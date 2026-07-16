@@ -25,6 +25,7 @@ import {
 import {
   createCommandRegistry,
   type CommandDefinition,
+  type CommandRegistry,
   type CommandResult,
 } from "../commands/commandRegistry";
 import {
@@ -39,7 +40,7 @@ import {
   type WalletState,
 } from "../economy/wallet";
 import { createCosmetics, type Cosmetics } from "../game/cosmetics";
-import type { GameDefinition, PersistConfig } from "../game/defineGame";
+import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
 import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
@@ -503,6 +504,306 @@ export interface GameContext {
   hydrate(snapshot: WorldSnapshot): void;
 }
 
+/**
+ * Shared wiring every optional-feature descriptor draws from — the live core subsystems (entities,
+ * spatial, economy, inventory) plus reactive plumbing (`signalNotify`) and a `feature` reader for the
+ * few features that reference another (quest reads unlocks). Handed to each {@link FeatureDescriptor}'s
+ * `create` so a new opt-in subsystem plugs into one registration, never a new `features.x ?` branch.
+ */
+interface FeatureDeps {
+  features: GameFeatures;
+  signalNotify: () => void;
+  events: GameEvents;
+  now: () => number;
+  entities: EntityStore;
+  spatial: SpatialApi;
+  store: ObservableKeyedStore<unknown>;
+  commandRegistry: CommandRegistry<GameContext>;
+  economy: GameContextEconomy;
+  content: GameContextContent;
+  activeUserId: () => string;
+  walletOf: (userId: string) => WalletState;
+  setWallet: (userId: string, state: WalletState) => void;
+  layouts: Record<string, InventoryLayout>;
+  inventoryFor: (userId: string) => InventorySet<string>;
+  ensureInstanceStats: (instanceId: string) => StatValueMap;
+  seedUserPool: (userId: string, statId: string, pool: { current: number; max?: number; min?: number }) => void;
+  sharedSocial: () => Social;
+  pile: (id: string, config?: CardPileConfig) => CardPile;
+  loop: (id: string, config?: TurnLoopConfig) => TurnLoop;
+  raceState: (id: string, config?: RaceStateConfig) => RaceState;
+  feature: <T>(key: keyof GameFeatures) => T | undefined;
+}
+
+/** What a descriptor produces: the `ctx`-facing value plus its optional replication/save modules. */
+interface FeatureBuild {
+  value: unknown;
+  /** Registered into the host→client replication set when present (`ctx.snapshot`/`ctx.hydrate`). */
+  replicate?: SnapshotModule;
+  /** Registered into the whole-world save-only set when present (`ctx.game.save`). */
+  save?: SnapshotModule;
+}
+
+/**
+ * One opt-in subsystem expressed as data: which `features` flag turns it on, how it wires itself from
+ * {@link FeatureDeps}, and whether it replicates or persists. `createGameContext` iterates the
+ * descriptor list instead of hand-wiring each `features.x ? create : undefined` branch — the seam a
+ * new feature extends through.
+ */
+interface FeatureDescriptor {
+  readonly key: keyof GameFeatures;
+  enabled(features: GameFeatures): boolean;
+  create(deps: FeatureDeps): FeatureBuild;
+}
+
+const featureDescriptors: readonly FeatureDescriptor[] = [
+  {
+    key: "unlocks",
+    enabled: (f) => f.unlocks === true,
+    create(d) {
+      const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], d.signalNotify);
+      return {
+        value: unlocks,
+        save: {
+          key: "unlocks",
+          snapshot: () => unlocks.snapshotAll(),
+          hydrate: (data) => unlocks.hydrateAll(data as Record<string, string[]>),
+        },
+      };
+    },
+  },
+  {
+    key: "social",
+    enabled: (f) => f.social === true,
+    create(d) {
+      const raw = d.sharedSocial();
+      const social: Social = {
+        friends: notifyAfter(
+          raw.friends,
+          ["request", "accept", "decline", "remove", "block", "hydrate"],
+          d.signalNotify,
+        ),
+        party: notifyAfter(
+          raw.party,
+          ["invite", "accept", "decline", "kick", "leave", "promote"],
+          d.signalNotify,
+        ),
+        presence: raw.presence,
+        emotes: raw.emotes,
+        worldInvites: notifyAfter(raw.worldInvites, ["invite", "accept", "decline"], d.signalNotify),
+        snapshot: raw.snapshot,
+        hydrate: (data) => {
+          raw.hydrate(data);
+          d.signalNotify();
+        },
+      };
+      return {
+        value: social,
+        replicate: {
+          key: "social",
+          snapshot: () => social.snapshot(),
+          hydrate: (data) => social.hydrate(data as SocialSnapshot),
+        },
+      };
+    },
+  },
+  {
+    key: "chat",
+    enabled: (f) => f.chat === true,
+    create(d) {
+      const raw = d.sharedSocial();
+      const chat = notifyAfter(
+        createChat({
+          events: d.events,
+          now: d.now,
+          party: raw.party,
+          proximity: {
+            entities: { get: (id) => d.entities.get(id) },
+            spatial: { inRadius: (center, radius, filter) => d.spatial.inRadius(center, radius, filter) },
+          },
+          blockedBy: (userId) => raw.friends.snapshot(userId).blocked,
+        }),
+        ["register", "send", "whisper", "hydrate"],
+        d.signalNotify,
+      );
+      return {
+        value: chat,
+        replicate: {
+          key: "chat",
+          snapshot: () => chat.snapshot(),
+          hydrate: (data) => chat.hydrate(data as ChatSnapshot),
+        },
+      };
+    },
+  },
+  {
+    key: "leaderboard",
+    enabled: (f) => f.leaderboard === true,
+    create(d) {
+      const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], d.signalNotify);
+      return {
+        value: leaderboard,
+        replicate: {
+          key: "leaderboard",
+          snapshot: () => leaderboard.snapshot(),
+          hydrate: (data) => leaderboard.hydrate(data as LeaderboardRow[]),
+        },
+      };
+    },
+  },
+  {
+    key: "roster",
+    enabled: (f) => f.roster === true,
+    create(d) {
+      const roster = notifyAfter(
+        createRoster({ now: d.now }),
+        ["capture", "release", "setEquipped", "hydrate"],
+        d.signalNotify,
+      );
+      return {
+        value: roster,
+        save: {
+          key: "roster",
+          snapshot: () => roster.snapshotAll(),
+          hydrate: (data) => roster.hydrateAll(data as Record<string, readonly RosterEntry[]>),
+        },
+      };
+    },
+  },
+  {
+    key: "cosmetics",
+    enabled: (f) => f.cosmetics === true,
+    create(d) {
+      return {
+        value: notifyAfter(createCosmetics({ events: d.events }), ["apply", "equip", "hydrate"], d.signalNotify),
+      };
+    },
+  },
+  {
+    key: "trade",
+    enabled: (f) => f.trade === true,
+    create(d) {
+      return {
+        value: createTradeSystem({
+          resolveTrade: (itemId) => d.content.itemById?.(itemId)?.trade,
+          wallet: {
+            canAfford: (costs) =>
+              walletCanAfford(d.walletOf(d.activeUserId()), costs) ? null : "insufficient-funds",
+            charge(costs) {
+              const result = walletChargeAll(d.walletOf(d.activeUserId()), costs);
+              if (result.status === "ok") {
+                d.setWallet(d.activeUserId(), result.state);
+                d.signalNotify();
+              }
+            },
+            grant(gains) {
+              for (const [currencyId, amount] of Object.entries(gains)) {
+                d.economy.grant(d.activeUserId(), currencyId, amount);
+              }
+            },
+          },
+          inventory: {
+            put(inventoryId, itemId, count) {
+              if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
+              const result = d.inventoryFor(d.activeUserId()).put(inventoryId, itemId, count);
+              return result.status === "ok" ? null : { reason: result.reason };
+            },
+            take(inventoryId, itemId, count) {
+              if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
+              const result = d.inventoryFor(d.activeUserId()).take(inventoryId, itemId, count);
+              return result.status === "ok" ? null : { reason: result.reason };
+            },
+            count: (inventoryId, itemId) => d.inventoryFor(d.activeUserId()).count(inventoryId, itemId),
+          },
+        }),
+      };
+    },
+  },
+  {
+    key: "quest",
+    enabled: (f) => f.quest === true,
+    create(d) {
+      const quest = notifyAfter(
+        createQuestJournal({
+          events: d.events,
+          rewards: {
+            grantXp(userId, amount) {
+              const existing = d.ensureInstanceStats(userId)["xp"];
+              const current = (existing?.current ?? 0) + amount;
+              d.seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
+            },
+            grantEconomy: (userId, currencyId, amount) => d.economy.grant(userId, currencyId, amount),
+            grantItem(userId, inventoryId, itemId, count) {
+              if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
+              const result = d.inventoryFor(userId).put(inventoryId, itemId, count);
+              return result.status === "ok" ? null : { reason: result.reason };
+            },
+            grantUnlock: (userId, unlockId) => d.feature<Unlocks>("unlocks")?.grant(userId, unlockId),
+          },
+          hasUnlock: (userId, id) => d.feature<Unlocks>("unlocks")?.has(userId, id) ?? false,
+        }),
+        ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
+        d.signalNotify,
+      );
+      return {
+        value: quest,
+        save: {
+          key: "quest",
+          snapshot: () => quest.snapshotAll(),
+          hydrate: (data) => quest.hydrateAll(data as Record<string, QuestSnapshotEntry[]>),
+        },
+      };
+    },
+  },
+  {
+    key: "dialogue",
+    enabled: (f) => f.dialogue === true,
+    create(d) {
+      const dialogue = createGameDialogue(d.store);
+      d.commandRegistry.define("dialogue.open", {
+        apply(state, input) {
+          const id = (input as { id?: string }).id;
+          if (id !== undefined) state.game.dialogue?.open(id);
+        },
+      });
+      d.commandRegistry.define("dialogue.close", {
+        apply(state) {
+          state.game.dialogue?.close();
+        },
+      });
+      return { value: dialogue };
+    },
+  },
+  {
+    key: "players",
+    enabled: (f) => f.players === true,
+    create(d) {
+      return { value: notifyAfter(createConnectedPlayers(), ["join", "leave"], d.signalNotify) };
+    },
+  },
+  {
+    key: "cards",
+    enabled: (f) => f.cards === true,
+    create(d) {
+      return { value: { pile: d.pile } satisfies GameContextCards };
+    },
+  },
+  {
+    key: "turn",
+    enabled: (f) => f.turn === true,
+    create(d) {
+      return { value: { loop: d.loop } satisfies GameContextTurn };
+    },
+  },
+  {
+    key: "race",
+    enabled: (f) => f.race === true,
+    create(d) {
+      return { value: { state: d.raceState } satisfies GameContextRace };
+    },
+  },
+];
+
 export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: GameContextOptions<TAssetRef, TMultiplayer>,
 ): GameContext {
@@ -663,70 +964,23 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
   const features = definition.features ?? {};
-  const unlocks = features.unlocks
-    ? notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify)
-    : undefined;
-  const rawSocial =
-    features.social || features.chat
-      ? createSocial({
-          events,
-          now,
-          emotes: {
-            entities: { get: (id) => entities.get(id) },
-            spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
-          },
-        })
-      : null;
-  let social: Social | undefined;
-  if (features.social && rawSocial !== null) {
-    social = {
-      friends: notifyAfter(
-        rawSocial.friends,
-        ["request", "accept", "decline", "remove", "block", "hydrate"],
-        signal.notify,
-      ),
-      party: notifyAfter(
-        rawSocial.party,
-        ["invite", "accept", "decline", "kick", "leave", "promote"],
-        signal.notify,
-      ),
-      presence: rawSocial.presence,
-      emotes: rawSocial.emotes,
-      worldInvites: notifyAfter(
-        rawSocial.worldInvites,
-        ["invite", "accept", "decline"],
-        signal.notify,
-      ),
-      snapshot: rawSocial.snapshot,
-      hydrate: (data) => {
-        rawSocial.hydrate(data);
-        signal.notify();
-      },
-    };
-  }
-  let chat: Chat | undefined;
-  if (features.chat && rawSocial !== null) {
-    chat = notifyAfter(
-      createChat({
+  const featureRegistry = new Map<keyof GameFeatures, unknown>();
+  const featureValue = <T>(key: keyof GameFeatures): T | undefined =>
+    featureRegistry.get(key) as T | undefined;
+  let rawSocial: Social | null = null;
+  const sharedSocial = (): Social => {
+    if (rawSocial === null) {
+      rawSocial = createSocial({
         events,
         now,
-        party: rawSocial.party,
-        proximity: {
+        emotes: {
           entities: { get: (id) => entities.get(id) },
           spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
         },
-        blockedBy: (userId) => rawSocial.friends.snapshot(userId).blocked,
-      }),
-      ["register", "send", "whisper", "hydrate"],
-      signal.notify,
-    );
-  }
-  const leaderboard = features.leaderboard
-    ? notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify)
-    : undefined;
-  const roster = features.roster
-    ? notifyAfter(createRoster({ now }), ["capture", "release", "setEquipped", "hydrate"], signal.notify)
-    : undefined;
+      });
+    }
+    return rawSocial;
+  };
   const playerStatsByUser = new Map<string, Stats<string>>();
   function playerStatsFor(userId: string): Stats<string> {
     let stats = playerStatsByUser.get(userId);
@@ -758,9 +1012,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
-  const cosmetics = features.cosmetics
-    ? notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify)
-    : undefined;
   const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
@@ -822,40 +1073,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  const trade = features.trade
-    ? createTradeSystem({
-    resolveTrade: (itemId) => content.itemById?.(itemId)?.trade,
-    wallet: {
-      canAfford: (costs) => (walletCanAfford(walletOf(activeUserId()), costs) ? null : "insufficient-funds"),
-      charge(costs) {
-        const result = walletChargeAll(walletOf(activeUserId()), costs);
-        if (result.status === "ok") {
-          wallets.set(activeUserId(), result.state);
-          signal.notify();
-        }
-      },
-      grant(gains) {
-        for (const [currencyId, amount] of Object.entries(gains)) {
-          economy.grant(activeUserId(), currencyId, amount);
-        }
-      },
-    },
-    inventory: {
-      put(inventoryId, itemId, count) {
-        if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventoryFor(activeUserId()).put(inventoryId, itemId, count);
-        return result.status === "ok" ? null : { reason: result.reason };
-      },
-      take(inventoryId, itemId, count) {
-        if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventoryFor(activeUserId()).take(inventoryId, itemId, count);
-        return result.status === "ok" ? null : { reason: result.reason };
-      },
-      count: (inventoryId, itemId) => inventoryFor(activeUserId()).count(inventoryId, itemId),
-    },
-      })
-    : undefined;
-
   function seedUserPool(
     userId: string,
     statId: string,
@@ -865,31 +1082,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     const next = setStatValue(map, statId, pool);
     map[statId] = next[statId]!;
   }
-
-  const quest = features.quest
-    ? notifyAfter(
-        createQuestJournal({
-          events,
-          rewards: {
-            grantXp(userId, amount) {
-              const existing = ensureInstanceStats(userId)["xp"];
-              const current = (existing?.current ?? 0) + amount;
-              seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
-            },
-            grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
-            grantItem(userId, inventoryId, itemId, count) {
-              if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-              const result = inventoryFor(userId).put(inventoryId, itemId, count);
-              return result.status === "ok" ? null : { reason: result.reason };
-            },
-            grantUnlock: (userId, unlockId) => unlocks?.grant(userId, unlockId),
-          },
-          hasUnlock: (userId, id) => unlocks?.has(userId, id) ?? false,
-        }),
-        ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
-        signal.notify,
-      )
-    : undefined;
 
   const loadouts = notifyAfter(
     createLoadouts({
@@ -915,7 +1107,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
       stats: { seed: seedUserPool },
       economy: { grant: economy.grant },
-      unlocks: { grant: (userId, unlockId) => unlocks?.grant(userId, unlockId) },
+      unlocks: { grant: (userId, unlockId) => featureValue<Unlocks>("unlocks")?.grant(userId, unlockId) },
     }),
     ["applyLoadout"],
     signal.notify,
@@ -1324,25 +1516,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
-  const dialogue = features.dialogue ? createGameDialogue(store) : undefined;
-  if (dialogue !== undefined) {
-    commandRegistry.define("dialogue.open", {
-      apply(state, input) {
-        const id = (input as { id?: string }).id;
-        if (id !== undefined) state.game.dialogue?.open(id);
-      },
-    });
-    commandRegistry.define("dialogue.close", {
-      apply(state) {
-        state.game.dialogue?.close();
-      },
-    });
-  }
-
-  const players = features.players
-    ? notifyAfter(createConnectedPlayers(), ["join", "leave"], signal.notify)
-    : undefined;
-
   const cardPiles = new Map<string, CardPile>();
   function pile(id: string, config?: CardPileConfig): CardPile {
     const existing = cardPiles.get(id);
@@ -1446,6 +1619,40 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return queue;
   }
 
+  const featureDeps: FeatureDeps = {
+    features,
+    signalNotify: signal.notify,
+    events,
+    now,
+    entities,
+    spatial,
+    store,
+    commandRegistry,
+    economy,
+    content,
+    activeUserId,
+    walletOf,
+    setWallet: (userId, state) => wallets.set(userId, state),
+    layouts,
+    inventoryFor,
+    ensureInstanceStats,
+    seedUserPool,
+    sharedSocial,
+    pile,
+    loop,
+    raceState,
+    feature: featureValue,
+  };
+  const featureReplicateModules: SnapshotModule[] = [];
+  const featureSaveModules: SnapshotModule[] = [];
+  for (const descriptor of featureDescriptors) {
+    if (!descriptor.enabled(features)) continue;
+    const build = descriptor.create(featureDeps);
+    featureRegistry.set(descriptor.key, build.value);
+    if (build.replicate !== undefined) featureReplicateModules.push(build.replicate);
+    if (build.save !== undefined) featureSaveModules.push(build.save);
+  }
+
   const snapshotModules: SnapshotModule[] = [
     { key: "entities", snapshot: () => entities.snapshot(), hydrate: (data) => entities.hydrate(data as SceneEntity[]) },
     {
@@ -1477,29 +1684,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         }
       },
     },
+    ...featureReplicateModules,
   ];
-  if (leaderboard) {
-    snapshotModules.push({
-      key: "leaderboard",
-      snapshot: () => leaderboard.snapshot(),
-      hydrate: (data) => leaderboard.hydrate(data as LeaderboardRow[]),
-    });
-  }
-  if (chat) {
-    snapshotModules.push({
-      key: "chat",
-      snapshot: () => chat.snapshot(),
-      hydrate: (data) => chat.hydrate(data as ChatSnapshot),
-    });
-  }
-  if (social) {
-    const socialModule = social;
-    snapshotModules.push({
-      key: "social",
-      snapshot: () => socialModule.snapshot(),
-      hydrate: (data) => socialModule.hydrate(data as SocialSnapshot),
-    });
-  }
 
   /**
    * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it also
@@ -1521,31 +1707,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         signal.notify();
       },
     },
+    ...featureSaveModules,
   ];
-  if (quest) {
-    const questModule = quest;
-    saveModules.push({
-      key: "quest",
-      snapshot: () => questModule.snapshotAll(),
-      hydrate: (data) => questModule.hydrateAll(data as Record<string, QuestSnapshotEntry[]>),
-    });
-  }
-  if (unlocks) {
-    const unlocksModule = unlocks;
-    saveModules.push({
-      key: "unlocks",
-      snapshot: () => unlocksModule.snapshotAll(),
-      hydrate: (data) => unlocksModule.hydrateAll(data as Record<string, string[]>),
-    });
-  }
-  if (roster) {
-    const rosterModule = roster;
-    saveModules.push({
-      key: "roster",
-      snapshot: () => rosterModule.snapshotAll(),
-      hydrate: (data) => rosterModule.hydrateAll(data as Record<string, readonly RosterEntry[]>),
-    });
-  }
 
   const ctx: GameContext = {
     scene: {
@@ -1657,20 +1820,20 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         },
       },
       loot,
-      trade,
-      quest,
-      social,
-      chat,
-      unlocks,
+      trade: featureValue<TradeSystem>("trade"),
+      quest: featureValue<QuestJournal>("quest"),
+      social: featureValue<Social>("social"),
+      chat: featureValue<Chat>("chat"),
+      unlocks: featureValue<Unlocks>("unlocks"),
       economy,
-      leaderboard,
-      roster,
+      leaderboard: featureValue<Leaderboard>("leaderboard"),
+      roster: featureValue<Roster>("roster"),
       store,
-      dialogue,
-      cards: features.cards ? { pile } : undefined,
-      turn: features.turn ? { loop } : undefined,
-      race: features.race ? { state: raceState } : undefined,
-      players,
+      dialogue: featureValue<GameDialogue>("dialogue"),
+      cards: featureValue<GameContextCards>("cards"),
+      turn: featureValue<GameContextTurn>("turn"),
+      race: featureValue<GameContextRace>("race"),
+      players: featureValue<ConnectedPlayers>("players"),
     },
     player: {
       get userId() {
@@ -1689,7 +1852,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
       possession,
-      cosmetics,
+      cosmetics: featureValue<Cosmetics>("cosmetics"),
       get motion() {
         return motionFor(activeUserId());
       },
