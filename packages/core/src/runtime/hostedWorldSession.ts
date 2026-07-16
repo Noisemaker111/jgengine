@@ -4,7 +4,7 @@ import type { GameContext, GameContextContent } from "./gameContext";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
 import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
 import type { WorldDiff } from "./worldReplication";
-import type { WorldSnapshot } from "./worldSnapshot";
+import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
 /** One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves. */
 export interface HostedWorldRecord {
@@ -66,6 +66,10 @@ export interface HostedWorldSession {
   tick(dt: number): number;
   /** Replication pull: `null`/`0` cursor → full baseline; a prior revision → a diff since it. */
   sync(sinceRevision: number | null): HostedWorldSync;
+  /** The full world baseline projected for one viewer (private/AOI). Identity when no replication policy is set. */
+  snapshotFor(viewer: SnapshotViewer): WorldSnapshot;
+  /** True when {@link snapshotFor} is viewer-dependent — a host must serve each connection its own projected frame instead of a shared diff. */
+  projectsViewers(): boolean;
   revision(): number;
   members(): readonly string[];
   /** Force-persist the current world to the store. */
@@ -121,6 +125,8 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
       }
       return { kind: "diff", diff: runner.diff(sinceRevision) };
     },
+    snapshotFor: (viewer) => runner.snapshot(viewer),
+    projectsViewers: () => runner.projectsViewers(),
     revision: () => runner.revision(),
     members: () => runner.members(),
     save: persist,

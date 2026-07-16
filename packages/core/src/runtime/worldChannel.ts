@@ -2,7 +2,7 @@ import type { GameContext } from "./gameContext";
 import type { InputFrame } from "./hostedGameRunner";
 import type { HostedWorldSession } from "./hostedWorldSession";
 import { createWorldMirror } from "./worldMirror";
-import type { WorldDiff } from "./worldReplication";
+import { diffSnapshots, type WorldDiff } from "./worldReplication";
 import type { WorldSnapshot } from "./worldSnapshot";
 
 /** Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream. */
@@ -43,9 +43,13 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
   const connections = new Set<WorldHostConnection>();
   const connectionsByUser = new Map<string, Set<WorldHostConnection>>();
 
+  const perViewer = session.projectsViewers();
+
   function connect(userId: string, send: (frame: WorldServerFrame) => void): WorldHostConnection {
     let cursor = 0;
     let released = false;
+    let viewerSnapshot: WorldSnapshot | null = null;
+    let viewerRevision = 0;
     function release(): void {
       if (released) return;
       released = true;
@@ -77,6 +81,19 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
       },
       push() {
         if (released) return;
+        if (perViewer) {
+          const revision = session.revision();
+          if (viewerSnapshot !== null && revision === viewerRevision) return;
+          const snapshot = session.snapshotFor({ userId });
+          if (viewerSnapshot === null) {
+            send({ t: "baseline", revision, snapshot });
+          } else {
+            send({ t: "diff", diff: diffSnapshots(viewerSnapshot, snapshot, revision, viewerRevision) });
+          }
+          viewerSnapshot = snapshot;
+          viewerRevision = revision;
+          return;
+        }
         if (cursor !== 0 && cursor === session.revision()) return;
         const sync = session.sync(cursor === 0 ? null : cursor);
         if (sync.kind === "baseline") {
