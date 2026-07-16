@@ -16,7 +16,7 @@ export interface TowerDef {
   splashRadius: number;
   slow?: SlowSpec;
   targeting: AutoTargetPolicy;
-  boltColor: string;
+  boltColor: number;
   icon: "bow" | "bomb" | "frost";
   color: string;
   trim: string;
@@ -33,7 +33,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     fireRateHz: 2,
     splashRadius: 0,
     targeting: "first",
-    boltColor: "#f4d35e",
+    boltColor: 0xf4d35e,
     icon: "bow",
     color: "#8a5a34",
     trim: "#4c3018",
@@ -48,7 +48,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     fireRateHz: 0.7,
     splashRadius: 2.2,
     targeting: "first",
-    boltColor: "#e0763a",
+    boltColor: 0xe0763a,
     icon: "bomb",
     color: "#5b5b62",
     trim: "#2c2c31",
@@ -64,7 +64,7 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
     splashRadius: 0,
     slow: { factor: 0.45, durationMs: 1600 },
     targeting: "first",
-    boltColor: "#7fd8e8",
+    boltColor: 0x7fd8e8,
     icon: "frost",
     color: "#3d6b82",
     trim: "#1f3b48",

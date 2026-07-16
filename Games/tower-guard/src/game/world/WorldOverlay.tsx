@@ -1,6 +1,4 @@
-import { useState } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 import { useGameContext } from "@jgengine/react/provider";
 import { useGameStore } from "@jgengine/react/hooks";
 import { AuthoredScene } from "@jgengine/shell/scene";
@@ -11,7 +9,6 @@ import { GOLD_CURRENCY } from "../entities/base/catalog";
 import { towerDef } from "../entities/towers/catalog";
 import { scatterModels } from "../models";
 import { session } from "../session";
-import { activeProjectiles } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, SPAWN_POINT } from "./path";
 
 /** Renders the authored scene — draped creep path + instanced foliage — straight from the document; `pine` placements resolve to a real catalog GLB via `scatterModels`. */
@@ -85,37 +82,12 @@ function SpawnGate() {
   );
 }
 
-function ProjectileBolts() {
-  const ctx = useGameContext();
-  const [, setTick] = useState(0);
-  useFrame(() => setTick((value) => value + 1));
-  const now = ctx.time.now();
-  const bolts = activeProjectiles(now);
-  return (
-    <>
-      {bolts.map((bolt) => {
-        const t = Math.min(1, (now - bolt.spawnedAt) / bolt.travelSeconds);
-        const x = bolt.from[0] + (bolt.to[0] - bolt.from[0]) * t;
-        const y = bolt.from[1] + 0.9 + (bolt.to[1] - bolt.from[1]) * t;
-        const z = bolt.from[2] + (bolt.to[2] - bolt.from[2]) * t;
-        return (
-          <mesh key={bolt.id} position={[x, y, z]}>
-            <sphereGeometry args={[0.14, 8, 8]} />
-            <meshStandardMaterial color={bolt.color} emissive={bolt.color} emissiveIntensity={0.9} />
-          </mesh>
-        );
-      })}
-    </>
-  );
-}
-
 export function TowerGuardWorldOverlay() {
   return (
     <>
       <Scene />
       <SpawnGate />
       <BuildPlots />
-      <ProjectileBolts />
     </>
   );
 }

@@ -1,8 +1,6 @@
 import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
@@ -11,6 +9,7 @@ import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { applyMaterialOverride } from "@jgengine/shell/materialOverride";
+import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/modelRender";
 
 import { assets, DUNGEON } from "./assets";
@@ -24,18 +23,6 @@ import { DIR_VECTORS, type V2 } from "./types";
 const VOID_BASE = "#0b0f1e";
 const VOID_HIGH = "#141a30";
 const ROOM_BASE = "#232a44";
-
-/**
- * A dedicated `LoadingManager`, not the implicit `THREE.DefaultLoadingManager` a bare
- * `useLoader(GLTFLoader, url, ...)` constructs — matches the fix in `packages/shell/GamePlayerShell.tsx`.
- * The shared default manager is process-wide singleton state — under this dev server's repeated
- * navigations it can end up with an already-aborted internal `AbortController`, which
- * `FileLoader.load()` composes into every future request's abort signal, silently stalling
- * `GLTFLoader.load()` forever with no thrown error (parsing already-fetched bytes still works fine
- * — it's a fetch-stage-only hang). A private manager sidesteps the shared state.
- */
-const gltfLoader = new GLTFLoader(new THREE.LoadingManager());
-gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 function resolveModel(id: string): ModelAssetRef {
   const entry = assets.resolve(id);
@@ -61,17 +48,14 @@ const WEIGHT_SCALE = 1.6;
  * fetch/parse continuation for a very long time on a busy machine; preloading while the page is
  * still quiet avoids that entirely. */
 for (const id of Object.values(DUNGEON)) {
-  useLoader.preload(gltfLoader, resolveModel(id).url);
+  useLoader.preload(sharedGltfLoader, resolveModel(id).url);
 }
 
 /**
- * Every placed object routes through this one preloaded `gltfLoader` via `renderObject` — including
- * wall/emitter/exit, which have no per-instance tint and would otherwise be the obvious fit for the
- * engine's static `objectModels` map. `objectModels` resolves through the shell's own separate
- * `sharedGltfLoader` instance (`packages/shell/GamePlayerShell.tsx`), which this game's module-level
- * `useLoader.preload` never warms — that split cache reintroduces the exact main-thread-starvation
- * hang the preload exists to avoid. Keeping every model on this game's one loader keeps the preload
- * meaningful for all of them.
+ * Every placed object routes through the shell's shared `sharedGltfLoader` via `renderObject` — the
+ * same loader the engine's static `objectModels` map uses, and the one the preload loop above warms.
+ * One shared, preloaded cache for every model avoids the main-thread-starvation hang a split loader
+ * (game-private loader unwarmed by objectModels, or vice versa) would reintroduce.
  */
 const OBJECT_MODEL_IDS: Record<ObjectId, string> = {
   wall: DUNGEON.wall,
@@ -130,7 +114,7 @@ function centeredPosition(entry: ModelAssetRef, baseY = 0, scale = 1): [number, 
 
 function useDungeonScene(id: string, material: ModelMaterialOverride | undefined, poseClip?: string) {
   const entry = resolveModel(id);
-  const gltf = useLoader(gltfLoader, entry.url);
+  const gltf = useLoader(sharedGltfLoader, entry.url);
   const materialKey =
     material === undefined
       ? ""
@@ -243,9 +227,9 @@ const FLOOR_VARIANT_IDS = [DUNGEON.floor, DUNGEON.floorDetail, DUNGEON.dirt] as 
 /** Tiles the room's walkable footprint with real dungeon-kit floor GLBs (three variants, hashed
  * per cell for texture variety) instead of one flat color plane. */
 function FloorTiles({ room }: { room: RoomDef }) {
-  const floor = useLoader(gltfLoader, resolveModel(FLOOR_VARIANT_IDS[0]).url);
-  const detail = useLoader(gltfLoader, resolveModel(FLOOR_VARIANT_IDS[1]).url);
-  const dirt = useLoader(gltfLoader, resolveModel(FLOOR_VARIANT_IDS[2]).url);
+  const floor = useLoader(sharedGltfLoader, resolveModel(FLOOR_VARIANT_IDS[0]).url);
+  const detail = useLoader(sharedGltfLoader, resolveModel(FLOOR_VARIANT_IDS[1]).url);
+  const dirt = useLoader(sharedGltfLoader, resolveModel(FLOOR_VARIANT_IDS[2]).url);
 
   const tiles = useMemo(
     () => {

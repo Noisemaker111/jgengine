@@ -4,7 +4,6 @@ import { selectAutoTarget, type AutoTargetPolicy } from "@jgengine/core/scene/au
 
 import { towerDef, type TowerDef } from "../entities/towers/catalog";
 import { session } from "../session";
-import { pushProjectile } from "./pendingProjectiles";
 
 const TOWER_ID = "__tower__";
 
@@ -83,7 +82,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
 
     applyDamage(ctx, def, tower.instanceId, targetId);
     applySlow(ctx, def, targetId, now);
-    pushProjectile(entity.position, target.position, def.boltColor, def.splashRadius, now);
+    ctx.scene.entity.vfx({ kind: "projectile", color: def.boltColor, from: entity.position, to: target.position });
     tower.cooldownSeconds = 1 / def.fireRateHz;
   }
 }

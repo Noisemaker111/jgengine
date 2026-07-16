@@ -5,7 +5,6 @@ import { registerBuildCommands } from "../build/commands";
 import { BASE_CATALOG_ID, BASE_ENTITY_ID, GOLD_CURRENCY, STARTING_GOLD } from "../entities/base/catalog";
 import { creepDef, CREEP_CATALOG } from "../entities/enemies/catalog";
 import { resetSession, session } from "../session";
-import { resetProjectiles } from "../combat/pendingProjectiles";
 import { KEEP_POINT } from "./path";
 
 function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
@@ -22,7 +21,6 @@ function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
 
 export function setupWorld(ctx: GameContext): void {
   resetSession();
-  resetProjectiles();
   ctx.game.economy.grant(ctx.player.userId, GOLD_CURRENCY, STARTING_GOLD);
   ctx.scene.entity.spawn(BASE_CATALOG_ID, { id: BASE_ENTITY_ID, position: KEEP_POINT, role: "prop" });
   registerBuildCommands(ctx);
