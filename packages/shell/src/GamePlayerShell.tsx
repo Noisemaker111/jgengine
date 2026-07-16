@@ -226,13 +226,6 @@ function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
   return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
 }
 
-export {
-  heldActionsFor,
-  shouldFireBoundAction,
-  dispatchBoundAction,
-  RESERVED_INPUT_ACTIONS,
-} from "./boundActionDispatch";
-
 function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
   const hit = service.worldHit();
   if (hit === null) return undefined;
@@ -272,7 +265,6 @@ export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
 export { hasEnvironmentTerrain } from "@jgengine/core/world/terrain";
-export { resolveWorldSky, colorFromId } from "./worldSky";
 
 function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
   const size = entry.shadowCameraSize ?? 40;

@@ -139,18 +139,20 @@
 ## @jgengine/core/runtime/adapter
 
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
-- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
+- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative.
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
 - `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
+- `isPresenceOnly` (function): function isPresenceOnly(multiplayer: unknown): boolean — True when multiplayer is on but the world sim is not host-authoritative — presence/feeds/chat only. Equivalent to `resolveAuthority(m) === "client"`.
 - `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
 - `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
 - `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
 - `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
 - `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `resolveAuthority` (function): function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null — Resolved authority for a multiplayer config. - `offline` / missing adapter → `null` (single-player; not multiplayer authority). - unset or `"client"` → `"client"` (presence-only; each client ticks). - `"server"` → host-authoritative shared sim.
 - `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
 - `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented

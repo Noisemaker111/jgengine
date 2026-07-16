@@ -10,7 +10,7 @@ import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
 import { localCommandSink, type CommandSink } from "./commandSink";
 
-/** Actions the shell consumes natively and never routes to a same-named command. */
+/** Actions the shell consumes natively and never routes to a same-named command. @internal */
 export const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
   "moveForward",
   "moveBack",
@@ -26,7 +26,7 @@ export const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
   "interact",
 ]);
 
-/** Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions. */
+/** Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions. @internal */
 export function heldActionsFor(
   tracker: Pick<ActionStateTracker<string>, "isDown">,
   actions: readonly string[],
@@ -34,7 +34,7 @@ export function heldActionsFor(
   return actions.filter((action) => tracker.isDown(action));
 }
 
-/** Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`). */
+/** Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`). @internal */
 export function shouldFireBoundAction(
   tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">,
   action: string,
@@ -51,7 +51,7 @@ export function shouldFireBoundAction(
   });
 }
 
-/** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). */
+/** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). @internal */
 export function dispatchBoundAction(
   ctx: GameContext,
   action: string,

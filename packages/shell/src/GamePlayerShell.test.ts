@@ -5,9 +5,9 @@ import {
   hasEnvironmentTerrain,
   nearbyObstacles,
   resolvePhysicsTuning,
-  resolveWorldSky,
 } from "./GamePlayerShell";
 import { heldActionsFor, shouldFireBoundAction } from "./boundActionDispatch";
+import { resolveWorldSky } from "./worldSky";
 import { advanceVoxelPlayer, createVoxelPlayerBody } from "@jgengine/core/movement/voxelController";
 import { resolveMovementIntent, createEmptyMovementKeys } from "@jgengine/core/movement/movementModel";
 

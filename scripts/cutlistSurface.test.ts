@@ -91,4 +91,43 @@ describe("CUTLIST surface diet", () => {
     };
     expect(pkg.keywords ?? []).not.toContain("ecs");
   });
+
+  test("CRITIQUE-ACTIONS non-deferred work rows are closed", () => {
+    const text = readFileSync(join(root, "CRITIQUE-ACTIONS.md"), "utf8");
+    // Status legend uses 🔨/☐ in the meaning table — only flag open *work* rows (ID|...|status).
+    const workRows = text
+      .split("\n")
+      .filter((line) => /^\| [A-Z][0-9]+ \|/.test(line));
+    for (const row of workRows) {
+      const cells = row.split("|").map((c) => c.trim());
+      const status = cells[cells.length - 2] ?? "";
+      const id = cells[1] ?? "";
+      if (id === "R4") {
+        expect(status).toMatch(/⏸/);
+        continue;
+      }
+      expect(status, `row ${id} must not stay open`).not.toMatch(/☐|🔨/);
+      expect(status).toMatch(/✅|⏸/);
+    }
+  });
+
+  test("flagship hosted path and shell extracts exist", () => {
+    const hosted = readFileSync(join(root, "examples/HOSTED.md"), "utf8");
+    expect(hosted).toMatch(/claudecraft/);
+    expect(hosted).toMatch(/authority:\s*"server"|authority: "server"/);
+    expect(existsSync(join(root, "Games/claudecraft/package.json"))).toBe(true);
+    expect(existsSync(join(root, "packages/shell/src/boundActionDispatch.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/shell/src/hotbarActions.ts"))).toBe(true);
+    expect(existsSync(join(root, "packages/shell/src/worldSky.ts"))).toBe(true);
+    expect(readFileSync(join(root, "packages/core/src/scene/entityStore.ts"), "utf8")).toMatch(
+      /export function entityMetaOf/,
+    );
+    expect(existsSync(join(root, "packages/core/src/physics/README.md"))).toBe(true);
+  });
+
+  test("resolveAuthority and isPresenceOnly are exported from adapter", () => {
+    const src = readFileSync(join(root, "packages/core/src/runtime/adapter.ts"), "utf8");
+    expect(src).toMatch(/export function resolveAuthority/);
+    expect(src).toMatch(/export function isPresenceOnly/);
+  });
 });

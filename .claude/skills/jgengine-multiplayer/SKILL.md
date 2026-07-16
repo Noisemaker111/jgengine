@@ -22,12 +22,12 @@ Games never need `createGameRuntime` for single-player or client loops. Hosts re
 
 | `authority` | Meaning |
 | --- | --- |
-| unset / `"client"` | **Presence-only** — each client runs its own `onTick`; presence/feeds/chat sync. Not a shared competitive sim. `isPresenceOnly(multiplayer)` |
-| `"server"` | Host-authoritative world; shell mirrors host state. `isServerAuthoritative(multiplayer)` |
+| unset / `"client"` | **Presence-only** — each client runs its own `onTick`; presence/feeds/chat sync. Not a shared competitive sim. `isPresenceOnly(multiplayer)` / `resolveAuthority(multiplayer) === "client"` |
+| `"server"` | Host-authoritative world; shell mirrors host state. `isServerAuthoritative(multiplayer)` / `resolveAuthority === "server"` |
 
 ```ts
-import { ws, isPresenceOnly, isServerAuthoritative } from "@jgengine/core/runtime/adapter";
-ws({ topology: "shared" }); // presence-only default
+import { ws, isPresenceOnly, isServerAuthoritative, resolveAuthority } from "@jgengine/core/runtime/adapter";
+ws({ topology: "shared" }); // presence-only default — resolveAuthority → "client"
 ws({ topology: "shared", authority: "server" }); // shared world
 ```
 

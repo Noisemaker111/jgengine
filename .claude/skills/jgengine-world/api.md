@@ -614,6 +614,7 @@
 - `SpawnPose` (interface): interface SpawnPose — ⚠ undocumented
 - `SpawnPositionInput` (type): type SpawnPositionInput = EntityPosition | { x: number; y: number; z: number } — ⚠ undocumented
 - `createEntityStore` (function): function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> — ⚠ undocumented
+- `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
 - `groundSpeed` (function): function groundSpeed(entity: SceneEntity<unknown>): number — Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code.
 - `movedWhileFrozen` (function): function movedWhileFrozen(entity: SceneEntity<unknown>, threshold = DEFAULT_FROZEN_MOVE_THRESHOLD): boolean — ⚠ undocumented
 
