@@ -5,6 +5,14 @@ import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 
 import { createGameHost, memoryPersistence, OP_LEDGER_LIMIT } from "./host";
 
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve: (value: T) => void = () => {};
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
 function coinsRuntime() {
   return createGameRuntime({
     gameId: "shop",
@@ -162,6 +170,64 @@ test("the op ledger evicts the oldest ID once past its bound", async () => {
 
   await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-0" } });
   expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(OP_LEDGER_LIMIT + 2);
+});
+
+test("a stalled mutation in one room does not block another room's mutation", async () => {
+  const base = memoryPersistence();
+  let slowServerId = "";
+  const gate = deferred<void>();
+  const persistence = {
+    ...base,
+    async appendFeed(args: Parameters<typeof base.appendFeed>[0]) {
+      if (args.serverId === slowServerId) {
+        await gate.promise;
+      }
+      return base.appendFeed(args);
+    },
+  };
+
+  const host = createGameHost({ persistence, allowedFeedActions: ["slow", "fast"] });
+  const { serverId: roomA } = await host.joinServer({ userId: "alice", gameId: "demo" });
+  const { serverId: roomB } = await host.joinServer({ userId: "bob", gameId: "demo" });
+  slowServerId = roomA;
+
+  const order: string[] = [];
+  const slow = host
+    .pushFeedEntry({ userId: "alice", serverId: roomA, action: "slow", entry: 1 })
+    .then(() => order.push("slow"));
+  const fast = host
+    .pushFeedEntry({ userId: "bob", serverId: roomB, action: "fast", entry: 1 })
+    .then(() => order.push("fast"));
+
+  await fast;
+  expect(order).toEqual(["fast"]);
+
+  gate.resolve();
+  await slow;
+  expect(order).toEqual(["fast", "slow"]);
+});
+
+test("mutations submitted to the same room stay ordered even without an await between calls", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+
+  const order: string[] = [];
+  const first = host
+    .runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-1" } })
+    .then((result) => {
+      order.push("first");
+      return result;
+    });
+  const second = host
+    .runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-2" } })
+    .then((result) => {
+      order.push("second");
+      return result;
+    });
+
+  await Promise.all([first, second]);
+  expect(order).toEqual(["first", "second"]);
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(2);
 });
 
 test("leaving a server forgets its op ledger", async () => {
