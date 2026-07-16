@@ -99,6 +99,15 @@ derive enemy waypoints from a `route` path and tower plots from markers, so ther
 (`Games/tower-guard`: `editor.scene.json` drives rendering *and* pathing; no hand-rolled path meshes, no
 duplicated coordinates). Never draw a path or scatter field with hand-written per-segment meshes.
 
+This rule is **gated**: `bun run check-content-gate` (wired into `check-types`) fails a game that hard-codes
+world geometry instead of rendering an editor document, and flags source files dense with hand-placed
+coordinate literals. Two shrinking baselines (`scripts/content-gate-baseline.json`,
+`scripts/coordinate-literal-baseline.json`) list today's offenders so `main` stays green; they may only
+lose entries. After migrating a game to `<AuthoredScene>`, reseed with `bun run check-content-gate --update`
+and commit the trimmed baselines. Legitimately procedural / geometry-free games live in the `EXEMPT` map in
+`scripts/check-content-gate.ts`. The end-to-end editor→`<AuthoredScene>` path this depends on is proven
+browserless by `scripts/editor-mvp.test.ts`.
+
 ## The F2 chord family — three modes, all agent-usable headless
 
 - **F2+D — debug mode**: engine devtools overlay (Perf/Tune/Logs/Net/Keys/Col). A plain F2 tap does nothing; F2 is only the chord holder.
