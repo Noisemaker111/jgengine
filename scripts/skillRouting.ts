@@ -1,3 +1,5 @@
+import { API_SKILL_DIRS } from "../packages/jgengine/src/skills";
+
 export const MAIN = "jgengine";
 
 export const CORE_DOMAIN_SKILLS: Record<string, string> = {
@@ -19,7 +21,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   format: "jgengine-ui",
   game: "jgengine-gameplay",
   gameplay: "jgengine-gameplay",
-  input: "jgengine-gameplay",
+  input: "jgengine-world",
   interaction: "jgengine-world",
   inventory: "jgengine-gameplay",
   item: "jgengine-gameplay",
@@ -40,7 +42,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   settings: "jgengine-ui",
   stats: "jgengine-combat",
   survival: "jgengine-gameplay",
-  tactics: "jgengine-combat",
+  tactics: "jgengine-gameplay",
   time: "jgengine-world",
   turn: "jgengine-gameplay",
   ui: "jgengine-ui",
@@ -60,7 +62,7 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   shell: "jgengine-ui",
   assets: "jgengine-assets",
   // github + jgengine CLI are tooling, not game-authoring surface — omit so they
-  // leave skill api.md / orphan gate (still published; agents use CLI docs, not api.md).
+  // leave generated game-authoring API docs (still published; agents use CLI help).
 };
 
 export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {
@@ -74,7 +76,7 @@ export const CORE_MODULE_OVERRIDES: Record<string, string> = {
 
 /**
  * Curated top-level domain barrels (`@jgengine/core/world`, `gameplay`, …) have no `/` segment,
- * so they would otherwise land on MAIN and ignore domain skill examples in the orphan gate.
+ * so they would otherwise land on MAIN instead of their discovery domain.
  */
 export const CORE_BARREL_SKILLS: Record<string, string> = {
   world: "jgengine-world",
@@ -84,15 +86,26 @@ export const CORE_BARREL_SKILLS: Record<string, string> = {
   ui: "jgengine-ui",
 };
 
-export const SKILL_DIRS = [
+export const SKILL_DIRS = API_SKILL_DIRS;
+
+export const INTAKE_ROUTES = {
+  authoring: ["jgengine-editor", "jgengine-world"],
+  world: ["jgengine-world"],
+  gameplay: ["jgengine-gameplay"],
+  combat: ["jgengine-combat"],
+  ui: ["jgengine-ui"],
+  assets: ["jgengine-assets"],
+  multiplayer: ["jgengine-multiplayer"],
+} as const;
+
+export const NORMAL_GAME_INTAKE = [
   MAIN,
-  "jgengine-world",
-  "jgengine-combat",
-  "jgengine-gameplay",
-  "jgengine-multiplayer",
-  "jgengine-ui",
-  "jgengine-assets",
   "jgengine-editor",
+  "jgengine-world",
+  "jgengine-gameplay",
+  "jgengine-ui",
+  "jgengine-verify",
+  "workflow",
 ] as const;
 
 export function skillForModule(pkg: string, modulePath: string): string | null {

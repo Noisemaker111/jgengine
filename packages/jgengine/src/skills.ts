@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 export const SKILLS_SOURCE = "Noisemaker111/jgengine";
 
-export const GAME_SKILLS = [
+export const API_SKILL_DIRS = [
   "jgengine",
   "jgengine-world",
   "jgengine-combat",
@@ -15,8 +15,9 @@ export const GAME_SKILLS = [
   "jgengine-ui",
   "jgengine-assets",
   "jgengine-editor",
-  "jgengine-verify",
 ] as const;
+
+export const GAME_SKILLS = [...API_SKILL_DIRS, "jgengine-verify"] as const;
 
 export type SkillsScope = "global" | "project";
 

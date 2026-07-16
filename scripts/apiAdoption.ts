@@ -1,10 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { Glob } from "bun";
 
 export interface Adoption {
-  names: Set<string>;
-  namespaceModules: Set<string>;
+  bindings: Set<string>;
 }
 
 const CONSUMER_GLOBS = [
@@ -14,14 +12,16 @@ const CONSUMER_GLOBS = [
   "examples/**/*.tsx",
   "apps/**/*.ts",
   "apps/**/*.tsx",
-  // Cross-package adopters (ws/shell/node importing @jgengine/*). Same-package relative
-  // imports do not match — pure helpers still need @internal or a skill example.
   "packages/*/src/**/*.ts",
   "packages/*/src/**/*.tsx",
 ] as const;
 
 const NAMED_IMPORT = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*["'](@jgengine\/[^"']+)["']/g;
-const NAMESPACE_IMPORT = /import\s+\*\s+as\s+\w+\s+from\s*["'](@jgengine\/[^"']+)["']/g;
+const NAMESPACE_IMPORT = /import\s+\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s*["'](@jgengine\/[^"']+)["']/g;
+
+export function adoptionKey(importPath: string, name: string): string {
+  return `${importPath.replace(/\/index$/, "")}#${name}`;
+}
 
 function symbolFromClause(raw: string): string | null {
   const trimmed = raw.trim().replace(/^type\s+/, "");
@@ -31,45 +31,63 @@ function symbolFromClause(raw: string): string | null {
   return name === "" ? null : name;
 }
 
+export function collectSourceAdoption(text: string): Adoption {
+  const bindings = new Set<string>();
+  for (const match of text.matchAll(NAMED_IMPORT)) {
+    const importPath = match[2] ?? "";
+    for (const clause of (match[1] ?? "").split(",")) {
+      const name = symbolFromClause(clause);
+      if (name !== null) bindings.add(adoptionKey(importPath, name));
+    }
+  }
+  for (const match of text.matchAll(NAMESPACE_IMPORT)) {
+    const alias = match[1] ?? "";
+    const importPath = match[2] ?? "";
+    const access = new RegExp(`\\b${alias.replace(/[$]/g, "\\$")}\\.([A-Za-z_$][\\w$]*)`, "g");
+    for (const member of text.matchAll(access)) {
+      const name = member[1];
+      if (name !== undefined) bindings.add(adoptionKey(importPath, name));
+    }
+  }
+  return { bindings };
+}
+
 function isConsumerSource(file: string): boolean {
   if (file.includes(".test.")) return false;
   const normalized = file.replaceAll("\\", "/");
-  if (normalized.includes("/dist/")) return false;
-  if (normalized.includes("/node_modules/")) return false;
-  return true;
+  return !normalized.includes("/dist/") && !normalized.includes("/node_modules/");
 }
 
 export function collectAdoption(root: string): Adoption {
-  const names = new Set<string>();
-  const namespaceModules = new Set<string>();
+  const bindings = new Set<string>();
   for (const pattern of CONSUMER_GLOBS) {
     for (const file of new Glob(pattern).scanSync({ cwd: root, absolute: true })) {
       if (!isConsumerSource(file)) continue;
-      const text = readFileSync(file, "utf8");
-      for (const match of text.matchAll(NAMED_IMPORT)) {
-        for (const clause of (match[1] ?? "").split(",")) {
-          const name = symbolFromClause(clause);
-          if (name !== null) names.add(name);
-        }
-      }
-      for (const match of text.matchAll(NAMESPACE_IMPORT)) {
-        namespaceModules.add((match[1] ?? "").replace(/\/index$/, ""));
-      }
+      for (const binding of collectSourceAdoption(readFileSync(file, "utf8")).bindings) bindings.add(binding);
     }
   }
-  return { names, namespaceModules };
+  return { bindings };
 }
 
-const IDENTIFIER = /[A-Za-z_$][\w$]*/g;
+export function isExportAdopted(
+  adoption: Adoption,
+  skill: string,
+  importPath: string,
+  name: string,
+): boolean {
+  if (adoption.bindings.has(adoptionKey(importPath, name))) return true;
+  const packageRoot = importPath.match(/^(@jgengine\/[^/]+)/)?.[1];
+  if (packageRoot !== undefined && adoption.bindings.has(adoptionKey(packageRoot, name))) return true;
+  const coreBarrel = skill.startsWith("jgengine-") ? `@jgengine/core/${skill.slice("jgengine-".length)}` : undefined;
+  return coreBarrel !== undefined && adoption.bindings.has(adoptionKey(coreBarrel, name));
+}
 
-export function collectSkillTokens(root: string, skill: string): Set<string> {
-  const dir = join(root, ".claude", "skills", skill);
-  const tokens = new Set<string>();
-  // Retired skills (e.g. jgengine-procedural) leave barrel mappings without a dir — empty tokens, not throw.
-  if (!existsSync(dir)) return tokens;
-  for (const file of new Glob("*.md").scanSync({ cwd: dir, absolute: true })) {
-    if (file.endsWith("api.md")) continue;
-    for (const token of readFileSync(file, "utf8").match(IDENTIFIER) ?? []) tokens.add(token);
-  }
-  return tokens;
+export function hasPublicIntentEvidence(
+  adoption: Adoption,
+  skill: string,
+  importPath: string,
+  name: string,
+  capabilityCount: number,
+): boolean {
+  return capabilityCount > 0 || isExportAdopted(adoption, skill, importPath, name);
 }

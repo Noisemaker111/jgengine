@@ -1,1 +1,0 @@
-Cost first (`fan-out` skill): workers only for substantial mechanical legs — a full gate run, `shoot`/Playwright, a multi-file sweep, a big-diff ship. A handful per session, never one per action; small edits, small ships, quick greps, and all waiting stay inline. Never wait on CI — silence is green. Judge worker output; never dump raw worker text.

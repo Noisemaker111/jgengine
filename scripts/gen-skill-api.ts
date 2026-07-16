@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { extractPackageSurface, type ApiExport, type ApiPackage } from "./apiSurface";
-import { collectAdoption, collectSkillTokens } from "./apiAdoption";
-import { PACKAGE_SKILLS, SKILL_DIRS, skillForModule } from "./skillRouting";
+import { collectAdoption, hasPublicIntentEvidence } from "./apiAdoption";
+import { CORE_BARREL_SKILLS, PACKAGE_SKILLS, SKILL_DIRS, skillForModule } from "./skillRouting";
 import { runOrphanRatchet } from "./orphanRatchet";
 
 const BASELINE_PATH = "scripts/api-doc-baseline.json";
@@ -71,19 +71,41 @@ function writeBaseline(root: string, relPath: string, entries: readonly string[]
   writeFileSync(join(root, relPath), `${JSON.stringify([...entries].sort(), null, 2)}\n`);
 }
 
+function collectCommittedApiKeys(root: string): Set<string> {
+  const keys = new Set<string>();
+  for (const skill of SKILL_DIRS) {
+    const path = join(root, ".claude", "skills", skill, OUT_NAME);
+    if (!existsSync(path)) continue;
+    let importPath = "";
+    for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+      const heading = line.match(/^## (@jgengine\/\S+)$/)?.[1];
+      if (heading !== undefined) {
+        importPath = heading;
+        continue;
+      }
+      const name = line.match(/^- `([^`]+)` \(/)?.[1];
+      if (importPath !== "" && name !== undefined) keys.add(exportKey(importPath, name));
+    }
+  }
+  return keys;
+}
+
 const ORPHAN_GATED_KINDS = new Set(["function", "class"]);
+const CURATED_CORE_BARRELS = new Set(Object.keys(CORE_BARREL_SKILLS).map((name) => `@jgengine/core/${name}`));
+
+export function isCanonicalDeclarationImport(importPath: string): boolean {
+  return !CURATED_CORE_BARRELS.has(importPath);
+}
 
 function collectOrphans(root: string, skills: SkillModules): string[] {
   const adoption = collectAdoption(root);
-  const tokens = new Set<string>();
-  for (const skill of SKILL_DIRS) for (const t of collectSkillTokens(root, skill)) tokens.add(t);
   const orphans: string[] = [];
-  for (const refs of skills.values()) {
+  for (const [skill, refs] of skills) {
     for (const ref of refs) {
-      if (adoption.namespaceModules.has(ref.importPath)) continue;
+      if (!isCanonicalDeclarationImport(ref.importPath)) continue;
       for (const e of ref.exports) {
         if (!ORPHAN_GATED_KINDS.has(e.kind)) continue;
-        if (adoption.names.has(e.name) || tokens.has(e.name)) continue;
+        if (hasPublicIntentEvidence(adoption, skill, ref.importPath, e.name, e.capabilities?.length ?? 0)) continue;
         orphans.push(exportKey(ref.importPath, e.name));
       }
     }
@@ -121,10 +143,14 @@ function main(): void {
     );
   }
 
-  const orphans = collectOrphans(root, skills);
-  const orphanSet = new Set(orphans);
   const orphanBaselineExists = existsSync(join(root, ORPHAN_BASELINE_PATH));
   const orphanBaseline = readBaseline(root, ORPHAN_BASELINE_PATH);
+  const committedApiKeys = collectCommittedApiKeys(root);
+  const unprovenExports = collectOrphans(root, skills);
+  const orphans = seed
+    ? unprovenExports
+    : unprovenExports.filter((key) => orphanBaseline.has(key) || !committedApiKeys.has(key));
+  const orphanSet = new Set(orphans);
 
   const newOrphans = orphans.filter((key) => !orphanBaseline.has(key));
   const prunedOrphanBaseline = [...orphanBaseline].filter((key) => orphanSet.has(key));
@@ -132,7 +158,7 @@ function main(): void {
 
   if (!seed && orphanBaselineExists && newOrphans.length > 0) {
     failures.push(
-      `${newOrphans.length} exported primitive(s) have no game adopter and no skill example — surface them in the domain SKILL.md, use them in a game, or mark @internal:`,
+      `${newOrphans.length} exported primitive(s) have no exact consumer import or @capability intent — adopt them, tag their public intent, or mark @internal:`,
       ...newOrphans.map((key) => `  ${key}`),
     );
   }

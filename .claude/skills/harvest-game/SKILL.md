@@ -1,27 +1,29 @@
 ---
 name: harvest-game
-description: Run the full game loop end to end - research a game, build a minimal version in Games/, track engine gaps as you hit them, and file them as [FEATURE] issue(s) at session end. Invoke with a game name ("like <game>"), a genre, a link (repo or game page), or nothing to have one picked.
-disable-model-invocation: true
+description: Build a probe or full game while recording reusable engine gaps.
 ---
 
-# The harvest-game loop
+# Harvest a game
 
-Build a game, harvest the engine gaps it exposes. Take the invocation argument and resolve a target game:
+Choose `scope: probe` for a minimal playable slice or `scope: full` for the complete requested game. Scope changes breadth, not quality or workflow.
 
-- **A specific game named** → that's the target. Research it.
-- **A link (repo or game page)** → that's the target, and the link is its spec. Read it for mechanics, systems, camera, controls, and content scope — it is a research source, never a port source. Build fresh from the engine surface; translating its code line-by-line faithfully recreates its workarounds and hides exactly the gaps this loop exists to expose. Even when the user explicitly asks for a 1:1 port of an open-source game, the same rule holds: copy its behavior and data (numbers, tables, layouts, palettes, formulas, feel) and, where the license allows, its assets — never its functions, custom renderers, or workaround systems; rebuild on engine seams, and file the gap when a seam is missing.
-- **A genre** → pick a well-known game in that genre whose core mechanics stress engine areas no existing `Games/*` game already covers.
-- **Nothing / "find one"** → web-research currently popular or recently viral games and pick one the engine can't obviously do yet. Prefer games whose defining mechanic looks missing from the engine surface.
+## Target
 
-Then run the whole loop in this session:
+Resolve a named game, genre, or linked source into mechanics, camera, controls, content, HUD, and an observable completion scenario. Sources specify behavior and data, never implementation: rebuild on JGengine seams and copy assets only when their license permits it.
 
-1. **Research.** Web-search the target's core loop, mechanics, camera, controls, win conditions, and HUD until you can describe a minimal playable slice. Keep the game profile in your working notes only — the game's name and genre must never appear in the filed issue or any committed text other than the game's own directory.
-2. **Work on your session's branch**, per the root workflow — the PR comes later, when the game is real.
-3. **Build** a minimal playable version in `Games/<id>` — core loop playable, not a full clone. Minimal never means graybox: the slice carries the target's *identity* — a named aesthetic with a committed palette (ground, sky, UI panel/ink/accent hex values), UI copy in the fantasy's own voice, and an initial camera framing that shows the game at its best — because presentation is where a whole class of engine gaps lives (sky/backdrop, time-of-day lighting, palette seams, camera pose) and none of them surface on a gray plane. Give the slice a timed observable acceptance up front ("run untouched at max speed for five minutes: what does a player actually see?") and judge the final screenshot against it. Wire it as the other `Games/*` do: a private workspace package `@games/<id>` with `./src` exports and no build, plus the standalone dev harness `check-game-shape` enforces (root `index.html` + `vite.config.ts`, `src/index.css` importing `./style.css`, a `"dev": "vite"` script). Games auto-register from `Games/*` in `apps/dev`'s registry and the jgengine.com Games dropdown — no registry entry, vite alias, or `@games` dependency to add by hand. Use the `jgengine` intake and its selectively routed API domains, not by copying other games.
-4. **Track gaps the moment you hit them** in your working notes — one raw engine problem per line, engine terms only, no game context, no solutions. The bar is not "the engine couldn't do it" — friction is a gap too: anything the game had to hand-roll that should be a natural engine primitive or one-liner. Tag each line `blocker` (no engine-surface route existed), `workaround` (a route existed but the game had to hand-roll something the engine should own), or `ergonomics` (it worked but took boilerplate a primitive would erase). A gap you hit while building outranks a gap you suspect from reading; note both, but only after genuinely attempting the engine-surface route.
-5. **Verify** per the `jgengine-verify` ladder — cheapest gate first, browser last: `bun run check-types`, then `bun test packages Games` including the co-located `<game>.world.test.ts` `summarizeEnvironment` assertions for every `environment()` world (this is the scene-correctness gate, not the screenshot), then `bun run shoot <id> --mode ui` and `--mode play` as the final human glance — open the PNGs and actually look at them. A hung shot is never re-run in the foreground; the world test is what proves the scene resolved.
-6. **Session end.** File the gaps as `[FEATURE]` issue(s) on this repo — title `[FEATURE] <brief summary>`, body a numbered list of the raw engine problems, each carrying its `blocker` / `workaround` / `ergonomics` tag (nothing else, no game context, no solutions). Then ship per CLAUDE.md's ship rule: push, open the PR (GitHub MCP `create_pull_request`, ready for review), `subscribe_pr_activity`, confirm the PR's checks go green — never merge; the user merges on request.
+## Build
 
-Finish by reporting: what was built and where, the issue link(s), and how many gaps were filed.
+1. Use `jgengine` for intake and load only selected domains.
+2. Scaffold with `bun run new:game <id> --name "Title"`; never copy another game harness.
+3. For `probe`, implement the smallest polished loop that stresses the target seam.
+4. For `full`, implement every requested system end to end and enough content to exercise scale.
+5. Author world content through `jgengine-editor`; consume it through shared runtime primitives.
 
+Track gaps while building as `blocker`, `workaround`, or `ergonomics`. A gap is a missing reusable seam, wrong default, or avoidable integration burden—not simply game-specific work. Prefer evidence from an attempted engine path over speculation.
+
+## Finish
+
+Verify the observable scenario through `jgengine-verify`. File substantial reusable gaps as concise `[FEATURE]` issues with problem, context, and primitive-level scope. Small in-scope fixes may land with the game when they share its verification story.
+
+Ship the game and coherent upstream fixes through `workflow`. Report the delivered scope, evidence, and filed gap links.
 

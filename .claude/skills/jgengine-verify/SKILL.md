@@ -1,138 +1,39 @@
 ---
 name: jgengine-verify
-description: Scene truth is data. Invoke before verifying anything works or renders.
+description: Prove code, scene, gameplay, and visual claims with proportional evidence.
 ---
 
-# JGengine — Verify without the browser
+# JGengine verification
 
-A JGengine scene is derived deterministically from an `environment()` descriptor by pure `@jgengine/core` world-gen. That means "does the world render correctly" is a question about **data**, not pixels — and data is asserted in `bun test` in milliseconds, with no GPU. The browser screenshot only uniquely proves *look* (shader, material, color, framing), and it is the flakiest, slowest step in the repo. So verification runs in this order, and stops as soon as the cheap gates catch the bug.
+Verification follows risk: cheapest deterministic evidence first, visual/browser evidence only for claims pixels or interaction uniquely prove.
 
-## The ladder — cheapest first, browser last
+## Core ladder
 
-1. **`bun run check-types`** — the change compiles across the affected packages. Type-green says nothing about whether the scene has content; it is necessary, not sufficient.
-2. **`bun test packages`** — pure game math (curves, cooldowns, spawn logic) and world content. This is where scene correctness is proven:
-   - For any game with an `environment()` world, a co-located `<game>.world.test.ts` calls `summarizeEnvironment(world)` (`@jgengine/core/world/environmentSummary`) and asserts the counts. `summarizeEnvironment` resolves the descriptor through the same core world-gen the renderer runs — building counts + part geometry + union bounds, terrain height stats (`min`/`max`/`mean`/`finite`) plus the resolved terrain `palette` (low/high/waterline), and water/vegetation/weather presence plus each structure group's resolved `style` + `palette` — plus an `isEmpty` flag.
-   - This catches the entire "the game looks broken" class deterministically: empty scene (`isEmpty`), wrong building count, dropped feature, flat or `NaN` terrain (`height.finite === false`, or `max === min` when relief was expected), or a game left on the engine's untouched look (`terrain.palette`/`structures[].palette` still matching the default `material: "grass"` / `style: "generic"` instead of this game's own choice) — the identical-worlds bug the `material`/`style` unions exist to prevent.
-3. **`bun run inspect-shot.ts <shot.png>`** (or `shoot ... --inspect`) — a cheap, deterministic pixel-metrics pass over the PNG, objective signal before the human glance. Coarse grid sample (`step = max(1, w/160) × max(1, h/90)`) over the decoded RGBA buffer yields `colorEntropyBits` (Shannon entropy over 4-bit-per-channel RGB buckets, `< 3.0` → sparse), `dominantColorShare` (top bucket ÷ samples, `> 0.6` → sparse), `edgeDensity` (fraction of adjacent grid cells with luminance delta `> 12`, `< 0.04` → primitive-dominant), and `luminance.contrast` (p95 − p5, `< 60` → fog/darkness compression). A `nonblank` guard (`alphaPixels > 256 && (variance > 8 || colorBuckets > 3)`) always exits nonzero on a blank/broken capture; the four look-quality thresholds only print a warning by default — pass `--strict` to hard-fail on them (CI-able). `bun run shoot <game> --inspect` runs this on the PNG it already captured (no second browser launch) and writes `shots/<name>.metrics.json` beside it. This catches the objective half of "flat/murky/sparse" automatically — it does not replace the glance, only cuts how often you need one.
-4. **`bun run shoot <game> --mode ui`** (HUD) / **`--mode play`** (full scene) — **only** for what the tests above cannot assert: the *look*. This is a final human glance you take once and open the PNG to judge (per `jgengine-ui`'s quality bar). It is not the loop you iterate against. The HUD is responsive (`HudCanvas`/`HudPanel` scale, chip, and re-flow on phone-scale displays), so the glance includes a **mobile** shot alongside the desktop one — `bun run shoot <game> --device mobile --mode play` (and `--mode ui` where the HUD is the point) — confirming chips/hides land and nothing overflows a 390px viewport. `--device both` (desktop 1600×900 + mobile 390×844 PNGs) does both in one run; default is desktop. Implementation: system Chrome + raw CDP; page sets `data-jg-capture=ready` (tiny handshake, no PNG/base64 in-page); host `Page.captureScreenshot` writes binary to `shots/`. Optional **`--connect <port>`** attaches to an already-running Chrome with remote debugging, **`--keep`** leaves the dev server and Chrome running for the next call instead of tearing them down, and **`--size half`** halves both dimensions for a cheap mid-loop shot — see "The warm loop" below for the iterative (beautify-work) version of this command. `--mode play` works for pure-DOM/HUD games too (`presentation: "hud"`): the handshake resolves on a `<canvas>` **or** the shape-agnostic `data-jg-frame-ready` marker the shell stamps, so board/card games no longer time out. Use **`--run <cmd[,cmd]>`** to script past a start screen and **`--settle <ms>`** to wait past an intro before capture.
+1. Run focused type/tests while iterating.
+2. Assert pure rules and serialized transitions in tests.
+3. Assert scene/environment data through `summarizeEnvironment`, voxel summaries, or authored-document queries.
+4. Exercise gameplay progress when the loop can softlock.
+5. Capture and inspect screenshots only for visual/layout/integration claims.
+6. Run `bun run gate` before shipping; run `bun run ship:preflight` immediately before commit/push.
 
-## The screenshot rules — this is the friction this skill exists to kill
+Use guarded repository scripts (`bun run test`, `bun run test:all`, `bun run gate`), not an unbounded bare `bun test` across the repository.
 
-- **The world test is the gate; the screenshot is the glance.** If step 2 is red, fix that first — a screenshot of a broken scene tells you less than a failing assertion, and takes 100× longer to produce.
-- **Menu-gated games declare `capture.play` once; `--mode play` then just works.** A game with a start/title screen sets `capture: { play: ["<startCommand>"], settleMs?: n }` on its config (the same command its start button dispatches) and marks the menu root element `data-jg-menu`. `shoot --mode play` auto-runs those commands after boot, and the capture **fails loudly** — never a silent menu PNG — if the menu is still on screen at capture time or a declared/`--run` command name isn't registered (the error lists the registered names). `--run <cmd[,cmd]>` remains as a per-shot override; `--settle <ms>` overrides the declared settle. If a shoot errors with "start menu still on screen", the fix is declaring `capture.play` on the game, not retrying with flags.
-- **Any other screen is a named capture state.** Sometimes the menu (or lobby, store, results screen) IS the shot. `capture.states` maps a name to the command sequence that reaches that screen from boot — `states: { main_menu: [], store: ["openStore"], game_over: ["startRun", "debug.loseRun"] }` — and `bun run shoot <game> --state <name>` captures it (to `shots/<game>-state-<name>.png`) with **no** live-play guard: a named state captures exactly what it reaches, menus included. Unknown names fail fast listing the declared states. Live-sim states belong here; static UI fixtures stay in `src/preview.tsx` states (faster, no sim).
-- **Painted terrain features need mesh resolution.** `terrain.materialRegions` colors interpolate across terrain vertices: at the default segment count a 7-unit road smears into a 40-unit blob. Set `segments` so vertices land every ~2 world units (e.g. 300 for a 640-unit world) before concluding the look is a lighting bug — this exact miss once cost four screenshot loops.
-- **First shoot must pass the first-shot art recipe** (`jgengine-world`): `sky` preset `day` when brightness matters (dusk/night ignore `sunIntensity` overrides), a forward (+Z) landmark in frame, readable play-surface colors, props scaled as figures. Fix world/sky/placement *before* the first `shoot` — do not discover murk and bad framing across four screenshot loops.
-- **Once `shoot` hangs, do not re-run it in the foreground.** Chrome/CDP on heavy WebGL scenes can hang, crash the GPU/tab, or emit corrupt output. Re-running the identical command is the rake this repo steps on repeatedly. If a shot hangs once: report it, fall back to the world test to prove the scene resolved, and only retry the screenshot if the user asks.
-- **Don't invent in-browser verification the user didn't ask for.** If you've been told not to open the browser, `summarizeEnvironment` + git archaeology is how you confirm behavior — not a screenshot.
-- **Menu-gated games: `bun run drive`, never hand-rolled Playwright.** A game behind a title/character-select screen (or any state `--mode play` can't reach) is driven with `bun run drive <game> --click "TEXT" --wait 1500 --shot picked --key KeyW:2500 --shot walked` — ordered steps, screenshots to `shots/<game>-<name>.png`. It reuses shoot's dev-server + CDP plumbing; clicks resolve visible text to coordinates, wait for the element's position to stop moving (entrance animations and hydration shift layout for ~2s), and dispatch raw mouse events, so hover overlays never intercept, nothing times out on actionability, and no `--wait` padding is needed before a click; `--key CODE:MS` holds a key (`keydown`/`keyup` with the real `e.code`). Pointer-lock mouse-look can't be synthesized — pick shots that don't need turning, or set the spawn to face the subject.
-- **Run `shoot`/`drive` yourself — no subagent needed for screenshots.** A single command writing one PNG isn't a fan-out leg; run it directly and judge the PNG. Route `check-types`/`bun test` through the `fan-out` skill when they're substantial (full gate, full suite).
-- **Bot-playtest rung: prove the loop *advances*, not just that it renders.** `summarizeEnvironment` proves content exists and `shoot` proves it looks right, but a game can pass both and softlock on frame one. For a game with a scored or positional loop, add `bun run drive <game> --playtest --key KeyW:5000 --seed 1` after the visual rung: it drives the held key, samples the game's `capture.probe` over time, and prints `{ seed, framesElapsed, durationMs, progressDelta, totalProgress, softlockWindowMs, softlocked, probed }` as JSON. A metric moving beyond `--epsilon` (default 0.001) is progress; every metric flat for longer than `--softlock` (default 1500ms) under active input is a **softlock** — `--strict` turns a softlock (or a missing probe) into a nonzero exit for CI. Genre-agnostic: "progress" is whatever the game reports.
-- **Opt a game into the playtest rung with `capture.probe`.** Extend the same capture handshake that carries `capture.play`/`capture.states`: add `capture: { probe: (ctx) => ({ ... }) }` returning a flat map of numeric progress metrics — position, score, distance, phase, whatever advances. The dev runner exposes it as `window.__jgProbe` when `?capture=1`; `drive --playtest` reads it every `--sample` ms and folds the series into the verdict. Reference adopter is `wreckway` (`Games/wreckway/src/game.config.ts`), a corridor runner whose probe reports the vehicle's `{ x, y, z }` — the harness reads it end to end and the vehicle position is the progress signal a `--key KeyW` (throttle) run should advance. A game that omits `probe` prints an unprobed verdict (loud warning; nonzero under `--strict`). Needs a `--key` hold to drive input — a bare `--playtest` with no key proves nothing and says so. Two headless caveats: pointer-lock look can't be synthesized (probe forward progress on a single held key, not facing), and an over-hot `--sample` starves a heavy scene's render thread — with dt clamped, slow rendering reads as slow progress, so keep sampling at the 250ms default and read the emitted `durationMs` (it should track the `--key` hold; a run stretched far past it means the scene is starved, not softlocked).
+## Scene and gameplay proof
 
-## The warm loop — cutting shot→judge→edit→re-shoot cost
+- Generated worlds assert resolved counts, finite/non-flat terrain where expected, palettes, bounds, and required features.
+- Authored worlds assert required layers, objects, paths, markers, and ids from `editor.scene.json`.
+- Gameplay tests prove the observable acceptance scenario, including save/restore or multi-client behavior when changed.
+- `drive --playtest` with a declared capture probe is the softlock/progress rung for interactive loops.
 
-Once step 2 is green and step 4 iterates on *look*, keep the browser warm:
+## Visual proof
 
-1. **Scoped typecheck.** `bun run --cwd Games/<id> check-types` (~5s); full-repo gate only at ship.
-2. **Persistent daemon.** `bun run shoot --serve` (or `daemon start|status|stop`) keeps Vite + Chrome warm; later plain `shoot <id> --mode play` auto-attaches in seconds (folds `--keep`/`--connect`).
-3. **Half-res mid-loop.** `--size half` for judge shots; full-res for the PR milestone.
+- Use preview states for deterministic HUD/menu captures; use `--mode play` for live integration and scene look.
+- Menu-gated games declare capture commands/states rather than hand-driving setup repeatedly.
+- Inspect desktop and mobile when responsive UI changes.
+- Run pixel inspection for blank/sparse/contrast regressions, then open the PNG and judge it against the UI scorecard.
+- If a WebGL capture hangs once, do not repeat the same foreground command; fall back to deterministic scene evidence and report the capture failure.
+- Visual PRs embed final screenshots with `bun run pr-shots`; do not send binary images through GitHub content APIs.
 
-```
-bun run shoot --serve                         # once: Vite + Chrome stay warm
-bun run shoot <id> --mode play --size half    # re-shot attaches to daemon
-bun run shoot <id> --mode play                # final full-res
-bun run shoot daemon stop
-```
-Manual fallback: `--keep` then `--connect <port>`. `drive` shares the flags.
-4. **Read/edit discipline.** Offset `Read` to the changed region; batch edits before re-shooting.
+## Evidence report
 
-## Adding the scene gate to a game
-
-A game with a declared world exports its `environment()` feature and asserts on it:
-
-```ts
-// <game>/src/game/world.world.test.ts — under src/game/, never at the top of src/ (check-game-shape rejects extra files there)
-import { describe, expect, test } from "bun:test";
-import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-import { world } from "../world"; // the environment() feature
-
-describe("<game> world", () => {
-  const summary = summarizeEnvironment(world);
-  test("renders a populated scene", () => expect(summary.isEmpty).toBe(false));
-  test("has the expected content", () => {
-    expect(summary.counts.buildings).toBe(6);
-    expect(summary.terrain?.height.finite).toBe(true);
-  });
-  test("uses this game's own look, not the engine defaults", () => {
-    expect(summary.terrain?.palette.low).not.toBe("#30402c"); // untouched "grass" default
-    expect(summary.structures[0]?.palette.wall).not.toBe("#83766a"); // untouched "generic" default
-  });
-});
-```
-
-If the game's world is `biomes()` / `voxel()` / `flat()` rather than `environment()`, `summarizeEnvironment` does not apply — assert on that world's own generator output (region field, voxel seed) with the same "resolve the data, assert the counts" pattern, still browserless.
-
-For a voxel game built on `@jgengine/core/world/voxelField`'s `createVoxelField`, assert on `field.summary()` (`{ blocks, types, bounds }`) the same way an `environment()` world asserts on `summarizeEnvironment`:
-
-```ts
-// <game>/src/game/world.world.test.ts — under src/game/, never at the top of src/ (check-game-shape rejects extra files there)
-import { describe, expect, test } from "bun:test";
-import { world } from "../world"; // the populated VoxelField
-
-describe("<game> voxel world", () => {
-  const summary = world.summary();
-  test("renders a populated scene", () => expect(summary.blocks).toBeGreaterThan(0));
-  test("has the expected block types", () => {
-    expect(summary.types).toContain("stone");
-    expect(summary.bounds).not.toBeNull();
-  });
-});
-```
-
-## Preview states — the fast, reliable UI capture path
-
-Every game ships `src/preview.tsx`: the default export is a static default frame, and an optional `states` named export (`GamePreviewStates` from `@jgengine/react/preview`) maps state keys — `stage_1`, `game_over`, `normal_chest:opened` — to components. State components SHOULD compose the game's **real UI components** (`Hud`, `Overlays`, result screens) fed with canned fixture snapshots, not a hand-drawn facsimile: a facsimile only tests the drawing, while real components with fixture state make each key a genuine render test of the UI the player sees.
-
-Capture is `bun run shoot <game> --preview <stateKey>` (bare `--preview` or `--mode preview` = default frame), which drives `/?game=<id>&preview=<stateKey>` in the dev runner. That URL mounts only the resolved preview component — no sim, no three.js, no `GamePlayerShell` — so it renders in milliseconds, never hangs on WebGL, and fires the same `data-jg-capture` handshake. Output lands at `shots/<game>-preview-<state>.png`. An unknown state key fails fast with the list of available keys. Reach for `--preview` before `--mode ui`/`--mode play` whenever the question is "does this UI state render right" — the full-shell modes remain only for live-scene look and integration.
-
-## SSR'd widgets must be hydration-stable
-
-Hosts prerender registry widgets (jgengine.com does this for `/components`), so any widget that emits a computed float straight into an SVG attribute must round at the boundary — server and client stringify a raw trig result to different last digits and React throws a hydration mismatch. Round coordinate output to a fixed precision (≈3 decimals) inside the shared arc/point helper (`polarToCartesian`, `pointAt`, `radial`) so both renders agree; new SVG widgets round by default.
-
-## PR evidence — visual work ships its pixels
-
-Any PR that changes what a player sees (world look, HUD, menus, previews, art direction) embeds its final screenshots in the PR body — the reviewer judges pixels, not prose. Mechanism: **`bun run pr-shots <file.png> [more.png ...]`** — it hashes each PNG straight into the object store and pushes a commit to the `pr-shots` archive branch (created from `main` the first time; never merged) with a detached index, so HEAD, the task branch's checkout, and the working tree never move. It prints the ready-to-paste `![name](https://raw.githubusercontent.com/…)` embed lines; drop them in the PR body. Defaults the archive subdir to the current branch name (override with `--branch`/`--dir`); `--dry` prints the URLs without pushing. **Never** upload shots with GitHub MCP `create_or_update_file`/`push_files` — those take file content as a JSON string, so a binary PNG must be base64-encoded into the request and every byte of that encoding lands in your context as literal tokens (one screenshot easily runs tens of thousands of tokens; a batch of them has hung a session for 20+ minutes). Run `pr-shots` directly in the main session — never a subagent, and never one subagent per file (a hung/dropped "upload worker" per screenshot is the exact failure this replaces). Desktop + mobile when the HUD is the point. Non-visual PRs skip this entirely. Any PR whose body or chat report claims done/premium/shipped carries the done-ledger (below) alongside the screenshots — the ledger is the evidence, the pixels are the proof.
-
-## The done-ledger — report what you verified, not adjectives
-
-A "done"/"premium"/"shipped" claim **is** the ledger below, compacted — never prose adjectives. Each rung reports `pass` / `fail` / `skipped(reason)` + evidence (test name, shot path, metrics JSON). Consecutive `skipped`/`not-needed` rows collapse into one line. This is what the *author* proves before the PR; CI proves the rest — same contract as "Silence is green."
-
-| Rung | Reports |
-| --- | --- |
-| `types` | `bun run check-types` clean |
-| `tests` | `bun test packages` pass count |
-| `world` | `summarizeEnvironment` / voxel-summary assertion name + key counts |
-| `shoot` | shot path(s) under `shots/` |
-| `pixel` | `shots/<name>.metrics.json` values from `bun run shoot --inspect` — pixel-metrics rung ([#788](https://github.com/Noisemaker111/jgengine/issues/788), shipped) |
-| `score` | scorecard category scores against `jgengine-ui` → [`references/visual-scorecard.md`](../jgengine-ui/references/visual-scorecard.md) — premium/showcase verdict, take-the-lower fresh-eyes reconciliation ([#789](https://github.com/Noisemaker111/jgengine/issues/789), shipped) |
-| `bot` | playtest progress/softlock JSON — bot-playtest rung, [#790](https://github.com/Noisemaker111/jgengine/issues/790); until shipped, report `skipped(#790 unshipped)` |
-
-A rung that doesn't apply to this game (no declared world, no visual claim) reports `not-needed`, never a silent gap. A **visual/premium** claim requires the `score` and `pixel` rows present in the ledger — never just "looks good."
-
-Compact form — one block, no prose, this is the whole chat "done" report and the PR-body ledger:
-
-```
-done-ledger
-types  pass  check-types clean
-tests  pass  bun test packages 42/42
-world  pass  <game>.world.test.ts isEmpty=false buildings=6
-shoot  pass  shots/<game>-play.png
-pixel  pass  shots/<game>-play.metrics.json entropy=4.1 dominantShare=0.31 edge=0.09 contrast=88
-score  pass  premium avg=2.4, all categories >=2 (fresh-eyes reconciled)
-bot    skipped (#790 unshipped)
-```
-
-## Definition of done references this
-
-The numbered `jgengine` intake defines the observable target; this skill proves it after implementation, and the done-ledger above is how that proof gets reported — see also the `jgengine` skill's "New-game definition of done."
+Report each applicable rung as pass/fail/skipped with the command or artifact: types, tests, world/document, gameplay, screenshot, pixel metrics, and visual score. A completion claim without the acceptance evidence is not complete.
