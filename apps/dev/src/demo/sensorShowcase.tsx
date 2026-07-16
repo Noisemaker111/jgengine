@@ -181,7 +181,7 @@ export const sensorShowcaseGame: PlayableGame = {
   content: {
     entityById: (catalogId) => entityCatalog[catalogId] ?? null,
   },
-  loop: { onInit, onNewPlayer, onTick },
+  loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: SensorHud,
   WorldOverlay: SensorWorldOverlay,
   camera: {

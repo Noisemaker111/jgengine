@@ -285,7 +285,7 @@ export const mapDemoGame: PlayableGame = {
     entityById: (catalogId) => entityCatalog[catalogId] ?? null,
     objectById: (catalogId) => objectCatalog[catalogId] ?? null,
   },
-  loop: { onInit, onNewPlayer, onTick },
+  loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: MapUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
   WorldOverlay: () => <MapMarkerBeacons markers={markerSet} />,

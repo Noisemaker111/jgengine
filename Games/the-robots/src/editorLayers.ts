@@ -294,6 +294,7 @@ export function buildTheRobotsEditorLayers(): EditorDocument {
     annotations: [],
     prefabs: [],
     collections: [],
+    catalogs: [],
   };
 }
 

@@ -310,6 +310,6 @@ export const demoGame: PlayableGame = {
     itemById: (itemId) => itemCatalog[itemId] ?? null,
     entityById: (catalogId) => entityCatalog[catalogId] ?? null,
   },
-  loop: { onInit, onNewPlayer, onTick },
+  loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: DemoGameUI,
 };

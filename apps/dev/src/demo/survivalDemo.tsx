@@ -457,7 +457,7 @@ export const survivalDemoGame: PlayableGame = {
     entityById: (catalogId) => entityCatalog[catalogId] ?? null,
     itemById: (itemId) => (itemId in itemCatalog ? itemCatalog[itemId as keyof typeof itemCatalog] : null),
   },
-  loop: { onInit, onNewPlayer, onTick },
+  loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: SurvivalGameUI,
   environment: SurvivalWorld,
   camera: { minDistance: 8, maxDistance: 40, initialDistance: 26, targetHeight: 1.4 },
