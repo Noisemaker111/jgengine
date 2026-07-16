@@ -124,6 +124,28 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const connections = new Set<Connection>();
   const sessionsByUserId = new Map<string, Connection>();
+  const subscribers = new Map<string, Set<Connection>>();
+
+  const subscribersOf = (key: string): readonly Connection[] => {
+    const set = subscribers.get(key);
+    return set === undefined ? [] : [...set];
+  };
+  const addSubscription = (connection: Connection, key: string): void => {
+    connection.subscriptions.add(key);
+    let set = subscribers.get(key);
+    if (set === undefined) {
+      set = new Set();
+      subscribers.set(key, set);
+    }
+    set.add(connection);
+  };
+  const removeSubscription = (connection: Connection, key: string): void => {
+    connection.subscriptions.delete(key);
+    const set = subscribers.get(key);
+    if (set === undefined) return;
+    set.delete(connection);
+    if (set.size === 0) subscribers.delete(key);
+  };
   const presence = new Map<string, Map<string, PresenceEntry>>();
   const positionHistoryMs = options.positionHistoryMs ?? 1_000;
   const histories = new Map<string, PositionHistory>();
@@ -164,9 +186,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const broadcastPresence = (serverId: string) => {
     const key = subscriptionKey("presence", serverId);
+    const targets = subscribersOf(key);
+    if (targets.length === 0) return;
     const data = presenceRows(serverId);
-    for (const connection of connections) {
-      if (!connection.subscriptions.has(key)) continue;
+    for (const connection of targets) {
       send(connection, { v: 1, t: "update", channel: "presence", serverId, data });
     }
   };
@@ -216,9 +239,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const broadcastChat = (serverId: string, channelId: string) => {
     const key = subscriptionKey("chat", serverId, channelId);
+    const targets = subscribersOf(key);
+    if (targets.length === 0) return;
     const data = chatRing(serverId, channelId).slice();
-    for (const connection of connections) {
-      if (!connection.subscriptions.has(key)) continue;
+    for (const connection of targets) {
       send(connection, { v: 1, t: "update", channel: "chat", serverId, action: channelId, data });
     }
   };
@@ -240,9 +264,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const broadcastVoice = (serverId: string, channelId: string) => {
     const key = subscriptionKey("voice", serverId, channelId);
+    const targets = subscribersOf(key);
+    if (targets.length === 0) return;
     const data = voiceParticipants(serverId, channelId);
-    for (const connection of connections) {
-      if (!connection.subscriptions.has(key)) continue;
+    for (const connection of targets) {
       send(connection, { v: 1, t: "update", channel: "voice", serverId, action: channelId, data });
     }
   };
@@ -361,23 +386,21 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
 
   const onHostEvent = (event: HostChangeEvent) => {
-    for (const connection of connections) {
-      if (connection.userId === null) continue;
-      if (event.type === "server") {
-        if (connection.subscriptions.has(subscriptionKey("server", event.serverId))) {
-          void pushSubscription(connection, "server", event.serverId);
-        }
-      } else if (event.type === "player") {
-        if (
-          connection.userId === event.userId &&
-          connection.subscriptions.has(subscriptionKey("player", event.serverId))
-        ) {
+    if (event.type === "server") {
+      for (const connection of subscribersOf(subscriptionKey("server", event.serverId))) {
+        if (connection.userId === null) continue;
+        void pushSubscription(connection, "server", event.serverId);
+      }
+    } else if (event.type === "player") {
+      for (const connection of subscribersOf(subscriptionKey("player", event.serverId))) {
+        if (connection.userId === event.userId) {
           void pushSubscription(connection, "player", event.serverId);
         }
-      } else {
-        if (connection.subscriptions.has(subscriptionKey("feed", event.serverId, event.action))) {
-          void pushSubscription(connection, "feed", event.serverId, event.action);
-        }
+      }
+    } else {
+      for (const connection of subscribersOf(subscriptionKey("feed", event.serverId, event.action))) {
+        if (connection.userId === null) continue;
+        void pushSubscription(connection, "feed", event.serverId, event.action);
       }
     }
   };
@@ -599,13 +622,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             replyError(connection, message.id, "Not a member of this server");
             return;
           }
-          connection.subscriptions.add(subscriptionKey(message.channel, message.serverId, message.action));
+          addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
           await pushSubscription(connection, message.channel, message.serverId, message.action);
           return;
         }
         case "unsubscribe": {
-          connection.subscriptions.delete(
+          removeSubscription(
+            connection,
             subscriptionKey(message.channel, message.serverId, message.action),
           );
           reply(connection, message.id, null);
@@ -666,6 +690,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             sessionsByUserId.delete(connection.userId);
           }
           connections.delete(connection);
+          for (const key of [...connection.subscriptions]) removeSubscription(connection, key);
           leaveJoinedServers(connection);
           dropPresence(connection);
           dropVoice(connection);
@@ -687,6 +712,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     close: () => {
       unsubscribeHost();
       connections.clear();
+      subscribers.clear();
     },
   };
 }
