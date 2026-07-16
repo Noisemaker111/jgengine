@@ -86,6 +86,8 @@ bun run games:<id>   # one game standalone, e.g. bun run games:studio-showcase
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.
 
+**Public export surface.** Every `@jgengine/*` package ships a broad `"./*"` wildcard export, so every built `dist` file is an importable subpath. `scripts/export-manifest.json` is the reviewed record of that surface — the exact set of subpaths a consumer can `import`, generated with `bun run gen:export-manifest` (rerun and commit after adding/removing/renaming public source). `scripts/exportManifest.test.ts` fails when the real subpaths drift from the manifest, so an accidental new public path (or a test fixture leaking out) is caught in review. `scripts/tarballInstall.test.ts` packs each package (`npm pack`) and imports it from a clean consumer dir with no workspace aliases — proving the published tarball resolves and that build-excluded internals (`testFixtures`, `*.test`, `testkit`) are never importable. Both tests require `bun run build` first (they read `dist`).
+
 ## Credits
 
 JGengine's procedural buildings, water, rain, and snow renderers were shaped
