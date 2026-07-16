@@ -1,26 +1,285 @@
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
+import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
+import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
+import { applyMaterialOverride } from "@jgengine/shell/materialOverride";
+import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/modelRender";
 
+import { assets, DUNGEON } from "./assets";
 import { HEROES } from "./entities/players/catalog";
-import { ROOMS, roomBounds } from "./rooms/catalog";
-import { DIR_VECTORS } from "./types";
+import { objectStyles, type ObjectId } from "./objects/catalog";
+import { ROOMS, roomBounds, type RoomDef } from "./rooms/catalog";
 import { currentRoomState } from "./rooms/setup";
 import { duetStore } from "./stores";
+import { DIR_VECTORS, type V2 } from "./types";
 
-const VOID_COLOR = "#080b18";
-const GRID_COLOR = "#3a4d82";
+const VOID_BASE = "#0b0f1e";
+const VOID_HIGH = "#141a30";
+const ROOM_BASE = "#232a44";
 
-function gridGeometry(minX: number, maxX: number, minZ: number, maxZ: number): THREE.BufferGeometry {
-  const points: number[] = [];
-  for (let x = minX; x <= maxX + 1; x++) points.push(x - 0.5, 0, minZ - 0.5, x - 0.5, 0, maxZ + 0.5);
-  for (let z = minZ; z <= maxZ + 1; z++) points.push(minX - 0.5, 0, z - 0.5, maxX + 0.5, 0, z - 0.5);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+/**
+ * A dedicated `LoadingManager`, not the implicit `THREE.DefaultLoadingManager` a bare
+ * `useLoader(GLTFLoader, url, ...)` constructs. The shared default manager is process-wide
+ * singleton state — under this dev server's repeated navigations it can end up with an
+ * already-aborted internal `AbortController`, which `FileLoader.load()` composes into every future
+ * request's abort signal, silently stalling `GLTFLoader.load()` forever with no thrown error
+ * (parsing already-fetched bytes still works fine — it's a fetch-stage-only hang). A private
+ * manager sidesteps the shared state; see the matching fix in `packages/shell/GamePlayerShell.tsx`.
+ */
+const gltfLoader = new GLTFLoader(new THREE.LoadingManager());
+gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+function resolveModel(id: string): ModelAssetRef {
+  const entry = assets.resolve(id);
+  if (entry === null) throw new Error(`duet-keys: unknown model id "${id}"`);
+  return entry;
+}
+
+function tinted(id: string, material: ModelMaterialOverride): ModelConfig {
+  const entry = resolveModel(id);
+  return { url: entry.url, dims: entry.dims, material };
+}
+
+/** Warm every dungeon-kit id into `useLoader`'s cache before the Canvas's render loop starts
+ * competing for the main thread — `useLoader` inside an active `useFrame` loop can starve the
+ * fetch/parse continuation for a very long time on a busy machine; preloading while the page is
+ * still quiet avoids that entirely. */
+for (const id of Object.values(DUNGEON)) {
+  useLoader.preload(gltfLoader, resolveModel(id).url);
+}
+
+/** Wall/emitter/exit tiles never change look at runtime — resolved once as a static `objectModels` map. */
+export const objectModels: Record<string, string | ModelConfig> = {
+  wall: DUNGEON.wall,
+  emitter: tinted(DUNGEON.rocks, {
+    color: objectStyles.emitter.color,
+    emissive: "#bafcff",
+    emissiveIntensity: 0.55,
+  }),
+  exit_lumen: tinted(DUNGEON.stairs, {
+    color: HEROES.lumen.color,
+    emissive: HEROES.lumen.glow,
+    emissiveIntensity: 0.45,
+  }),
+  exit_anchor: tinted(DUNGEON.stairs, {
+    color: HEROES.anchor.color,
+    emissive: HEROES.anchor.glow,
+    emissiveIntensity: 0.45,
+  }),
+};
+
+/** Objects whose material/position react to live room state — rendered through `renderObject`
+ * instead of the static `objectModels` map so `object.visual` drives the tint each frame. */
+const TINTED_OBJECT_MODELS: Partial<Record<ObjectId, string>> = {
+  gate: DUNGEON.gate,
+  plate: DUNGEON.floorDetail,
+  receiver: DUNGEON.column,
+  spike: DUNGEON.trap,
+};
+
+class ModelErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+  override render(): ReactNode {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+function ModelBoundary({ children }: { children: ReactNode }) {
+  return (
+    <ModelErrorBoundary>
+      <Suspense fallback={null}>{children}</Suspense>
+    </ModelErrorBoundary>
+  );
+}
+
+function centeredPosition(entry: ModelAssetRef, baseY = 0, scale = 1): [number, number, number] {
+  const dims = entry.dims;
+  if (dims === undefined) return [0, baseY, 0];
+  return [-scale * dims.center.x, baseY - scale * dims.minY, -scale * dims.center.z];
+}
+
+function useDungeonScene(id: string, material: ModelMaterialOverride | undefined, poseClip?: string) {
+  const entry = resolveModel(id);
+  const gltf = useLoader(gltfLoader, entry.url);
+  const materialKey =
+    material === undefined
+      ? ""
+      : `${material.color ?? ""}|${material.emissive ?? ""}|${material.emissiveIntensity ?? ""}`;
+  const scene = useMemo(
+    () => {
+      const cloned = cloneModelScene(gltf.scene);
+      if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
+      if (poseClip !== undefined) {
+        const clip = THREE.AnimationClip.findByName(gltf.animations, poseClip);
+        if (clip !== null) {
+          const mixer = new THREE.AnimationMixer(cloned);
+          mixer.clipAction(clip).play();
+          mixer.update(0);
+        }
+      }
+      return cloned;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [gltf, materialKey, poseClip],
+  );
+  useEffect(() => () => disposeClonedMaterials(scene), [scene]);
+  return { scene, entry };
+}
+
+function setOpacity(root: THREE.Object3D, opacity: number): void {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      const standard = material as THREE.MeshStandardMaterial;
+      standard.transparent = opacity < 1;
+      standard.opacity = opacity;
+    }
+  });
+}
+
+/** The two heroes, rendered as real dungeon-kit characters — cyan-tinted human (Lumen) and
+ * orange-tinted orc (Anchor) — with a floor ring marking which one the player is driving. */
+function HeroMesh({ entity }: { entity: SceneEntity }) {
+  const active = useStore(duetStore, (state) => state.active);
+  const hero = entity.name === "anchor" ? HEROES.anchor : HEROES.lumen;
+  const isActive = active === hero.id;
+  const modelId = hero.id === "anchor" ? DUNGEON.orcHero : DUNGEON.humanHero;
+  const { scene, entry } = useDungeonScene(
+    modelId,
+    {
+      color: hero.color,
+      emissive: hero.glow,
+      emissiveIntensity: isActive ? 0.85 : 0.3,
+    },
+    "static",
+  );
+  const heroScale = 1.5;
+  const position = centeredPosition(entry, 0, heroScale);
+  return (
+    <group>
+      <primitive object={scene} position={position} scale={heroScale} />
+      <mesh rotation-x={-Math.PI / 2} position-y={0.05}>
+        <ringGeometry args={[0.5, 0.62, 24]} />
+        <meshBasicMaterial color={hero.glow} transparent opacity={isActive ? 0.95 : 0.25} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+export function renderHero(entity: SceneEntity): ReactNode {
+  if (entity.name !== "lumen" && entity.name !== "anchor") return null;
+  return (
+    <ModelBoundary>
+      <HeroMesh entity={entity} />
+    </ModelBoundary>
+  );
+}
+
+/** Gate/plate/receiver/spike: real dungeon-kit props whose tint (and, via the object's own
+ * position — sunk/raised by `applyRoomVisuals`) communicate the live puzzle state. */
+function DungeonObjectMesh({ object }: { object: SceneObject }) {
+  const modelId = TINTED_OBJECT_MODELS[object.catalogId as ObjectId]!;
+  const color = object.visual?.color;
+  const opacity = object.visual?.opacity ?? 1;
+  const { scene, entry } = useDungeonScene(
+    modelId,
+    color === undefined ? undefined : { color, emissive: color, emissiveIntensity: 0.35 },
+  );
+  useEffect(() => setOpacity(scene, opacity), [scene, opacity]);
+  const position = centeredPosition(entry);
+  return <primitive object={scene} position={position} />;
+}
+
+export function renderDuetObject(object: SceneObject): ReactNode {
+  if (!(object.catalogId in TINTED_OBJECT_MODELS)) return null;
+  return (
+    <ModelBoundary>
+      <DungeonObjectMesh object={object} />
+    </ModelBoundary>
+  );
+}
+
+function hashCell({ x, z }: V2): number {
+  return Math.abs((x * 92821 + z * 68917) | 0);
+}
+
+const FLOOR_VARIANT_IDS = [DUNGEON.floor, DUNGEON.floorDetail, DUNGEON.dirt] as const;
+
+/** Tiles the room's walkable footprint with real dungeon-kit floor GLBs (three variants, hashed
+ * per cell for texture variety) instead of one flat color plane. */
+function FloorTiles({ room }: { room: RoomDef }) {
+  const floor = useLoader(gltfLoader, resolveModel(FLOOR_VARIANT_IDS[0]).url);
+  const detail = useLoader(gltfLoader, resolveModel(FLOOR_VARIANT_IDS[1]).url);
+  const dirt = useLoader(gltfLoader, resolveModel(FLOOR_VARIANT_IDS[2]).url);
+
+  const tiles = useMemo(
+    () => {
+      const variants = [floor, detail, dirt];
+      return room.floor.map((cell) => {
+        const hash = hashCell(cell);
+        const gltf = variants[hash % variants.length]!;
+        return {
+          key: `${cell.x}:${cell.z}`,
+          cell,
+          scene: cloneModelScene(gltf.scene),
+          rotationY: (hash % 4) * (Math.PI / 2),
+        };
+      });
+    },
+    [room, floor, detail, dirt],
+  );
+
+  useEffect(
+    () => () => {
+      for (const tile of tiles) disposeClonedMaterials(tile.scene);
+    },
+    [tiles],
+  );
+
+  return (
+    <>
+      {tiles.map((tile) => (
+        <primitive
+          key={tile.key}
+          object={tile.scene}
+          position={[tile.cell.x, 0, tile.cell.z]}
+          rotation-y={tile.rotationY}
+        />
+      ))}
+    </>
+  );
+}
+
+function voidGeometry(): THREE.BufferGeometry {
+  const geometry = new THREE.PlaneGeometry(200, 200, 48, 48);
+  const positions = geometry.attributes.position!;
+  const base = new THREE.Color(VOID_BASE);
+  const high = new THREE.Color(VOID_HIGH);
+  const colors = new Float32Array(positions.count * 3);
+  const tmp = new THREE.Color();
+  for (let index = 0; index < positions.count; index++) {
+    const x = positions.getX(index);
+    const y = positions.getY(index);
+    const blend = 0.5 + Math.sin(x * 0.08) * 0.3 + Math.cos(y * 0.06) * 0.3;
+    tmp.copy(base).lerp(high, Math.min(1, Math.max(0, blend)));
+    colors[index * 3] = tmp.r;
+    colors[index * 3 + 1] = tmp.g;
+    colors[index * 3 + 2] = tmp.b;
+  }
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   return geometry;
 }
 
@@ -28,53 +287,69 @@ export function DuetEnvironment() {
   const roomIndex = useStore(duetStore, (s) => s.roomIndex);
   const room = ROOMS[roomIndex] ?? ROOMS[0]!;
   const bounds = roomBounds(room);
-  const grid = useMemo(
-    () => gridGeometry(bounds.minX, bounds.maxX, bounds.minZ, bounds.maxZ),
-    [bounds.minX, bounds.maxX, bounds.minZ, bounds.maxZ],
-  );
+  const voidGeo = useMemo(voidGeometry, []);
+
   return (
     <group>
-      <mesh rotation-x={-Math.PI / 2} position-y={-0.4} receiveShadow>
-        <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color={VOID_COLOR} roughness={1} metalness={0} />
+      <mesh rotation-x={-Math.PI / 2} position-y={-0.4} geometry={voidGeo} receiveShadow>
+        <meshStandardMaterial vertexColors roughness={1} metalness={0} />
       </mesh>
-      <mesh
-        rotation-x={-Math.PI / 2}
-        position={[bounds.centerX, -0.02, bounds.centerZ]}
-        receiveShadow
-      >
+      <mesh rotation-x={-Math.PI / 2} position={[bounds.centerX, -0.02, bounds.centerZ]} receiveShadow>
         <planeGeometry args={[bounds.width + 0.4, bounds.depth + 0.4]} />
-        <meshStandardMaterial color="#1b2440" roughness={0.85} metalness={0.05} />
+        <meshStandardMaterial color={ROOM_BASE} roughness={0.85} metalness={0.05} />
       </mesh>
-      <lineSegments geometry={grid} position-y={0.012}>
-        <lineBasicMaterial color={GRID_COLOR} transparent opacity={0.6} />
-      </lineSegments>
+      <ModelBoundary>
+        <FloorTiles room={room} />
+      </ModelBoundary>
     </group>
   );
 }
 
-/** Dynamic devices the heroes latch: Lumen's prism + beam, Anchor's weight. */
+/** Dynamic devices the heroes latch: Lumen's spinning prism crystal + light beam, Anchor's dropped
+ * weight — real dungeon-kit props instead of primitive octahedron/cylinder geometry. */
+function PrismProp({ position }: { position: [number, number, number] }) {
+  const { scene, entry } = useDungeonScene(DUNGEON.coin, {
+    color: HEROES.lumen.glow,
+    emissive: HEROES.lumen.color,
+    emissiveIntensity: 1.1,
+  });
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame((_state, delta) => {
+    if (groupRef.current !== null) groupRef.current.rotation.y += delta * 1.6;
+  });
+  const propScale = 2.4;
+  const local = centeredPosition(entry, 0.55, propScale);
+  return (
+    <group ref={groupRef} position={position}>
+      <primitive object={scene} position={local} scale={propScale} />
+    </group>
+  );
+}
+
+function AnchorWeightProp({ position }: { position: [number, number, number] }) {
+  const { scene, entry } = useDungeonScene(DUNGEON.stones, {
+    color: "#2a2f3d",
+    metalness: 0.5,
+    roughness: 0.5,
+  });
+  const weightScale = 1.35;
+  const local = centeredPosition(entry, 0, weightScale);
+  return (
+    <group position={position}>
+      <primitive object={scene} position={local} scale={weightScale} />
+    </group>
+  );
+}
+
 export function DuetVfx() {
   const ctx = useGameContext();
   const beamRef = useRef<THREE.Mesh>(null);
-  const prismRef = useRef<THREE.Mesh>(null);
-  const anchorRef = useRef<THREE.Mesh>(null);
+  const latch = useStore(duetStore, (s) => s.latch);
 
   useFrame(() => {
-    const store = duetStore.peek(ctx);
-    const room = store === undefined ? undefined : ROOMS[store.roomIndex];
-    const latch = store?.latch ?? { anchorCell: null, prism: null };
-
-    const anchor = anchorRef.current;
-    if (anchor !== null) {
-      anchor.visible = latch.anchorCell !== null;
-      if (latch.anchorCell !== null) anchor.position.set(latch.anchorCell.x, 0.42, latch.anchorCell.z);
-    }
-
-    const prismMesh = prismRef.current;
+    const room = ROOMS[duetStore.peek(ctx)?.roomIndex ?? 0];
     const beam = beamRef.current;
     if (latch.prism === null || room === undefined) {
-      if (prismMesh !== null) prismMesh.visible = false;
       if (beam !== null) beam.visible = false;
       return;
     }
@@ -83,11 +358,6 @@ export function DuetVfx() {
     const start = latch.prism.cell;
     const end = state.beamPath.length > 0 ? state.beamPath[state.beamPath.length - 1]! : start;
     const length = Math.abs(end.x - start.x) + Math.abs(end.z - start.z);
-
-    if (prismMesh !== null) {
-      prismMesh.visible = true;
-      prismMesh.position.set(start.x, 0.5, start.z);
-    }
     if (beam !== null) {
       beam.visible = length > 0;
       if (length > 0) {
@@ -109,49 +379,16 @@ export function DuetVfx() {
           opacity={0.8}
         />
       </mesh>
-      <mesh ref={prismRef} visible={false} rotation-y={Math.PI / 4} castShadow>
-        <octahedronGeometry args={[0.32, 0]} />
-        <meshStandardMaterial color={HEROES.lumen.glow} emissive={HEROES.lumen.color} emissiveIntensity={0.9} />
-      </mesh>
-      <mesh ref={anchorRef} visible={false} castShadow>
-        <cylinderGeometry args={[0.34, 0.42, 0.7, 6]} />
-        <meshStandardMaterial color="#4a3a20" metalness={0.4} roughness={0.6} />
-      </mesh>
+      {latch.anchorCell !== null ? (
+        <ModelBoundary>
+          <AnchorWeightProp position={[latch.anchorCell.x, 0, latch.anchorCell.z]} />
+        </ModelBoundary>
+      ) : null}
+      {latch.prism !== null ? (
+        <ModelBoundary>
+          <PrismProp position={[latch.prism.cell.x, 0, latch.prism.cell.z]} />
+        </ModelBoundary>
+      ) : null}
     </group>
   );
-}
-
-function HeroMesh({ entity }: { entity: SceneEntity }) {
-  const active = useStore(duetStore, (state) => state.active);
-  const hero = entity.name === "anchor" ? HEROES.anchor : HEROES.lumen;
-  const isActive = active === hero.id;
-  return (
-    <group>
-      {hero.id === "lumen" ? (
-        <mesh position-y={0.6} castShadow>
-          <cylinderGeometry args={[0.32, 0.34, 1.2, 16]} />
-          <meshStandardMaterial color={hero.color} emissive={hero.glow} emissiveIntensity={isActive ? 0.85 : 0.3} />
-        </mesh>
-      ) : (
-        <mesh position-y={0.5} castShadow>
-          <boxGeometry args={[0.7, 1, 0.7]} />
-          <meshStandardMaterial color={hero.color} emissive={hero.glow} emissiveIntensity={isActive ? 0.7 : 0.25} />
-        </mesh>
-      )}
-      <mesh rotation-x={-Math.PI / 2} position-y={0.05}>
-        <ringGeometry args={[0.5, 0.62, 24]} />
-        <meshBasicMaterial
-          color={hero.glow}
-          transparent
-          opacity={isActive ? 0.95 : 0.25}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-export function renderHero(entity: SceneEntity) {
-  if (entity.name !== "lumen" && entity.name !== "anchor") return null;
-  return <HeroMesh entity={entity} />;
 }

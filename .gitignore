@@ -19,6 +19,7 @@ shots/
 !apps/dev/public/models/kenney-blaster/
 !apps/dev/public/models/kenney-space/
 !apps/dev/public/models/kenney-furniture/
+!apps/dev/public/models/kenney-mini-dungeon/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 

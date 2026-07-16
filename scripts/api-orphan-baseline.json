@@ -1275,7 +1275,6 @@
   "@jgengine/shell/inputSink#noopInputSink",
   "@jgengine/shell/inputSink#remoteInputSink",
   "@jgengine/shell/inputSink#resolveInputSink",
-  "@jgengine/shell/materialOverride#applyMaterialOverride",
   "@jgengine/shell/multiplayer#randomPlayerId",
   "@jgengine/shell/pointer/PointerOverlays#ContextMenuView",
   "@jgengine/shell/pointer/PointerOverlays#MarqueeBox",
