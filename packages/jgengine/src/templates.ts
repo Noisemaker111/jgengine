@@ -493,10 +493,10 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 The F2 chord family is in every JGengine game, and it is **your** toolkit, not just the player's:
 
 - **F2+D — debug mode**: engine devtools overlay (perf, logs, net, keybinds, live tunables with Save-to-source).
-- **F2+C — canvas mode**: drag HUD panels live to fix layout.
+- **F2+C — canvas mode**: drag/resize HUD panels; layout writes to scene document \`ui.panels\` (undoable with live editor).
 - **F2+E — editor mode** (also \`?mode=editor\`): the Blender/Unity-style scene editor — place spawns, zones, paths, vegetation; Save writes \`src/editor.scene.json\`.
 
-Prefer these over guessing: tune numbers in debug mode, fix HUD layout in canvas mode, and place/move world content in editor mode instead of hand-editing \`x,y,z\` in tables. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. See the \`jgengine-editor\` skill.
+Prefer these over guessing: tune numbers in debug mode, fix HUD layout in canvas mode, and place/move world content in editor mode instead of hand-editing \`x,y,z\` in tables. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`canvas_resize_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. HUD placement lives in \`editor.scene.json\` → \`ui.panels\`; TSX \`HudPanel\` props are fallback-only. See the \`jgengine-editor\` skill.
 
 ## Project rules
 

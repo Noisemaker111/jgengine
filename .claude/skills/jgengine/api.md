@@ -363,6 +363,480 @@
 - `SnapshotViewer` (interface): interface SnapshotViewer — Who a host→client snapshot is being projected for — the identity a {@link SnapshotModule.project} filters against.
 - `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
 
+## @jgengine/core/ui
+
+- `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
+- `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
+- `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
+- `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
+- `DEFAULT_UI_SCALE` (const): const DEFAULT_UI_SCALE: 1 — Player-controlled multiplier on the HUD's computed fit scale — one lever on desktop and mobile alike.
+- `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
+- `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
+- `GRAPHICS_QUALITY_DPR` (const): const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> — Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
+- `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
+- `GameLayoutMode` (type): type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait" — The explicit composition mode a game renders for — not a scaled desktop layout.
+- `GameSettingDef` (interface): interface GameSettingDef — Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`.
+- `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
+- `GameViewportLayout` (interface): interface GameViewportLayout — The shared live geometry the engine allocates once and every UI subsystem reads.
+- `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
+- `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
+- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented
+- `HudLayoutStore` (interface): interface HudLayoutStore — ⚠ undocumented
+- `HudPanelTypeDef` (interface): interface HudPanelTypeDef — Declared panel type: growable axes, size limits, optional ParamSchema for the editor.
+- `HudPlacement` (interface): interface HudPlacement — ⚠ undocumented
+- `HudPlatform` (type): type HudPlatform = "web" | "mobile" — Where a game is meant to be played. `"web"` alone keeps today's desktop-first HUD; adding `"mobile"` turns on design-resolution fit scaling on compact displays.
+- `HudPriority` (type): type HudPriority = "critical" | "secondary" | "tertiary" — Gameplay-importance tier of a HUD element.
+- `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
+- `HudSize` (interface): interface HudSize — ⚠ undocumented
+- `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
+- `Insets` (interface): interface Insets — Edge insets in CSS pixels (safe areas, reservations).
+- `LayoutCollision` (interface): interface LayoutCollision — One detected forbidden/warned overlap between two regions.
+- `LayoutCollisionPolicy` (type): type LayoutCollisionPolicy = "forbid" | "allow" | "warn" — How a region participates in collision reporting.
+- `LayoutOrientation` (type): type LayoutOrientation = "portrait" | "landscape" — A concrete device orientation.
+- `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
+- `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
+- `LookPreset` (type): type LookPreset = "cinematic" | "flat" — Named default-look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
+- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `ResolvedHudPanelLayout` (interface): interface ResolvedHudPanelLayout — Fully resolved panel layout after document + fallback merge.
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
+- `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
+- `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption — ⚠ undocumented
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented
+- `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
+- `SettingsStore` (interface): interface SettingsStore — ⚠ undocumented
+- `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
+- `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
+- `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
+- `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
+- `UI_SCALE_MIN` (const): const UI_SCALE_MIN: 0.5 — ⚠ undocumented
+- `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
+- `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
+- `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
+- `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
+- `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
+- `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
+- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
+- `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
+- `orientationGateActive` (function): function orientationGateActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — The rotate gate blocks gameplay: a hard requirement (or `unsupported`) the live orientation doesn't satisfy.
+- `orientationHintActive` (function): function orientationHintActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — An advisory rotate hint applies: a preference (not a hard gate) the live orientation doesn't satisfy.
+- `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate.
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"cinematic"`, so a scene reads lit-like-a-game out of the box; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+- `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
+- `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.
+- `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
+
+## @jgengine/core/world
+
+- `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
+- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
+- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
+- `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
+- `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
+- `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
+- `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
+- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
+- `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
+- `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented
+- `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
+- `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
+- `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
+- `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
+- `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
+- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
+- `CameraView` (type): type CameraView = PerspectiveView | OrthographicView — ⚠ undocumented
+- `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's contribution to visibility. The VisibilitySystem unions results across every active context: an object stays renderable/loaded if *any* relevant camera needs it. A camera can opt out of driving asset streaming (e.g. a minimap that only needs positions, not loaded meshes) via `influencesStreaming: false`.
+- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
+- `Carryable` (class): class Carryable — A grabbed physics object following a moving hold point through a spring constraint (the pick — a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner carry (the follow point is the average of owners' hold points), an encumbrance read, and drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
+- `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
+- `ClockSnapshot` (interface): interface ClockSnapshot — ⚠ undocumented
+- `CollapseEvent` (interface): interface CollapseEvent — ⚠ undocumented
+- `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
+- `CollisionEvent` (interface): interface CollisionEvent — A contact reported to `onCollision`. The object is reused each call — read/copy, never retain.
+- `ConcealmentSensor` (interface): interface ConcealmentSensor — ⚠ undocumented
+- `ContextMenu` (interface): interface ContextMenu — ⚠ undocumented
+- `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
+- `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
+- `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — ⚠ undocumented
+- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
+- `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
+- `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
+- `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
+- `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
+- `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented
+- `EnvironmentField` (interface): interface EnvironmentField — ⚠ undocumented
+- `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
+- `FactionDef` (interface): interface FactionDef — ⚠ undocumented
+- `FireGrid` (interface): interface FireGrid — ⚠ undocumented
+- `FogCells` (interface): interface FogCells — ⚠ undocumented
+- `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
+- `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
+- `FramingConfig` (interface): interface FramingConfig — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor — ⚠ undocumented
+- `FreezeViolation` (interface): interface FreezeViolation — ⚠ undocumented
+- `Frustum` (interface): interface Frustum — ⚠ undocumented
+- `FrustumProjection` (interface): interface FrustumProjection — ⚠ undocumented
+- `FrustumSample` (interface): interface FrustumSample — ⚠ undocumented
+- `FrustumSensor` (interface): interface FrustumSensor — ⚠ undocumented
+- `FrustumTarget` (interface): interface FrustumTarget — ⚠ undocumented
+- `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
+- `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
+- `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
+- `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed"> — ⚠ undocumented
+- `GripCurve` (interface): interface GripCurve — ⚠ undocumented
+- `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
+- `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
+- `HeatLevelDef` (interface): interface HeatLevelDef — One escalation tier — the heat threshold it begins at and the pursuer count it wants active.
+- `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
+- `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
+- `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `Job` (interface): interface Job — ⚠ undocumented
+- `JobDef` (interface): interface JobDef — ⚠ undocumented
+- `JobReport` (interface): interface JobReport — ⚠ undocumented
+- `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
+- `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
+- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
+- `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
+- `LockAction` (type): type LockAction = "hardSet" | "set" | "steady" | "ease" | "drop" — One discrete pick move: how far the pick drives into the lock this step.
+- `LockCell` (interface): interface LockCell — One cell inside the fogged {@link visibleCells} window: its board position and kind.
+- `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
+- `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
+- `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
+- `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
+- `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> — ⚠ undocumented
+- `MapRoute` (interface): interface MapRoute — ⚠ undocumented
+- `MapZone` (interface): interface MapZone — ⚠ undocumented
+- `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
+- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MinimapView` (interface): interface MinimapView — ⚠ undocumented
+- `ModelAssetRef` (interface): interface ModelAssetRef — ⚠ undocumented
+- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
+- `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
+- `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
+- `MovementPose` (type): type MovementPose = "standing" | "crouch" | "prone" | "running" — ⚠ undocumented
+- `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a plain sine voice so a theme is never silent.
+- `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
+- `NavGrid` (interface): interface NavGrid — ⚠ undocumented
+- `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented
+- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
+- `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
+- `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
+- `ObjectVisual` (interface): interface ObjectVisual — ⚠ undocumented
+- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
+- `POSE_HITBOX` (const): const POSE_HITBOX: Record<MovementPose, PoseHitbox> — ⚠ undocumented
+- `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented
+- `PadSize` (type): type PadSize = readonly [number, number] | { radius: number } — ⚠ undocumented
+- `PaintStroke` (interface): interface PaintStroke — ⚠ undocumented
+- `ParamField` (type): type ParamField = | RangeParamField | NumberParamField | BoolParamField | SelectParamField | ColorParamField | TextParamField | SeedParamField | WeightedListParamField | ActionParamField — One row in a kind's parameter schema — the union the generic inspector knows how to render.
+- `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
+- `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
+- `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
+- `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
+- `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
+- `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
+- `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
+- `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
+- `PlacementController` (interface): interface PlacementController — ⚠ undocumented
+- `PlacementPreview` (interface): interface PlacementPreview — ⚠ undocumented
+- `PlacementRules` (interface): interface PlacementRules — ⚠ undocumented
+- `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
+- `PositionedPrompt` (interface): interface PositionedPrompt — ⚠ undocumented
+- `ProximityPrompt` (interface): interface ProximityPrompt — ⚠ undocumented
+- `QteStep` (interface): interface QteStep — ⚠ undocumented
+- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
+- `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
+- `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
+- `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField — ⚠ undocumented
+- `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
+- `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
+- `RevealHit` (interface): interface RevealHit — ⚠ undocumented
+- `RevealQuery` (interface): interface RevealQuery — ⚠ undocumented
+- `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. */ sidewalk: { width: number; color: string } | false; } — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
+- `RoofPlan` (interface): interface RoofPlan — ⚠ undocumented
+- `RosterEntry` (interface): interface RosterEntry — ⚠ undocumented
+- `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
+- `SHAPE_BOX` (const): const SHAPE_BOX: 0 — ⚠ undocumented
+- `SHAPE_SPHERE` (const): const SHAPE_SPHERE: 1 — ⚠ undocumented
+- `SOIL_KIND` (const): const SOIL_KIND: "soil" — The editor volume kind marking a box as a soil crack/moss patch.
+- `SOIL_SCHEMA` (const): const SOIL_SCHEMA: ParamSchema — The soil parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `ScatterInstance` (interface): interface ScatterInstance — ⚠ undocumented
+- `ScatterPoint` (interface): interface ScatterPoint — ⚠ undocumented
+- `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
+- `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> — ⚠ undocumented
+- `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
+- `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
+- `SceneObject` (interface): interface SceneObject — ⚠ undocumented
+- `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
+- `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
+- `ScreenRect` (interface): interface ScreenRect — ⚠ undocumented
+- `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
+- `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
+- `SensorReading` (interface): interface SensorReading — ⚠ undocumented
+- `SimClock` (interface): interface SimClock — ⚠ undocumented
+- `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
+- `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
+- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
+- `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
+- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented
+- `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
+- `SoundDef` (interface): interface SoundDef — ⚠ undocumented
+- `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
+- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — ⚠ undocumented
+- `SpawnDirectorState` (interface): interface SpawnDirectorState — ⚠ undocumented
+- `SpawnEntry` (interface): interface SpawnEntry — ⚠ undocumented
+- `SpawnRequest` (interface): interface SpawnRequest — ⚠ undocumented
+- `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
+- `StatValue` (interface): interface StatValue — ⚠ undocumented
+- `Station` (interface): interface Station — ⚠ undocumented
+- `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
+- `StructureMaterial` (interface): interface StructureMaterial — ⚠ undocumented
+- `SupportResult` (interface): interface SupportResult — ⚠ undocumented
+- `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
+- `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
+- `SynthPatch` (interface): interface SynthPatch — A procedural sound cue: a set of voices triggered together, each with its own `delay`, summed into one one-shot. Pure serialisable data — the shell realises it on Web Audio, so the same catalog runs headless in tests with no `AudioContext`.
+- `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
+- `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
+- `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
+- `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
+- `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint" — A sculpt operation kind: heightfield brushes plus the surface-paint brush.
+- `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
+- `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
+- `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
+- `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
+- `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
+- `TerrainDetailMaterialConfig` (interface): interface TerrainDetailMaterialConfig — Real PBR texture applied over the ground surface — the seam that lets a game put a `buildMaterialCatalog` material on terrain. Blends with, never replaces, the procedural detail shader: color/roughness/ao tile the maps by world position, `strength` fades them over the existing vertex-colour + noise look.
+- `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
+- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
+- `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
+- `TerrainMaterialLayer` (interface): interface TerrainMaterialLayer — One material layer in a terrain's reorderable stack: a palette `surface` id (drives the base color) plus its render parameters. Array order is the stack order — lower index paints under higher. `roughness`/`tiling`/`triplanar`/`tint`/`opacity` are carried as data so a runtime game reads them straight off the snapshot.
+- `TerrainMaterialRegion` (type): type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion — A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given), `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core and blend back across `falloff`; later regions in the list win overlaps.
+- `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
+- `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
+- `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
+- `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
+- `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
+- `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
+- `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
+- `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
+- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented
+- `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
+- `VisibilityConfig` (interface): interface VisibilityConfig — Per-game visibility configuration, surfaced on `PlayableGame.visibility`. Everything is optional: an existing game that sets nothing gets the conservative engine defaults automatically. This is the scene-level and per-kind override seam (requirement: per-object, per-layer, per-scene, and global controls).
+- `VisibilitySystem` (interface): interface VisibilitySystem — ⚠ undocumented
+- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
+- `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
+- `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
+- `VoxelMaterial` (interface): interface VoxelMaterial — ⚠ undocumented
+- `VoxelVolume` (class): class VoxelVolume — A runtime-editable dense voxel grid — the carve/deposit op behind destructible dig worlds (Deep Rock Galactic tunnels, Astroneer terrain). Cells hold a material id (0 = empty); `carve` clears a sphere of solid cells that a tool is strong enough to break and returns how many it removed (feed that to a loot roll), `deposit` fills a sphere with a material. World↔cell mapping is `origin`+`scale`.
+- `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
+- `WaterSurface` (interface): interface WaterSurface — ⚠ undocumented
+- `WaveManifest` (interface): interface WaveManifest — ⚠ undocumented
+- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented
+- `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
+- `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
+- `WeatherState` (interface): interface WeatherState — ⚠ undocumented
+- `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
+- `WindField` (interface): interface WindField — ⚠ undocumented
+- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
+- `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
+- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
+- `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. The shell/host call this each frame; a game never does.
+- `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
+- `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
+- `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
+- `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
+- `applySurfaceDeltaToSnapshot` (function): function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write).
+- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
+- `beginSurfaceStroke` (function): function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke — Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
+- `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
+- `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
+- `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
+- `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
+- `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
+- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
+- `carrySpeedMultiplier` (function): function carrySpeedMultiplier(mass: number, carryCapacity: number, owners: number): number — Movement multiplier (1 = unhindered, →0 = crushed) for a body of `mass` carried by `owners`. Pure — the HUD/movement kit reads it to slow a laden hauler (Lethal Company) and to gate items that need 2+ people (R.E.P.O.).
+- `carvableTerrain` (function): function carvableTerrain(base: TerrainField): CarvableField — ⚠ undocumented
+- `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
+- `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
+- `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
+- `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented
+- `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
+- `composeRealm` (function): function composeRealm(base: RealmBase, cards: readonly RealmCard[]): ComposedRealm — Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model. A major card is the biome base; minor cards layer weather, day length, and spawn edits. The result recomposes both the environment (into a sampleable field via `environmentField()`) and the spawn table, and it depends on the weather hooks in this group (#92) to turn its `weather` into gameplay modifiers. Cards apply in array order; sort your deck (majors first) before composing.
+- `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
+- `constrainToNavGrid` (function): function constrainToNavGrid(grid: NavGrid, options?: NavConstrainOptions): (proposed: NavConstrainProposed, entity: NavConstrainEntity) => NavConstrainProposed | null — ⚠ undocumented
+- `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
+- `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
+- `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
+- `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
+- `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
+- `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
+- `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
+- `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
+- `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
+- `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.
+- `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
+- `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
+- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — ⚠ undocumented
+- `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
+- `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
+- `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — Gliding/wingsuit descent control — lift, drag, and steering from a launch.
+- `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
+- `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
+- `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
+- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
+- `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
+- `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
+- `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
+- `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — ⚠ undocumented
+- `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
+- `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
+- `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
+- `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
+- `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
+- `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
+- `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
+- `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
+- `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
+- `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
+- `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
+- `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
+- `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
+- `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
+- `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
+- `distance` (function): function distance(a: Vec3, b: Vec3): number — ⚠ undocumented
+- `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
+- `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
+- `editableTerrainFromSnapshot` (function): function editableTerrainFromSnapshot(snapshot: TerraformSnapshot, base?: TerrainField): EditableTerrain — Rebuilds a live {@link EditableTerrain} from a snapshot, layered over `base` ground.
+- `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
+- `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
+- `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
+- `findPath` (function): function findPath(grid: NavGrid, from: NavPoint, to: NavPoint, options: FindPathOptions = {}): NavPoint[] | null — A* over the walkable grid. Returns a polyline of world-space `[x, z]` waypoints from `from` to `to`, or `null` when no route exists. Blocked start/goal snap to the nearest walkable cell so a click on an obstacle still routes to its edge.
+- `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
+- `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
+- `footprintObstacles` (function): function footprintObstacles(grid: FootprintGrid): PlacementObstacle[] — Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the grid's committed footprints unchanged.
+- `furnitureSpots` (function): function furnitureSpots(road: RoadEnvironmentDescriptor, options: FurnitureSpotOptions = {}): readonly FurnitureSpot[] — Evenly spaced street-furniture anchors along a road's curb lines — streetlights, palms, signs, hydrants, benches. Each spot sits just outside the asphalt (plus `outset`), faces away from the street, and alternates sides by default so lights stagger like a real avenue. This is the answer to "where do I put it": furniture is an asset of the street, never a hand-typed coordinate.
+- `gauge` (function): function gauge(gaugeId: string): GaugePromptDisplay — ⚠ undocumented
+- `generateLock` (function): function generateLock(seed: string | number, tier: LockTierSpec): LockSpec — Generate a solvable depth-puzzle lock: a "Tumbler's Path" board with a guaranteed solution path carved first, an open-row forgiveness band wrapped around it, tumbler gate columns that pinch to a single exact row, and optional ward-traps that look open but jam on contact. Deterministic: the same (seed, tier) always yields the same board.
+- `getCurrentGameTimestamp` (function): function getCurrentGameTimestamp(createdAt: number, now: number, timeScale?: number | null): number — ⚠ undocumented
+- `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
+- `groundSpeed` (function): function groundSpeed(entity: SceneEntity<unknown>): number — Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code.
+- `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
+- `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
+- `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
+- `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
+- `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
+- `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
+- `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
+- `label` (function): function label(text: string): LabelPromptDisplay — ⚠ undocumented
+- `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
+- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
+- `markerKindStyle` (function): function markerKindStyle(kind: string, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
+- `migrateTerrainSnapshot` (function): function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSnapshot — Upgrades a pre-2.0 snapshot in place-safe (copy-on-write) form: derives a {@link TerrainMaterialLayer} stack from the distinct painted surfaces (first-seen order, default params) when none exists. Leaves the lazy `weights` buffer absent — a single-layer terrain stays compact until blended. Idempotent: a snapshot that already carries `layers` is returned unchanged.
+- `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
+- `notesInWindow` (function): function notesInWindow(theme: MusicTheme, anchorSec: number, fromSec: number, toSec: number): ScheduledNote[] — Pure lookahead scheduler: every note occurrence of `theme` whose onset falls in the half-open window `(fromSec, toSec]`, given the theme's loop-zero at `anchorSec`. Handles any number of loop wraps, so a director calls it once per tick with a non-overlapping window and never double-schedules a note.
+- `objectVisualScale` (function): function objectVisualScale(visual: ObjectVisual | undefined): readonly [number, number, number] — ⚠ undocumented
+- `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `offsetPath` (function): function offsetPath(path: readonly RoadPoint[], offset: number): readonly RoadPoint[] — Offset a centerline sideways by a signed distance along its local perpendicular — the building block for lanes, curb lines, and sidewalk paths. Positive offsets fall on the left of the direction of travel, negative on the right.
+- `pad` (function): function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor — ⚠ undocumented
+- `parkingSpots` (function): function parkingSpots(road: RoadEnvironmentDescriptor, options: ParkingSpotOptions = {}): readonly ParkingSpot[] — Curbside parking anchors along a road: hugging the edge of the asphalt, headed parallel to the street in that side's direction of travel. Spawn parked vehicles here instead of eyeballing coordinates in the middle of the carriageway.
+- `parseParams` (function): function parseParams(schema: ParamSchema, meta: Record<string, unknown> | undefined): ParsedParams — Parse a raw `meta` bag against a schema into typed params — every field present, invalid/missing values replaced by the field default, numbers clamped to their range. The single parser every studio shares instead of hand-writing its own `metaNumber`/`metaBool` ladder.
+- `partsBounds` (function): function partsBounds(parts: readonly GeneratedPart[]): GeneratedAsset["bounds"] — Compute bounds from parts (each part is an axis-aligned box at its center) — a helper generators return so callers can frame/ground the asset without re-deriving it.
+- `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSampler = 0, offset = 0): Waypoint[] — ⚠ undocumented
+- `patrol` (function): function patrol({ waypoints, speed, loop = true, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; }): PatrolBehavior — ⚠ undocumented
+- `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
+- `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
+- `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
+- `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
+- `player` (function): function player(): PlayerBehavior — ⚠ undocumented
+- `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
+- `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
+- `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
+- `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
+- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
+- `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
+- `proximityPrompt` (function): function proximityPrompt({ radius, display, invoke = null }: ProximityPromptConfig): ProximityPrompt — ⚠ undocumented
+- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — ⚠ undocumented
+- `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
+- `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
+- `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
+- `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
+- `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
+- `registerAssetGenerator` (function): function registerAssetGenerator(definition: AssetGeneratorDefinition): void — Register a parametric asset generator. Idempotent per id (last wins); call at module load.
+- `registerSceneKind` (function): function registerSceneKind<TResolved>(definition: SceneKindDefinition<TResolved>): void — Register a scene kind — the plug-in point for a new parametric studio. Idempotent per `kind` (last registration wins), so a game's registration overrides a default. Call at module load; the editor inspector, `+ Add` menu, and `AuthoredScene` renderer lookup all read this registry.
+- `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
+- `resolveActivePrompt` (function): function resolveActivePrompt<T extends PositionedPrompt>(playerPosition: PromptPoint, prompts: readonly T[]): T | null — Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal priority and distance keep the earliest prompt in the list.
+- `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
+- `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
+- `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
+- `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
+- `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
+- `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] — ⚠ undocumented
+- `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — ⚠ undocumented
+- `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
+- `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
+- `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
+- `sagCurve` (function): function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[] — Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span lowest point droops by exactly `sag` meters below the chord. Cheap and stable; the go-to for cables where exact catenary physics don't matter. Returns `segments + 1` points.
+- `sampleGripCurve` (function): function sampleGripCurve(curve: GripCurve, slip: number): number — Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1). Grip peaks near the breakaway slip then falls off as the tire slides — the shape that separates a planted corner from a drift. Points are read in ascending slip order; ends clamp.
+- `sanitizeGameTimeScale` (function): function sanitizeGameTimeScale(timeScale?: number | null): number — ⚠ undocumented
+- `scatter` (function): function scatter(config: ScatterConfig): ScatterPoint[] — ⚠ undocumented
+- `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
+- `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
+- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+- `screenRect` (function): function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect — Normalize two drag corners (in any order) into a rectangle.
+- `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
+- `selectWithinRect` (function): function selectWithinRect(candidates: readonly ScreenPoint[], rect: ScreenRect): string[] — Ids of the projected candidates whose screen point falls inside the marquee.
+- `sidewalkPoint` (function): function sidewalkPoint(road: RoadEnvironmentDescriptor, side: "left" | "right", fraction: number): RoadPoint | null — A deterministic point on one of a road's sidewalks at a normalized position — `side` picks the band, `fraction` (0..1) picks how far along. The canonical pedestrian spawn helper.
+- `sidewalkWidthOf` (function): function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number — Resolved sidewalk band widths for a road; zero when the road declares no sidewalk.
+- `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
+- `sky` (function): function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor — ⚠ undocumented
+- `slopeStepCost` (function): function slopeStepCost(field: { sampleHeight(x: number, z: number): number }, weight = DEFAULT_SLOPE_STEP_WEIGHT): (from: NavPoint, to: NavPoint) => number — `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a 45° slope roughly doubles the step cost.
+- `snapToNearest` (function): function snapToNearest(registry: ConnectorRegistry, placed: readonly PlacedPiece[], movingDef: ConnectorPieceDef, cursor: ConnectorVec3, options: SnapOptions = {}): SnapResult | null — ⚠ undocumented
+- `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
+- `socketWorldPosition` (function): function socketWorldPosition(socket: ConnectorSocket, origin: ConnectorVec3, rotationY: number): ConnectorVec3 — ⚠ undocumented
+- `socketsCompatible` (function): function socketsCompatible(a: ConnectorSocket, b: ConnectorSocket): boolean — ⚠ undocumented
+- `solveLock` (function): function solveLock(spec: LockSpec): boolean — Whether the board has a path from the start row to the bolt seat at all.
+- `solveLockPath` (function): function solveLockPath(spec: LockSpec): number[] | null — Return a concrete row-per-column solution, or null if the board is unsolvable.
+- `solveSupport` (function): function solveSupport(pieces: readonly SupportPiece[], links: readonly SupportLink[], config: SupportConfig = {}): SupportResult — ⚠ undocumented
+- `steerYaw` (function): function steerYaw(yaw: number, steerRight: number, turnRatePerSecond: number, dt: number): number — Integrate one steering step. `steerRight` is the signed steer input (+1 = turn right, matching `DRIVE_AXIS_BINDINGS`' KeyD/ArrowRight), `turnRatePerSecond` is radians per second at full lock. Steering right decreases yaw in the engine frame; this helper owns that sign so game code never re-derives it.
+- `stepLock` (function): function stepLock(spec: LockSpec, col: number, row: number, action: LockAction): { result: LockStepResult; col: number; row: number } — Authoritative single step. The caller owns the lives economy: a slip/bind/trap does not advance the pick and should cost a life; advanced/success move the pick.
+- `stepPlayerMovement` (function): function stepPlayerMovement(ctx: GameContext, userId: string, input: InputFrame, dt: number, tuning: PlayerMovementTuning, heading?: number): void — Integrate one player's movement for a tick from their held-input frame and commit the pose — the single genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call, so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain, scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions.
+- `summarizeEnvironment` (function): function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary — ⚠ undocumented
+- `talkable` (function): function talkable(dialogueId: string): PromptableBehavior — ⚠ undocumented
+- `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
+- `themeLoopSeconds` (function): function themeLoopSeconds(theme: MusicTheme): number — Loop length of a theme in seconds.
+- `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: KinematicVehicle, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
+- `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
+- `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
+- `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
+- `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
+- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — ⚠ undocumented
+- `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.
+- `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
+- `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
+- `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
+- `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
+- `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
+- `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
+
 ## @jgengine/shell/cartridge
 
 - `CartridgeAbilitySlot` (interface): interface CartridgeAbilitySlot — ⚠ undocumented

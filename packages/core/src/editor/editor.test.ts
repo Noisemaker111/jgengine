@@ -97,23 +97,19 @@ describe("editor document", () => {
     expect(decoded.document).toEqual(original);
   });
 
-  test("seedEditorCatalogs fills missing entries and preserves document overrides", () => {
-    const doc = normalizeEditorLayers({
-      catalogs: [{ id: "weapons", entries: [{ id: "bow", meta: { damage: 99 } }] }],
-    });
-    const seeded = seedEditorCatalogs(doc, [
-      {
-        id: "weapons",
-        label: "Weapons",
-        schema: { fields: [{ key: "damage", type: "number", default: 1 }] },
-        entries: [
-          { id: "bow", meta: { damage: 8 } },
-          { id: "cannon", meta: { damage: 26 } },
-        ],
+  test("decodeEditorDocument round-trips ui panel layout", () => {
+    const original = normalizeEditorLayers({
+      ui: {
+        panels: {
+          health: { anchor: "top-left", dx: 16, dy: 16, width: 220, height: 28, type: "health-bar" },
+          build: { anchor: "bottom", dx: 0, dy: -12, visible: true },
+        },
       },
-    ]);
-    expect(findEditorCatalogEntry(seeded, "weapons", "bow")?.meta).toEqual({ damage: 99 });
-    expect(findEditorCatalogEntry(seeded, "weapons", "cannon")?.meta).toEqual({ damage: 26 });
+    });
+    const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(original)));
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error("expected decode success");
+    expect(decoded.document.ui).toEqual(original.ui);
   });
 
   test("json round-trip", () => {

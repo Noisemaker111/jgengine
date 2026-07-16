@@ -22,16 +22,13 @@
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
+- `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
+- `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
 - `EditorVolume` (interface): interface EditorVolume — A spatial region — zone, aggro range, capture area — placed in the scene.
 - `EditorVolumeShape` (type): type EditorVolumeShape = "sphere" | "cylinder" | "box" — Collision shape a volume is rendered and tested as.
-- `RuntimeEntityState` (interface): interface RuntimeEntityState — One live entity row the runtime may stream to the editor (play-mode inspector feed).
-- `RuntimeInspectorGetResult` (interface): interface RuntimeInspectorGetResult — One resolved runtime field returned by `runtime_get`.
-- `RuntimeInspectorSetPlan` (interface): interface RuntimeInspectorSetPlan — Desired mutation from `runtime_set` before the host applies it.
-- `RuntimeInspectorSummary` (interface): interface RuntimeInspectorSummary — Compact reverse-channel view for the play-mode inspector and `runtime_summary` RPC.
-- `RuntimePlayControl` (interface): interface RuntimePlayControl — Play-mode sim gate held by the editor host — pause freezes ticks; step runs N frames then re-pauses.
-- `RuntimeStateDelta` (interface): interface RuntimeStateDelta — Incremental runtime state for the reverse channel. Entity rows upsert by id; `removeIds` drop rows; `tunables` shallow-merge. Ephemeral unless written back as a document patch.
-- `RuntimeStateSnapshot` (interface): interface RuntimeStateSnapshot — Full ephemeral runtime view held on the reverse channel — never mutates the document.
+- `HudPanelTypeDef` (interface): interface HudPanelTypeDef — Declared panel type: growable axes, size limits, optional ParamSchema for the editor.
+- `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
@@ -102,9 +99,13 @@
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
 - `EditorPrefab` (interface): interface EditorPrefab — A serializable, reusable stamp of authored objects — markers/volumes/paths/notes centered on their own centroid so the same prefab inserts consistently anywhere, in this scene or another game's. `insertPrefab` tags every inserted object's `meta.prefabId`/`meta.prefabInstanceId`; `detachPrefabInstance` strips those tags to break the link without touching the content.
 - `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
+- `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
+- `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
 - `EditorVolume` (interface): interface EditorVolume — A spatial region — zone, aggro range, capture area — placed in the scene.
 - `EditorVolumeShape` (type): type EditorVolumeShape = "sphere" | "cylinder" | "box" — Collision shape a volume is rendered and tested as.
+- `HudPanelTypeDef` (interface): interface HudPanelTypeDef — Declared panel type: growable axes, size limits, optional ParamSchema for the editor.
+- `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
