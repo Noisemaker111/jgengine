@@ -322,6 +322,7 @@
     "./world/footprintGrid",
     "./world/geometry",
     "./world/grassKind",
+    "./world/gridCell",
     "./world/gridInstances",
     "./world/interiors",
     "./world/lod",

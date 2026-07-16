@@ -1211,6 +1211,7 @@
 - `FootprintReservation` (interface): interface FootprintReservation — A live claim on a {@link FootprintGrid}: which cells `id` (a `kind` tag for adjacency checks) holds.
 - `GridCell` (interface): interface GridCell — One integer cell address on a {@link FootprintGrid}.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
+- `connectedTo` (function): function connectedTo(grid: FootprintGrid, cells: readonly GridCell[], accepts?: (neighborKind: string) => boolean): boolean — True when at least one cell orthogonally touching `cells` (but outside them) is occupied by a kind `accepts` admits — the "must touch existing track/road/pipe" placement gate. Looser than {@link hasValidAdjacency}: it only asks whether *some* neighbor connects, and never rejects an incompatible neighbor. `accepts` omitted matches any occupied neighbor.
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `footprintObstacles` (function): function footprintObstacles(grid: FootprintGrid): PlacementObstacle[] — Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the grid's committed footprints unchanged.
 - `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
@@ -1233,6 +1234,17 @@
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `GrassRules` (interface): interface GrassRules — Fully-defaulted grass params parsed from a volume's `meta`.
 - `ResolvedGrass` (interface): interface ResolvedGrass — A resolved grass patch: world-space area center at ground height, footprint size (XZ), and rules.
+
+## @jgengine/core/world/gridCell
+
+- `DIR_ORDER` (const): const DIR_ORDER: readonly GridDir[] — The cardinals in clockwise order (`north → east → south → west`) — iterate for turn/rotation logic.
+- `DIR_VECTORS` (const): const DIR_VECTORS: Record<GridDir, GridCoord> — Unit step, in cells, for each cardinal direction: north is `-z`, south `+z`, east `+x`, west `-x` (a `+z`-forward world, matching `atan2(dx, dz)` facing). Add one to a cell to walk a square.
+- `GridCoord` (interface): interface GridCoord — One integer grid cell on an axis-aligned world lattice — `{x, z}` in *cell* units, not world units.
+- `GridDir` (type): type GridDir = "north" | "south" | "east" | "west" — The four cardinal grid directions.
+- `addCell` (function): function addCell(cell: GridCoord, step: GridCoord): GridCoord — The cell reached by stepping `cell` by `step` cells — add a `DIR_VECTORS[dir]` to walk one square.
+- `cellKey` (function): function cellKey(cell: GridCoord): string — Stable string key for a cell, for `Map`/`Set` occupancy lookups.
+- `sameCell` (function): function sameCell(a: GridCoord, b: GridCoord): boolean — True when two cells address the same lattice square.
+- `yawToDir` (function): function yawToDir(yaw: number): GridDir — Quantize a body yaw (`atan2(sinX, cosZ)`, 0 = `+z` / south) to the nearest cardinal grid direction.
 
 ## @jgengine/core/world/gridInstances
 

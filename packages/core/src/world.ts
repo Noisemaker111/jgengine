@@ -1,5 +1,6 @@
 export { type HeatConfig, type HeatGain, type HeatLevelDef, type HeatState } from "./ai/heatSystem";
 export { type Job, type JobDef, type JobReport } from "./ai/jobBoard";
+export { type MobBrain, type MobBrainConfig } from "./ai/mobBrain";
 export {
   advanceSpawnDirector,
   advanceWave,
@@ -12,7 +13,7 @@ export {
   type SpawnRequest,
   type WaveManifest,
 } from "./ai/spawnDirector";
-export { createThreatTable, type ThreatTable } from "./ai/threat";
+export { createThreatTable } from "./ai/threat";
 export {
   computeFalloffGain,
   distance3,
@@ -36,6 +37,7 @@ export {
   createReputationLedger,
   effectiveRelation,
   tierForStanding,
+  type ReputationTier,
 } from "./faction/reputation";
 export {
   buildContextMenu,
@@ -224,8 +226,17 @@ export {
   type WorldGridConfig,
 } from "./world/features";
 export { createFogField, type FogCells, type FogField } from "./world/fog";
-export { boundaryNeighbors, connectedTo, createFootprintGrid, footprintObstacles, hasValidAdjacency } from "./world/footprintGrid";
-export { type Aabb, type AvoidZone } from "./world/geometry";
+export {
+  boundaryNeighbors,
+  connectedTo,
+  createFootprintGrid,
+  footprintObstacles,
+  hasValidAdjacency,
+  type FootprintGrid,
+  type GridCell,
+} from "./world/footprintGrid";
+export { type Aabb, type AvoidZone, type Vec2 } from "./world/geometry";
+export { GRASS_SCHEMA } from "./world/grassKind";
 export {
   DIR_ORDER,
   DIR_VECTORS,
@@ -236,7 +247,6 @@ export {
   type GridCoord,
   type GridDir,
 } from "./world/gridCell";
-export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { createLodScheduler } from "./world/lod";
 export { mapLayerColor, type MapCellStates, type MapRoute, type MapZone } from "./world/mapLayers";

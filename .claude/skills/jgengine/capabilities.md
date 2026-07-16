@@ -59,7 +59,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
+- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
 
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
@@ -88,6 +88,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## durability — track item wear, breakage, and repair
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
+
+## duration-compact — humanize a duration as short "2h 15m" / "45m" / "30s" countdown text
+
+- `formatDurationCompact` (function) · `import { formatDurationCompact } from "@jgengine/core/ui"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
@@ -174,7 +178,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## limb-health — per-body-part/region health tracked separately
 
-- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
+- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/gameplay"`
 
 ## listing-book — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
 

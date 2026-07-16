@@ -33,7 +33,15 @@ export {
 } from "./crafting/recipe";
 export { createListingBook, type Listing } from "./economy/listingBook";
 export { type TechNodeDef } from "./economy/techTree";
-export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
+export {
+  balance,
+  charge,
+  chargeAll,
+  createEmptyWallet,
+  grant,
+  isOverdrawn,
+  type WalletState,
+} from "./economy/wallet";
 export {
   DEFAULT_CHAT_BODY_LENGTH,
   DEFAULT_CHAT_HISTORY_LIMIT,
@@ -249,10 +257,13 @@ export { type CellGrid } from "./puzzle/cellGrid";
 export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";
 export { pickUniform, pickWeighted } from "./random/pick";
-export { seededStreams } from "./random/rng";
+export { hashString, seededStreams } from "./random/rng";
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";
+export { createDecayMeterSet, type DecayMeterSet } from "./survival/decayMeter";
+export { createMoodleStack, stackMoodles, type Moodle, type MoodleStack } from "./survival/moodle";
+export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regionHealth";
 export { createCommitController } from "./turn/commit";
 export { createIntentBoard } from "./turn/intent";
 export { createTurnLoop, type TurnLoop } from "./turn/turnLoop";

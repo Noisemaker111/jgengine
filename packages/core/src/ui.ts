@@ -1,5 +1,5 @@
 export { formatDistance } from "./format/distance";
-export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
+export { formatDelta, formatDuration, formatDurationCompact, formatOrdinal, padNumber } from "./format/duration";
 export { formatSpeed } from "./format/speed";
 export { resolveGameLook, type LookPreset } from "./render/lookPreset";
 export {

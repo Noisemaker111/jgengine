@@ -24,7 +24,7 @@ export {
   type ProjectileSystemDeps,
   type RaycastHit,
 } from "./combat/projectiles";
-export { createRegenShield } from "./combat/regenShield";
+export { createRegenShield, type RegenShield } from "./combat/regenShield";
 export {
   DEFAULT_FIRE_PULSE_SECONDS,
   DEFAULT_HIT_PULSE_SECONDS,
@@ -36,7 +36,7 @@ export {
   type EntityRenderCues,
   type RenderCueTuning,
 } from "./combat/renderCues";
-export { resistanceScale, resolveResistance } from "./combat/resistance";
+export { resistanceScale, resolveResistance, type ResistanceMatrix } from "./combat/resistance";
 export { createResourcePool, type ResourcePool } from "./combat/resourcePool";
 export {
   DEFAULT_EYE_HEIGHT,

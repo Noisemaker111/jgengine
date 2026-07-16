@@ -205,6 +205,7 @@
 ## @jgengine/core/combat/resistance
 
 - `ResistVerdict` (type): type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable" — ⚠ undocumented
+- `ResistanceCell` (type): type ResistanceCell = ResistVerdict | number — A single matrix cell: either a named {@link ResistVerdict} (resolved through the multiplier table) or a raw scalar multiplier for a value the four named verdicts can't express — e.g. `0.9` for a mild resistance that is neither `resist` (0.5) nor `normal` (1). A `0` scalar zeroes the damage but, unlike `"immune"`, does not set the `immune` flag.
 - `ResistanceMatrix` (interface): interface ResistanceMatrix<TCategory extends string = string, TProperty extends string = string> — ⚠ undocumented
 - `ResistanceResult` (interface): interface ResistanceResult — ⚠ undocumented
 - `UnknownResistanceCategoryError` (class): class UnknownResistanceCategoryError extends Error — ⚠ undocumented

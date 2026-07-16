@@ -26,6 +26,6 @@
     ".nitro",
     ".vercel",
     ".tanstack",
-    "src/**/*.test.ts"
+    "src/**/*.test.ts*"
   ]
 }
