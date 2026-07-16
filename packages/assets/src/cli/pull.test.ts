@@ -8,7 +8,7 @@ import { mirrorOverrideUrl, type FetchLike } from "../download";
 import { sourceById } from "../sources";
 import { cmdPull } from "./pull";
 
-const source = sourceById.get("kenney-nature")!;
+const source = sourceById.get("quaternius-stylized-nature")!;
 const originalFetch = globalThis.fetch;
 
 function zipWithGlb(content: string): Uint8Array {
@@ -49,7 +49,7 @@ describe("cmdPull --offline", () => {
     });
 
     try {
-      await expect(cmdPull(["kenney-nature", "--dir", dir, "--offline"])).rejects.toThrow("process.exit:1");
+      await expect(cmdPull(["quaternius-stylized-nature", "--dir", dir, "--offline"])).rejects.toThrow("process.exit:1");
     } finally {
       exitSpy.mockRestore();
       rmSync(dir, { recursive: true, force: true });
@@ -58,12 +58,12 @@ describe("cmdPull --offline", () => {
 
   test("skips the network entirely when the target dir is already populated", async () => {
     const dir = makeTmpDir();
-    const outDir = join(dir, "models", "kenney-nature");
+    const outDir = join(dir, "models", "quaternius-stylized-nature");
     mkdirSync(outDir, { recursive: true });
     writeFileSync(join(outDir, "existing.glb"), "already-here");
     globalThis.fetch = neverFetch();
 
-    await cmdPull(["kenney-nature", "--dir", dir, "--offline"]);
+    await cmdPull(["quaternius-stylized-nature", "--dir", dir, "--offline"]);
 
     rmSync(dir, { recursive: true, force: true });
   });
@@ -80,10 +80,10 @@ describe("cmdPull mirror resolution", () => {
       calls,
     );
 
-    await cmdPull(["kenney-nature", "--dir", dir]);
+    await cmdPull(["quaternius-stylized-nature", "--dir", dir]);
 
     expect(calls).toEqual([expectedUrl]);
-    const written = readFileSync(join(dir, "models", "kenney-nature", "model.glb"), "utf8");
+    const written = readFileSync(join(dir, "models", "quaternius-stylized-nature", "model.glb"), "utf8");
     expect(written).toBe("from-env-mirror");
 
     rmSync(dir, { recursive: true, force: true });
@@ -100,7 +100,7 @@ describe("cmdPull mirror resolution", () => {
       calls,
     );
 
-    await cmdPull(["kenney-nature", "--dir", dir, "--mirror", flagBase]);
+    await cmdPull(["quaternius-stylized-nature", "--dir", dir, "--mirror", flagBase]);
 
     expect(calls).toEqual([expectedUrl]);
 
@@ -110,26 +110,26 @@ describe("cmdPull mirror resolution", () => {
   test("falls through to the primary provider path when no mirror is configured", async () => {
     process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
     const dir = makeTmpDir();
+    const primaryUrl =
+      typeof source.download === "object" && "url" in source.download
+        ? source.download.url
+        : "https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip";
     const calls: string[] = [];
     globalThis.fetch = fetchFrom(
       {
-        "https://kenney.nl/assets/nature-kit": () =>
-          new Response('<a href="https://kenney.nl/media/pages/nature-kit/download.zip">zip</a>', {
-            status: 200,
-          }),
-        "https://kenney.nl/media/pages/nature-kit/download.zip": () =>
-          new Response(zipWithGlb("from-primary"), { status: 200 }),
+        [primaryUrl]: () => new Response(zipWithGlb("from-primary"), { status: 200 }),
       },
       calls,
     );
 
-    await cmdPull(["kenney-nature", "--dir", dir]);
+    await cmdPull(["quaternius-stylized-nature", "--dir", dir]);
 
-    expect(calls).toEqual([
-      "https://kenney.nl/assets/nature-kit",
-      "https://kenney.nl/media/pages/nature-kit/download.zip",
-    ]);
+    expect(calls).toEqual([primaryUrl]);
+    expect(readFileSync(join(dir, "models", "quaternius-stylized-nature", "model.glb"), "utf8")).toBe(
+      "from-primary",
+    );
 
     rmSync(dir, { recursive: true, force: true });
   });
 });
+

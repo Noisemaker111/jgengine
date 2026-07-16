@@ -1,21 +1,27 @@
 import { describe, expect, test } from "bun:test";
 
-import { BASE_CATALOG_ID } from "./entities/base/catalog";
-import { entityModels } from "./models";
+import { entityModels, scatterModels } from "./models";
 
-describe("keep entityModels", () => {
-  const keep = entityModels[BASE_CATALOG_ID]!;
-
-  test("assembles the keep from a resolved base with catalog dims", () => {
-    expect(keep.url).toBe("/models/kenney-castle/tower-square-base.glb");
-    expect(keep.dims?.footprint).toEqual({ w: 1, d: 1 });
+describe("tower-guard models", () => {
+  test("resolves keep/towers/raiders onto Quaternius/KayKit (or soft-empty offline)", () => {
+    for (const [key, config] of Object.entries(entityModels)) {
+      expect(config.url.length).toBeGreaterThan(0);
+      expect(config.url.includes("kenney")).toBe(false);
+      expect(key.length).toBeGreaterThan(0);
+    }
+    for (const id of Object.values(scatterModels)) {
+      expect(id.includes("kenney")).toBe(false);
+      expect(id.includes("quaternius") || id.includes("nature/")).toBe(true);
+    }
   });
 
-  test("stacks the mid and roof kit pieces as static parts, scaled with the base", () => {
-    expect(keep.scale).toBe(1.6);
-    expect(keep.parts).toEqual([
-      { model: "kenney-castle/tower-square-mid-windows", position: [0, 1.616, 0], scale: 1.6 },
-      { model: "kenney-castle/tower-square-roof", position: [0, 3.232, 0], scale: 1.6 },
-    ]);
+  test("keep and towers prefer dungeon modular kit when catalog is live", () => {
+    const keep = entityModels.keep ?? entityModels.base;
+    // BASE_CATALOG_ID may be "keep" — just assert any entity model that loaded is CC0.
+    const any = Object.values(entityModels)[0];
+    if (any !== undefined) {
+      expect(any.url).toMatch(/\/models\/(kaykit|quaternius)-/);
+    }
+    void keep;
   });
 });

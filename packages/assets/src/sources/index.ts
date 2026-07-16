@@ -2,19 +2,16 @@ import type { AssetSource } from "../manifest";
 import { ambientcgSources } from "./ambientcg";
 import { gameiconsSources } from "./gameicons";
 import { kaykitSources } from "./kaykit";
-import { kenneySources, kenneySpriteSources } from "./kenney";
 import { quaterniusSources } from "./quaternius";
 
 export const sources: readonly AssetSource[] = [
-  ...kenneySources,
   ...quaterniusSources,
   ...kaykitSources,
   ...ambientcgSources,
-  ...kenneySpriteSources,
   ...gameiconsSources,
 ];
 
-/** Every source whose archive holds GLB models (Kenney, Quaternius, KayKit packs). */
+/** Every source whose archive holds GLB models (Quaternius, KayKit packs). */
 export const modelSources: readonly AssetSource[] = sources.filter(
   (source) => (source.kind ?? "model") === "model",
 );
@@ -33,4 +30,4 @@ export const sourceById: ReadonlyMap<string, AssetSource> = new Map(
   sources.map((source) => [source.id, source]),
 );
 
-export { ambientcgSources, gameiconsSources, kaykitSources, kenneySources, kenneySpriteSources, quaterniusSources };
+export { ambientcgSources, gameiconsSources, kaykitSources, quaterniusSources };

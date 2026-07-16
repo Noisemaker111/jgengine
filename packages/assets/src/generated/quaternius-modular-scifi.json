@@ -1,0 +1,4013 @@
+[
+  {
+    "id": "quaternius-modular-scifi/Alien_Cyclop",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Alien_Cyclop.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.071492314338684,
+        "d": 1.22166246175766
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03264239430427551
+      },
+      "minY": -1.0906437635421753
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Alien_Oculichrysalis",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Alien_Oculichrysalis.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8092154860496521,
+        "d": 0.8213434219360352
+      },
+      "center": {
+        "x": 0,
+        "z": -0.008370012044906616
+      },
+      "minY": -0.8716927170753479
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Alien_Scolitex",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Alien_Scolitex.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.4323089122772217,
+        "d": 3.2265729904174805
+      },
+      "center": {
+        "x": 0,
+        "z": 0.8470613956451416
+      },
+      "minY": -1.0816559791564941
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomMetal_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomMetal_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.9999982058108117,
+        "d": 3.999980866054102
+      },
+      "center": {
+        "x": -1.9999977976530658,
+        "z": -2.000009566972949
+      },
+      "minY": -8.940520501710125e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomMetal_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomMetal_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.600000520082176,
+        "d": 4.599984048327315
+      },
+      "center": {
+        "x": -2.3000029824515877,
+        "z": -2.3000083573060692
+      },
+      "minY": -8.344650268554688e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomMetal_Corner_Square_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomMetal_Corner_Square_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.0000001192092896,
+        "d": 4.000000476837101
+      },
+      "center": {
+        "x": -2.0000004172325134,
+        "z": -1.9999997615814493
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomMetal_Corner_Square_Outer_1",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomMetal_Corner_Square_Outer_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5999994277954102,
+        "d": 0.599998950958252
+      },
+      "center": {
+        "x": -4.299999237060547,
+        "z": -4.300000429153442
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomMetal_Corner_Square_Outer_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomMetal_Corner_Square_Outer_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5999999046325684,
+        "d": 0.5999999046325684
+      },
+      "center": {
+        "x": -4.299999952316284,
+        "z": -4.299999475479126
+      },
+      "minY": 2.5145712356788863e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomMetal_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomMetal_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6000001430511475,
+        "d": 4
+      },
+      "center": {
+        "x": -1.7000001668930054,
+        "z": 4.76837158203125e-7
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomSimple_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomSimple_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.9999982058108117,
+        "d": 3.999980866054102
+      },
+      "center": {
+        "x": -1.9999977976530658,
+        "z": -2.000009566972949
+      },
+      "minY": -8.940520501710125e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomSimple_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomSimple_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.600003517823097,
+        "d": 4.599981474639208
+      },
+      "center": {
+        "x": -2.300001483581127,
+        "z": -2.3000096441501228
+      },
+      "minY": -8.344650268554688e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomSimple_Corner_Square_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomSimple_Corner_Square_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.0000001192092896,
+        "d": 4.000000476837101
+      },
+      "center": {
+        "x": -2.0000004172325134,
+        "z": -1.9999997615814493
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomSimple_Corner_Square_Outer_1",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomSimple_Corner_Square_Outer_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5999994277954102,
+        "d": 0.599998950958252
+      },
+      "center": {
+        "x": -4.299999237060547,
+        "z": -4.300000429153442
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomSimple_Corner_Square_Outer_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomSimple_Corner_Square_Outer_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5999999046325684,
+        "d": 0.6000001430511475
+      },
+      "center": {
+        "x": -4.300000905990601,
+        "z": -4.29999840259552
+      },
+      "minY": 2.514569814593415e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/BottomSimple_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "BottomSimple_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6000001430511475,
+        "d": 4.000000476837158
+      },
+      "center": {
+        "x": -1.7000001668930054,
+        "z": 0
+      },
+      "minY": 7.768661609191055e-14
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_Astra",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_Astra.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.327770933508873,
+        "d": 1.209268569946289
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -0.23522746562957764
+      },
+      "minY": -0.006465137004852295
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_Hollow",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_Hollow.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2093325853347778,
+        "d": 1.2093325853347778
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.5917540114051008e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_Large_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_Large_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3964720964431763,
+        "d": 1.9621734619140625
+      },
+      "center": {
+        "x": 0,
+        "z": 0.1429426670074463
+      },
+      "minY": -0.00322918314486742
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_MetalSupport_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_MetalSupport_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.470941054503896,
+        "d": 4.470954394466389
+      },
+      "center": {
+        "x": -2.2354691089785206,
+        "z": -2.2354614853229577
+      },
+      "minY": -0.02199912816286087
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_MetalSupport",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_MetalSupport.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9566290080547333,
+        "d": 4
+      },
+      "center": {
+        "x": 0.007375553250312805,
+        "z": 0
+      },
+      "minY": -0.022009747102856636
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_Pipes",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_Pipes.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8746281862258911,
+        "d": 0.8746281862258911
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_Round",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Column_Simple",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Column_Simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5068493187427521,
+        "d": 0.9748794436454773
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -0.01877954602241516
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_0",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_0.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7680696249008179,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_1",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5760522782802582,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8037938475608826,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_3",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7778176069259644,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_4",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8142308592796326,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_5",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7682482600212097,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_6",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_6.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7814484238624573,
+        "d": 1.2725337743759155
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_7",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_7.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7891368269920349,
+        "d": 1.2725338339805603
+      },
+      "center": {
+        "x": 0,
+        "z": 9.238719940185547e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_8",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_8.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8338311016559601,
+        "d": 1.272532880306244
+      },
+      "center": {
+        "x": -4.6193599700927734e-7,
+        "z": 4.470348358154297e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_9",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_9.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7680698931217194,
+        "d": 1.2725319862365723
+      },
+      "center": {
+        "x": -2.2351741790771484e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_A",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8873679339885712,
+        "d": 1.2136480808258057
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Dashes",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Dashes.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0734562873840332,
+        "d": 0.33158017694950104
+      },
+      "center": {
+        "x": 0,
+        "z": -1.564621925354004e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_K",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_K.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9046263694763184,
+        "d": 1.213647186756134
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": 4.470348358154297e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_90_Round_Large",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_90_Round_Large.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.0720009580254555,
+        "d": 3.0720019936561584
+      },
+      "center": {
+        "x": 1.4640004746615887,
+        "z": 1.4639990031719208
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_90_Round",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_90_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0720004811882973,
+        "d": 2.0719998255372047
+      },
+      "center": {
+        "x": 0.9640002362430096,
+        "z": 0.9640000872313976
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_90",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_90.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0720686465501785,
+        "d": 2.0720127522945404
+      },
+      "center": {
+        "x": 0.9639656767249107,
+        "z": 0.9639936238527298
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_Bend1_L",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_Bend1_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.14400003105402,
+        "d": 4
+      },
+      "center": {
+        "x": -1.000000011175871,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_Bend1_R",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_Bend1_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.14400003105402,
+        "d": 4
+      },
+      "center": {
+        "x": 1.000000011175871,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_Bend2_L",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_Bend2_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.14400003105402,
+        "d": 4
+      },
+      "center": {
+        "x": -0.5000000111758709,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_Bend2_R",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_Bend2_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.14400003105402,
+        "d": 4
+      },
+      "center": {
+        "x": 0.5000000111758709,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Line_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Line_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.14400000870227814,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Logo_Letters",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Logo_Letters.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.9022457599639893,
+        "d": 0.5867986083030701
+      },
+      "center": {
+        "x": -0.0013099908828735352,
+        "z": 0.004436761140823364
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Logo_Small",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Logo_Small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7639169692993164,
+        "d": 0.47692160308361053
+      },
+      "center": {
+        "x": 0,
+        "z": 1.564621925354004e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Logo",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Logo.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.292189121246338,
+        "d": 1.4173604249954224
+      },
+      "center": {
+        "x": -0.01983475685119629,
+        "z": -0.07762384414672852
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Sign",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Sign.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6894210278987885,
+        "d": 0.6155723631381989
+      },
+      "center": {
+        "x": 4.917383193969727e-7,
+        "z": -3.129243850708008e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_V",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_V.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8659671545028687,
+        "d": 1.213647186756134
+      },
+      "center": {
+        "x": 0,
+        "z": 4.470348358154297e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_X",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_X.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8647725582122803,
+        "d": 1.213647186756134
+      },
+      "center": {
+        "x": 0,
+        "z": 4.470348358154297e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_XSign",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_XSign.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.36149390041828156,
+        "d": 0.3423805236816406
+      },
+      "center": {
+        "x": 3.203749656677246e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Decal_Z",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Decal_Z.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7180700898170471,
+        "d": 1.213647186756134
+      },
+      "center": {
+        "x": 0,
+        "z": 4.470348358154297e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_DarkMetal",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_DarkMetal.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1057209968566895,
+        "d": 0.20320472121238708
+      },
+      "center": {
+        "x": -1.0528604984283447,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_Frame_A",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_Frame_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.870644569396973,
+        "d": 0.9273766279220581
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": 0
+      },
+      "minY": -0.11896121501922607
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_Frame_Square_Blocked",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_Frame_Square_Blocked.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.853449821472168,
+        "d": 0.5068492889404297
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_Frame_Square",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_Frame_Square.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.853449821472168,
+        "d": 0.5068492889404297
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.013425212353467941
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_Frame_SquareTall",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_Frame_SquareTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.843747138977051,
+        "d": 0.5068492889404297
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.013425212353467941
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_Metal",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_Metal.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1057209968566895,
+        "d": 0.10160236060619354
+      },
+      "center": {
+        "x": -1.0528604984283447,
+        "z": 0.05080118030309677
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Door_Simple",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Door_Simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1057209968566895,
+        "d": 0.1363188922405243
+      },
+      "center": {
+        "x": -1.0528604984283447,
+        "z": 0.06815944612026215
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_3Plates",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_3Plates.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_CenterPlate_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_CenterPlate_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.9999998807907104,
+        "d": 4.000002861022949
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -9.5367431640625e-7
+      },
+      "minY": -4.344552451129857e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_CenterPlate",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_CenterPlate.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4.000000476837158
+      },
+      "center": {
+        "x": 0,
+        "z": 2.384185791015625e-7
+      },
+      "minY": -4.344552451129857e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_DarkPlates_Curves",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_DarkPlates_Curves.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.000005722045898
+      },
+      "center": {
+        "x": 0.0000011920928955078125,
+        "z": -0.000002384185791015625
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_DarkPlates",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_DarkPlates.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Metal_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Metal_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.00000524520874
+      },
+      "center": {
+        "x": 0.0000011920928955078125,
+        "z": -0.0000026226043701171875
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Metal",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Metal.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Metal2_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Metal2_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.00000524520874
+      },
+      "center": {
+        "x": 0.0000011920928955078125,
+        "z": -0.0000026226043701171875
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Metal2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Metal2.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Rails_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Rails_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.358422040939331,
+        "d": 1.8910028338432312
+      },
+      "center": {
+        "x": 0,
+        "z": 0.9892981350421906
+      },
+      "minY": 0.0029671788215637207
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Rails_4",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Rails_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.358422040939331,
+        "d": 3.8025912046432495
+      },
+      "center": {
+        "x": 0,
+        "z": 2.000265657901764
+      },
+      "minY": 0.002967238426208496
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Rails_4Wide",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Rails_4Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.246695518493652,
+        "d": 3.8025912046432495
+      },
+      "center": {
+        "x": 0,
+        "z": 2.000265657901764
+      },
+      "minY": 0.002967238426208496
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Rails_4WideTall",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Rails_4WideTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.246695518493652,
+        "d": 5.730790495872498
+      },
+      "center": {
+        "x": 0,
+        "z": 2.964365303516388
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Ramp_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Ramp_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000147819519043,
+        "d": 2
+      },
+      "center": {
+        "x": -0.00007390975952148438,
+        "z": 1
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Ramp_2Short",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Ramp_2Short.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000147819519043,
+        "d": 1.5
+      },
+      "center": {
+        "x": -0.00007390975952148438,
+        "z": 0.75
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Ramp_4",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Ramp_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000147819519043,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 2
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Ramp_4Wide",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Ramp_4Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000051021575928,
+        "d": 4.000000476837158
+      },
+      "center": {
+        "x": 0,
+        "z": 2.000000238418579
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Round1",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Round1.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.990800857543945,
+        "d": 5.990800857543945
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.028622543439269066
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Simple_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Simple_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.00000524520874
+      },
+      "center": {
+        "x": 0.0000011920928955078125,
+        "z": -0.0000026226043701171875
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Simple",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Simple2_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Simple2_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.00000524520874
+      },
+      "center": {
+        "x": 0.0000011920928955078125,
+        "z": -0.0000026226043701171875
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Simple2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Simple2.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Squares_Curve",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Squares_Curve.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 4.00000524520874
+      },
+      "center": {
+        "x": 0.0000011920928955078125,
+        "z": -0.0000026226043701171875
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Squares",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Squares.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Stairs_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Stairs_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000147819519043,
+        "d": 2.072711706161499
+      },
+      "center": {
+        "x": -0.00007390975952148438,
+        "z": 1.0363558530807495
+      },
+      "minY": -0.00855785608291626
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Stairs_4",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Stairs_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000147819519043,
+        "d": 4.082711696624756
+      },
+      "center": {
+        "x": 0,
+        "z": 2.041355848312378
+      },
+      "minY": -0.008157849311828613
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Stairs_4Wide",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Stairs_4Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000051021575928,
+        "d": 4.082711696624756
+      },
+      "center": {
+        "x": 0,
+        "z": 2.041355848312378
+      },
+      "minY": -0.008157849311828613
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Stairs_4WideTall",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Stairs_4WideTall.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000051021575928,
+        "d": 6.082711696624756
+      },
+      "center": {
+        "x": 0,
+        "z": 3.041355848312378
+      },
+      "minY": -0.008157849311828613
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Window_Thin",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Window_Thin.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.88456130027771,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.41330623626708984
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_Window_Wide",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_Window_Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999999523162842,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.41330698132514954
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Platform_X",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Platform_X.glb",
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 4
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_AccessPoint",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_AccessPoint.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44116929173469543,
+        "d": 1.2962622046470642
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -0.009164959192276001
+      },
+      "minY": 1.111771821975708
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Barrel_Large",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Barrel_Large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5078441500663757,
+        "d": 0.5319890975952148
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.008179725147783756
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Cable_1",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Cable_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0184591710567474,
+        "d": 1.6469088196754456
+      },
+      "center": {
+        "x": 0.020618155598640442,
+        "z": 0.2484099566936493
+      },
+      "minY": -0.01830253005027771
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Cable_3",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Cable_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5598958134651184,
+        "d": 5.734548091888428
+      },
+      "center": {
+        "x": 0.6276061236858368,
+        "z": 0.03996706008911133
+      },
+      "minY": -0.01304243691265583
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Chest",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Chest.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5028187036514282,
+        "d": 0.753032922744751
+      },
+      "center": {
+        "x": 0,
+        "z": 0.012021183967590332
+      },
+      "minY": 0.003235679818317294
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Clamp",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Clamp.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5604876577854156,
+        "d": 0.4601919949054718
+      },
+      "center": {
+        "x": 0.08103843033313751,
+        "z": -0.010082140564918518
+      },
+      "minY": -0.004400940146297216
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Computer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Computer.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7433525919914246,
+        "d": 0.5624592006206512
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.06499911844730377
+      },
+      "minY": -0.0011917203664779663
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Crate3",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Crate3.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.5
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Crate4",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Crate4.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1208693981170654,
+        "d": 1.1208693385124207
+      },
+      "center": {
+        "x": 0,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.5604347586631775
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Fan_Small_Propeller",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Fan_Small_Propeller.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0625789165496826,
+        "d": 1.1488734483718872
+      },
+      "center": {
+        "x": -3.5762786865234375e-7,
+        "z": 0
+      },
+      "minY": -0.05499667301774025
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Fan_Small",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Fan_Small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6768345832824707,
+        "d": 1.6768347024917603
+      },
+      "center": {
+        "x": -2.980232238769531e-7,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -0.05499667301774025
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_ItemHolder",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_ItemHolder.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.038621644741907,
+        "d": 1.0722780984168339
+      },
+      "center": {
+        "x": -0.04688545441851488,
+        "z": 0.02706932730037448
+      },
+      "minY": -0.004088744521141052
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Light_Corner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Light_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.12297772616148,
+        "d": 4.208324566017836
+      },
+      "center": {
+        "x": -2.15844464674592,
+        "z": -2.10915081971325
+      },
+      "minY": -0.14768467843532562
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Light_Floor",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Light_Floor.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3331035375595093,
+        "d": 0.5245764255523682
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -0.001287149265408516
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Light_Small",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Light_Small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.860852837562561,
+        "d": 0.44531941413879395
+      },
+      "center": {
+        "x": -0.4304264187812805,
+        "z": 0
+      },
+      "minY": -0.1476801186800003
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Light_Wide",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Light_Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.320244312286377,
+        "d": 0.44531941413879395
+      },
+      "center": {
+        "x": -0.6601221561431885,
+        "z": 0
+      },
+      "minY": -0.1476801186800003
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_PipeHolder",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_PipeHolder.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.116868734359741,
+        "d": 1.161383032798767
+      },
+      "center": {
+        "x": -0.005346417427062988,
+        "z": 0
+      },
+      "minY": 0.007752552628517151
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_2",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.06660092622041702,
+        "d": 1.9463729858398438
+      },
+      "center": {
+        "x": -0.0023812688887119293,
+        "z": -1
+      },
+      "minY": 5.960464477539063e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_3",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.06660186871886253,
+        "d": 2.9655596017837524
+      },
+      "center": {
+        "x": -0.002380797639489174,
+        "z": -1.493574321269989
+      },
+      "minY": 5.960464477539063e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_4",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.06660092249512672,
+        "d": 3.9256978034973145
+      },
+      "center": {
+        "x": 0.001011071726679802,
+        "z": -2
+      },
+      "minY": 5.960464477539063e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_Incline_Long_L",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_Incline_Long_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2545394990593195,
+        "d": 3.8025909662246704
+      },
+      "center": {
+        "x": -0.09607798885554075,
+        "z": 2.0002655386924744
+      },
+      "minY": 0.0029671192169189453
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_Incline_Long_R",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_Incline_Long_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2545394990593195,
+        "d": 3.8025912046432495
+      },
+      "center": {
+        "x": 0.09607798885554075,
+        "z": 2.000265657901764
+      },
+      "minY": 0.002967238426208496
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_Incline_Short_L",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_Incline_Short_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2545395065099001,
+        "d": 1.8910027742385864
+      },
+      "center": {
+        "x": -0.09897493477910757,
+        "z": 0.9892980456352234
+      },
+      "minY": 0.0029671192169189453
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_Incline_Short_R",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_Incline_Short_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2545395038467646,
+        "d": 2.601413972745603
+      },
+      "center": {
+        "x": 0.09897493292262638,
+        "z": 1.0061376194490772
+      },
+      "minY": -0.3209410965600439
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_Round_Big",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_Round_Big.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.996392611414194,
+        "d": 4.048893265426159
+      },
+      "center": {
+        "x": 2.0352476220577955,
+        "z": -2.005203578621149
+      },
+      "minY": 5.820766091346741e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Rail_Round_Small",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Rail_Round_Small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9937009364366531,
+        "d": 1.9662008434534073
+      },
+      "center": {
+        "x": 1.0309727415442467,
+        "z": -1.0467321798205376
+      },
+      "minY": 5.681067705154419e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Vent_Big",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Vent_Big.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0003747940063477,
+        "d": 0.9764095842838287
+      },
+      "center": {
+        "x": 0,
+        "z": -0.006964370608329773
+      },
+      "minY": -0.06878673285245895
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Vent_Small",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Vent_Small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.6183004975318909
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.5100137418233572e-8
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/Prop_Vent_Wide",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "Prop_Vent_Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.938290536403656,
+        "d": 0.2909760793246807
+      },
+      "center": {
+        "x": -0.000004380941390991211,
+        "z": 0.013379441507281875
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_AccentStrip_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_AccentStrip_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_AccentStrip_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_AccentStrip_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_AccentStrip_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_AccentStrip_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.999999761581421
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 0
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Band2_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Band2_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.00433123905384,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.0021669228925134,
+        "z": -2.000008384332432
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Band2_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Band2_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.004331413899422
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.0021668354697226
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Band2_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Band2_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.007500410079956055,
+        "d": 3.9999998807907104
+      },
+      "center": {
+        "x": -1.9962493181228638,
+        "z": 5.960464477539063e-8
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_DarkMetal2_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_DarkMetal2_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 5.815973622702586e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_DarkMetal2_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_DarkMetal2_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 5.815973622702586e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_DarkMetal2_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_DarkMetal2_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.9999998807907104
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 5.960464477539063e-8
+      },
+      "minY": 5.292485788780299e-16
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_DarkPlastic_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_DarkPlastic_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_DarkPlastic_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_DarkPlastic_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_DarkPlastic_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_DarkPlastic_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.999999761581421
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 0
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Metal2_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Metal2_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Metal2_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Metal2_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Metal2_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Metal2_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.9999998807907104
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 5.960464477539063e-8
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_MetalPlates_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_MetalPlates_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850676603
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384303328
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_MetalPlates_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_MetalPlates_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010222761,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.000008471725778,
+        "z": -2.000001279515743
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_MetalPlates_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_MetalPlates_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.999999761581421
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 0
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Simple1_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Simple1_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Simple1_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Simple1_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Simple1_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Simple1_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.999999761581421
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 0
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Simple2_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Simple2_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145995,
+        "d": 3.9999841850549274
+      },
+      "center": {
+        "x": -2.000001366938477,
+        "z": -2.0000083843096945
+      },
+      "minY": 3.2584136988589307e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Simple2_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Simple2_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010210028,
+        "d": 4.000000301991577
+      },
+      "center": {
+        "x": -2.0000084717321442,
+        "z": -2.0000012795156863
+      },
+      "minY": 3.2584136988589307e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Simple2_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Simple2_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.999999761581421
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 0
+      },
+      "minY": -3.258412846207648e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Triangles_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Triangles_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Triangles_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Triangles_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 0.00185164634604007
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_Triangles_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_Triangles_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.999999761581421
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 0
+      },
+      "minY": 0.0018510540248826146
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_WhitePlate2_Corner_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_WhitePlate2_Corner_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000000127145881,
+        "d": 3.9999841850094526
+      },
+      "center": {
+        "x": -2.000001366938534,
+        "z": -2.000008384332432
+      },
+      "minY": 3.323063140214799e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_WhitePlate2_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_WhitePlate2_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.999984010164553,
+        "d": 4.000000301991463
+      },
+      "center": {
+        "x": -2.0000084717548816,
+        "z": -2.000001279515743
+      },
+      "minY": 3.323063140214799e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/ShortWall_WhitePlate2_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "ShortWall_WhitePlate2_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.76837158203125e-7,
+        "d": 3.9999998807907104
+      },
+      "center": {
+        "x": -1.9999992847442627,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -3.1760473007125256e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopAstra_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopAstra_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002257039682,
+        "d": 3.9999775154774397
+      },
+      "center": {
+        "x": -1.999999348317317,
+        "z": -2.000011003842701
+      },
+      "minY": 2.999999761581421
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopAstra_Curve_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopAstra_Curve_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002257039682,
+        "d": 3.9999775154774397
+      },
+      "center": {
+        "x": -1.999999348317317,
+        "z": -2.000011003842701
+      },
+      "minY": 2.999999761581421
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopAstra_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopAstra_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.08610367774963379,
+        "d": 3.999999523162842
+      },
+      "center": {
+        "x": -1.956948161125183,
+        "z": 0
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopCables_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopCables_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.16067116146553,
+        "d": 4.160648468168802
+      },
+      "center": {
+        "x": -2.0803337460494618,
+        "z": -2.0803446158606675
+      },
+      "minY": 2.999999761581421
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopCables_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopCables_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.215302171935491,
+        "d": 4.215280306094428
+      },
+      "center": {
+        "x": -2.107649474029813,
+        "z": -2.1076604069503446
+      },
+      "minY": 2.999999761581421
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopCables_Corner_Square_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopCables_Corner_Square_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.168575763702393,
+        "d": 4.168575763702393
+      },
+      "center": {
+        "x": -2.08428692817688,
+        "z": -2.08428692817688
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopCables_Corner_Square_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopCables_Corner_Square_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.215301339934626,
+        "d": 4.21530168843276
+      },
+      "center": {
+        "x": -2.1076498900302454,
+        "z": -2.1076497157811787
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopCables_Straight_Hanging",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopCables_Straight_Hanging.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.44205009937286377,
+        "d": 4.000000596046448
+      },
+      "center": {
+        "x": -1.9475497603416443,
+        "z": 6.556510925292969e-7
+      },
+      "minY": 0.05680352449417114
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopCables_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopCables_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.38387537002563477,
+        "d": 4.000000596046448
+      },
+      "center": {
+        "x": -1.9766371250152588,
+        "z": 6.556510925292969e-7
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopPlastic_Corner_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopPlastic_Corner_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5704813003540039,
+        "d": 0.5704813003540039
+      },
+      "center": {
+        "x": -4.285240173339844,
+        "z": -4.2852396965026855
+      },
+      "minY": 3.5
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopPlastic_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopPlastic_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000002046494501,
+        "d": 3.999980687538482
+      },
+      "center": {
+        "x": -1.9999994535899077,
+        "z": -2.000009656230759
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopPlastic_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopPlastic_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.5678651911729276,
+        "d": 4.567841218251488
+      },
+      "center": {
+        "x": -2.283930868769005,
+        "z": -2.283942855229725
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopPlastic_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopPlastic_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5678632259368896,
+        "d": 4.0000001192092896
+      },
+      "center": {
+        "x": -1.7160683870315552,
+        "z": 4.172325134277344e-7
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopSimple_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopSimple_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000001064946787,
+        "d": 3.9999775154828967
+      },
+      "center": {
+        "x": -1.9999987522708693,
+        "z": -2.0000110038399725
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopSimple_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopSimple_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.000001064946787,
+        "d": 3.9999775154828967
+      },
+      "center": {
+        "x": -1.9999987522708693,
+        "z": -2.0000110038399725
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopSimple_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopSimple_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0,
+        "d": 4
+      },
+      "center": {
+        "x": -2,
+        "z": 4.76837158203125e-7
+      },
+      "minY": 3
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopWindow_Corner_Curve_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopWindow_Corner_Curve_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.09876762926001,
+        "d": 4.098747655865736
+      },
+      "center": {
+        "x": -2.0493820354371337,
+        "z": -2.0493915452971123
+      },
+      "minY": 2.997406244277954
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopWindow_Corner_Curve_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopWindow_Corner_Curve_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.5705216509811635,
+        "d": 4.57049856379308
+      },
+      "center": {
+        "x": -2.2852590986732366,
+        "z": -2.2852696885929618
+      },
+      "minY": 2.997406244277954
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/TopWindow_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "TopWindow_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6692851781845093,
+        "d": 4.000000715255737
+      },
+      "center": {
+        "x": -1.764123022556305,
+        "z": 1.1920928955078125e-7
+      },
+      "minY": 2.997406244277954
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.465095520019531,
+        "d": 4.468433141708374
+      },
+      "center": {
+        "x": -2.232545852661133,
+        "z": -2.2342368364334106
+      },
+      "minY": -0.0064650774002075195
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.098308719979855,
+        "d": 4.101707222942423
+      },
+      "center": {
+        "x": -2.04915277273102,
+        "z": -2.0508729205112104
+      },
+      "minY": -0.0064650774002075195
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Corner_Square_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Corner_Square_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.7739973068237305,
+        "d": 4.773998260498047
+      },
+      "center": {
+        "x": -2.386998176574707,
+        "z": -2.386998176574707
+      },
+      "minY": -0.006465164944529533
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Corner_Square_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Corner_Square_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.435271593630546,
+        "d": 4.435270469178704
+      },
+      "center": {
+        "x": -2.217634035795811,
+        "z": -2.217636505370365
+      },
+      "minY": -0.0064650774002075195
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Straight_Broken",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Straight_Broken.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.451526165008545,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": -2.048234224319458,
+        "z": 0
+      },
+      "minY": -0.006465137004852295
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Straight_Divided",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Straight_Divided.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.209268569946289,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": -2.169363021850586,
+        "z": 0
+      },
+      "minY": -0.006465137004852295
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Straight_Flat_Window",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Straight_Flat_Window.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5014517307281494,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": -2.2507258653640747,
+        "z": 0
+      },
+      "minY": -2.5648702717262495e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Straight_Flat",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Straight_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.10000014305114746,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": -2.0500000715255737,
+        "z": 0
+      },
+      "minY": -2.5648702717262495e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Straight_Window",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Straight_Window.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4974968433380127,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": -2.2487484216690063,
+        "z": 0
+      },
+      "minY": -2.5648702717262495e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallAstra_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallAstra_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.209268569946289,
+        "d": 4.0000011920928955
+      },
+      "center": {
+        "x": -2.169363021850586,
+        "z": 1.1920928955078125e-7
+      },
+      "minY": -0.006465137004852295
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallBand_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallBand_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.200001649072533,
+        "d": 4.19997804929335
+      },
+      "center": {
+        "x": -2.0999994615660285,
+        "z": -2.10001126145562
+      },
+      "minY": -2.842170943040401e-14
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallBand_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallBand_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.0073181311393,
+        "d": 3.999978556574206
+      },
+      "center": {
+        "x": -2.0036575237858187,
+        "z": -2.000010483294318
+      },
+      "minY": -2.842170943040401e-14
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallBand_Corner_Square_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallBand_Corner_Square_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.200000524520874,
+        "d": 4.200000286102238
+      },
+      "center": {
+        "x": -2.100000023841858,
+        "z": -2.0999996662140177
+      },
+      "minY": -3.258412846207648e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallBand_Corner_Square_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallBand_Corner_Square_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.00750143606956,
+        "d": 4.007501300181275
+      },
+      "center": {
+        "x": -2.003750407300913,
+        "z": -2.0037499984078977
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallBand_Straight_Broken",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallBand_Straight_Broken.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.678962230682373,
+        "d": 4.823317527770996
+      },
+      "center": {
+        "x": -1.8605191707611084,
+        "z": -0.41165828704833984
+      },
+      "minY": -0.011731147766113281
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallBand_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallBand_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20750117301940918,
+        "d": 4
+      },
+      "center": {
+        "x": -2.0962496995925903,
+        "z": 4.76837158203125e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Cap_A",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Cap_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20076775550842285,
+        "d": 0.3953521251678467
+      },
+      "center": {
+        "x": -2.0277243852615356,
+        "z": -1.9999648332595825
+      },
+      "minY": 0.8731297850608826
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Cap_B",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Cap_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20076775550842285,
+        "d": 0.3953521251678467
+      },
+      "center": {
+        "x": -2.0277243852615356,
+        "z": 1.9999648332595825
+      },
+      "minY": 0.8731297850608826
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Corner_Round_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Corner_Round_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.200002071783956,
+        "d": 4.1999799523327965
+      },
+      "center": {
+        "x": -2.099999250210317,
+        "z": -2.1000103099358967
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Corner_Round_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Corner_Round_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.008278672160486,
+        "d": 4.008255540878963
+      },
+      "center": {
+        "x": -2.0041376033118468,
+        "z": -2.0041477384411337
+      },
+      "minY": -3.258412846207648e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Corner_Square_Inner",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Corner_Square_Inner.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.200000524520874,
+        "d": 4.200001001358032
+      },
+      "center": {
+        "x": -2.100000023841858,
+        "z": -2.099999785423279
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Corner_Square_Outer",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Corner_Square_Outer.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.120076485012589,
+        "d": 4.120075877874541
+      },
+      "center": {
+        "x": -2.0600374601609417,
+        "z": -2.060037763729966
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  },
+  {
+    "id": "quaternius-modular-scifi/WallWindow_Straight",
+    "source": "quaternius-modular-scifi",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "WallWindow_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3200761079788208,
+        "d": 4.000000953674316
+      },
+      "center": {
+        "x": -2.0399622321128845,
+        "z": 2.384185791015625e-7
+      },
+      "minY": -3.2584125619905535e-7
+    }
+  }
+]

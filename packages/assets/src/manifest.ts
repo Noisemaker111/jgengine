@@ -3,7 +3,6 @@ import type { ModelDims } from "@jgengine/core/scene/assetCatalog";
 export type { ModelDims };
 
 export type AssetProvider =
-  | "kenney"
   | "quaternius"
   | "kaykit"
   | "polypizza"

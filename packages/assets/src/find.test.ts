@@ -3,10 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { findAssets, rankAssets } from "./find";
 
 describe("findAssets", () => {
-  test("resolves a model across the index and aliases", () => {
-    const top = findAssets("astronaut")[0];
-    expect(top?.kind).toBe("model");
-    if (top?.kind === "model") expect(top.id).toBe("kenney-space/astronautA");
+  test("surfaces a model pack by name", () => {
+    const packs = findAssets("nature", { kind: "pack" });
+    expect(packs.every((entry) => entry.kind === "pack")).toBe(true);
+    expect(packs.some((entry) => entry.kind === "pack" && entry.source === "quaternius-stylized-nature")).toBe(
+      true,
+    );
   });
 
   test("finds a HUD component by name", () => {
@@ -37,25 +39,20 @@ describe("findAssets", () => {
     if (top?.kind === "icon") expect(top.name).toBe("sword");
   });
 
-  test("matches a whole pack by name", () => {
-    const packs = findAssets("nature", { kind: "pack" });
+  test("matches a whole pack by provider", () => {
+    const packs = findAssets("medieval", { kind: "pack" });
     expect(packs.every((entry) => entry.kind === "pack")).toBe(true);
-    expect(packs.some((entry) => entry.kind === "pack" && entry.source === "kenney-nature")).toBe(true);
+    expect(packs.some((entry) => entry.kind === "pack" && entry.source === "quaternius-medieval-village")).toBe(
+      true,
+    );
   });
 
-  test("matches a whole sprite pack by name", () => {
+  test("matches the game-icons.net sprite pack by name", () => {
     const packs = findAssets("game icons", { kind: "spritePack" });
     expect(packs.every((entry) => entry.kind === "spritePack")).toBe(true);
     expect(
-      packs.some((entry) => entry.kind === "spritePack" && entry.source === "kenney-game-icons"),
+      packs.some((entry) => entry.kind === "spritePack" && entry.source === "gameicons-icons"),
     ).toBe(true);
-  });
-
-  test("finds the game-icons.net sprite pack too", () => {
-    const packs = findAssets("icon library", { kind: "spritePack" });
-    expect(packs.some((entry) => entry.kind === "spritePack" && entry.source === "gameicons-icons")).toBe(
-      true,
-    );
   });
 
   test("returns nothing for gibberish", () => {

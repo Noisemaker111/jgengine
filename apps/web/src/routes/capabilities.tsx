@@ -145,7 +145,7 @@ function Hud() {
     filename: "terminal",
     code: `# discover and pull CC0 packs, license-verified
 npx jgengine assets search "tree"
-npx jgengine assets pull kenney-nature`,
+npx jgengine assets pull quaternius-stylized-nature`,
   },
 ];
 

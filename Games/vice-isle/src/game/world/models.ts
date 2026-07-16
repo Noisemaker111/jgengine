@@ -1,42 +1,123 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
+
 import { assets } from "../assets";
 import { BUILDING_SPECS } from "./buildings";
 
-const CHAR = "kenney-mini-characters";
-const RACING = "kenney-racing";
-const NATURE = "kenney-nature";
-const ROADS = "kenney-city-roads";
-const SURVIVAL = "kenney-survival";
+const CHAR = "kaykit-adventurers";
+const NATURE = "quaternius-stylized-nature";
+const DUNGEON = "kaykit-dungeon";
+const FURN = "kaykit-furniture";
+const SPACE = "kaykit-space-base";
 
-function model(id: string, targetHeight: number, extra?: Partial<ModelConfig>): ModelConfig {
-  const base = assets.resolve(id)!;
-  return { url: base.url, dims: base.dims, targetHeight, ...extra };
+/**
+ * Art plan: preferred Quaternius/KayKit catalog ids. Soft-resolve via
+ * resolveModelPlan — missing packs → shell primitives until pull/reindex.
+ * Vehicles use space-base landers as temporary stand-ins until a CC0 car pack lands.
+ */
+export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  street_runner: {
+    model: `${CHAR}/Rogue`,
+    fallbackModel: `${CHAR}/Rogue_Hooded`,
+    style: { targetHeight: 1.8 },
+  },
+  ped_beach: {
+    model: `${CHAR}/Mage`,
+    fallbackModel: `${CHAR}/Rogue`,
+    style: { targetHeight: 1.75 },
+  },
+  ped_city: {
+    model: `${CHAR}/Knight`,
+    fallbackModel: `${CHAR}/Barbarian`,
+    style: { targetHeight: 1.8 },
+  },
+  ped_docks: {
+    model: `${CHAR}/Rogue_Hooded`,
+    fallbackModel: `${CHAR}/Mage`,
+    style: { targetHeight: 1.78 },
+  },
+  contact_marco: {
+    model: `${CHAR}/Barbarian`,
+    fallbackModel: `${CHAR}/Knight`,
+    style: { targetHeight: 1.85, material: { color: "#f4efe2" } },
+  },
+  ganger_dock: {
+    model: `${CHAR}/Rogue`,
+    fallbackModel: `${CHAR}/Barbarian`,
+    style: { targetHeight: 1.85, material: { color: "#c23b3b" } },
+  },
+  ganger_enforcer: {
+    model: `${CHAR}/Barbarian`,
+    fallbackModel: `${CHAR}/Knight`,
+    style: { targetHeight: 2.05, material: { color: "#7a1c1c" } },
+  },
+  kingpin_sal: {
+    model: `${CHAR}/Knight`,
+    fallbackModel: `${CHAR}/Mage`,
+    style: { targetHeight: 2.25, material: { color: "#c9a227" } },
+  },
+  cop_patrol: {
+    model: `${CHAR}/Mage`,
+    fallbackModel: `${CHAR}/Knight`,
+    style: { targetHeight: 1.85, material: { color: "#2e4f8f" } },
+  },
+  cop_swat: {
+    model: `${CHAR}/Knight`,
+    fallbackModel: `${CHAR}/Barbarian`,
+    style: { targetHeight: 1.9, material: { color: "#20242e" } },
+  },
+
+  car_compact: {
+    model: `${SPACE}/spacetruck`,
+    fallbackModel: `${SPACE}/lander_B`,
+    style: { targetHeight: 1.35 },
+  },
+  car_muscle: {
+    model: `${SPACE}/spacetruck_large`,
+    fallbackModel: `${SPACE}/spacetruck`,
+    style: { targetHeight: 1.4 },
+  },
+  car_sport: {
+    model: `${SPACE}/lander_A`,
+    fallbackModel: `${SPACE}/spacetruck`,
+    style: { targetHeight: 1.3 },
+  },
+  car_cop: {
+    model: `${SPACE}/spacetruck`,
+    fallbackModel: `${SPACE}/lander_B`,
+    style: { targetHeight: 1.4 },
+  },
+});
+
+const objectPlan: Record<string, ModelPick> = {
+  obj_palm_planter: {
+    model: `${NATURE}/CommonTree_1`,
+    fallbackModel: `${NATURE}/Pine_1`,
+    style: { targetHeight: 5.6 },
+  },
+  obj_streetlight: {
+    model: `${FURN}/lamp_standing`,
+    fallbackModel: `${DUNGEON}/torch_mounted`,
+    style: { targetHeight: 4.3 },
+  },
+  obj_gunshop_sign: {
+    model: `${DUNGEON}/banner_red`,
+    fallbackModel: `${DUNGEON}/banner_blue`,
+    style: { targetHeight: 2.4 },
+  },
+  obj_crate_dock: {
+    model: `${DUNGEON}/box_large`,
+    fallbackModel: `${DUNGEON}/crates_stacked`,
+    style: { targetHeight: 1 },
+  },
+};
+
+for (const b of BUILDING_SPECS) {
+  objectPlan[b.id] = {
+    model: b.model,
+    fallbackModel: b.fallbackModel,
+    style: { targetHeight: b.targetHeight },
+  };
 }
 
-export const entityModels: Record<string, ModelConfig> = {
-  street_runner: model(`${CHAR}/character-male-a`, 1.8),
-  ped_beach: model(`${CHAR}/character-female-a`, 1.75),
-  ped_city: model(`${CHAR}/character-male-b`, 1.8),
-  ped_docks: model(`${CHAR}/character-female-b`, 1.78),
-  contact_marco: model(`${CHAR}/character-male-c`, 1.85, { material: { color: "#f4efe2" } }),
-  ganger_dock: model(`${CHAR}/character-male-d`, 1.85, { material: { color: "#c23b3b" } }),
-  ganger_enforcer: model(`${CHAR}/character-male-e`, 2.05, { material: { color: "#7a1c1c" } }),
-  kingpin_sal: model(`${CHAR}/character-male-f`, 2.25, { material: { color: "#c9a227" } }),
-  cop_patrol: model(`${CHAR}/character-female-c`, 1.85, { material: { color: "#2e4f8f" } }),
-  cop_swat: model(`${CHAR}/character-female-d`, 1.9, { material: { color: "#20242e" } }),
-
-  car_compact: model(`${RACING}/raceCarGreen`, 1.35),
-  car_muscle: model(`${RACING}/raceCarRed`, 1.4),
-  car_sport: model(`${RACING}/raceCarOrange`, 1.3),
-  car_cop: model(`${RACING}/raceCarWhite`, 1.4, {
-    parts: [{ model: `${RACING}/lightRedDouble`, position: [0, 1.05, -0.1], scale: 3.2 }],
-  }),
-};
-
-export const objectModels: Record<string, ModelConfig> = {
-  obj_palm_planter: model(`${NATURE}/tree_palmTall`, 5.6),
-  obj_streetlight: model(`${ROADS}/light-curved`, 4.3),
-  obj_gunshop_sign: model(`${RACING}/billboard`, 2.4),
-  obj_crate_dock: model(`${SURVIVAL}/box`, 1),
-  ...Object.fromEntries(BUILDING_SPECS.map((b) => [b.id, model(b.glb, b.targetHeight)])),
-};
+export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, objectPlan);

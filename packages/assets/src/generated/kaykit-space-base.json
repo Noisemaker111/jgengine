@@ -1,0 +1,1199 @@
+[
+  {
+    "id": "kaykit-space-base/basemodule_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "basemodule_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.2481826543807983,
+        "d": 2.1759612560272217
+      },
+      "center": {
+        "x": -0.05186992883682251,
+        "z": 0.08798062801361084
+      },
+      "minY": -0.0000018477439880371094
+    }
+  },
+  {
+    "id": "kaykit-space-base/basemodule_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "basemodule_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0793932676315308,
+        "d": 2.316664934158325
+      },
+      "center": {
+        "x": -1.7881393432617188e-7,
+        "z": 0.04722321033477783
+      },
+      "minY": 3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kaykit-space-base/basemodule_C",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "basemodule_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.2055556774139404
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10277783870697021
+      },
+      "minY": 3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kaykit-space-base/basemodule_D",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "basemodule_D.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.4444446563720703,
+        "d": 2.1444426774978638
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kaykit-space-base/basemodule_E",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "basemodule_E.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.2222185134887695,
+        "d": 2.277772903442383
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06666922569274902
+      },
+      "minY": 3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kaykit-space-base/basemodule_garage",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "basemodule_garage.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.373955488204956
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09080004692077637
+      },
+      "minY": -0.0000018477439880371094
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargo_A_packed",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargo_A_packed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5205000042915344,
+        "d": 0.5204999446868896
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -0.01025011483579874
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargo_A_stacked",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargo_A_stacked.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0204999446868896,
+        "d": 1.0204999446868896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.01025011483579874
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargo_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargo_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.5205000042915344
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargo_B_packed",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargo_B_packed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5205000042915344,
+        "d": 0.5204999446868896
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -0.01025011483579874
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargo_B_stacked",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargo_B_stacked.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0204999446868896,
+        "d": 1.0204999446868896
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.01025011483579874
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargo_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargo_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.5205000042915344
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802322387695312e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargodepot_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargodepot_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0722213983535767,
+        "d": 2.082467198371887
+      },
+      "center": {
+        "x": -0.03611057996749878,
+        "z": -0.03098362684249878
+      },
+      "minY": -7.450580596923828e-8
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargodepot_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargodepot_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.082562804222107,
+        "d": 2.1778693199157715
+      },
+      "center": {
+        "x": -0.031031429767608643,
+        "z": -0.01671743392944336
+      },
+      "minY": 3.725290298461914e-9
+    }
+  },
+  {
+    "id": "kaykit-space-base/cargodepot_C",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "cargodepot_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.073691487312317,
+        "d": 2.0950868129730225
+      },
+      "center": {
+        "x": -0.026595771312713623,
+        "z": 0.04754340648651123
+      },
+      "minY": -0.0000015273690223693848
+    }
+  },
+  {
+    "id": "kaykit-space-base/containers_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "containers_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4999999850988388,
+        "d": 0.5
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 0
+      },
+      "minY": -0.0019850539974868298
+    }
+  },
+  {
+    "id": "kaykit-space-base/containers_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "containers_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4999999850988388,
+        "d": 0.5
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 0
+      },
+      "minY": -0.0019850539974868298
+    }
+  },
+  {
+    "id": "kaykit-space-base/containers_C",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "containers_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4999999850988388,
+        "d": 0.5
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 0
+      },
+      "minY": -0.0019850539974868298
+    }
+  },
+  {
+    "id": "kaykit-space-base/containers_D",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "containers_D.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4999999850988388,
+        "d": 0.5
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 0
+      },
+      "minY": -0.0019850539974868298
+    }
+  },
+  {
+    "id": "kaykit-space-base/drill_structure",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "drill_structure.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7501269578933716,
+        "d": 1.750126838684082
+      },
+      "center": {
+        "x": 0,
+        "z": 5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/lander_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "lander_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3717536926269531,
+        "d": 1.4217513799667358
+      },
+      "center": {
+        "x": 0.014125466346740723,
+        "z": 0.03912431001663208
+      },
+      "minY": -0.000003039836883544922
+    }
+  },
+  {
+    "id": "kaykit-space-base/lander_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "lander_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3717536926269531,
+        "d": 1.4217513799667358
+      },
+      "center": {
+        "x": 0.014125466346740723,
+        "z": 0.03912431001663208
+      },
+      "minY": -0.000003039836883544922
+    }
+  },
+  {
+    "id": "kaykit-space-base/lander_base",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "lander_base.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.343502938747406,
+        "d": 1.3435029983520508
+      },
+      "center": {
+        "x": 8.940696716308594e-8,
+        "z": 1.1920928955078125e-7
+      },
+      "minY": -0.000003039836883544922
+    }
+  },
+  {
+    "id": "kaykit-space-base/landingpad_large",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "landingpad_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.500000238418579,
+        "d": 2.5000005960464478
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -0.000003039836883544922
+    }
+  },
+  {
+    "id": "kaykit-space-base/landingpad_small",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "landingpad_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.900000274181366,
+        "d": 1.9000005722045898
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -0.000003039836883544922
+    }
+  },
+  {
+    "id": "kaykit-space-base/lights",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "lights.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6799910068511963,
+        "d": 0.6799799203872681
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -0.0000012838389693570207
+    }
+  },
+  {
+    "id": "kaykit-space-base/rock_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.533012717962265,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0.04999999701976776,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/rock_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "rock_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6952393651008606,
+        "d": 0.8027932047843933
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/rocks_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "rocks_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3141050338745117,
+        "d": 1.6428150534629822
+      },
+      "center": {
+        "x": -0.1331343650817871,
+        "z": -0.00032719969749450684
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/rocks_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "rocks_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.8810463547706604,
+        "d": 1.7384575009346008
+      },
+      "center": {
+        "x": -0.00907859206199646,
+        "z": -0.006633371114730835
+      },
+      "minY": -0.000012698579666903242
+    }
+  },
+  {
+    "id": "kaykit-space-base/roofmodule_base",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "roofmodule_base.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3952346444129944,
+        "d": 1.3952369689941406
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": -0.10000007599592209
+    }
+  },
+  {
+    "id": "kaykit-space-base/roofmodule_cargo_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "roofmodule_cargo_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3952346444129944,
+        "d": 1.3952369689941406
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": -0.10000007599592209
+    }
+  },
+  {
+    "id": "kaykit-space-base/roofmodule_cargo_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "roofmodule_cargo_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3952346444129944,
+        "d": 1.3952369689941406
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": -0.10000007599592209
+    }
+  },
+  {
+    "id": "kaykit-space-base/roofmodule_cargo_C",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "roofmodule_cargo_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3952346444129944,
+        "d": 1.3952369689941406
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": -0.10000007599592209
+    }
+  },
+  {
+    "id": "kaykit-space-base/roofmodule_solarpanels",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "roofmodule_solarpanels.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3952346444129944,
+        "d": 1.3952369689941406
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": -0.10000007599592209
+    }
+  },
+  {
+    "id": "kaykit-space-base/solarpanel",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "solarpanel.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8999999761581421,
+        "d": 0.44999998807907104
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0000013709068298339844
+      },
+      "minY": -0.0000027492642402648926
+    }
+  },
+  {
+    "id": "kaykit-space-base/spacetruck_large",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "spacetruck_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5045649111270905,
+        "d": 1.02772855758667
+      },
+      "center": {
+        "x": 0,
+        "z": -0.057928383350372314
+      },
+      "minY": -0.13354897499084473
+    }
+  },
+  {
+    "id": "kaykit-space-base/spacetruck_trailer",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "spacetruck_trailer.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4800001084804535,
+        "d": 0.9999999403953552
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.1431208774447441
+    }
+  },
+  {
+    "id": "kaykit-space-base/spacetruck",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "spacetruck.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.48949870467185974,
+        "d": 0.89332714676857
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0011280328035354614
+      },
+      "minY": -0.07789527624845505
+    }
+  },
+  {
+    "id": "kaykit-space-base/structure_low",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "structure_low.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7501269578933716,
+        "d": 1.750126838684082
+      },
+      "center": {
+        "x": 0,
+        "z": 5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/structure_tall",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "structure_tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7501269578933716,
+        "d": 1.750126838684082
+      },
+      "center": {
+        "x": 0,
+        "z": 5.960464477539063e-8
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_low_curved",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_low_curved.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_low",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_low.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_mining",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_mining.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_slope_inner_corner",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_slope_inner_corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_slope_outer_corner",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_slope_outer_corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_slope",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_slope.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_tall_curved",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_tall_curved.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/terrain_tall",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "terrain_tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1
+    }
+  },
+  {
+    "id": "kaykit-space-base/tunnel_diagonal_long_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "tunnel_diagonal_long_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.939037561416626,
+        "d": 2.9390376806259155
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 0.20000000298023224
+    }
+  },
+  {
+    "id": "kaykit-space-base/tunnel_diagonal_long_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "tunnel_diagonal_long_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.939037561416626,
+        "d": 2.9390376806259155
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": 0.20000000298023224
+    }
+  },
+  {
+    "id": "kaykit-space-base/tunnel_diagonal_short_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "tunnel_diagonal_short_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9390377402305603,
+        "d": 0.9390377402305603
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": -2.9802322387695312e-8
+      },
+      "minY": 0.20000000298023224
+    }
+  },
+  {
+    "id": "kaykit-space-base/tunnel_diagonal_short_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "tunnel_diagonal_short_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9390377402305603,
+        "d": 0.9390377402305603
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": -2.9802322387695312e-8
+      },
+      "minY": 0.20000000298023224
+    }
+  },
+  {
+    "id": "kaykit-space-base/tunnel_straight_A",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "tunnel_straight_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.9300000667572021
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.20000000298023224
+    }
+  },
+  {
+    "id": "kaykit-space-base/tunnel_straight_B",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "tunnel_straight_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.7999999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.20000000298023224
+    }
+  },
+  {
+    "id": "kaykit-space-base/windturbine_low",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "windturbine_low.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1435028910636902,
+        "d": 1.2904070615768433
+      },
+      "center": {
+        "x": 8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-space-base/windturbine_tall",
+    "source": "kaykit-space-base",
+    "categories": [
+      "scifi",
+      "environment",
+      "prop"
+    ],
+    "file": "windturbine_tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6652379631996155,
+        "d": 0.9998471140861511
+      },
+      "center": {
+        "x": 0.000004082918167114258,
+        "z": -0.054720014333724976
+      },
+      "minY": -0.0000025676779387140414
+    }
+  }
+]

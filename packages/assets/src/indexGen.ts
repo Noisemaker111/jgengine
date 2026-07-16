@@ -6,7 +6,7 @@ import type { AssetSource, IndexEntry, ModelDims } from "./manifest";
 import { sourceById } from "./sources";
 
 export function keyFromFile(file: string): string {
-  return file.replace(/\.glb$/i, "");
+  return file.replace(/\.gltf\.glb$/i, "").replace(/\.glb$/i, "");
 }
 
 export function entryForFile(source: AssetSource, file: string, dims?: ModelDims): IndexEntry {

@@ -1,0 +1,1115 @@
+[
+  {
+    "id": "kaykit-furniture/armchair_pillows",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "armchair_pillows.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.8000001907348633,
+        "d": 1.600000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/armchair",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "armchair.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.8000001907348633,
+        "d": 1.600000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/bed_double_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "bed_double_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.0999999046325684,
+        "d": 3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/bed_double_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "bed_double_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.100000023841858,
+        "d": 3
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/bed_single_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "bed_single_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.600000023841858,
+        "d": 3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/bed_single_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "bed_single_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.600000023841858,
+        "d": 3
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/book_set",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "book_set.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7799999713897705,
+        "d": 0.3649999648332596
+      },
+      "center": {
+        "x": 8.642673492431641e-7,
+        "z": 0.005042843520641327
+      },
+      "minY": -0.2499997317790985
+    }
+  },
+  {
+    "id": "kaykit-furniture/book_single",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "book_single.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.25999999046325684,
+        "d": 0.3649999648332596
+      },
+      "center": {
+        "x": 8.642673492431641e-7,
+        "z": 0.005042843520641327
+      },
+      "minY": -0.2499997317790985
+    }
+  },
+  {
+    "id": "kaykit-furniture/cabinet_medium_decorated",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cabinet_medium_decorated.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0416327714920044,
+        "d": 1.0015586018562317
+      },
+      "center": {
+        "x": 0.020816385746002197,
+        "z": 0.0007793009281158447
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/cabinet_medium",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cabinet_medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1.0015586018562317
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0007793009281158447
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/cabinet_small_decorated",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cabinet_small_decorated.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0476707220077515,
+        "d": 1.1038827896118164
+      },
+      "center": {
+        "x": -0.020590007305145264,
+        "z": 0.0519413948059082
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/cabinet_small",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cabinet_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.0015586018562317
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0007793009281158447
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/cactus_medium_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cactus_medium_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8799095451831818,
+        "d": 0.8368438184261322
+      },
+      "center": {
+        "x": -0.000007912516593933105,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 0.0000018132850527763367
+    }
+  },
+  {
+    "id": "kaykit-furniture/cactus_medium_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cactus_medium_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8799095451831818,
+        "d": 0.8368438184261322
+      },
+      "center": {
+        "x": -0.000007912516593933105,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 0.0000018132850527763367
+    }
+  },
+  {
+    "id": "kaykit-furniture/cactus_small_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cactus_small_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5000000149011612,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0.000007621943950653076,
+        "z": 0.0000015795230865478516
+      },
+      "minY": -3.6954881466044753e-7
+    }
+  },
+  {
+    "id": "kaykit-furniture/cactus_small_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "cactus_small_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5000000149011612,
+        "d": 0.5
+      },
+      "center": {
+        "x": 0.000007621943950653076,
+        "z": 0.0000015795230865478516
+      },
+      "minY": -3.6954881466044753e-7
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_A_wood",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_A_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.8451285362243652
+      },
+      "center": {
+        "x": 0,
+        "z": -0.04756432771682739
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.8451285362243652
+      },
+      "center": {
+        "x": 0,
+        "z": -0.04756432771682739
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_B_wood",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_B_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.8451285362243652
+      },
+      "center": {
+        "x": 0.0000152587890625,
+        "z": -0.04756432771682739
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.8451285362243652
+      },
+      "center": {
+        "x": 0.0000152587890625,
+        "z": -0.04756432771682739
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_C",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.935621440410614
+      },
+      "center": {
+        "x": -0.0000152587890625,
+        "z": -0.092810720205307
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_stool_wood",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_stool_wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.75
+      },
+      "center": {
+        "x": 0.0000152587890625,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/chair_stool",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "chair_stool.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.75,
+        "d": 0.75
+      },
+      "center": {
+        "x": 0.0000152587890625,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/couch_pillows",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "couch_pillows.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.000000238418579,
+        "d": 1.600000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/couch",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "couch.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.000000238418579,
+        "d": 1.600000023841858
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050000011920928955
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/lamp_standing",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "lamp_standing.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -1.1920928955078125e-7
+    }
+  },
+  {
+    "id": "kaykit-furniture/lamp_table",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "lamp_table.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -0.0016652223421260715
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_large_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_large_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0100001096725464,
+        "d": 0.20000008530419677
+      },
+      "center": {
+        "x": 0.004999995231628418,
+        "z": 0.10000000503161743
+      },
+      "minY": -0.6000000238418579
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_large_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_large_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.20000008530419677
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.10000000503161743
+      },
+      "minY": -0.6000000834465027
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_medium",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7000001072883606,
+        "d": 0.20000008530419677
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10000000503161743
+      },
+      "minY": -0.4500000476837158
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_small_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_small_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5000001192092896,
+        "d": 0.20000008530419677
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10000000503161743
+      },
+      "minY": -0.30000007152557373
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_small_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_small_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7000001072883606,
+        "d": 0.20000008530419677
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10000000503161743
+      },
+      "minY": -0.22000005841255188
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_small_C",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_small_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5000001192092896,
+        "d": 0.20000008530419677
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10000000503161743
+      },
+      "minY": -0.2500000596046448
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_standing_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_standing_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5,
+        "d": 0.3794697970151901
+      },
+      "center": {
+        "x": 0,
+        "z": -0.01847682148218155
+      },
+      "minY": -0.0010237395763397217
+    }
+  },
+  {
+    "id": "kaykit-furniture/pictureframe_standing_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pictureframe_standing_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7000001072883606,
+        "d": 0.3570172041654587
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": -0.007180027663707733
+      },
+      "minY": -0.00021269917488098145
+    }
+  },
+  {
+    "id": "kaykit-furniture/pillow_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pillow_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6500000059604645,
+        "d": 0.5000000596046448
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.09999999403953552
+    }
+  },
+  {
+    "id": "kaykit-furniture/pillow_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "pillow_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6500000059604645,
+        "d": 0.5000000596046448
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.09999999403953552
+    }
+  },
+  {
+    "id": "kaykit-furniture/rug_oval_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "rug_oval_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/rug_oval_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "rug_oval_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/rug_rectangle_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "rug_rectangle_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/rug_rectangle_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "rug_rectangle_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/rug_rectangle_stripes_A",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "rug_rectangle_stripes_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/rug_rectangle_stripes_B",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "rug_rectangle_stripes_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/shelf_A_big",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "shelf_A_big.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.5000000447034836
+      },
+      "center": {
+        "x": 0,
+        "z": 0.250000037252903
+      },
+      "minY": -0.29999980330467224
+    }
+  },
+  {
+    "id": "kaykit-furniture/shelf_A_small",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "shelf_A_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.5000000447034836
+      },
+      "center": {
+        "x": 0,
+        "z": 0.250000037252903
+      },
+      "minY": -0.29999980330467224
+    }
+  },
+  {
+    "id": "kaykit-furniture/shelf_B_large_decorated",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "shelf_B_large_decorated.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.5000000715752559
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.2500000238170168
+      },
+      "minY": -0.10000038146972656
+    }
+  },
+  {
+    "id": "kaykit-furniture/shelf_B_large",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "shelf_B_large.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.5000000715752559
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.2500000238170168
+      },
+      "minY": -0.10000038146972656
+    }
+  },
+  {
+    "id": "kaykit-furniture/shelf_B_small_decorated",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "shelf_B_small_decorated.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0000001192092896,
+        "d": 0.5713372946282345
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.28566863534350606
+      },
+      "minY": -0.10000038146972656
+    }
+  },
+  {
+    "id": "kaykit-furniture/shelf_B_small",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "shelf_B_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0000001192092896,
+        "d": 0.5000000715752559
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.2500000238170168
+      },
+      "minY": -0.10000038146972656
+    }
+  },
+  {
+    "id": "kaykit-furniture/table_low",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "table_low.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.4000000953674316,
+        "d": 1.5
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-furniture/table_medium_long",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "table_medium_long.glb",
+    "dims": {
+      "footprint": {
+        "w": 3,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/table_medium",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "table_medium.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -7.450580596923828e-9
+    }
+  },
+  {
+    "id": "kaykit-furniture/table_small",
+    "source": "kaykit-furniture",
+    "categories": [
+      "furniture",
+      "prop",
+      "interior"
+    ],
+    "file": "table_small.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -7.450580596923828e-9
+    }
+  }
+]

@@ -4,13 +4,13 @@ import type { AssetSource, SingleAsset } from "./manifest";
 import { verifyData, verifyManifest } from "./verify";
 
 const okSource: AssetSource = {
-  id: "kenney-nature",
-  provider: "kenney",
-  title: "Nature Kit",
+  id: "quaternius-stylized-nature",
+  provider: "quaternius",
+  title: "Stylized Nature MegaKit",
   license: "CC0-1.0",
-  author: "Kenney",
+  author: "Quaternius",
   categories: ["nature"],
-  download: { scrape: "https://kenney.nl/assets/nature-kit" },
+  download: { scrape: "https://quaternius.com/packs/stylizednaturemegakit.html" },
 };
 
 describe("verifyData", () => {
@@ -44,8 +44,10 @@ describe("verifyData", () => {
     const result = verifyData({
       sources: [],
       singles: [],
-      aliases: [{ key: "nature/ghost", target: "kenney-nature/does_not_exist" }],
-      index: [{ id: "kenney-nature/real", source: "kenney-nature", categories: ["nature"], file: "real.glb" }],
+      aliases: [{ key: "nature/ghost", target: "quaternius-stylized-nature/does_not_exist" }],
+      index: [
+        { id: "quaternius-stylized-nature/real", source: "quaternius-stylized-nature", categories: ["nature"], file: "real.glb" },
+      ],
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((error) => error.includes("not found"))).toBe(true);

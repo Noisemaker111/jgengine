@@ -1,5 +1,6 @@
 import { resolveArchiveUrl, downloadArchive } from "../packages/assets/src/download";
 import { sources } from "../packages/assets/src/sources";
+import type { AssetSource } from "../packages/assets/src/manifest";
 
 const TAG = "packs";
 const repo = process.env.GITHUB_REPOSITORY ?? "Noisemaker111/jgengine";
@@ -44,10 +45,16 @@ async function ensureRelease(): Promise<{ id: number; assets: { name: string }[]
   return { id: ((await created.json()) as { id: number }).id, assets: [] };
 }
 
+function isPriority(source: AssetSource): boolean {
+  const kind = source.kind ?? "model";
+  return kind === "model" || kind === "sprite";
+}
+
 const release = await ensureRelease();
 const have = new Set(release.assets.map((asset) => asset.name));
 let uploaded = 0;
-const failures: string[] = [];
+const softFailures: string[] = [];
+const hardFailures: string[] = [];
 
 for (const source of sources) {
   const assetName = `${source.provider}-${source.id}.zip`;
@@ -70,12 +77,16 @@ for (const source of sources) {
     uploaded += 1;
     console.log(`mirrored ${assetName} (${(archive.byteLength / 1_048_576).toFixed(1)} MB) from ${url}`);
   } catch (error) {
-    failures.push(`${assetName}: ${error instanceof Error ? error.message : String(error)}`);
+    const line = `${assetName}: ${error instanceof Error ? error.message : String(error)}`;
+    if (isPriority(source)) hardFailures.push(line);
+    else softFailures.push(line);
   }
 }
 
 console.log(
-  `mirror-assets: ${sources.length} catalog packs, ${have.size} already mirrored, ${uploaded} uploaded, ${failures.length} failed`,
+  `mirror-assets: ${sources.length} catalog packs, ${have.size} already mirrored, ${uploaded} uploaded, ${hardFailures.length} hard fails, ${softFailures.length} soft fails (materials)`,
 );
-for (const failure of failures) console.error(`  - ${failure}`);
-if (failures.length > 0) process.exit(1);
+for (const failure of softFailures) console.warn(`  ~ ${failure}`);
+for (const failure of hardFailures) console.error(`  - ${failure}`);
+// Materials 404s (stale ambientCG ids) must not block model/sprite mirroring.
+if (hardFailures.length > 0) process.exit(1);

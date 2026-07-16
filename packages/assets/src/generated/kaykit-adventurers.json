@@ -1,0 +1,674 @@
+[
+  {
+    "id": "kaykit-adventurers/arrow_bundle",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "arrow_bundle.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2920442968606949,
+        "d": 0.28695788979530334
+      },
+      "center": {
+        "x": -0.004841230809688568,
+        "z": 0.010057404637336731
+      },
+      "minY": -0.32719185948371887
+    }
+  },
+  {
+    "id": "kaykit-adventurers/arrow",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "arrow.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.11733995750546455,
+        "d": 0.10162632167339325
+      },
+      "center": {
+        "x": 0.0000034403055906295776,
+        "z": 0.016935043036937714
+      },
+      "minY": -0.38292860984802246
+    }
+  },
+  {
+    "id": "kaykit-adventurers/axe_1handed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "axe_1handed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7143203467130661,
+        "d": 0.18496182560920715
+      },
+      "center": {
+        "x": -0.23169700056314468,
+        "z": 5.736947059631348e-7
+      },
+      "minY": -0.27304908633232117
+    }
+  },
+  {
+    "id": "kaykit-adventurers/axe_2handed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "axe_2handed.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.239548683166504,
+        "d": 0.26180073618888855
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0000011622905731201172
+      },
+      "minY": -0.43298184871673584
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Barbarian",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Barbarian.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.974894997129568,
+        "d": 1.8502591910222737
+      },
+      "center": {
+        "x": -0.015458569234047537,
+        "z": 0.3998250197287797
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/crossbow_1handed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "crossbow_1handed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9114131033420563,
+        "d": 1.2218839526176453
+      },
+      "center": {
+        "x": 0.0012482255697250366,
+        "z": 0.33325251936912537
+      },
+      "minY": -0.17123575508594513
+    }
+  },
+  {
+    "id": "kaykit-adventurers/crossbow_2handed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "crossbow_2handed.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2231536507606506,
+        "d": 1.4408700466156006
+      },
+      "center": {
+        "x": 0.00001755356788635254,
+        "z": 0.442745566368103
+      },
+      "minY": -0.17123575508594513
+    }
+  },
+  {
+    "id": "kaykit-adventurers/dagger",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "dagger.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2592974379658699,
+        "d": 0.15174122154712677
+      },
+      "center": {
+        "x": 0.009482886642217636,
+        "z": 7.450580596923828e-9
+      },
+      "minY": -0.22489459812641144
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Knight",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Knight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.6892934902919494,
+        "d": 2.577180897666162
+      },
+      "center": {
+        "x": 0.04200405905131843,
+        "z": 0.7091565314913972
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Mage",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Mage.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.425716446903504,
+        "d": 2.5448104818275112
+      },
+      "center": {
+        "x": 0.08435849880093571,
+        "z": -0.018152036592924414
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/mug_empty",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "mug_empty.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5342333763837814,
+        "d": 0.3959590047597885
+      },
+      "center": {
+        "x": 0.06913799792528152,
+        "z": -2.3096799850463867e-7
+      },
+      "minY": -0.23884634673595428
+    }
+  },
+  {
+    "id": "kaykit-adventurers/mug_full",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "mug_full.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5342333763837814,
+        "d": 0.3959590047597885
+      },
+      "center": {
+        "x": 0.06913799792528152,
+        "z": -2.3096799850463867e-7
+      },
+      "minY": -0.23884634673595428
+    }
+  },
+  {
+    "id": "kaykit-adventurers/quiver",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "quiver.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.30543237924575806,
+        "d": 0.1944693997502327
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024237211793661118
+      },
+      "minY": -0.5085819363594055
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Rogue_Hooded",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Rogue_Hooded.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.9449818820744484,
+        "d": 1.5483866200865448
+      },
+      "center": {
+        "x": -0.4691928529064687,
+        "z": 0.20674141575997773
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/Rogue",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "Rogue.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.9449818820744484,
+        "d": 1.4772370622576416
+      },
+      "center": {
+        "x": -0.4691928529064687,
+        "z": 0.24231619467442933
+      },
+      "minY": -0.000026527046429691836
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_badge_color",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_badge_color.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826073110103607,
+        "d": 0.2458796128630638
+      },
+      "center": {
+        "x": 0.0000029653310775756836,
+        "z": -0.02182820811867714
+      },
+      "minY": -0.5401484966278076
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_badge",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_badge.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826073110103607,
+        "d": 0.2458796128630638
+      },
+      "center": {
+        "x": 0.0000029653310775756836,
+        "z": -0.02182820811867714
+      },
+      "minY": -0.5401484966278076
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_round_barbarian",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_round_barbarian.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826070427894592,
+        "d": 0.331945538520813
+      },
+      "center": {
+        "x": 0.0000028312206268310547,
+        "z": 0.02120475471019745
+      },
+      "minY": -0.44131818413734436
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_round_color",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_round_color.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826070427894592,
+        "d": 0.331945538520813
+      },
+      "center": {
+        "x": 0.0000028312206268310547,
+        "z": 0.02120475471019745
+      },
+      "minY": -0.44131818413734436
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_round",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_round.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826070427894592,
+        "d": 0.331945538520813
+      },
+      "center": {
+        "x": -0.0000028312206268310547,
+        "z": 0.02120475471019745
+      },
+      "minY": -0.44131818413734436
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_spikes_color",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_spikes_color.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0070413947105408,
+        "d": 0.4597856253385544
+      },
+      "center": {
+        "x": 0.0000028312206268310547,
+        "z": 0.08512479811906815
+      },
+      "minY": -0.555518388748169
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_spikes",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_spikes.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0070413947105408,
+        "d": 0.4597856253385544
+      },
+      "center": {
+        "x": 0.0000028312206268310547,
+        "z": 0.08512479811906815
+      },
+      "minY": -0.555518388748169
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_square_color",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_square_color.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826133906841278,
+        "d": 0.30108028650283813
+      },
+      "center": {
+        "x": -7.450580596923828e-8,
+        "z": 0.005772128701210022
+      },
+      "minY": -0.5964440107345581
+    }
+  },
+  {
+    "id": "kaykit-adventurers/shield_square",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "shield_square.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8826133906841278,
+        "d": 0.30108028650283813
+      },
+      "center": {
+        "x": -7.450580596923828e-8,
+        "z": 0.005772128701210022
+      },
+      "minY": -0.5964440107345581
+    }
+  },
+  {
+    "id": "kaykit-adventurers/smokebomb",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "smokebomb.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3825877606868744,
+        "d": 0.3638625741004944
+      },
+      "center": {
+        "x": 0.0000010728836059570312,
+        "z": -0.0000025480985641479492
+      },
+      "minY": -0.17134758830070496
+    }
+  },
+  {
+    "id": "kaykit-adventurers/spellbook_closed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "spellbook_closed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.29302287101745605,
+        "d": 0.42714478075504303
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0021018609404563904
+      },
+      "minY": -0.28749969601631165
+    }
+  },
+  {
+    "id": "kaykit-adventurers/spellbook_open",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "spellbook_open.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8281691670417786,
+        "d": 0.2219403013586998
+      },
+      "center": {
+        "x": 0,
+        "z": 0.023397032171487808
+      },
+      "minY": -0.2844379246234894
+    }
+  },
+  {
+    "id": "kaykit-adventurers/staff",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "staff.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5762094408273697,
+        "d": 0.2923450767993927
+      },
+      "center": {
+        "x": 0.042737267911434174,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": -0.9004455804824829
+    }
+  },
+  {
+    "id": "kaykit-adventurers/sword_1handed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "sword_1handed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5034445822238922,
+        "d": 0.13063345104455948
+      },
+      "center": {
+        "x": 0.0000036209821701049805,
+        "z": -1.1175870895385742e-8
+      },
+      "minY": -0.36576569080352783
+    }
+  },
+  {
+    "id": "kaykit-adventurers/sword_2handed_color",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "sword_2handed_color.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8390286266803741,
+        "d": 0.2480197474360466
+      },
+      "center": {
+        "x": 0.0000035315752029418945,
+        "z": -7.078051567077637e-8
+      },
+      "minY": -0.4013613760471344
+    }
+  },
+  {
+    "id": "kaykit-adventurers/sword_2handed",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "sword_2handed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8390286266803741,
+        "d": 0.2480197474360466
+      },
+      "center": {
+        "x": 0.0000035315752029418945,
+        "z": -7.078051567077637e-8
+      },
+      "minY": -0.4013613760471344
+    }
+  },
+  {
+    "id": "kaykit-adventurers/wand",
+    "source": "kaykit-adventurers",
+    "categories": [
+      "character",
+      "rigged",
+      "fantasy"
+    ],
+    "file": "wand.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.16059501469135284,
+        "d": 0.16059502959251404
+      },
+      "center": {
+        "x": -0.000029809772968292236,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": -0.26569339632987976
+    }
+  }
+]

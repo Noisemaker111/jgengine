@@ -12,7 +12,7 @@ import { bodyColor, type AlienBodyPlan } from "../creatures/bodyPlan";
 import { moodOf } from "../needs/needs";
 import { MOOD_COLORS } from "../palette";
 import { householdStore } from "../session/store";
-import { ALIEN_MESH_IDS, alienMeshUrl } from "../models";
+import { resolveAlienMeshUrl } from "../models";
 
 const ALIEN_HEIGHT = 1.7;
 
@@ -143,10 +143,7 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   const household = useStore(householdStore);
   const groupRef = useRef<THREE.Group>(null);
   const phase = useMemo(() => (hash(entity.id) % 628) / 100, [entity.id]);
-  const meshUrl = useMemo(
-    () => alienMeshUrl(ALIEN_MESH_IDS[hash(entity.id) % ALIEN_MESH_IDS.length]!),
-    [entity.id],
-  );
+  const meshUrl = useMemo(() => resolveAlienMeshUrl(hash(entity.id)), [entity.id]);
 
   const member = household.members[entity.id];
   const moving = member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander");
@@ -179,18 +176,25 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
 
   return (
     <group ref={groupRef}>
-      <ModelErrorBoundary>
-        <Suspense fallback={null}>
-          <AlienModel
-            meshUrl={meshUrl}
-            scale={scale}
-            color={color}
-            emissive={emissive}
-            emissiveIntensity={emissiveIntensity}
-            moving={moving}
-          />
-        </Suspense>
-      </ModelErrorBoundary>
+      {meshUrl !== null ? (
+        <ModelErrorBoundary>
+          <Suspense fallback={null}>
+            <AlienModel
+              meshUrl={meshUrl}
+              scale={scale}
+              color={color}
+              emissive={emissive}
+              emissiveIntensity={emissiveIntensity}
+              moving={moving}
+            />
+          </Suspense>
+        </ModelErrorBoundary>
+      ) : (
+        <mesh scale={scale} position={[0, ALIEN_HEIGHT * 0.5, 0]}>
+          <capsuleGeometry args={[0.28, ALIEN_HEIGHT * 0.55, 6, 10]} />
+          <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} />
+        </mesh>
+      )}
       {eyes}
     </group>
   );

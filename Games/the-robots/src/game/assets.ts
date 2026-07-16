@@ -1,15 +1,15 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
+/** Preferred CC0 packs for this game — pull + reindex to light up MODEL_PLAN ids. */
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   sources: [
-    "kenney-blaster",
-    "kenney-space",
-    "kenney-mini-characters",
-    "kenney-survival",
-    "kenney-nature",
-    "kenney-mini-arena",
+    "quaternius-modular-scifi",
+    "quaternius-stylized-nature",
+    "kaykit-adventurers",
+    "kaykit-skeletons",
+    "kaykit-space-base",
   ],
 });
 

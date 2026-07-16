@@ -6,27 +6,27 @@ import { buildCatalog, entryUrl } from "./build";
 describe("buildCatalog", () => {
   test("resolves an index id to a provider-pathed url", () => {
     const catalog = buildCatalog({ basePath: "/models" });
-    const resolved = catalog.resolve("kenney-nature/tree_pineDefaultA");
+    const resolved = catalog.resolve("quaternius-stylized-nature/Pine_1");
     expect(resolved).not.toBeNull();
-    expect(resolved?.url).toBe("/models/kenney-nature/tree_pineDefaultA.glb");
+    expect(resolved?.url).toBe("/models/quaternius-stylized-nature/Pine_1.glb");
   });
 
   test("entryUrl strips trailing slashes from basePath", () => {
-    const entry = { id: "s/a", source: "kenney-space", categories: ["space"], file: "a.glb" };
-    expect(entryUrl("/models/", entry)).toBe("/models/kenney-space/a.glb");
+    const entry = { id: "s/a", source: "quaternius-modular-scifi", categories: ["scifi"], file: "a.glb" };
+    expect(entryUrl("/models/", entry)).toBe("/models/quaternius-modular-scifi/a.glb");
   });
 
   test("aliases resolve to the same url as their target", () => {
     const catalog = buildCatalog({ basePath: "/models" });
     expect(catalog.resolve("nature/tree_pine")?.url).toBe(
-      catalog.resolve("kenney-nature/tree_pineDefaultA")?.url,
+      catalog.resolve("quaternius-stylized-nature/Pine_1")?.url,
     );
   });
 
   test("sources filter excludes other providers", () => {
-    const catalog = buildCatalog({ basePath: "/models", sources: ["kenney-space"] });
-    expect(catalog.has("kenney-space/astronautA")).toBe(true);
-    expect(catalog.has("kenney-nature/tree_pineDefaultA")).toBe(false);
+    const catalog = buildCatalog({ basePath: "/models", sources: ["quaternius-modular-scifi"] });
+    expect(catalog.has("quaternius-modular-scifi/Alien_Cyclop")).toBe(true);
+    expect(catalog.has("quaternius-stylized-nature/Pine_1")).toBe(false);
   });
 
   test("every generated entry is registered", () => {

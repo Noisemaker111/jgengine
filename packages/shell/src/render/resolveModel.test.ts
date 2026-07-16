@@ -2,19 +2,25 @@ import { describe, expect, test } from "bun:test";
 
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-import { createModelMapResolver, resolveModel, tryResolveCatalogModel } from "./resolveModel";
+import {
+  createModelMapResolver,
+  pickModel,
+  resolveModel,
+  resolveModelPlan,
+  tryResolveCatalogModel,
+} from "./resolveModel";
 
 describe("resolveModel", () => {
   const assets = createAssetCatalog();
-  assets.register("kenney-space/astronautA", { url: "/models/kenney-space/astronautA.glb" });
+  assets.register("quaternius-modular-scifi/astronautA", { url: "/models/quaternius-modular-scifi/astronautA.glb" });
   assets.register("crate", {
     url: "/models/crate.glb",
     dims: { footprint: { w: 1, d: 1 }, center: { x: 0.5, z: 0.5 }, minY: 0 },
   });
 
   test("resolves a known string id to a ModelConfig", () => {
-    expect(resolveModel("kenney-space/astronautA", assets)).toEqual({
-      url: "/models/kenney-space/astronautA.glb",
+    expect(resolveModel("quaternius-modular-scifi/astronautA", assets)).toEqual({
+      url: "/models/quaternius-modular-scifi/astronautA.glb",
     });
   });
 
@@ -59,7 +65,7 @@ describe("tryResolveCatalogModel", () => {
 
 describe("createModelMapResolver", () => {
   const assets = createAssetCatalog();
-  assets.register("scatter/pine", { url: "/models/kenney-nature/tree_pine.glb" });
+  assets.register("scatter/pine", { url: "/models/quaternius-stylized-nature/tree_pine.glb" });
 
   test("undefined when either the map or the catalog is missing", () => {
     expect(createModelMapResolver(undefined, assets, "scatterModels")).toBeUndefined();
@@ -73,11 +79,56 @@ describe("createModelMapResolver", () => {
 
   test("mapped key resolves through the catalog", () => {
     const resolveItem = createModelMapResolver({ pine: "scatter/pine" }, assets, "scatterModels")!;
-    expect(resolveItem("pine")).toEqual({ url: "/models/kenney-nature/tree_pine.glb" });
+    expect(resolveItem("pine")).toEqual({ url: "/models/quaternius-stylized-nature/tree_pine.glb" });
   });
 
   test("mapped key with a missing catalog id throws, naming the seam and key", () => {
     const resolveItem = createModelMapResolver({ pine: "typo/pine" }, assets, "scatterModels")!;
     expect(() => resolveItem("pine")).toThrow(/scatterModels\["pine"\] → "typo\/pine"/);
+  });
+});
+
+describe("pickModel / resolveModelPlan", () => {
+  const assets = createAssetCatalog();
+  assets.register("quaternius-modular-scifi/astronautA", {
+    url: "/models/quaternius-modular-scifi/astronautA.glb",
+  });
+  assets.register("kaykit-adventurers/Rogue", { url: "/models/kaykit-adventurers/Rogue.glb" });
+
+  test("prefers model when live", () => {
+    expect(
+      pickModel(assets, {
+        model: "kaykit-adventurers/Rogue",
+        fallbackModel: "quaternius-modular-scifi/astronautA",
+        style: { targetHeight: 1.8 },
+      }),
+    ).toEqual({
+      url: "/models/kaykit-adventurers/Rogue.glb",
+      targetHeight: 1.8,
+    });
+  });
+
+  test("falls through to fallbackModel when preferred is missing", () => {
+    expect(
+      pickModel(assets, {
+        model: "missing/pack",
+        fallbackModel: "quaternius-modular-scifi/astronautA",
+      }),
+    ).toEqual({ url: "/models/quaternius-modular-scifi/astronautA.glb" });
+  });
+
+  test("returns undefined when neither id is in the catalog (primitive seam)", () => {
+    expect(pickModel(assets, { model: "a/b", fallbackModel: "c/d" })).toBeUndefined();
+  });
+
+  test("resolveModelPlan omits unresolved keys", () => {
+    expect(
+      resolveModelPlan(assets, {
+        hero: { model: "kaykit-adventurers/Rogue" },
+        crate: { model: "missing/box" },
+      }),
+    ).toEqual({
+      hero: { url: "/models/kaykit-adventurers/Rogue.glb" },
+    });
   });
 });

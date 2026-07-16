@@ -7,6 +7,7 @@ import {
   extractGlbs,
   extractSpriteFiles,
   mirrorOverrideUrl,
+  packGltfToGlb,
   sha256Hex,
   type FetchLike,
 } from "./download";
@@ -48,6 +49,40 @@ function fetchFrom(table: Record<string, () => Response>, calls: string[] = []):
     return respond();
   }) as FetchLike;
 }
+
+describe("packGltfToGlb / extractGlbs", () => {
+  test("packs a gltf + bin pair into a glb", () => {
+    const gltf = new TextEncoder().encode(
+      JSON.stringify({
+        asset: { version: "2.0" },
+        buffers: [{ uri: "Alien.bin", byteLength: 4 }],
+      }),
+    );
+    const bin = new Uint8Array([1, 2, 3, 4]);
+    const glb = packGltfToGlb(gltf, bin);
+    const magic = new TextDecoder().decode(glb.slice(0, 4));
+    expect(magic).toBe("glTF");
+    expect(glb.byteLength).toBeGreaterThan(12);
+  });
+
+  test("extractGlbs converts co-located gltf+bin and prefers native glb", () => {
+    const gltf = new TextEncoder().encode(
+      JSON.stringify({ asset: { version: "2.0" }, buffers: [{ uri: "prop.bin", byteLength: 2 }] }),
+    );
+    const archive = zipSync({
+      "pack/glTF/prop.gltf": gltf,
+      "pack/glTF/prop.bin": new Uint8Array([9, 8]),
+      "pack/GLB/hero.glb": new TextEncoder().encode("native-glb"),
+      "pack/glTF/hero.gltf": gltf,
+      "pack/glTF/hero.bin": new Uint8Array([1, 1]),
+    });
+    const files = extractGlbs(archive);
+    const byName = Object.fromEntries(files.map((entry) => [entry.file, entry.bytes]));
+    expect(Object.keys(byName).sort()).toEqual(["hero.glb", "prop.glb"]);
+    expect(new TextDecoder().decode(byName["hero.glb"]!)).toBe("native-glb");
+    expect(new TextDecoder().decode(byName["prop.glb"]!.slice(0, 4))).toBe("glTF");
+  });
+});
 
 describe("extractSpriteFiles", () => {
   test("pulls svg and png files out of a nested archive, deduped by basename", () => {

@@ -1,63 +1,76 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
 
 import { assets } from "./assets";
 import { BASE_CATALOG_ID } from "./entities/base/catalog";
 import { CREEP_CATALOG, type CreepDef } from "./entities/enemies/catalog";
 
-const TOWER_DEFENSE = "/models/kenney-tower-defense";
-const ARENA = "/models/kenney-mini-arena";
+const VILLAGE = "quaternius-medieval-village";
+const NATURE = "quaternius-stylized-nature";
+const DUNGEON = "kaykit-dungeon";
+const CHAR = "kaykit-adventurers";
+const SKEL = "kaykit-skeletons";
 
 const RAIDER_HEIGHT = 1.8;
 const RAIDER_CLIPS = { idle: "idle", walk: "walk" } as const;
 
-function raiderModel(def: CreepDef): ModelConfig {
+function raiderPick(def: CreepDef): ModelPick {
   return {
-    url: `${ARENA}/character-soldier.glb`,
-    targetHeight: RAIDER_HEIGHT * def.scale,
-    material: { color: def.color },
-    animation: { states: { ...RAIDER_CLIPS }, oneShots: { death: "die" } },
+    model: `${CHAR}/Rogue`,
+    fallbackModel: `${SKEL}/Skeleton_Rogue`,
+    style: {
+      targetHeight: RAIDER_HEIGHT * def.scale,
+      material: { color: def.color },
+      animation: { states: { ...RAIDER_CLIPS }, oneShots: { death: "die" } },
+    },
   };
 }
 
-const TOWER_MODEL: Record<string, ModelConfig> = {
-  tower_archer: { url: `${TOWER_DEFENSE}/weapon-ballista.glb`, targetHeight: 2.1 },
-  tower_cannon: { url: `${TOWER_DEFENSE}/weapon-cannon.glb`, targetHeight: 1.55 },
+const TOWER_PLAN: Record<string, ModelPick> = {
+  tower_archer: {
+    model: `${DUNGEON}/wall_archedwindow_gated`,
+    fallbackModel: `${DUNGEON}/wall_pillar`,
+    style: { targetHeight: 2.1 },
+  },
+  tower_cannon: {
+    model: `${DUNGEON}/wall_scaffold`,
+    fallbackModel: `${DUNGEON}/wall_arched`,
+    style: { targetHeight: 1.55 },
+  },
   tower_frost: {
-    url: `${TOWER_DEFENSE}/tower-round-crystals.glb`,
-    targetHeight: 2,
-    material: { emissive: "#3fb9d1", emissiveIntensity: 0.5 },
+    model: `${DUNGEON}/wall_corner_gated`,
+    fallbackModel: `${DUNGEON}/pillar_decorated`,
+    style: {
+      targetHeight: 2,
+      material: { emissive: "#3fb9d1", emissiveIntensity: 0.5 },
+    },
   },
 };
 
-const KEEP_MODULE_HEIGHT = 1.01;
-const KEEP_SCALE = 1.6;
-const keepBase = assets.resolve("kenney-castle/tower-square-base")!;
-
-const KEEP_MODEL: ModelConfig = {
-  url: keepBase.url,
-  dims: keepBase.dims,
-  scale: KEEP_SCALE,
-  parts: [
-    {
-      model: "kenney-castle/tower-square-mid-windows",
-      position: [0, KEEP_MODULE_HEIGHT * KEEP_SCALE, 0],
-      scale: KEEP_SCALE,
-    },
-    {
-      model: "kenney-castle/tower-square-roof",
-      position: [0, KEEP_MODULE_HEIGHT * 2 * KEEP_SCALE, 0],
-      scale: KEEP_SCALE,
-    },
-  ],
+const KEEP_PLAN: ModelPick = {
+  model: `${DUNGEON}/wall_arched`,
+  fallbackModel: `${VILLAGE}/Wall_UnevenBrick_Straight`,
+  style: { scale: 1.6 },
 };
 
-export const entityModels: Record<string, ModelConfig> = {
-  [BASE_CATALOG_ID]: KEEP_MODEL,
-  ...TOWER_MODEL,
-  ...Object.fromEntries(Object.values(CREEP_CATALOG).map((def) => [def.id, raiderModel(def)])),
-};
+function buildEntityModels(): Record<string, ModelConfig> {
+  const plan: Record<string, ModelPick> = {
+    [BASE_CATALOG_ID]: KEEP_PLAN,
+    ...TOWER_PLAN,
+  };
+  for (const def of Object.values(CREEP_CATALOG)) {
+    plan[def.id] = raiderPick(def);
+  }
+  return resolveModelPlan(assets, plan);
+}
 
-/** Scatter palette item id → asset catalog id; the forest/meadow regions' `pine` placements GPU-instance this real GLB instead of the stylized proxy conifer. */
-export const scatterModels: Record<string, string> = {
-  pine: "scatter/pine",
-};
+export const entityModels: Record<string, ModelConfig> = buildEntityModels();
+
+/** Scatter palette item → catalog id when live; else InstancedScatter stylized proxy. */
+export const scatterModels: Record<string, string> = {};
+for (const id of [`${NATURE}/Pine_1`, `${NATURE}/Pine_2`, "nature/tree_pine"] as const) {
+  if (assets.resolve(id) !== null) {
+    scatterModels.pine = id;
+    break;
+  }
+}
