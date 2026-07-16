@@ -54,6 +54,25 @@ idea are his. three-start is MIT-licensed; go star it.
 
 The **[`references/visual-scorecard.md`](.claude/skills/jgengine-ui/references/visual-scorecard.md)** rubric in the `jgengine-ui` skill adapts the structure — a 0–3 scale, ten scored categories, premium/showcase pass thresholds, an automatic-failure list, and a fresh-eyes take-the-lower-score reconciliation — of `visual-scorecard.md` from **[threejs-game-skills](https://github.com/majidmanzarpour/threejs-game-skills)** by **[Majid Manzarpour](https://x.com/majidmanzarpour)** (MIT License). Every category, threshold, and example is reworded for this engine's own terms (`environment()`, `AuthoredScene`, `InstancedScatter`, `summarizeEnvironment`) and none of the source repo's prose or assets were copied — only the rubric shape.
 
+## Kay Lousberg (KayKit)
+
+JGengine's `@jgengine/assets` catalog mirrors **[KayKit](https://kaylousberg.itch.io)**
+packs by **[Kay Lousberg](https://kaylousberg.itch.io)** (CC0-1.0) —
+GitHub-mirrored (`github.com/KayKit-Game-Assets`) `.glb` characters and props:
+adventurers, skeletons, dungeon kits, a medieval hexagon pack, furniture,
+city-builder bits, and space-base bits
+([`packages/assets/src/sources/kaykit.ts`](packages/assets/src/sources/kaykit.ts)).
+CC0 — no attribution required, credited here anyway. Go play his games.
+
+## Quaternius
+
+JGengine's `@jgengine/assets` catalog mirrors **[Quaternius](https://quaternius.com)**
+megakits (CC0-1.0) — stylized nature, medieval village, downtown city, modular
+sci-fi, fantasy props, base characters, animated animals, and monsters
+([`packages/assets/src/sources/quaternius.ts`](packages/assets/src/sources/quaternius.ts)).
+CC0 — no attribution required, credited here anyway. Broadest low-poly CC0
+library around; go star it.
+
 ## Game concepts
 
 Some of the games in `Games/*` are our own take on someone else's idea. We
