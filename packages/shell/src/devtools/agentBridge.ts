@@ -5,6 +5,12 @@ import {
   listActiveHudLayouts,
   type HudPlacement,
 } from "@jgengine/core/ui/hudLayout";
+import {
+  listHudPanelTypes,
+  resolvePanelResize,
+  resizePanelSize,
+  type EditorUiPanelLayout,
+} from "@jgengine/core/ui/hudDocument";
 import { buildFullReport, buildLeanReport } from "./DevtoolsOverlay";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
@@ -61,10 +67,39 @@ function canvasPanels() {
         anchor: panel.placement.anchor,
         dx: panel.placement.dx,
         dy: panel.placement.dy,
+        width: panel.width,
+        height: panel.height,
+        visible: panel.visible,
+        type: panel.type,
         moved: panel.moved,
       })),
     };
   });
+}
+
+function writeUiPanelDocument(id: string, panel: EditorUiPanelLayout): boolean {
+  const host = window.__jgengineEditorHost;
+  if (host === undefined) return false;
+  host.handle({
+    method: "dispatch",
+    command: { type: "setUiPanel", id, patch: panel },
+  });
+  return true;
+}
+
+function panelLayoutSnapshot(
+  placement: HudPlacement,
+  extras?: { width?: number; height?: number; visible?: boolean; type?: string },
+): EditorUiPanelLayout {
+  return {
+    anchor: placement.anchor,
+    dx: placement.dx,
+    dy: placement.dy,
+    ...(extras?.width === undefined ? {} : { width: extras.width }),
+    ...(extras?.height === undefined ? {} : { height: extras.height }),
+    ...(extras?.visible === undefined ? {} : { visible: extras.visible }),
+    ...(extras?.type === undefined ? {} : { type: extras.type }),
+  };
 }
 
 /**
@@ -129,12 +164,106 @@ export function installAgentBridge(options: {
         }
         const placement: HudPlacement = { anchor, dx, dy };
         for (const layout of listActiveHudLayouts()) {
-          if (layout.getState().panels[id] === undefined) continue;
-          layout.hydrate(JSON.stringify({ v: 1, panels: { [id]: placement } }));
-          return { ok: true, id, placement };
+          const existing = layout.getState().panels[id];
+          if (existing === undefined) continue;
+          layout.hydrate(
+            JSON.stringify({
+              v: 2,
+              panels: {
+                [id]: {
+                  ...placement,
+                  ...(existing.width === undefined ? {} : { width: existing.width }),
+                  ...(existing.height === undefined ? {} : { height: existing.height }),
+                  ...(existing.visible === false ? { visible: false } : {}),
+                  ...(existing.type === undefined ? {} : { type: existing.type }),
+                },
+              },
+            }),
+          );
+          const panel = layout.getState().panels[id]!;
+          const uiPanel = panelLayoutSnapshot(panel.placement, {
+            width: panel.width,
+            height: panel.height,
+            visible: panel.visible,
+            type: panel.type,
+          });
+          const document = writeUiPanelDocument(id, uiPanel);
+          return { ok: true, id, placement: panel.placement, panel: uiPanel, document };
         }
         return { ok: false, error: `no HUD panel "${id}" — canvas_state lists ids` };
       }
+      case "canvas_resize_panel": {
+        const id = typeof request.id === "string" ? request.id : "";
+        if (id === "") {
+          return { ok: false, error: "canvas_resize_panel needs { id, width?/height? or dw?/dh? }" };
+        }
+        for (const layout of listActiveHudLayouts()) {
+          const existing = layout.getState().panels[id];
+          if (existing === undefined) continue;
+          const resize = resolvePanelResize(existing.type);
+          const current = {
+            width: existing.width ?? (typeof request.width === "number" ? request.width : 100),
+            height: existing.height ?? (typeof request.height === "number" ? request.height : 40),
+          };
+          let next = current;
+          if (typeof request.width === "number" || typeof request.height === "number") {
+            const absolute = {
+              width: typeof request.width === "number" ? request.width : current.width,
+              height: typeof request.height === "number" ? request.height : current.height,
+            };
+            next = resizePanelSize(
+              current,
+              { dw: absolute.width - current.width, dh: absolute.height - current.height },
+              "both",
+              resize,
+            );
+          } else {
+            const dw = typeof request.dw === "number" ? request.dw : 0;
+            const dh = typeof request.dh === "number" ? request.dh : 0;
+            next = resizePanelSize(current, { dw, dh }, resize.axes, resize);
+          }
+          layout.hydrate(
+            JSON.stringify({
+              v: 2,
+              panels: {
+                [id]: {
+                  anchor: existing.placement.anchor,
+                  dx: existing.placement.dx,
+                  dy: existing.placement.dy,
+                  width: next.width,
+                  height: next.height,
+                  ...(existing.visible === false ? { visible: false } : {}),
+                  ...(existing.type === undefined ? {} : { type: existing.type }),
+                },
+              },
+            }),
+          );
+          const panel = layout.getState().panels[id]!;
+          const uiPanel = panelLayoutSnapshot(panel.placement, {
+            width: panel.width,
+            height: panel.height,
+            visible: panel.visible,
+            type: panel.type,
+          });
+          const document = writeUiPanelDocument(id, uiPanel);
+          return { ok: true, id, size: next, panel: uiPanel, document };
+        }
+        return { ok: false, error: `no HUD panel "${id}" — canvas_state lists ids` };
+      }
+      case "canvas_list_panel_types":
+        return {
+          ok: true,
+          types: listHudPanelTypes().map((def) => ({
+            id: def.id,
+            label: def.label,
+            resize: def.resize,
+            minWidth: def.minWidth,
+            maxWidth: def.maxWidth,
+            minHeight: def.minHeight,
+            maxHeight: def.maxHeight,
+            hasSchema: def.schema !== undefined,
+          })),
+        };
       case "canvas_reset": {
         const id = typeof request.id === "string" ? request.id : undefined;
         const layouts = listActiveHudLayouts();

@@ -109,7 +109,7 @@ browserless by `scripts/editor-mvp.test.ts`.
 ## The F2 chord family — three modes, all agent-usable headless
 
 - **F2+D — debug mode**: engine devtools overlay (Perf/Tune/Logs/Net/Keys/Col). A plain F2 tap does nothing; F2 is only the chord holder.
-- **F2+C — canvas mode**: HUD layout editing — drag `HudPanel`s live (`HudCanvas` `editChord`).
+- **F2+C — canvas mode**: HUD layout (`document.ui.panels`) — drag/resize; TSX props fallback-only.
 - **F2+E — editor mode**: this scene editor.
 
 Agents never need a user-launched server: `bun run drive` boots the dev server **and** headless Chromium itself, and every `GamePlayerShell` page installs `window.__jgengineAgent` — one RPC surface covering all three modes (`--rpc` prefers it, falls back to the raw editor host). Unknown verbs delegate to the live editor host, so all editor verbs below work through it too.
@@ -124,7 +124,7 @@ bun run drive <id> --rpc '{"method":"editor_summon"}' --wait 2000 --rpc '{"metho
 bun run drive <id> --mode editor --rpc '{"method":"set_transform","id":"boss","x":-90,"z":-650}' --rpc '{"method":"export_document"}'
 ```
 
-Canvas verbs: `canvas_state`, `canvas_set_editing {editing}`, `canvas_move_panel {id, anchor, dx?, dy?}`, `canvas_reset {id?}`. Debug verbs: `debug_open {open?}`, `debug_snapshot`, `debug_report`. Editor extras: `save_scene` writes the live document to `Games/<id>/src/editor.scene.json` through the dev-server save endpoint — the headless Ctrl+S. Menu-gated games: `--click`/`--key` steps first, then RPC. For pure document edits without WebGL, use the headless CLI below.
+Canvas verbs: `canvas_state`, `canvas_set_editing`, `canvas_move_panel`, `canvas_resize_panel`, `canvas_list_panel_types`, `canvas_reset`. Debug: `debug_open`, `debug_snapshot`, `debug_report`. Editor extras: `save_scene` → `editor.scene.json`. Menu-gated: `--click`/`--key` first. Pure document edits: headless CLI below.
 
 ## Agent RPC (same verbs as UI)
 

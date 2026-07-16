@@ -11,9 +11,16 @@ import {
   type WeightDelta,
 } from "../world/terraform";
 import {
+  patchUiPanel,
+  removeUiPanel,
+  type EditorUiDocument,
+  type EditorUiPanelLayout,
+} from "../ui/hudDocument";
+import {
   cloneEditorDocument,
   collectDescendants,
   createPrefabFragment,
+  editorDocumentExtras,
   ensureUniqueEditorId,
   extractEditorFragment,
   findEditorCollection,
@@ -95,6 +102,9 @@ export type EditorCommand =
       patch: { color?: string; label?: string; meta?: Record<string, unknown> };
     }
   | { type: "assignMaterial"; ids: readonly string[]; materialId: string }
+  | { type: "setUiPanel"; id: string; patch: Partial<EditorUiPanelLayout> }
+  | { type: "removeUiPanel"; id: string }
+  | { type: "setUi"; ui: EditorUiDocument | undefined }
   | { type: "undo" }
   | { type: "redo" };
 
@@ -133,13 +143,11 @@ function removeByIds(doc: EditorDocument, ids: ReadonlySet<string>): EditorDocum
     volumes: doc.volumes.filter((volume) => !ids.has(volume.id)),
     paths: doc.paths.filter((path) => !ids.has(path.id)),
     annotations: doc.annotations.filter((note) => !ids.has(note.id)),
-    prefabs: doc.prefabs,
+    ...editorDocumentExtras(doc),
     collections: doc.collections.map((collection) => ({
       ...collection,
       memberIds: collection.memberIds.filter((id) => !ids.has(id)),
     })),
-    catalogs: doc.catalogs,
-    ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
 
@@ -166,10 +174,7 @@ function translateByIds(
     annotations: doc.annotations.map((note) =>
       ids.has(note.id) ? { ...note, position: shifted(note.position, delta) } : note,
     ),
-    prefabs: doc.prefabs,
-    collections: doc.collections,
-    catalogs: doc.catalogs,
-    ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
+    ...editorDocumentExtras(doc),
   };
 }
 
@@ -245,10 +250,7 @@ function insertFragment(
       volumes: [...doc.volumes, ...volumes],
       paths: [...doc.paths, ...paths],
       annotations: [...doc.annotations, ...annotations],
-      prefabs: doc.prefabs,
-      collections: doc.collections,
-      catalogs: doc.catalogs,
-      ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
+      ...editorDocumentExtras(doc),
     },
     selection: newIds,
   };
@@ -526,9 +528,30 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         annotations: state.document.annotations,
         prefabs: state.document.prefabs,
         collections: state.document.collections,
-        catalogs: state.document.catalogs,
+        ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
       };
       return { ...state, document: nextDoc };
+    }
+    case "setUiPanel": {
+      const ui = patchUiPanel(state.document.ui, command.id, command.patch);
+      return { ...state, document: { ...state.document, ui } };
+    }
+    case "removeUiPanel": {
+      const ui = removeUiPanel(state.document.ui, command.id);
+      if (ui === undefined) {
+        const { ui: _removed, ...rest } = state.document;
+        void _removed;
+        return { ...state, document: rest };
+      }
+      return { ...state, document: { ...state.document, ui } };
+    }
+    case "setUi": {
+      if (command.ui === undefined) {
+        const { ui: _removed, ...rest } = state.document;
+        void _removed;
+        return { ...state, document: rest };
+      }
+      return { ...state, document: { ...state.document, ui: command.ui } };
     }
     case "sculptTerrain": {
       if (state.document.terrain === undefined) return state;

@@ -43,6 +43,8 @@ export type { EditorVec3 } from "./types";
 export type { EditorVolume } from "./types";
 /** Collision shape a volume is rendered and tested as. */
 export type { EditorVolumeShape } from "./types";
+/** HUD layout section on the scene document — panel id → anchor/offset/size/visibility. */
+export type { EditorUiDocument, EditorUiPanelLayout, HudPanelTypeDef, HudResizeAxes } from "./types";
 export {
   WELL_KNOWN_MARKER_KINDS,
   WELL_KNOWN_PATH_KINDS,
@@ -57,6 +59,7 @@ export {
   decodeEditorDocument,
   editorChildren,
   editorDocumentBounds,
+  editorDocumentExtras,
   editorDocumentSize,
   editorParentOf,
   editorRoots,

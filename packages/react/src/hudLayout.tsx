@@ -22,6 +22,13 @@ import {
   type HudLayoutStore,
   type HudSize,
 } from "@jgengine/core/ui/hudLayout";
+import {
+  resizePanelSize,
+  resolvePanelResize,
+  type EditorUiDocument,
+  type EditorUiPanelLayout,
+  type HudResizeAxes,
+} from "@jgengine/core/ui/hudDocument";
 import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
 import {
   isMobileMode,
@@ -61,22 +68,104 @@ export interface HudEditChord {
   press: string;
 }
 
+function patchDocumentUi(id: string, panel: EditorUiPanelLayout): void {
+  if (typeof window === "undefined") return;
+  const host = (
+    window as Window & {
+      __jgengineEditorHost?: { handle(request: { method: string } & Record<string, unknown>): unknown };
+    }
+  ).__jgengineEditorHost;
+  if (host === undefined) return;
+  host.handle({
+    method: "dispatch",
+    command: { type: "setUiPanel", id, patch: panel },
+  });
+}
+
+function sizeStyle(panel: { width?: number; height?: number } | undefined): CSSProperties {
+  if (panel === undefined) return {};
+  return {
+    ...(panel.width === undefined ? {} : { width: panel.width }),
+    ...(panel.height === undefined ? {} : { height: panel.height }),
+  };
+}
+
+function ResizeHandles({
+  axes,
+  onResizeStart,
+}: {
+  axes: HudResizeAxes;
+  onResizeStart: (edge: "e" | "s" | "se", event: ReactPointerEvent) => void;
+}) {
+  if (axes === "none") return null;
+  const handle = (edge: "e" | "s" | "se", cursor: string, style: CSSProperties) => (
+    <div
+      key={edge}
+      data-hud-resize={edge}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        onResizeStart(edge, event);
+      }}
+      style={{
+        position: "absolute",
+        zIndex: 3,
+        pointerEvents: "auto",
+        background: "rgba(255, 255, 255, 0.85)",
+        cursor,
+        ...style,
+      }}
+    />
+  );
+  return (
+    <>
+      {axes === "x" || axes === "both"
+        ? handle("e", "ew-resize", { top: 4, bottom: 4, right: -3, width: 6 })
+        : null}
+      {axes === "y" || axes === "both"
+        ? handle("s", "ns-resize", { left: 4, right: 4, bottom: -3, height: 6 })
+        : null}
+      {axes === "both" ? handle("se", "nwse-resize", { right: -4, bottom: -4, width: 10, height: 10 }) : null}
+    </>
+  );
+}
+
 export function useHudLayout(options?: {
   storageKey?: string;
   snap?: number;
   locked?: boolean;
+  /**
+   * Scene-document `ui` section — source of truth for panel placement/size.
+   * When provided, hydrates the layout store (and wins over legacy localStorage).
+   */
+  documentUi?: EditorUiDocument;
+  /** When true (default), canvas moves/resizes write undoable `setUiPanel` patches to a live editor host. */
+  documentPatches?: boolean;
 }): HudLayoutStore {
   const storageKey = options?.storageKey;
   const snap = options?.snap;
   const locked = options?.locked;
+  const documentUi = options?.documentUi;
+  const documentPatches = options?.documentPatches !== false;
   const layout = useMemo(() => {
-    const store = createHudLayout({ snap, locked });
-    if (storageKey !== undefined && typeof localStorage !== "undefined") {
+    const store = createHudLayout({
+      snap,
+      locked,
+      onDocumentPatch: documentPatches ? patchDocumentUi : undefined,
+    });
+    if (documentUi !== undefined) {
+      store.applyDocumentUi(documentUi);
+    } else if (storageKey !== undefined && typeof localStorage !== "undefined") {
       store.hydrate(localStorage.getItem(STORAGE_PREFIX + storageKey));
     }
     return store;
-  }, [storageKey, snap, locked]);
+  }, [storageKey, snap, locked, documentPatches]);
   useEffect(() => {
+    if (documentUi !== undefined) {
+      layout.applyDocumentUi(documentUi);
+    }
+  }, [layout, documentUi]);
+  useEffect(() => {
+    if (documentUi !== undefined) return;
     if (storageKey === undefined || typeof localStorage === "undefined") return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const unsubscribe = layout.subscribe(() => {
@@ -93,7 +182,7 @@ export function useHudLayout(options?: {
         localStorage.setItem(STORAGE_PREFIX + storageKey, layout.serialize());
       }
     };
-  }, [layout, storageKey]);
+  }, [layout, storageKey, documentUi]);
   return layout;
 }
 
@@ -518,6 +607,9 @@ export function HudPanel({
   allowOverlapWith,
   collisionGroup,
   region = true,
+  width,
+  height,
+  type,
   className,
   style,
   children,
@@ -532,7 +624,10 @@ export function HudPanel({
   chip?: string;
   /** `false` lets pointer events pass through to the game (read-only panels). Default true. */
   interactive?: boolean;
-  /** Legacy pixel inset from the anchor; only used as the reset placement for dragged panels. */
+  /**
+   * Fallback pixel inset from the anchor when the scene document has no `ui.panels[id]`.
+   * Document layout is the source of truth once authored; TSX props are fallback-only.
+   */
   inset?: { x: number; y: number };
   locked?: boolean;
   /** Opt-in play-phase gate: render this panel only during these phases. Omit for always-visible (default). */
@@ -547,6 +642,12 @@ export function HudPanel({
   collisionGroup?: string;
   /** Register this panel as a collision-tracked layout region. Default true. */
   region?: boolean;
+  /** Fallback width when the document has not authored a size. */
+  width?: number;
+  /** Fallback height when the document has not authored a size. */
+  height?: number;
+  /** Panel type id ({@link registerHudPanelType}) — drives resize axes + ParamSchema. */
+  type?: string;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
@@ -560,13 +661,19 @@ export function HudPanel({
   const registeredOnRef = useRef<HudLayoutStore | null>(null);
   if (registeredOnRef.current !== layout) {
     registeredOnRef.current = layout;
-    layout.register(id, anchoredPlacement(anchor, inset ?? { x: 16, y: 16 }));
+    layout.register(id, anchoredPlacement(anchor, inset ?? { x: 16, y: 16 }), {
+      width,
+      height,
+      type,
+    });
   }
 
   const layoutState = useEngineState(layout);
   const panel = layoutState.panels[id];
   const draggable = !compact && locked !== true && isPanelDraggable(layoutState, id);
   const editing = layoutState.editing && draggable;
+  const resizeSpec = resolvePanelResize(panel?.type ?? type);
+  const resizable = editing && resizeSpec.axes !== "none";
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<PanelDrag | null>(null);
@@ -578,6 +685,7 @@ export function HudPanel({
 
   const regionHidden =
     panel === undefined ||
+    panel.visible === false ||
     (compact && compactMode === "hide") ||
     (onMobile && mobileBehavior === "hidden") ||
     !hudVisibleInPhase(showDuring, phase);
@@ -596,6 +704,7 @@ export function HudPanel({
 
   const onPointerDown = (event: ReactPointerEvent) => {
     if (!draggable || event.button !== 0) return;
+    if ((event.target as HTMLElement | null)?.closest?.("[data-hud-resize]") != null) return;
     const root = rootRef.current;
     const canvas = canvasRef.current;
     if (root === null || canvas === null) return;
@@ -652,6 +761,46 @@ export function HudPanel({
     window.addEventListener("pointercancel", onEnd);
   };
 
+  const onResizeStart = (edge: "e" | "s" | "se", event: ReactPointerEvent) => {
+    if (!resizable || event.button !== 0) return;
+    const root = rootRef.current;
+    if (root === null) return;
+    const startWidth = panel?.width ?? root.getBoundingClientRect().width;
+    const startHeight = panel?.height ?? root.getBoundingClientRect().height;
+    const pointerId = event.pointerId;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    suppressClickRef.current = true;
+    layout.bringToFront(id);
+    const onMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      const dw = edge === "s" ? 0 : moveEvent.clientX - startX;
+      const dh = edge === "e" ? 0 : moveEvent.clientY - startY;
+      const next = resizePanelSize(
+        { width: startWidth, height: startHeight },
+        { dw, dh },
+        resizeSpec.axes,
+        resizeSpec,
+      );
+      layout.resize(id, next);
+    };
+    const onEnd = (endEvent: PointerEvent) => {
+      if (endEvent.pointerId !== pointerId) return;
+      detachRef.current?.();
+    };
+    detachRef.current?.();
+    const detach = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+      detachRef.current = null;
+    };
+    detachRef.current = detach;
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
+  };
+
   const onClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (!suppressClickRef.current) return;
     suppressClickRef.current = false;
@@ -683,14 +832,17 @@ export function HudPanel({
       >
         {id}
       </div>
+      {resizable ? <ResizeHandles axes={resizeSpec.axes} onResizeStart={onResizeStart} /> : null}
     </>
   ) : null;
 
   if (panel === undefined) return null;
+  if (panel.visible === false) return null;
   if (compact && compactMode === "hide") return null;
   if (onMobile && mobileBehavior === "hidden") return null;
   if (!hudVisibleInPhase(showDuring, phase)) return null;
 
+  const authoredSize = sizeStyle(panel);
   const flow = compact || !panel.moved;
   if (flow) {
     const regionEl = regions[compact ? anchor : panel.placement.anchor];
@@ -704,6 +856,7 @@ export function HudPanel({
         data-dragging={dragging ? "" : undefined}
         data-hud-priority={priority}
         data-hud-mobile-behavior={mobileBehavior}
+        data-hud-type={panel.type ?? type}
         className={className}
         onPointerDown={onPointerDown}
         onClickCapture={onClickCapture}
@@ -716,6 +869,8 @@ export function HudPanel({
           cursor: dragging ? "grabbing" : editing ? "grab" : undefined,
           outline: editing ? "1px dashed rgba(255, 255, 255, 0.6)" : undefined,
           outlineOffset: editing ? 2 : undefined,
+          boxSizing: "border-box",
+          ...authoredSize,
           ...style,
         }}
       >
@@ -748,6 +903,7 @@ export function HudPanel({
       ref={rootRef}
       data-hud-panel={id}
       data-dragging={dragging ? "" : undefined}
+      data-hud-type={panel.type ?? type}
       className={className}
       onPointerDown={onPointerDown}
       onClickCapture={onClickCapture}
@@ -761,6 +917,8 @@ export function HudPanel({
         cursor: dragging ? "grabbing" : editing ? "grab" : undefined,
         outline: editing ? "1px dashed rgba(255, 255, 255, 0.6)" : undefined,
         outlineOffset: editing ? 2 : undefined,
+        boxSizing: "border-box",
+        ...authoredSize,
         ...style,
       }}
     >

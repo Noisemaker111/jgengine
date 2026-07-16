@@ -52,6 +52,13 @@ export {
   type HudPlacement,
   type HudSize,
 } from "./ui/hudLayout";
+export type {
+  EditorUiDocument,
+  EditorUiPanelLayout,
+  HudPanelTypeDef,
+  HudResizeAxes,
+  ResolvedHudPanelLayout,
+} from "./ui/hudDocument";
 export {
   hudScaleForViewport,
   overflowingPanels,

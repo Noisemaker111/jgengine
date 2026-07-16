@@ -1,5 +1,7 @@
-import type { ParamSchema } from "../scene/sceneKinds";
+import type { EditorUiDocument } from "../ui/hudDocument";
 import type { TerraformSnapshot } from "../world/terraform";
+
+export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../ui/hudDocument";
 
 /** A world-space point used across editor markers, volumes, and paths. */
 export type EditorVec3 = { x: number; y: number; z: number };
@@ -158,10 +160,10 @@ export interface EditorDocument {
   /** Named selection sets / production groups — restore, add-to, lock, color, visibility. */
   collections: EditorCollection[];
   /**
-   * Gameplay data catalogs (weapon stats, wave tables, economy, …) edited via SchemaInspector.
-   * Schemas come from the game's `editorCatalogs` export; only values live here.
+   * HUD layout owned by the scene document — panel id → anchor/offset/size/visibility.
+   * Canvas mode (F2+C) and `canvas_move_panel` / `canvas_resize_panel` write here; HudPanel reads it.
    */
-  catalogs: EditorCatalogData[];
+  ui?: EditorUiDocument;
 }
 
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */

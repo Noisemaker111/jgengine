@@ -1,3 +1,4 @@
+import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
 import { migrateTerrainSnapshot } from "../world/terraform";
 import type {
   EditorCatalogData,
@@ -16,6 +17,21 @@ import type {
   EditorVolume,
   EditorVolumeShape,
 } from "./types";
+
+/** Spread-ready non-placeable fields preserved across document rebuilds. @internal */
+export function editorDocumentExtras(doc: EditorDocument): {
+  prefabs: EditorPrefab[];
+  collections: EditorCollection[];
+  terrain?: EditorTerrain;
+  ui?: EditorDocument["ui"];
+} {
+  return {
+    prefabs: doc.prefabs,
+    collections: doc.collections,
+    ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
+    ...(doc.ui === undefined ? {} : { ui: doc.ui }),
+  };
+}
 
 /** Builds a fresh, empty editor document to start authoring a scene from scratch.
  * @internal
@@ -55,6 +71,7 @@ function cloneCatalogs(catalogs: readonly EditorCatalogData[] | undefined): Edit
   * @internal
   */
 export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
+  const ui = cloneEditorUiDocument(doc.ui);
   return {
     version: 1,
     markers: doc.markers.map((marker) => ({
@@ -90,6 +107,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     collections: doc.collections.map((collection) => ({ ...collection, memberIds: [...collection.memberIds] })),
     catalogs: cloneCatalogs(doc.catalogs),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
+    ...(ui === undefined ? {} : { ui }),
   };
 }
 
@@ -125,6 +143,7 @@ function upsertCatalogs(
 export function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument {
   if (input === undefined || input === null) return createEmptyEditorDocument();
   const resolved = typeof input === "function" ? input() : input;
+  const ui = cloneEditorUiDocument(resolved.ui);
   return {
     version: 1,
     markers: asArray(resolved.markers),
@@ -135,6 +154,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     collections: asArray(resolved.collections),
     catalogs: cloneCatalogs(resolved.catalogs),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
+    ...(ui === undefined ? {} : { ui }),
   };
 }
 
@@ -182,6 +202,14 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     out.collections.push(...doc.collections);
     out.catalogs = upsertCatalogs(out.catalogs, doc.catalogs);
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
+    if (doc.ui !== undefined) {
+      out.ui = {
+        panels: {
+          ...(out.ui?.panels ?? {}),
+          ...Object.fromEntries(Object.entries(doc.ui.panels).map(([id, panel]) => [id, { ...panel }])),
+        },
+      };
+    }
   }
   return out;
 }
@@ -690,6 +718,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   }
   if (errors.length > 0) return { ok: false, errors };
   const terrain = raw.terrain === undefined ? undefined : migrateTerrainSnapshot(raw.terrain as EditorTerrain);
+  const ui = decodeEditorUiDocument(raw.ui);
   return {
     ok: true,
     document: {
@@ -702,6 +731,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       collections,
       catalogs,
       ...(terrain === undefined ? {} : { terrain }),
+      ...(ui === undefined ? {} : { ui }),
     },
   };
 }
@@ -734,6 +764,16 @@ export function applyEditorDocumentOverlay(
   base: EditorDocument,
   overlay: EditorDocument,
 ): EditorDocument {
+  const terrain = overlay.terrain ?? base.terrain;
+  const ui =
+    overlay.ui === undefined
+      ? cloneEditorUiDocument(base.ui)
+      : {
+          panels: {
+            ...(base.ui?.panels ?? {}),
+            ...Object.fromEntries(Object.entries(overlay.ui.panels).map(([id, panel]) => [id, { ...panel }])),
+          },
+        };
   return {
     version: 1,
     markers: upsertById(base.markers, overlay.markers),
@@ -742,10 +782,8 @@ export function applyEditorDocumentOverlay(
     annotations: upsertById(base.annotations, overlay.annotations),
     prefabs: upsertById(base.prefabs, overlay.prefabs),
     collections: upsertById(base.collections, overlay.collections),
-    catalogs: upsertCatalogs(base.catalogs, overlay.catalogs),
-    ...(overlay.terrain ?? base.terrain) === undefined
-      ? {}
-      : { terrain: overlay.terrain ?? base.terrain },
+    ...(terrain === undefined ? {} : { terrain }),
+    ...(ui === undefined ? {} : { ui }),
   };
 }
 
