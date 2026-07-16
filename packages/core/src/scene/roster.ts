@@ -20,6 +20,9 @@ export interface Roster {
   setEquipped(userId: string, entryId: string, equipped: boolean): RosterEntry | null;
   snapshot(userId: string): readonly RosterEntry[];
   hydrate(userId: string, entries: readonly RosterEntry[]): void;
+  /** Whole-store capture across every owner — the world-save/replication seam (per-owner `snapshot` can't enumerate owners). */
+  snapshotAll(): Record<string, readonly RosterEntry[]>;
+  hydrateAll(data: Record<string, readonly RosterEntry[]>): void;
 }
 
 export interface RosterDeps {
@@ -81,6 +84,17 @@ export function createRoster(deps: RosterDeps = {}): Roster {
     },
     hydrate(userId, entries) {
       rosters.set(userId, new Map(entries.map((entry) => [entry.id, entry])));
+    },
+    snapshotAll() {
+      const out: Record<string, readonly RosterEntry[]> = {};
+      for (const [userId, entries] of rosters) out[userId] = Array.from(entries.values());
+      return out;
+    },
+    hydrateAll(data) {
+      rosters.clear();
+      for (const [userId, entries] of Object.entries(data)) {
+        rosters.set(userId, new Map(entries.map((entry) => [entry.id, entry])));
+      }
     },
   };
 }

@@ -1,55 +1,67 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { createSaveStore, memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { defineGame } from "@jgengine/core/game/defineGame";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { activeCharacter, pickCharacter, resetCharacterState, talentTree } from "./characters";
-import type { RobotsSave } from "./save";
+import { resumeBuild } from "./commands";
+import { characterIdStore, talentRanksStore } from "./stores";
 
 afterEach(() => resetCharacterState());
 
-function newStore(backend = memorySaveBackend()) {
-  return createSaveStore<RobotsSave>({
-    backend,
-    key: "the-robots",
-    slot: "slot-0",
-    initial: { characterId: null, talents: null },
+function bootContext(backend: SaveBackend): GameContext {
+  return createGameContext({
+    definition: defineGame({
+      name: "the-robots-save-test",
+      assets: createAssetCatalog(),
+      multiplayer: "off",
+      persist: true,
+      features: { quest: true },
+    }),
+    content: {},
+    player: { userId: "p1", isNew: true },
+    save: { backend, mode: "manual" },
   });
 }
 
-describe("the-robots build save", () => {
-  test("captures and restores a character + talent build across a reload", async () => {
+describe("the-robots whole-world save", () => {
+  test("pick + spend -> reload -> resume restores the character and talent build", async () => {
     const backend = memorySaveBackend();
 
-    // Build a character with two ranks invested.
+    const host = bootContext(backend);
+    host.scene.entity.spawn("player", { id: "p1", position: [0, 0, 0] });
     pickCharacter("gunk");
     const tree = talentTree();
     if (tree === null) throw new Error("expected an active talent tree");
     tree.grantPoints(3);
     tree.allocate("sal_locked_loaded");
     tree.allocate("sal_locked_loaded");
-    const store = newStore(backend);
-    store.set({ characterId: activeCharacter()?.id ?? null, talents: tree.snapshot() });
-    await store.save();
+    characterIdStore.write(host, "gunk");
+    talentRanksStore.write(host, tree.snapshot().ranks);
+    host.scene.entity.stats.set("p1", "skillPoints", { current: tree.pointsAvailable(), max: 30 });
+    host.game.economy.grant("p1", "cores", 12);
+    await host.game.save!.save();
 
-    // Fresh boot: nothing picked yet.
     resetCharacterState();
     expect(activeCharacter()).toBeNull();
 
-    // Restore from the persisted slot.
-    const reopened = newStore(backend);
-    const save = await reopened.load();
-    expect(save.characterId).toBe("gunk");
-    const def = pickCharacter(save.characterId!);
-    expect(def).not.toBeNull();
+    const reboot = bootContext(backend);
+    expect(await reboot.game.save!.load()).toBe(true);
+    expect(resumeBuild(reboot)).toBe(true);
+
+    expect(activeCharacter()?.id).toBe("gunk");
     const restored = talentTree();
     if (restored === null) throw new Error("expected a restored talent tree");
-    if (save.talents !== null) restored.hydrate(save.talents);
     expect(restored.snapshot().ranks["sal_locked_loaded"]).toBe(2);
     expect(restored.pointsAvailable()).toBe(1);
+    expect(reboot.game.economy.balance("p1", "cores")).toBe(12);
   });
 
-  test("an empty slot restores to no character", async () => {
-    const save = await newStore().load();
-    expect(save.characterId).toBeNull();
-    expect(save.talents).toBeNull();
+  test("an empty slot resumes to no build (character select)", async () => {
+    const fresh = bootContext(memorySaveBackend());
+    expect(await fresh.game.save!.load()).toBe(false);
+    expect(resumeBuild(fresh)).toBe(false);
+    expect(activeCharacter()).toBeNull();
   });
 });

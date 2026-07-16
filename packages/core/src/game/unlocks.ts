@@ -43,6 +43,9 @@ export interface Unlocks {
   tree(categoryId: string): UnlockDef[];
   snapshot(userId: string): string[];
   hydrate(userId: string, ids: string[]): void;
+  /** Whole-store capture across every user — the world-save/replication seam (per-user `snapshot` can't enumerate users). */
+  snapshotAll(): Record<string, string[]>;
+  hydrateAll(data: Record<string, string[]>): void;
 }
 
 export function createUnlocks(defs: UnlockDef[] = []): Unlocks {
@@ -78,6 +81,15 @@ export function createUnlocks(defs: UnlockDef[] = []): Unlocks {
     },
     hydrate(userId, ids) {
       granted.set(userId, new Set(ids));
+    },
+    snapshotAll() {
+      const out: Record<string, string[]> = {};
+      for (const [userId, ids] of granted) out[userId] = Array.from(ids);
+      return out;
+    },
+    hydrateAll(data) {
+      granted.clear();
+      for (const [userId, ids] of Object.entries(data)) granted.set(userId, new Set(ids));
     },
   };
 }

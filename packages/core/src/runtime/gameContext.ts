@@ -48,7 +48,7 @@ import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../gam
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
 import { createGameDialogue, type GameDialogue } from "../game/dialogue";
-import { createQuestJournal, type QuestJournal } from "../game/quest";
+import { createQuestJournal, type QuestJournal, type QuestSnapshotEntry } from "../game/quest";
 import {
   createWorldItemStore,
   resolveDeathDrops,
@@ -107,7 +107,7 @@ import { createForms, type Forms } from "../scene/form";
 import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
-import { createRoster, type Roster } from "../scene/roster";
+import { createRoster, type Roster, type RosterEntry } from "../scene/roster";
 import { createSelectionSet, type SelectionSet } from "../scene/selection";
 import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
 import { createPossession, type Possession } from "../scene/possession";
@@ -128,7 +128,7 @@ import {
   type SnapshotModule,
   type WorldSnapshot,
 } from "./worldSnapshot";
-import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions } from "./runtimeSave";
+import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock, type SimClock } from "../time/simClock";
@@ -1501,6 +1501,52 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     });
   }
 
+  /**
+   * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it also
+   * captures the persistent progression subsystems (economy, quest, unlocks, roster) that a
+   * single-player save must restore but a host does not replicate to clients. Keeping the two sets
+   * distinct leaves `ctx.snapshot()`/`ctx.hydrate()` — the host→client payload — byte-identical for
+   * every multiplayer game, while `ctx.game.save` still persists everything.
+   */
+  const saveModules: SnapshotModule[] = [
+    ...snapshotModules,
+    {
+      key: "economy",
+      snapshot: () => Object.fromEntries(wallets),
+      hydrate: (data) => {
+        wallets.clear();
+        for (const [userId, state] of Object.entries(data as Record<string, WalletState>)) {
+          wallets.set(userId, state);
+        }
+        signal.notify();
+      },
+    },
+  ];
+  if (quest) {
+    const questModule = quest;
+    saveModules.push({
+      key: "quest",
+      snapshot: () => questModule.snapshotAll(),
+      hydrate: (data) => questModule.hydrateAll(data as Record<string, QuestSnapshotEntry[]>),
+    });
+  }
+  if (unlocks) {
+    const unlocksModule = unlocks;
+    saveModules.push({
+      key: "unlocks",
+      snapshot: () => unlocksModule.snapshotAll(),
+      hydrate: (data) => unlocksModule.hydrateAll(data as Record<string, string[]>),
+    });
+  }
+  if (roster) {
+    const rosterModule = roster;
+    saveModules.push({
+      key: "roster",
+      snapshot: () => rosterModule.snapshotAll(),
+      hydrate: (data) => rosterModule.hydrateAll(data as Record<string, readonly RosterEntry[]>),
+    });
+  }
+
   const ctx: GameContext = {
     scene: {
       object: sceneObjects,
@@ -1677,7 +1723,15 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {
-    ctx.game.save = createRuntimeSave({ target: ctx, ...saveOptions });
+    const saveTarget: RuntimeSaveTarget = {
+      snapshot: () => composeWorldSnapshot(saveModules),
+      hydrate: (snapshot) => {
+        applyWorldSnapshot(saveModules, snapshot);
+        signal.notify();
+      },
+      subscribe: signal.subscribe,
+    };
+    ctx.game.save = createRuntimeSave({ target: saveTarget, ...saveOptions });
   }
 
   return ctx;
