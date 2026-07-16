@@ -1,10 +1,10 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
+import { entityModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
-import { renderProp } from "./game/world/propMesh";
-import { renderVehicle } from "./game/world/kartMesh";
 import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
@@ -13,6 +13,7 @@ export const game = defineGame({
   world,
   physics,
   input: keybinds,
+  assets,
   content,
   loop: { onInit, onNewPlayer, onTick },
   lifecycle,
@@ -25,8 +26,8 @@ export const game = defineGame({
       return { x: car.position[0], y: car.position[1], z: car.position[2] };
     },
   },
-  renderEntity: renderVehicle,
-  renderObject: renderProp,
+  entityModels,
+  objectModels,
   shadows: true,
   camera: {
     rig: "chase",

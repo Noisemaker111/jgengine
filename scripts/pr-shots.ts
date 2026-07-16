@@ -118,7 +118,10 @@ const baseRef = hasArchive ? ARCHIVE_BRANCH : "main";
 git(["fetch", "-q", "origin", baseRef]);
 const baseCommit = git(["rev-parse", `origin/${baseRef}`]);
 
-const indexFile = `.git/pr-shots-index-${process.pid}`;
+// `git rev-parse --git-dir` (not a hardcoded `.git/`) so this also works from a git
+// worktree, where `.git` is a file pointing at the real gitdir under the main
+// checkout's `.git/worktrees/<name>/`, not a directory we can write into directly.
+const indexFile = `${git(["rev-parse", "--git-dir"])}/pr-shots-index-${process.pid}`;
 const indexEnv: NodeJS.ProcessEnv = { ...process.env, GIT_INDEX_FILE: indexFile };
 let commit: string;
 try {
