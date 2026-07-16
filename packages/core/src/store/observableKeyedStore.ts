@@ -6,6 +6,7 @@ export interface ObservableKeyedStore<T> {
   subscribe(listener: () => void): () => void;
   /** Notified only when membership changes (a key is added, deleted, or hydrated) — value updates on an existing key do not fire. Pair with {@link keysSnapshot}. */
   subscribeMembership(listener: () => void): () => void;
+  /** An owned copy of the store's entries — mutating the returned map never reaches the store. Stable identity until the next write, like {@link arraySnapshot}. */
   mapSnapshot(): ReadonlyMap<string, T>;
   arraySnapshot(): readonly T[];
   /** Stable-identity list of keys; identity changes only when membership changes, so a per-frame `set` on an existing key does not churn it. */
@@ -28,9 +29,12 @@ export function createObservableKeyedStore<T>(
   let arrayDirty = false;
   let keysCache: readonly string[] = EMPTY_KEYS;
   let keysDirty = false;
+  let mapCache: ReadonlyMap<string, T> = new Map();
+  let mapDirty = false;
 
   function emit(): void {
     arrayDirty = true;
+    mapDirty = true;
     for (const listener of listeners) listener();
   }
 
@@ -69,7 +73,11 @@ export function createObservableKeyedStore<T>(
       return () => membershipListeners.delete(listener);
     },
     mapSnapshot() {
-      return store;
+      if (mapDirty) {
+        mapCache = new Map(store);
+        mapDirty = false;
+      }
+      return mapCache;
     },
     arraySnapshot() {
       if (arrayDirty) {

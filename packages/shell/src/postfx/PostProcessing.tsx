@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, RenderPass, UnrealBloomPass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
@@ -19,6 +19,29 @@ const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
   none: THREE.NoToneMapping,
 };
 
+interface BuiltGraph {
+  composer: EffectComposer;
+  grade: ShaderPass | null;
+  dof: BokehPass | null;
+}
+
+function disposeGraph(built: BuiltGraph): void {
+  for (const pass of built.composer.passes) pass.dispose();
+  if (built.dof !== null) {
+    built.dof.renderTargetDepth.dispose();
+    built.dof.materialDepth.dispose();
+    built.dof.materialBokeh.dispose();
+    built.dof.fsQuad.dispose();
+  }
+  built.composer.dispose();
+}
+
+function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: number): void {
+  built.composer.setPixelRatio(pixelRatio);
+  built.composer.setSize(width, height);
+  if (built.dof !== null) built.dof.renderTargetDepth.setSize(width * pixelRatio, height * pixelRatio);
+}
+
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
@@ -31,7 +54,9 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
 
-  const built = useMemo(() => {
+  const builtRef = useRef<BuiltGraph | null>(null);
+
+  useEffect(() => {
     const width = Math.max(1, size.width);
     const height = Math.max(1, size.height);
     const target = new THREE.WebGLRenderTarget(width, height, {
@@ -66,15 +91,15 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
       );
     }
 
+    let dof: BokehPass | null = null;
     if (config.dof !== undefined && config.dof !== false) {
-      const dof = config.dof;
-      composer.addPass(
-        new BokehPass(scene, camera, {
-          focus: dof.focus ?? 18,
-          aperture: dof.aperture ?? 0.00025,
-          maxblur: dof.maxBlur ?? 0.01,
-        }),
-      );
+      const d = config.dof;
+      dof = new BokehPass(scene, camera, {
+        focus: d.focus ?? 18,
+        aperture: d.aperture ?? 0.00025,
+        maxblur: d.maxBlur ?? 0.01,
+      });
+      composer.addPass(dof);
     }
 
     composer.addPass(new OutputPass());
@@ -85,8 +110,14 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
       composer.addPass(grade);
     }
 
-    return { composer, grade };
-  }, [gl, scene, camera, config, size.width, size.height]);
+    const graph: BuiltGraph = { composer, grade, dof };
+    syncSize(graph, width, height, gl.getPixelRatio());
+    builtRef.current = graph;
+    return () => {
+      disposeGraph(graph);
+      builtRef.current = null;
+    };
+  }, [gl, scene, camera, config]);
 
   useEffect(() => {
     const prevTone = gl.toneMapping;
@@ -100,13 +131,14 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
   }, [gl, config.toneMapping, config.exposure]);
 
   useEffect(() => {
-    const { composer } = built;
-    composer.setPixelRatio(gl.getPixelRatio());
-    composer.setSize(size.width, size.height);
-    return () => composer.dispose();
-  }, [built, gl, size.width, size.height]);
+    const built = builtRef.current;
+    if (built === null) return;
+    syncSize(built, Math.max(1, size.width), Math.max(1, size.height), gl.getPixelRatio());
+  }, [gl, size.width, size.height]);
 
   useFrame((_, delta) => {
+    const built = builtRef.current;
+    if (built === null) return;
     if (built.grade !== null) built.grade.uniforms.uTime.value += delta;
     built.composer.render(delta);
   }, 1);
