@@ -67,9 +67,21 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
   shell: { cartridge: MAIN },
 };
 
-/** Core modules whose skill differs from their top-level domain (e.g. AOI projection lives with multiplayer docs). */
+/** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
   "runtime/worldProjection": "jgengine-multiplayer",
+};
+
+/**
+ * Curated top-level domain barrels (`@jgengine/core/world`, `gameplay`, …) have no `/` segment,
+ * so they would otherwise land on MAIN and ignore domain skill examples in the orphan gate.
+ */
+export const CORE_BARREL_SKILLS: Record<string, string> = {
+  world: "jgengine-world",
+  combat: "jgengine-combat",
+  gameplay: "jgengine-gameplay",
+  multiplayer: "jgengine-multiplayer",
+  ui: "jgengine-ui",
 };
 
 export const SKILL_DIRS = [
@@ -94,9 +106,7 @@ export function skillForModule(pkg: string, modulePath: string): string | null {
   const domain = modulePath.split("/")[0];
   if (domain === undefined || CORE_INTERNAL_DOMAINS.has(domain)) return null;
   if (!modulePath.includes("/")) {
-    if (modulePath === "gameplay") return "jgengine-gameplay";
-    if (modulePath === "procedural") return "jgengine-world";
-    return CORE_DOMAIN_SKILLS[modulePath] ?? MAIN;
+    return CORE_BARREL_SKILLS[modulePath] ?? MAIN;
   }
   const skill = CORE_DOMAIN_SKILLS[domain];
   if (skill === undefined) {

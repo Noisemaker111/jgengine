@@ -56,3 +56,26 @@ export {
 export { useF2Chord } from "./useF2Chord";
 export type { EditorBridgeServerOptions, EditorBridgeServer } from "./mcp/bridgeServer";
 export { EDITOR_MCP_TOOLS, type EditorMcpTool } from "./mcp/tools";
+export { packAgentContext, type AgentEditorContext } from "./agent/context";
+export { routeToolCall, type AgentToolCall, type AgentToolResult } from "./agent/toolBridge";
+export {
+  createDefaultAgentEndpoint,
+  createHttpAgentEndpoint,
+  resolveAgentEndpointConfig,
+  EDITOR_AGENT_URL_ENV,
+  EDITOR_AGENT_KEY_ENV,
+  EDITOR_AGENT_KEY_FALLBACK_ENV,
+  type AgentEndpoint,
+  type AgentEndpointConfig,
+  type AgentChatMessage,
+  type AgentChatRequest,
+  type AgentChatResponse,
+  type AgentChatRole,
+} from "./agent/endpoint";
+export {
+  runAgentTurn,
+  undoAgentPatch,
+  type AgentPatchEntry,
+  type AgentTranscriptEntry,
+  type AgentTurnResult,
+} from "./agent/turn";

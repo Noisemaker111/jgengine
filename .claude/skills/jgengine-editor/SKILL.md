@@ -128,6 +128,8 @@ Canvas verbs: `canvas_state`, `canvas_set_editing`, `canvas_move_panel`, `canvas
 
 ## Agent RPC (same verbs as UI)
 
+**Agent panel** (toolbar): shared GUI/RPC undo — `packAgentContext` / `routeToolCall` / `runAgentTurn` / `undoAgentPatch`; `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (see `reference.md`).
+
 Browser console / injected host:
 
 ```js
@@ -137,22 +139,17 @@ window.__jgengineEditorHost.handle({ method: "set_transform", id: "boss_warrior"
 window.__jgengineEditorHost.handle({ method: "export_document" })
 ```
 
-Headless against the live rendered editor (screenshots + RPC in one run):
+Headless (live editor + screenshots, or document-only CLI):
 
 ```
 bun run drive the-robots --mode editor --wait 3000 --rpc '{"method":"editor_status"}' --shot check
 bun run drive the-robots --mode editor --rpc '{"method":"set_mode","mode":"play"}' --wait 2000 --shot playing
-```
-
-Headless document tools (no WebGL — document verbs only, no camera/perf):
-
-```
-bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'   # chain more --rpc to run them in order on one session (create_terrain → sculpt_terrain → …)
+bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'
 bun packages/editor/src/mcp/cli.ts --game the-robots --serve   # POST localhost:17373/rpc
 bun packages/editor/src/mcp/cli.ts --game the-robots --stdio   # MCP JSON-RPC on stdin/stdout
 ```
 
-The CLI/HTTP bridge validates every RPC payload and a game's `editorLayers` export at load time — malformed JSON (inline oversized/`--rpc-file` path/stdin), an unknown `method`, or a wrong-shaped document/marker/volume/path field is rejected with a path-specific diagnostic (`$.markers[2].position expected {x,y,z} numbers`) instead of crashing or silently passing through.
+The CLI/HTTP bridge validates every RPC payload and a game's `editorLayers` export at load time — malformed JSON, unknown `method`, or wrong-shaped document fields get path-specific diagnostics instead of crashing.
 
 Viewport: click anything to select — editor gizmos hit directly, world geometry snaps to the nearest marker/volume/path/note, repeat-click cycles stacked candidates, shift/ctrl-click multi-selects — then TransformControls (W move / E rotate marker / R scale volume: radius, cylinder height, or box half-extents). Multi-selection drags move every selected object. Snap button cycles ground / grid / off (grid also snaps rotation to 15°); `G` toggles the reference grid. Outliner groups by kind (notes included) with ×N dedup rows; `N` cycles instances of the selected row; ctrl-click adds to selection.
 
@@ -373,11 +370,13 @@ bun packages/editor/src/mcp/cli.ts --game tower-guard --rpc '{"method":"set_cata
 
 ## Core APIs (`editor/`)
 
-- `@jgengine/core/editor/index` — document, session, undo, liveSync (`createDocumentLiveSync`, `applyDocumentPatch`, `summarizeRuntimeInspector`, `planRuntimeInspectorSet`, `createRuntimePlayControl`, `consumeRuntimePlayStep`)
-- `@jgengine/editor` — `EditorApp`, `createEditorHost`/`getEditorHost`, play-mode Runtime panel; `<AuthoredScene live>` hot-applies patches
-- Headless: `runtime_summary` · `runtime_get` · `runtime_set` (write-back default) · `runtime_pause`/`runtime_step` · `write_back_override`
+- `@jgengine/core/editor/index` — document, session, commands, undo
+- `@jgengine/core/editor/types` — markers, volumes, paths
+- `@jgengine/core/editor/document` — normalize/merge/export
+- `@jgengine/core/editor/commands` — `createEditorSession`
+- `@jgengine/editor` — `EditorApp`, host RPC, bridge server, agent panel (dev-only package)
 
 ## Do not
 
-- Statically import `@jgengine/editor` from `GameHost` or game entry code — summon it only as a lazy chunk (`await import("@jgengine/editor")`), the pattern the scaffolded `main.tsx` ships
+- Statically import `@jgengine/editor` from `GameHost` or game entry code — summon it only as a lazy chunk (`await import("@jgengine/editor")`)
 - Treat mesh modeling as in-scope (placement/world tools only)

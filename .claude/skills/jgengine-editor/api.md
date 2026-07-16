@@ -112,10 +112,25 @@
 
 ## @jgengine/editor
 
+- `AgentChatMessage` (interface): interface AgentChatMessage — One turn message exchanged with a pluggable agent endpoint (user, assistant, tool, or system).
+- `AgentChatRequest` (interface): interface AgentChatRequest — Payload sent to a pluggable agent backend for one model turn.
+- `AgentChatResponse` (interface): interface AgentChatResponse — Model reply: optional prose plus zero or more tool calls to run via editor RPC.
+- `AgentChatRole` (type): type AgentChatRole = "user" | "assistant" | "tool" | "system" — One message in an agent chat transcript (user, assistant, or tool result).
+- `AgentEditorContext` (interface): interface AgentEditorContext — Compact editor state injected into every agent turn so the model sees selection/mode/camera.
+- `AgentEndpoint` (interface): interface AgentEndpoint — Pluggable agent backend — HTTP, Claude SDK adapter, or a local rule engine.
+- `AgentEndpointConfig` (interface): interface AgentEndpointConfig — Resolved remote agent settings: optional URL and optional Bearer API key.
+- `AgentPatchEntry` (interface): interface AgentPatchEntry — One agent edit shown in the panel transcript — human can undo when it is the top of the stack.
+- `AgentToolCall` (interface): interface AgentToolCall — One tool call from an agent turn — name maps 1:1 onto an editor RPC method.
+- `AgentToolResult` (interface): interface AgentToolResult — Result of routing one tool call through the editor host.
+- `AgentTranscriptEntry` (type): type AgentTranscriptEntry = | { kind: "user"; id: string; content: string; at: number } | { kind: "assistant"; id: string; content: string; at: number } | { kind: "tool"; id: string; result: AgentToolResult; at: number } | { kind: "error"; id: string; content: string; at: number } | { kind: "patch";… — One rendered line in the agent panel transcript (user, assistant, tool, error, or patch).
+- `AgentTurnResult` (interface): interface AgentTurnResult — Result of {@link runAgentTurn}: chat history, UI transcript, undoable patches, and packed context.
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
+- `EDITOR_AGENT_KEY_ENV` (const): const EDITOR_AGENT_KEY_ENV: "JGENGINE_EDITOR_AGENT_KEY" — Env var name for the optional Bearer token (`JGENGINE_EDITOR_AGENT_KEY`).
+- `EDITOR_AGENT_KEY_FALLBACK_ENV` (const): const EDITOR_AGENT_KEY_FALLBACK_ENV: "ANTHROPIC_API_KEY" — Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`).
+- `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
 - `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
@@ -126,7 +141,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, the embedded {@link AgentPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
@@ -158,13 +173,20 @@
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `blankWorld` (function): function blankWorld(seed = "standalone"): EnvironmentWorldFeature — The default flat-ground world the standalone editor opens on when the host supplies none.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
-- `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */ catalogs?: readonly EditorCatalogDefinition[]; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: num… — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
+- `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
+- `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
+- `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
 - `downloadSaver` (function): function downloadSaver(filename = "editor.scene.json"): EditorSaveFn — A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening.
 - `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
+- `packAgentContext` (function): function packAgentContext(api: EditorHostApi): AgentEditorContext — Packs the live host's selection, mode, focus, and document counts for agent prompts. Injected into every embedded-panel turn so the agent shares the human's current view.
+- `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {}): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
+- `routeToolCall` (function): function routeToolCall(api: EditorHostApi, call: AgentToolCall): AgentToolResult — Routes one agent tool call through the same editor RPC surface humans use. Mutating calls share the session undo stack — no parallel history. Tool name maps 1:1 onto `EditorBridgeRequest.method` (same verbs as MCP/CLI).
+- `runAgentTurn` (function): function runAgentTurn(options: { api: EditorHostApi; endpoint: AgentEndpoint; history: readonly AgentChatMessage[]; userMessage: string; maxRounds?: number; now?: () => number; }): Promise<AgentTurnResult> — Runs one user message against an agent endpoint: injects live editor context via `packAgentContext`, executes tool calls through `routeToolCall` (shared undo), and returns transcript + patch entries the human can reverse with `undoAgentPatch`.
 - `shallowArrayEqual` (function): function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean — Shallow array equality — for selectors that return id lists (`selection`) or small tuples.
+- `undoAgentPatch` (function): function undoAgentPatch(api: EditorHostApi, patches: readonly AgentPatchEntry[], patchId: string): { ok: true; patches: AgentPatchEntry[] } | { ok: false; error: string } — Undoes one agent patch when it is still the top of the session undo stack. Newer live agent patches must be undone first; returns the updated list immutably.
 - `useF2Chord` (function): function useF2Chord(code: string, onChord: () => void): void — Listens for the engine's F2+<key> chord family and fires on the given code (e.g. "KeyE").
 - `useStoreSelector` (function): function useStoreSelector<S, T>(store: SubscribableStore<S>, selector: (state: S) => T, isEqual: (a: T, b: T) => boolean = Object.is): T — Subscribe a component to a **selected slice** of an external store (editor session or UI store) via `useSyncExternalStore`. The component re-renders only when `selector`'s output changes by `isEqual` (default `Object.is`) — a gizmo drag no longer rerenders panels that read an unrelated slice. The selected value is memoized so an equal slice keeps its reference (no render churn).
 - `virtualWindow` (function): function virtualWindow(scrollTop: number, viewportHeight: number, rowHeight: number, rowCount: number, overscan = 6): VirtualWindow — Pure windowing math for a fixed-row-height virtual list: given the scroll offset and viewport, returns the `[start, end)` row range to mount (padded by `overscan`) plus the spacer heights, so a 10,000-row outliner only ever mounts the visible handful. No DOM, unit-testable.
@@ -193,7 +215,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, the embedded {@link AgentPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
 ## @jgengine/editor/PerfProbe
 
@@ -222,6 +244,44 @@
 ## @jgengine/editor/TerrainPanel
 
 - `TerrainPanel` (function): function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
+
+## @jgengine/editor/agent/AgentPanel
+
+- `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
+
+## @jgengine/editor/agent/context
+
+- `AgentEditorContext` (interface): interface AgentEditorContext — Compact editor state injected into every agent turn so the model sees selection/mode/camera.
+- `packAgentContext` (function): function packAgentContext(api: EditorHostApi): AgentEditorContext — Packs the live host's selection, mode, focus, and document counts for agent prompts. Injected into every embedded-panel turn so the agent shares the human's current view.
+
+## @jgengine/editor/agent/endpoint
+
+- `AgentChatMessage` (interface): interface AgentChatMessage — One turn message exchanged with a pluggable agent endpoint (user, assistant, tool, or system).
+- `AgentChatRequest` (interface): interface AgentChatRequest — Payload sent to a pluggable agent backend for one model turn.
+- `AgentChatResponse` (interface): interface AgentChatResponse — Model reply: optional prose plus zero or more tool calls to run via editor RPC.
+- `AgentChatRole` (type): type AgentChatRole = "user" | "assistant" | "tool" | "system" — One message in an agent chat transcript (user, assistant, or tool result).
+- `AgentEndpoint` (interface): interface AgentEndpoint — Pluggable agent backend — HTTP, Claude SDK adapter, or a local rule engine.
+- `AgentEndpointConfig` (interface): interface AgentEndpointConfig — Resolved remote agent settings: optional URL and optional Bearer API key.
+- `EDITOR_AGENT_KEY_ENV` (const): const EDITOR_AGENT_KEY_ENV: "JGENGINE_EDITOR_AGENT_KEY" — Env var name for the optional Bearer token (`JGENGINE_EDITOR_AGENT_KEY`).
+- `EDITOR_AGENT_KEY_FALLBACK_ENV` (const): const EDITOR_AGENT_KEY_FALLBACK_ENV: "ANTHROPIC_API_KEY" — Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`).
+- `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
+- `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
+- `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
+- `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {}): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
+
+## @jgengine/editor/agent/toolBridge
+
+- `AgentToolCall` (interface): interface AgentToolCall — One tool call from an agent turn — name maps 1:1 onto an editor RPC method.
+- `AgentToolResult` (interface): interface AgentToolResult — Result of routing one tool call through the editor host.
+- `routeToolCall` (function): function routeToolCall(api: EditorHostApi, call: AgentToolCall): AgentToolResult — Routes one agent tool call through the same editor RPC surface humans use. Mutating calls share the session undo stack — no parallel history. Tool name maps 1:1 onto `EditorBridgeRequest.method` (same verbs as MCP/CLI).
+
+## @jgengine/editor/agent/turn
+
+- `AgentPatchEntry` (interface): interface AgentPatchEntry — One agent edit shown in the panel transcript — human can undo when it is the top of the stack.
+- `AgentTranscriptEntry` (type): type AgentTranscriptEntry = | { kind: "user"; id: string; content: string; at: number } | { kind: "assistant"; id: string; content: string; at: number } | { kind: "tool"; id: string; result: AgentToolResult; at: number } | { kind: "error"; id: string; content: string; at: number } | { kind: "patch";… — One rendered line in the agent panel transcript (user, assistant, tool, error, or patch).
+- `AgentTurnResult` (interface): interface AgentTurnResult — Result of {@link runAgentTurn}: chat history, UI transcript, undoable patches, and packed context.
+- `runAgentTurn` (function): function runAgentTurn(options: { api: EditorHostApi; endpoint: AgentEndpoint; history: readonly AgentChatMessage[]; userMessage: string; maxRounds?: number; now?: () => number; }): Promise<AgentTurnResult> — Runs one user message against an agent endpoint: injects live editor context via `packAgentContext`, executes tool calls through `routeToolCall` (shared undo), and returns transcript + patch entries the human can reverse with `undoAgentPatch`.
+- `undoAgentPatch` (function): function undoAgentPatch(api: EditorHostApi, patches: readonly AgentPatchEntry[], patchId: string): { ok: true; patches: AgentPatchEntry[] } | { ok: false; error: string } — Undoes one agent patch when it is still the top of the session undo stack. Newer live agent patches must be undone first; returns the updated list immutably.
 
 ## @jgengine/editor/chromeFields
 
