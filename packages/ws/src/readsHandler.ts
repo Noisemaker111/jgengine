@@ -66,7 +66,8 @@ export function createReadsHandler(options: ReadsHandlerOptions): ReadsHandler {
         return json(await options.listOpenServers({ gameId, limit }));
       }
       const records = await (await getPersistence()).listServers(gameId);
-      return json(toOpenServerListings(records.map((record) => toServerListing(record)), limit));
+      const publicRecords = records.filter((record) => (record.visibility ?? "public") !== "private");
+      return json(toOpenServerListings(publicRecords.map((record) => toServerListing(record)), limit));
     }
 
     if (head === "leaderboard" && tail !== undefined && segments.length === 2) {

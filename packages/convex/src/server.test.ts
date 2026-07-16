@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { UserIdentity } from "convex/server";
 
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { markPlayerDirty, type GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
@@ -8,6 +9,20 @@ import {
   applyCommandWithOcc,
   commitIfRevisionMatch,
 } from "./occ";
+import { canJoinPrivateServer, isListablePublicly, resolveActor } from "./server";
+
+function identity(overrides: Partial<UserIdentity> = {}): UserIdentity {
+  return {
+    tokenIdentifier: "issuer|alice",
+    subject: "alice",
+    issuer: "issuer",
+    ...overrides,
+  };
+}
+
+function authCtx(user: UserIdentity | null) {
+  return { auth: { getUserIdentity: async () => user } };
+}
 
 type GoldGrantInput = { userId: string; amount: number };
 
@@ -145,4 +160,59 @@ test("applyCommandWithOcc isolates concurrent mutations via revision CAS", () =>
 test("hydrate preserves non-zero server revision", () => {
   const snapshot = hydrateAt(42, 1);
   expect(snapshot.revision).toBe(42);
+});
+
+test("resolveActor binds a signed-in caller to their own identity", async () => {
+  const actor = await resolveActor(authCtx(identity({ subject: "alice" })), undefined, "required");
+  expect(actor).toBe("alice");
+});
+
+test("resolveActor rejects a signed-in caller claiming another player's externalId", async () => {
+  const actor = await resolveActor(authCtx(identity({ subject: "alice" })), "bob", "required");
+  expect(actor).toBeNull();
+});
+
+test("resolveActor accepts a signed-in caller's externalId when it matches their own subject", async () => {
+  const actor = await resolveActor(authCtx(identity({ subject: "alice" })), "alice", "required");
+  expect(actor).toBe("alice");
+});
+
+test("resolveActor rejects every caller in required mode with no Convex identity", async () => {
+  const actor = await resolveActor(authCtx(null), "anyone", "required");
+  expect(actor).toBeNull();
+});
+
+test("resolveActor rejects a caller with no identity and no claim, even in anonymous mode", async () => {
+  const actor = await resolveActor(authCtx(null), undefined, "anonymous");
+  expect(actor).toBeNull();
+});
+
+test("isListablePublicly excludes private servers, includes public and undefined", () => {
+  expect(isListablePublicly("private")).toBe(false);
+  expect(isListablePublicly("public")).toBe(true);
+  expect(isListablePublicly(undefined)).toBe(true);
+});
+
+test("canJoinPrivateServer rejects a non-member with no code or a wrong code", () => {
+  expect(canJoinPrivateServer({ isMember: false, joinCode: "SECRET1", suppliedCode: undefined })).toBe(
+    false,
+  );
+  expect(canJoinPrivateServer({ isMember: false, joinCode: "SECRET1", suppliedCode: "WRONG" })).toBe(
+    false,
+  );
+  expect(canJoinPrivateServer({ isMember: false, joinCode: undefined, suppliedCode: undefined })).toBe(
+    false,
+  );
+});
+
+test("canJoinPrivateServer accepts a non-member presenting the matching (case-insensitive) code", () => {
+  expect(canJoinPrivateServer({ isMember: false, joinCode: "SECRET1", suppliedCode: "secret1" })).toBe(
+    true,
+  );
+});
+
+test("canJoinPrivateServer always accepts an existing member, code or not", () => {
+  expect(canJoinPrivateServer({ isMember: true, joinCode: "SECRET1", suppliedCode: undefined })).toBe(
+    true,
+  );
 });

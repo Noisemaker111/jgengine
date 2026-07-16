@@ -21,7 +21,7 @@ import {
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
-import { browseSessions, findByJoinCode } from "@jgengine/core/multiplayer/matchmaking";
+import { browseSessions, findByJoinCode, normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
   createFeedWriteGate,
   validateFeedWrite,
@@ -60,6 +60,7 @@ export type GameHost = {
     gameId: string;
     serverId?: string;
     attributes?: SessionAttributes;
+    code?: string;
   }) => Promise<JoinServerResult>;
   browseServers: (args: {
     gameId: string;
@@ -285,6 +286,21 @@ export function createGameHost(options: GameHostOptions): GameHost {
           throw new Error("Server belongs to a different game");
         }
 
+        if (
+          entry !== null &&
+          entry.record.visibility === "private" &&
+          !entry.record.memberUserIds.includes(args.userId)
+        ) {
+          const requiredCode = entry.record.joinCode;
+          const matches =
+            requiredCode !== undefined &&
+            args.code !== undefined &&
+            normalizeJoinCode(args.code) === normalizeJoinCode(requiredCode);
+          if (!matches) {
+            throw new Error("Server is private");
+          }
+        }
+
         if (entry === null) {
           const attributes = args.attributes;
           const record: GameServerRecord = {
@@ -346,7 +362,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
         args.code,
       );
       if (match === null) return null;
-      return host.joinServer({ userId: args.userId, gameId: args.gameId, serverId: match.serverId });
+      return host.joinServer({
+        userId: args.userId,
+        gameId: args.gameId,
+        serverId: match.serverId,
+        code: args.code,
+      });
     },
 
     leaveServer: (args) =>
@@ -469,10 +490,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
     listOpenServers: async (args) => {
       const byId = new Map<string, ServerListing>();
       for (const record of await persistence.listServers(args.gameId)) {
+        if ((record.visibility ?? "public") === "private") continue;
         byId.set(record.serverId, toServerListing(record));
       }
       for (const entry of live.values()) {
         if (entry.record.gameId !== args.gameId) continue;
+        if ((entry.record.visibility ?? "public") === "private") continue;
         byId.set(entry.record.serverId, toServerListing(entry.record));
       }
       return toOpenServerListings(byId.values(), args.limit);

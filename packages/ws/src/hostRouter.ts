@@ -437,6 +437,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             gameId: message.gameId,
             serverId: message.serverId,
             attributes: message.attributes,
+            code: message.code,
           });
           connection.joinedServers.add(result.serverId);
           reply(connection, message.id, result);
