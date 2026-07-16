@@ -1,0 +1,3698 @@
+[
+  {
+    "id": "quaternius-medieval-village/Balcony_Cross_Corner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Balcony_Cross_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1042537689208984,
+        "d": 2.1042540073394775
+      },
+      "center": {
+        "x": 0.05212676525115967,
+        "z": -0.052126288414001465
+      },
+      "minY": -0.10508715361356735
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Balcony_Cross_Straight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Balcony_Cross_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000007152557373,
+        "d": 0.20628303289413452
+      },
+      "center": {
+        "x": 0,
+        "z": 1.0011115372180939
+      },
+      "minY": -0.10508717596530914
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Balcony_Simple_Corner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Balcony_Simple_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.10425341129303,
+        "d": 2.104253888130188
+      },
+      "center": {
+        "x": 0.052126944065093994,
+        "z": -0.05212634801864624
+      },
+      "minY": -0.10508715361356735
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Balcony_Simple_Straight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Balcony_Simple_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.20628303289413452
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 1.0011115372180939
+      },
+      "minY": -0.10508717596530914
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_Exterior_Brick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_Exterior_Brick.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5306706577539444,
+        "d": 0.5758337825536728
+      },
+      "center": {
+        "x": -0.08760636299848557,
+        "z": 0.08878273516893387
+      },
+      "minY": -0.007091104984283447
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_Exterior_TopDown",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_Exterior_TopDown.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.09298392070923,
+        "d": 0.09298436040990055
+      },
+      "center": {
+        "x": -0.0459542476455681,
+        "z": 0.04595453443471342
+      },
+      "minY": 0.6495780944824219
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_Exterior_TopOnly",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_Exterior_TopOnly.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.09278270287904888,
+        "d": 0.09278303827159107
+      },
+      "center": {
+        "x": -0.04585363873047754,
+        "z": 0.045853873365558684
+      },
+      "minY": 2.883235454559326
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_Exterior_Wood",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_Exterior_Wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.21017442643642426,
+        "d": 0.23964012414216995
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": 1.1175870895385742e-8
+      },
+      "minY": -1.5052728485898115e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_ExteriorWide_Brick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_ExteriorWide_Brick.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7123051732778549,
+        "d": 0.7564214468002319
+      },
+      "center": {
+        "x": -0.13366246968507767,
+        "z": 0.15599972009658813
+      },
+      "minY": -0.01851489581167698
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_ExteriorWide_Wood",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_ExteriorWide_Wood.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.29045501351356506,
+        "d": 0.3311777263879776
+      },
+      "center": {
+        "x": -8.642673492431641e-7,
+        "z": 1.4156103134155273e-7
+      },
+      "minY": -1.6249023815362307e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_Interior_Big",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_Interior_Big.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3331426717340946,
+        "d": 0.3681250996887684
+      },
+      "center": {
+        "x": 0.1573073398321867,
+        "z": -0.13982888124883175
+      },
+      "minY": -1.1920928955078125e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Corner_Interior_Small",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Corner_Interior_Small.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.21017444133758545,
+        "d": 0.23964013159275055
+      },
+      "center": {
+        "x": 0.2999998927116394,
+        "z": -0.30000000447034836
+      },
+      "minY": -1.5052728485898115e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_1_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_1_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1178661659359932,
+        "d": 0.12070027366280556
+      },
+      "center": {
+        "x": 0.5126699768006802,
+        "z": 0.0027925800532102585
+      },
+      "minY": 0.0352252721786499
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_1_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_1_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1200128868222237,
+        "d": 0.12070027366280556
+      },
+      "center": {
+        "x": 0.5137433372437954,
+        "z": 0.0027925800532102585
+      },
+      "minY": 0.033089637756347656
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_2_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_2_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1138191297650337,
+        "d": 0.2609003782272339
+      },
+      "center": {
+        "x": 0.5142451487481594,
+        "z": -0.0032317042350769043
+      },
+      "minY": 0.03962576389312744
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_2_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_2_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1154488399624825,
+        "d": 0.2609003782272339
+      },
+      "center": {
+        "x": 0.5150600038468838,
+        "z": -0.0032317042350769043
+      },
+      "minY": 0.028338909149169922
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_4_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_4_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1178661659359932,
+        "d": 0.20934630930423737
+      },
+      "center": {
+        "x": 0.5126699768006802,
+        "z": -0.012914516031742096
+      },
+      "minY": 0.0352252721786499
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_4_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_4_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1147095635533333,
+        "d": 0.20934630930423737
+      },
+      "center": {
+        "x": 0.5142482779920101,
+        "z": -0.012914516031742096
+      },
+      "minY": 0.033089637756347656
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_8_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_8_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1178661659359932,
+        "d": 0.19946424663066864
+      },
+      "center": {
+        "x": 0.5126699768006802,
+        "z": -0.007973499596118927
+      },
+      "minY": 0.0352252721786499
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Door_8_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_8_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1516425386071205,
+        "d": 0.19946424663066864
+      },
+      "center": {
+        "x": 0.5126253478229046,
+        "z": -0.007973499596118927
+      },
+      "minY": 0.033089637756347656
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/DoorFrame_Flat_Brick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "DoorFrame_Flat_Brick.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.574607491493225,
+        "d": 0.4943271726369858
+      },
+      "center": {
+        "x": -0.0009017586708068848,
+        "z": -0.04797015339136124
+      },
+      "minY": -0.0016925190575420856
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/DoorFrame_Flat_WoodDark",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "DoorFrame_Flat_WoodDark.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5739920735359192,
+        "d": 0.3884521573781967
+      },
+      "center": {
+        "x": 0.000786513090133667,
+        "z": -0.04906373471021652
+      },
+      "minY": -0.008544828742742538
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/DoorFrame_Round_Brick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "DoorFrame_Round_Brick.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6031200289726257,
+        "d": 0.4771699756383896
+      },
+      "center": {
+        "x": -0.0025558769702911377,
+        "z": -0.05654875189065933
+      },
+      "minY": -0.0016925190575420856
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/DoorFrame_Round_WoodDark",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "DoorFrame_Round_WoodDark.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4069843292236328,
+        "d": 0.5389639735221863
+      },
+      "center": {
+        "x": -7.748603820800781e-7,
+        "z": 0.029453784227371216
+      },
+      "minY": -0.008544921875
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_Brick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_Brick.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_RedBrick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_RedBrick.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_UnevenBrick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_UnevenBrick.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodDark_Half1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodDark_Half1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": -0.5,
+        "z": 0
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodDark_Half2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodDark_Half2.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 2
+      },
+      "center": {
+        "x": 0.5,
+        "z": 0
+      },
+      "minY": -0.010000059381127357
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodDark_Half3",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodDark_Half3.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1.000000000000003
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4999999999999985
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodDark_OverhangCorner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodDark_OverhangCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9999999872900904,
+        "d": 1.7564597725868225
+      },
+      "center": {
+        "x": -0.5000000063549548,
+        "z": 0.12177011370658875
+      },
+      "minY": -0.010000168345868587
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodDark_OverhangCorner2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodDark_OverhangCorner2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9566476345062256,
+        "d": 1.75
+      },
+      "center": {
+        "x": -0.5216761827468872,
+        "z": 0.125
+      },
+      "minY": -0.010000367648899555
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodDark",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodDark.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodLight_OverhangCorner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodLight_OverhangCorner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9999999872900904,
+        "d": 1.7564597725868225
+      },
+      "center": {
+        "x": -0.5000000063549548,
+        "z": 0.12177011370658875
+      },
+      "minY": -0.010000168345868587
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodLight_OverhangCorner2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodLight_OverhangCorner2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9566476345062256,
+        "d": 1.75
+      },
+      "center": {
+        "x": -0.5216761827468872,
+        "z": 0.125
+      },
+      "minY": -0.010000367648899555
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Floor_WoodLight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Floor_WoodLight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.010000384412705898
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/HoleCover_90Angle",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "HoleCover_90Angle.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1198205947875977,
+        "d": 2.1198205947875977
+      },
+      "center": {
+        "x": 0.05991017818450928,
+        "z": -0.05991017818450928
+      },
+      "minY": -0.10508690029382706
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/HoleCover_90Half",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "HoleCover_90Half.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1198206464973453,
+        "d": 1.1198205102435281
+      },
+      "center": {
+        "x": 0.5599100331203459,
+        "z": -0.559910220456544
+      },
+      "minY": -0.10508651286363602
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/HoleCover_90Stairs",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "HoleCover_90Stairs.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3241894245147705,
+        "d": 2.1198205947875977
+      },
+      "center": {
+        "x": 0.9577257633209229,
+        "z": -0.05991017818450928
+      },
+      "minY": -0.10508690029382706
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/HoleCover_Straight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "HoleCover_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.23964053392410278
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -1.0000002086162567
+      },
+      "minY": -0.10508651286363602
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/HoleCover_StraightHalf",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "HoleCover_StraightHalf.glb",
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.23964005708694458
+      },
+      "center": {
+        "x": 0,
+        "z": -0.9999999701976776
+      },
+      "minY": -0.10508604347705841
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Plaster_Corner_Front",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Plaster_Corner_Front.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.117569327354431,
+        "d": 3.117571234703064
+      },
+      "center": {
+        "x": -0.4412153363227844,
+        "z": 0.4412155747413635
+      },
+      "minY": -0.023045778274536133
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Plaster_Corner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Plaster_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.100797176361084,
+        "d": 3.1007977724075317
+      },
+      "center": {
+        "x": -0.449601411819458,
+        "z": 0.44960111379623413
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Plaster_Long",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Plaster_Long.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 2.2000000923871994
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0.8999999538064003
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Plaster_Short",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Plaster_Short.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 1.3228351324796677
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0.46141747385263443
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Roof_Plaster",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Roof_Plaster.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.021612048149109
+      },
+      "center": {
+        "x": 0,
+        "z": -0.010806024074554443
+      },
+      "minY": -0.3244321346282959
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Roof_UnevenBricks",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Roof_UnevenBricks.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.021612048149109
+      },
+      "center": {
+        "x": 0,
+        "z": -0.010806024074554443
+      },
+      "minY": -0.3244321346282959
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_RoofIncline_Plaster",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_RoofIncline_Plaster.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1.4295332431793213
+      },
+      "center": {
+        "x": 0,
+        "z": -0.30684542655944824
+      },
+      "minY": -0.3244321346282959
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_RoofIncline_UnevenBricks",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_RoofIncline_UnevenBricks.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1.4295332431793213
+      },
+      "center": {
+        "x": 0,
+        "z": -0.30684542655944824
+      },
+      "minY": -0.3244321346282959
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_Plaster_Long_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_Plaster_Long_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 2.3140343725681305
+      },
+      "center": {
+        "x": -0.9256305396556854,
+        "z": 0.842983290553093
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_Plaster_Long_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_Plaster_Long_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 2.3140343725681305
+      },
+      "center": {
+        "x": 0.9256305396556854,
+        "z": 0.842983290553093
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_Plaster_Short_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_Plaster_Short_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 1.43686905503273
+      },
+      "center": {
+        "x": -0.9256305396556854,
+        "z": 0.40440063178539276
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_Plaster_Short_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_Plaster_Short_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 1.43686905503273
+      },
+      "center": {
+        "x": 0.9256305396556854,
+        "z": 0.40440063178539276
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_UnevenBrick_Long_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_UnevenBrick_Long_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 2.3140343725681305
+      },
+      "center": {
+        "x": -0.9256305396556854,
+        "z": 0.842983290553093
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_UnevenBrick_Long_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_UnevenBrick_Long_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 2.3140343725681305
+      },
+      "center": {
+        "x": 0.9256305396556854,
+        "z": 0.842983290553093
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_UnevenBrick_Short_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_UnevenBrick_Short_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 1.43686905503273
+      },
+      "center": {
+        "x": -0.9256305396556854,
+        "z": 0.40440063178539276
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_Side_UnevenBrick_Short_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_Side_UnevenBrick_Short_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4793322682380676,
+        "d": 1.43686905503273
+      },
+      "center": {
+        "x": 0.9256305396556854,
+        "z": 0.40440063178539276
+      },
+      "minY": -2.384185791015625e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_UnevenBrick_Corner_Front",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_UnevenBrick_Corner_Front.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.1175695657730103,
+        "d": 3.117571234703064
+      },
+      "center": {
+        "x": -0.441215455532074,
+        "z": 0.4412155747413635
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_UnevenBrick_Corner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_UnevenBrick_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.100797176361084,
+        "d": 3.1007977724075317
+      },
+      "center": {
+        "x": -0.449601411819458,
+        "z": 0.44960111379623413
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_UnevenBrick_Long",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_UnevenBrick_Long.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 2.2000000923871994
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0.8999999538064003
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Overhang_UnevenBrick_Short",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Overhang_UnevenBrick_Short.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 1.3228351324796677
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0.46141747385263443
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Brick1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Brick1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.34563612937927246,
+        "d": 0.2501659542322159
+      },
+      "center": {
+        "x": 0.004912540316581726,
+        "z": -0.0003442838788032532
+      },
+      "minY": -0.11037472635507584
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Brick2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Brick2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3954097777605057,
+        "d": 0.21688799560070038
+      },
+      "center": {
+        "x": 0.007355310022830963,
+        "z": 0.00008466094732284546
+      },
+      "minY": -0.11202564835548401
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Brick3",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Brick3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3813912868499756,
+        "d": 0.21562998741865158
+      },
+      "center": {
+        "x": 0.007486894726753235,
+        "z": -0.0009100846946239471
+      },
+      "minY": -0.11486761271953583
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Brick4",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Brick4.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2566720247268677,
+        "d": 0.21562998741865158
+      },
+      "center": {
+        "x": -0.0000050067901611328125,
+        "z": -0.005192611366510391
+      },
+      "minY": -0.11486760526895523
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Chimney",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Chimney.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9457785189151764,
+        "d": 1.0000001192092896
+      },
+      "center": {
+        "x": -0.02711080014705658,
+        "z": 0
+      },
+      "minY": 5.960464477539063e-8
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Chimney2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Chimney2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9457785189151764,
+        "d": 0.9880171120166779
+      },
+      "center": {
+        "x": -0.02711080014705658,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 5.820766091346741e-8
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Crate",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Crate.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0835824608802795,
+        "d": 1.08358234167099
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": 0.003361523151397705
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_ExteriorBorder_Corner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_ExteriorBorder_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7000001072883606,
+        "d": 0.6999999957624823
+      },
+      "center": {
+        "x": -0.34999993443489075,
+        "z": 0.3499999901978299
+      },
+      "minY": 2.701569457030928e-8
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_ExteriorBorder_Straight1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_ExteriorBorder_Straight1.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 0.699999988079071
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3499999940395355
+      },
+      "minY": 2.701569457030928e-8
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_ExteriorBorder_Straight2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_ExteriorBorder_Straight2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 0.699999988079071
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3499999940395355
+      },
+      "minY": 2.701569457030928e-8
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_MetalFence_Ornament",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_MetalFence_Ornament.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9523119926452637,
+        "d": 0.15605799108743668
+      },
+      "center": {
+        "x": 0.002842247486114502,
+        "z": 3.725290298461914e-9
+      },
+      "minY": -1.1920928955078125e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_MetalFence_Simple",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_MetalFence_Simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9491038918495178,
+        "d": 0.15605798363685608
+      },
+      "center": {
+        "x": 0.004446297883987427,
+        "z": 7.450580596923828e-9
+      },
+      "minY": -1.1920928955078125e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Support",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Support.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1986035406589508,
+        "d": 2.0362730622291565
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0.9000135362148285
+      },
+      "minY": 1.2113893032073975
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Vine1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Vine1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5357589721679688,
+        "d": 0.21896351873874664
+      },
+      "center": {
+        "x": -0.015259802341461182,
+        "z": 0.064773790538311
+      },
+      "minY": -2.1205222606658936
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Vine2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Vine2.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.386113464832306,
+        "d": 0.21384452283382416
+      },
+      "center": {
+        "x": 0.19900426268577576,
+        "z": 0.06221429258584976
+      },
+      "minY": -2.1205222606658936
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Vine4",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Vine4.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0165728032588959,
+        "d": 0.15001652017235756
+      },
+      "center": {
+        "x": -0.20983977615833282,
+        "z": 0.04823167435824871
+      },
+      "minY": -1.0138827562332153
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Vine5",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Vine5.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.301084518432617,
+        "d": 1.1258394420146942
+      },
+      "center": {
+        "x": -0.16781044006347656,
+        "z": -0.4612453132867813
+      },
+      "minY": -1.954820990562439
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Vine6",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Vine6.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.136980772018433,
+        "d": 1.4704611003398895
+      },
+      "center": {
+        "x": 0.03341352939605713,
+        "z": -0.633556142449379
+      },
+      "minY": -1.0719956159591675
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Vine9",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Vine9.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.136980772018433,
+        "d": 1.4704610705375671
+      },
+      "center": {
+        "x": 0.03341352939605713,
+        "z": -0.016979306936264038
+      },
+      "minY": -0.6333709955215454
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_Wagon",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_Wagon.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9514083862304688,
+        "d": 4.024016499519348
+      },
+      "center": {
+        "x": -0.003654956817626953,
+        "z": -1.1384238600730896
+      },
+      "minY": 0.00312984362244606
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_WoodenFence_Extension1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_WoodenFence_Extension1.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.045045018196106,
+        "d": 0.11035726591944695
+      },
+      "center": {
+        "x": 0.01012641191482544,
+        "z": -2.7939677238464355e-8
+      },
+      "minY": -0.02825251966714859
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_WoodenFence_Extension2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_WoodenFence_Extension2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0270316004753113,
+        "d": 0.11035726591944695
+      },
+      "center": {
+        "x": 0.01913312077522278,
+        "z": -2.7939677238464355e-8
+      },
+      "minY": -0.02825251966714859
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Prop_WoodenFence_Single",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Prop_WoodenFence_Single.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.064099669456482,
+        "d": 0.1198200061917305
+      },
+      "center": {
+        "x": 0.0005990862846374512,
+        "z": 3.3527612686157227e-8
+      },
+      "minY": -0.02825251966714859
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_2x4_RoundTile",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_2x4_RoundTile.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.2934184074401855,
+        "d": 4.232189655303955
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": -0.008414030075073242
+      },
+      "minY": -0.3415522575378418
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Dormer_RoundTile",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Dormer_RoundTile.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.966370940208435,
+        "d": 2.4391595125198364
+      },
+      "center": {
+        "x": 0.9169350266456604,
+        "z": 0.00006562471389770508
+      },
+      "minY": 0.029659956693649292
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.6071172952651978,
+        "d": 0.7512634992599487
+      },
+      "center": {
+        "x": -0.028685033321380615,
+        "z": 0.040667176246643066
+      },
+      "minY": -0.13308730721473694
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick4_Half_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick4_Half_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.4101100265979767,
+        "d": 0.48955416679382324
+      },
+      "center": {
+        "x": -1.0756518691778183,
+        "z": -0.09018659591674805
+      },
+      "minY": -0.13180206716060638
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick4_Half_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick4_Half_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.4163310825824738,
+        "d": 0.48955416679382324
+      },
+      "center": {
+        "x": 1.0787623971700668,
+        "z": -0.09018659591674805
+      },
+      "minY": -0.13180206716060638
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick4",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick4.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.399803400039673,
+        "d": 1.129103422164917
+      },
+      "center": {
+        "x": 0.016094326972961426,
+        "z": 0.22958803176879883
+      },
+      "minY": -0.13180206716060638
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick6_Half_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick6_Half_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.414314392954111,
+        "d": 0.489554762840271
+      },
+      "center": {
+        "x": -1.6566850524395704,
+        "z": -0.09018629789352417
+      },
+      "minY": -0.13180209696292877
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick6_Half_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick6_Half_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.400194052606821,
+        "d": 0.489554762840271
+      },
+      "center": {
+        "x": 1.6496248822659254,
+        "z": -0.09018629789352417
+      },
+      "minY": -0.13180209696292877
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick6",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick6.glb",
+    "dims": {
+      "footprint": {
+        "w": 6.694395303726196,
+        "d": 1.1291040182113647
+      },
+      "center": {
+        "x": 0.0006796121597290039,
+        "z": 0.2295883297920227
+      },
+      "minY": -0.13180209696292877
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick8_Half_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick8_Half_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.326524142175913,
+        "d": 0.4895540177822113
+      },
+      "center": {
+        "x": -2.1127899270504713,
+        "z": -0.0901867002248764
+      },
+      "minY": -0.13180209696292877
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick8_Half_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick8_Half_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.34927785769105,
+        "d": 0.4895540177822113
+      },
+      "center": {
+        "x": 2.1241667848080397,
+        "z": -0.0901867002248764
+      },
+      "minY": -0.13180209696292877
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Front_Brick8",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Front_Brick8.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.510794639587402,
+        "d": 1.129103273153305
+      },
+      "center": {
+        "x": 0.0006794929504394531,
+        "z": 0.22958792746067047
+      },
+      "minY": -0.13180209696292877
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_FrontSupports",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_FrontSupports.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.486258506774902,
+        "d": 0.6545270439237356
+      },
+      "center": {
+        "x": -9.5367431640625e-7,
+        "z": 0.29999847430735826
+      },
+      "minY": -0.11826205253601074
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Log",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Log.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1489304304122925,
+        "d": 10.695795059204102
+      },
+      "center": {
+        "x": -0.011854231357574463,
+        "z": 0
+      },
+      "minY": 3.848724842071533
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Modular_RoundTiles",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Modular_RoundTiles.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.663220226764679,
+        "d": 2.2516591548919678
+      },
+      "center": {
+        "x": -0.000856935977935791,
+        "z": -0.08029282093048096
+      },
+      "minY": 0.006394326686859131
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTile_2x1_Long",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTile_2x1_Long.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.347305774688721,
+        "d": 1.9521887302398682
+      },
+      "center": {
+        "x": -7.152557373046875e-7,
+        "z": 0.507179856300354
+      },
+      "minY": -1.008133888244629
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTile_2x1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTile_2x1.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.2970235347747803,
+        "d": 1.9521887302398682
+      },
+      "center": {
+        "x": 0,
+        "z": 0.507179856300354
+      },
+      "minY": -0.34155815839767456
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_4x4",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_4x4.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.513076305389404,
+        "d": 5.561474800109863
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04082942008972168
+      },
+      "minY": -0.5157185792922974
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_4x6",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_4x6.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.513076305389404,
+        "d": 7.572280406951904
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00010585784912109375
+      },
+      "minY": -0.5157185792922974
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_4x8",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_4x8.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.513076305389404,
+        "d": 9.682739734649658
+      },
+      "center": {
+        "x": 0,
+        "z": 0.012616395950317383
+      },
+      "minY": -0.5157185792922974
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_6x10",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_6x10.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.249783515930176,
+        "d": 11.852186679840088
+      },
+      "center": {
+        "x": 0,
+        "z": 0.028512239456176758
+      },
+      "minY": -0.7821269035339355
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_6x12",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_6x12.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.249783515930176,
+        "d": 13.657506942749023
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.7821269035339355
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_6x14",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_6x14.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.249783515930176,
+        "d": 15.705883026123047
+      },
+      "center": {
+        "x": 0,
+        "z": -0.024187564849853516
+      },
+      "minY": -0.7821269035339355
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_6x4",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_6x4.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.249783515930176,
+        "d": 4.992188215255737
+      },
+      "center": {
+        "x": 0,
+        "z": 2.3578916788101196
+      },
+      "minY": -0.7821268439292908
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_6x6",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_6x6.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.249783515930176,
+        "d": 8.03218936920166
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07789182662963867
+      },
+      "minY": -0.7821269035339355
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_6x8",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_6x8.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.249783515930176,
+        "d": 9.682739734649658
+      },
+      "center": {
+        "x": 0,
+        "z": 0.012616395950317383
+      },
+      "minY": -0.7821269035339355
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_8x10",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_8x10.glb",
+    "dims": {
+      "footprint": {
+        "w": 9.951994895935059,
+        "d": 11.859444618225098
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07772397994995117
+      },
+      "minY": -0.7799561023712158
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_8x12",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_8x12.glb",
+    "dims": {
+      "footprint": {
+        "w": 9.951994895935059,
+        "d": 14.132187843322754
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05103445053100586
+      },
+      "minY": -0.7799561023712158
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_8x14",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_8x14.glb",
+    "dims": {
+      "footprint": {
+        "w": 9.951994895935059,
+        "d": 15.705883026123047
+      },
+      "center": {
+        "x": 0,
+        "z": -0.024187564849853516
+      },
+      "minY": -0.7799561023712158
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_RoundTiles_8x8",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_RoundTiles_8x8.glb",
+    "dims": {
+      "footprint": {
+        "w": 9.951994895935059,
+        "d": 10.332187175750732
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08135294914245605
+      },
+      "minY": -0.7799561023712158
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Support2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Support2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.1997000202536583,
+        "d": 0.7651262446001432
+      },
+      "center": {
+        "x": 4.842877388000488e-8,
+        "z": 0.3825631060324479
+      },
+      "minY": -0.6772639155387878
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Tower_RoundTiles",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Tower_RoundTiles.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.650521278381348,
+        "d": 5.427099704742432
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.5719583630561829
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1_Center_Mirror",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1_Center_Mirror.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 1.4989915533861833
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": -0.7494957127173087
+      },
+      "minY": -0.14530563354492188
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1_Center",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1_Center.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 1.4989915533861833
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": 0.7494957127173087
+      },
+      "minY": -0.14530563354492188
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1_Corner",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1_Corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.544260360300541,
+        "d": 1.556861326098442
+      },
+      "center": {
+        "x": 0.6712263338267803,
+        "z": -0.6645357981324196
+      },
+      "minY": -0.16884352266788483
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1289291381835938,
+        "d": 1.5603222846984863
+      },
+      "center": {
+        "x": -0.06446456909179688,
+        "z": 0.7389882802963257
+      },
+      "minY": -0.1611957550048828
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1_Middle",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1_Middle.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9999999403953552,
+        "d": 2
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": 0.9243063926696777
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1289291381835938,
+        "d": 1.5603222846984863
+      },
+      "center": {
+        "x": 0.06446456909179688,
+        "z": 0.7389882802963257
+      },
+      "minY": -0.1611957550048828
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Roof_Wooden_2x1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Roof_Wooden_2x1.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.2578582763671875,
+        "d": 1.5603222846984863
+      },
+      "center": {
+        "x": 0,
+        "z": 0.7389882802963257
+      },
+      "minY": -0.1611957550048828
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stair_Interior_Rails",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stair_Interior_Rails.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7167109251022339,
+        "d": 4.563224300742149
+      },
+      "center": {
+        "x": 0,
+        "z": -2.0372965410351753
+      },
+      "minY": 0.02250903844833374
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stair_Interior_Simple",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stair_Interior_Simple.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6761797666549683,
+        "d": 4.619539234787226
+      },
+      "center": {
+        "x": 0.003216564655303955,
+        "z": -2.275040639564395
+      },
+      "minY": -0.01040551345795393
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stair_Interior_Solid",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stair_Interior_Solid.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.768798589706421,
+        "d": 4.709672659635544
+      },
+      "center": {
+        "x": 0,
+        "z": -1.9969965368509293
+      },
+      "minY": -0.018151555210351944
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stair_Interior_SolidExtended",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stair_Interior_SolidExtended.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.768798589706421,
+        "d": 6.158302515745163
+      },
+      "center": {
+        "x": 0,
+        "z": -2.721311464905739
+      },
+      "minY": -0.018151553347706795
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_NoFirstStep",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_NoFirstStep.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.0772459506988525
+      },
+      "center": {
+        "x": 0,
+        "z": -0.03862297534942627
+      },
+      "minY": -5.094234021706286e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Platform",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Platform.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.0013427734375
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Platform45",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Platform45.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000671148300171,
+        "d": 2.0006715059280396
+      },
+      "center": {
+        "x": 0.00033533573150634766,
+        "z": 0.0003356337547302246
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Platform45Clean",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Platform45Clean.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.0006715059280396
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": 0.0003356337547302246
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_PlatformU",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_PlatformU.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.00067138671875
+      },
+      "center": {
+        "x": 0,
+        "z": 0.000335693359375
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_SidePlatform",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_SidePlatform.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 2.0013427734375
+      },
+      "center": {
+        "x": -1.7881393432617188e-7,
+        "z": 0
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Sides",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Sides.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Sides45",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Sides45.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000000596046448,
+        "d": 2.0000000596046448
+      },
+      "center": {
+        "x": 8.940696716308594e-8,
+        "z": -2.086162567138672e-7
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_SidesU",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_SidesU.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 1.9999998211860657
+      },
+      "center": {
+        "x": 0,
+        "z": -8.940696716308594e-8
+      },
+      "minY": -3.820675516279714e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_SingleSide",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_SingleSide.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20000004768371582,
+        "d": 2
+      },
+      "center": {
+        "x": -0.9000002145767212,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_SingleSideThick",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_SingleSideThick.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.40000009536743164,
+        "d": 2
+      },
+      "center": {
+        "x": -2.384185791015625e-7,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Straight_Center",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Straight_Center.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.0779173374176025
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": -0.03828728199005127
+      },
+      "minY": -0.20368799567222595
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Straight_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Straight_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.0779173374176025
+      },
+      "center": {
+        "x": 0,
+        "z": -0.03828728199005127
+      },
+      "minY": -0.20368799567222595
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Straight_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Straight_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.0779173374176025
+      },
+      "center": {
+        "x": 0,
+        "z": -0.03828728199005127
+      },
+      "minY": -0.20368799567222595
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Stairs_Exterior_Straight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs_Exterior_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.0779173374176025
+      },
+      "center": {
+        "x": 0,
+        "z": -0.03828728199005127
+      },
+      "minY": -0.20368799567222595
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Arch",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Arch.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.0640457272529602
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03202282637357712
+      },
+      "minY": -1.1920928955078125e-7
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_BottomCover",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_BottomCover.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.43160542100667953
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.09823264554142952
+      },
+      "minY": -0.11676454544067383
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Door_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Door_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Door_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Door_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Door_RoundInset",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Door_RoundInset.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 1.0924464017152786
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.4537767991423607
+      },
+      "minY": -1.1278182812197925e-16
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Straight_Base",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Straight_Base.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Straight_L",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Straight_L.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.00177800655365,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": 0.0008888840675354004,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Straight_R",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Straight_R.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0017778873443604,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -0.0008889436721801758,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Straight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": -0.0020958781242370605
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Window_Thin_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Window_Thin_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Window_Wide_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Window_Wide_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Window_Wide_Flat2",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Window_Wide_Flat2.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": -0.023045778274536133
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_Window_Wide_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_Window_Wide_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_Plaster_WoodGrid",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_Plaster_WoodGrid.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 0.4064820408821106
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1107943058013916
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_UnevenBrick_Door_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_UnevenBrick_Door_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064817279577255
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.11079446226358414
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_UnevenBrick_Door_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_UnevenBrick_Door_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064817279577255
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.11079446226358414
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_UnevenBrick_Straight",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_UnevenBrick_Straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064817279577255
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.11079446226358414
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_UnevenBrick_Window_Thin_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_UnevenBrick_Window_Thin_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064817279577255
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.11079446226358414
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_UnevenBrick_Window_Wide_Flat",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_UnevenBrick_Window_Wide_Flat.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064817279577255
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.11079446226358414
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Wall_UnevenBrick_Window_Wide_Round",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Wall_UnevenBrick_Window_Wide_Round.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.0000001192092896,
+        "d": 0.4064817279577255
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.11079446226358414
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Window_Roof_Thin",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_Roof_Thin.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8518267571926117,
+        "d": 1.179054081439972
+      },
+      "center": {
+        "x": 0.035723522305488586,
+        "z": 0.5117224156856537
+      },
+      "minY": 1.3382160663604736
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Window_Roof_Wide",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_Roof_Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4164857268333435,
+        "d": 1.1790540665388107
+      },
+      "center": {
+        "x": 0.047453850507736206,
+        "z": 0.5117224231362343
+      },
+      "minY": 1.3382160663604736
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Window_Thin_Flat1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_Thin_Flat1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.7879710495471954,
+        "d": 0.4357430338859558
+      },
+      "center": {
+        "x": -0.011072799563407898,
+        "z": -0.048709332942962646
+      },
+      "minY": 0.9747479557991028
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Window_Thin_Round1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_Thin_Round1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8876205682754517,
+        "d": 0.3443889021873474
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07982790470123291
+      },
+      "minY": 1.01604425907135
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Window_Wide_Flat1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_Wide_Flat1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.608236312866211,
+        "d": 0.6834383308887482
+      },
+      "center": {
+        "x": -9.5367431640625e-7,
+        "z": 0.07513831555843353
+      },
+      "minY": 0.94417804479599
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/Window_Wide_Round1",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_Wide_Round1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.364915370941162,
+        "d": 0.5295750498771667
+      },
+      "center": {
+        "x": 0,
+        "z": 0.012504488229751587
+      },
+      "minY": 1.01604425907135
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Thin_Flat_Closed",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Thin_Flat_Closed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8517746031284332,
+        "d": 0.1357695609331131
+      },
+      "center": {
+        "x": 0.0072406381368637085,
+        "z": 0.23886915296316147
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Thin_Flat_Open",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Thin_Flat_Open.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3540059924125671,
+        "d": 0.37707386910915375
+      },
+      "center": {
+        "x": -0.01646164059638977,
+        "z": 0.3250708058476448
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Thin_Round_Closed",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Thin_Round_Closed.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.867402970790863,
+        "d": 0.1357695758342743
+      },
+      "center": {
+        "x": 0.005018681287765503,
+        "z": 0.22034980356693268
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Thin_Round_Open",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Thin_Round_Open.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.606278121471405,
+        "d": 0.3764881193637848
+      },
+      "center": {
+        "x": -0.01643344759941101,
+        "z": 0.24726112186908722
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Wide_Flat_Closed",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Wide_Flat_Closed.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3469353318214417,
+        "d": 0.1357695758342743
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0.22034980356693268
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Wide_Flat_Open",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Wide_Flat_Open.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.4805694818496704,
+        "d": 0.4565186947584152
+      },
+      "center": {
+        "x": 0.0015756487846374512,
+        "z": 0.36491499096155167
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Wide_Round_Closed",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Wide_Round_Closed.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3469353318214417,
+        "d": 0.1357695758342743
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0.22034980356693268
+      },
+      "minY": 1.0932440757751465
+    }
+  },
+  {
+    "id": "quaternius-medieval-village/WindowShutters_Wide_Round_Open",
+    "source": "quaternius-medieval-village",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "WindowShutters_Wide_Round_Open.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.3034836053848267,
+        "d": 0.47235530614852905
+      },
+      "center": {
+        "x": -0.04821544885635376,
+        "z": 0.32697251439094543
+      },
+      "minY": 1.0932440757751465
+    }
+  }
+]
