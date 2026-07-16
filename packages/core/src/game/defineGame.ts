@@ -1,6 +1,9 @@
 import type { ActionCodesMap } from "../input/actionBindings";
 import type { GameFeedOptions } from "./feed";
 import type { GamePhase } from "./gamePhase";
+import type { SystemDefinition } from "./defineSystem";
+import { mergeSystemFeatures } from "./defineSystem";
+import { composeGameLoop } from "./systemRuntime";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { GameContext } from "../runtime/gameContext";
@@ -60,6 +63,10 @@ export interface GameLoop<TContext = unknown> {
   onTick?(ctx: TContext, dt: number): void;
   /** Once per leave in a hosted world (never fired single-player). Despawn the player's entities / release their slots here. */
   onPlayerLeave?(ctx: TContext, player: LoopPlayer): void;
+  /** Scenario/run reset — clear run-scoped state. Composed system `reset` hooks run here too. */
+  onReset?(ctx: TContext): void;
+  /** World teardown (mode switch, unmount). Composed system `dispose` hooks run here too. */
+  onDispose?(ctx: TContext): void;
 }
 
 /**
@@ -175,6 +182,13 @@ export interface GameDefinition<
   scene: EntityStore;
   /** Opt-in `ctx.game.*` subsystems beyond the always-on base; omitted systems are `undefined` on `ctx.game`. */
   features?: GameFeatures;
+  /**
+   * Composable game capabilities — the preferred authoring path for runtime behavior.
+   * Each system owns timing, events, and optional save/replication/reset/disposal.
+   * Installing a system with `feature` enables that `ctx.game.*` capability without a redundant flag.
+   * Classic `loop` hooks still run for incremental migration (systems tick first, then `loop.onTick`).
+   */
+  systems?: readonly SystemDefinition[];
   world?: WorldFeature;
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
@@ -208,12 +222,25 @@ export type GameDefinitionConfig<
   assets?: AssetCatalog<TAssetRef>;
 };
 
-/** Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`. */
+/**
+ * Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`,
+ * OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
+ *
+ * @capability define-game single public game-authoring path — compose systems, world, and loop in one definition
+ */
 export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   config: GameDefinitionConfig<TAssetRef, TMultiplayer>,
 ): GameDefinition<TAssetRef, TMultiplayer> {
   if (config.name.trim().length === 0) {
     throw new Error("defineGame: name must be non-empty");
   }
-  return { ...config, scene: createEntityStore(), assets: config.assets ?? createAssetCatalog() };
+  const features = mergeSystemFeatures(config.features, config.systems);
+  const loop = composeGameLoop(config.systems, config.loop);
+  return {
+    ...config,
+    features,
+    loop,
+    scene: createEntityStore(),
+    assets: config.assets ?? createAssetCatalog(),
+  };
 }

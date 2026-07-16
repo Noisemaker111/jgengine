@@ -12,6 +12,16 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
+## Unreleased
+
+### Migrate
+
+- **Nothing required** — classic `loop.onTick` fan-out still runs after systems. Prefer moving per-frame work into `defineGame({ systems: [...] })` with `defineSystem` (`@jgengine/core/game/defineSystem`); install a system with `feature: "quest"` (etc.) instead of a redundant `features` flag. See skill `jgengine` → [reference-systems.md](.claude/skills/jgengine/reference-systems.md).
+
+### Added
+
+- **Composable game systems** (#842) — `defineSystem` / `compileSystemSchedule` / `composeGameLoop` / `installSystems`. `defineGame({ systems })` is the single authoring path: fixed / frame / interval / event-only / manual ticks, multi-subscribe channels, deterministic stage order + optional `before`/`after`/`dependsOn`, system-owned save / replicate / reset / dispose. Installing a system activates its `feature` without a separate flag. `GameLoop` gains optional `onReset` / `onDispose`. `ctx.game.registerSave` / `registerReplicate` for system modules. Adopters: tower-guard, claudecraft (runtime without a giant tick fan-out).
+
 ## 0.10.0
 
 ### Migrate

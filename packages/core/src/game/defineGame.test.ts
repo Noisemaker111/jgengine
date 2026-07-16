@@ -81,7 +81,7 @@ describe("defineGame", () => {
     expect(game.server).toBe("persistent");
     expect(game.save).toEqual({ auto: "5m", scope: "player+chunks" });
     expect(game.ui).toBe("GameUI");
-    expect(game.loop).toBe(loop);
+    expect(game.loop?.onInit).toBeDefined();
   });
 });
 

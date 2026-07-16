@@ -4,6 +4,7 @@ import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import { entityModels } from "./game/models";
+import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
 import { TowerGuardWorldOverlay } from "./game/world/WorldOverlay";
 import { loop } from "./loop";
@@ -17,6 +18,7 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "defense" },
   content,
+  systems,
   loop,
   GameUI,
   settings: {

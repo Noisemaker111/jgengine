@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
 
+## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
+
+- `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/game/systemRuntime"`
+
 ## consumables — use/consume items with cooldowns and effects
 
 - `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/gameplay"`
@@ -19,6 +23,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/survival/decayMeter"`
+
+## define-game — single public game-authoring path — compose systems, world, and loop in one definition
+
+- `defineGame` (function) · `import { defineGame } from "@jgengine/core/game/defineGame"`
 
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
@@ -39,6 +47,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
 
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
+
+## game-system — declare a composable capability with its own schedule and lifecycle
+
+- `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/game/defineSystem"`
 
 ## item-instance-registry — a runtime store for procedurally generated item instances
 
@@ -136,6 +148,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## spawn-points — register spawn locations and pick where entities respawn
 
 - `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
+
+## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
+
+- `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/game/systemSchedule"`
 
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
