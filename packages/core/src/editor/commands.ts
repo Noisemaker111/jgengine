@@ -734,7 +734,9 @@ type HistoryEntry =
   | { kind: "paint"; delta: SurfaceDelta; selection: string[] }
   | { kind: "blend"; delta: WeightDelta; selection: string[] };
 
-/** Creates an editor session with undo/redo history seeded from an initial document. */
+/** Creates an editor session with undo/redo history seeded from an initial document.
+ * @internal
+ */
 export function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession {
   let state: EditorSessionState = {
     document: cloneEditorDocument(initial),
@@ -895,7 +897,9 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
   };
 }
 
-/** Compact snapshot of a session state — counts, selection, and the selected object. */
+/** Compact snapshot of a session state — counts, selection, and the selected object.
+ * @internal
+ */
 export function summarizeEditorSession(state: EditorSessionState): {
   markers: number;
   volumes: number;

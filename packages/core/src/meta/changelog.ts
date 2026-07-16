@@ -1,5 +1,7 @@
+/** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
 export const VERSION = "0.10.0";
 
+/** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
   migrate: readonly string[];
   added: readonly string[];
@@ -7,10 +9,11 @@ export interface ChangelogEntry {
   removed: readonly string[];
 }
 
+/** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
   "0.10.0": {
     migrate: [
-      "Bump every @jgengine/* dependency to ^0.10.0 (the eight packages version in lockstep).",
+      "Bump lockstep SDK packages to ^0.10.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine and @jgengine/github may lag on their own version lines.",
       "Nothing to change for existing games — the shared mobile-composition system (viewport allocation, region collision, --jg-* viewport vars) is wired automatically by the shell; HudPanels inside a HudCanvas register themselves. Legacy orientation: \"landscape\" | \"portrait\" keeps its advisory dismissible-hint behavior.",
       "Opt a driving/landscape game into the strict gate: replace advisory orientation with the contract form orientation: { mobile: \"landscape-required\" } (rules: any · portrait/landscape advisory · portrait-required/landscape-required · unsupported). In portrait the engine shows a polished RotateDeviceScreen, suppresses input, freezes the sim, and unmounts the HUD/controls until the device is landscape.",
       "Declare HUD intent where useful: HudPanel gains priority (critical/secondary/tertiary), mobileBehavior (hidden unmounts on phones, transient softens collision), allowOverlapWith, and collisionGroup — all optional; omitting them keeps prior behavior.",

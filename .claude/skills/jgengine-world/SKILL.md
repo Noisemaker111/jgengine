@@ -42,6 +42,16 @@ movement: {
 
 `defineGame({ physics: { gravity, jumpVelocity } })` drives the kinematics controller directly: `gravity` (signed, e.g. `-24`) and `jumpVelocity` override the built-in tuning; omit either to keep the defaults. This is the one global exception to "never player tuning in `defineGame`" — it configures the shared controller, not a catalog entry. It is still **distinct** from `physics/physicsWorld`'s standalone rigid-body sim (see below) — `defineGame.physics` never touches that sim.
 
+### Walk controller ≠ `PhysicsWorld` (do not conflate)
+
+| Path | Use for |
+| --- | --- |
+| Shell walk controller + `defineGame({ physics: { gravity, jumpVelocity } })` + `ctx.player.motion` | Local player locomotion (FPS/third-person). Default for almost every character game. |
+| `PhysicsWorld` (`physics/physicsWorld`) | Debris, piles, joints, vehicles-lite, structure collapse — headless SoA sim. |
+| `ctx.scene.entity.bind(key).sync(bodies, dt)` (`scene/bodyBind`) | When a sim body **and** a scene entity must share pose — do not hand-write per-body `setPose` every tick. |
+
+ADR: `packages/core/src/physics/README.md`. Never feed the walk controller into `PhysicsWorld` “for realism” without a bind plan.
+
 **Vertical motion intents** — `ctx.player.motion` (`@jgengine/core/runtime/motionIntents`): `impulse(vy)` adds to the vertical velocity the shell's controller is about to integrate, `setVerticalVelocity(vy)` replaces it outright, `setY(y)` wins over physics for that frame. The shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated; this is not reactive state (jump pads, launch abilities, bounce pads).
 
 **`collision: { voxel: true }` — object lattice as solids.** When set, the shell's local player uses a voxel body whose `isSolid(x,y,z)` is rebuilt from `ctx.scene.object.list()` as exact `` `${x},${y},${z}` `` keys (integer cell queries). Integer-placed objects are walkable/blocking; fractional-coord objects decorate without colliding. Removing an object opens a real trapdoor under gravity — do not fake the fall with `setPose`. `visual.scale` does not shrink the collider (always a unit cell). The voxel body is created once; prefer `motion.setY` / `impulse` for vertical relocation — full XY teleport of the local voxel body is not supported. Solid cache rebuilds when object **count** changes. Recipe: `jgengine` → voxel trapdoor board.

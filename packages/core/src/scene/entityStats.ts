@@ -22,10 +22,12 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** @internal */
 export function getStatValue(map: StatValueMap, statId: string): StatValue | null {
   return map[statId] ?? null;
 }
 
+/** @internal */
 export function setStatValue(map: StatValueMap, statId: string, patch: StatValuePatch): StatValueMap {
   const existing = map[statId];
   const max = patch.max ?? existing?.max ?? 0;
@@ -34,6 +36,7 @@ export function setStatValue(map: StatValueMap, statId: string, patch: StatValue
   return { ...map, [statId]: { current, max, min } };
 }
 
+/** @internal */
 export function applyPoolDelta(map: StatValueMap, statId: string, amount: number): PoolDeltaResult {
   const existing = map[statId];
   if (existing === undefined) {
@@ -50,6 +53,7 @@ export function applyPoolDelta(map: StatValueMap, statId: string, amount: number
   };
 }
 
+/** @internal */
 export function seedStatValues(catalogStats: StatCatalog): StatValueMap {
   const map: StatValueMap = {};
   for (const [statId, declaration] of Object.entries(catalogStats)) {
@@ -60,7 +64,9 @@ export function seedStatValues(catalogStats: StatCatalog): StatValueMap {
   return map;
 }
 
-/** Deep-copy the per-entity stat maps into a serializable record — the transport counterpart of {@link hydrateEntityStats}. */
+/** Deep-copy the per-entity stat maps into a serializable record — the transport counterpart of {@link hydrateEntityStats}.
+ * @internal
+ */
 export function snapshotEntityStats(
   store: ReadonlyMap<string, StatValueMap>,
 ): Record<string, StatValueMap> {
@@ -73,7 +79,9 @@ export function snapshotEntityStats(
   return out;
 }
 
-/** Replace a live stat store with deep copies of a snapshot, clearing entities absent from it. */
+/** Replace a live stat store with deep copies of a snapshot, clearing entities absent from it.
+ * @internal
+ */
 export function hydrateEntityStats(
   store: Map<string, StatValueMap>,
   data: Record<string, StatValueMap>,
@@ -92,6 +100,7 @@ export interface EntityStatsApi {
   delta(instanceId: string, statId: string, amount: number): null | { reason: string };
 }
 
+/** @internal */
 export function createEntityStatsApi(
   resolve: (instanceId: string) => StatValueMap | undefined,
 ): EntityStatsApi {

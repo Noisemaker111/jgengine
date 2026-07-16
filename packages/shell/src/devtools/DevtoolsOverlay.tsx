@@ -61,6 +61,7 @@ function readStoredOverrides(gameName: string): DevtoolsOverrides | null {
   }
 }
 
+/** @internal */
 export function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides {
   const overrides = devtools.overrides.export();
   try {
@@ -71,6 +72,7 @@ export function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides {
   return overrides;
 }
 
+/** @internal */
 export function applyStoredDevtoolsOverrides(gameName: string): void {
   const stored = readStoredOverrides(gameName);
   if (stored === null) return;
@@ -85,6 +87,7 @@ export function applyStoredDevtoolsOverrides(gameName: string): void {
   }
 }
 
+/** @internal */
 export function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultiplayer {
   return {
     ...multiplayer,
@@ -95,6 +98,7 @@ export function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultipl
   };
 }
 
+/** @internal */
 export function DevtoolsRendererProbe() {
   const frameCounter = useRef(0);
   useFrame((state) => {
@@ -1070,6 +1074,7 @@ function summarizeLongFrames(events: readonly LongFrameEvent[]) {
   };
 }
 
+/** @internal */
 export function buildLeanReport(playable: PlayableGame) {
   const snap = devtools.snapshot();
   const frame = snap.frame;
@@ -1120,10 +1125,12 @@ export function buildLeanReport(playable: PlayableGame) {
   };
 }
 
+/** @internal */
 export function buildFullReport(playable: PlayableGame): DevtoolsSnapshot & { game: string } {
   return { game: playable.game.name, ...devtools.snapshot() };
 }
 
+/** @internal */
 export function DevtoolsOverlay({
   open,
   ctx,

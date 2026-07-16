@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { talkable, wander } from "@jgengine/core/scene/behaviors";
-import { createEntityStore, groundSpeed, movedWhileFrozen } from "@jgengine/core/scene/entityStore";
+import {
+  createEntityStore,
+  entityMetaOf,
+  groundSpeed,
+  movedWhileFrozen,
+} from "@jgengine/core/scene/entityStore";
 
 describe("scene entity store", () => {
   test("spawn generates unique monotonic ids when omitted", () => {
@@ -68,6 +73,17 @@ describe("scene entity store", () => {
     expect(updated?.position).toEqual([1, 2, 3]);
     expect(updated?.rotationY).toBe(Math.PI);
     expect(updated?.meta).toEqual({ label: "b" });
+  });
+
+  test("entityMetaOf narrows meta with a type guard or returns null", () => {
+    type Tag = { tag: string };
+    const isTag = (value: unknown): value is Tag =>
+      typeof value === "object" && value !== null && typeof (value as Tag).tag === "string";
+    const store = createEntityStore();
+    const id = store.spawn("mob", { meta: { tag: "elite" } });
+    const entity = store.get(id)!;
+    expect(entityMetaOf(entity, isTag)).toEqual({ tag: "elite" });
+    expect(entityMetaOf(entity, (v): v is { n: number } => typeof (v as { n?: unknown }).n === "number")).toBeNull();
   });
 
   test("update patches role, movement, and behaviors", () => {

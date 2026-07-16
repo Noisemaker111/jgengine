@@ -27,14 +27,6 @@
 - `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
 - `LaneRuleInput` (interface): interface LaneRuleInput<C> — ⚠ undocumented
 - `Side` (type): type Side = string — ⚠ undocumented
-- `boardTotals` (function): function boardTotals<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>): Readonly<Record<Side, number>> — ⚠ undocumented
-- `createLaneBoard` (function): function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> — A lane-based board where cards resolve per lane — the lane card-battler layout.
-- `createLaneBoardState` (function): function createLaneBoardState<C>(config: LaneBoardConfig<C>): LaneBoardState<C> — ⚠ undocumented
-- `laneAggregate` (function): function laneAggregate<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number, side: Side): LaneAggregate — ⚠ undocumented
-- `laneOutcome` (function): function laneOutcome<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number): LaneOutcome — ⚠ undocumented
-- `lanesWon` (function): function lanesWon<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>): Readonly<Record<Side, number>> — ⚠ undocumented
-- `placeCard` (function): function placeCard<C>(state: LaneBoardState<C>, config: LaneBoardConfig<C>, lane: number, side: Side, card: C): LaneResult<C> — ⚠ undocumented
-- `removeCard` (function): function removeCard<C>(state: LaneBoardState<C>, lane: number, side: Side, predicate: (card: C, index: number) => boolean): LaneResult<C> — ⚠ undocumented
 
 ## @jgengine/core/board/timelineBoard
 
@@ -44,11 +36,6 @@
 - `TimelineSlot` (interface): interface TimelineSlot — ⚠ undocumented
 - `TimelineSlotConfig` (interface): interface TimelineSlotConfig — ⚠ undocumented
 - `TimelineTickResult` (interface): interface TimelineTickResult — ⚠ undocumented
-- `createTimelineBoard` (function): function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard — A step-sequencer timeline board of timed, toggleable slots.
-- `createTimelineBoardState` (function): function createTimelineBoardState(slots: readonly TimelineSlotConfig[]): TimelineBoardState — ⚠ undocumented
-- `resetSlot` (function): function resetSlot(state: TimelineBoardState, slotId: string, remainingMs?: number): TimelineBoardState — ⚠ undocumented
-- `setSlotEnabled` (function): function setSlotEnabled(state: TimelineBoardState, slotId: string, enabled: boolean): TimelineBoardState — ⚠ undocumented
-- `tickTimeline` (function): function tickTimeline(state: TimelineBoardState, dtMs: number): TimelineTickResult — ⚠ undocumented
 
 ## @jgengine/core/cards/cardPile
 
@@ -94,24 +81,6 @@
 - `SoilState` (type): type SoilState = "untilled" | "tilled" — ⚠ undocumented
 - `TileCoord` (type): type TileCoord = readonly [number, number] — ⚠ undocumented
 - `TilePattern` (type): type TilePattern = readonly TileCoord[] — ⚠ undocumented
-- `advanceCropDay` (function): function advanceCropDay(def: CropDef, state: CropTileState): CropTileState — ⚠ undocumented
-- `applyToolToTiles` (function): function applyToolToTiles(tiles: ReadonlyMap<string, CropTileState>, center: TileCoord, pattern: TilePattern, apply: (state: CropTileState, coord: TileCoord) => CropTileState, fill: () => CropTileState = emptyTile): ApplyToolResult — ⚠ undocumented
-- `canPlant` (function): function canPlant(state: CropTileState): boolean — ⚠ undocumented
-- `canTill` (function): function canTill(state: CropTileState): boolean — ⚠ undocumented
-- `createCropField` (function): function createCropField(catalog: CropCatalog = () => null): CropField — ⚠ undocumented
-- `createDayTicker` (function): function createDayTicker(startDay = 0): DayTicker — ⚠ undocumented
-- `diamondPattern` (function): function diamondPattern(radius: number): TilePattern — ⚠ undocumented
-- `emptyTile` (function): function emptyTile(): CropTileState — ⚠ undocumented
-- `harvestCrop` (function): function harvestCrop(def: CropDef, state: CropTileState): HarvestResult — ⚠ undocumented
-- `maturityDays` (function): function maturityDays(def: CropDef): number — ⚠ undocumented
-- `patternAt` (function): function patternAt(center: TileCoord, pattern: TilePattern): TileCoord[] — ⚠ undocumented
-- `plantCrop` (function): function plantCrop(state: CropTileState, cropId: string): CropTileState — ⚠ undocumented
-- `rectPattern` (function): function rectPattern(width: number, depth: number): TilePattern — ⚠ undocumented
-- `singleTile` (function): function singleTile(): TilePattern — ⚠ undocumented
-- `squarePattern` (function): function squarePattern(radius: number): TilePattern — ⚠ undocumented
-- `tileKey` (function): function tileKey(coord: TileCoord): string — ⚠ undocumented
-- `tillTile` (function): function tillTile(state: CropTileState): CropTileState — ⚠ undocumented
-- `waterTile` (function): function waterTile(state: CropTileState): CropTileState — ⚠ undocumented
 
 ## @jgengine/core/crafting/production
 
@@ -187,11 +156,6 @@
 - `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
 - `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> — ⚠ undocumented
 - `CurrencyOperation` (type): type CurrencyOperation = "add" | "deduct" — ⚠ undocumented
-- `applyCurrencyOperation` (function): function applyCurrencyOperation(currency: CurrencyDefinition, current: number, operation: CurrencyOperation, amount: number): CurrencyAdjustment — ⚠ undocumented
-- `formatCurrencyAmount` (function): function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string — Format a currency amount with its symbol and grouping for HUD display.
-- `insufficientCurrencyReason` (function): function insufficientCurrencyReason(currency: CurrencyDefinition, needed: number, current: number): string — ⚠ undocumented
-- `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
-- `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
 
 ## @jgengine/core/economy/listingBook
 
@@ -212,15 +176,6 @@
 - `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
 - `WalletBook` (interface): interface WalletBook — ⚠ undocumented
 - `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
-- `balanceIn` (function): function balanceIn(book: WalletBook, scope: WalletScope, currency: string): number — ⚠ undocumented
-- `chargeFrom` (function): function chargeFrom(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): BookChargeResult — ⚠ undocumented
-- `contributionOf` (function): function contributionOf(book: WalletBook, groupId: string, userId: string): Readonly<Record<string, number>> — ⚠ undocumented
-- `contributorsOf` (function): function contributorsOf(book: WalletBook, groupId: string): string[] — ⚠ undocumented
-- `createWalletBook` (function): function createWalletBook(): WalletBook — Shared or group currency pools that track each member's contribution to a common balance.
-- `grantTo` (function): function grantTo(book: WalletBook, scope: WalletScope, currency: string, amount: number, by?: string): WalletBook — ⚠ undocumented
-- `groupScope` (function): function groupScope(groupId: string): WalletScope — ⚠ undocumented
-- `scopeKey` (function): function scopeKey(scope: WalletScope): string — ⚠ undocumented
-- `userScope` (function): function userScope(userId: string): WalletScope — ⚠ undocumented
 
 ## @jgengine/core/economy/techTree
 
@@ -229,13 +184,6 @@
 - `TechRejection` (type): type TechRejection = | { reason: "unknown-node" } | { reason: "already-unlocked" } | { reason: "missing-prerequisites"; missing: readonly string[] } — ⚠ undocumented
 - `TechState` (type): type TechState = UnlockState — ⚠ undocumented
 - `TechTree` (interface): interface TechTree — ⚠ undocumented
-- `availableTech` (function): function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] — Research/tech nodes gated by prerequisites that unlock recipes and capabilities as they are granted.
-- `canUnlockTech` (function): function canUnlockTech(defs: readonly TechNodeDef[], state: TechState, id: string): TechCheck — ⚠ undocumented
-- `createTechTree` (function): function createTechTree(defs: readonly TechNodeDef[] = []): TechTree — ⚠ undocumented
-- `grantTech` (function): function grantTech(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
-- `missingPrerequisites` (function): function missingPrerequisites(state: TechState, node: TechNodeDef): string[] — ⚠ undocumented
-- `techPrerequisitesMet` (function): function techPrerequisitesMet(state: TechState, node: TechNodeDef): boolean — ⚠ undocumented
-- `unlockedRecipes` (function): function unlockedRecipes(defs: readonly TechNodeDef[], state: TechState): string[] — ⚠ undocumented
 
 ## @jgengine/core/economy/wallet
 
@@ -619,13 +567,6 @@
 - `HistoryStacks` (interface): interface HistoryStacks<T> — Bounded past/future snapshot stacks — a serializable undo/redo record for any state `T`.
 - `HistoryStep` (interface): interface HistoryStep<T> — The snapshot an undo/redo restores plus the advanced stacks.
 - `SnapshotHistory` (interface): interface SnapshotHistory<T> — Stateful undo/redo handle over {@link HistoryStacks}, holding the stacks in a closure.
-- `canRedo` (function): function canRedo<T>(stacks: HistoryStacks<T>): boolean — True when there is an undone state to redo.
-- `canUndo` (function): function canUndo<T>(stacks: HistoryStacks<T>): boolean — True when there is a prior state to undo to.
-- `createSnapshotHistory` (function): function createSnapshotHistory<T>(limit = 100): SnapshotHistory<T> — Stateful undo/redo handle wrapping the pure snapshot functions. Call `record(state)` before each mutation; `undo`/`redo` return the state to apply. `limit` bounds the past stack.
-- `emptyHistory` (function): function emptyHistory<T>(): HistoryStacks<T> — Empty history stacks for state `T`.
-- `recordSnapshot` (function): function recordSnapshot<T>(stacks: HistoryStacks<T>, present: T, limit = 100): HistoryStacks<T> — Record `present` as the newest undo step and clear the redo future (a fresh action forks history). The oldest past entries beyond `limit` are dropped so the stack stays bounded for save/transport.
-- `redoSnapshot` (function): function redoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistoryStep<T> | null — Step forward: pop the newest future snapshot to apply as the new present, and push the given `present` back onto the past. Returns `null` when there is nothing to redo.
-- `undoSnapshot` (function): function undoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistoryStep<T> | null — Step back: pop the newest past snapshot to apply as the new present, and push the given `present` onto the future for a later redo. Returns `null` when there is nothing to undo.
 
 ## @jgengine/core/game/social
 
@@ -693,11 +634,6 @@
 - `TradeSystem` (interface): interface TradeSystem — ⚠ undocumented
 - `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
 - `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
-- `applyTradeOutcome` (function): function applyTradeOutcome(outcome: TradeOutcome, appliers: { adjustItem(itemId: string, count: number): { reason: string } | null; adjustCurrency(delta: Record<string, number>): void; }): { reason: string } | null — ⚠ undocumented
-- `canAffordCosts` (function): function canAffordCosts(balances: Record<string, number>, costs: Record<string, number>): string | null — ⚠ undocumented
-- `createTradeSystem` (function): function createTradeSystem(deps: TradeSystemDeps): TradeSystem — Buy and sell goods against player currency balances, resolving affordability and price.
-- `resolveBuy` (function): function resolveBuy(itemId: string, trade: TradeField | null | undefined, shopId: string, count: number, balances: Record<string, number>): TradeResolution — ⚠ undocumented
-- `resolveSell` (function): function resolveSell(itemId: string, trade: TradeField | null | undefined, count: number): TradeResolution — ⚠ undocumented
 
 ## @jgengine/core/game/unlocks
 
@@ -726,12 +662,6 @@
 - `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput — ⚠ undocumented
 - `WorldItemStore` (interface): interface WorldItemStore — ⚠ undocumented
 - `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps — ⚠ undocumented
-- `createWorldItemStore` (function): function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore — Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
-- `resolveDeathDrops` (function): function resolveDeathDrops(drops: readonly Drop[], options: ResolveDeathDropsOptions): ResolvedDeathDrops — Splits rolled death drops between direct grants and scattered ground items. `mode: "grant"` is the legacy behavior (loot straight to inventory); `mode: "world"` routes item drops through a scatter impulse and leaves currency drops granting directly (coins fly to the killer, gear hits the ground).
-- `resolveWorldItemPresentation` (function): function resolveWorldItemPresentation(item: LootFilterItem, rarityStyle: Record<string, RarityStyle> | undefined, rules: readonly LootFilterRule[] | undefined): WorldItemPresentation — Composes the baseline rarity→beam/color/label render binding (#32, catalog data the game supplies) with the loot-filter rule overrides (#33). A matching rule wins field-by-field; unmatched fields fall back to the rarity's baseline style.
-- `scatterOffset` (function): function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
-- `scatterPosition` (function): function scatterPosition(origin: EntityPosition, rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — ⚠ undocumented
-- `selectNearestWorldItem` (function): function selectNearestWorldItem(candidates: readonly { instanceId: string; position: EntityPosition }[], from: EntityPosition, radius: number): string | null — Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts).
 
 ## @jgengine/core/input/actionBindings
 
@@ -744,26 +674,12 @@
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
-- `actionLabel` (function): function actionLabel(map: ActionCodesMap, action: string): string | null — Short display label for an action's first bound code, or null when unbound.
-- `actionRepeatMs` (function): function actionRepeatMs(codes: ActionCodes | undefined): number | undefined — ⚠ undocumented
-- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
-- `bindingMatches` (function): function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean — ⚠ undocumented
-- `createActionStateTracker` (function): function createActionStateTracker<TAction extends string, TCode extends string = string>(map: ActionStateBindingMap<TAction, TCode>): ActionStateTracker<TAction> — ⚠ undocumented
-- `hotbarSlotActionIndex` (function): function hotbarSlotActionIndex(action: string): number | null — 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null.
-- `hotbarSlotBindings` (function): function hotbarSlotBindings(count: number, options?: { action?: (slot: number) => string }): ActionCodesMap — ⚠ undocumented
-- `isHotbarSlotAction` (function): function isHotbarSlotAction(action: string): boolean — ⚠ undocumented
-- `normalizeKeyCode` (function): function normalizeKeyCode(code: string): string — Collapse left/right modifier variants of a KeyboardEvent.code so bindings store one logical key.
-- `resolveActionCommand` (function): function resolveActionCommand(action: string, has: (command: string) => boolean, reserved: ReadonlySet<string>): string | null — Convention mapping a bound input action to the command it fires: the action's own name when a command by that name exists, otherwise a `ui.<action>` fallback. Reserved actions (consumed natively by the shell) and hotbar slots yield null so the shell can handle them itself.
-- `resolveBoundAction` (function): function resolveBoundAction<TAction extends string, TCode extends string>(code: TCode, bindings: ActionBindingMap<TAction, TCode>): TAction | null — First action (in the map's key order) bound to the given control code, or null.
-- `shouldDispatchAction` (function): function shouldDispatchAction({ pressed, down, repeatMs, lastFiredAt, now }: ShouldDispatchActionInput): boolean — ⚠ undocumented
-- `toActionStateBindingMap` (function): function toActionStateBindingMap<TAction extends string, TCode extends string>(map: ActionCodesMap<TAction, TCode>): ActionStateBindingMap<TAction, TCode> — ⚠ undocumented
 
 ## @jgengine/core/input/axisInput
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisBinding` (interface): interface AxisBinding — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
-- `AxisChannel` (class): class AxisChannel — Analog control channel — distinct from the digital action bindings. Throttle/brake/steer/handbrake are continuous values ramped from held keys (a keyboard feels like a pedal) or driven directly from a gamepad axis via `setAnalog`. `sample(dt, isDown, pointer?)` folds the current held-key state into the smoothed value; a binding's `pointer` source takes over from its keys while a pointer is active, and a `setAnalog` override replaces both for that axis until cleared.
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
 - `AxisInput` (interface): interface AxisInput — ⚠ undocumented
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
@@ -772,10 +688,6 @@
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
 - `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> — ⚠ undocumented
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
-- `clampAxis` (function): function clampAxis(value: number, range: AxisRange): number — ⚠ undocumented
-- `createAxisChannel` (function): function createAxisChannel<TAxes extends string>(config: GenericAxisConfig<TAxes>): GenericAxisChannel<TAxes> — ⚠ undocumented
-- `rampToward` (function): function rampToward(current: number, target: number, rate: number, dt: number): number — ⚠ undocumented
-- `sampleAxisBindings` (function): function sampleAxisBindings<TAxes extends string>(bindings: Record<TAxes, AxisBinding>, isDown: (code: string) => boolean, pointer?: PointerAxisState | null, ranges?: Partial<Record<TAxes, AxisRange>>): Record<TAxes, number> — Instantaneous (unsmoothed) analog sample of an axis binding map — the per-frame target an `AxisChannel` ramps toward, exposed as a pure read for `ctx.input.axis` and headless sampling. Each axis is its binding's positive-minus-negative held state (or its pointer source while a pointer is active), clamped to the axis range; axes without a listed range default to bipolar `[-1, 1]`.
 
 ## @jgengine/core/input/bindingOverrides
 
@@ -869,13 +781,6 @@
 - `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented
 - `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented
 - `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented
-- `countItem` (function): function countItem(state: InventoryState, itemId: string): number — ⚠ undocumented
-- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — A bag of stackable items supporting add, remove, count, and move — the base inventory model.
-- `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — ⚠ undocumented
-- `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — ⚠ undocumented
-- `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — ⚠ undocumented
-- `putItem` (function): function putItem(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, itemId: string, count: number, options?: { slot?: number }): PutResult — ⚠ undocumented
-- `takeItem` (function): function takeItem(state: InventoryState, itemId: string, count: number): TakeResult — ⚠ undocumented
 
 ## @jgengine/core/inventory/shapedGrid
 
@@ -890,33 +795,12 @@
 - `ShapedRejected` (interface): interface ShapedRejected — ⚠ undocumented
 - `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" — ⚠ undocumented
 - `ShapedResult` (type): type ShapedResult<T> = ShapedPlaceResult<T> | ShapedRejected — ⚠ undocumented
-- `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — ⚠ undocumented
-- `cellFromPoint` (function): function cellFromPoint(point: { x: number; y: number }, cellSize: number, gridOrigin: { x: number; y: number } = { x: 0, y: 0 }): Cell — ⚠ undocumented
-- `cellOccupant` (function): function cellOccupant<T>(grid: ShapedGrid<T>, cell: Cell): string | null — ⚠ undocumented
-- `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — A spatial grid inventory that holds shaped multi-cell items, Resident-Evil/Tarkov style.
-- `gridAdjacencyQuery` (function): function gridAdjacencyQuery<T>(grid: ShapedGrid<T>, options: { diagonal?: boolean } = {}): GridAdjacencyQuery — ⚠ undocumented
-- `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — ⚠ undocumented
-- `normalizeFootprint` (function): function normalizeFootprint(footprint: Footprint): Footprint — ⚠ undocumented
-- `occupiedCells` (function): function occupiedCells(footprint: Footprint, origin: Cell, rotation: Rotation): Cell[] — ⚠ undocumented
-- `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — ⚠ undocumented
-- `removeShaped` (function): function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> — ⚠ undocumented
-- `rotateFootprint` (function): function rotateFootprint(footprint: Footprint, rotation: Rotation): Footprint — ⚠ undocumented
 
 ## @jgengine/core/inventory/slotModel
 
 - `Slot` (type): type Slot<T> = T | null — ⚠ undocumented
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `SlotResult` (type): type SlotResult<T> = | { status: "ok"; grid: Slot<T>[] } | { status: "rejected"; reason: "invalid-slot" | "slot-occupied" | "empty-slot" } — ⚠ undocumented
-- `compactSlots` (function): function compactSlots<T>(grid: SlotGrid<T>): Slot<T>[] — ⚠ undocumented
-- `countFilled` (function): function countFilled<T>(grid: SlotGrid<T>): number — ⚠ undocumented
-- `createSlots` (function): function createSlots<T>(size: number): Slot<T>[] — ⚠ undocumented
-- `firstEmpty` (function): function firstEmpty<T>(grid: SlotGrid<T>): number | null — ⚠ undocumented
-- `indexOfSlot` (function): function indexOfSlot<T>(grid: SlotGrid<T>, match: (value: T, index: number) => boolean): number | null — ⚠ undocumented
-- `insertFirst` (function): function insertFirst<T>(grid: SlotGrid<T>, value: T): SlotResult<T> — ⚠ undocumented
-- `moveSlot` (function): function moveSlot<T>(grid: SlotGrid<T>, from: number, to: number): SlotResult<T> — ⚠ undocumented
-- `normalizeSlots` (function): function normalizeSlots<T>(values: SlotGrid<T>, size: number): Slot<T>[] — ⚠ undocumented
-- `placeAt` (function): function placeAt<T>(grid: SlotGrid<T>, index: number, value: T): SlotResult<T> — ⚠ undocumented
-- `removeAt` (function): function removeAt<T>(grid: SlotGrid<T>, index: number): SlotResult<T> — ⚠ undocumented
 
 ## @jgengine/core/inventory/storageTier
 
@@ -1014,30 +898,12 @@
 
 - `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
 - `CellRun` (interface): interface CellRun<T> — ⚠ undocumented
-- `cellAt` (function): function cellAt<T>(grid: CellGrid<T>, x: number, y: number): T | null — ⚠ undocumented
-- `clearRows` (function): function clearRows<T>(grid: CellGrid<T>, rows: readonly number[]): CellGrid<T> — ⚠ undocumented
-- `collapseColumns` (function): function collapseColumns<T>(grid: CellGrid<T>): CellGrid<T> — ⚠ undocumented
-- `createCellGrid` (function): function createCellGrid<T>(width: number, height: number): CellGrid<T> — ⚠ undocumented
-- `findRuns` (function): function findRuns<T>(grid: CellGrid<T>, minLength: number, matches: (a: T, b: T) => boolean = (a, b) => a === b): CellRun<T>[] — ⚠ undocumented
-- `fullRows` (function): function fullRows<T>(grid: CellGrid<T>): number[] — ⚠ undocumented
-- `inGridBounds` (function): function inGridBounds<T>(grid: CellGrid<T>, x: number, y: number): boolean — ⚠ undocumented
-- `withCell` (function): function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> — ⚠ undocumented
-- `withCells` (function): function withCells<T>(grid: CellGrid<T>, entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[]): CellGrid<T> — ⚠ undocumented
 
 ## @jgengine/core/puzzle/fallingPiece
 
 - `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> — ⚠ undocumented
 - `LockDelayState` (interface): interface LockDelayState — ⚠ undocumented
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
-- `createLockDelay` (function): function createLockDelay(delaySeconds: number): LockDelayState — ⚠ undocumented
-- `dropDistance` (function): function dropDistance<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>): number — ⚠ undocumented
-- `gravityInterval` (function): function gravityInterval(level: number, base = 0.8, perLevel = 0.07, min = 0.05): number — ⚠ undocumented
-- `levelForLines` (function): function levelForLines(lines: number, linesPerLevel = 10): number — ⚠ undocumented
-- `lineScore` (function): function lineScore(cleared: number, level: number, table: readonly number[] = CLASSIC_LINE_SCORE): number — ⚠ undocumented
-- `mergePiece` (function): function mergePiece<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>, value: T): CellGrid<T> — ⚠ undocumented
-- `pieceCells` (function): function pieceCells<TShape extends string>(table: ShapeTable<TShape>, piece: FallingPiece<TShape>): readonly (readonly [number, number])[] — ⚠ undocumented
-- `pieceCollides` (function): function pieceCollides<T, TShape extends string>(grid: CellGrid<T>, table: ShapeTable<TShape>, piece: FallingPiece<TShape>): boolean — ⚠ undocumented
-- `stepLockDelay` (function): function stepLockDelay(state: LockDelayState, grounded: boolean, dt: number): { state: LockDelayState; locked: boolean } — ⚠ undocumented
 
 ## @jgengine/core/puzzle/nonogram
 
@@ -1045,10 +911,6 @@
 - `NonogramClue` (type): type NonogramClue = readonly number[] — A line clue — the lengths of its consecutive filled runs, in order.
 - `NonogramSolution` (type): type NonogramSolution = readonly (readonly boolean[])[] — A solved grid, row-major; `true` is a filled cell.
 - `NonogramSolveResult` (interface): interface NonogramSolveResult — Outcome of {@link solveNonogram}: the deduced board and whether propagation fully determined it.
-- `deriveClues` (function): function deriveClues(solution: NonogramSolution): { rows: number[][]; cols: number[][] } — Row and column clues derived from a solution grid — the puzzle a solved board poses.
-- `runLengths` (function): function runLengths(line: readonly boolean[]): number[] — Run lengths of the filled cells in a boolean line — the clue a solved line yields.
-- `solveLine` (function): function solveLine(line: readonly NonogramCell[], clue: NonogramClue): NonogramCell[] | null — Constraint-propagate one line against its `clue`: intersect every clue-consistent arrangement, forcing a cell `filled` when it is filled in all of them and `empty` when empty in all, leaving the rest `unknown`. Returns the tightened line, or `null` on contradiction (no arrangement fits the current cells) — the per-line deduction step at the heart of every nonogram/picross solver.
-- `solveNonogram` (function): function solveNonogram(rows: readonly NonogramClue[], cols: readonly NonogramClue[]): NonogramSolveResult — Solve a nonogram from its row and column clues by iterated line propagation until the board stops changing. `solved` is true iff the board is fully determined without guessing — the standard test for whether a nonogram is fair. Returns `solved: false` with a partial board on contradiction or ambiguity.
 
 ## @jgengine/core/random/nameGen
 
@@ -1073,10 +935,6 @@
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
-- `dailySeed` (function): function dailySeed(nowMs: number, salt?: string): string — ⚠ undocumented
-- `seedFromSearch` (function): function seedFromSearch(search: string, param = DEFAULT_SEED_PARAM): string | null — ⚠ undocumented
-- `seedFromUrl` (function): function seedFromUrl(url: string, param = DEFAULT_SEED_PARAM): string | null — ⚠ undocumented
-- `withSeedParam` (function): function withSeedParam(url: string, seed: string | number, param = DEFAULT_SEED_PARAM): string — ⚠ undocumented
 
 ## @jgengine/core/session/contestedChannel
 
@@ -1087,7 +945,6 @@
 - `ContestedEventKind` (type): type ContestedEventKind = "start" | "tick" | "contested" | "paused" | "complete" | "interrupted" — ⚠ undocumented
 - `ContestedPhase` (type): type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted" — ⚠ undocumented
 - `ContestedSnapshot` (interface): interface ContestedSnapshot — ⚠ undocumented
-- `createContestedChannel` (function): function createContestedChannel(config: ContestedChannelConfig): ContestedChannel — ⚠ undocumented
 
 ## @jgengine/core/session/extraction
 
@@ -1099,7 +956,6 @@
 - `RaidSession` (interface): interface RaidSession — ⚠ undocumented
 - `RaidSessionConfig` (interface): interface RaidSessionConfig — ⚠ undocumented
 - `RaidStatus` (type): type RaidStatus = "in-raid" | "extracting" | "extracted" | "dead" — ⚠ undocumented
-- `createRaidSession` (function): function createRaidSession(config: RaidSessionConfig): RaidSession — ⚠ undocumented
 
 ## @jgengine/core/session/ring
 
@@ -1115,7 +971,6 @@
 ## @jgengine/core/session/roles
 
 - `RoleSpec` (interface): interface RoleSpec — ⚠ undocumented
-- `assignRoles` (function): function assignRoles(userIds: readonly string[], roles: readonly RoleSpec[], rng: () => number = Math.random): Record<string, string> — Assign hidden or team roles across players by ratio — social-deduction and team-shuffle setups.
 
 ## @jgengine/core/session/roundState
 
@@ -1130,8 +985,6 @@
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
-- `createRoundState` (function): function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase> — Run a match as repeating buy/action/end round phases with per-round win rewards and loss-streak economy.
-- `lossBonusFor` (function): function lossBonusFor(rule: LossBonusRule | undefined, streak: number): number — ⚠ undocumented
 
 ## @jgengine/core/turn/commit
 

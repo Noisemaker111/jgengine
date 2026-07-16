@@ -34,6 +34,7 @@ export interface RoofConfig {
   overhang?: number;
 }
 
+/** @internal */
 export function wallSegments(points: readonly Vec2[], closed: boolean): WallSegment[] {
   const segments: WallSegment[] = [];
   const count = closed ? points.length : points.length - 1;
@@ -47,6 +48,7 @@ export function wallSegments(points: readonly Vec2[], closed: boolean): WallSegm
   return segments;
 }
 
+/** @internal */
 export function isEnclosed(points: readonly Vec2[], tolerance = 0.5): boolean {
   if (points.length < 3) return false;
   const first = points[0]!;
@@ -54,12 +56,14 @@ export function isEnclosed(points: readonly Vec2[], tolerance = 0.5): boolean {
   return Math.hypot(first[0] - last[0], first[1] - last[1]) <= tolerance;
 }
 
+/** @internal */
 export function enclosePath(points: readonly Vec2[], tolerance = 0.5): readonly Vec2[] {
   if (points.length < 3) return points;
   if (!isEnclosed(points, tolerance)) return points;
   return points.slice(0, points.length - 1);
 }
 
+/** @internal */
 export function polygonArea(polygon: readonly Vec2[]): number {
   let sum = 0;
   for (let index = 0; index < polygon.length; index += 1) {
@@ -70,6 +74,7 @@ export function polygonArea(polygon: readonly Vec2[]): number {
   return Math.abs(sum) / 2;
 }
 
+/** @internal */
 export function footprintFromWalls(points: readonly Vec2[], tolerance = 0.5): EnclosedFootprint | null {
   const closed = isEnclosed(points, tolerance);
   const polygon = enclosePath(points, tolerance);
@@ -97,6 +102,7 @@ export function footprintFromWalls(points: readonly Vec2[], tolerance = 0.5): En
   };
 }
 
+/** @internal */
 export function autoRoof(footprint: EnclosedFootprint, config: RoofConfig = {}): RoofPlan {
   const style = config.style ?? "hip";
   const eaveHeight = config.eaveHeight ?? 3;
@@ -182,6 +188,7 @@ export interface SurfacePaintStore {
   restore(snapshot: Record<PaintTarget, Record<string, string>>): void;
 }
 
+/** @internal */
 export function createSurfacePaint(): SurfacePaintStore {
   const maps: Record<PaintTarget, Map<string, string>> = {
     floor: new Map(),
@@ -230,6 +237,7 @@ function snapPoint(point: Vec2, grid: number): Vec2 {
   return [Math.round(point[0] / grid) * grid, Math.round(point[1] / grid) * grid];
 }
 
+/** @internal */
 export function createWallDrawTool(config: { snap?: number; closeTolerance?: number } = {}): WallDrawTool {
   const defaultSnap = config.snap ?? 0;
   const closeTolerance = config.closeTolerance ?? 0.5;
@@ -278,6 +286,7 @@ export function createWallDrawTool(config: { snap?: number; closeTolerance?: num
   };
 }
 
+/** @internal */
 export function wallSegmentBounds(segment: WallSegment, thickness: number): Aabb {
   const center: Vec2 = [(segment.from[0] + segment.to[0]) / 2, (segment.from[1] + segment.to[1]) / 2];
   const quarterTurns = Math.abs(Math.round(segment.angle / (Math.PI / 2))) % 2;

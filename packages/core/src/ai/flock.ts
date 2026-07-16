@@ -29,7 +29,8 @@ export interface FlockConfig {
  * (many-agents-to-POI) deliberately isn't. Pure: returns the desired acceleration for one agent;
  * `stepFlock` is the convenience integrator. O(neighbors) per agent — pre-filter with a spatial
  * grid past a few hundred agents.
- */
+  * @internal
+  */
 export function flockSteer(
   agent: FlockAgent,
   neighbors: readonly FlockAgent[],
@@ -191,7 +192,9 @@ function fillNeighbors(
   return count;
 }
 
-/** Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions. */
+/** Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions.
+ * @internal
+ */
 export function stepFlock(
   agents: FlockStepAgent[],
   config: FlockConfig,

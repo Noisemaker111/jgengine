@@ -17,6 +17,7 @@ export type RunCommandResult =
   | { ok: true; snapshot: import("./snapshot").GameRuntimeSnapshot }
   | { ok: false; reason: string };
 
+/** @internal */
 export function runCommand<TInput>(
   snapshot: import("./snapshot").GameRuntimeSnapshot,
   commands: Record<string, CommandDef<TInput>>,

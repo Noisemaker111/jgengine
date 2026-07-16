@@ -46,7 +46,9 @@ function hash2(ix: number, iz: number, seed: number): number {
   return (h >>> 0) / 4294967295;
 }
 
-/** Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed. */
+/** Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
+ * @internal
+ */
 export function valueNoise(x: number, z: number, seed: number): number {
   const x0 = Math.floor(x);
   const z0 = Math.floor(z);
@@ -73,7 +75,9 @@ export interface FractalNoiseConfig {
   ridged: boolean;
 }
 
-/** Layers `valueNoise` octaves per `config` into a single normalized noise sample. */
+/** Layers `valueNoise` octaves per `config` into a single normalized noise sample.
+ * @internal
+ */
 export function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number {
   let amplitude = 1;
   let frequency = config.frequency;
@@ -90,6 +94,7 @@ export function fractalNoise(x: number, z: number, config: FractalNoiseConfig): 
   return norm === 0 ? 0 : sum / norm;
 }
 
+/** @internal */
 export function seedFrom(value: string | number | undefined, fallback: number): number {
   if (typeof value === "number") return value | 0;
   if (typeof value === "string") {
@@ -103,7 +108,9 @@ export function seedFrom(value: string | number | undefined, fallback: number): 
   return fallback;
 }
 
-/** Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients. */
+/** Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
+ * @internal
+ */
 export function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] {
   const epsilon = 0.75;
   return (x, z) => {
@@ -134,7 +141,9 @@ export const FLAT_FIELD: TerrainField = {
   sampleNormal: () => [0, 1, 0] as const,
 };
 
-/** A flat, zero-height `TerrainField` for arenas with no elevation. */
+/** A flat, zero-height `TerrainField` for arenas with no elevation.
+ * @internal
+ */
 export function flatField(): TerrainField {
   return FLAT_FIELD;
 }
@@ -153,7 +162,9 @@ export interface NoiseFieldConfig {
   waterLevel?: number;
 }
 
-/** Builds a `TerrainField` whose height is fractal noise shaped by `config`. */
+/** Builds a `TerrainField` whose height is fractal noise shaped by `config`.
+ * @internal
+ */
 export function noiseField(config: NoiseFieldConfig = {}): TerrainField {
   const fractal: FractalNoiseConfig = {
     seed: seedFrom(config.seed, 1337),
@@ -178,6 +189,7 @@ export interface RollingFieldConfig {
   bounds?: WorldBounds;
 }
 
+/** @internal */
 export function rollingField(config: RollingFieldConfig = {}): TerrainField {
   return noiseField({
     seed: config.seed ?? "rolling",
@@ -205,7 +217,9 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas. */
+/** Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
+ * @internal
+ */
 export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
   const seed = seedFrom(config.seed ?? "arena", 7);
   const rolling: FractalNoiseConfig = {
@@ -239,12 +253,15 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
   return fieldFromHeight(sampleHeight, { bounds: config.bounds, waterLevel: ARENA_WATER_LEVEL });
 }
 
+/** @internal */
 export function groundFieldFor(world?: WorldFeature): TerrainField {
   if (world !== undefined && world.kind === "environment") return resolveEnvironmentField(world);
   return flatField();
 }
 
-/** Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers. */
+/** Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
+ * @internal
+ */
 export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean {
   return world?.kind === "environment" && (world.terrain !== undefined || (world.islands?.length ?? 0) > 0);
 }
@@ -263,7 +280,8 @@ function islandContains(descriptor: TerrainIslandDescriptor, x: number, z: numbe
  * Composes a base terrain and any number of bounded islands into one world field: inside an island's
  * rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain
  * answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
- */
+  * @internal
+  */
 export function composeIslandFields(
   base: TerrainField | null,
   islands: readonly TerrainIslandDescriptor[],
@@ -379,7 +397,8 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
  * any authored `sculpt` snapshot, then any `clearings` flattened on top — so an editor-sculpted
  * heightfield drives both the rendered mesh and player collision, and gameplay spots stay level,
  * through the one seam every consumer already reads.
- */
+  * @internal
+  */
 export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
   const base = feature.terrain === undefined ? null : resolveTerrainField(feature.terrain);
   const composed =
@@ -399,7 +418,9 @@ export interface TerrainSlopeSample {
   steepness: number;
 }
 
-/** Local slope from the field's normal — the input for gravity-roll, ski acceleration, and slide checks (#284.6). */
+/** Local slope from the field's normal — the input for gravity-roll, ski acceleration, and slide checks (#284.6).
+ * @internal
+ */
 export function sampleSlope(field: TerrainField, x: number, z: number): TerrainSlopeSample {
   const [nx, ny, nz] = field.sampleNormal(x, z);
   const horizontal = Math.hypot(nx, nz);
@@ -413,7 +434,8 @@ export function sampleSlope(field: TerrainField, x: number, z: number): TerrainS
 /**
  * Downhill force/acceleration from the local slope: direction × sin(slope angle) × `scale`.
  * Add it to any integrator's XZ velocity each tick (`scale` ≈ gravity for a free-rolling body).
- */
+  * @internal
+  */
 export function slopeForce(field: TerrainField, x: number, z: number, scale = 9.8): readonly [number, number] {
   const [nx, , nz] = field.sampleNormal(x, z);
   if (Math.hypot(nx, nz) < 1e-9) return [0, 0];
@@ -466,7 +488,9 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
 const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
 const DEFAULT_TERRAIN_MATERIAL_STRENGTH = 1;
 
-/** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level. */
+/** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
+ * @internal
+ */
 export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail {
   return {
     rockColor: config.rockColor ?? DEFAULT_TERRAIN_DETAIL.rockColor,
@@ -491,6 +515,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
   };
 }
 
+/** @internal */
 export function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette {
   const material = descriptor.material ?? DEFAULT_TERRAIN_MATERIAL;
   const preset = TERRAIN_MATERIAL_PALETTES[material] as TerrainPalette | undefined;
@@ -569,7 +594,8 @@ function createBandValueSampler<T>(
  * ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers.
  * Below the first / above the last band clamps to that band's palette. Returns `fallback` when no
  * bands are declared. Pure math, unit-testable independent of rendering.
- */
+  * @internal
+  */
 export function createBiomeBandSampler(
   bands: readonly BiomeBand[],
   fallback: TerrainPalette,
@@ -600,7 +626,8 @@ function mixBiomeFog(from: BiomeFogValue, to: BiomeFogValue, t: number): BiomeFo
  * Per-z fog sampler over a descriptor's `biomeBands` — cross-fades each band's `fog` (unset fields
  * falling through to `fallback`) across the same `fade` window as the ground sampler, so fog color and
  * range track the camera's z. Bands with no `fog` resolve to `fallback`. Pure math, unit-testable.
- */
+  * @internal
+  */
 export function createBiomeFogSampler(
   bands: readonly BiomeBand[],
   fallback: BiomeFogValue,
@@ -644,7 +671,8 @@ function mixBiomeSky(from: BiomeSkyValue, to: BiomeSkyValue, t: number): BiomeSk
  * Per-z sky sampler over a descriptor's `biomeBands` — cross-fades each band's `sky` (unset fields
  * falling through to `fallback`) across the same `fade` window as the ground sampler, so horizon/zenith
  * colors and sun/ambient intensity track the camera's z. Bands with no `sky` resolve to `fallback`.
- */
+  * @internal
+  */
 export function createBiomeSkySampler(
   bands: readonly BiomeBand[],
   fallback: BiomeSkyValue,
@@ -669,7 +697,8 @@ export function createBiomeSkySampler(
  * Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered
  * `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring
  * seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
- */
+  * @internal
+  */
 export function createTerrainPaletteSampler(
   descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">,
 ): (x: number, z: number) => TerrainPalette {
@@ -775,6 +804,7 @@ export interface HeightMapFieldConfig {
   waterLevel?: number;
 }
 
+/** @internal */
 export function heightMapField(config: HeightMapFieldConfig): TerrainField {
   const { columns, rows, samples } = config;
   if (columns <= 0 || rows <= 0) throw new Error("heightMapField: columns/rows must be positive");
@@ -816,7 +846,9 @@ export function heightMapField(config: HeightMapFieldConfig): TerrainField {
   );
 }
 
-/** Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks. */
+/** Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
+ * @internal
+ */
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
   if (descriptor.heightField === undefined && descriptor.heightMap !== undefined) {
@@ -847,7 +879,9 @@ export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): 
   });
 }
 
-/** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`. */
+/** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.
+ * @internal
+ */
 export function snapToGround(
   field: TerrainField,
   position: readonly [number, number, number],
@@ -866,7 +900,9 @@ export interface GroundSnapEntityStore {
   setPose(id: string, pose: { position?: readonly [number, number, number] }): boolean;
 }
 
-/** Ground-snaps an already-spawned entity in place; returns false when `id` is unknown. */
+/** Ground-snaps an already-spawned entity in place; returns false when `id` is unknown.
+ * @internal
+ */
 export function snapEntityToGround(
   entities: GroundSnapEntityStore,
   id: string,
@@ -880,7 +916,9 @@ export function snapEntityToGround(
 
 export const DEFAULT_MAX_WALK_SLOPE = 0.6;
 
-/** Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`. */
+/** Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
+ * @internal
+ */
 export function resolveGroundStep(
   field: TerrainField,
   x: number,

@@ -19,6 +19,7 @@ export interface ResolvedInspectionCameraConfig {
   dampingFactor: number;
 }
 
+/** @internal */
 export function resolveInspectionCameraConfig(config?: InspectionCameraConfig): ResolvedInspectionCameraConfig {
   return {
     anchor: config?.anchor ?? "target",
@@ -47,7 +48,9 @@ export function resolveInspectionCameraConfig(config?: InspectionCameraConfig): 
   };
 }
 
-/** Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset. */
+/** Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset.
+ * @internal
+ */
 export function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Vec3; target: Vec3 } {
   if (config.initialPosition !== null) {
     return { camera: config.initialPosition, target: config.target };
@@ -62,7 +65,9 @@ export function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { 
   };
 }
 
-/** Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag. */
+/** Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag.
+ * @internal
+ */
 export function resolveInspectionZoomToCursor(anchor: InspectionZoomAnchor): boolean {
   return anchor === "cursor";
 }

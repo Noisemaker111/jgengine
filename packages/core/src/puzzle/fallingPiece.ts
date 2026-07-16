@@ -12,6 +12,7 @@ export type ShapeTable<TShape extends string = string> = Record<
   readonly (readonly (readonly [number, number])[])[]
 >;
 
+/** @internal */
 export function pieceCells<TShape extends string>(
   table: ShapeTable<TShape>,
   piece: FallingPiece<TShape>,
@@ -22,6 +23,7 @@ export function pieceCells<TShape extends string>(
   return state.map(([ox, oy]) => [piece.x + ox, piece.y + oy] as const);
 }
 
+/** @internal */
 export function pieceCollides<T, TShape extends string>(
   grid: CellGrid<T>,
   table: ShapeTable<TShape>,
@@ -34,6 +36,7 @@ export function pieceCollides<T, TShape extends string>(
   return false;
 }
 
+/** @internal */
 export function mergePiece<T, TShape extends string>(
   grid: CellGrid<T>,
   table: ShapeTable<TShape>,
@@ -47,6 +50,7 @@ export function mergePiece<T, TShape extends string>(
   return { width: grid.width, height: grid.height, cells };
 }
 
+/** @internal */
 export function dropDistance<T, TShape extends string>(
   grid: CellGrid<T>,
   table: ShapeTable<TShape>,
@@ -57,16 +61,19 @@ export function dropDistance<T, TShape extends string>(
   return distance;
 }
 
+/** @internal */
 export function gravityInterval(level: number, base = 0.8, perLevel = 0.07, min = 0.05): number {
   return Math.max(min, base - level * perLevel);
 }
 
+/** @internal */
 export function levelForLines(lines: number, linesPerLevel = 10): number {
   return Math.floor(lines / linesPerLevel);
 }
 
 const CLASSIC_LINE_SCORE: readonly number[] = [0, 40, 100, 300, 1200];
 
+/** @internal */
 export function lineScore(
   cleared: number,
   level: number,
@@ -80,10 +87,12 @@ export interface LockDelayState {
   readonly elapsed: number;
 }
 
+/** @internal */
 export function createLockDelay(delaySeconds: number): LockDelayState {
   return { delaySeconds, elapsed: 0 };
 }
 
+/** @internal */
 export function stepLockDelay(
   state: LockDelayState,
   grounded: boolean,

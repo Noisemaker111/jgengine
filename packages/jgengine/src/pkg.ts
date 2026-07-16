@@ -15,6 +15,7 @@ interface PackageJson {
 
 export type { PackageJson };
 
+/** @internal */
 export function readPackageJson(path: string): PackageJson | null {
   if (!existsSync(path)) return null;
   try {
@@ -24,12 +25,14 @@ export function readPackageJson(path: string): PackageJson | null {
   }
 }
 
+/** @internal */
 export function cliVersion(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   const own = readPackageJson(join(here, "..", "package.json")) ?? readPackageJson(join(here, "..", "..", "package.json"));
   return own?.version ?? "0.0.0";
 }
 
+/** @internal */
 export function findUp(startDir: string, predicate: (dir: string) => boolean): string | null {
   let dir = resolve(startDir);
   for (;;) {
@@ -40,6 +43,7 @@ export function findUp(startDir: string, predicate: (dir: string) => boolean): s
   }
 }
 
+/** @internal */
 export function findWorkspaceRoot(startDir: string): string | null {
   return findUp(startDir, (dir) => {
     const pkg = readPackageJson(join(dir, "package.json"));
@@ -47,15 +51,18 @@ export function findWorkspaceRoot(startDir: string): string | null {
   });
 }
 
+/** @internal */
 export function isEngineMonorepo(rootDir: string): boolean {
   return existsSync(join(rootDir, "packages", "core", "src")) && existsSync(join(rootDir, "Games"));
 }
 
+/** @internal */
 export function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(`--${name}`);
   return index >= 0 ? argv[index + 1] : undefined;
 }
 
+/** @internal */
 export function hasFlag(argv: string[], name: string): boolean {
   return argv.includes(`--${name}`);
 }

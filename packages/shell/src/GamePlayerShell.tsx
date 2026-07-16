@@ -17,38 +17,29 @@ import {
   type ReactNode,
 } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-
-/**
- * Dedicated LoadingManager for every GLB load instead of THREE.DefaultLoadingManager.
- * The shared default manager is process-wide; under repeated dev-server navigations its
- * AbortController can already be aborted, which silently stalls GLTFLoader.fetch forever
- * with no thrown error. A private manager sidesteps that (ported from the duet-keys ship).
- */
-const modelLoadingManager = new THREE.LoadingManager();
-const sharedGltfLoader = new GLTFLoader(modelLoadingManager);
-sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 import {
-  actionRepeatMs,
   createActionStateTracker,
-  hotbarSlotActionIndex,
-  resolveActionCommand,
-  shouldDispatchAction,
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
+import {
+  RESERVED_INPUT_ACTIONS,
+  dispatchBoundAction,
+  heldActionsFor,
+  shouldFireBoundAction,
+} from "./boundActionDispatch";
+import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "./hotbarActions";
+import { colorFromId, resolveWorldSky } from "./worldSky";
+import { pointerAimFor, pointerContextMenu } from "./shellPointer";
+import { shellDrivesPlayerPose } from "./shellMovement";
 import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
 import {
-  buildContextMenu,
   contextVerbInput,
   type ContextMenu,
   type ContextVerb,
 } from "@jgengine/core/interaction/contextMenu";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { aimToPoint } from "@jgengine/core/input/pointer";
-import { eyeHeightFromColliders } from "@jgengine/core/combat/shotOrigin";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
@@ -63,10 +54,9 @@ import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { attachWorldSync } from "./worldSync";
-import { localCommandSink, resolveCommandSink, type CommandSink } from "./commandSink";
+import { resolveCommandSink, type CommandSink } from "./commandSink";
 import { inputFramesEqual, resolveInputSink, type InputSink } from "./inputSink";
 import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
-import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
@@ -117,6 +107,7 @@ import { VERSION } from "@jgengine/core/meta/changelog";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
+import { attachAudioEventWire } from "./audio/audioWire";
 import { PostProcessing } from "./postfx/PostProcessing";
 import { DefaultSurface, detailMaps } from "./render/defaultSurface";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
@@ -132,7 +123,8 @@ import {
   resolveRigKind,
   rtsPanKeysConflict,
 } from "./camera";
-import { resolveModel, tryResolveCatalogModel } from "./render/resolveModel";
+import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "./render/resolveModel";
+import { sharedGltfLoader } from "./render/modelLoad";
 import { CullingProvider, useRenderVisibility } from "./visibility/CullingProvider";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
@@ -210,93 +202,11 @@ function logRuntimeError(error: unknown, phase: string, componentStack?: string)
   return diagnostic;
 }
 
-const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
-  "moveForward",
-  "moveBack",
-  "moveLeft",
-  "moveRight",
-  "turnLeft",
-  "turnRight",
-  "sprint",
-  "jump",
-  "tabTarget",
-  "clearTarget",
-  "useAbility",
-  "interact",
-]);
-
 /** No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own. */
 const EMPTY_RESERVED: ReadonlySet<string> = new Set();
 
 /** Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker. */
 const NO_ACTIONS: string[] = [];
-
-const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
-
-function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
-  const bound = input ?? {};
-  return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
-}
-
-function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
-  return Object.keys(input ?? {}).flatMap((action) => {
-    const slot = hotbarSlotActionIndex(action);
-    return slot === null ? [] : [{ action, slot }];
-  });
-}
-
-function hotbarIdFor(playable: PlayableGame): string | null {
-  const declarations = Object.entries(playable.game.inventories ?? {});
-  const hud = declarations.find(([, declaration]) => declaration.hud === "hotbar");
-  return (hud ?? declarations[0])?.[0] ?? null;
-}
-
-function executeHotbarSlot(
-  ctx: GameContext,
-  fromId: string,
-  hotbarId: string,
-  slot: number,
-  yaw: number,
-  pitch: number,
-  aimOverride?: Aim,
-): { ok: boolean; error?: string } {
-  const stack = ctx.player.inventory.state(hotbarId).slots[slot];
-  if (stack === undefined || stack === null) return { ok: false, error: `Hotbar slot ${slot + 1} is empty` };
-  const result = ctx.item.use.use({
-    from: fromId,
-    itemId: stack.itemId,
-    inventoryId: hotbarId,
-    aim: aimOverride ?? { yaw, pitch },
-  });
-  return result.error === undefined ? { ok: true } : { ok: false, error: result.error };
-}
-
-function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
-  const hit = service.worldHit();
-  if (hit === null) return undefined;
-  const shooter =
-    ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId)) ??
-    ctx.scene.entity.get(ctx.player.userId);
-  if (shooter === null) return undefined;
-  const eye = eyeHeightFromColliders(ctx.scene.entity.collidersOf(shooter.id));
-  return aimToPoint(
-    [shooter.position[0], shooter.position[1] + eye, shooter.position[2]],
-    hit.point,
-  );
-}
-
-function pointerContextMenu(ctx: GameContext, playable: PlayableGame, hit: { point: readonly [number, number, number]; entity: string | null; object: string | null }): ContextMenu | null {
-  if (hit.entity !== null) {
-    const entity = ctx.scene.entity.get(hit.entity);
-    const verbs = entity === null ? undefined : playable.content.entityById?.(entity.name)?.verbs;
-    return buildContextMenu({ kind: "entity", targetId: hit.entity, verbs, point: hit.point });
-  }
-  if (hit.object !== null) {
-    const verbs = ctx.scene.object.catalog(hit.object)?.verbs;
-    return buildContextMenu({ kind: "object", targetId: hit.object, verbs, point: hit.point });
-  }
-  return null;
-}
 
 function GamePhaseStamp() {
   const { phase } = useGamePhase();
@@ -306,57 +216,10 @@ function GamePhaseStamp() {
   return null;
 }
 
-/** Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions. */
-export function heldActionsFor(tracker: Pick<ActionStateTracker<string>, "isDown">, actions: readonly string[]): string[] {
-  return actions.filter((action) => tracker.isDown(action));
-}
-
-/** Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`). */
-export function shouldFireBoundAction(
-  tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">,
-  action: string,
-  input: PlayableGame["game"]["input"],
-  repeatFiredAt: ReadonlyMap<string, number>,
-  now: number,
-): boolean {
-  return shouldDispatchAction({
-    pressed: tracker.wasPressed(action),
-    down: tracker.isDown(action),
-    repeatMs: actionRepeatMs(input?.[action]),
-    lastFiredAt: repeatFiredAt.get(action) ?? null,
-    now,
-  });
-}
-
-/** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). */
-export function dispatchBoundAction(
-  ctx: GameContext,
-  action: string,
-  yaw: number,
-  pitch: number,
-  aim: Aim,
-  reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS,
-  sink: CommandSink = localCommandSink(ctx),
-): void {
-  const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), reserved);
-  if (command !== null) sink.run(command, { yaw, pitch, aim });
-}
-
 export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
 export { hasEnvironmentTerrain } from "@jgengine/core/world/terrain";
-
-/** The world's declared sky, when its world feature is an environment with one (#196.1). */
-export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined {
-  return world?.kind === "environment" ? world.sky : undefined;
-}
-
-function colorFromId(id: string): string {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return `hsl(${hash % 360}, 65%, 55%)`;
-}
 
 function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
   const size = entry.shadowCameraSize ?? 40;
@@ -521,36 +384,6 @@ function ModelPartGroup({
       <EntityModel model={model} />
     </group>
   );
-}
-
-/** Resolves an entity model plus any bone attachments' or kit-of-parts' models through the asset catalog, so `EntityModel` receives fully-resolved `ModelConfig`s. */
-function resolveEntityModel(
-  value: string | ModelConfig | undefined,
-  assets: AssetCatalog,
-  key: string,
-): ModelConfig | undefined {
-  const model = resolveModel(value, assets, { seam: "entityModels", key });
-  if (model === undefined) return model;
-  if (model.attachments === undefined && model.parts === undefined) return model;
-  return {
-    ...model,
-    ...(model.attachments === undefined
-      ? {}
-      : {
-          attachments: model.attachments.map((attachment) => ({
-            ...attachment,
-            model: resolveModel(attachment.model, assets) ?? attachment.model,
-          })),
-        }),
-    ...(model.parts === undefined
-      ? {}
-      : {
-          parts: model.parts.map((part) => ({
-            ...part,
-            model: resolveModel(part.model, assets) ?? part.model,
-          })),
-        }),
-  };
 }
 
 function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps: ModelMaterialMaps }) {
@@ -1774,18 +1607,7 @@ export function GamePlayerShell({
   useEffect(() => () => audioEngine.dispose(), [audioEngine]);
   useEffect(() => {
     if (ctx === null) return;
-    const offPlay = ctx.game.events.on("audio.play", ({ sound, at }) => {
-      audioEngine.playOneShot(sound, at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] });
-    });
-    const offMusic = ctx.game.events.on("audio.music", ({ theme, transpose }) => {
-      audioEngine.playMusic(theme, transpose === undefined ? undefined : { transpose });
-    });
-    const offResume = ctx.game.events.on("audio.resume", () => audioEngine.resume());
-    return () => {
-      offPlay();
-      offMusic();
-      offResume();
-    };
+    return attachAudioEventWire(ctx.game.events, audioEngine);
   }, [ctx, audioEngine]);
   useEffect(() => {
     if (typeof document === "undefined") return;

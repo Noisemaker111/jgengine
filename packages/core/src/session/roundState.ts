@@ -94,6 +94,7 @@ export interface RoundState<TPhase extends string = RoundPhase> {
 
 const DEFAULT_PHASE_ORDER: readonly RoundPhase[] = ["buy", "live", "end"];
 
+/** @internal */
 export function lossBonusFor(rule: LossBonusRule | undefined, streak: number): number {
   if (rule === undefined) return 0;
   return Math.min(rule.max, rule.base + rule.step * Math.max(0, streak));
@@ -117,11 +118,14 @@ function isConcludable<TPhase extends string>(order: readonly TPhase[], phase: T
  * Run a match as repeating buy/action/end round phases with per-round win rewards and loss-streak economy.
  *
  * @capability match-rounds run buy/action/end round phases with per-round economy
- */
+  * @internal
+  */
 export function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase>;
+/** @internal */
 export function createRoundState<TPhase extends string>(
   config: RoundConfig<TPhase> & { phaseOrder: readonly TPhase[] },
 ): RoundState<TPhase>;
+/** @internal */
 export function createRoundState<TPhase extends string>(config: RoundConfig<TPhase>): RoundState<TPhase> {
   const order = config.phaseOrder ?? (DEFAULT_PHASE_ORDER as unknown as readonly TPhase[]);
   const durations = config.phases;

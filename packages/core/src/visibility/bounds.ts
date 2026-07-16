@@ -41,6 +41,7 @@ export type BoundsSpec =
 /** Conservative default: a unit sphere. Objects without explicit bounds cull as a small volume, never a point. */
 export const DEFAULT_BOUNDS: BoundsSpec = { kind: "sphere", radius: 1 };
 
+/** @internal */
 export function createRenderBounds(): RenderBounds {
   return {
     centerX: 0,
@@ -78,7 +79,9 @@ function fillBounds(
   return out;
 }
 
-/** Resolve a spec + world position into concrete bounds. Writes into `out` when supplied (no allocation). */
+/** Resolve a spec + world position into concrete bounds. Writes into `out` when supplied (no allocation).
+ * @internal
+ */
 export function resolveBounds(
   spec: BoundsSpec,
   position: Vec3,
@@ -105,6 +108,7 @@ export function resolveBounds(
   }
 }
 
+/** @internal */
 export function expandRenderBounds(bounds: RenderBounds, margin: number, out: RenderBounds = createRenderBounds()): RenderBounds {
   out.centerX = bounds.centerX;
   out.centerY = bounds.centerY;
@@ -119,6 +123,7 @@ export function expandRenderBounds(bounds: RenderBounds, margin: number, out: Re
   return out;
 }
 
+/** @internal */
 export function aabbIntersects(
   aMinX: number, aMinY: number, aMinZ: number, aMaxX: number, aMaxY: number, aMaxZ: number,
   bMinX: number, bMinY: number, bMinZ: number, bMaxX: number, bMaxY: number, bMaxZ: number,
@@ -130,6 +135,7 @@ export function aabbIntersects(
   );
 }
 
+/** @internal */
 export function boundsIntersect(a: RenderBounds, b: RenderBounds): boolean {
   return aabbIntersects(
     a.minX, a.minY, a.minZ, a.maxX, a.maxY, a.maxZ,
@@ -158,6 +164,7 @@ interface BoundsEntry {
   bounds: RenderBounds;
 }
 
+/** @internal */
 export function createBoundsCache(): BoundsCache {
   const entries = new Map<string, BoundsEntry>();
   let recomputes = 0;

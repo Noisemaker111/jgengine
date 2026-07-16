@@ -48,6 +48,7 @@ const saveConfigValidator = v.union(
   }),
 );
 
+/** @internal */
 export function jgengineTables() {
   return {
     jgGameServers: defineTable({
@@ -130,7 +131,8 @@ export function jgengineTables() {
  * Convex table for the hosted GameContext-world path: one row per (gameId, serverId) holding the full
  * `WorldSnapshot` blob, its revision, the member roster, and each member's held input. A sibling of
  * {@link jgengineTables} — spread either (or both) into `defineSchema`.
- */
+  * @internal
+  */
 export function jgengineHostedTables() {
   return {
     jgHostedWorlds: defineTable({
@@ -167,7 +169,9 @@ export const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules = {
   keepAliveRefreshMs: 10_000,
 };
 
-/** Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`. */
+/** Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`.
+ * @internal
+ */
 export async function resolveActor(
   ctx: { auth: Auth },
   claimedExternalId: string | undefined,
@@ -296,6 +300,7 @@ async function loadServerSnapshot(
   });
 }
 
+/** @internal */
 export async function applyLeaderboardIncrements(
   ctx: JGMutationCtx,
   gameId: string,
@@ -424,6 +429,7 @@ async function flushServerIfDue(
 
 export const JG_RUNTIME_TICK_MS = 1_000;
 
+/** @internal */
 export function createGameServerFunctions(options?: {
   runtimes?: GameRuntime[];
   auth?: JgAuthMode;
@@ -932,6 +938,7 @@ export function createGameServerFunctions(options?: {
 const leaderboardScopeValidator = v.union(v.literal("global"), v.literal("server"), v.literal("profile"));
 const MAX_LEADERBOARD_TOP_LIMIT = 100;
 
+/** @internal */
 export function createLeaderboardFunctions(options?: { auth?: JgAuthMode }) {
   void options;
 
@@ -1007,6 +1014,7 @@ export function createLeaderboardFunctions(options?: { auth?: JgAuthMode }) {
   return { getTop, getProfile, incrementMany };
 }
 
+/** @internal */
 export function createPresenceFunctions(options?: {
   auth?: JgAuthMode;
   freshWindowMs?: number;
@@ -1142,6 +1150,7 @@ export function createPresenceFunctions(options?: {
   return { list, sync, leave };
 }
 
+/** @internal */
 export function createChatFunctions(options?: {
   auth?: JgAuthMode;
   historyLimit?: number;
@@ -1259,6 +1268,7 @@ const JG_CRON_SPECS: readonly JgCronSpec[] = [
   { name: "jg flush", intervalSeconds: 60, functionKey: "flushDirtyServers" },
 ];
 
+/** @internal */
 export function jgengineCronSpecs(): readonly JgCronSpec[] {
   return JG_CRON_SPECS;
 }

@@ -22,12 +22,6 @@
 - `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
-## @jgengine/core/render/color
-
-- `hexToRgb` (function): function hexToRgb(hex: string): readonly [number, number, number] — Split a `#rrggbb` hex color into its `[r, g, b]` channels (0–255).
-- `mixHex` (function): function mixHex(from: string, to: string, t: number): string — Interpolate between two `#rrggbb` colors by fraction `t`, clamped to the endpoints.
-- `rgbToHex` (function): function rgbToHex(r: number, g: number, b: number): string — Combine `[r, g, b]` channels (0–255, rounded) into a `#rrggbb` hex string.
-
 ## @jgengine/core/render/lookPreset
 
 - `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
@@ -94,17 +88,6 @@
 - `LayoutRegionKind` (type): type LayoutRegionKind = "hud" | "control" | "system" | "screen" — What kind of UI a registered region belongs to.
 - `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
 - `ZERO_INSETS` (const): const ZERO_INSETS: Insets — All-zero insets.
-- `computeGameplayRect` (function): function computeGameplayRect(viewport: LayoutRect, safeArea: Insets, reserved: readonly LayoutRect[]): LayoutRect — The usable gameplay rectangle after reserving physical zones for touch controls and system UI. Starts from the safe-area-inset viewport and carves each reserved zone from whichever edge it hugs.
-- `detectLayoutCollisions` (function): function detectLayoutCollisions(regions: readonly LayoutRegion[], options?: DetectCollisionsOptions): LayoutCollision[] — Every forbidden or warned rectangle intersection across the registered regions. A pair is skipped when either side's policy is `allow`, when either opts into the other via `allowOverlapWith`, when they share a `collisionGroup`, or when the overlap is below `minArea`.
-- `formatLayoutCollisions` (function): function formatLayoutCollisions(collisions: readonly LayoutCollision[]): string — Human-readable diagnostic block for a set of collisions (empty string when there are none).
-- `intersects` (function): function intersects(a: LayoutRect, b: LayoutRect): boolean — Do the two rectangles share any interior area? Touching edges do not count.
-- `isMobileMode` (function): function isMobileMode(mode: GameLayoutMode): boolean — Whether a mode is one of the phone modes.
-- `orientationOf` (function): function orientationOf(width: number, height: number): LayoutOrientation — Portrait when taller than wide, else landscape.
-- `overlapArea` (function): function overlapArea(a: LayoutRect, b: LayoutRect): number — Overlapping area in px²; 0 when the rectangles don't intersect.
-- `rectArea` (function): function rectArea(rect: LayoutRect): number — Area of a rect in px².
-- `rectHeight` (function): function rectHeight(rect: LayoutRect): number — Height of a rect (clamped to ≥0).
-- `rectWidth` (function): function rectWidth(rect: LayoutRect): number — Width of a rect (clamped to ≥0).
-- `resolveLayoutMode` (function): function resolveLayoutMode(input: LayoutModeInput): GameLayoutMode — Resolve the explicit composition mode. A mobile layout is not a scaled desktop layout: a coarse-pointer device on a game that supports mobile is always a `mobile-*` mode, split by live orientation; everything else is a desktop mode split by width.
 
 ## @jgengine/core/ui/hudLayout
 
@@ -117,14 +100,6 @@
 - `HudPlacement` (interface): interface HudPlacement — ⚠ undocumented
 - `HudRect` (interface): interface HudRect — ⚠ undocumented
 - `HudSize` (interface): interface HudSize — ⚠ undocumented
-- `anchoredPlacement` (function): function anchoredPlacement(anchor: HudAnchor, inset: { x: number; y: number }): HudPlacement — ⚠ undocumented
-- `clampRect` (function): function clampRect(rect: HudRect, viewport: HudSize): HudRect — ⚠ undocumented
-- `createHudLayout` (function): function createHudLayout(options?: HudLayoutOptions): HudLayoutStore — ⚠ undocumented
-- `isHudAnchor` (function): function isHudAnchor(value: unknown): value is HudAnchor — ⚠ undocumented
-- `isPanelDraggable` (function): function isPanelDraggable(state: HudLayoutState, id: string): boolean — ⚠ undocumented
-- `nearestAnchor` (function): function nearestAnchor(rect: HudRect, viewport: HudSize): HudAnchor — ⚠ undocumented
-- `placementFromRect` (function): function placementFromRect(rect: HudRect, viewport: HudSize, snap = 1): HudPlacement — ⚠ undocumented
-- `rectFromPlacement` (function): function rectFromPlacement(placement: HudPlacement, size: HudSize, viewport: HudSize): HudRect — ⚠ undocumented
 
 ## @jgengine/core/ui/hudScale
 
@@ -299,8 +274,6 @@
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
-- `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
-- `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
@@ -311,11 +284,7 @@
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
-- `useDisplayProfile` (function): function useDisplayProfile(): DisplayProfile — ⚠ undocumented
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
-- `useEngineEvent` (function): function useEngineEvent<TEventMap extends object, K extends keyof TEventMap>(store: EventfulEngineStore<TEventMap>, eventName: K, handler: (payload: TEventMap[K]) => void): void — ⚠ undocumented
-- `useEngineState` (function): function useEngineState<TState>(store: ReadableEngineStore<TState>): TState — ⚠ undocumented
-- `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
 - `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
@@ -418,8 +387,6 @@
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
-- `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
-- `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
@@ -427,7 +394,6 @@
 ## @jgengine/react/display
 
 - `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
-- `useDisplayProfile` (function): function useDisplayProfile(): DisplayProfile — ⚠ undocumented
 
 ## @jgengine/react/dragLayer
 
@@ -444,17 +410,11 @@
 
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
-- `useEngineEvent` (function): function useEngineEvent<TEventMap extends object, K extends keyof TEventMap>(store: EventfulEngineStore<TEventMap>, eventName: K, handler: (payload: TEventMap[K]) => void): void — ⚠ undocumented
-- `useEngineState` (function): function useEngineState<TState>(store: ReadableEngineStore<TState>): TState — ⚠ undocumented
-- `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 
 ## @jgengine/react/fogOverlay
 
 - `FogCellRect` (interface): interface FogCellRect — ⚠ undocumented
 - `FogPaintSurface` (interface): interface FogPaintSurface — ⚠ undocumented
-- `createFogDataUrl` (function): function createFogDataUrl(fog: FogCells, canvasSize: { width: number; height: number }, cellRect: (col: number, row: number) => FogCellRect | null, fill = "rgba(11, 15, 20, 0.82)"): string | null — ⚠ undocumented
-- `forEachUnrevealedFogCell` (function): function forEachUnrevealedFogCell(fog: FogCells, visit: (col: number, row: number) => void): number — ⚠ undocumented
-- `paintFogOverlay` (function): function paintFogOverlay(surface: FogPaintSurface, canvasSize: { width: number; height: number }, fog: FogCells, cellRect: (col: number, row: number) => FogCellRect | null, fill = "rgba(11, 15, 20, 0.82)"): number — ⚠ undocumented
 
 ## @jgengine/react/gameIcons
 
@@ -622,8 +582,6 @@
 ## @jgengine/react/selectSnapshot
 
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
-- `createSelectCache` (function): function createSelectCache<TSnapshot, TSelected>(): SelectCache<TSnapshot, TSelected> — ⚠ undocumented
-- `readSelectSnapshot` (function): function readSelectSnapshot<TSnapshot, TSelected>(cache: SelectCache<TSnapshot, TSelected>, snapshot: TSnapshot, select: (snapshot: TSnapshot) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 
 ## @jgengine/react/settings
 
@@ -639,11 +597,6 @@
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
-
-## @jgengine/react/skillCheckPaint
-
-- `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
-- `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 
 ## @jgengine/react/social
 
@@ -699,13 +652,9 @@
 
 - `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
 - `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
-- `dispatchBoundAction` (function): function dispatchBoundAction(ctx: GameContext, action: string, yaw: number, pitch: number, aim: Aim, reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS, sink: CommandSink = localCommandSink(ctx)): void — Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`).
 - `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
-- `heldActionsFor` (function): function heldActionsFor(tracker: Pick<ActionStateTracker<string>, "isDown">, actions: readonly string[]): string[] — Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions.
 - `nearbyObstacles` (function): function nearbyObstacles(objects: readonly { position: readonly [number, number, number]; }[], center: readonly [number, number, number], radius?: number): CollisionObstacle[] — Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
 - `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
-- `resolveWorldSky` (function): function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined — The world's declared sky, when its world feature is an environment with one (#196.1).
-- `shouldFireBoundAction` (function): function shouldFireBoundAction(tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">, action: string, input: PlayableGame["game"]["input"], repeatFiredAt: ReadonlyMap<string, number>, now: number): boolean — Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`).
 
 ## @jgengine/shell/GameUiPreview
 
@@ -743,38 +692,17 @@
 
 ## @jgengine/shell/behaviour
 
-- `Object3DBehaviour` (class): class Object3DBehaviour extends Behaviour — ⚠ undocumented
 - `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-- `createBehaviourWorldDriver` (function): function createBehaviourWorldDriver(world: BehaviourWorld): { start(): void; stop(): void; isRunning(): boolean; step(dt: number): void; } — ⚠ undocumented
-- `useBehaviourWorld` (function): function useBehaviourWorld(world: BehaviourWorld, scaleDt?: (rawDt: number) => number): void — Bootstraps `world` on mount and dispatches `world.update` every frame at simulation priority. Stops driving updates on unmount so remount does not double-step. `scaleDt` maps the raw frame delta to the dt behaviours receive — pass the game clock's scaling to keep behaviours on game time, or omit for real-time seconds. Games driving `world.update` themselves from `loop.onTick` should not also render this.
 
 ## @jgengine/shell/behaviourAttach
 
-- `Object3DBehaviour` (class): class Object3DBehaviour extends Behaviour — ⚠ undocumented
 - `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-
-## @jgengine/shell/behaviourDriver
-
-- `createBehaviourWorldDriver` (function): function createBehaviourWorldDriver(world: BehaviourWorld): { start(): void; stop(): void; isRunning(): boolean; step(dt: number): void; } — ⚠ undocumented
 
 ## @jgengine/shell/camera
 
-- `CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND: 1.4 — Calibrated trauma decay for `traumaShake`/`impactPresets` (trauma/second).
-- `CALIBRATED_TRAUMA_SHAKE_FREQUENCY` (const): const CALIBRATED_TRAUMA_SHAKE_FREQUENCY: 32 — Calibrated shake noise frequency (Hz) for `traumaShake`.
-- `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
-- `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
-- `CAMERA_POST_FRAME_PRIORITY` (const): const CAMERA_POST_FRAME_PRIORITY: number — ⚠ undocumented
-- `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — ⚠ undocumented
-- `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
-- `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
-- `CameraPose` (interface): interface CameraPose — ⚠ undocumented
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
-- `ChaseRig` (function): function ChaseRig(props: RigProps): null — ⚠ undocumented
-- `CinematicRig` (function): function CinematicRig(props: RigProps): null — ⚠ undocumented
-- `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
-- `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
@@ -784,108 +712,18 @@
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
-- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
-- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
-- `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
-- `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
-- `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
-- `OrbitCameraConfig` (interface): interface OrbitCameraConfig — ⚠ undocumented
-- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — ⚠ undocumented
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
-- `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
-- `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
-- `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
-- `PlayerFovBounds` (interface): interface PlayerFovBounds — ⚠ undocumented
 - `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
-- `ResolvedChase` (interface): interface ResolvedChase — ⚠ undocumented
-- `ResolvedDirectedCamera` (interface): interface ResolvedDirectedCamera — ⚠ undocumented
-- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
-- `ResolvedObserver` (interface): interface ResolvedObserver — ⚠ undocumented
-- `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
-- `ResolvedShoulder` (interface): interface ResolvedShoulder — ⚠ undocumented
-- `ResolvedSideScroll` (interface): interface ResolvedSideScroll — ⚠ undocumented
-- `ResolvedTopDown` (interface): interface ResolvedTopDown — ⚠ undocumented
-- `RigProps` (interface): interface RigProps — ⚠ undocumented
-- `RtsRig` (function): function RtsRig(props: RigProps & { panKeysEnabled?: boolean }): null — ⚠ undocumented
-- `ShakeOffset` (interface): interface ShakeOffset — ⚠ undocumented
-- `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
-- `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
-- `StaticCameraValues` (interface): interface StaticCameraValues — ⚠ undocumented
-- `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
-- `TraumaState` (interface): interface TraumaState — ⚠ undocumented
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
-- `addTrauma` (function): function addTrauma(state: TraumaState, amount: number): void — Add trauma (0..1) and clamp; larger hits raise the ceiling toward 1.
-- `angleDelta` (function): function angleDelta(a: number, b: number): number — Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI].
-- `applyCameraBlendStep` (function): function applyCameraBlendStep(scratch: CameraBlendScratch, camera: Camera, targetFov: number, dt: number): boolean — ⚠ undocumented
-- `blendShoulder` (function): function blendShoulder(hip: ResolvedShoulder, ads: ResolvedShoulder, t: number): ResolvedShoulder — Blend two shoulder framings by an ADS factor in [0,1].
-- `cameraFollowStep` (function): function cameraFollowStep(input: { camera: Vec3; target: Vec3; previousTarget: Vec3 | null; lockedDistance: number | null; }): CameraFollowState — ⚠ undocumented
-- `cameraLookPitch` (function): function cameraLookPitch(camera: Vec3, target: Vec3): number — Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera.
-- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Feed the default camera-shake channel from anywhere (see G7 hitstop cross-cut).
-- `captureCameraBlendFrom` (function): function captureCameraBlendFrom(scratch: CameraBlendScratch, position: Vector3, quaternion: Quaternion, fov: number, duration: number): void — ⚠ undocumented
-- `chaseDesiredPosition` (function): function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 — Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing).
-- `chaseLookAt` (function): function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 — Look point ahead of / above a chased vehicle.
-- `cinematicSample` (function): function cinematicSample(keyframes: readonly CameraKeyframe[], elapsed: number, loop: boolean, fallbackFov: number): CinematicSample — Sample a keyframe path at `elapsed` seconds. Each keyframe's `duration` is the travel time from the previous keyframe into it; segment easing is per the destination keyframe. Reports `done` once past the final keyframe (unless looping, which wraps `elapsed` into the total path duration).
-- `clamp` (function): function clamp(value: number, min: number, max: number): number — ⚠ undocumented
-- `clampPlayerFov` (function): function clampPlayerFov(value: unknown, min: number = PLAYER_FOV_MIN, max: number = PLAYER_FOV_MAX): number — ⚠ undocumented
-- `composePlayerFov` (function): function composePlayerFov(preference: number, poseFov: number, mode: "relative" | "absolute" = "relative", bounds: PlayerFovBounds = resolvePlayerFovBounds()): number — Composition model for perspective rigs: - preference is the player base FOV - poseFov is the rig's authored FOV (includes chase-speed modulation, ADS zoom, transitions) - relative mode shifts the authored FOV by (preference − default) so mods still stack - absolute mode (cinematic keyframes) keeps the authored FOV as-is
-- `createCameraBlendScratch` (function): function createCameraBlendScratch(Vector3Ctor: new () => Vector3, QuaternionCtor: new () => Quaternion): CameraBlendScratch — ⚠ undocumented
-- `createCameraShakeChannel` (function): function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel — ⚠ undocumented
-- `createTrauma` (function): function createTrauma(): TraumaState — ⚠ undocumented
-- `crossfadePose` (function): function crossfadePose(from: CameraPose, to: CameraPose, t: number): CameraPose — Linear cross-fade between two full camera poses (position, lookAt, fov).
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
-- `distanceBetween` (function): function distanceBetween(a: Vec3, b: Vec3): number — ⚠ undocumented
-- `forwardVector` (function): function forwardVector(yaw: number): Vec3 — ⚠ undocumented
-- `lerp` (function): function lerp(from: number, to: number, blend: number): number — ⚠ undocumented
-- `lerpVec3` (function): function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 — ⚠ undocumented
-- `loadPlayerFov` (function): function loadPlayerFov(bounds: PlayerFovBounds = resolvePlayerFovBounds(), storage: Pick<Storage, "getItem"> | null | undefined = defaultStorage()): number — ⚠ undocumented
-- `lockOnPose` (function): function lockOnPose(player: Vec3, target: Vec3, config: LockOnCameraConfig | undefined, fov: number): { pose: CameraPose; yaw: number } — Lock-on pose: camera sits behind the player along the player→target vector so the target stays framed. The look point is biased between player and target by `framingBias`.
-- `observerPose` (function): function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose — Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input.
-- `orbitFollowStep` (function): function orbitFollowStep(input: { state: OrbitFollowRuntimeState; desiredTarget: Vec3; deltaSeconds: number; config: ResolvedOrbitCameraConfig; dragging: boolean; }): OrbitFollowRuntimeState & { distance: number } — Pure orbit follow step — smooth target tracking, camera carries target delta (OrbitControls alone keeps camera fixed when only target moves), optional distance lock. Call each frame before OrbitControls.update() in the shell.
-- `orbitYawFromCamera` (function): function orbitYawFromCamera(cameraX: number, cameraZ: number, targetX: number, targetZ: number): number — Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
-- `resolveChase` (function): function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase — ⚠ undocumented
-- `resolveDirectedCamera` (function): function resolveDirectedCamera(director: DirectorCameraValues | undefined, staticConfig: StaticCameraValues): ResolvedDirectedCamera — Merges a `CameraDirector` runtime snapshot over the static `GameCameraConfig` (#196.2). `director` omitted, or its fields `undefined`/`null`, is a pure passthrough to `staticConfig` so mounting a director with no active override changes nothing.
-- `resolveFollowTargetFromPosition` (function): function resolveFollowTargetFromPosition(position: readonly [number, number, number], config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">): Vec3 — ⚠ undocumented
-- `resolveInspectionCameraConfig` (function): function resolveInspectionCameraConfig(config?: InspectionCameraConfig): ResolvedInspectionCameraConfig — ⚠ undocumented
-- `resolveInspectionZoomToCursor` (function): function resolveInspectionZoomToCursor(anchor: InspectionZoomAnchor): boolean — Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag.
-- `resolveObserver` (function): function resolveObserver(config: ObserverCameraConfig | undefined): ResolvedObserver — ⚠ undocumented
-- `resolveOrbitCameraConfig` (function): function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig — ⚠ undocumented
-- `resolvePlayerFovBounds` (function): function resolvePlayerFovBounds(options?: { min?: number; max?: number; default?: number; }): PlayerFovBounds — ⚠ undocumented
-- `resolveRigKind` (function): function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind — Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least specific: an explicit `rig` field always wins; then `perspective: "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the mere presence of a rig's own config block selects that rig, checked in the fixed order below (#207.8) so a config carrying more than one block resolves deterministically instead of depending on object key order. Set `rig` explicitly to break a tie.
-- `resolveShoulder` (function): function resolveShoulder(config: ShoulderCameraConfig | undefined, aiming: boolean): ResolvedShoulder — ⚠ undocumented
-- `resolveSideScroll` (function): function resolveSideScroll(config: SideScrollCameraConfig | undefined): ResolvedSideScroll — ⚠ undocumented
-- `resolveSideScrollPose` (function): function resolveSideScrollPose(entityPos: Vec3, resolved: ResolvedSideScroll, fov: number): CameraPose — Fixed lateral 2.5D follow pose: the camera sits perpendicular to the travel axis at `distance`, above the entity by `height`, and looks at the entity raised by `lookHeight`. Axis "x" watches from +z; axis "z" watches from +x.
-- `resolveTargetSmoothing` (function): function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, dragging: boolean): number — ⚠ undocumented
-- `resolveTopDown` (function): function resolveTopDown(config: TopDownCameraConfig | undefined): ResolvedTopDown — ⚠ undocumented
-- `rightVector` (function): function rightVector(yaw: number): Vec3 — Screen-right of a yaw: `forward × up` with up = +Y.
-- `rtsPanKeysConflict` (function): function rtsPanKeysConflict(input: ActionCodesMap | undefined): boolean — ⚠ undocumented
-- `savePlayerFov` (function): function savePlayerFov(value: number, bounds: PlayerFovBounds = resolvePlayerFovBounds(), storage: Pick<Storage, "setItem"> | null | undefined = defaultStorage()): number — ⚠ undocumented
-- `seatPose` (function): function seatPose(follow: Vec3, yaw: number, local: { x?: number; y?: number; z?: number }, fov: number): CameraPose — World-space seat pose (cockpit/hood/rear) rigidly attached to the vehicle.
-- `seedInspectionCamera` (function): function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Vec3; target: Vec3 } — Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset.
-- `seedOrbitFollowState` (function): function seedOrbitFollowState(input: { entityPosition: readonly [number, number, number]; config: Pick< ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight" | "initialYaw" | "initialPitch" >; }): OrbitFollowRuntimeState — ⚠ undocumented
-- `shakeOffset` (function): function shakeOffset(state: TraumaState, config: { maxOffset?: number; maxRoll?: number; exponent?: number; frequency?: number; } | undefined): ShakeOffset — Positional + roll shake for the current trauma. Shake magnitude is `trauma^exponent` so small hits stay subtle; the oscillation is deterministic per-seed pseudo-noise (no per-frame RNG, so identical inputs reproduce).
-- `shoulderPose` (function): function shoulderPose(follow: Vec3, yaw: number, pitch: number, sideSign: number, shoulder: ResolvedShoulder): CameraPose — Over-the-shoulder camera pose. The boom sits behind the follow point along `yaw`, raised by `heightOffset`, and pushed sideways by `shoulderOffset` (sign set by `sideSign`: +1 right, -1 left). `pitch` tilts the look point.
-- `sideScrollFollowBlend` (function): function sideScrollFollowBlend(followSmoothing: number, dt: number): number — Frame-rate independent follow blend for the side-scroll rig; `followSmoothing <= 0` hard-locks (blend 1) instead of freezing.
-- `smoothBlend` (function): function smoothBlend(deltaSeconds: number, speed: number): number — Frame-rate independent exponential smoothing factor in [0, 1].
-- `smoothYaw` (function): function smoothYaw(current: number, desired: number, speed: number, dt: number): number — Exponential yaw smoothing that respects wrap-around.
-- `smoothstep` (function): function smoothstep(t: number): number — ⚠ undocumented
-- `speedToFov` (function): function speedToFov(speed: number, curve: { base?: number; max?: number; speedForMax?: number } | undefined): number — Speed→FOV curve: FOV climbs from base to max as speed rises to `speedForMax`.
-- `springArmStep` (function): function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 — Exponential spring-arm approach toward a desired point (frame-rate independent).
-- `stepTrauma` (function): function stepTrauma(state: TraumaState, decayPerSecond: number, dt: number): void — Decay trauma linearly toward 0 and advance the shake clock.
-- `topDownPose` (function): function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number): CameraPose — Camera pose for a fixed top-down / isometric rig. `pitch` is the elevation of the camera→target ray above the ground (PI/2 = straight down); `yaw` is the fixed azimuth (PI/4 reads isometric). Height sets zoom; horizontal boom is derived so the look angle stays constant as height changes.
-- `traumaShake` (function): function traumaShake(trauma: number, time = 0): ShakeOffset — Calibrated trauma² camera shake: offset scales with `trauma` squared using game-feel defaults (decay 1.4/s, max offset 0.55, max roll 0.1 rad, noise freq 32×t) — the curve `impactPresets` trauma values are calibrated against, so an impact "just looks right" without hand-tuning `shakeOffset`.
-- `useCameraShake` (function): function useCameraShake(): CameraShakeChannel — The active rig's shake channel — call `.shake(...)` to add trauma from React UI.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
-- `yawTo` (function): function yawTo(from: Vec3, to: Vec3): number — Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
 
 ## @jgengine/shell/camera/GameCameraRig
 
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
-- `resolveRigKind` (function): function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind — Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least specific: an explicit `rig` field always wins; then `perspective: "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the mere presence of a rig's own config block selects that rig, checked in the fixed order below (#207.8) so a config carrying more than one block resolves deterministically instead of depending on object key order. Set `rig` explicitly to break a tie.
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
@@ -916,9 +754,6 @@
 ## @jgengine/shell/camera/cameraBlendMath
 
 - `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
-- `applyCameraBlendStep` (function): function applyCameraBlendStep(scratch: CameraBlendScratch, camera: Camera, targetFov: number, dt: number): boolean — ⚠ undocumented
-- `captureCameraBlendFrom` (function): function captureCameraBlendFrom(scratch: CameraBlendScratch, position: Vector3, quaternion: Quaternion, fov: number, duration: number): void — ⚠ undocumented
-- `createCameraBlendScratch` (function): function createCameraBlendScratch(Vector3Ctor: new () => Vector3, QuaternionCtor: new () => Quaternion): CameraBlendScratch — ⚠ undocumented
 
 ## @jgengine/shell/camera/cameraRigs
 
@@ -934,9 +769,6 @@
 - `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
 - `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
-- `applyCameraBlendStep` (function): function applyCameraBlendStep(scratch: CameraBlendScratch, camera: Camera, targetFov: number, dt: number): boolean — ⚠ undocumented
-- `captureCameraBlendFrom` (function): function captureCameraBlendFrom(scratch: CameraBlendScratch, position: Vector3, quaternion: Quaternion, fov: number, duration: number): void — ⚠ undocumented
-- `createCameraBlendScratch` (function): function createCameraBlendScratch(Vector3Ctor: new () => Vector3, QuaternionCtor: new () => Quaternion): CameraBlendScratch — ⚠ undocumented
 
 ## @jgengine/shell/camera/fovPreference
 
@@ -945,20 +777,12 @@
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
 - `PlayerFovBounds` (interface): interface PlayerFovBounds — ⚠ undocumented
-- `clampPlayerFov` (function): function clampPlayerFov(value: unknown, min: number = PLAYER_FOV_MIN, max: number = PLAYER_FOV_MAX): number — ⚠ undocumented
-- `composePlayerFov` (function): function composePlayerFov(preference: number, poseFov: number, mode: "relative" | "absolute" = "relative", bounds: PlayerFovBounds = resolvePlayerFovBounds()): number — Composition model for perspective rigs: - preference is the player base FOV - poseFov is the rig's authored FOV (includes chase-speed modulation, ADS zoom, transitions) - relative mode shifts the authored FOV by (preference − default) so mods still stack - absolute mode (cinematic keyframes) keeps the authored FOV as-is
-- `loadPlayerFov` (function): function loadPlayerFov(bounds: PlayerFovBounds = resolvePlayerFovBounds(), storage: Pick<Storage, "getItem"> | null | undefined = defaultStorage()): number — ⚠ undocumented
-- `resolvePlayerFovBounds` (function): function resolvePlayerFovBounds(options?: { min?: number; max?: number; default?: number; }): PlayerFovBounds — ⚠ undocumented
-- `savePlayerFov` (function): function savePlayerFov(value: number, bounds: PlayerFovBounds = resolvePlayerFovBounds(), storage: Pick<Storage, "setItem"> | null | undefined = defaultStorage()): number — ⚠ undocumented
 
 ## @jgengine/shell/camera/inspectionCameraMath
 
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
-- `resolveInspectionCameraConfig` (function): function resolveInspectionCameraConfig(config?: InspectionCameraConfig): ResolvedInspectionCameraConfig — ⚠ undocumented
-- `resolveInspectionZoomToCursor` (function): function resolveInspectionZoomToCursor(anchor: InspectionZoomAnchor): boolean — Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag.
-- `seedInspectionCamera` (function): function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Vec3; target: Vec3 } — Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset.
 
 ## @jgengine/shell/camera/orbitCameraMath
 
@@ -972,18 +796,6 @@
 - `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
 - `ResolvedOrbitCollision` (interface): interface ResolvedOrbitCollision — An {@link OrbitCollisionConfig} with every field resolved to a concrete value.
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
-- `cameraFollowStep` (function): function cameraFollowStep(input: { camera: Vec3; target: Vec3; previousTarget: Vec3 | null; lockedDistance: number | null; }): CameraFollowState — ⚠ undocumented
-- `cameraLookPitch` (function): function cameraLookPitch(camera: Vec3, target: Vec3): number — Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera.
-- `compensatedFov` (function): function compensatedFov(baseFovDegrees: number, desiredDistance: number, pulledDistance: number): number — FOV that keeps a target's on-screen size constant as the spring-arm pulls the camera in. Widens the base FOV by the desired/pulled distance ratio; a no-op (returns the base) whenever the camera sits at or beyond its desired distance.
-- `distanceBetween` (function): function distanceBetween(a: Vec3, b: Vec3): number — ⚠ undocumented
-- `lerpVec3` (function): function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 — ⚠ undocumented
-- `orbitFollowStep` (function): function orbitFollowStep(input: { state: OrbitFollowRuntimeState; desiredTarget: Vec3; deltaSeconds: number; config: ResolvedOrbitCameraConfig; dragging: boolean; }): OrbitFollowRuntimeState & { distance: number } — Pure orbit follow step — smooth target tracking, camera carries target delta (OrbitControls alone keeps camera fixed when only target moves), optional distance lock. Call each frame before OrbitControls.update() in the shell.
-- `orbitYawFromCamera` (function): function orbitYawFromCamera(cameraX: number, cameraZ: number, targetX: number, targetZ: number): number — Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
-- `resolveFollowTargetFromPosition` (function): function resolveFollowTargetFromPosition(position: readonly [number, number, number], config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">): Vec3 — ⚠ undocumented
-- `resolveOrbitCameraConfig` (function): function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig — ⚠ undocumented
-- `resolveTargetSmoothing` (function): function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, dragging: boolean): number — ⚠ undocumented
-- `seedOrbitFollowState` (function): function seedOrbitFollowState(input: { entityPosition: readonly [number, number, number]; config: Pick< ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset" | "initialDistance" | "initialHeight" | "initialYaw" | "initialPitch" >; }): OrbitFollowRuntimeState — ⚠ undocumented
-- `smoothBlend` (function): function smoothBlend(deltaSeconds: number, speed: number): number — Frame-rate independent exponential smoothing factor in [0, 1].
 
 ## @jgengine/shell/camera/rigMath
 
@@ -1003,68 +815,20 @@
 - `ShakeOffset` (interface): interface ShakeOffset — ⚠ undocumented
 - `StaticCameraValues` (interface): interface StaticCameraValues — ⚠ undocumented
 - `TraumaState` (interface): interface TraumaState — ⚠ undocumented
-- `addTrauma` (function): function addTrauma(state: TraumaState, amount: number): void — Add trauma (0..1) and clamp; larger hits raise the ceiling toward 1.
-- `angleDelta` (function): function angleDelta(a: number, b: number): number — Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI].
-- `bankRollStep` (function): function bankRollStep(currentRoll: number, yaw: number, previousYaw: number, dt: number, resolved: ResolvedChase): number — One smoothing step of the chase rig's turn-bank roll (#286.10): roll opposes yaw rate, clamped and exponentially damped.
-- `blendShoulder` (function): function blendShoulder(hip: ResolvedShoulder, ads: ResolvedShoulder, t: number): ResolvedShoulder — Blend two shoulder framings by an ADS factor in [0,1].
-- `chaseDesiredPosition` (function): function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 — Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing).
-- `chaseLookAt` (function): function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 — Look point ahead of / above a chased vehicle.
-- `cinematicSample` (function): function cinematicSample(keyframes: readonly CameraKeyframe[], elapsed: number, loop: boolean, fallbackFov: number): CinematicSample — Sample a keyframe path at `elapsed` seconds. Each keyframe's `duration` is the travel time from the previous keyframe into it; segment easing is per the destination keyframe. Reports `done` once past the final keyframe (unless looping, which wraps `elapsed` into the total path duration).
-- `clamp` (function): function clamp(value: number, min: number, max: number): number — ⚠ undocumented
-- `createTrauma` (function): function createTrauma(): TraumaState — ⚠ undocumented
-- `crossfadePose` (function): function crossfadePose(from: CameraPose, to: CameraPose, t: number): CameraPose — Linear cross-fade between two full camera poses (position, lookAt, fov).
-- `forwardVector` (function): function forwardVector(yaw: number): Vec3 — ⚠ undocumented
-- `leadFollowPoint` (function): function leadFollowPoint(follow: Vec3, previous: Vec3, dt: number, resolved: ResolvedChase): Vec3 — Velocity-lead the follow point (#286.9): aim `leadTime` seconds along the target's frame velocity, clamped to `leadMax`.
-- `lerp` (function): function lerp(from: number, to: number, blend: number): number — ⚠ undocumented
-- `lockOnPose` (function): function lockOnPose(player: Vec3, target: Vec3, config: LockOnCameraConfig | undefined, fov: number): { pose: CameraPose; yaw: number } — Lock-on pose: camera sits behind the player along the player→target vector so the target stays framed. The look point is biased between player and target by `framingBias`.
-- `observerPose` (function): function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose — Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input.
-- `resolveChase` (function): function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase — ⚠ undocumented
-- `resolveDirectedCamera` (function): function resolveDirectedCamera(director: DirectorCameraValues | undefined, staticConfig: StaticCameraValues): ResolvedDirectedCamera — Merges a `CameraDirector` runtime snapshot over the static `GameCameraConfig` (#196.2). `director` omitted, or its fields `undefined`/`null`, is a pure passthrough to `staticConfig` so mounting a director with no active override changes nothing.
-- `resolveObserver` (function): function resolveObserver(config: ObserverCameraConfig | undefined): ResolvedObserver — ⚠ undocumented
-- `resolveShoulder` (function): function resolveShoulder(config: ShoulderCameraConfig | undefined, aiming: boolean): ResolvedShoulder — ⚠ undocumented
-- `resolveSideScroll` (function): function resolveSideScroll(config: SideScrollCameraConfig | undefined): ResolvedSideScroll — ⚠ undocumented
-- `resolveSideScrollPose` (function): function resolveSideScrollPose(entityPos: Vec3, resolved: ResolvedSideScroll, fov: number): CameraPose — Fixed lateral 2.5D follow pose: the camera sits perpendicular to the travel axis at `distance`, above the entity by `height`, and looks at the entity raised by `lookHeight`. Axis "x" watches from +z; axis "z" watches from +x.
-- `resolveTopDown` (function): function resolveTopDown(config: TopDownCameraConfig | undefined): ResolvedTopDown — ⚠ undocumented
-- `rightVector` (function): function rightVector(yaw: number): Vec3 — Screen-right of a yaw: `forward × up` with up = +Y.
-- `rtsPanKeysConflict` (function): function rtsPanKeysConflict(input: ActionCodesMap | undefined): boolean — ⚠ undocumented
-- `seatPose` (function): function seatPose(follow: Vec3, yaw: number, local: { x?: number; y?: number; z?: number }, fov: number): CameraPose — World-space seat pose (cockpit/hood/rear) rigidly attached to the vehicle.
-- `shakeOffset` (function): function shakeOffset(state: TraumaState, config: { maxOffset?: number; maxRoll?: number; exponent?: number; frequency?: number; } | undefined): ShakeOffset — Positional + roll shake for the current trauma. Shake magnitude is `trauma^exponent` so small hits stay subtle; the oscillation is deterministic per-seed pseudo-noise (no per-frame RNG, so identical inputs reproduce).
-- `shoulderPose` (function): function shoulderPose(follow: Vec3, yaw: number, pitch: number, sideSign: number, shoulder: ResolvedShoulder): CameraPose — Over-the-shoulder camera pose. The boom sits behind the follow point along `yaw`, raised by `heightOffset`, and pushed sideways by `shoulderOffset` (sign set by `sideSign`: +1 right, -1 left). `pitch` tilts the look point.
-- `sideScrollFollowBlend` (function): function sideScrollFollowBlend(followSmoothing: number, dt: number): number — Frame-rate independent follow blend for the side-scroll rig; `followSmoothing <= 0` hard-locks (blend 1) instead of freezing.
-- `smoothYaw` (function): function smoothYaw(current: number, desired: number, speed: number, dt: number): number — Exponential yaw smoothing that respects wrap-around.
-- `smoothstep` (function): function smoothstep(t: number): number — ⚠ undocumented
-- `speedToFov` (function): function speedToFov(speed: number, curve: { base?: number; max?: number; speedForMax?: number } | undefined): number — Speed→FOV curve: FOV climbs from base to max as speed rises to `speedForMax`.
-- `springArmStep` (function): function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 — Exponential spring-arm approach toward a desired point (frame-rate independent).
-- `stepTrauma` (function): function stepTrauma(state: TraumaState, decayPerSecond: number, dt: number): void — Decay trauma linearly toward 0 and advance the shake clock.
-- `topDownPose` (function): function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number): CameraPose — Camera pose for a fixed top-down / isometric rig. `pitch` is the elevation of the camera→target ray above the ground (PI/2 = straight down); `yaw` is the fixed azimuth (PI/4 reads isometric). Height sets zoom; horizontal boom is derived so the look angle stays constant as height changes.
-- `traumaShake` (function): function traumaShake(trauma: number, time = 0): ShakeOffset — Calibrated trauma² camera shake: offset scales with `trauma` squared using game-feel defaults (decay 1.4/s, max offset 0.55, max roll 0.1 rad, noise freq 32×t) — the curve `impactPresets` trauma values are calibrated against, so an impact "just looks right" without hand-tuning `shakeOffset`.
-- `yawTo` (function): function yawTo(from: Vec3, to: Vec3): number — Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
-
-## @jgengine/shell/camera/rigResolve
-
-- `resolveRigKind` (function): function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind — Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least specific: an explicit `rig` field always wins; then `perspective: "first"` (the historical shorthand for `rig: "orbit" | "first"`); then the mere presence of a rig's own config block selects that rig, checked in the fixed order below (#207.8) so a config carrying more than one block resolves deterministically instead of depending on object key order. Set `rig` explicitly to break a tie.
-- `turntableAsObserver` (function): function turntableAsObserver(config: GameCameraConfig | undefined): GameCameraConfig — The turntable rig is a flat facade over the observer's point-orbit mode: map its `target`/`distance`/… onto an observer block so ObserverRig runs unchanged.
 
 ## @jgengine/shell/camera/shakeChannel
 
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
-- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Feed the default camera-shake channel from anywhere (see G7 hitstop cross-cut).
-- `createCameraShakeChannel` (function): function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel — ⚠ undocumented
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
-- `useCameraShake` (function): function useCameraShake(): CameraShakeChannel — The active rig's shake channel — call `.shake(...)` to add trauma from React UI.
 
 ## @jgengine/shell/camera/shakeChannelMath
 
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
-- `createCameraShakeChannel` (function): function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel — ⚠ undocumented
 
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
-- `localCommandSink` (function): function localCommandSink(ctx: GameContext): CommandSink — Runs commands on the local `ctx` — the default, client-authoritative path.
-- `remoteCommandSink` (function): function remoteCommandSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): CommandSink — Sends commands to the authoritative host over the transport; the result replicates back through world sync.
-- `resolveCommandSink` (function): function resolveCommandSink(ctx: GameContext, opts: { serverAuthoritative: boolean; backend: Pick<LiveGameBackend, "transport"> | null; serverId: string | null; }): CommandSink — The sink a server-authoritative shell should dispatch gameplay commands through: remote when the game opts into `authority: "server"` and a server is joined, local otherwise. Client-only UI commands (targeting, hotbar scroll) keep calling `ctx.game.commands.run` directly — only authoritative gameplay verbs route to the host.
 
 ## @jgengine/shell/defineGame
 
@@ -1074,16 +838,6 @@
 ## @jgengine/shell/devtools/CollisionDebugWorld
 
 - `CollisionDebugWorld` (function): function CollisionDebugWorld(): React.JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
-
-## @jgengine/shell/devtools/DevtoolsOverlay
-
-- `DevtoolsOverlay` (function): function DevtoolsOverlay({ open, ctx, playable, multiplayer, }: { open: boolean; ctx: GameContext; playable: PlayableGame; multiplayer: ShellMultiplayer | null; }): React.JSX.Element | null — ⚠ undocumented
-- `DevtoolsRendererProbe` (function): function DevtoolsRendererProbe(): null — ⚠ undocumented
-- `applyStoredDevtoolsOverrides` (function): function applyStoredDevtoolsOverrides(gameName: string): void — ⚠ undocumented
-- `buildFullReport` (function): function buildFullReport(playable: PlayableGame): DevtoolsSnapshot & { game: string } — ⚠ undocumented
-- `buildLeanReport` (function): function buildLeanReport(playable: PlayableGame): { game: string; at: number; why: string | null; frame: { fps: number; avgFrameMs: number; p95FrameMs: number; maxFrameMs: number; avgSimMs: number; maxSimMs: number; avgOutsideMs: number; maxOutsideMs: number; longFrames: number; samples: number; pha… — ⚠ undocumented
-- `persistDevtoolsOverrides` (function): function persistDevtoolsOverrides(gameName: string): DevtoolsOverrides — ⚠ undocumented
-- `withDevtoolsLatency` (function): function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultiplayer — ⚠ undocumented
 
 ## @jgengine/shell/devtools/agentBridge
 
@@ -1100,13 +854,7 @@
 - `CollisionDebugListener` (type): type CollisionDebugListener = () => void — ⚠ undocumented
 - `CollisionDebugState` (interface): interface CollisionDebugState — ⚠ undocumented
 - `ProjectileDebugTrace` (interface): interface ProjectileDebugTrace — ⚠ undocumented
-- `aimProbeNeeded` (function): function aimProbeNeeded(layers: CollisionDebugLayers): boolean — ⚠ undocumented
-- `anyCollisionLayerOn` (function): function anyCollisionLayerOn(layers: CollisionDebugLayers): boolean — ⚠ undocumented
-- `colliderScanNeeded` (function): function colliderScanNeeded(layers: CollisionDebugLayers): boolean — ⚠ undocumented
 - `collisionDebug` (const): const collisionDebug: CollisionDebugController — ⚠ undocumented
-- `createCollisionDebugController` (function): function createCollisionDebugController(initial: CollisionDebugState = createDefaultCollisionDebugState()): CollisionDebugController — ⚠ undocumented
-- `createDefaultCollisionDebugState` (function): function createDefaultCollisionDebugState(): CollisionDebugState — ⚠ undocumented
-- `projectileListenNeeded` (function): function projectileListenNeeded(layers: CollisionDebugLayers): boolean — ⚠ undocumented
 
 ## @jgengine/shell/devtools/collisionDebugMath
 
@@ -1122,66 +870,40 @@
 - `DebugShapeEntry` (interface): interface DebugShapeEntry — ⚠ undocumented
 - `HITBOX_WIRE_COLOR` (const): const HITBOX_WIRE_COLOR: "#f472b6" — ⚠ undocumented
 - `PROJECTILE_PATH_COLOR` (const): const PROJECTILE_PATH_COLOR: "#fde68a" — ⚠ undocumented
-- `classifyAimEndpoint` (function): function classifyAimEndpoint(hit: Pick<SceneRaycastHit, "damageEligible"> | null | undefined): AimEndpointKind — ⚠ undocumented
-- `collectDebugShapes` (function): function collectDebugShapes(input: CollectDebugShapesInput): DebugShapeEntry[] — Collects world-space collider wireframe entries for enabled layers. Returns [] and performs no entity/object iteration when both hitbox/body layers are off.
-- `computeAimLaser` (function): function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | null — Builds the authoritative aim-laser segment using resolveShot + scene raycast (same seam as projectile prediction/settlement). Zero queries when aimLaser is off.
-- `muzzleMarkerFromOrigin` (function): function muzzleMarkerFromOrigin(origin: EntityPosition): { center: EntityPosition; radius: number; color: string; } — ⚠ undocumented
-- `pointAlongRay` (function): function pointAlongRay(origin: EntityPosition, direction: EntityPosition, distance: number): EntityPosition — ⚠ undocumented
-- `shapeWorldCenter` (function): function shapeWorldCenter(collider: ResolvedCollider, position: EntityPosition, rotationY: number): EntityPosition — ⚠ undocumented
 
 ## @jgengine/shell/environment
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
-- `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
-- `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
-- `resolveSkyLightOwnership` (function): function resolveSkyLightOwnership(hasAuthoredLighting: boolean): SkyLightOwnership — ⚠ undocumented
-- `skyEmitsLights` (function): function skyEmitsLights(ownership: SkyLightOwnership): boolean — ⚠ undocumented
 
 ## @jgengine/shell/environment
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
-- `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
-- `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
-- `resolveSkyLightOwnership` (function): function resolveSkyLightOwnership(hasAuthoredLighting: boolean): SkyLightOwnership — ⚠ undocumented
-- `skyEmitsLights` (function): function skyEmitsLights(ownership: SkyLightOwnership): boolean — ⚠ undocumented
 
 ## @jgengine/shell/environment/Daylight
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
-- `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDome` (function): function SkyDome({ topColor = SKY_TOP, horizonColor = SKY_HORIZON, radius = 260, offset = 24, exponent = 0.65, sunDirection, sunColor = "#fff4d6", sunIntensity = 1, hazeStrength = 0.5, sunGlowStrength = 1, materialRef, }: SkyDomeProps = {}): React.JSX.Element — ⚠ undocumented
 - `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
-- `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 
 ## @jgengine/shell/environment/EnvironmentScene
@@ -1211,22 +933,15 @@
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
-- `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
 
 ## @jgengine/shell/environment/groundPadMath
 
 - `PAD_THICKNESS` (const): const PAD_THICKNESS: 0.1 — ⚠ undocumented
 - `PadShape` (type): type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number } — ⚠ undocumented
-- `resolvePadMeshY` (function): function resolvePadMeshY(groundHeight: number, pad: Pick<PadEnvironmentDescriptor, "height" | "elevation">): number — ⚠ undocumented
-- `resolvePadShape` (function): function resolvePadShape(size: PadSize): PadShape — ⚠ undocumented
-- `resolvePadSurfaceY` (function): function resolvePadSurfaceY(groundHeight: number, pad: Pick<PadEnvironmentDescriptor, "height" | "elevation">): number — ⚠ undocumented
 
 ## @jgengine/shell/environment/skyLightingPolicy
 
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `resolveSkyLightOwnership` (function): function resolveSkyLightOwnership(hasAuthoredLighting: boolean): SkyLightOwnership — ⚠ undocumented
-- `skyEmitsLights` (function): function skyEmitsLights(ownership: SkyLightOwnership): boolean — ⚠ undocumented
 
 ## @jgengine/shell/input/mouseLook
 
@@ -1238,10 +953,6 @@
 ## @jgengine/shell/inputSink
 
 - `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
-- `inputFramesEqual` (function): function inputFramesEqual(a: InputFrame, b: InputFrame): boolean — Whether two input frames carry identical intent — the shell skips resending unchanged frames so a still player floods the host with nothing.
-- `noopInputSink` (function): function noopInputSink(): InputSink — Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
-- `remoteInputSink` (function): function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink — Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via {@link INPUT_COMMAND}.
-- `resolveInputSink` (function): function resolveInputSink(opts: { serverAuthoritative: boolean; backend: Pick<LiveGameBackend, "transport"> | null; serverId: string | null; }): InputSink — The sink a server-authoritative shell sends its per-frame input through: remote when `authority: "server"` and a server is joined, a no-op otherwise.
 
 ## @jgengine/shell/map
 
@@ -1268,7 +979,6 @@
 
 - `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — ⚠ undocumented
 - `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
-- `applyMaterialOverride` (function): function applyMaterialOverride(root: THREE.Object3D, override: ModelMaterialOverride, options?: MaterialOverrideOptions): void — ⚠ undocumented
 
 ## @jgengine/shell/multiplayer
 
@@ -1317,22 +1027,11 @@
 - `MaterialCache` (interface): interface MaterialCache — ⚠ undocumented
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
 - `PaintCanvas` (interface): interface PaintCanvas — ⚠ undocumented
-- `applyPaintTexture` (function): function applyPaintTexture(root: THREE.Object3D, paint: PaintCanvas): void — ⚠ undocumented
-- `applyPaintTextureToMaterials` (function): function applyPaintTextureToMaterials(materials: readonly THREE.MeshStandardMaterial[], paint: PaintCanvas): void — ⚠ undocumented
-- `cacheStandardMaterials` (function): function cacheStandardMaterials(root: THREE.Object3D, into?: MaterialCache | null): MaterialCache — ⚠ undocumented
-- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean }): THREE.Object3D — ⚠ undocumented
-- `createPaintCanvas` (function): function createPaintCanvas(seed: THREE.MeshStandardMaterial, size = PAINT_TEXTURE_SIZE): PaintCanvas — ⚠ undocumented
-- `disposeClonedMaterials` (function): function disposeClonedMaterials(root: THREE.Object3D): void — ⚠ undocumented
-- `drawPaintStrokes` (function): function drawPaintStrokes(paint: PaintCanvas, strokes: readonly PaintStroke[]): void — ⚠ undocumented
-- `standardMaterialsOf` (function): function standardMaterialsOf(root: THREE.Object3D): THREE.MeshStandardMaterial[] — ⚠ undocumented
-- `syncPaintCanvas` (function): function syncPaintCanvas(paint: PaintCanvas, seedColor: THREE.Color, strokes: readonly PaintStroke[], drawnCount: number): number — ⚠ undocumented
 
 ## @jgengine/shell/render/resolveModel
 
+- `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
 - `ModelResolveContext` (interface): interface ModelResolveContext — ⚠ undocumented
-- `createModelMapResolver` (function): function createModelMapResolver(map: Record<string, string | ModelConfig> | undefined, assets: AssetCatalog | undefined, seam: ModelResolveContext["seam"]): ((key: string) => ModelConfig | null) | undefined — Builds a `(key) => ModelConfig | null` override from a `seam`'s id/config map plus its catalog — `undefined` when either half is missing so the caller can fall back to its own default renderer. An unmapped key resolves to `null` (deliberate fallback); a mapped key with a missing/misspelled catalog id throws via {@link resolveModel}, same as the `entityModels`/`objectModels` seams.
-- `resolveModel` (function): function resolveModel(value: string | ModelConfig | undefined, assets: AssetCatalog, context?: ModelResolveContext): ModelConfig | undefined — Resolve a string asset id or a direct ModelConfig. Missing/misspelled catalog ids throw — silent generic-primitive fallback only happens when the mapping omits the key entirely (or uses tryResolveCatalogModel for optional ids).
-- `tryResolveCatalogModel` (function): function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined — Soft lookup used when an object catalog id may double as a model asset id.
 
 ## @jgengine/shell/render/useEntityRenderCues
 
@@ -1500,26 +1199,11 @@
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 - `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
-- `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
-- `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
-- `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
-- `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
-- `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
-- `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
 - `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
 - `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
-- `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
 - `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
-- `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
-- `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
-- `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
 - `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
 - `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
-- `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
-- `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
-- `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
-- `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
 - `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
 - `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
@@ -1556,26 +1240,11 @@
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 - `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
-- `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
-- `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
-- `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
-- `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
-- `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
-- `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
 - `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
 - `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
-- `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
 - `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
-- `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
-- `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
-- `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
 - `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
 - `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
-- `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
-- `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
-- `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
-- `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
 - `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
 - `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
@@ -1595,7 +1264,6 @@
 - `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/ProceduralGround
 
@@ -1611,16 +1279,12 @@
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
 - `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
-- `resolveGrassInstanceBudget` (function): function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number — Blade instance count for a patch: `density` (blades/m²) times the patch's `area`, capped at `budget` (defaulting to `count`, the buffer's allocated capacity) so a big field never exceeds the perf ceiling — it just renders sparser than requested and logs a devtools warning when that happens.
 
 ## @jgengine/shell/terrain/grassGeometry
 
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
-- `createGrassBladeGeometry` (function): function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry — ⚠ undocumented
-- `resolveGrassBladeGeometryOptions` (function): function resolveGrassBladeGeometryOptions(options: GrassBladeGeometryOptions = {}): ResolvedGrassBladeGeometryOptions — ⚠ undocumented
-- `resolveGrassRange` (function): function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] — ⚠ undocumented
 
 ## @jgengine/shell/terrain/grassMaterial
 
@@ -1629,21 +1293,15 @@
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `createGrassMaterial` (function): function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle — ⚠ undocumented
-- `resolveGrassWind` (function): function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> — ⚠ undocumented
 
 ## @jgengine/shell/terrain/random
 
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
-- `createSeededRandom` (function): function createSeededRandom(seed: TerrainSeed = 1): () => number — ⚠ undocumented
-- `hashNoise2` (function): function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number — ⚠ undocumented
-- `seedToUint32` (function): function seedToUint32(seed: TerrainSeed = 1): number — ⚠ undocumented
 
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
 - `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself.
-- `createTerrainDetailMaterial` (function): function createTerrainDetailMaterial(detail: ResolvedTerrainDetail, textures?: TerrainDetailMaterialTextures): TerrainDetailMaterialHandle — A `MeshStandardMaterial` whose fragment shader keeps the biome-tinted vertex colour as the base ground and blends procedural, noise-broken rock (by slope), sand (by waterline), and snow (by height) over it — textured-reading terrain with no image assets. Full PBR: lit, shadowed, and fogged like any standard material, so it composes with the post-processing chain.
 
 ## @jgengine/shell/terrain/terrainMath
 
@@ -1655,13 +1313,6 @@
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainPaletteSampler` (type): type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string } — Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/world/terrain` returns exactly this shape.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `createFieldGroundGeometry` (function): function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry — Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
-- `createProceduralGroundGeometry` (function): function createProceduralGroundGeometry(config: ProceduralTerrainConfig = {}, colors: TerrainVertexColorOptions = {}): THREE.BufferGeometry — ⚠ undocumented
-- `createProceduralTerrainSampler` (function): function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler — ⚠ undocumented
-- `normalizeHeightBlend` (function): function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number — ⚠ undocumented
-- `resolveTerrainSegments` (function): function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments — ⚠ undocumented
-- `resolveTerrainSize` (function): function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize — ⚠ undocumented
-- `toNoiseFieldConfig` (function): function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig — ⚠ undocumented
 
 ## @jgengine/shell/touch/OrientationHint
 
@@ -1727,8 +1378,6 @@
 - `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — ⚠ undocumented
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — ⚠ undocumented
 - `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig — ⚠ undocumented
-- `buildOceanWaveUniforms` (function): function buildOceanWaveUniforms(config: ResolvedOceanConfig): { directions: THREE.Vector2[]; params: THREE.Vector4[]; } — ⚠ undocumented
-- `createOceanConfig` (function): function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
 
@@ -1753,8 +1402,6 @@
 - `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — ⚠ undocumented
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — ⚠ undocumented
 - `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig — ⚠ undocumented
-- `buildOceanWaveUniforms` (function): function buildOceanWaveUniforms(config: ResolvedOceanConfig): { directions: THREE.Vector2[]; params: THREE.Vector4[]; } — ⚠ undocumented
-- `createOceanConfig` (function): function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
 
@@ -1780,8 +1427,6 @@
 - `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — ⚠ undocumented
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — ⚠ undocumented
 - `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig — ⚠ undocumented
-- `buildOceanWaveUniforms` (function): function buildOceanWaveUniforms(config: ResolvedOceanConfig): { directions: THREE.Vector2[]; params: THREE.Vector4[]; } — ⚠ undocumented
-- `createOceanConfig` (function): function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanMaterial
 
@@ -1809,11 +1454,8 @@
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" — ⚠ undocumented
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
-- `WeatherUniformProvider` (function): function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
-- `createWeatherUniformSet` (function): function createWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet — ⚠ undocumented
-- `useWeatherUniformSet` (function): function useWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet — ⚠ undocumented
 
 ## @jgengine/shell/weather/FireSpreadLayer
 
@@ -1841,14 +1483,6 @@
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" — ⚠ undocumented
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
 
-## @jgengine/shell/weather/fireSpreadPose
-
-- `setBillboardQuaternion` (function): function setBillboardQuaternion(quaternion: Quaternion, euler: Euler, yaw: number): void — ⚠ undocumented
-
-## @jgengine/shell/weather/weatherGeometry
-
-- `createWeatherQuadGeometry` (function): function createWeatherQuadGeometry(maxCount: number, seed: number): THREE.InstancedBufferGeometry — ⚠ undocumented
-
 ## @jgengine/shell/weather/weatherMath
 
 - `DEFAULT_RAIN_COUNT` (const): const DEFAULT_RAIN_COUNT: 2000 — ⚠ undocumented
@@ -1856,18 +1490,12 @@
 - `DEFAULT_SNOW_COUNT` (const): const DEFAULT_SNOW_COUNT: 1500 — ⚠ undocumented
 - `DEFAULT_SNOW_DENSITY` (const): const DEFAULT_SNOW_DENSITY: 0.5 — ⚠ undocumented
 - `WeatherSeedAttributes` (interface): interface WeatherSeedAttributes — ⚠ undocumented
-- `clampWeatherRatio` (function): function clampWeatherRatio(value: number): number — ⚠ undocumented
-- `createWeatherSeedAttributes` (function): function createWeatherSeedAttributes(maxCount: number, seed: number): WeatherSeedAttributes — ⚠ undocumented
-- `resolveWeatherInstanceCount` (function): function resolveWeatherInstanceCount(maxCount: number, density: number, budget?: number): number — ⚠ undocumented
 
 ## @jgengine/shell/weather/weatherUniforms
 
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
-- `WeatherUniformProvider` (function): function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
-- `createWeatherUniformSet` (function): function createWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet — ⚠ undocumented
-- `useWeatherUniformSet` (function): function useWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet — ⚠ undocumented
 
 ## @jgengine/shell/world/DataObjects
 
@@ -1909,9 +1537,6 @@
 - `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
 - `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
 - `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
-- `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented
-- `paintWorldBarSamples` (function): function paintWorldBarSamples(canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null }, samples: readonly WorldBarSample[], dpr: number, barWidthPx = 112, barHeightPx = 10): void — ⚠ undocumented
-- `telegraphPulseOpacity` (function): function telegraphPulseOpacity(bornMs: number, windupMs: number, nowMs: number): number — ⚠ undocumented
 
 ## @jgengine/shell/world/WorldItems
 
@@ -1921,27 +1546,14 @@
 
 - `PoseSource` (interface): interface PoseSource — ⚠ undocumented
 - `PoseWritable` (interface): interface PoseWritable — ⚠ undocumented
-- `posesEqual` (function): function posesEqual(a: PoseSource, b: PoseSource): boolean — ⚠ undocumented
-- `writeEntityPose` (function): function writeEntityPose(target: PoseWritable, source: PoseSource): void — ⚠ undocumented
 
 ## @jgengine/shell/world/floatTextStyle
 
 - `FloatTextInfo` (interface): interface FloatTextInfo — ⚠ undocumented
 - `FloatTextStyle` (interface): interface FloatTextStyle — ⚠ undocumented
-- `resolveFloatTextStyle` (function): function resolveFloatTextStyle(info: FloatTextInfo): FloatTextStyle — ⚠ undocumented
-
-## @jgengine/shell/world/telegraphPulse
-
-- `telegraphPulseOpacity` (function): function telegraphPulseOpacity(bornMs: number, windupMs: number, nowMs: number): number — ⚠ undocumented
 
 ## @jgengine/shell/world/worldBarSamples
 
 - `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
 - `Projectable` (interface): interface Projectable — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
-- `collectWorldBarSamples` (function): function collectWorldBarSamples(ctx: GameContext, statId: string, height: number, roles: readonly CatalogEntityRole[] | undefined, resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined, camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }, viewport: { width:… — ⚠ undocumented
-- `paintWorldBarSamples` (function): function paintWorldBarSamples(canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null }, samples: readonly WorldBarSample[], dpr: number, barWidthPx = 112, barHeightPx = 10): void — ⚠ undocumented
-
-## @jgengine/shell/worldSync
-
-- `attachWorldSync` (function): function attachWorldSync(feeds: Pick<GameRuntimeFeeds, "subscribeServer">, serverId: string, ctx: Pick<GameContext, "hydrate">): () => void — Client half of host-authoritative play: subscribe to the server-state channel and mirror each authoritative `WorldSnapshot` (carried in `serverState`) into the local `ctx`, so the game renders the host's world instead of a locally-simulated one. Pure and transport-agnostic — the backend's `feeds.subscribeServer` is the only dependency; returns the unsubscribe. The shell attaches this (and gates its local sim) when the game's adapter opts into `authority: "server"`.

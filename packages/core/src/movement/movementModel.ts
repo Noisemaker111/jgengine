@@ -15,6 +15,7 @@ export type MovementKey = "w" | "a" | "s" | "d" | "shift" | "control" | "c" | "s
 
 export type MovementKeysState = Record<MovementKey, boolean>;
 
+/** @internal */
 export function createEmptyMovementKeys(): MovementKeysState {
   return { w: false, a: false, s: false, d: false, shift: false, control: false, c: false, space: false };
 }
@@ -47,7 +48,8 @@ const IDLE_INTENT: MovementIntent = {
  * Translate the set of held keys into an intent. When `canMove` is false (a
  * menu is open, the world is paused) the avatar is fully idle so it never
  * drifts behind an overlay.
- */
+  * @internal
+  */
 export function resolveMovementIntent(keys: MovementKeysState, canMove: boolean): MovementIntent {
   if (!canMove) return IDLE_INTENT;
 
@@ -129,6 +131,7 @@ export interface PlayerMotionState {
   jumpHeld: boolean;
 }
 
+/** @internal */
 export function createPlayerMotionState(): PlayerMotionState {
   return {
     horizontalVelocityX: 0,
@@ -178,7 +181,8 @@ export interface MotionFrameOptions {
  * (need not be normalized); the avatar's right axis is derived from it. Pulling
  * this out of the render loop is what lets us assert "held forward for N frames
  * crosses the room" in a unit test instead of only in the live game.
- */
+  * @internal
+  */
 export function advancePlayerMotion(
   motion: PlayerMotionState,
   intent: MovementIntent,
@@ -300,7 +304,8 @@ function clampAxisStep(originalCoord: number, step: number, min: number, max: nu
  * by `playerRadius`; an obstacle whose vertical span misses the player's
  * feet-to-head span is skipped entirely. Callers should pre-filter to nearby
  * objects — this also early-exits per obstacle on horizontal distance.
- */
+  * @internal
+  */
 export function resolveObstacleStep(
   current: readonly [number, number, number],
   stepX: number,
@@ -350,7 +355,9 @@ export function resolveObstacleStep(
 
 const OBSTACLE_GATHER_RADIUS = 3;
 
-/** Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}. */
+/** Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
+ * @internal
+ */
 export function nearbyObstacles(
   objects: readonly { position: readonly [number, number, number] }[],
   center: readonly [number, number, number],
@@ -366,7 +373,9 @@ export function nearbyObstacles(
   return result;
 }
 
-/** Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`). */
+/** Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`).
+ * @internal
+ */
 export function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep {
   return axis === "x" ? { stepX, stepZ: 0 } : { stepX: 0, stepZ };
 }
@@ -375,7 +384,8 @@ export function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z
  * Snap a world position to its containing cell's center, matching the
  * bounds-free form of `navGrid`'s and `tacticalGrid`'s `floor` + half-cell
  * convention (`PlayerMovementConfig.mode: "grid"`).
- */
+  * @internal
+  */
 export function snapPositionToGrid(x: number, z: number, cellSize: number): [number, number] {
   return [(Math.floor(x / cellSize) + 0.5) * cellSize, (Math.floor(z / cellSize) + 0.5) * cellSize];
 }
@@ -383,7 +393,9 @@ export function snapPositionToGrid(x: number, z: number, cellSize: number): [num
 /** Peak jump height from MOVEMENT_TUNING.jumpVelocity + gravity, with small buffer. */
 export const MAX_JUMP_OFFSET = 1.15;
 
-/** Camera yaw looks along -Z; character mesh faces +Z at body rotation.y = 0. */
+/** Camera yaw looks along -Z; character mesh faces +Z at body rotation.y = 0.
+ * @internal
+ */
 export function cameraYawToAvatarBodyYaw(cameraYaw: number): number {
   return cameraYaw + Math.PI;
 }

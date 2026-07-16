@@ -9,7 +9,8 @@ import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
  * of a locally-simulated one. Pure and transport-agnostic — the backend's `feeds.subscribeServer` is the only
  * dependency; returns the unsubscribe. The shell attaches this (and gates its local sim) when the game's adapter
  * opts into `authority: "server"`.
- */
+  * @internal
+  */
 export function attachWorldSync(
   feeds: Pick<GameRuntimeFeeds, "subscribeServer">,
   serverId: string,

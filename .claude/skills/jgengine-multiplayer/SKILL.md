@@ -5,6 +5,32 @@ description: Multiplayer API: adapters, topology, authority, rooms, persistence.
 
 # jgengine-multiplayer
 
+## Flagship hosted path
+
+Real game + host, not a missing gallery id: **[examples/HOSTED.md](../../../examples/HOSTED.md)** — `claudecraft` with `ws({ authority: "server" })` + `examples/express-host` (or Convex).
+
+## Two runtimes (do not confuse them)
+
+| Role | API | Who uses it |
+| --- | --- | --- |
+| **Game sim (authoring)** | `createGameContext` + `defineGame` / shell `onTick(ctx, dt)` | Every game |
+| **Host command/snapshot loop** | `createGameRuntime` (`@jgengine/core/runtime/gameRuntime`) | `@jgengine/ws` / `@jgengine/node` / `@jgengine/convex` hosts only |
+
+Games never need `createGameRuntime` for single-player or client loops. Hosts register one when `runCommand`/tick/save must be authoritative on the server. World shape for games is still `ctx.snapshot()` / `ctx.hydrate()`.
+
+## Authority (presence vs shared sim)
+
+| `authority` | Meaning |
+| --- | --- |
+| unset / `"client"` | **Presence-only** — each client runs its own `onTick`; presence/feeds/chat sync. Not a shared competitive sim. `isPresenceOnly(multiplayer)` / `resolveAuthority(multiplayer) === "client"` |
+| `"server"` | Host-authoritative world; shell mirrors host state. `isServerAuthoritative(multiplayer)` / `resolveAuthority === "server"` |
+
+```ts
+import { ws, isPresenceOnly, isServerAuthoritative, resolveAuthority } from "@jgengine/core/runtime/adapter";
+ws({ topology: "shared" }); // presence-only default — resolveAuthority → "client"
+ws({ topology: "shared", authority: "server" }); // shared world
+```
+
 ## Multiplayer and the backend seam
 
 The transport/host/persistence seam — `createWsBackend`, protocol codec, browser-safe authoritative host + router, WebRTC P2P, the Node/Convex/SQL adapters, presence, and save cadence. Full surface: **[reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-multiplayer/reference.md)**.

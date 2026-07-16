@@ -6,6 +6,7 @@ import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo } from "
 import { installSkills } from "./skills";
 import { gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
 
+/** @internal */
 export function writeGame(targetDir: string, id: string, name: string, variant: TemplateVariant): void {
   for (const file of gameTemplate({ id, name, variant, engineVersion: cliVersion() })) {
     const dest = join(targetDir, file.path);
@@ -14,6 +15,7 @@ export function writeGame(targetDir: string, id: string, name: string, variant: 
   }
 }
 
+/** @internal */
 export function registerRootGameScript(rootDir: string, id: string, folderName: string = id): boolean {
   const rootPackagePath = join(rootDir, "package.json");
   const root = JSON.parse(readFileSync(rootPackagePath, "utf8")) as { scripts?: Record<string, string> };
@@ -67,6 +69,7 @@ function isInsideDir(child: string, parent: string): boolean {
   return resolvedChild === resolvedParent || resolvedChild.startsWith(resolvedParent + sep);
 }
 
+/** @internal */
 export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {

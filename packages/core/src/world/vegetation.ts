@@ -46,12 +46,16 @@ function metaString(meta: Record<string, unknown> | undefined, key: string, fall
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
-/** True when an editor volume is a vegetation fill area. */
+/** True when an editor volume is a vegetation fill area.
+ * @internal
+ */
 export function isVegetationVolume(volume: EditorVolume): boolean {
   return volume.kind === VEGETATION_VOLUME_KIND;
 }
 
-/** The volume's vegetation settings with defaults filled in; null for non-vegetation volumes. */
+/** The volume's vegetation settings with defaults filled in; null for non-vegetation volumes.
+ * @internal
+ */
 export function readVegetationSettings(volume: EditorVolume): VegetationSettings | null {
   if (!isVegetationVolume(volume)) return null;
   return {
@@ -64,7 +68,9 @@ export function readVegetationSettings(volume: EditorVolume): VegetationSettings
   };
 }
 
-/** The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius. */
+/** The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius.
+ * @internal
+ */
 export function vegetationFootprint(volume: EditorVolume): Aabb {
   const halfW = volume.shape === "box" ? (volume.halfExtents?.x ?? 5) : (volume.radius ?? 5);
   const halfD = volume.shape === "box" ? (volume.halfExtents?.z ?? 5) : (volume.radius ?? 5);
@@ -102,7 +108,8 @@ function placementHash(volumeId: string, seed: string, index: number, salt: numb
  * `density` items/m² (respecting `minDistance`), clip round shapes to their
  * radius, and derive per-instance scale/rotation from the volume id + seed, so
  * the same saved scene always grows the same field.
- */
+  * @internal
+  */
 export function resolveVegetationVolume(volume: EditorVolume): VegetationPlacement[] {
   const settings = readVegetationSettings(volume);
   if (settings === null || settings.density <= 0) return [];
@@ -142,7 +149,8 @@ export function resolveVegetationVolume(volume: EditorVolume): VegetationPlaceme
  * `item: "grass"`, which the shell renders as blades — see
  * `grassPatchesFromVegetation`). A game maps each placement's `item` to a
  * mesh/entity via its render catalog and places it grounded.
- */
+  * @internal
+  */
 export function resolveVegetation(doc: EditorDocument): VegetationPlacement[] {
   const out: VegetationPlacement[] = [];
   for (const volume of doc.volumes) {
@@ -158,7 +166,8 @@ export function resolveVegetation(doc: EditorDocument): VegetationPlacement[] {
  * Grass-blade patches for every `item: "grass"` vegetation volume, ready to
  * spread into `environment()`'s `grass` list — the volume's density number is
  * the blades-per-m² the shell renders, so the editor slider drives it directly.
- */
+  * @internal
+  */
 export function grassPatchesFromVegetation(doc: EditorDocument): GrassEnvironmentConfig[] {
   const patches: GrassEnvironmentConfig[] = [];
   for (const volume of doc.volumes) {

@@ -36,7 +36,9 @@ export interface WorldHost {
   session(): HostedWorldSession;
 }
 
-/** Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections. */
+/** Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections.
+ * @internal
+ */
 export function createWorldHost(session: HostedWorldSession): WorldHost {
   const connections = new Set<WorldHostConnection>();
 
@@ -97,7 +99,9 @@ export interface WorldClientLink {
   revision(): number;
 }
 
-/** Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream. */
+/** Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream.
+ * @internal
+ */
 export function createWorldClientLink(
   ctx: Pick<GameContext, "hydrate">,
   send: (frame: WorldClientFrame) => void,

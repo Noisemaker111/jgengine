@@ -1,5 +1,6 @@
 export type TerrainSeed = number | string;
 
+/** @internal */
 export function seedToUint32(seed: TerrainSeed = 1): number {
   if (typeof seed === "number") return seed >>> 0;
   let hash = 2166136261;
@@ -10,6 +11,7 @@ export function seedToUint32(seed: TerrainSeed = 1): number {
   return hash >>> 0;
 }
 
+/** @internal */
 export function createSeededRandom(seed: TerrainSeed = 1): () => number {
   let state = seedToUint32(seed);
   return () => {
@@ -21,6 +23,7 @@ export function createSeededRandom(seed: TerrainSeed = 1): () => number {
   };
 }
 
+/** @internal */
 export function hashNoise2(x: number, z: number, seed: TerrainSeed = 1): number {
   let hash = seedToUint32(seed);
   hash ^= Math.imul(x | 0, 374761393);

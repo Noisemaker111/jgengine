@@ -27,7 +27,9 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** GitHub's quartile bucketing of a day's contribution count (0 = none … 4 = most). */
+/** GitHub's quartile bucketing of a day's contribution count (0 = none … 4 = most).
+ * @internal
+ */
 export function levelForCount(count: number): number {
   if (count <= 0) return 0;
   if (count <= 2) return 1;
@@ -36,20 +38,25 @@ export function levelForCount(count: number): number {
   return 4;
 }
 
+/** @internal */
 export function dateOf(index: number): Date {
   return new Date(ANCHOR + index * 86400000);
 }
 
+/** @internal */
 export function dateLabel(index: number): string {
   return labelFromISO(dateOf(index).toISOString().slice(0, 10));
 }
 
+/** @internal */
 export function labelFromISO(iso: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
   return `${WEEKDAY_NAMES[d.getUTCDay()]}, ${MONTH_NAMES[d.getUTCMonth()]} ${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
-/** Deterministic plausible contribution year for demos / offline fallback. */
+/** Deterministic plausible contribution year for demos / offline fallback.
+ * @internal
+ */
 export function generateYear(seed: number): DayCell[] {
   const rng = mulberry32(seed);
   const seasonPhase = rng() * Math.PI * 2;

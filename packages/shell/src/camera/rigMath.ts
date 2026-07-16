@@ -26,6 +26,7 @@ function actionCodeList(codes: ActionCodes): readonly string[] {
   return [...(modes.hold ?? []), ...(modes.toggle ?? [])];
 }
 
+/** @internal */
 export function rtsPanKeysConflict(input: ActionCodesMap | undefined): boolean {
   if (input === undefined) return false;
   return Object.values(input).some((codes) =>
@@ -33,24 +34,30 @@ export function rtsPanKeysConflict(input: ActionCodesMap | undefined): boolean {
   );
 }
 
+/** @internal */
 export function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
 }
 
+/** @internal */
 export function lerp(from: number, to: number, blend: number): number {
   return from + (to - from) * blend;
 }
 
+/** @internal */
 export function smoothstep(t: number): number {
   const clamped = clamp(t, 0, 1);
   return clamped * clamped * (3 - 2 * clamped);
 }
 
+/** @internal */
 export function forwardVector(yaw: number): Vec3 {
   return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
 }
 
-/** Screen-right of a yaw: `forward × up` with up = +Y. */
+/** Screen-right of a yaw: `forward × up` with up = +Y.
+ * @internal
+ */
 export function rightVector(yaw: number): Vec3 {
   return { x: -Math.cos(yaw), y: 0, z: Math.sin(yaw) };
 }
@@ -63,6 +70,7 @@ export interface ResolvedTopDown {
   followSmoothing: number;
 }
 
+/** @internal */
 export function resolveTopDown(config: TopDownCameraConfig | undefined): ResolvedTopDown {
   return {
     height: config?.height ?? 18,
@@ -82,7 +90,8 @@ export function resolveTopDown(config: TopDownCameraConfig | undefined): Resolve
  * the camera→target ray above the ground (PI/2 = straight down); `yaw` is the
  * fixed azimuth (PI/4 reads isometric). Height sets zoom; horizontal boom is
  * derived so the look angle stays constant as height changes.
- */
+  * @internal
+  */
 export function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number): CameraPose {
   const lookAt: Vec3 = {
     x: follow.x + resolved.offset.x,
@@ -102,7 +111,9 @@ export function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number
   };
 }
 
-/** Exponential spring-arm approach toward a desired point (frame-rate independent). */
+/** Exponential spring-arm approach toward a desired point (frame-rate independent).
+ * @internal
+ */
 export function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 {
   return lerpVec3(current, desired, smoothBlend(dt, damping));
 }
@@ -115,6 +126,7 @@ export interface ResolvedSideScroll {
   followSmoothing: number;
 }
 
+/** @internal */
 export function resolveSideScroll(config: SideScrollCameraConfig | undefined): ResolvedSideScroll {
   return {
     axis: config?.axis ?? "x",
@@ -125,7 +137,9 @@ export function resolveSideScroll(config: SideScrollCameraConfig | undefined): R
   };
 }
 
-/** Frame-rate independent follow blend for the side-scroll rig; `followSmoothing <= 0` hard-locks (blend 1) instead of freezing. */
+/** Frame-rate independent follow blend for the side-scroll rig; `followSmoothing <= 0` hard-locks (blend 1) instead of freezing.
+ * @internal
+ */
 export function sideScrollFollowBlend(followSmoothing: number, dt: number): number {
   return followSmoothing <= 0 ? 1 : smoothBlend(dt, followSmoothing);
 }
@@ -134,7 +148,8 @@ export function sideScrollFollowBlend(followSmoothing: number, dt: number): numb
  * Fixed lateral 2.5D follow pose: the camera sits perpendicular to the travel
  * axis at `distance`, above the entity by `height`, and looks at the entity
  * raised by `lookHeight`. Axis "x" watches from +z; axis "z" watches from +x.
- */
+  * @internal
+  */
 export function resolveSideScrollPose(entityPos: Vec3, resolved: ResolvedSideScroll, fov: number): CameraPose {
   const perpendicular: Vec3 = resolved.axis === "x" ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
   return {
@@ -148,7 +163,9 @@ export function resolveSideScrollPose(entityPos: Vec3, resolved: ResolvedSideScr
   };
 }
 
-/** Speed→FOV curve: FOV climbs from base to max as speed rises to `speedForMax`. */
+/** Speed→FOV curve: FOV climbs from base to max as speed rises to `speedForMax`.
+ * @internal
+ */
 export function speedToFov(
   speed: number,
   curve: { base?: number; max?: number; speedForMax?: number } | undefined,
@@ -160,12 +177,16 @@ export function speedToFov(
   return lerp(base, max, clamp(speed / speedForMax, 0, 1));
 }
 
-/** Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)). */
+/** Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
+ * @internal
+ */
 export function yawTo(from: Vec3, to: Vec3): number {
   return Math.atan2(to.x - from.x, to.z - from.z);
 }
 
-/** Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI]. */
+/** Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI].
+ * @internal
+ */
 export function angleDelta(a: number, b: number): number {
   let delta = (b - a) % (Math.PI * 2);
   if (delta > Math.PI) delta -= Math.PI * 2;
@@ -173,7 +194,9 @@ export function angleDelta(a: number, b: number): number {
   return delta;
 }
 
-/** Exponential yaw smoothing that respects wrap-around. */
+/** Exponential yaw smoothing that respects wrap-around.
+ * @internal
+ */
 export function smoothYaw(current: number, desired: number, speed: number, dt: number): number {
   return current + angleDelta(current, desired) * smoothBlend(dt, speed);
 }
@@ -185,6 +208,7 @@ export interface ResolvedShoulder {
   fov: number;
 }
 
+/** @internal */
 export function resolveShoulder(
   config: ShoulderCameraConfig | undefined,
   aiming: boolean,
@@ -205,7 +229,9 @@ export function resolveShoulder(
   };
 }
 
-/** Blend two shoulder framings by an ADS factor in [0,1]. */
+/** Blend two shoulder framings by an ADS factor in [0,1].
+ * @internal
+ */
 export function blendShoulder(hip: ResolvedShoulder, ads: ResolvedShoulder, t: number): ResolvedShoulder {
   return {
     shoulderOffset: lerp(hip.shoulderOffset, ads.shoulderOffset, t),
@@ -219,7 +245,8 @@ export function blendShoulder(hip: ResolvedShoulder, ads: ResolvedShoulder, t: n
  * Over-the-shoulder camera pose. The boom sits behind the follow point along
  * `yaw`, raised by `heightOffset`, and pushed sideways by `shoulderOffset`
  * (sign set by `sideSign`: +1 right, -1 left). `pitch` tilts the look point.
- */
+  * @internal
+  */
 export function shoulderPose(
   follow: Vec3,
   yaw: number,
@@ -252,7 +279,8 @@ export function shoulderPose(
  * Lock-on pose: camera sits behind the player along the player→target vector so
  * the target stays framed. The look point is biased between player and target
  * by `framingBias`.
- */
+  * @internal
+  */
 export function lockOnPose(
   player: Vec3,
   target: Vec3,
@@ -291,6 +319,7 @@ export interface ResolvedChase {
   bankDamping: number;
 }
 
+/** @internal */
 export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase {
   return {
     distance: config?.distance ?? 6,
@@ -306,7 +335,9 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
   };
 }
 
-/** Velocity-lead the follow point (#286.9): aim `leadTime` seconds along the target's frame velocity, clamped to `leadMax`. */
+/** Velocity-lead the follow point (#286.9): aim `leadTime` seconds along the target's frame velocity, clamped to `leadMax`.
+ * @internal
+ */
 export function leadFollowPoint(follow: Vec3, previous: Vec3, dt: number, resolved: ResolvedChase): Vec3 {
   if (resolved.leadTime <= 0 || dt <= 0) return follow;
   let leadX = ((follow.x - previous.x) / dt) * resolved.leadTime;
@@ -326,7 +357,9 @@ function wrapAngle(angle: number): number {
   return wrapped;
 }
 
-/** One smoothing step of the chase rig's turn-bank roll (#286.10): roll opposes yaw rate, clamped and exponentially damped. */
+/** One smoothing step of the chase rig's turn-bank roll (#286.10): roll opposes yaw rate, clamped and exponentially damped.
+ * @internal
+ */
 export function bankRollStep(currentRoll: number, yaw: number, previousYaw: number, dt: number, resolved: ResolvedChase): number {
   if (resolved.bankPerYawRate <= 0) return 0;
   const yawRate = dt > 0 ? wrapAngle(yaw - previousYaw) / dt : 0;
@@ -341,6 +374,7 @@ export interface ResolvedObserver {
   orbitSpeed: number;
 }
 
+/** @internal */
 export function resolveObserver(config: ObserverCameraConfig | undefined): ResolvedObserver {
   return {
     distance: config?.distance ?? 8,
@@ -350,7 +384,9 @@ export function resolveObserver(config: ObserverCameraConfig | undefined): Resol
   };
 }
 
-/** Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input. */
+/** Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input.
+ * @internal
+ */
 export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose {
   const position: Vec3 = {
     x: subject.x + Math.sin(angle) * resolved.distance,
@@ -364,7 +400,9 @@ export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObs
   };
 }
 
-/** Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing). */
+/** Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing).
+ * @internal
+ */
 export function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 {
   const back = forwardVector(yaw);
   return {
@@ -374,7 +412,9 @@ export function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: Resolv
   };
 }
 
-/** Look point ahead of / above a chased vehicle. */
+/** Look point ahead of / above a chased vehicle.
+ * @internal
+ */
 export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 {
   const forward = forwardVector(yaw);
   return {
@@ -384,7 +424,9 @@ export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase):
   };
 }
 
-/** World-space seat pose (cockpit/hood/rear) rigidly attached to the vehicle. */
+/** World-space seat pose (cockpit/hood/rear) rigidly attached to the vehicle.
+ * @internal
+ */
 export function seatPose(
   follow: Vec3,
   yaw: number,
@@ -413,16 +455,21 @@ export interface TraumaState {
   time: number;
 }
 
+/** @internal */
 export function createTrauma(): TraumaState {
   return { trauma: 0, time: 0 };
 }
 
-/** Add trauma (0..1) and clamp; larger hits raise the ceiling toward 1. */
+/** Add trauma (0..1) and clamp; larger hits raise the ceiling toward 1.
+ * @internal
+ */
 export function addTrauma(state: TraumaState, amount: number): void {
   state.trauma = clamp(state.trauma + amount, 0, 1);
 }
 
-/** Decay trauma linearly toward 0 and advance the shake clock. */
+/** Decay trauma linearly toward 0 and advance the shake clock.
+ * @internal
+ */
 export function stepTrauma(state: TraumaState, decayPerSecond: number, dt: number): void {
   state.time += dt;
   state.trauma = clamp(state.trauma - decayPerSecond * dt, 0, 1);
@@ -443,7 +490,8 @@ export interface ShakeOffset {
  * Positional + roll shake for the current trauma. Shake magnitude is
  * `trauma^exponent` so small hits stay subtle; the oscillation is deterministic
  * per-seed pseudo-noise (no per-frame RNG, so identical inputs reproduce).
- */
+  * @internal
+  */
 export function shakeOffset(
   state: TraumaState,
   config: {
@@ -482,7 +530,8 @@ export const CALIBRATED_TRAUMA_SHAKE_FREQUENCY = 32;
  * against, so an impact "just looks right" without hand-tuning `shakeOffset`.
  *
  * @capability camera-shake calibrated trauma² camera kick with zero tuning
- */
+  * @internal
+  */
 export function traumaShake(trauma: number, time = 0): ShakeOffset {
   return shakeOffset(
     { trauma: clamp(trauma, 0, 1), time },
@@ -494,7 +543,9 @@ export function traumaShake(trauma: number, time = 0): ShakeOffset {
   );
 }
 
-/** Linear cross-fade between two full camera poses (position, lookAt, fov). */
+/** Linear cross-fade between two full camera poses (position, lookAt, fov).
+ * @internal
+ */
 export function crossfadePose(from: CameraPose, to: CameraPose, t: number): CameraPose {
   const blend = clamp(t, 0, 1);
   return {
@@ -526,7 +577,8 @@ export interface ResolvedDirectedCamera {
  * (#196.2). `director` omitted, or its fields `undefined`/`null`, is a pure
  * passthrough to `staticConfig` so mounting a director with no active override
  * changes nothing.
- */
+  * @internal
+  */
 export function resolveDirectedCamera(
   director: DirectorCameraValues | undefined,
   staticConfig: StaticCameraValues,
@@ -548,7 +600,8 @@ export interface CinematicSample {
  * travel time from the previous keyframe into it; segment easing is per the
  * destination keyframe. Reports `done` once past the final keyframe (unless
  * looping, which wraps `elapsed` into the total path duration).
- */
+  * @internal
+  */
 export function cinematicSample(
   keyframes: readonly CameraKeyframe[],
   elapsed: number,

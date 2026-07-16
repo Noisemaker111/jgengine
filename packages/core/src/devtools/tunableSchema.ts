@@ -80,14 +80,17 @@ export interface ResolvedAxisBounds {
   readonly step: readonly number[];
 }
 
+/** @internal */
 export function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/** @internal */
 export function escapePathSegment(segment: string): string {
   return segment.replace(/\\/g, "\\\\").replace(/\./g, "\\.");
 }
 
+/** @internal */
 export function unescapePathSegment(segment: string): string {
   let out = "";
   for (let i = 0; i < segment.length; i += 1) {
@@ -102,11 +105,13 @@ export function unescapePathSegment(segment: string): string {
   return out;
 }
 
+/** @internal */
 export function joinTunablePath(parent: string, segment: string): string {
   const escaped = escapePathSegment(segment);
   return parent === "" ? escaped : `${parent}.${escaped}`;
 }
 
+/** @internal */
 export function splitTunablePath(path: string): string[] {
   const parts: string[] = [];
   let current = "";
@@ -128,6 +133,7 @@ export function splitTunablePath(path: string): string[] {
   return parts;
 }
 
+/** @internal */
 export function parseColor(input: unknown): NormalizedColor | null {
   if (typeof input !== "string" || !COLOR_PATTERN.test(input)) return null;
   const raw = input.slice(1);
@@ -158,6 +164,7 @@ export function parseColor(input: unknown): NormalizedColor | null {
   return { hex, rgb, alpha, hasAlpha: true };
 }
 
+/** @internal */
 export function formatColor(rgb: string, alpha: number, withAlpha: boolean): string | null {
   const parsed = parseColor(rgb);
   const rgbHex = parsed?.rgb ?? (/^#[0-9a-fA-F]{6}$/.test(rgb) ? rgb.toLowerCase() : null);
@@ -170,6 +177,7 @@ export function formatColor(rgb: string, alpha: number, withAlpha: boolean): str
   return `${rgbHex}${a}`;
 }
 
+/** @internal */
 export function normalizeColorValue(input: unknown, forceAlpha?: boolean): string | null {
   const parsed = parseColor(input);
   if (parsed === null) return null;
@@ -179,21 +187,25 @@ export function normalizeColorValue(input: unknown, forceAlpha?: boolean): strin
   return parsed.rgb;
 }
 
+/** @internal */
 export function isColorString(value: unknown): value is string {
   return typeof value === "string" && COLOR_PATTERN.test(value);
 }
 
+/** @internal */
 export function vecLength(kind: "vec2" | "vec3" | "vec4"): number {
   if (kind === "vec2") return 2;
   if (kind === "vec3") return 3;
   return 4;
 }
 
+/** @internal */
 export function isNumericTuple(value: unknown, length: number): value is number[] {
   if (!Array.isArray(value) || value.length !== length) return false;
   return value.every(isFiniteNumber);
 }
 
+/** @internal */
 export function isIntervalShape(value: unknown): value is TunableInterval {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
@@ -202,6 +214,7 @@ export function isIntervalShape(value: unknown): value is TunableInterval {
   return isFiniteNumber(record.min) && isFiniteNumber(record.max);
 }
 
+/** @internal */
 export function expandAxisMeta(
   length: number,
   labels: readonly string[] | undefined,
@@ -231,10 +244,12 @@ export function expandAxisMeta(
   return { labels: resolvedLabels, min: resolvedMin, max: resolvedMax, step: resolvedStep };
 }
 
+/** @internal */
 export function clampAxisValue(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** @internal */
 export function parseVec(
   kind: "vec2" | "vec3" | "vec4",
   raw: unknown,
@@ -245,6 +260,7 @@ export function parseVec(
   return raw.map((value, i) => clampAxisValue(value, bounds.min[i]!, bounds.max[i]!));
 }
 
+/** @internal */
 export function parseInterval(
   raw: unknown,
   options: { min?: number; max?: number; step?: number; integer?: boolean },
@@ -282,12 +298,14 @@ export function parseInterval(
   return { min: lo, max: hi };
 }
 
+/** @internal */
 export function convertAngle(value: number, from: AngleUnit, to: AngleUnit): number {
   if (from === to) return value;
   if (from === "deg" && to === "rad") return (value * Math.PI) / 180;
   return (value * 180) / Math.PI;
 }
 
+/** @internal */
 export function normalizeAngle(
   value: number,
   unit: AngleUnit,
@@ -308,6 +326,7 @@ export function normalizeAngle(
   return next;
 }
 
+/** @internal */
 export function resolveChoices<T>(
   options: readonly T[] | undefined,
   choices: readonly TunableChoice<T>[] | undefined,
@@ -317,11 +336,13 @@ export function resolveChoices<T>(
   return undefined;
 }
 
+/** @internal */
 export function choiceValues(choices: readonly TunableChoice[] | undefined): readonly unknown[] | undefined {
   if (choices === undefined) return undefined;
   return choices.map((choice) => choice.value);
 }
 
+/** @internal */
 export function findChoice(
   choices: readonly TunableChoice[] | undefined,
   raw: unknown,
@@ -330,12 +351,14 @@ export function findChoice(
   return choices.find((choice) => Object.is(choice.value, raw));
 }
 
+/** @internal */
 export function parseEnumValue(raw: unknown, choices: readonly TunableChoice[] | undefined): unknown | null {
   if (choices === undefined) return null;
   const match = findChoice(choices, raw);
   return match === undefined ? null : match.value;
 }
 
+/** @internal */
 export function coerceSelectWrite(
   raw: unknown,
   choices: readonly TunableChoice[] | undefined,
@@ -363,6 +386,7 @@ export function coerceSelectWrite(
   return raw;
 }
 
+/** @internal */
 export function inferKind(initial: unknown, options?: TunableOptions): DevtoolsControlKind {
   if (options?.kind !== undefined) return options.kind;
   if (options?.choices !== undefined || options?.options !== undefined) {
@@ -374,6 +398,7 @@ export function inferKind(initial: unknown, options?: TunableOptions): DevtoolsC
   return "text";
 }
 
+/** @internal */
 export function discoverableKind(value: unknown, meta?: ScanFieldMeta): DevtoolsControlKind | null {
   if (meta?.kind !== undefined) {
     if (meta.kind === "vec2" || meta.kind === "vec3" || meta.kind === "vec4") {
@@ -397,6 +422,7 @@ export function discoverableKind(value: unknown, meta?: ScanFieldMeta): Devtools
   return null;
 }
 
+/** @internal */
 export function isScannableContainer(value: unknown): value is Record<string, unknown> {
   if (value === null || typeof value !== "object") return false;
   if (Array.isArray(value)) return value.length <= MAX_TABLE_ENTRIES;
@@ -404,6 +430,7 @@ export function isScannableContainer(value: unknown): value is Record<string, un
   return proto === Object.prototype || proto === null;
 }
 
+/** @internal */
 export function ownWritableDataKeys(target: Record<string, unknown>): string[] {
   return Object.keys(target).filter((key) => {
     if (UNSAFE_KEYS.has(key)) return false;
@@ -415,6 +442,7 @@ export function ownWritableDataKeys(target: Record<string, unknown>): string[] {
   });
 }
 
+/** @internal */
 export function sliderBounds(
   initial: number,
   options: { min?: number; max?: number; step?: number } | undefined,
@@ -425,6 +453,7 @@ export function sliderBounds(
   return { min, max, step };
 }
 
+/** @internal */
 export function validateControlValue(
   kind: DevtoolsControlKind,
   raw: unknown,
@@ -518,6 +547,7 @@ export interface OverrideParseResult {
   readonly diagnostics: readonly string[];
 }
 
+/** @internal */
 export function parseOverridesPayload(raw: unknown): OverrideParseResult {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
     return { overrides: null, diagnostics: ["overrides payload is not an object"] };
@@ -567,6 +597,7 @@ export function parseOverridesPayload(raw: unknown): OverrideParseResult {
   };
 }
 
+/** @internal */
 export function cloneValue<T>(value: T): T {
   if (Array.isArray(value)) return value.slice() as T;
   if (value !== null && typeof value === "object") return { ...(value as object) } as T;

@@ -51,6 +51,7 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
+/** @internal */
 export function useDisplayProfile(): DisplayProfile {
   return useSyncExternalStore(subscribe, readProfile, () => SERVER_PROFILE);
 }

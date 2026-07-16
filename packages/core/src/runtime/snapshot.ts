@@ -74,6 +74,7 @@ export type GameRuntimeSnapshot = {
   };
 };
 
+/** @internal */
 export function createEmptyServerRow(): RuntimeServerRow {
   return {
     entities: [],
@@ -83,6 +84,7 @@ export function createEmptyServerRow(): RuntimeServerRow {
   };
 }
 
+/** @internal */
 export function createEmptyPlayerRow(userId: string): RuntimePlayerRow {
   return {
     userId,
@@ -93,6 +95,7 @@ export function createEmptyPlayerRow(userId: string): RuntimePlayerRow {
   };
 }
 
+/** @internal */
 export function createRuntimeSnapshot(args: {
   gameId: string;
   serverId: string;
@@ -117,6 +120,7 @@ export function createRuntimeSnapshot(args: {
   };
 }
 
+/** @internal */
 export function markServerDirty(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot {
   return {
     ...snapshot,
@@ -125,6 +129,7 @@ export function markServerDirty(snapshot: GameRuntimeSnapshot): GameRuntimeSnaps
   };
 }
 
+/** @internal */
 export function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string): GameRuntimeSnapshot {
   if (snapshot.dirty.players.includes(userId)) {
     return markServerDirty(snapshot);
@@ -140,6 +145,7 @@ export function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string): 
   };
 }
 
+/** @internal */
 export function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot {
   return {
     ...snapshot,
@@ -151,6 +157,7 @@ export function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnaps
   };
 }
 
+/** @internal */
 export function splitProfilePlayer(player: RuntimePlayerRow): {
   persistent: RuntimePlayerRow;
   session: Record<string, unknown>;

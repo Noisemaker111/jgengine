@@ -45,6 +45,7 @@ export interface HudLayoutOptions {
   locked?: boolean;
 }
 
+/** @internal */
 export function isPanelDraggable(state: HudLayoutState, id: string): boolean {
   return state.panels[id] !== undefined && (state.editing || !state.locked);
 }
@@ -76,10 +77,12 @@ export const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }>
 
 const HUD_ANCHORS = Object.keys(HUD_ANCHOR_FRACTIONS) as HudAnchor[];
 
+/** @internal */
 export function isHudAnchor(value: unknown): value is HudAnchor {
   return typeof value === "string" && value in HUD_ANCHOR_FRACTIONS;
 }
 
+/** @internal */
 export function anchoredPlacement(
   anchor: HudAnchor,
   inset: { x: number; y: number },
@@ -92,6 +95,7 @@ export function anchoredPlacement(
   };
 }
 
+/** @internal */
 export function nearestAnchor(rect: HudRect, viewport: HudSize): HudAnchor {
   const cx = viewport.width > 0 ? (rect.x + rect.width / 2) / viewport.width : 0.5;
   const cy = viewport.height > 0 ? (rect.y + rect.height / 2) / viewport.height : 0.5;
@@ -108,6 +112,7 @@ export function nearestAnchor(rect: HudRect, viewport: HudSize): HudAnchor {
   return best;
 }
 
+/** @internal */
 export function clampRect(rect: HudRect, viewport: HudSize): HudRect {
   return {
     x: Math.max(0, Math.min(rect.x, viewport.width - rect.width)),
@@ -117,6 +122,7 @@ export function clampRect(rect: HudRect, viewport: HudSize): HudRect {
   };
 }
 
+/** @internal */
 export function placementFromRect(rect: HudRect, viewport: HudSize, snap = 1): HudPlacement {
   const clamped = clampRect(rect, viewport);
   const anchor = nearestAnchor(clamped, viewport);
@@ -131,6 +137,7 @@ export function placementFromRect(rect: HudRect, viewport: HudSize, snap = 1): H
   };
 }
 
+/** @internal */
 export function rectFromPlacement(
   placement: HudPlacement,
   size: HudSize,
@@ -187,6 +194,7 @@ export function listActiveHudLayouts(): HudLayoutStore[] {
   return [...activeHudLayouts];
 }
 
+/** @internal */
 export function createHudLayout(options?: HudLayoutOptions): HudLayoutStore {
   const snap = options?.snap ?? 1;
   const defaults = new Map<string, HudPlacement>();

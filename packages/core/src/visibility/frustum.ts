@@ -44,6 +44,7 @@ export interface Frustum {
 const WORLD_UP: Vec3 = [0, 1, 0];
 const ALT_UP: Vec3 = [1, 0, 0];
 
+/** @internal */
 export function createFrustum(): Frustum {
   return {
     planes: new Float64Array(24),
@@ -100,6 +101,7 @@ function planeFromCorners(
   planes[slot * 4 + 3] = d;
 }
 
+/** @internal */
 export function updateFrustum(out: Frustum, view: CameraView): Frustum {
   const { position, target } = view;
   let fx = target[0] - position[0];
@@ -186,7 +188,9 @@ export function updateFrustum(out: Frustum, view: CameraView): Frustum {
   return out;
 }
 
-/** Conservative AABB-vs-frustum: never a false negative (may keep a corner-case that is truly outside). */
+/** Conservative AABB-vs-frustum: never a false negative (may keep a corner-case that is truly outside).
+ * @internal
+ */
 export function aabbInFrustum(
   f: Frustum,
   minX: number, minY: number, minZ: number,
@@ -203,6 +207,7 @@ export function aabbInFrustum(
   return true;
 }
 
+/** @internal */
 export function sphereInFrustum(f: Frustum, cx: number, cy: number, cz: number, radius: number): boolean {
   const planes = f.planes;
   for (let i = 0; i < 6; i += 1) {
@@ -212,13 +217,17 @@ export function sphereInFrustum(f: Frustum, cx: number, cy: number, cz: number, 
   return true;
 }
 
-/** Sphere broad-phase reject, then the tight AABB test. Both conservative. */
+/** Sphere broad-phase reject, then the tight AABB test. Both conservative.
+ * @internal
+ */
 export function boundsInFrustum(f: Frustum, b: RenderBounds): boolean {
   if (!sphereInFrustum(f, b.centerX, b.centerY, b.centerZ, b.radius)) return false;
   return aabbInFrustum(f, b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ);
 }
 
-/** Push every plane outward by `margin` (unit normals ⇒ d += margin) to form a preload/hysteresis region. */
+/** Push every plane outward by `margin` (unit normals ⇒ d += margin) to form a preload/hysteresis region.
+ * @internal
+ */
 export function dilateFrustum(src: Frustum, margin: number, out: Frustum): Frustum {
   const sp = src.planes;
   const op = out.planes;

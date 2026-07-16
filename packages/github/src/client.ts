@@ -11,6 +11,7 @@ export interface GitHubClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+/** @internal */
 export class GitHubError extends Error {
   constructor(
     readonly status: number,
@@ -35,6 +36,7 @@ export interface GitHubClient {
   graphql<T>(query: string, variables?: Record<string, unknown>): Promise<T>;
 }
 
+/** @internal */
 export function createGitHub(options: GitHubClientOptions = {}): GitHubClient {
   const doFetch = options.fetchImpl ?? fetch;
   const { endpoint, token } = options;

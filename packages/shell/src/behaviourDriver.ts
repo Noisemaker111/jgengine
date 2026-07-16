@@ -1,5 +1,6 @@
 import type { BehaviourWorld } from "@jgengine/core/behaviour/behaviour";
 
+/** @internal */
 export function createBehaviourWorldDriver(world: BehaviourWorld): {
   start(): void;
   stop(): void;

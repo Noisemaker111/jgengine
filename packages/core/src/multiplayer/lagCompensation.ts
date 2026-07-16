@@ -15,6 +15,7 @@ export interface PositionHistoryConfig {
 
 const DEFAULT_MAX_SAMPLES = 256;
 
+/** @internal */
 export class PositionHistory {
   private readonly historyMs: number;
   private readonly maxSamples: number;
@@ -105,10 +106,12 @@ export class PositionHistory {
   }
 }
 
+/** @internal */
 export function createPositionHistory(config: PositionHistoryConfig): PositionHistory {
   return new PositionHistory(config);
 }
 
+/** @internal */
 export function rewindTimestamp(nowMs: number, rttMs: number, interpDelayMs: number): number {
   return nowMs - rttMs / 2 - interpDelayMs;
 }
@@ -136,6 +139,7 @@ function normalize(v: Vec3): Vec3 | null {
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
+/** @internal */
 export function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number): number | null {
   const dir = normalize(ray.direction);
   if (dir === null) return null;
@@ -156,6 +160,7 @@ export function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number)
   return t;
 }
 
+/** @internal */
 export function resolveHitscan(
   history: PositionHistory,
   targets: readonly HitscanTarget[],

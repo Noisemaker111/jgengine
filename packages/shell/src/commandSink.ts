@@ -6,7 +6,9 @@ export interface CommandSink {
   run(name: string, input: unknown): void;
 }
 
-/** Runs commands on the local `ctx` — the default, client-authoritative path. */
+/** Runs commands on the local `ctx` — the default, client-authoritative path.
+ * @internal
+ */
 export function localCommandSink(ctx: GameContext): CommandSink {
   return {
     run(name, input) {
@@ -15,7 +17,9 @@ export function localCommandSink(ctx: GameContext): CommandSink {
   };
 }
 
-/** Sends commands to the authoritative host over the transport; the result replicates back through world sync. */
+/** Sends commands to the authoritative host over the transport; the result replicates back through world sync.
+ * @internal
+ */
 export function remoteCommandSink(
   backend: Pick<LiveGameBackend, "transport">,
   serverId: string,
@@ -31,7 +35,8 @@ export function remoteCommandSink(
  * The sink a server-authoritative shell should dispatch gameplay commands through: remote when the game opts into
  * `authority: "server"` and a server is joined, local otherwise. Client-only UI commands (targeting, hotbar
  * scroll) keep calling `ctx.game.commands.run` directly — only authoritative gameplay verbs route to the host.
- */
+  * @internal
+  */
 export function resolveCommandSink(
   ctx: GameContext,
   opts: {

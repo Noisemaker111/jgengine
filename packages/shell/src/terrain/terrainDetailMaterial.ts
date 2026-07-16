@@ -58,7 +58,8 @@ float jgFbm(vec2 p){
  * they tile by world position at `detail.material.repeat` world units per tile and blend over the
  * procedural result at `detail.material.strength` — the real-texture seam layers onto the existing
  * look instead of replacing it.
- */
+  * @internal
+  */
 export function createTerrainDetailMaterial(
   detail: ResolvedTerrainDetail,
   textures?: TerrainDetailMaterialTextures,

@@ -85,7 +85,8 @@ function levelFor(levels: readonly HeatLevelDef[], heat: number): HeatLevelDef |
  * while a witness or pursuer is close), tiered pursuer budgets, ring-shaped spawn points around the
  * player, and a stand-down countdown once heat clears so pursuit doesn't vanish instantly. Pure and
  * seeded like `ai/spawnDirector` — the caller owns spawning/despawning the actual entities.
- */
+  * @internal
+  */
 export function createHeatState(config: HeatConfig): HeatState {
   return {
     heat: 0,
@@ -121,7 +122,8 @@ function ringPoints(
  * Advances {@link HeatState} by one tick: sums this tick's witnessed gains, bleeds heat once clear of
  * witnesses past `decayDelaySeconds`, resolves the current {@link HeatLevelDef}, and reports how many
  * pursuers to spawn (with ring points) or whether to stand pursuit down entirely.
- */
+  * @internal
+  */
 export function advanceHeat(
   config: HeatConfig,
   state: HeatState,

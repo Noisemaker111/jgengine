@@ -1,14 +1,5 @@
-export * from "./runtime/save";
-export * from "./runtime/snapshot";
-export * from "./runtime/worldSnapshot";
-export * from "./runtime/worldReplication";
-export * from "./game/connectedPlayers";
-export * from "./runtime/hostedGameRunner";
-export * from "./runtime/hostedWorldSession";
-export * from "./runtime/worldMirror";
-export * from "./runtime/worldChannel";
-export * from "./runtime/commandRunner";
-export * from "./runtime/gameRuntime";
-export * from "./runtime/adapter";
-export * from "./runtime/transport";
-export * from "./runtime/visibility";
+/**
+ * Package root — deep-path imports only for engine APIs (`@jgengine/core/<domain>/<file>`).
+ * Re-exports {@link VERSION} / {@link CHANGELOG} so `import { VERSION } from "@jgengine/core"` works.
+ */
+export { VERSION, CHANGELOG, type ChangelogEntry } from "./meta/changelog";

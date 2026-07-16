@@ -1,4 +1,6 @@
-/** Horizontal facing derived from an orbit camera orbiting a target on the XZ plane. */
+/** Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
+ * @internal
+ */
 export function orbitYawFromCamera(
   cameraX: number,
   cameraZ: number,
@@ -10,7 +12,9 @@ export function orbitYawFromCamera(
   return Math.atan2(dx, dz);
 }
 
-/** Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera. */
+/** Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera.
+ * @internal
+ */
 export function cameraLookPitch(camera: Vec3, target: Vec3): number {
   const horizontal = Math.hypot(target.x - camera.x, target.z - camera.z);
   return Math.atan2(target.y - camera.y, horizontal);
@@ -135,11 +139,14 @@ export interface OrbitFollowRuntimeState {
   lockedDistance: number | null;
 }
 
-/** Frame-rate independent exponential smoothing factor in [0, 1]. */
+/** Frame-rate independent exponential smoothing factor in [0, 1].
+ * @internal
+ */
 export function smoothBlend(deltaSeconds: number, speed: number): number {
   return 1 - Math.exp(-speed * deltaSeconds);
 }
 
+/** @internal */
 export function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig {
   const resolved: ResolvedOrbitCameraConfig = {
     ...DEFAULT_ORBIT_CAMERA,
@@ -158,7 +165,8 @@ export function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrb
  * FOV that keeps a target's on-screen size constant as the spring-arm pulls the
  * camera in. Widens the base FOV by the desired/pulled distance ratio; a no-op
  * (returns the base) whenever the camera sits at or beyond its desired distance.
- */
+  * @internal
+  */
 export function compensatedFov(baseFovDegrees: number, desiredDistance: number, pulledDistance: number): number {
   if (pulledDistance <= 0 || desiredDistance <= 0 || pulledDistance >= desiredDistance) {
     return baseFovDegrees;
@@ -168,6 +176,7 @@ export function compensatedFov(baseFovDegrees: number, desiredDistance: number, 
   return Math.min((widened * 180) / Math.PI, 170);
 }
 
+/** @internal */
 export function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, dragging: boolean): number {
   if (dragging) {
     return config.dragTargetSmoothing;
@@ -175,6 +184,7 @@ export function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, draggi
   return config.targetSmoothing;
 }
 
+/** @internal */
 export function resolveFollowTargetFromPosition(
   position: readonly [number, number, number],
   config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">,
@@ -187,6 +197,7 @@ export function resolveFollowTargetFromPosition(
   };
 }
 
+/** @internal */
 export function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 {
   return {
     x: from.x + (to.x - from.x) * blend,
@@ -195,6 +206,7 @@ export function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 {
   };
 }
 
+/** @internal */
 export function distanceBetween(a: Vec3, b: Vec3): number {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
@@ -202,6 +214,7 @@ export function distanceBetween(a: Vec3, b: Vec3): number {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/** @internal */
 export function seedOrbitFollowState(input: {
   entityPosition: readonly [number, number, number];
   config: Pick<
@@ -241,7 +254,8 @@ export function seedOrbitFollowState(input: {
  * Pure orbit follow step — smooth target tracking, camera carries target delta
  * (OrbitControls alone keeps camera fixed when only target moves), optional
  * distance lock. Call each frame before OrbitControls.update() in the shell.
- */
+  * @internal
+  */
 export function orbitFollowStep(input: {
   state: OrbitFollowRuntimeState;
   desiredTarget: Vec3;
@@ -293,7 +307,9 @@ export function orbitFollowStep(input: {
   return { target, camera, lockedDistance, distance: distanceBetween(camera, target) };
 }
 
-/** @deprecated Use orbitFollowStep — kept for older call sites. */
+/** @deprecated Use orbitFollowStep — kept for older call sites.
+ * @internal
+ */
 export function cameraFollowStep(input: {
   camera: Vec3;
   target: Vec3;

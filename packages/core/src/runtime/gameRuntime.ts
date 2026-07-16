@@ -68,6 +68,7 @@ export type GameRuntime = {
   toProfileRow: (snapshot: GameRuntimeSnapshot, userId: string) => RuntimeProfileRow | null;
 };
 
+/** @internal */
 export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntime {
   const loop = definition.loop;
   let initialized = false;

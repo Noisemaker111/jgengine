@@ -33,7 +33,8 @@ interface Tracked {
  * then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same
  * shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per
  * commit; dirty-hint acceleration is a later optimization behind the same seam.
- */
+  * @internal
+  */
 export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
   let revision = 0;
   const entities = new Map<string, Tracked>();
@@ -147,7 +148,8 @@ function keysAfter(map: Map<string, number>, sinceRevision: number): string[] {
  * Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of
  * {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs
  * per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
- */
+  * @internal
+  */
 export function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff {
   const prevEntities = new Map<string, string>();
   for (const entity of (prev["entities"] ?? []) as readonly SceneEntity[]) {
@@ -194,7 +196,8 @@ export function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision
  * Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the
  * client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities,
  * stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
- */
+  * @internal
+  */
 export function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot {
   const next: WorldSnapshot = { ...baseline };
 

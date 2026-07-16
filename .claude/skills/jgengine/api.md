@@ -4,114 +4,9 @@
 
 ## @jgengine/core
 
-- `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's position and reach, as seen by the visibility system.
-- `CommandDef` (type): type CommandDef<TInput = unknown> = { validate: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => CommandValidationError | null; apply: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => GameRuntimeSnapshot; } — ⚠ undocumented
-- `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
-- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
-- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
-- `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
-- `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
-- `GameBackend` (type): type GameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>; } — ⚠ undocumented
-- `GameRuntime` (type): type GameRuntime = { gameId: string; save: SaveConfig; hydrate: (input: HydrateInput) => GameRuntimeSnapshot; runCommand: ( snapshot: GameRuntimeSnapshot, actorUserId: string, commandName: string, input: unknown, ) => ReturnType<typeof runCommand>; tick: (snapshot: GameRuntimeSnapshot, dtSeconds: nu… — ⚠ undocumented
-- `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
-- `GameRuntimeFeedView` (type): type GameRuntimeFeedView = { action: string; entries: unknown[]; } — ⚠ undocumented
-- `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
-- `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeSnapshot` (type): type GameRuntimeSnapshot = { version: number; gameId: string; serverId: string; server: RuntimeServerRow; players: Record<string, RuntimePlayerRow>; chunks: Record<string, RuntimeChunkRow>; revision: number; dirty: { server: boolean; players: string[]; chunks: string[]; }; } — ⚠ undocumented
-- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string }) => Promise<JoinServerResult>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
-- `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.
-- `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
-- `HostedWorldRecord` (interface): interface HostedWorldRecord — One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves.
-- `HostedWorldSession` (interface): interface HostedWorldSession — The stateful host substrate a long-lived backend binds (ws server, browser P2P host): a live {@link HostedGameRunner} loaded from a {@link HostedWorldStore}, auto-persisted on tick, serving each client a baseline then diffs. The stateless Convex path doesn't use this — it reconstructs a runner from the same store per invocation and diffs with `diffSnapshots`. Either way the store seam and the game code are identical.
-- `HostedWorldSessionOptions` (interface): interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedWorldSession}: the game, its persistence store, and the auto-save cadence.
-- `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
-- `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
-- `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; } — ⚠ undocumented
-- `INPUT_COMMAND` (const): const INPUT_COMMAND: "engine.input" — Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire.
-- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
-- `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
-- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
-- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
-- `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
-- `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
-- `PresencePoseRow` (type): type PresencePoseRow = { userId: string; position: { x: number; y: number; z: number }; rotationY: number; rotationPitch: number; lastSeenAt: number; } — ⚠ undocumented
-- `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
-- `RUNTIME_SNAPSHOT_VERSION` (const): const RUNTIME_SNAPSHOT_VERSION: 1 — ⚠ undocumented
-- `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
-- `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
-- `RuntimeChunkRow` (type): type RuntimeChunkRow = { chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string, unknown>; } — ⚠ undocumented
-- `RuntimeEntityRow` (type): type RuntimeEntityRow = { instanceId: string; catalogId: string; position?: [number, number, number]; rotationY?: number; parentSpace?: string; group?: string; stats?: Record<string, { current: number; max: number; min?: number }>; targetInstanceId?: string | null; userId?: string; } — ⚠ undocumented
-- `RuntimeInitContext` (type): type RuntimeInitContext = { snapshot: GameRuntimeSnapshot; setSnapshot: (snapshot: GameRuntimeSnapshot) => void; } — ⚠ undocumented
-- `RuntimeInventorySlot` (type): type RuntimeInventorySlot = { item: string; count: number; slot?: number; } — ⚠ undocumented
-- `RuntimeLoopContext` (type): type RuntimeLoopContext = RuntimeInitContext & { player: { userId: string; isNew: boolean; }; } — ⚠ undocumented
-- `RuntimeObjectRow` (type): type RuntimeObjectRow = { instanceId: string; catalogId: string; position: [number, number, number]; rotationY?: number; parentSpace?: string; flags?: Record<string, unknown>; } — ⚠ undocumented
-- `RuntimePlayerRow` (type): type RuntimePlayerRow = { userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Record<string, unknown>; } — ⚠ undocumented
-- `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
-- `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented
-- `RuntimeWorldContext` (type): type RuntimeWorldContext = RuntimeInitContext & { playerIds: readonly string[]; } — ⚠ undocumented
-- `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented
-- `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
-- `ServerLoopHooks` (type): type ServerLoopHooks = { onInit?: (ctx: RuntimeInitContext) => void; onNewPlayer?: (ctx: RuntimeLoopContext) => void; onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void; } — ⚠ undocumented
-- `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
-- `SnapshotModule` (interface): interface SnapshotModule<T = unknown> — The replication seam for host-authoritative shared worlds: the opt-in feature manifest *is* the replication schema. Each live subsystem a game opts into registers a {@link SnapshotModule} keyed by name; the host serializes exactly the registered set into a {@link WorldSnapshot} and a client hydrates the same keys back. Adding a replicated subsystem is a registration, never a new branch.
-- `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `VisibilityBounds` (interface): interface VisibilityBounds — Sphere bounds used for visibility/streaming distance checks.
-- `VisibilityDecision` (interface): interface VisibilityDecision — Result of evaluating one object against the active cameras this tick.
-- `VisibilityDefaults` (interface): interface VisibilityDefaults — Baseline policy settings a `VisibilitySystem` is constructed with.
-- `VisibilityId` (type): type VisibilityId = string | number — Stable identifier for a visibility-tracked object or camera.
-- `VisibilityObject` (interface): interface VisibilityObject — An entity/asset tracked by `VisibilitySystem.evaluate`.
-- `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
-- `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
-- `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
-- `WorldClientFrame` (type): type WorldClientFrame = | { t: "join"; isNew: boolean } | { t: "leave" } | { t: "command"; name: string; input: unknown } | { t: "input"; frame: InputFrame } — Client→host frame: a player's session verbs. What a transport marshals upstream.
-- `WorldClientLink` (interface): interface WorldClientLink — The client end of a {@link WorldHost} connection: applies server frames to a local `ctx`, sends session verbs upstream.
-- `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
-- `WorldHost` (interface): interface WorldHost — The transport-agnostic host: fans one {@link HostedWorldSession} out to many connections, each tracking its own revision cursor so a joiner gets a baseline and everyone else gets diffs. A ws server, a Convex function, or an in-process loopback all drive the same shape — decode a frame → `connection.receive`; after `session.tick` → `broadcast`. No wire format is assumed; frames are plain data a transport serializes however it likes.
-- `WorldHostConnection` (interface): interface WorldHostConnection — One client's link on the host side: routes its upstream frames into the shared session, pushes it sync frames.
-- `WorldMirror` (interface): interface WorldMirror — The client end of host-authoritative replication: folds a host's baseline + {@link WorldDiff} stream onto a local {@link GameContext}. It keeps the last full {@link WorldSnapshot}, advances it with each diff, and pushes the result through `ctx.hydrate` — so the client mirrors exactly the subsystems its own game opted into and silently ignores host modules it lacks. This is the inverse of a {@link HostedWorldSession}; the transport in between (loopback, ws, Convex) is irrelevant.
-- `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
-- `WorldServerFrame` (type): type WorldServerFrame = | { t: "baseline"; revision: number; snapshot: WorldSnapshot } | { t: "diff"; diff: WorldDiff } — Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream.
-- `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
-- `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
-- `applyWorldDiff` (function): function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot — Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities, stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
-- `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
-- `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
-- `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
-- `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
-- `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
-- `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
-- `createGameRuntime` (function): function createGameRuntime(definition: GameRuntimeDefinition): GameRuntime — ⚠ undocumented
-- `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
-- `createHostedWorldSession` (function): function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>): HostedWorldSession — Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
-- `createRuntimeSnapshot` (function): function createRuntimeSnapshot(args: { gameId: string; serverId: string; server?: RuntimeServerRow; players?: Record<string, RuntimePlayerRow>; chunks?: Record<string, RuntimeChunkRow>; revision?: number; }): GameRuntimeSnapshot — ⚠ undocumented
-- `createWorldClientLink` (function): function createWorldClientLink(ctx: Pick<GameContext, "hydrate">, send: (frame: WorldClientFrame) => void): WorldClientLink — Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream.
-- `createWorldHost` (function): function createWorldHost(session: HostedWorldSession): WorldHost — Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections.
-- `createWorldMirror` (function): function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror — Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
-- `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
-- `diffSnapshots` (function): function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff — Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
-- `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
-- `isSaveEnabled` (function): function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> — ⚠ undocumented
-- `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
-- `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
-- `markPlayerDirty` (function): function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string): GameRuntimeSnapshot — ⚠ undocumented
-- `markServerDirty` (function): function markServerDirty(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
-- `memoryWorldStore` (function): function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
-- `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
-- `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
-- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `parseSaveAutoMs` (function): function parseSaveAutoMs(auto: string): number — ⚠ undocumented
-- `pullWorld` (function): function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void — Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
-- `runCommand` (function): function runCommand<TInput>(snapshot: GameRuntimeSnapshot, commands: Record<string, CommandDef<TInput>>, commandName: string, input: TInput, actorUserId: string): RunCommandResult — ⚠ undocumented
-- `saveScopeIncludesChunks` (function): function saveScopeIncludesChunks(scope: SaveScope): boolean — ⚠ undocumented
-- `saveScopeIncludesPlayer` (function): function saveScopeIncludesPlayer(scope: SaveScope): boolean — ⚠ undocumented
-- `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
-- `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `splitProfilePlayer` (function): function splitProfilePlayer(player: RuntimePlayerRow): { persistent: RuntimePlayerRow; session: Record<string, unknown>; } — ⚠ undocumented
-- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
+- `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
+- `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/authoring
 
@@ -142,7 +37,6 @@
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
-- `selectSpawnPoint` (function): function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a spawn point by game intent while keeping weighting mechanics internal.
 - `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
@@ -190,45 +84,27 @@
 - `TunableVec2` (type): type TunableVec2 = [number, number] — ⚠ undocumented
 - `TunableVec3` (type): type TunableVec3 = [number, number, number] — ⚠ undocumented
 - `TunableVec4` (type): type TunableVec4 = [number, number, number, number] — ⚠ undocumented
-- `convertAngle` (function): function convertAngle(value: number, from: AngleUnit, to: AngleUnit): number — ⚠ undocumented
 - `createDevtools` (function): function createDevtools(): Devtools — ⚠ undocumented
 - `devtools` (const): const devtools: Devtools — ⚠ undocumented
-- `escapePathSegment` (function): function escapePathSegment(segment: string): string — ⚠ undocumented
-- `formatColor` (function): function formatColor(rgb: string, alpha: number, withAlpha: boolean): string | null — ⚠ undocumented
 - `formatLogMessage` (function): function formatLogMessage(args: readonly unknown[]): string — ⚠ undocumented
 - `instrumentLatency` (function): function instrumentLatency<T extends object>(target: T, methods: readonly (keyof T)[], record: (ms: number) => void = devtools.latency.record): T — ⚠ undocumented
-- `joinTunablePath` (function): function joinTunablePath(parent: string, segment: string): string — ⚠ undocumented
 - `measureProfile` (function): function measureProfile<T>(name: string, fn: () => T): T — ⚠ undocumented
-- `normalizeAngle` (function): function normalizeAngle(value: number, unit: AngleUnit, options: { min?: number; max?: number; wrap?: boolean }): number — ⚠ undocumented
-- `normalizeColorValue` (function): function normalizeColorValue(input: unknown, forceAlpha?: boolean): string | null — ⚠ undocumented
-- `parseColor` (function): function parseColor(input: unknown): NormalizedColor | null — ⚠ undocumented
-- `parseOverridesPayload` (function): function parseOverridesPayload(raw: unknown): OverrideParseResult — ⚠ undocumented
 - `snapshotDevtools` (function): function snapshotDevtools(): DevtoolsSnapshot — ⚠ undocumented
-- `splitTunablePath` (function): function splitTunablePath(path: string): string[] — ⚠ undocumented
 - `tunable` (function): function tunable<T>(name: string, initial: T, options?: TunableOptions<T>): Tunable<T> — ⚠ undocumented
-- `unescapePathSegment` (function): function unescapePathSegment(segment: string): string — ⚠ undocumented
-- `validateControlValue` (function): function validateControlValue(kind: DevtoolsControlKind, raw: unknown, context: { min?: number; max?: number; step?: number; integer?: boolean; unit?: AngleUnit; wrap?: boolean; choices?: readonly TunableChoice[]; options?: readonly unknown[]; axisBounds?: ResolvedAxisBounds; alpha?: boolean; }): { … — ⚠ undocumented
 
 ## @jgengine/core/devtools/rewriteTunables
 
 - `TunableDelta` (interface): interface TunableDelta — One changed tunable to write back into game source: which table, key path, and new value.
-- `formatTunableLiteral` (function): function formatTunableLiteral(value: unknown): string | null — Renders a tunable value as TS source, or null when the value has no safe literal form.
-- `rewriteTunableExport` (function): function rewriteTunableExport(code: string, exportName: string, path: readonly string[], value: unknown): string | null — Rewrites one tunable's literal inside TS source: `exportName` names the `export const/let`, `path` descends object keys and array indices to the scalar, and `value` becomes the new literal. Returns the updated source, or null when the target cannot be safely located.
 
 ## @jgengine/core/devtools/saveEndpoint
 
 - `SaveEndpointInfo` (interface): interface SaveEndpointInfo — Where dev-time saves land: the endpoint URL plus the Games/<gameId> directory it targets.
 - `SaveEndpointRequest` (type): type SaveEndpointRequest = | { kind: "editor-document"; gameId: string; json: string } | { kind: "tunables"; gameId: string; deltas: readonly { table: string; key: string; value: unknown }[]; } — One write request the dev save endpoint accepts: a scene document or tunable deltas.
 - `SaveEndpointResponse` (interface): interface SaveEndpointResponse — Result envelope the dev save endpoint returns for every write request.
-- `getSaveEndpoint` (function): function getSaveEndpoint(): SaveEndpointInfo | null — Returns the installed dev save endpoint, or null when saves cannot reach disk.
-- `installSaveEndpoint` (function): function installSaveEndpoint(url: string, gameId: string): () => void — Publishes the dev-server save endpoint so editor and devtools UIs show Save buttons.
 
 ## @jgengine/core/devtools/transformTunables
 
 - `TunableTransformResult` (interface): interface TunableTransformResult — ⚠ undocumented
-- `transformTunableExports` (function): function transformTunableExports(code: string, table: string): TunableTransformResult — ⚠ undocumented
-- `tunableDiscoveryPlugin` (function): function tunableDiscoveryPlugin(): { name: string; enforce: "pre"; transform(code: string, id: string): { code: string; map: null } | null; } — ⚠ undocumented
-- `tunableModuleTable` (function): function tunableModuleTable(id: string): string | null — ⚠ undocumented
 
 ## @jgengine/core/devtools/tunableSchema
 
@@ -253,59 +129,30 @@
 - `TunableVec2` (type): type TunableVec2 = [number, number] — ⚠ undocumented
 - `TunableVec3` (type): type TunableVec3 = [number, number, number] — ⚠ undocumented
 - `TunableVec4` (type): type TunableVec4 = [number, number, number, number] — ⚠ undocumented
-- `choiceValues` (function): function choiceValues(choices: readonly TunableChoice[] | undefined): readonly unknown[] | undefined — ⚠ undocumented
-- `clampAxisValue` (function): function clampAxisValue(value: number, min: number, max: number): number — ⚠ undocumented
-- `cloneValue` (function): function cloneValue<T>(value: T): T — ⚠ undocumented
-- `coerceSelectWrite` (function): function coerceSelectWrite(raw: unknown, choices: readonly TunableChoice[] | undefined, options: readonly unknown[] | undefined): unknown | null — ⚠ undocumented
-- `convertAngle` (function): function convertAngle(value: number, from: AngleUnit, to: AngleUnit): number — ⚠ undocumented
-- `discoverableKind` (function): function discoverableKind(value: unknown, meta?: ScanFieldMeta): DevtoolsControlKind | null — ⚠ undocumented
-- `escapePathSegment` (function): function escapePathSegment(segment: string): string — ⚠ undocumented
-- `expandAxisMeta` (function): function expandAxisMeta(length: number, labels: readonly string[] | undefined, min: number | readonly number[] | undefined, max: number | readonly number[] | undefined, step: number | readonly number[] | undefined, sample: readonly number[]): ResolvedAxisBounds — ⚠ undocumented
-- `findChoice` (function): function findChoice(choices: readonly TunableChoice[] | undefined, raw: unknown): TunableChoice | undefined — ⚠ undocumented
-- `formatColor` (function): function formatColor(rgb: string, alpha: number, withAlpha: boolean): string | null — ⚠ undocumented
-- `inferKind` (function): function inferKind(initial: unknown, options?: TunableOptions): DevtoolsControlKind — ⚠ undocumented
-- `isColorString` (function): function isColorString(value: unknown): value is string — ⚠ undocumented
-- `isFiniteNumber` (function): function isFiniteNumber(value: unknown): value is number — ⚠ undocumented
-- `isIntervalShape` (function): function isIntervalShape(value: unknown): value is TunableInterval — ⚠ undocumented
-- `isNumericTuple` (function): function isNumericTuple(value: unknown, length: number): value is number[] — ⚠ undocumented
-- `isScannableContainer` (function): function isScannableContainer(value: unknown): value is Record<string, unknown> — ⚠ undocumented
-- `joinTunablePath` (function): function joinTunablePath(parent: string, segment: string): string — ⚠ undocumented
-- `normalizeAngle` (function): function normalizeAngle(value: number, unit: AngleUnit, options: { min?: number; max?: number; wrap?: boolean }): number — ⚠ undocumented
-- `normalizeColorValue` (function): function normalizeColorValue(input: unknown, forceAlpha?: boolean): string | null — ⚠ undocumented
-- `ownWritableDataKeys` (function): function ownWritableDataKeys(target: Record<string, unknown>): string[] — ⚠ undocumented
-- `parseColor` (function): function parseColor(input: unknown): NormalizedColor | null — ⚠ undocumented
-- `parseEnumValue` (function): function parseEnumValue(raw: unknown, choices: readonly TunableChoice[] | undefined): unknown | null — ⚠ undocumented
-- `parseInterval` (function): function parseInterval(raw: unknown, options: { min?: number; max?: number; step?: number; integer?: boolean }): TunableInterval | null — ⚠ undocumented
-- `parseOverridesPayload` (function): function parseOverridesPayload(raw: unknown): OverrideParseResult — ⚠ undocumented
-- `parseVec` (function): function parseVec(kind: "vec2" | "vec3" | "vec4", raw: unknown, bounds: ResolvedAxisBounds): number[] | null — ⚠ undocumented
-- `resolveChoices` (function): function resolveChoices<T>(options: readonly T[] | undefined, choices: readonly TunableChoice<T>[] | undefined): readonly TunableChoice<T>[] | undefined — ⚠ undocumented
-- `sliderBounds` (function): function sliderBounds(initial: number, options: { min?: number; max?: number; step?: number } | undefined): { min: number; max: number; step: number } — ⚠ undocumented
-- `splitTunablePath` (function): function splitTunablePath(path: string): string[] — ⚠ undocumented
-- `unescapePathSegment` (function): function unescapePathSegment(segment: string): string — ⚠ undocumented
-- `validateControlValue` (function): function validateControlValue(kind: DevtoolsControlKind, raw: unknown, context: { min?: number; max?: number; step?: number; integer?: boolean; unit?: AngleUnit; wrap?: boolean; choices?: readonly TunableChoice[]; options?: readonly unknown[]; axisBounds?: ResolvedAxisBounds; alpha?: boolean; }): { … — ⚠ undocumented
-- `vecLength` (function): function vecLength(kind: "vec2" | "vec3" | "vec4"): number — ⚠ undocumented
 
 ## @jgengine/core/meta/changelog
 
-- `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — ⚠ undocumented
-- `ChangelogEntry` (interface): interface ChangelogEntry — ⚠ undocumented
-- `VERSION` (const): const VERSION: "0.10.0" — ⚠ undocumented
+- `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
+- `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
+- `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/runtime/adapter
 
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
-- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
+- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative.
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
 - `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
+- `isPresenceOnly` (function): function isPresenceOnly(multiplayer: unknown): boolean — True when multiplayer is on but the world sim is not host-authoritative — presence/feeds/chat only. Equivalent to `resolveAuthority(m) === "client"`.
 - `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
 - `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
 - `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
 - `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
 - `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `resolveAuthority` (function): function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null — Resolved authority for a multiplayer config. - `offline` / missing adapter → `null` (single-player; not multiplayer authority). - unset or `"client"` → `"client"` (presence-only; each client ticks). - `"server"` → host-authoritative shared sim.
 - `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
 - `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
@@ -314,14 +161,12 @@
 
 - `CameraDirector` (interface): interface CameraDirector — ⚠ undocumented
 - `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank"> > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11).
-- `createCameraDirector` (function): function createCameraDirector(): CameraDirector — ⚠ undocumented
 
 ## @jgengine/core/runtime/commandRunner
 
 - `CommandDef` (type): type CommandDef<TInput = unknown> = { validate: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => CommandValidationError | null; apply: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => GameRuntimeSnapshot; } — ⚠ undocumented
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
 - `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
-- `runCommand` (function): function runCommand<TInput>(snapshot: GameRuntimeSnapshot, commands: Record<string, CommandDef<TInput>>, commandName: string, input: TInput, actorUserId: string): RunCommandResult — ⚠ undocumented
 
 ## @jgengine/core/runtime/gameContext
 
@@ -362,7 +207,6 @@
 - `RuntimeLoopContext` (type): type RuntimeLoopContext = RuntimeInitContext & { player: { userId: string; isNew: boolean; }; } — ⚠ undocumented
 - `RuntimeWorldContext` (type): type RuntimeWorldContext = RuntimeInitContext & { playerIds: readonly string[]; } — ⚠ undocumented
 - `ServerLoopHooks` (type): type ServerLoopHooks = { onInit?: (ctx: RuntimeInitContext) => void; onNewPlayer?: (ctx: RuntimeLoopContext) => void; onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void; } — ⚠ undocumented
-- `createGameRuntime` (function): function createGameRuntime(definition: GameRuntimeDefinition): GameRuntime — ⚠ undocumented
 
 ## @jgengine/core/runtime/hostPersistence
 
@@ -384,18 +228,6 @@
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
 - `ToServerListingOptions` (type): type ToServerListingOptions = { includeJoinCode?: boolean; } — ⚠ undocumented
 - `WorldChunkRecord` (type): type WorldChunkRecord = { serverId: string; chunkKey: string; snapshot: RuntimeChunkRow; updatedAt: number; } — ⚠ undocumented
-- `applyLeaderboardRows` (function): function applyLeaderboardRows(rows: Map<string, LeaderboardRow>, gameId: string, entries: LeaderboardIncrement[], now: number): void — ⚠ undocumented
-- `buildHydratePlayers` (function): function buildHydratePlayers(server: GameServerRecord, profiles: Record<string, PlayerProfileRecord | null>): Record<string, RuntimePlayerRow> — ⚠ undocumented
-- `clampLimit` (function): function clampLimit(value: number | undefined, fallback: number, max: number): number — ⚠ undocumented
-- `drainPendingLeaderboardIncrements` (function): function drainPendingLeaderboardIncrements(session: Record<string, unknown>): { increments: LeaderboardIncrement[]; session: Record<string, unknown>; } — ⚠ undocumented
-- `leaderboardRowKey` (function): function leaderboardRowKey(row: Omit<LeaderboardRow, "value" | "updatedAt">): string — ⚠ undocumented
-- `planServerPersist` (function): function planServerPersist(server: GameServerRecord, snapshot: GameRuntimeSnapshot, save: SaveConfig, now: number): ServerPersistPlan — ⚠ undocumented
-- `profileLeaderboardStats` (function): function profileLeaderboardStats(rows: Iterable<LeaderboardRow>, gameId: string, userId: string): Record<string, number> — ⚠ undocumented
-- `shouldAutoSave` (function): function shouldAutoSave(save: SaveConfig, dirtyAt: number | undefined, lastSavedAt: number | undefined, now: number): boolean — ⚠ undocumented
-- `toOpenServerListings` (function): function toOpenServerListings(listings: Iterable<ServerListing>, limit: number = OPEN_SERVER_LISTING_LIMIT): ServerListing[] — ⚠ undocumented
-- `toServerListing` (function): function toServerListing(record: GameServerRecord, options: ToServerListingOptions = {}): ServerListing — ⚠ undocumented
-- `topLeaderboardRows` (function): function topLeaderboardRows(rows: Iterable<LeaderboardRow>, args: { gameId: string; stat: string; scope: LeaderboardScope; serverId?: string; limit?: number; }): LeaderboardEntry[] — ⚠ undocumented
-- `trimFeedEntries` (function): function trimFeedEntries<T>(entries: T[], limit = FEED_RING_LIMIT): T[] — ⚠ undocumented
 
 ## @jgengine/core/runtime/hostedGameRunner
 
@@ -403,7 +235,6 @@
 - `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
 - `INPUT_COMMAND` (const): const INPUT_COMMAND: "engine.input" — Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire.
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
 
 ## @jgengine/core/runtime/hostedWorldSession
 
@@ -412,8 +243,6 @@
 - `HostedWorldSessionOptions` (interface): interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedWorldSession}: the game, its persistence store, and the auto-save cadence.
 - `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
 - `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
-- `createHostedWorldSession` (function): function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>): HostedWorldSession — Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
-- `memoryWorldStore` (function): function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
 
 ## @jgengine/core/runtime/inputSnapshot
 
@@ -425,9 +254,6 @@
 
 - `MotionIntentBatch` (interface): interface MotionIntentBatch — ⚠ undocumented
 - `MotionIntents` (interface): interface MotionIntents — Seam for game code to reach the motion the shell's FrameDriver otherwise owns privately (#162.4). Game code calls `impulse`, `pushHorizontal`, `setVerticalVelocity`, and/or `setY` from `onTick` or commands; the shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated. `setY` wins over physics for that frame; impulses add to the velocity the driver is about to integrate; a later `setVerticalVelocity` replaces that velocity outright. Horizontal pushes compose with the walk controller (#282.4): they add to its horizontal velocity and decay naturally as it re-blends toward input — knockback, dashes, explosion shoves without raw `setPose` offsets.
-- `applyHorizontalImpulses` (function): function applyHorizontalImpulses(velocityX: number, velocityZ: number, batch: MotionIntentBatch | null): readonly [number, number] — Fold a batch's horizontal pushes into a controller's velocity pair — shared by the walk and voxel drivers.
-- `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
-- `createMotionIntents` (function): function createMotionIntents(): MotionIntents — ⚠ undocumented
 
 ## @jgengine/core/runtime/perContext
 
@@ -460,10 +286,6 @@
 
 - `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented
 - `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
-- `isSaveEnabled` (function): function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> — ⚠ undocumented
-- `parseSaveAutoMs` (function): function parseSaveAutoMs(auto: string): number — ⚠ undocumented
-- `saveScopeIncludesChunks` (function): function saveScopeIncludesChunks(scope: SaveScope): boolean — ⚠ undocumented
-- `saveScopeIncludesPlayer` (function): function saveScopeIncludesPlayer(scope: SaveScope): boolean — ⚠ undocumented
 
 ## @jgengine/core/runtime/snapshot
 
@@ -476,13 +298,6 @@
 - `RuntimePlayerRow` (type): type RuntimePlayerRow = { userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Record<string, unknown>; } — ⚠ undocumented
 - `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
 - `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented
-- `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
-- `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
-- `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
-- `createRuntimeSnapshot` (function): function createRuntimeSnapshot(args: { gameId: string; serverId: string; server?: RuntimeServerRow; players?: Record<string, RuntimePlayerRow>; chunks?: Record<string, RuntimeChunkRow>; revision?: number; }): GameRuntimeSnapshot — ⚠ undocumented
-- `markPlayerDirty` (function): function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string): GameRuntimeSnapshot — ⚠ undocumented
-- `markServerDirty` (function): function markServerDirty(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
-- `splitProfilePlayer` (function): function splitProfilePlayer(player: RuntimePlayerRow): { persistent: RuntimePlayerRow; session: Record<string, unknown>; } — ⚠ undocumented
 
 ## @jgengine/core/runtime/transport
 
@@ -512,7 +327,6 @@
 - `VisibilityObject` (interface): interface VisibilityObject — An entity/asset tracked by `VisibilitySystem.evaluate`.
 - `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
 - `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
-- `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
 
 ## @jgengine/core/runtime/worldChannel
 
@@ -521,305 +335,20 @@
 - `WorldHost` (interface): interface WorldHost — The transport-agnostic host: fans one {@link HostedWorldSession} out to many connections, each tracking its own revision cursor so a joiner gets a baseline and everyone else gets diffs. A ws server, a Convex function, or an in-process loopback all drive the same shape — decode a frame → `connection.receive`; after `session.tick` → `broadcast`. No wire format is assumed; frames are plain data a transport serializes however it likes.
 - `WorldHostConnection` (interface): interface WorldHostConnection — One client's link on the host side: routes its upstream frames into the shared session, pushes it sync frames.
 - `WorldServerFrame` (type): type WorldServerFrame = | { t: "baseline"; revision: number; snapshot: WorldSnapshot } | { t: "diff"; diff: WorldDiff } — Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream.
-- `createWorldClientLink` (function): function createWorldClientLink(ctx: Pick<GameContext, "hydrate">, send: (frame: WorldClientFrame) => void): WorldClientLink — Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream.
-- `createWorldHost` (function): function createWorldHost(session: HostedWorldSession): WorldHost — Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections.
 
 ## @jgengine/core/runtime/worldMirror
 
 - `WorldMirror` (interface): interface WorldMirror — The client end of host-authoritative replication: folds a host's baseline + {@link WorldDiff} stream onto a local {@link GameContext}. It keeps the last full {@link WorldSnapshot}, advances it with each diff, and pushes the result through `ctx.hydrate` — so the client mirrors exactly the subsystems its own game opted into and silently ignores host modules it lacks. This is the inverse of a {@link HostedWorldSession}; the transport in between (loopback, ws, Convex) is irrelevant.
-- `createWorldMirror` (function): function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror — Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
-- `pullWorld` (function): function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void — Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
 
 ## @jgengine/core/runtime/worldReplication
 
 - `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
 - `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
-- `applyWorldDiff` (function): function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot — Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities, stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
-- `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
-- `diffSnapshots` (function): function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff — Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
 
 ## @jgengine/core/runtime/worldSnapshot
 
 - `SnapshotModule` (interface): interface SnapshotModule<T = unknown> — The replication seam for host-authoritative shared worlds: the opt-in feature manifest *is* the replication schema. Each live subsystem a game opts into registers a {@link SnapshotModule} keyed by name; the host serializes exactly the registered set into a {@link WorldSnapshot} and a client hydrates the same keys back. Adding a replicated subsystem is a registration, never a new branch.
 - `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
-- `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
-- `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
-
-## @jgengine/github
-
-- `ActivityEvent` (interface): interface ActivityEvent — ⚠ undocumented
-- `CELL_COUNT` (const): const CELL_COUNT: number — ⚠ undocumented
-- `CommitActivityWeek` (interface): interface CommitActivityWeek — ⚠ undocumented
-- `ContributionData` (interface): interface ContributionData — ⚠ undocumented
-- `ContributionStats` (interface): interface ContributionStats — ⚠ undocumented
-- `ContributionsWire` (interface): interface ContributionsWire — ⚠ undocumented
-- `DAYS` (const): const DAYS: 7 — ⚠ undocumented
-- `DEFAULT_ENDPOINT` (const): const DEFAULT_ENDPOINT: "/api/github-contributions" — ⚠ undocumented
-- `DayCell` (interface): interface DayCell — One day of a contribution calendar, positioned on a week×weekday grid.
-- `EventsOptions` (interface): interface EventsOptions — ⚠ undocumented
-- `GitHubClient` (interface): interface GitHubClient — Minimal transport over the GitHub API. `rest`/`graphql` are the two primitives; resource helpers (repos, pullRequests, …) are thin functions built on `rest`. Public reads can go direct; anything private/authed/GraphQL routes through a proxy endpoint that keeps the token server-side.
-- `GitHubClientOptions` (interface): interface GitHubClientOptions — ⚠ undocumented
-- `GitHubError` (class): class GitHubError extends Error — ⚠ undocumented
-- `GitHubProfile` (interface): interface GitHubProfile — The normalized JSON the proxy handler returns and the client consumes.
-- `IssueSummary` (interface): interface IssueSummary — ⚠ undocumented
-- `IssuesOptions` (interface): interface IssuesOptions — ⚠ undocumented
-- `LanguageShare` (interface): interface LanguageShare — ⚠ undocumented
-- `MONTH_NAMES` (const): const MONTH_NAMES: readonly ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] — ⚠ undocumented
-- `PullRequestSummary` (interface): interface PullRequestSummary — ⚠ undocumented
-- `PullRequestsOptions` (interface): interface PullRequestsOptions — ⚠ undocumented
-- `RawIssue` (interface): interface RawIssue — ⚠ undocumented
-- `RawRepo` (interface): interface RawRepo — ⚠ undocumented
-- `RepoSummary` (interface): interface RepoSummary — ⚠ undocumented
-- `ReposOptions` (interface): interface ReposOptions — ⚠ undocumented
-- `SearchResult` (interface): interface SearchResult<T> — ⚠ undocumented
-- `UserProfile` (interface): interface UserProfile — ⚠ undocumented
-- `WEEKDAY_NAMES` (const): const WEEKDAY_NAMES: readonly ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] — ⚠ undocumented
-- `WEEKS` (const): const WEEKS: 53 — ⚠ undocumented
-- `Workflow` (interface): interface Workflow — ⚠ undocumented
-- `WorkflowRun` (interface): interface WorkflowRun — ⚠ undocumented
-- `WorkflowRunsOptions` (interface): interface WorkflowRunsOptions — ⚠ undocumented
-- `buildQuery` (function): function buildQuery(parts: Record<string, string | number | undefined>): string — Join qualifier parts (skipping undefined values) into a GitHub search query string.
-- `commitActivity` (function): function commitActivity(gh: GitHubClient, owner: string, name: string): Promise<CommitActivityWeek[]> — Weekly commit counts for the last year. GitHub computes these stats asynchronously and may respond 202 with an empty body while the cache warms up; when the parsed payload isn't an array, this returns `[]` rather than throwing.
-- `contributions` (function): function contributions(user: string, endpoint: string = DEFAULT_ENDPOINT): Promise<ContributionData> — Browser client: fetch a user's contributions through the proxy endpoint.
-- `createGitHub` (function): function createGitHub(options: GitHubClientOptions = {}): GitHubClient — ⚠ undocumented
-- `dateLabel` (function): function dateLabel(index: number): string — ⚠ undocumented
-- `dateOf` (function): function dateOf(index: number): Date — ⚠ undocumented
-- `events` (function): function events(gh: GitHubClient, user: string, opts: EventsOptions = {}): Promise<ActivityEvent[]> — A user's public activity feed (pushes, issue/PR actions, stars, forks, …).
-- `generateYear` (function): function generateYear(seed: number): DayCell[] — Deterministic plausible contribution year for demos / offline fallback.
-- `issues` (function): function issues(gh: GitHubClient, owner: string, name: string, opts: IssuesOptions = {}): Promise<IssueSummary[]> — List issues on a repository. GitHub's `/issues` endpoint also returns pull requests (an item is a PR when it carries a `pull_request` key) — that's reflected in `isPullRequest`, and `comments` is the item's comment count.
-- `labelFromISO` (function): function labelFromISO(iso: string): string — ⚠ undocumented
-- `languages` (function): function languages(gh: GitHubClient, owner: string, name: string): Promise<Record<string, number>> — Bytes of code per language, as reported by GitHub's linguist pass.
-- `levelForCount` (function): function levelForCount(count: number): number — GitHub's quartile bucketing of a day's contribution count (0 = none … 4 = most).
-- `pullRequests` (function): function pullRequests(gh: GitHubClient, owner: string, name: string, opts: PullRequestsOptions = {}): Promise<PullRequestSummary[]> — List pull requests on a repository. See the module note re: comment counts.
-- `repo` (function): function repo(gh: GitHubClient, owner: string, name: string): Promise<RepoSummary> — Fetch a single repository by owner/name.
-- `repos` (function): function repos(gh: GitHubClient, user: string, opts: ReposOptions = {}): Promise<RepoSummary[]> — List a user's repositories, mapped down to a lean summary shape.
-- `searchIssues` (function): function searchIssues(gh: GitHubClient, query: string): Promise<SearchResult<IssueSummary>> — Search issues and pull requests. Reuses the issues() mapping since search returns the same item shape.
-- `searchRepos` (function): function searchRepos(gh: GitHubClient, query: string): Promise<SearchResult<RepoSummary>> — Search repositories.
-- `summarize` (function): function summarize(cells: readonly DayCell[]): ContributionStats — Roll a contribution calendar into headline stats (totals, streaks, peaks, cadence).
-- `toIssueSummary` (function): function toIssueSummary(raw: RawIssue): IssueSummary — ⚠ undocumented
-- `toPullRequestSummary` (function): function toPullRequestSummary(raw: RawPullRequest): PullRequestSummary — ⚠ undocumented
-- `toRepoSummary` (function): function toRepoSummary(raw: RawRepo): RepoSummary — ⚠ undocumented
-- `topLanguages` (function): function topLanguages(bytes: Record<string, number>, n: number = 5): LanguageShare[] — Rank a language→bytes map, attaching each entry's share of the total.
-- `user` (function): function user(gh: GitHubClient, login: string): Promise<UserProfile> — Fetch a public user profile.
-- `wireToCells` (function): function wireToCells(wire: ContributionsWire): DayCell[] — Flatten the proxy's week/day wire into positioned, leveled, labeled cells.
-- `workflowRuns` (function): function workflowRuns(gh: GitHubClient, owner: string, name: string, opts: WorkflowRunsOptions = {}): Promise<WorkflowRun[]> — List recent workflow runs (CI history) for a repository.
-- `workflows` (function): function workflows(gh: GitHubClient, owner: string, name: string): Promise<Workflow[]> — List the workflow definitions configured on a repository.
-
-## @jgengine/github/analytics
-
-- `ContributionStats` (interface): interface ContributionStats — ⚠ undocumented
-- `summarize` (function): function summarize(cells: readonly DayCell[]): ContributionStats — Roll a contribution calendar into headline stats (totals, streaks, peaks, cadence).
-
-## @jgengine/github/calendar
-
-- `CELL_COUNT` (const): const CELL_COUNT: number — ⚠ undocumented
-- `DAYS` (const): const DAYS: 7 — ⚠ undocumented
-- `DayCell` (interface): interface DayCell — One day of a contribution calendar, positioned on a week×weekday grid.
-- `MONTH_NAMES` (const): const MONTH_NAMES: readonly ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] — ⚠ undocumented
-- `WEEKDAY_NAMES` (const): const WEEKDAY_NAMES: readonly ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] — ⚠ undocumented
-- `WEEKS` (const): const WEEKS: 53 — ⚠ undocumented
-- `dateLabel` (function): function dateLabel(index: number): string — ⚠ undocumented
-- `dateOf` (function): function dateOf(index: number): Date — ⚠ undocumented
-- `generateYear` (function): function generateYear(seed: number): DayCell[] — Deterministic plausible contribution year for demos / offline fallback.
-- `labelFromISO` (function): function labelFromISO(iso: string): string — ⚠ undocumented
-- `levelForCount` (function): function levelForCount(count: number): number — GitHub's quartile bucketing of a day's contribution count (0 = none … 4 = most).
-
-## @jgengine/github/client
-
-- `GitHubClient` (interface): interface GitHubClient — Minimal transport over the GitHub API. `rest`/`graphql` are the two primitives; resource helpers (repos, pullRequests, …) are thin functions built on `rest`. Public reads can go direct; anything private/authed/GraphQL routes through a proxy endpoint that keeps the token server-side.
-- `GitHubClientOptions` (interface): interface GitHubClientOptions — ⚠ undocumented
-- `GitHubError` (class): class GitHubError extends Error — ⚠ undocumented
-- `createGitHub` (function): function createGitHub(options: GitHubClientOptions = {}): GitHubClient — ⚠ undocumented
-
-## @jgengine/github/resources/actions
-
-- `Workflow` (interface): interface Workflow — ⚠ undocumented
-- `WorkflowRun` (interface): interface WorkflowRun — ⚠ undocumented
-- `WorkflowRunsOptions` (interface): interface WorkflowRunsOptions — ⚠ undocumented
-- `workflowRuns` (function): function workflowRuns(gh: GitHubClient, owner: string, name: string, opts: WorkflowRunsOptions = {}): Promise<WorkflowRun[]> — List recent workflow runs (CI history) for a repository.
-- `workflows` (function): function workflows(gh: GitHubClient, owner: string, name: string): Promise<Workflow[]> — List the workflow definitions configured on a repository.
-
-## @jgengine/github/resources/activity
-
-- `ActivityEvent` (interface): interface ActivityEvent — ⚠ undocumented
-- `CommitActivityWeek` (interface): interface CommitActivityWeek — ⚠ undocumented
-- `EventsOptions` (interface): interface EventsOptions — ⚠ undocumented
-- `commitActivity` (function): function commitActivity(gh: GitHubClient, owner: string, name: string): Promise<CommitActivityWeek[]> — Weekly commit counts for the last year. GitHub computes these stats asynchronously and may respond 202 with an empty body while the cache warms up; when the parsed payload isn't an array, this returns `[]` rather than throwing.
-- `events` (function): function events(gh: GitHubClient, user: string, opts: EventsOptions = {}): Promise<ActivityEvent[]> — A user's public activity feed (pushes, issue/PR actions, stars, forks, …).
-
-## @jgengine/github/resources/issues
-
-- `IssueSummary` (interface): interface IssueSummary — ⚠ undocumented
-- `IssuesOptions` (interface): interface IssuesOptions — ⚠ undocumented
-- `RawIssue` (interface): interface RawIssue — ⚠ undocumented
-- `issues` (function): function issues(gh: GitHubClient, owner: string, name: string, opts: IssuesOptions = {}): Promise<IssueSummary[]> — List issues on a repository. GitHub's `/issues` endpoint also returns pull requests (an item is a PR when it carries a `pull_request` key) — that's reflected in `isPullRequest`, and `comments` is the item's comment count.
-- `toIssueSummary` (function): function toIssueSummary(raw: RawIssue): IssueSummary — ⚠ undocumented
-
-## @jgengine/github/resources/pulls
-
-- `PullRequestSummary` (interface): interface PullRequestSummary — ⚠ undocumented
-- `PullRequestsOptions` (interface): interface PullRequestsOptions — ⚠ undocumented
-- `pullRequests` (function): function pullRequests(gh: GitHubClient, owner: string, name: string, opts: PullRequestsOptions = {}): Promise<PullRequestSummary[]> — List pull requests on a repository. See the module note re: comment counts.
-- `toPullRequestSummary` (function): function toPullRequestSummary(raw: RawPullRequest): PullRequestSummary — ⚠ undocumented
-
-## @jgengine/github/resources/repos
-
-- `LanguageShare` (interface): interface LanguageShare — ⚠ undocumented
-- `RawRepo` (interface): interface RawRepo — ⚠ undocumented
-- `RepoSummary` (interface): interface RepoSummary — ⚠ undocumented
-- `ReposOptions` (interface): interface ReposOptions — ⚠ undocumented
-- `languages` (function): function languages(gh: GitHubClient, owner: string, name: string): Promise<Record<string, number>> — Bytes of code per language, as reported by GitHub's linguist pass.
-- `repo` (function): function repo(gh: GitHubClient, owner: string, name: string): Promise<RepoSummary> — Fetch a single repository by owner/name.
-- `repos` (function): function repos(gh: GitHubClient, user: string, opts: ReposOptions = {}): Promise<RepoSummary[]> — List a user's repositories, mapped down to a lean summary shape.
-- `toRepoSummary` (function): function toRepoSummary(raw: RawRepo): RepoSummary — ⚠ undocumented
-- `topLanguages` (function): function topLanguages(bytes: Record<string, number>, n: number = 5): LanguageShare[] — Rank a language→bytes map, attaching each entry's share of the total.
-
-## @jgengine/github/resources/search
-
-- `SearchResult` (interface): interface SearchResult<T> — ⚠ undocumented
-- `buildQuery` (function): function buildQuery(parts: Record<string, string | number | undefined>): string — Join qualifier parts (skipping undefined values) into a GitHub search query string.
-- `searchIssues` (function): function searchIssues(gh: GitHubClient, query: string): Promise<SearchResult<IssueSummary>> — Search issues and pull requests. Reuses the issues() mapping since search returns the same item shape.
-- `searchRepos` (function): function searchRepos(gh: GitHubClient, query: string): Promise<SearchResult<RepoSummary>> — Search repositories.
-
-## @jgengine/github/resources/users
-
-- `UserProfile` (interface): interface UserProfile — ⚠ undocumented
-- `user` (function): function user(gh: GitHubClient, login: string): Promise<UserProfile> — Fetch a public user profile.
-
-## @jgengine/github/server
-
-- `ContributionsWire` (interface): interface ContributionsWire — ⚠ undocumented
-- `GitHubProxyOptions` (interface): interface GitHubProxyOptions — ⚠ undocumented
-- `GitHubUserNotFoundError` (class): class GitHubUserNotFoundError extends Error — Thrown by resolveContributions when the user does not exist (→ 404).
-- `githubContributionsHandler` (function): function githubContributionsHandler(options: { token?: string } = {}): (request: Request) => Promise<Response> — Turnkey proxy handler — mount at any route in any Web-`Response` server (Nitro, workers, Deno). Reads `?user=`, validates, proxies GitHub, returns JSON + CORS.
-- `githubProxyHandler` (function): function githubProxyHandler(options: GitHubProxyOptions = {}): (request: Request) => Promise<Response> — General read-only GitHub proxy: forwards `?path=/...` GETs (and GraphQL POSTs to `/graphql`) to api.github.com with the server-side token. Host-locked and GET-only, so it can only ever READ GitHub — never an open proxy, never a write. Mount once and every client resource routes through it.
-- `parseContributionsHtml` (function): function parseContributionsHtml(html: string): { date: string; count: number; weekday: number }[] — ⚠ undocumented
-- `resolveContributions` (function): function resolveContributions(user: string, options: { token?: string } = {}): Promise<ContributionsWire> — Server-side: fetch a user's contribution calendar via GraphQL (with token) or HTML scrape.
-
-## @jgengine/github/source
-
-- `ContributionData` (interface): interface ContributionData — ⚠ undocumented
-- `ContributionsWire` (interface): interface ContributionsWire — ⚠ undocumented
-- `DEFAULT_ENDPOINT` (const): const DEFAULT_ENDPOINT: "/api/github-contributions" — ⚠ undocumented
-- `GitHubProfile` (interface): interface GitHubProfile — The normalized JSON the proxy handler returns and the client consumes.
-- `contributions` (function): function contributions(user: string, endpoint: string = DEFAULT_ENDPOINT): Promise<ContributionData> — Browser client: fetch a user's contributions through the proxy endpoint.
-- `wireToCells` (function): function wireToCells(wire: ContributionsWire): DayCell[] — Flatten the proxy's week/day wire into positioned, leveled, labeled cells.
-
-## @jgengine/github/wire
-
-- `ContributionsWire` (interface): interface ContributionsWire — ⚠ undocumented
-- `GitHubProfile` (interface): interface GitHubProfile — The normalized JSON the proxy handler returns and the client consumes.
-
-## @jgengine/jgengine
-
-- `DesktopArgs` (interface): interface DesktopArgs — ⚠ undocumented
-- `DesktopMetadata` (interface): interface DesktopMetadata — ⚠ undocumented
-- `DesktopPlan` (interface): interface DesktopPlan — ⚠ undocumented
-- `Finding` (interface): interface Finding — ⚠ undocumented
-- `GAME_ID_PATTERN` (const): const GAME_ID_PATTERN: RegExp — ⚠ undocumented
-- `IN_REPO_TSCONFIG_PATHS` (const): const IN_REPO_TSCONFIG_PATHS: Record<string, string[]> — ⚠ undocumented
-- `StageResult` (interface): interface StageResult — ⚠ undocumented
-- `TemplateFile` (interface): interface TemplateFile — ⚠ undocumented
-- `TemplateOptions` (interface): interface TemplateOptions — ⚠ undocumented
-- `TemplateVariant` (type): type TemplateVariant = "standalone" | "in-repo" — ⚠ undocumented
-- `ToolchainReport` (interface): interface ToolchainReport — ⚠ undocumented
-- `buildPlan` (function): function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): DesktopPlan | { error: string } — ⚠ undocumented
-- `checkToolchains` (function): function checkToolchains(): ToolchainReport — ⚠ undocumented
-- `cliVersion` (function): function cliVersion(): string — ⚠ undocumented
-- `defaultIdentifier` (function): function defaultIdentifier(productName: string): string — ⚠ undocumented
-- `diagnose` (function): function diagnose(dir: string): Finding[] — ⚠ undocumented
-- `displayNameFromId` (function): function displayNameFromId(id: string): string — ⚠ undocumented
-- `gameTemplate` (function): function gameTemplate(options: TemplateOptions): TemplateFile[] — ⚠ undocumented
-- `parseDesktopArgs` (function): function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string } — ⚠ undocumented
-- `registerRootGameScript` (function): function registerRootGameScript(rootDir: string, id: string, folderName: string = id): boolean — ⚠ undocumented
-- `resolveMetadata` (function): function resolveMetadata(input: { mode: DesktopMode; projectDir: string | null; url: URL | null; name?: string; id?: string; version?: string; }): DesktopMetadata | { error: string } — ⚠ undocumented
-- `runCreate` (function): function runCreate(argv: string[]): number — ⚠ undocumented
-- `runDesktop` (function): function runDesktop(argv: string[]): void — ⚠ undocumented
-- `runDesktopAsync` (function): function runDesktopAsync(argv: string[], cwd: string = process.cwd()): Promise<number> — ⚠ undocumented
-- `runDoctor` (function): function runDoctor(argv: string[]): number — ⚠ undocumented
-- `validateHttpsUrl` (function): function validateHttpsUrl(raw: string): { ok: true; url: URL } | { ok: false; error: string } — ⚠ undocumented
-- `writeGame` (function): function writeGame(targetDir: string, id: string, name: string, variant: TemplateVariant): void — ⚠ undocumented
-- `writeStaging` (function): function writeStaging(plan: DesktopPlan): StageResult — ⚠ undocumented
-
-## @jgengine/jgengine/create
-
-- `registerRootGameScript` (function): function registerRootGameScript(rootDir: string, id: string, folderName: string = id): boolean — ⚠ undocumented
-- `runCreate` (function): function runCreate(argv: string[]): number — ⚠ undocumented
-- `writeGame` (function): function writeGame(targetDir: string, id: string, name: string, variant: TemplateVariant): void — ⚠ undocumented
-
-## @jgengine/jgengine/desktop
-
-- `DesktopArgs` (interface): interface DesktopArgs — ⚠ undocumented
-- `DesktopMetadata` (interface): interface DesktopMetadata — ⚠ undocumented
-- `DesktopMode` (type): type DesktopMode = "project" | "url" — ⚠ undocumented
-- `DesktopPlan` (interface): interface DesktopPlan — ⚠ undocumented
-- `StageResult` (interface): interface StageResult — ⚠ undocumented
-- `ToolchainReport` (interface): interface ToolchainReport — ⚠ undocumented
-- `assertUrlReachable` (function): function assertUrlReachable(url: string): Promise<{ ok: true } | { ok: false; error: string }> — ⚠ undocumented
-- `buildFrontend` (function): function buildFrontend(projectDir: string): { ok: true; distDir: string } | { ok: false; error: string } — ⚠ undocumented
-- `buildPlan` (function): function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): DesktopPlan | { error: string } — ⚠ undocumented
-- `checkToolchains` (function): function checkToolchains(): ToolchainReport — ⚠ undocumented
-- `commandAvailable` (function): function commandAvailable(command: string, args: string[] = ["--version"]): boolean — ⚠ undocumented
-- `copyFrontendDist` (function): function copyFrontendDist(distDir: string, stagingDir: string): void — ⚠ undocumented
-- `defaultIdentifier` (function): function defaultIdentifier(productName: string): string — ⚠ undocumented
-- `defaultStagingDir` (function): function defaultStagingDir(mode: DesktopMode, projectDir: string | null, cwd: string): string — ⚠ undocumented
-- `findNsisArtifact` (function): function findNsisArtifact(stagingDir: string): string | null — ⚠ undocumented
-- `isGameProject` (function): function isGameProject(dir: string): { ok: true } | { ok: false; error: string } — ⚠ undocumented
-- `packageDisplayName` (function): function packageDisplayName(pkgName: string | undefined): string | null — ⚠ undocumented
-- `parseDesktopArgs` (function): function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string } — ⚠ undocumented
-- `readGameConfigName` (function): function readGameConfigName(projectDir: string): string | null — ⚠ undocumented
-- `resolveIconSource` (function): function resolveIconSource(projectDir: string | null, explicit: string | undefined): string | null — ⚠ undocumented
-- `resolveMetadata` (function): function resolveMetadata(input: { mode: DesktopMode; projectDir: string | null; url: URL | null; name?: string; id?: string; version?: string; }): DesktopMetadata | { error: string } — ⚠ undocumented
-- `runDesktop` (function): function runDesktop(argv: string[]): void — ⚠ undocumented
-- `runDesktopAsync` (function): function runDesktopAsync(argv: string[], cwd: string = process.cwd()): Promise<number> — ⚠ undocumented
-- `runTauriNsisBuild` (function): function runTauriNsisBuild(stagingDir: string): { ok: true; artifact: string } | { ok: false; error: string } — ⚠ undocumented
-- `slugFromProductName` (function): function slugFromProductName(name: string): string — ⚠ undocumented
-- `validateHttpsUrl` (function): function validateHttpsUrl(raw: string): { ok: true; url: URL } | { ok: false; error: string } — ⚠ undocumented
-- `validateIdentifier` (function): function validateIdentifier(id: string): string | null — ⚠ undocumented
-- `validateVersion` (function): function validateVersion(version: string): string | null — ⚠ undocumented
-- `writeStaging` (function): function writeStaging(plan: DesktopPlan): StageResult — ⚠ undocumented
-
-## @jgengine/jgengine/doctor
-
-- `Finding` (interface): interface Finding — ⚠ undocumented
-- `diagnose` (function): function diagnose(dir: string): Finding[] — ⚠ undocumented
-- `runDoctor` (function): function runDoctor(argv: string[]): number — ⚠ undocumented
-
-## @jgengine/jgengine/pkg
-
-- `PackageJson` (interface): interface PackageJson — ⚠ undocumented
-- `cliVersion` (function): function cliVersion(): string — ⚠ undocumented
-- `findUp` (function): function findUp(startDir: string, predicate: (dir: string) => boolean): string | null — ⚠ undocumented
-- `findWorkspaceRoot` (function): function findWorkspaceRoot(startDir: string): string | null — ⚠ undocumented
-- `flag` (function): function flag(argv: string[], name: string): string | undefined — ⚠ undocumented
-- `hasFlag` (function): function hasFlag(argv: string[], name: string): boolean — ⚠ undocumented
-- `isEngineMonorepo` (function): function isEngineMonorepo(rootDir: string): boolean — ⚠ undocumented
-- `readPackageJson` (function): function readPackageJson(path: string): PackageJson | null — ⚠ undocumented
-
-## @jgengine/jgengine/skills
-
-- `GAME_SKILLS` (const): const GAME_SKILLS: readonly ["jgengine", "jgengine-world", "jgengine-procedural", "jgengine-combat", "jgengine-gameplay", "jgengine-multiplayer", "jgengine-ui", "jgengine-assets", "jgengine-verify"] — ⚠ undocumented
-- `SKILLS_SOURCE` (const): const SKILLS_SOURCE: "Noisemaker111/jgengine" — ⚠ undocumented
-- `SkillsScope` (type): type SkillsScope = "global" | "project" — ⚠ undocumented
-- `installSkills` (function): function installSkills(scope: SkillsScope, cwd?: string): number — ⚠ undocumented
-- `parseSkillsArgs` (function): function parseSkillsArgs(argv: string[]): { scope: SkillsScope } | { error: string } — ⚠ undocumented
-- `runSkills` (function): function runSkills(argv: string[]): number — ⚠ undocumented
-- `skillsInstallArgs` (function): function skillsInstallArgs(scope: SkillsScope): string[] — ⚠ undocumented
-
-## @jgengine/jgengine/templates
-
-- `FOLDER_NAME_PATTERN` (const): const FOLDER_NAME_PATTERN: RegExp — ⚠ undocumented
-- `GAME_ID_PATTERN` (const): const GAME_ID_PATTERN: RegExp — ⚠ undocumented
-- `IN_REPO_TSCONFIG_PATHS` (const): const IN_REPO_TSCONFIG_PATHS: Record<string, string[]> — ⚠ undocumented
-- `TemplateFile` (interface): interface TemplateFile — ⚠ undocumented
-- `TemplateOptions` (interface): interface TemplateOptions — ⚠ undocumented
-- `TemplateVariant` (type): type TemplateVariant = "standalone" | "in-repo" — ⚠ undocumented
-- `displayNameFromId` (function): function displayNameFromId(id: string): string — ⚠ undocumented
-- `displayNameFromInput` (function): function displayNameFromInput(input: string): string — ⚠ undocumented
-- `folderNameFromTitle` (function): function folderNameFromTitle(input: string): string — ⚠ undocumented
-- `gameTemplate` (function): function gameTemplate(options: TemplateOptions): TemplateFile[] — ⚠ undocumented
-- `packageIdFromFolder` (function): function packageIdFromFolder(folder: string): string — ⚠ undocumented
-- `parseCreateName` (function): function parseCreateName(input: string): { displayName: string; folderName: string; id: string } — ⚠ undocumented
 
 ## @jgengine/shell/cartridge
 

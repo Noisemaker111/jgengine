@@ -7,10 +7,12 @@
  */
 export type SkyLightOwnership = "authored" | "sky-default";
 
+/** @internal */
 export function resolveSkyLightOwnership(hasAuthoredLighting: boolean): SkyLightOwnership {
   return hasAuthoredLighting ? "authored" : "sky-default";
 }
 
+/** @internal */
 export function skyEmitsLights(ownership: SkyLightOwnership): boolean {
   return ownership === "sky-default";
 }

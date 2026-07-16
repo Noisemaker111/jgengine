@@ -22,10 +22,6 @@
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
 - `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
-- `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
-- `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
-- `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; channelId: string; }, Promise<ChatMessage[]>>; sendMessage: RegisteredMuta… — ⚠ undocumented
 - `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
 - `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
@@ -36,18 +32,9 @@
 - `createConvexPresenceSync` (function): function createConvexPresenceSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, tuning?: PoseSyncTuning): PresenceSync — ⚠ undocumented
 - `createConvexPresenceTransport` (function): function createConvexPresenceTransport<TRawRow extends RawPresenceActor, TRow, TLocation, TGameId extends string = string>(functions: ConvexPresenceFunctions, mapRow: (row: TRawRow) => TRow): PresenceTransport<TRow, TLocation, TGameId> — Wires a game's Convex presence functions into the engine's PresenceTransport contract: one snapshot subscription (my location + online players), one residents subscription (dormant candidates, decoupled from pose writes), and one tick mutation for pose upload + keep-alive. Dormant rows are derived client-side by subtracting the snapshot's online actors, so pose ticks never re-execute the residents query. mapRow converts backend rows into the game's row type (e.g. branding positions into its coordinate space).
 - `createConvexSaveBackend` (function): function createConvexSaveBackend(options: ConvexSaveBackendOptions): SaveBackend — A cloud {@link SaveBackend} backed by Convex — reads through a query and writes through mutations, so a {@link createSaveStore} configured with it saves to the server instead of `localStorage`. The only change from an offline game is swapping the backend; autosave, slots, and migration behave the same.
-- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: RegisteredMutation<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; mode?: string | u… — ⚠ undocumented
-- `createHostedGameServerFunctions` (function): function createHostedGameServerFunctions(options: { games: Record<string, HostedGameConfig>; auth?: JgAuthMode; tickMs?: number; }): { getHostedServer: RegisteredQuery<"public", { serverId?: string | undefined; externalId?: string | undefined; gameId: string; }, Promise<{ serverId: string; gameId: s… — The Convex counterpart of ws's `createWorldGameHost`: serves GameContext worlds statelessly by reconstructing a hosted session from the persisted `jgHostedWorlds` row on every invocation via {@link invokeHostedWorld}. Destructure + re-export the returned functions from a `convex/` module and drive `tickHostedWorlds` from a cron. Requires {@link jgengineHostedTables} in the deployment schema.
-- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: RegisteredQuery<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; limit?: number | undefined; gameId: string; scope: "global" | "server" | "profile"; stat: string; }, Promise<{ user… — ⚠ undocumented
-- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; }, Promise<{ userId: string; position: { x: number; y: number; z: number; }; rotationY: number… — ⚠ undocumented
 - `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
 - `defaultConvexSaveFunctions` (function): function defaultConvexSaveFunctions(): ConvexSaveFunctions — Default `saves.read` / `saves.write` / `saves.remove` refs for apps that follow the convention — pass your own `functions` to override.
-- `invokeHostedWorld` (function): function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): HostedWorldOutcome<T> — The reconstruct → op → save core of the stateless hosted path, Convex-agnostic so it unit-tests against `memoryWorldStore`: build a fresh {@link createHostedWorldSession} from `store.load()`, resume persisted members and replay held inputs, run the op, then persist the snapshot at `revision + 1` iff the world changed.
-- `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
-- `jgengineHostedTables` (function): function jgengineHostedTables(): { jgHostedWorlds: TableDefinition<VObject<{ gameId: string; serverId: string; snapshot: any; revision: number; memberUserIds: string[]; inputs: any; tickAnchorMs: number; createdAt: number; updatedAt: number; }, { gameId: VString<string, "required">; serverId: VStrin… — Convex table for the hosted GameContext-world path: one row per (gameId, serverId) holding the full `WorldSnapshot` blob, its revision, the member roster, and each member's held input. A sibling of {@link jgengineTables} — spread either (or both) into `defineSchema`.
-- `jgengineTables` (function): function jgengineTables(): { jgGameServers: TableDefinition<VObject<{ mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; joinCode?: string | undefined; lastSavedAt?: number | undefined; dirtyAt?: number | undefined; gameId: string; revision: number; memberUse… — ⚠ undocumented
 - `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
-- `resolveActor` (function): function resolveActor(ctx: { auth: Auth }, claimedExternalId: string | undefined, mode: JgAuthMode): Promise<string | null> — Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`.
 - `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 - `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
 
@@ -94,14 +81,10 @@
 - `HostedWorldInvocation` (interface): interface HostedWorldInvocation<T> — Everything one stateless invocation reconstructs a hosted world from: the persisted record via `store`, plus the member roster and held inputs the snapshot doesn't carry, and the op to apply to the fresh session.
 - `HostedWorldOutcome` (interface): interface HostedWorldOutcome<T> — What one stateless invocation produced: the op's value, the resulting revision, whether the world changed (and was saved back), and the post-op roster.
 - `JG_HOSTED_TICK_MS` (const): const JG_HOSTED_TICK_MS: 1000 — Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`.
-- `createHostedGameServerFunctions` (function): function createHostedGameServerFunctions(options: { games: Record<string, HostedGameConfig>; auth?: JgAuthMode; tickMs?: number; }): { getHostedServer: RegisteredQuery<"public", { serverId?: string | undefined; externalId?: string | undefined; gameId: string; }, Promise<{ serverId: string; gameId: s… — The Convex counterpart of ws's `createWorldGameHost`: serves GameContext worlds statelessly by reconstructing a hosted session from the persisted `jgHostedWorlds` row on every invocation via {@link invokeHostedWorld}. Destructure + re-export the returned functions from a `convex/` module and drive `tickHostedWorlds` from a cron. Requires {@link jgengineHostedTables} in the deployment schema.
-- `invokeHostedWorld` (function): function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): HostedWorldOutcome<T> — The reconstruct → op → save core of the stateless hosted path, Convex-agnostic so it unit-tests against `memoryWorldStore`: build a fresh {@link createHostedWorldSession} from `store.load()`, resume persisted members and replay held inputs, run the op, then persist the snapshot at `revision + 1` iff the world changed.
 
 ## @jgengine/convex/occ
 
 - `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
-- `applyCommandWithOcc` (function): function applyCommandWithOcc(args: { loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; runtime: GameRuntime; actorUserId: string; command: string; input: unknown; }): | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
-- `commitIfRevisionMatch` (function): function commitIfRevisionMatch(loadedRevision: number, currentRevision: number): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 
 ## @jgengine/convex/resolveConvexMultiplayer
 
@@ -114,15 +97,6 @@
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
-- `applyLeaderboardIncrements` (function): function applyLeaderboardIncrements(ctx: JGMutationCtx, gameId: string, entries: LeaderboardIncrement[]): Promise<void> — ⚠ undocumented
-- `createChatFunctions` (function): function createChatFunctions(options?: { auth?: JgAuthMode; historyLimit?: number; maxBodyLength?: number; minIntervalMs?: number; }): { messages: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; channelId: string; }, Promise<ChatMessage[]>>; sendMessage: RegisteredMuta… — ⚠ undocumented
-- `createGameServerFunctions` (function): function createGameServerFunctions(options?: { runtimes?: GameRuntime[]; auth?: JgAuthMode; slotsPerServer?: number; allowedFeedActions?: readonly string[]; }): { joinServer: RegisteredMutation<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; mode?: string | u… — ⚠ undocumented
-- `createLeaderboardFunctions` (function): function createLeaderboardFunctions(options?: { auth?: JgAuthMode }): { getTop: RegisteredQuery<"public", { serverId?: Id<"jgGameServers"> | undefined; externalId?: string | undefined; limit?: number | undefined; gameId: string; scope: "global" | "server" | "profile"; stat: string; }, Promise<{ user… — ⚠ undocumented
-- `createPresenceFunctions` (function): function createPresenceFunctions(options?: { auth?: JgAuthMode; freshWindowMs?: number; poseRules?: PoseSyncRules; }): { list: RegisteredQuery<"public", { externalId?: string | undefined; serverId: string; }, Promise<{ userId: string; position: { x: number; y: number; z: number; }; rotationY: number… — ⚠ undocumented
-- `jgengineCronSpecs` (function): function jgengineCronSpecs(): readonly JgCronSpec[] — ⚠ undocumented
-- `jgengineHostedTables` (function): function jgengineHostedTables(): { jgHostedWorlds: TableDefinition<VObject<{ gameId: string; serverId: string; snapshot: any; revision: number; memberUserIds: string[]; inputs: any; tickAnchorMs: number; createdAt: number; updatedAt: number; }, { gameId: VString<string, "required">; serverId: VStrin… — Convex table for the hosted GameContext-world path: one row per (gameId, serverId) holding the full `WorldSnapshot` blob, its revision, the member roster, and each member's held input. A sibling of {@link jgengineTables} — spread either (or both) into `defineSchema`.
-- `jgengineTables` (function): function jgengineTables(): { jgGameServers: TableDefinition<VObject<{ mode?: string | undefined; modeConfig?: any; visibility?: "public" | "private" | undefined; joinCode?: string | undefined; lastSavedAt?: number | undefined; dirtyAt?: number | undefined; gameId: string; revision: number; memberUse… — ⚠ undocumented
-- `resolveActor` (function): function resolveActor(ctx: { auth: Auth }, claimedExternalId: string | undefined, mode: JgAuthMode): Promise<string | null> — Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`.
 
 ## @jgengine/core/multiplayer/chatContract
 
@@ -142,9 +116,6 @@
 - `ReplayResult` (interface): interface ReplayResult — ⚠ undocumented
 - `SerializeBoardArgs` (interface): interface SerializeBoardArgs — ⚠ undocumented
 - `SnapshotUnit` (interface): interface SnapshotUnit — ⚠ undocumented
-- `cloneSnapshot` (function): function cloneSnapshot(snapshot: BoardSnapshot): BoardSnapshot — ⚠ undocumented
-- `replayCombat` (function): function replayCombat(a: BoardSnapshot, b: BoardSnapshot, rules: CombatRules): ReplayResult — ⚠ undocumented
-- `serializeBoard` (function): function serializeBoard(args: SerializeBoardArgs): BoardSnapshot — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/feedWriteGate
 
@@ -164,14 +135,9 @@
 - `HitscanHit` (interface): interface HitscanHit — ⚠ undocumented
 - `HitscanRay` (interface): interface HitscanRay — ⚠ undocumented
 - `HitscanTarget` (interface): interface HitscanTarget — ⚠ undocumented
-- `PositionHistory` (class): class PositionHistory — ⚠ undocumented
 - `PositionHistoryConfig` (interface): interface PositionHistoryConfig — ⚠ undocumented
 - `PositionSample` (interface): interface PositionSample extends Vec3 — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
-- `createPositionHistory` (function): function createPositionHistory(config: PositionHistoryConfig): PositionHistory — ⚠ undocumented
-- `raySphereDistance` (function): function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number): number | null — ⚠ undocumented
-- `resolveHitscan` (function): function resolveHitscan(history: PositionHistory, targets: readonly HitscanTarget[], ray: HitscanRay, atMs: number): HitscanHit | null — ⚠ undocumented
-- `rewindTimestamp` (function): function rewindTimestamp(nowMs: number, rttMs: number, interpDelayMs: number): number — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/matchmaking
 
@@ -216,23 +182,13 @@
 - `PoseSyncDecision` (interface): interface PoseSyncDecision — ⚠ undocumented
 - `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
 - `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
-- `decidePoseSync` (function): function decidePoseSync(current: PresencePoseState, incoming: IncomingPose, rules: PoseSyncRules, nowMs: number, floorY?: number): PoseSyncDecision — ⚠ undocumented
-- `isPresenceExpired` (function): function isPresenceExpired(lastSeenAtMs: number, nowMs: number, idleCutoffMs: number): boolean — ⚠ undocumented
-- `pickReusablePresence` (function): function pickReusablePresence<T extends { lastSeenAt?: number }>(rows: readonly T[]): T | undefined — Most-recently-seen row across an actor's rows, to reuse instead of inserting a new one.
-- `resolveActivePresence` (function): function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt?: number }>(rows: readonly T[]): ActivePresenceResolution<T> — ⚠ undocumented
-- `shouldPersistWorldSnapshot` (function): function shouldPersistWorldSnapshot(lastSavedAtMs: number | undefined, nowMs: number, intervalMs: number): boolean — ⚠ undocumented
-- `shouldRefreshKeepAlive` (function): function shouldRefreshKeepAlive(lastSeenAtMs: number | undefined, nowMs: number, rules: Pick<PoseSyncRules, "keepAliveRefreshMs">): boolean — ⚠ undocumented
-- `spawnPresenceState` (function): function spawnPresenceState(origin: { x: number; y: number; z: number } = DEFAULT_SPAWN_ORIGIN, nowMs: number, rules: Pick<PoseSyncRules, "maxElapsedSec">): PresencePoseState — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/simultaneousCommit
 
 - `CommitPhase` (type): type CommitPhase = "collecting" | "revealed" — ⚠ undocumented
-- `CommitRound` (class): class CommitRound<TAction> — ⚠ undocumented
 - `CommitRoundConfig` (interface): interface CommitRoundConfig — ⚠ undocumented
 - `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
 - `SealedCommit` (interface): interface SealedCommit<TAction> — ⚠ undocumented
-- `createCommitRound` (function): function createCommitRound<TAction>(config: CommitRoundConfig): CommitRound<TAction> — ⚠ undocumented
-- `resolveCommits` (function): function resolveCommits<TAction, TResult>(reveals: readonly SealedCommit<TAction>[], resolver: (ordered: readonly SealedCommit<TAction>[]) => TResult): TResult — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/voiceContract
 
@@ -425,16 +381,11 @@
 - `createWorldGameHost` (function): function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost — The GameContext-loop counterpart of the reducer `createGameHost`: a structural {@link GameHost} that serves each world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
 - `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
 - `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
-- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
-- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
 - `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
-- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
-- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
 - `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
 - `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
 - `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
-- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 - `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/createWsBackend
@@ -513,11 +464,6 @@
 - `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
 - `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
 - `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string; } — ⚠ undocumented
-- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
-- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
-- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
-- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
-- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 
 ## @jgengine/ws/readsHandler
 

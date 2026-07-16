@@ -37,7 +37,8 @@ function strengthAt(distance: number, range: number, falloff: "linear" | "none")
  * `proximityPrompt` (a UI affordance), this reads world state the player has no
  * other way to see — the strongest in-range reading wins, mirroring how a real
  * handheld sensor needle settles on the loudest nearby source.
- */
+  * @internal
+  */
 export function probeHiddenState(
   origin: EntityPosition,
   sources: readonly HiddenStateSource[],
@@ -47,7 +48,9 @@ export function probeHiddenState(
   return readings.length === 0 ? null : readings[0]!;
 }
 
-/** All in-range readings for `variableId`, strongest first. */
+/** All in-range readings for `variableId`, strongest first.
+ * @internal
+ */
 export function probeHiddenStateAll(
   origin: EntityPosition,
   sources: readonly HiddenStateSource[],

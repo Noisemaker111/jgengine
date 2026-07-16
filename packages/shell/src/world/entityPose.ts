@@ -8,11 +8,13 @@ export interface PoseSource {
   rotationY: number;
 }
 
+/** @internal */
 export function writeEntityPose(target: PoseWritable, source: PoseSource): void {
   target.position.set(source.position[0], source.position[1], source.position[2]);
   target.rotation.y = source.rotationY;
 }
 
+/** @internal */
 export function posesEqual(a: PoseSource, b: PoseSource): boolean {
   return (
     a.position[0] === b.position[0] &&

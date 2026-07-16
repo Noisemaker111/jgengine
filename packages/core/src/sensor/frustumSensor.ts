@@ -53,7 +53,8 @@ const WORLD_UP: EntityPosition = [0, 1, 0];
  * Project a world point into the camera's view. Pure geometry — no three.js —
  * so a game can run "is this framed?" checks headlessly (photo-mode scoring,
  * server-side kill-cam validation) as well as from the live render camera.
- */
+  * @internal
+  */
 export function projectToView(camera: FrustumCamera, point: EntityPosition): FrustumProjection {
   const forward = normalize(subtract(camera.lookAt, camera.position));
   const relative = subtract(point, camera.position);
@@ -95,7 +96,9 @@ export interface FramingConfig {
   sizeWeight?: number;
 }
 
-/** 0 (not framed) .. 1 (dead-center, ideal distance) framing quality for an in-view projection. */
+/** 0 (not framed) .. 1 (dead-center, ideal distance) framing quality for an in-view projection.
+ * @internal
+ */
 export function framingScore(projection: FrustumProjection, config?: FramingConfig): number {
   if (!projection.inView) return 0;
   const idealDistance = config?.idealDistance ?? 6;
@@ -129,7 +132,8 @@ export interface FrustumSensor {
  * A view-frustum sensor on a held camera object: which entities are in frame,
  * how well framed they are, and how long they've stayed on-screen (photo-mode
  * "is this subject framed", Content Warning-style monster-filming scoring).
- */
+  * @internal
+  */
 export function createFrustumSensor(config?: FramingConfig): FrustumSensor {
   const dwell = new Map<string, number>();
 

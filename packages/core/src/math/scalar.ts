@@ -1,16 +1,22 @@
 export { lerp, clamp01, smoothstep } from "../anim/easing";
 
-/** Constrain a value to the inclusive `[min, max]` range. */
+/** Constrain a value to the inclusive `[min, max]` range.
+ * @internal
+ */
 export function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
 }
 
-/** Fraction of the way `value` sits between `from` and `to`; inverse of `lerp`. Returns 0 when the span is empty. */
+/** Fraction of the way `value` sits between `from` and `to`; inverse of `lerp`. Returns 0 when the span is empty.
+ * @internal
+ */
 export function inverseLerp(from: number, to: number, value: number): number {
   return from === to ? 0 : (value - from) / (to - from);
 }
 
-/** Map `value` from the `[inMin, inMax]` range onto `[outMin, outMax]`, optionally clamped to the output range. */
+/** Map `value` from the `[inMin, inMax]` range onto `[outMin, outMax]`, optionally clamped to the output range.
+ * @internal
+ */
 export function remap(
   value: number,
   inMin: number,
@@ -27,19 +33,25 @@ export function remap(
   return mapped < lo ? lo : mapped > hi ? hi : mapped;
 }
 
-/** Euclidean modulo that always returns a non-negative result in `[0, modulus)`, unlike the `%` operator. */
+/** Euclidean modulo that always returns a non-negative result in `[0, modulus)`, unlike the `%` operator.
+ * @internal
+ */
 export function mod(value: number, modulus: number): number {
   return ((value % modulus) + modulus) % modulus;
 }
 
-/** Step `current` toward `target` by at most `maxDelta`, without overshooting. */
+/** Step `current` toward `target` by at most `maxDelta`, without overshooting.
+ * @internal
+ */
 export function moveTowards(current: number, target: number, maxDelta: number): number {
   const diff = target - current;
   if (Math.abs(diff) <= maxDelta) return target;
   return current + Math.sign(diff) * maxDelta;
 }
 
-/** Wrap `value` into the half-open range `[min, max)`, cycling past either edge. */
+/** Wrap `value` into the half-open range `[min, max)`, cycling past either edge.
+ * @internal
+ */
 export function wrap(value: number, min: number, max: number): number {
   const span = max - min;
   return span <= 0 ? min : min + mod(value - min, span);

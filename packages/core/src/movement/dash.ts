@@ -21,10 +21,12 @@ export interface DashBurst {
   distance: number;
 }
 
+/** @internal */
 export function iframeActive(config: DashConfig, elapsedMs: number): boolean {
   return elapsedMs >= config.iframes.fromMs && elapsedMs < config.iframes.toMs;
 }
 
+/** @internal */
 export function dashEase(t: number): number {
   const clamped = Math.max(0, Math.min(1, t));
   return 1 - (1 - clamped) * (1 - clamped);
@@ -34,7 +36,8 @@ export function dashEase(t: number): number {
  * Compute a dash/dodge burst's displacement over its window, with i-frame timing for dodges.
  *
  * @capability dash-move a dash/dodge burst with i-frames and cooldown
- */
+  * @internal
+  */
 export function dashDisplacement(
   config: DashConfig,
   dir: DashDirection,
@@ -46,6 +49,7 @@ export function dashDisplacement(
   return [(dir.x / len) * traveled, 0, (dir.z / len) * traveled];
 }
 
+/** @internal */
 export function dashOffset(
   config: DashConfig,
   dir: DashDirection,
@@ -54,6 +58,7 @@ export function dashOffset(
   return dashDisplacement(config, dir, elapsedMs);
 }
 
+/** @internal */
 export function dashFrameDelta(
   config: DashConfig,
   dir: DashDirection,
@@ -76,6 +81,7 @@ export interface DashState {
   offset(nowMs: number): [number, number, number];
 }
 
+/** @internal */
 export function createDashState(config: DashConfig): DashState {
   let stamina = config.staminaMax;
   let dashStartMs: number | null = null;

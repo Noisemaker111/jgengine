@@ -67,6 +67,7 @@ export type WsRunCommandResult = TransportRunCommandResult;
 export type WsBrowseResult = SessionListing[];
 export type WsJoinByCodeResult = JoinServerResult | null;
 
+/** @internal */
 export function encodeWsMessage(message: WsClientMessage | WsServerMessage): string {
   return JSON.stringify(message);
 }
@@ -128,6 +129,7 @@ export type WsDecodeFailure = {
   id?: number;
 };
 
+/** @internal */
 export function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure {
   if (typeof raw !== "string") return { reason: "Invalid message framing" };
   let parsed: unknown;
@@ -147,6 +149,7 @@ export function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure {
   return { reason: "Malformed message", id };
 }
 
+/** @internal */
 export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
   const message = parseVersioned(raw);
   if (message === null) return null;
@@ -234,6 +237,7 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
   }
 }
 
+/** @internal */
 export function decodeWsServerMessage(raw: unknown): WsServerMessage | null {
   const message = parseVersioned(raw);
   if (message === null) return null;
@@ -255,6 +259,7 @@ export function decodeWsServerMessage(raw: unknown): WsServerMessage | null {
   }
 }
 
+/** @internal */
 export function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string {
   return `${channel}|${serverId}|${action ?? ""}`;
 }

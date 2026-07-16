@@ -7,6 +7,7 @@ export type SaveConfig =
       scope: SaveScope;
     };
 
+/** @internal */
 export function parseSaveAutoMs(auto: string): number {
   const match = /^(\d+(?:\.\d+)?)(ms|s|m|h)$/.exec(auto.trim());
   if (!match) {
@@ -28,14 +29,17 @@ export function parseSaveAutoMs(auto: string): number {
   }
 }
 
+/** @internal */
 export function saveScopeIncludesPlayer(scope: SaveScope): boolean {
   return scope === "player" || scope === "player+chunks";
 }
 
+/** @internal */
 export function saveScopeIncludesChunks(scope: SaveScope): boolean {
   return scope === "chunks" || scope === "player+chunks";
 }
 
+/** @internal */
 export function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> {
   return config !== "none";
 }

@@ -16,6 +16,7 @@ export interface MaterialOverrideTextures {
   ao?: THREE.Texture;
 }
 
+/** @internal */
 export function applyMaterialOverride(
   root: THREE.Object3D,
   override: ModelMaterialOverride,

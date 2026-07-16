@@ -73,6 +73,7 @@ function rgbToHex(rgb: readonly [number, number, number]): string {
   return `#${rgb.map((channel) => clampByte(channel).toString(16).padStart(2, "0")).join("")}`;
 }
 
+/** @internal */
 export function lerpHexColor(a: string, b: string, t: number): string {
   const [ar, ag, ab] = hexToRgb(a);
   const [br, bg, bb] = hexToRgb(b);
@@ -137,7 +138,8 @@ function segmentAt(
  * Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk),
  * lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night
  * keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
- */
+  * @internal
+  */
 export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState {
   const wrapped = wrapFraction(dayFraction);
   const keyframes = buildKeyframes(config);

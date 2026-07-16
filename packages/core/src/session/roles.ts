@@ -10,7 +10,8 @@ export interface RoleSpec {
  * Assign hidden or team roles across players by ratio — social-deduction and team-shuffle setups.
  *
  * @capability role-assign assign hidden or team roles to players by ratio
- */
+  * @internal
+  */
 export function assignRoles(
   userIds: readonly string[],
   roles: readonly RoleSpec[],

@@ -10,7 +10,8 @@ export interface ModelResolveContext {
  * Resolve a string asset id or a direct ModelConfig. Missing/misspelled catalog
  * ids throw — silent generic-primitive fallback only happens when the mapping
  * omits the key entirely (or uses tryResolveCatalogModel for optional ids).
- */
+  * @internal
+  */
 export function resolveModel(
   value: string | ModelConfig | undefined,
   assets: AssetCatalog,
@@ -29,11 +30,47 @@ export function resolveModel(
   return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
 }
 
-/** Soft lookup used when an object catalog id may double as a model asset id. */
+/** Soft lookup used when an object catalog id may double as a model asset id.
+ * @internal
+ */
 export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined {
   const ref = assets.resolve(id);
   if (ref === null) return undefined;
   return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
+}
+
+/**
+ * Resolve an entity model plus bone-attachment / kit-of-parts models through the catalog
+ * so mounts receive fully-resolved `ModelConfig`s.
+ * @internal
+ */
+export function resolveEntityModel(
+  value: string | ModelConfig | undefined,
+  assets: AssetCatalog,
+  key: string,
+): ModelConfig | undefined {
+  const model = resolveModel(value, assets, { seam: "entityModels", key });
+  if (model === undefined) return model;
+  if (model.attachments === undefined && model.parts === undefined) return model;
+  return {
+    ...model,
+    ...(model.attachments === undefined
+      ? {}
+      : {
+          attachments: model.attachments.map((attachment) => ({
+            ...attachment,
+            model: resolveModel(attachment.model, assets) ?? attachment.model,
+          })),
+        }),
+    ...(model.parts === undefined
+      ? {}
+      : {
+          parts: model.parts.map((part) => ({
+            ...part,
+            model: resolveModel(part.model, assets) ?? part.model,
+          })),
+        }),
+  };
 }
 
 /**
@@ -48,7 +85,9 @@ export type ModelPick = {
   style?: Omit<ModelConfig, "url" | "dims">;
 };
 
-/** Soft-resolve `model`, then `fallbackModel`; merge `style` when either hits. */
+/** Soft-resolve `model`, then `fallbackModel`; merge `style` when either hits.
+ * @internal
+ */
 export function pickModel(assets: AssetCatalog, pick: ModelPick): ModelConfig | undefined {
   for (const id of [pick.model, pick.fallbackModel]) {
     if (id === undefined) continue;
@@ -59,7 +98,9 @@ export function pickModel(assets: AssetCatalog, pick: ModelPick): ModelConfig | 
   return undefined;
 }
 
-/** Build an entityModels/objectModels map from a plan; missing catalog ids drop out (primitive). */
+/** Build an entityModels/objectModels map from a plan; missing catalog ids drop out (primitive).
+ * @internal
+ */
 export function resolveModelPlan(
   assets: AssetCatalog,
   plan: Record<string, ModelPick>,
@@ -77,7 +118,8 @@ export function resolveModelPlan(
  * `undefined` when either half is missing so the caller can fall back to its own default renderer.
  * An unmapped key resolves to `null` (deliberate fallback); a mapped key with a missing/misspelled
  * catalog id throws via {@link resolveModel}, same as the `entityModels`/`objectModels` seams.
- */
+  * @internal
+  */
 export function createModelMapResolver(
   map: Record<string, string | ModelConfig> | undefined,
   assets: AssetCatalog | undefined,

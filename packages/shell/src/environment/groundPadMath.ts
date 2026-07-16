@@ -4,10 +4,12 @@ export const PAD_THICKNESS = 0.1;
 
 export type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number };
 
+/** @internal */
 export function resolvePadShape(size: PadSize): PadShape {
   return "radius" in size ? { circular: true, radius: size.radius } : { circular: false, width: size[0], depth: size[1] };
 }
 
+/** @internal */
 export function resolvePadSurfaceY(
   groundHeight: number,
   pad: Pick<PadEnvironmentDescriptor, "height" | "elevation">,
@@ -15,6 +17,7 @@ export function resolvePadSurfaceY(
   return pad.elevation ?? groundHeight + pad.height;
 }
 
+/** @internal */
 export function resolvePadMeshY(
   groundHeight: number,
   pad: Pick<PadEnvironmentDescriptor, "height" | "elevation">,

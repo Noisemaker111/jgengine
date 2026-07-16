@@ -13,11 +13,6 @@
 - `VisitorLoopOptions` (interface): interface VisitorLoopOptions — Config for {@link createVisitorLoop}: the POI catalog, dwell duration, and exit point every agent shares.
 - `VisitorPhase` (type): type VisitorPhase = "seeking" | "traveling" | "dwelling" | "departing" | "done" — A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop.
 - `VisitorStep` (interface): interface VisitorStep — One tick's result from a {@link VisitorLoop}: current phase, where to steer, and which POI it concerns.
-- `computeFlowField` (function): function computeFlowField(grid: NavGrid, goals: readonly NavPoint[], options: FlowFieldOptions = {}): FlowField — ⚠ undocumented
-- `createCrowdField` (function): function createCrowdField(grid: NavGrid): CrowdField — ⚠ undocumented
-- `createVisitorLoop` (function): function createVisitorLoop(options: VisitorLoopOptions): VisitorLoop — A many-agent seek→travel→arrive→dwell→depart loop over weighted points of interest (park visitors, shoppers, tavern patrons) — `ai/crowd`'s `selectPoi` covers only the weighted-pick step; this owns the per-agent phase machine around it so the caller only supplies positions and drives movement.
-- `selectPoi` (function): function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectPoiOptions): Poi | null — ⚠ undocumented
-- `spreadOffset` (function): function spreadOffset(id: string, radius: number): readonly [number, number] — Deterministic 2D offset uniformly within a disc of `radius`, stable per `id` — so a crowd converging on one target (a flank point, a rally banner, a boss) fans out to distinct spots instead of all stacking on the same coordinate. Same `id` always yields the same offset, no per-entity state to store.
 
 ## @jgengine/core/ai/flock
 
@@ -25,15 +20,12 @@
 - `FlockConfig` (interface): interface FlockConfig — ⚠ undocumented
 - `FlockStepAgent` (interface): interface FlockStepAgent — ⚠ undocumented
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
-- `flockSteer` (function): function flockSteer(agent: FlockAgent, neighbors: readonly FlockAgent[], config: FlockConfig, target?: FlockVec3): FlockVec3 — Classic per-agent boid steering — seek + separation + cohesion + alignment with a straggler rescue radius — the many-agents-to-*each-other* primitive `ai/crowd`'s navmesh flow field (many-agents-to-POI) deliberately isn't. Pure: returns the desired acceleration for one agent; `stepFlock` is the convenience integrator. O(neighbors) per agent — pre-filter with a spatial grid past a few hundred agents.
-- `stepFlock` (function): function stepFlock(agents: FlockStepAgent[], config: FlockConfig, dt: number, target?: FlockVec3): void — Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions.
 
 ## @jgengine/core/ai/groupAssist
 
 - `AssistMember` (interface): interface AssistMember — ⚠ undocumented
 - `AssistNetwork` (interface): interface AssistNetwork — ⚠ undocumented
 - `AssistNetworkConfig` (interface): interface AssistNetworkConfig — ⚠ undocumented
-- `createAssistNetwork` (function): function createAssistNetwork(config: AssistNetworkConfig = {}): AssistNetwork — ⚠ undocumented
 
 ## @jgengine/core/ai/heatSystem
 
@@ -44,8 +36,6 @@
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
 - `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
-- `advanceHeat` (function): function advanceHeat(config: HeatConfig, state: HeatState, dt: number, gains: readonly HeatGain[], ctx: HeatTickContext): HeatStep — Advances {@link HeatState} by one tick: sums this tick's witnessed gains, bleeds heat once clear of witnesses past `decayDelaySeconds`, resolves the current {@link HeatLevelDef}, and reports how many pursuers to spawn (with ring points) or whether to stand pursuit down entirely.
-- `createHeatState` (function): function createHeatState(config: HeatConfig): HeatState — Escalating crime/heat/pursuit state machine (#533.4) — the star-meter every open-world crime sandbox hand-rolls: witness-scoped gain (unseen crimes don't raise heat), proximity-gated decay (still hot while a witness or pursuer is close), tiered pursuer budgets, ring-shaped spawn points around the player, and a stand-down countdown once heat clears so pursuit doesn't vanish instantly. Pure and seeded like `ai/spawnDirector` — the caller owns spawning/despawning the actual entities.
 
 ## @jgengine/core/ai/jobBoard
 
@@ -56,14 +46,11 @@
 - `JobReport` (interface): interface JobReport — ⚠ undocumented
 - `JobTickContext` (interface): interface JobTickContext — ⚠ undocumented
 - `WorkerState` (interface): interface WorkerState — ⚠ undocumented
-- `createJobBoard` (function): function createJobBoard(): JobBoard — ⚠ undocumented
 
 ## @jgengine/core/ai/laneSelect
 
 - `LaneCandidate` (interface): interface LaneCandidate<TId extends string = string> — ⚠ undocumented
 - `PickLaneOptions` (interface): interface PickLaneOptions<TId extends string = string> — ⚠ undocumented
-- `corridorCost` (function): function corridorCost(points: readonly (readonly [number, number])[], costAt: (x: number, z: number) => number): number — Sum a live cost function over a corridor's sample points — the standard way to build `LaneCandidate.cost`.
-- `pickLane` (function): function pickLane<TId extends string>(candidates: readonly LaneCandidate<TId>[], options: PickLaneOptions<TId> = {}): TId | null — Live cost-based selection over parallel corridors (#286.7) — the racing-line / lane-merge pick every AI driver hand-rolled. Evaluate each lane's cost this tick (crowding, hazards, distance) and let stickiness hysteresis stop the agent flip-flopping between near-equal lanes.
 
 ## @jgengine/core/ai/mobBrain
 
@@ -74,7 +61,6 @@
 - `MobBrainStep` (interface): interface MobBrainStep — ⚠ undocumented
 - `MobVec3` (type): type MobVec3 = readonly [number, number, number] — ⚠ undocumented
 - `MobWanderConfig` (interface): interface MobWanderConfig — ⚠ undocumented
-- `createMobBrain` (function): function createMobBrain(config: MobBrainConfig, deps: MobBrainDeps): MobBrain — ⚠ undocumented
 
 ## @jgengine/core/ai/spawnDirector
 
@@ -97,7 +83,6 @@
 
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-- `selectSpawnPoint` (function): function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a spawn point by game intent while keeping weighting mechanics internal.
 
 ## @jgengine/core/ai/threat
 
@@ -110,25 +95,6 @@
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
-- `clamp01` (function): function clamp01(t: number): number — Constrain `t` to the unit range `[0, 1]`.
-- `easeInCubic` (function): function easeInCubic(t: number): number — ⚠ undocumented
-- `easeInOutCubic` (function): function easeInOutCubic(t: number): number — ⚠ undocumented
-- `easeInOutQuad` (function): function easeInOutQuad(t: number): number — ⚠ undocumented
-- `easeInQuad` (function): function easeInQuad(t: number): number — ⚠ undocumented
-- `easeOutBack` (function): function easeOutBack(t: number): number — ⚠ undocumented
-- `easeOutCubic` (function): function easeOutCubic(t: number): number — ⚠ undocumented
-- `easeOutElastic` (function): function easeOutElastic(t: number): number — ⚠ undocumented
-- `easeOutQuad` (function): function easeOutQuad(t: number): number — ⚠ undocumented
-- `lerp` (function): function lerp(from: number, to: number, t: number): number — Linearly interpolate from `from` to `to` by fraction `t` (unclamped).
-- `smoothstep` (function): function smoothstep(t: number): number — Smooth Hermite interpolation of `t` across `[0, 1]`, easing both ends.
-- `timedProgress` (function): function timedProgress(startedAt: number, now: number, durationMs: number): number — ⚠ undocumented
-- `tween` (function): function tween(from: number, to: number, t: number, easing: Easing = smoothstep): number — ⚠ undocumented
-
-## @jgengine/core/anim/oscillator
-
-- `pingPong` (function): function pingPong(value: number, length: number): number — Ping-pong a value across `[0, length]`, bouncing at each edge — the index/position analog of {@link triangleWave}.
-- `sawWave` (function): function sawWave(time: number, period: number): number — Sawtooth ramp: rises 0→1 over each `period` then resets, for looping sweeps and scrolls.
-- `triangleWave` (function): function triangleWave(time: number, period: number): number — Triangle wave: ramps 0→1→0 across each `period`, for patrols, searchlights, and pulsing glows.
 
 ## @jgengine/core/audio/audioFalloff
 
@@ -247,18 +213,6 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
-## @jgengine/core/math/scalar
-
-- `clamp` (function): function clamp(value: number, min: number, max: number): number — Constrain a value to the inclusive `[min, max]` range.
-- `clamp01` (function): function clamp01(t: number): number — Constrain `t` to the unit range `[0, 1]`.
-- `inverseLerp` (function): function inverseLerp(from: number, to: number, value: number): number — Fraction of the way `value` sits between `from` and `to`; inverse of `lerp`. Returns 0 when the span is empty.
-- `lerp` (function): function lerp(from: number, to: number, t: number): number — Linearly interpolate from `from` to `to` by fraction `t` (unclamped).
-- `mod` (function): function mod(value: number, modulus: number): number — Euclidean modulo that always returns a non-negative result in `[0, modulus)`, unlike the `%` operator.
-- `moveTowards` (function): function moveTowards(current: number, target: number, maxDelta: number): number — Step `current` toward `target` by at most `maxDelta`, without overshooting.
-- `remap` (function): function remap(value: number, inMin: number, inMax: number, outMin: number, outMax: number, clamped = false): number — Map `value` from the `[inMin, inMax]` range onto `[outMin, outMax]`, optionally clamped to the output range.
-- `smoothstep` (function): function smoothstep(t: number): number — Smooth Hermite interpolation of `t` across `[0, 1]`, easing both ends.
-- `wrap` (function): function wrap(value: number, min: number, max: number): number — Wrap `value` into the half-open range `[min, max)`, cycling past either edge.
-
 ## @jgengine/core/movement/avatarGait
 
 - `DEFAULT_GAIT_TUNING` (const): const DEFAULT_GAIT_TUNING: GaitTuning — ⚠ undocumented
@@ -270,14 +224,6 @@
 ## @jgengine/core/movement/cameraRig
 
 - `CAMERA_PITCH_LIMIT` (const): const CAMERA_PITCH_LIMIT: 1.45 — ⚠ undocumented
-- `advanceEyeHeight` (function): function advanceEyeHeight(currentEyeHeight: number, targetEyeHeight: number, deltaSeconds: number): number — ⚠ undocumented
-- `advanceHeadBobTime` (function): function advanceHeadBobTime(currentHeadBobTime: number, moving: boolean, grounded: boolean, bobRate: number, deltaSeconds: number): number — ⚠ undocumented
-- `clampCameraPitch` (function): function clampCameraPitch(pitch: number): number — ⚠ undocumented
-- `resolveCameraTrackingBlend` (function): function resolveCameraTrackingBlend(deltaSeconds: number): number — ⚠ undocumented
-- `resolveHeadBobAmplitude` (function): function resolveHeadBobAmplitude(crouching: boolean, running: boolean, grounded: boolean): number — ⚠ undocumented
-- `resolveHeadBobOffset` (function): function resolveHeadBobOffset(headBobTime: number, bobAmplitude: number): number — ⚠ undocumented
-- `resolveHeadBobRate` (function): function resolveHeadBobRate(crouching: boolean, running: boolean): number — ⚠ undocumented
-- `resolveTargetEyeHeight` (function): function resolveTargetEyeHeight(crouching: boolean, grounded: boolean): number — ⚠ undocumented
 
 ## @jgengine/core/movement/dash
 
@@ -286,12 +232,6 @@
 - `DashDirection` (interface): interface DashDirection — ⚠ undocumented
 - `DashRejection` (type): type DashRejection = { reason: "no-stamina" | "cooldown" | "dashing" } — ⚠ undocumented
 - `DashState` (interface): interface DashState — ⚠ undocumented
-- `createDashState` (function): function createDashState(config: DashConfig): DashState — ⚠ undocumented
-- `dashDisplacement` (function): function dashDisplacement(config: DashConfig, dir: DashDirection, elapsedMs: number): [number, number, number] — Compute a dash/dodge burst's displacement over its window, with i-frame timing for dodges.
-- `dashEase` (function): function dashEase(t: number): number — ⚠ undocumented
-- `dashFrameDelta` (function): function dashFrameDelta(config: DashConfig, dir: DashDirection, previousElapsedMs: number, elapsedMs: number): [number, number, number] — ⚠ undocumented
-- `dashOffset` (function): function dashOffset(config: DashConfig, dir: DashDirection, elapsedMs: number): [number, number, number] — ⚠ undocumented
-- `iframeActive` (function): function iframeActive(config: DashConfig, elapsedMs: number): boolean — ⚠ undocumented
 
 ## @jgengine/core/movement/glideModel
 
@@ -331,15 +271,6 @@
 - `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
-- `advancePlayerMotion` (function): function advancePlayerMotion(motion: PlayerMotionState, intent: MovementIntent, forwardX: number, forwardZ: number, baseSpeed: number, rawDeltaSeconds: number, tuning?: MovementTuningOverrides, options?: MotionFrameOptions): MovementFrameStep — Advance one frame of avatar kinematics. Mutates `motion` (velocity, jump, gravity, grounded) and returns the horizontal step to commit through the collision-resolving stepper.
-- `cameraYawToAvatarBodyYaw` (function): function cameraYawToAvatarBodyYaw(cameraYaw: number): number — Camera yaw looks along -Z; character mesh faces +Z at body rotation.y = 0.
-- `constrainStepToAxis` (function): function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep — Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`).
-- `createEmptyMovementKeys` (function): function createEmptyMovementKeys(): MovementKeysState — ⚠ undocumented
-- `createPlayerMotionState` (function): function createPlayerMotionState(): PlayerMotionState — ⚠ undocumented
-- `nearbyObstacles` (function): function nearbyObstacles(objects: readonly { position: readonly [number, number, number] }[], center: readonly [number, number, number], radius: number = OBSTACLE_GATHER_RADIUS): CollisionObstacle[] — Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
-- `resolveMovementIntent` (function): function resolveMovementIntent(keys: MovementKeysState, canMove: boolean): MovementIntent — Translate the set of held keys into an intent. When `canMove` is false (a menu is open, the world is paused) the avatar is fully idle so it never drifts behind an overlay.
-- `resolveObstacleStep` (function): function resolveObstacleStep(current: readonly [number, number, number], stepX: number, stepZ: number, obstacles: readonly CollisionObstacle[], playerRadius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): MovementFrameStep — Resolve a horizontal step against nearby placed objects with classic axis-separated sliding (try X, then Z against the post-X position) so walking into a wall stops the blocked axis but keeps sliding along the other. Obstacles are treated as circle-vs-AABB in the X/Z plane, inflated by `playerRadius`; an obstacle whose vertical span misses the player's feet-to-head span is skipped entirely. Callers should pre-filter to nearby objects — this also early-exits per obstacle on horizontal distance.
-- `snapPositionToGrid` (function): function snapPositionToGrid(x: number, z: number, cellSize: number): [number, number] — Snap a world position to its containing cell's center, matching the bounds-free form of `navGrid`'s and `tacticalGrid`'s `floor` + half-cell convention (`PlayerMovementConfig.mode: "grid"`).
 
 ## @jgengine/core/movement/playerMovement
 
@@ -657,14 +588,6 @@
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
-- `colliderBounds` (function): function colliderBounds(collider: ResolvedCollider, position: EntityPosition, rotationY: number): { min: EntityPosition; max: EntityPosition } — ⚠ undocumented
-- `colliderWorldCenter` (function): function colliderWorldCenter(collider: ResolvedCollider, position: EntityPosition, rotationY: number): EntityPosition — ⚠ undocumented
-- `defaultEntityColliders` (function): function defaultEntityColliders(): EntityColliderSet — ⚠ undocumented
-- `defaultObjectColliders` (function): function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJECT_HALF_EXTENTS): EntityColliderSet — ⚠ undocumented
-- `resolveColliders` (function): function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] — ⚠ undocumented
-- `scaledEntityColliders` (function): function scaledEntityColliders(scale: number): EntityColliderSet — Humanoid damage box uniformly scaled to match a visually scaled mesh, kept grounded (offset stays half its height). At scale 1 this equals `defaultEntityColliders()`.
-- `scaledObjectColliders` (function): function scaledObjectColliders(scale: readonly [number, number, number]): EntityColliderSet — Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh).
-- `worldOffset` (function): function worldOffset(local: EntityPosition | undefined, position: EntityPosition, rotationY: number): EntityPosition — ⚠ undocumented
 
 ## @jgengine/core/scene/entityStats
 
@@ -674,13 +597,6 @@
 - `StatValue` (interface): interface StatValue — ⚠ undocumented
 - `StatValueMap` (type): type StatValueMap = Record<string, StatValue> — ⚠ undocumented
 - `StatValuePatch` (interface): interface StatValuePatch — ⚠ undocumented
-- `applyPoolDelta` (function): function applyPoolDelta(map: StatValueMap, statId: string, amount: number): PoolDeltaResult — ⚠ undocumented
-- `createEntityStatsApi` (function): function createEntityStatsApi(resolve: (instanceId: string) => StatValueMap | undefined): EntityStatsApi — ⚠ undocumented
-- `getStatValue` (function): function getStatValue(map: StatValueMap, statId: string): StatValue | null — ⚠ undocumented
-- `hydrateEntityStats` (function): function hydrateEntityStats(store: Map<string, StatValueMap>, data: Record<string, StatValueMap>): void — Replace a live stat store with deep copies of a snapshot, clearing entities absent from it.
-- `seedStatValues` (function): function seedStatValues(catalogStats: StatCatalog): StatValueMap — ⚠ undocumented
-- `setStatValue` (function): function setStatValue(map: StatValueMap, statId: string, patch: StatValuePatch): StatValueMap — ⚠ undocumented
-- `snapshotEntityStats` (function): function snapshotEntityStats(store: ReadonlyMap<string, StatValueMap>): Record<string, StatValueMap> — Deep-copy the per-entity stat maps into a serializable record — the transport counterpart of {@link hydrateEntityStats}.
 
 ## @jgengine/core/scene/entityStore
 
@@ -698,6 +614,7 @@
 - `SpawnPose` (interface): interface SpawnPose — ⚠ undocumented
 - `SpawnPositionInput` (type): type SpawnPositionInput = EntityPosition | { x: number; y: number; z: number } — ⚠ undocumented
 - `createEntityStore` (function): function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> — ⚠ undocumented
+- `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
 - `groundSpeed` (function): function groundSpeed(entity: SceneEntity<unknown>): number — Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code.
 - `movedWhileFrozen` (function): function movedWhileFrozen(entity: SceneEntity<unknown>, threshold = DEFAULT_FROZEN_MOVE_THRESHOLD): boolean — ⚠ undocumented
 
@@ -751,8 +668,6 @@
 - `ObjectRaycastSource` (type): type ObjectRaycastSource = readonly SceneObject[] | ObjectQueryBroadphase — ⚠ undocumented
 - `intersectAabb` (function): function intersectAabb(origin: EntityPosition, direction: EntityPosition, min: EntityPosition, max: EntityPosition, maxDistance: number): { distance: number; normal: EntityPosition } | null — ⚠ undocumented
 - `normalizeDirection` (function): function normalizeDirection(direction: EntityPosition): EntityPosition — ⚠ undocumented
-- `raycastObjects` (function): function raycastObjects(source: ObjectRaycastSource, input: ObjectRaycastInput): ObjectRaycastHit | null — ⚠ undocumented
-- `raycastObjectsAll` (function): function raycastObjectsAll(source: ObjectRaycastSource, input: ObjectRaycastInput): ObjectRaycastHit[] — ⚠ undocumented
 
 ## @jgengine/core/scene/objectStore
 
@@ -885,16 +800,12 @@
 - `ConcealmentSample` (interface): interface ConcealmentSample — ⚠ undocumented
 - `ConcealmentSensor` (interface): interface ConcealmentSensor — ⚠ undocumented
 - `ConcealmentTarget` (interface): interface ConcealmentTarget — ⚠ undocumented
-- `colorDistance` (function): function colorDistance(a: ColorHex, b: ColorHex): number — ⚠ undocumented
-- `concealmentScore` (function): function concealmentScore(entityColors: readonly ColorHex[], backgroundColors: readonly ColorHex[]): number — ⚠ undocumented
-- `createConcealmentSensor` (function): function createConcealmentSensor(config?: { threshold?: number }): ConcealmentSensor — ⚠ undocumented
 
 ## @jgengine/core/sensor/freezeMonitor
 
 - `FreezeMonitor` (interface): interface FreezeMonitor — ⚠ undocumented
 - `FreezeSubject` (interface): interface FreezeSubject — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation — ⚠ undocumented
-- `createFreezeMonitor` (function): function createFreezeMonitor(config?: { toleranceSpeed?: number; graceSeconds?: number }): FreezeMonitor — ⚠ undocumented
 
 ## @jgengine/core/sensor/frustumSensor
 
@@ -904,9 +815,6 @@
 - `FrustumSample` (interface): interface FrustumSample — ⚠ undocumented
 - `FrustumSensor` (interface): interface FrustumSensor — ⚠ undocumented
 - `FrustumTarget` (interface): interface FrustumTarget — ⚠ undocumented
-- `createFrustumSensor` (function): function createFrustumSensor(config?: FramingConfig): FrustumSensor — A view-frustum sensor on a held camera object: which entities are in frame, how well framed they are, and how long they've stayed on-screen (photo-mode "is this subject framed", Content Warning-style monster-filming scoring).
-- `framingScore` (function): function framingScore(projection: FrustumProjection, config?: FramingConfig): number — 0 (not framed) .. 1 (dead-center, ideal distance) framing quality for an in-view projection.
-- `projectToView` (function): function projectToView(camera: FrustumCamera, point: EntityPosition): FrustumProjection — Project a world point into the camera's view. Pure geometry — no three.js — so a game can run "is this framed?" checks headlessly (photo-mode scoring, server-side kill-cam validation) as well as from the live render camera.
 
 ## @jgengine/core/sensor/hiddenStateProbe
 
@@ -914,8 +822,6 @@
 - `HiddenStateValue` (type): type HiddenStateValue = number | string | boolean — ⚠ undocumented
 - `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
 - `SensorReading` (interface): interface SensorReading — ⚠ undocumented
-- `probeHiddenState` (function): function probeHiddenState(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — A sensor verb: probe a hidden zone/entity state variable in range and surface a reading (EMF reader, spirit box, thermometer, geiger counter). Unlike `proximityPrompt` (a UI affordance), this reads world state the player has no other way to see — the strongest in-range reading wins, mirroring how a real handheld sensor needle settles on the loudest nearby source.
-- `probeHiddenStateAll` (function): function probeHiddenStateAll(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading[] — All in-range readings for `variableId`, strongest first.
 
 ## @jgengine/core/sensor/recordingBuffer
 
@@ -923,7 +829,6 @@
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
 - `RecordingFrame` (interface): interface RecordingFrame<T> — ⚠ undocumented
 - `RecordingPair` (interface): interface RecordingPair<T> — ⚠ undocumented
-- `createRecordingBuffer` (function): function createRecordingBuffer<T>(options: RecordingBufferOptions = {}): RecordingBuffer<T> — A session-recording buffer for replay / photo mode / kill-cam: append timestamped snapshots (poses, camera state, whatever `T` is) on game-time, then seek/scrub the recording independent of the live sim. Frames are expected in non-decreasing `t` order (one push per tick); `seek`/`range` binary-search on that assumption.
 
 ## @jgengine/core/sensor/replayLoop
 
@@ -931,16 +836,12 @@
 - `ReplayEntityDeps` (interface): interface ReplayEntityDeps — ⚠ undocumented
 - `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
 - `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> — ⚠ undocumented
-- `createReplayLoop` (function): function createReplayLoop<T>(buffer: RecordingBuffer<T>, options: ReplayLoopOptions<T> = {}): ReplayLoop<T> — ⚠ undocumented
-- `interpolateRecordedPose` (function): function interpolateRecordedPose<T extends RecordedPoseLike>(before: T, after: T, alpha: number): T — Linear pose blend for `ReplayLoopOptions.interpolate` — position lerp plus shortest-arc yaw.
-- `syncReplayEntity` (function): function syncReplayEntity(deps: ReplayEntityDeps, id: string, pose: RecordedPoseLike | null, dt?: number): void — Reconcile a replayed pose against an entity store: spawns the ghost on the first non-null sample, poses it while samples flow, despawns it through grace gaps or after the recording empties. `deps` matches `ctx.scene.entity` structurally — pass `{ has: (id) => ctx.scene.entity.get(id) !== null, spawn, setPose, despawn }`.
 
 ## @jgengine/core/sensor/revealQuery
 
 - `RevealHit` (interface): interface RevealHit — ⚠ undocumented
 - `RevealQuery` (interface): interface RevealQuery — ⚠ undocumented
 - `RevealQueryOptions` (interface): interface RevealQueryOptions — ⚠ undocumented
-- `createRevealQuery` (function): function createRevealQuery(options: RevealQueryOptions): RevealQuery — `inRadius` already ignores occlusion; combat's AoE resolution is what layers a line-of-sight filter on top of it (see `effect({ at, radius, los })`). This is the same unfiltered radius query, scoped to catalog-declared tags and shaped for a vision readout (Dark Sight / detective-vision reveal) instead of damage resolution — it never consults an occluder, by design.
 
 ## @jgengine/core/sensor/visionCone
 
@@ -949,10 +850,6 @@
 - `VisionPoint` (type): type VisionPoint = readonly [number, number] — ⚠ undocumented
 - `VisionTarget` (interface): interface VisionTarget<TId extends string = string> — ⚠ undocumented
 - `VisionWall` (interface): interface VisionWall — Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders.
-- `createVisionCone` (function): function createVisionCone(config: VisionConeConfig, walls: readonly VisionWall[] = []): VisionCone — ⚠ undocumented
-- `hasWallLineOfSight` (function): function hasWallLineOfSight(from: VisionPoint, to: VisionPoint, walls: readonly VisionWall[]): boolean — True when no wall segment crosses the sight line.
-- `pointInCone` (function): function pointInCone(origin: VisionPoint, heading: number, config: VisionConeConfig, point: VisionPoint): boolean — Angle + range test only — no occlusion. `heading` is engine yaw (radians, `atan2(dx, dz)`).
-- `segmentsIntersect` (function): function segmentsIntersect(a1: VisionPoint, a2: VisionPoint, b1: VisionPoint, b2: VisionPoint): boolean — 2D segment intersection on the XZ plane (collinear overlaps count) — the LoS building block `revealQuery`/`frustumSensor` never shipped (#286.5).
 
 ## @jgengine/core/time/beatClock
 
@@ -964,19 +861,10 @@
 - `BeatSnapshot` (interface): interface BeatSnapshot — ⚠ undocumented
 - `BufferedAction` (interface): interface BufferedAction<T> — ⚠ undocumented
 - `DEFAULT_BEAT_TIERS` (const): const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] — ⚠ undocumented
-- `classifyBeatAccuracy` (function): function classifyBeatAccuracy(nowSec: number, beatDurationSec: number, tiers: readonly BeatAccuracyTier[] = DEFAULT_BEAT_TIERS): BeatJudgement — Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers must be ordered tightest-first.
-- `createBeatClock` (function): function createBeatClock(config: BeatClockConfig, onBeat?: (beatIndex: number) => void): BeatClock — ⚠ undocumented
-- `createBeatInputBuffer` (function): function createBeatInputBuffer<T>(beatDurationSec: number): BeatInputBuffer<T> — ⚠ undocumented
-- `inBarWindow` (function): function inBarWindow(snapshot: BeatSnapshot, fromBeat: number, toBeat: number): boolean — Whether a snapshot sits inside a bar-relative open window `[fromBeat, toBeat)` — e.g. "act on beats 2-4 of every bar" (#286.12).
-- `nearestBeatDelta` (function): function nearestBeatDelta(nowSec: number, beatDurationSec: number): number — Signed offset (game-seconds) from `nowSec` to the nearest beat boundary — negative = early, positive = late (#286.12).
-- `nextBeatTime` (function): function nextBeatTime(nowSec: number, beatDurationSec: number, epsilon = QUANTIZE_EPSILON): number — The absolute beat-time (game-seconds) that a press at `nowSec` quantizes to: the same instant if it lands on a beat boundary, else the next one.
 
 ## @jgengine/core/time/calendarClock
 
 - `GameTime` (interface): interface GameTime — ⚠ undocumented
-- `computeClientServerOffset` (function): function computeClientServerOffset(serverNow: number, clientNow: number): number — ⚠ undocumented
-- `computeGameTime` (function): function computeGameTime(gameTimestamp: number): GameTime — ⚠ undocumented
-- `getGameClockTimestamp` (function): function getGameClockTimestamp(createdAt: number, serverNow: number, clientNow: number, gameTimeScale?: number): number — ⚠ undocumented
 
 ## @jgengine/core/time/gameClock
 
@@ -994,10 +882,6 @@
 - `IdleWindowConfig` (interface): interface IdleWindowConfig — ⚠ undocumented
 - `LinearCatchUpInput` (interface): interface LinearCatchUpInput — ⚠ undocumented
 - `SteppedCatchUpResult` (interface): interface SteppedCatchUpResult — ⚠ undocumented
-- `exponentialCatchUp` (function): function exponentialCatchUp(seconds: number, input: ExponentialCatchUpInput): number — ⚠ undocumented
-- `idleWindow` (function): function idleWindow(lastSeenMs: number, nowMs: number, config: IdleWindowConfig = {}): IdleWindow — ⚠ undocumented
-- `linearCatchUp` (function): function linearCatchUp(seconds: number, input: LinearCatchUpInput): number — ⚠ undocumented
-- `steppedCatchUp` (function): function steppedCatchUp(seconds: number, stepSeconds: number, step: (index: number) => void, maxSteps?: number): SteppedCatchUpResult — ⚠ undocumented
 
 ## @jgengine/core/time/serverTick
 
@@ -1045,12 +929,6 @@
 - `DEFAULT_BOUNDS` (const): const DEFAULT_BOUNDS: BoundsSpec — Conservative default: a unit sphere. Objects without explicit bounds cull as a small volume, never a point.
 - `RenderBounds` (interface): interface RenderBounds — World-space bounds a culler tests against. Kept as flat scalars (not tuples) so the hot culling path reads them without allocating. Carries both a bounding sphere (cheap broad reject) and a tight AABB (precise reject) — the standard "engine bounds" the frustum, distance, and spatial-index tests all consume.
 - `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented
-- `aabbIntersects` (function): function aabbIntersects(aMinX: number, aMinY: number, aMinZ: number, aMaxX: number, aMaxY: number, aMaxZ: number, bMinX: number, bMinY: number, bMinZ: number, bMaxX: number, bMaxY: number, bMaxZ: number): boolean — ⚠ undocumented
-- `boundsIntersect` (function): function boundsIntersect(a: RenderBounds, b: RenderBounds): boolean — ⚠ undocumented
-- `createBoundsCache` (function): function createBoundsCache(): BoundsCache — ⚠ undocumented
-- `createRenderBounds` (function): function createRenderBounds(): RenderBounds — ⚠ undocumented
-- `expandRenderBounds` (function): function expandRenderBounds(bounds: RenderBounds, margin: number, out: RenderBounds = createRenderBounds()): RenderBounds — ⚠ undocumented
-- `resolveBounds` (function): function resolveBounds(spec: BoundsSpec, position: Vec3, out: RenderBounds = createRenderBounds()): RenderBounds — Resolve a spec + world position into concrete bounds. Writes into `out` when supplied (no allocation).
 
 ## @jgengine/core/visibility/camera
 
@@ -1081,12 +959,6 @@
 - `Frustum` (interface): interface Frustum — ⚠ undocumented
 - `OrthographicView` (interface): interface OrthographicView — 2D / orthographic camera (top-down, side-scroller, minimap).
 - `PerspectiveView` (interface): interface PerspectiveView — 3D perspective camera (the default game camera).
-- `aabbInFrustum` (function): function aabbInFrustum(f: Frustum, minX: number, minY: number, minZ: number, maxX: number, maxY: number, maxZ: number): boolean — Conservative AABB-vs-frustum: never a false negative (may keep a corner-case that is truly outside).
-- `boundsInFrustum` (function): function boundsInFrustum(f: Frustum, b: RenderBounds): boolean — Sphere broad-phase reject, then the tight AABB test. Both conservative.
-- `createFrustum` (function): function createFrustum(): Frustum — ⚠ undocumented
-- `dilateFrustum` (function): function dilateFrustum(src: Frustum, margin: number, out: Frustum): Frustum — Push every plane outward by `margin` (unit normals ⇒ d += margin) to form a preload/hysteresis region.
-- `sphereInFrustum` (function): function sphereInFrustum(f: Frustum, cx: number, cy: number, cz: number, radius: number): boolean — ⚠ undocumented
-- `updateFrustum` (function): function updateFrustum(out: Frustum, view: CameraView): Frustum — ⚠ undocumented
 
 ## @jgengine/core/visibility/occlusion
 
@@ -1119,7 +991,6 @@
 
 - `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
 - `SpatialIndexOptions` (interface): interface SpatialIndexOptions — ⚠ undocumented
-- `aabbIntersects` (function): function aabbIntersects(aMinX: number, aMinY: number, aMinZ: number, aMaxX: number, aMaxY: number, aMaxZ: number, bMinX: number, bMinY: number, bMinZ: number, bMaxX: number, bMaxY: number, bMaxZ: number): boolean — ⚠ undocumented
 - `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — ⚠ undocumented
 
 ## @jgengine/core/visibility/visibilitySystem
@@ -1178,11 +1049,6 @@
 - `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
 - `GeneratedBuilding` (interface): interface GeneratedBuilding — ⚠ undocumented
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — ⚠ undocumented
-- `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — ⚠ undocumented
-- `createBuildingGrid` (function): function createBuildingGrid(config: BuildingGridConfig): BuildingLot[] — ⚠ undocumented
-- `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — ⚠ undocumented
-- `generateBuildingDistrict` (function): function generateBuildingDistrict(config: BuildingGridConfig): GeneratedBuilding[] — ⚠ undocumented
-- `resolveBuildingPalette` (function): function resolveBuildingPalette(style: BuildingStyle = DEFAULT_BUILDING_STYLE, overrides?: BuildingPaletteOverrides): BuildingPalette — ⚠ undocumented
 
 ## @jgengine/core/world/carve
 
@@ -1355,17 +1221,6 @@
 - `Footprint` (interface): interface Footprint — ⚠ undocumented
 - `MoveOptions` (interface): interface MoveOptions — ⚠ undocumented
 - `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented
-- `aabbContains` (function): function aabbContains(outer: Aabb, inner: Aabb): boolean — ⚠ undocumented
-- `aabbOverlap` (function): function aabbOverlap(a: Aabb, b: Aabb): boolean — ⚠ undocumented
-- `clampToAabb` (function): function clampToAabb(point: Vec2, aabb: Aabb): Vec2 — ⚠ undocumented
-- `clampToEllipse` (function): function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 — Clamp `point` to the ellipse boundary when it strays outside, else return it unchanged.
-- `ellipseNormal` (function): function ellipseNormal(point: Vec2, ellipse: Ellipse): Vec2 — Outward unit normal of the ellipse at the point nearest `point` — the boundary bounce direction.
-- `expandAabb` (function): function expandAabb(aabb: Aabb, margin: number): Aabb — ⚠ undocumented
-- `footprintAabb` (function): function footprintAabb(center: Vec2, footprint: Footprint, quarterTurns = 0): Aabb — ⚠ undocumented
-- `pointInAabb` (function): function pointInAabb(point: Vec2, aabb: Aabb): boolean — ⚠ undocumented
-- `pointInEllipse` (function): function pointInEllipse(point: Vec2, ellipse: Ellipse): boolean — True when `point` sits inside (or on) the ellipse — the oval-arena containment test.
-- `resolveMove` (function): function resolveMove(from: Vec2, delta: Vec2, blockers: readonly Aabb[], options: MoveOptions = {}): Vec2 — ⚠ undocumented
-- `snapToGrid` (function): function snapToGrid(point: Vec2, size: number): Vec2 — ⚠ undocumented
 
 ## @jgengine/core/world/grassKind
 
@@ -1493,11 +1348,6 @@
 
 - `Polyline` (interface): interface Polyline — A polyline prepared for repeated distance/fraction sampling, with cumulative arc-length precomputed.
 - `PolylineHit` (interface): interface PolylineHit — The closest point on a polyline to a query point, with where it lands along the line.
-- `closestPoint` (function): function closestPoint(line: Polyline, query: Vec2): PolylineHit — Closest point on the line to `query`, reporting arc-length position, segment index, and signed lateral offset.
-- `pointAtDistance` (function): function pointAtDistance(line: Polyline, dist: number): Vec2 — Point at an absolute arc-length distance along the line, clamped to the endpoints.
-- `pointAtFraction` (function): function pointAtFraction(line: Polyline, fraction: number): Vec2 — Point at a `[0, 1]` fraction of the line's total length.
-- `polyline` (function): function polyline(points: readonly Vec2[]): Polyline — Prepare a polyline from ordered points, computing cumulative arc-length once for O(log n) sampling.
-- `tangentAtDistance` (function): function tangentAtDistance(line: Polyline, dist: number): Vec2 — Unit tangent (direction of travel) at an absolute distance along the line.
 
 ## @jgengine/core/world/realm
 
@@ -1674,53 +1524,6 @@
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
 - `TerrainSlopeSample` (interface): interface TerrainSlopeSample — ⚠ undocumented
-- `arenaField` (function): function arenaField(config: ArenaFieldConfig = {}): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
-- `composeIslandFields` (function): function composeIslandFields(base: TerrainField | null, islands: readonly TerrainIslandDescriptor[], voidHeight = ISLAND_VOID_HEIGHT): TerrainField — Composes a base terrain and any number of bounded islands into one world field: inside an island's rect the island's own field (sampled in island-local coordinates) wins, elsewhere the base terrain answers, and with no base the gap is `ISLAND_VOID_HEIGHT` void. Later islands win overlaps.
-- `createBiomeBandSampler` (function): function createBiomeBandSampler(bands: readonly BiomeBand[], fallback: TerrainPalette): (z: number) => TerrainPalette — Per-z palette sampler over a descriptor's `biomeBands` — ordered zones that cross-fade their ground palette across a `fade`-wide window centered on the midpoint z between adjacent centers. Below the first / above the last band clamps to that band's palette. Returns `fallback` when no bands are declared. Pure math, unit-testable independent of rendering.
-- `createBiomeFogSampler` (function): function createBiomeFogSampler(bands: readonly BiomeBand[], fallback: BiomeFogValue): (z: number) => BiomeFogValue — Per-z fog sampler over a descriptor's `biomeBands` — cross-fades each band's `fog` (unset fields falling through to `fallback`) across the same `fade` window as the ground sampler, so fog color and range track the camera's z. Bands with no `fog` resolve to `fallback`. Pure math, unit-testable.
-- `createBiomeSkySampler` (function): function createBiomeSkySampler(bands: readonly BiomeBand[], fallback: BiomeSkyValue): (z: number) => BiomeSkyValue — Per-z sky sampler over a descriptor's `biomeBands` — cross-fades each band's `sky` (unset fields falling through to `fallback`) across the same `fade` window as the ground sampler, so horizon/zenith colors and sun/ambient intensity track the camera's z. Bands with no `sky` resolve to `fallback`.
-- `createTerrainPaletteSampler` (function): function createTerrainPaletteSampler(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">): (x: number, z: number) => TerrainPalette — Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
-- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
-- `groundFieldFor` (function): function groundFieldFor(world?: WorldFeature): TerrainField — ⚠ undocumented
-- `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
-- `heightMapField` (function): function heightMapField(config: HeightMapFieldConfig): TerrainField — ⚠ undocumented
-- `noiseField` (function): function noiseField(config: NoiseFieldConfig = {}): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `resolveEnvironmentField` (function): function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField — The full ground field for an environment world: base `terrain` composed with any `islands`, then any authored `sculpt` snapshot, then any `clearings` flattened on top — so an editor-sculpted heightfield drives both the rendered mesh and player collision, and gameplay spots stay level, through the one seam every consumer already reads.
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope = DEFAULT_MAX_WALK_SLOPE): { stepX: number; stepZ: number } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
-- `resolveTerrainDetail` (function): function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLevel = 0): ResolvedTerrainDetail — Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
-- `resolveTerrainPalette` (function): function resolveTerrainPalette(descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors"> = {}): TerrainPalette — ⚠ undocumented
-- `rollingField` (function): function rollingField(config: RollingFieldConfig = {}): TerrainField — ⚠ undocumented
-- `sampleSlope` (function): function sampleSlope(field: TerrainField, x: number, z: number): TerrainSlopeSample — Local slope from the field's normal — the input for gravity-roll, ski acceleration, and slide checks (#284.6).
-- `seedFrom` (function): function seedFrom(value: string | number | undefined, fallback: number): number — ⚠ undocumented
-- `slopeForce` (function): function slopeForce(field: TerrainField, x: number, z: number, scale = 9.8): readonly [number, number] — Downhill force/acceleration from the local slope: direction × sin(slope angle) × `scale`. Add it to any integrator's XZ velocity each tick (`scale` ≈ gravity for a free-rolling body).
-- `snapEntityToGround` (function): function snapEntityToGround(entities: GroundSnapEntityStore, id: string, field: TerrainField, offset = 0): boolean — Ground-snaps an already-spawned entity in place; returns false when `id` is unknown.
-- `snapToGround` (function): function snapToGround(field: TerrainField, position: readonly [number, number, number], offset = 0): [number, number, number] — Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
-
-## @jgengine/core/world/vec2
-
-- `add` (function): function add(a: Vec2, b: Vec2): Vec2 — Sum of two 2D vectors.
-- `cross` (function): function cross(a: Vec2, b: Vec2): number — 2D cross product (scalar z of the 3D cross), positive when `b` is counter-clockwise from `a`.
-- `distance` (function): function distance(a: Vec2, b: Vec2): number — Distance between two points.
-- `distanceSquared` (function): function distanceSquared(a: Vec2, b: Vec2): number — Squared distance between two points; cheaper than `distance` for radius comparisons.
-- `dot` (function): function dot(a: Vec2, b: Vec2): number — Dot product of two 2D vectors.
-- `fromHeading` (function): function fromHeading(headingRad: number): Vec2 — Unit vector for a heading measured clockwise from +Y (the engine's XZ-plane convention).
-- `heading` (function): function heading(a: Vec2): number — Heading in radians of a vector, measured clockwise from +Y to match `fromHeading`.
-- `length` (function): function length(a: Vec2): number — Euclidean length of a 2D vector.
-- `lengthSquared` (function): function lengthSquared(a: Vec2): number — Squared length of a 2D vector; cheaper than `length` when only comparing magnitudes.
-- `lerp` (function): function lerp(a: Vec2, b: Vec2, t: number): Vec2 — Linearly interpolate between points `a` and `b` by fraction `t`.
-- `negate` (function): function negate(a: Vec2): Vec2 — Negate a 2D vector.
-- `normalize` (function): function normalize(a: Vec2): Vec2 — Unit vector in the direction of `a`; returns the zero vector when `a` has no length.
-- `normalizeAngle` (function): function normalizeAngle(angleRad: number): number — Wrap an angle in radians into `[0, 2π)`.
-- `normalizeAngleDeg` (function): function normalizeAngleDeg(angleDeg: number): number — Wrap an angle in degrees into `[0, 360)`.
-- `perp` (function): function perp(a: Vec2): Vec2 — Left-hand perpendicular of `a` (rotated 90° counter-clockwise).
-- `reflect` (function): function reflect(v: Vec2, normal: Vec2, restitution = 1): Vec2 — Reflect a velocity off a surface with unit `normal`, losing energy by `restitution` (0..1). At `restitution` 1 the normal component mirrors elastically (`v − 2(v·n)n`); at 0 it is removed so the vector slides along the surface. Only the normal component is scaled — tangential motion is kept — so this is the wall/paddle/boundary bounce every arcade ball game hand-rolls.
-- `rotate` (function): function rotate(a: Vec2, radians: number): Vec2 — Rotate a 2D vector by `radians` about the origin.
-- `scale` (function): function scale(a: Vec2, s: number): Vec2 — Scale a 2D vector by a scalar.
-- `sub` (function): function sub(a: Vec2, b: Vec2): Vec2 — Difference `a - b` of two 2D vectors.
 
 ## @jgengine/core/world/vegetation
 
@@ -1728,12 +1531,6 @@
 - `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
 - `VegetationPlacement` (interface): interface VegetationPlacement — One placed vegetation instance — position on the ground plane plus per-instance variation.
 - `VegetationSettings` (interface): interface VegetationSettings — How a vegetation volume fills its area, read from the volume's `meta`. `density` is items per square meter — the one slider number: grass blades, trees, bushes, rocks all scale with it. Every field has a default, so a freshly placed `kind: "vegetation"` volume already grows grass.
-- `grassPatchesFromVegetation` (function): function grassPatchesFromVegetation(doc: EditorDocument): GrassEnvironmentConfig[] — Grass-blade patches for every `item: "grass"` vegetation volume, ready to spread into `environment()`'s `grass` list — the volume's density number is the blades-per-m² the shell renders, so the editor slider drives it directly.
-- `isVegetationVolume` (function): function isVegetationVolume(volume: EditorVolume): boolean — True when an editor volume is a vegetation fill area.
-- `readVegetationSettings` (function): function readVegetationSettings(volume: EditorVolume): VegetationSettings | null — The volume's vegetation settings with defaults filled in; null for non-vegetation volumes.
-- `resolveVegetation` (function): function resolveVegetation(doc: EditorDocument): VegetationPlacement[] — All model-item placements in a document (every vegetation volume except `item: "grass"`, which the shell renders as blades — see `grassPatchesFromVegetation`). A game maps each placement's `item` to a mesh/entity via its render catalog and places it grounded.
-- `resolveVegetationVolume` (function): function resolveVegetationVolume(volume: EditorVolume): VegetationPlacement[] — Deterministic placements for one vegetation volume: scatter its footprint at `density` items/m² (respecting `minDistance`), clip round shapes to their radius, and derive per-instance scale/rotation from the volume id + seed, so the same saved scene always grows the same field.
-- `vegetationFootprint` (function): function vegetationFootprint(volume: EditorVolume): Aabb — The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius.
 
 ## @jgengine/core/world/volumetricClouds
 
@@ -1766,15 +1563,6 @@
 - `WallDrawTool` (interface): interface WallDrawTool — ⚠ undocumented
 - `WallSegment` (interface): interface WallSegment — ⚠ undocumented
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
-- `autoRoof` (function): function autoRoof(footprint: EnclosedFootprint, config: RoofConfig = {}): RoofPlan — ⚠ undocumented
-- `createSurfacePaint` (function): function createSurfacePaint(): SurfacePaintStore — ⚠ undocumented
-- `createWallDrawTool` (function): function createWallDrawTool(config: { snap?: number; closeTolerance?: number } = {}): WallDrawTool — ⚠ undocumented
-- `enclosePath` (function): function enclosePath(points: readonly Vec2[], tolerance = 0.5): readonly Vec2[] — ⚠ undocumented
-- `footprintFromWalls` (function): function footprintFromWalls(points: readonly Vec2[], tolerance = 0.5): EnclosedFootprint | null — ⚠ undocumented
-- `isEnclosed` (function): function isEnclosed(points: readonly Vec2[], tolerance = 0.5): boolean — ⚠ undocumented
-- `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — ⚠ undocumented
-- `wallSegmentBounds` (function): function wallSegmentBounds(segment: WallSegment, thickness: number): Aabb — ⚠ undocumented
-- `wallSegments` (function): function wallSegments(points: readonly Vec2[], closed: boolean): WallSegment[] — ⚠ undocumented
 
 ## @jgengine/core/world/water
 

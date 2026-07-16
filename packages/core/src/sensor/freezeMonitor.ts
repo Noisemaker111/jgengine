@@ -14,6 +14,7 @@ export interface FreezeMonitor {
   reset(id?: string): void;
 }
 
+/** @internal */
 export function createFreezeMonitor(config?: { toleranceSpeed?: number; graceSeconds?: number }): FreezeMonitor {
   const toleranceSpeed = config?.toleranceSpeed ?? 0.05;
   const graceSeconds = config?.graceSeconds ?? 0;

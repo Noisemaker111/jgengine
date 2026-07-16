@@ -9,6 +9,7 @@ export interface IdleWindow {
   capped: boolean;
 }
 
+/** @internal */
 export function idleWindow(lastSeenMs: number, nowMs: number, config: IdleWindowConfig = {}): IdleWindow {
   const elapsedSeconds = Math.max(0, (nowMs - lastSeenMs) / 1000);
   const capped = config.maxSeconds !== undefined && elapsedSeconds > config.maxSeconds;
@@ -28,6 +29,7 @@ export interface LinearCatchUpInput {
   max?: number;
 }
 
+/** @internal */
 export function linearCatchUp(seconds: number, input: LinearCatchUpInput): number {
   const clampedSeconds = Math.max(0, seconds);
   const value = input.current + input.ratePerSecond * clampedSeconds;
@@ -41,6 +43,7 @@ export interface ExponentialCatchUpInput {
   max?: number;
 }
 
+/** @internal */
 export function exponentialCatchUp(seconds: number, input: ExponentialCatchUpInput): number {
   const clampedSeconds = Math.max(0, seconds);
   const factor = Math.max(0, input.factorPerSecond);
@@ -53,6 +56,7 @@ export interface SteppedCatchUpResult {
   remainderSeconds: number;
 }
 
+/** @internal */
 export function steppedCatchUp(
   seconds: number,
   stepSeconds: number,
