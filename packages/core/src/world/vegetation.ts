@@ -1,7 +1,7 @@
-import type { EditorDocument, EditorVolume } from "../editor/types";
 import type { Aabb } from "./geometry";
 import { scatter } from "./scatter";
 import type { GrassEnvironmentConfig } from "./features";
+import type { SceneDocumentLike, SceneVolumeLike } from "./sceneShapes";
 
 /** The editor volume kind that marks an area as vegetation fill. */
 export const VEGETATION_VOLUME_KIND = "vegetation";
@@ -49,14 +49,14 @@ function metaString(meta: Record<string, unknown> | undefined, key: string, fall
 /** True when an editor volume is a vegetation fill area.
  * @internal
  */
-export function isVegetationVolume(volume: EditorVolume): boolean {
+export function isVegetationVolume(volume: SceneVolumeLike): boolean {
   return volume.kind === VEGETATION_VOLUME_KIND;
 }
 
 /** The volume's vegetation settings with defaults filled in; null for non-vegetation volumes.
  * @internal
  */
-export function readVegetationSettings(volume: EditorVolume): VegetationSettings | null {
+export function readVegetationSettings(volume: SceneVolumeLike): VegetationSettings | null {
   if (!isVegetationVolume(volume)) return null;
   return {
     item: metaString(volume.meta, "item", VEGETATION_DEFAULTS.item),
@@ -71,7 +71,7 @@ export function readVegetationSettings(volume: EditorVolume): VegetationSettings
 /** The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius.
  * @internal
  */
-export function vegetationFootprint(volume: EditorVolume): Aabb {
+export function vegetationFootprint(volume: SceneVolumeLike): Aabb {
   const halfW = volume.shape === "box" ? (volume.halfExtents?.x ?? 5) : (volume.radius ?? 5);
   const halfD = volume.shape === "box" ? (volume.halfExtents?.z ?? 5) : (volume.radius ?? 5);
   return {
@@ -110,7 +110,7 @@ function placementHash(volumeId: string, seed: string, index: number, salt: numb
  * the same saved scene always grows the same field.
   * @internal
   */
-export function resolveVegetationVolume(volume: EditorVolume): VegetationPlacement[] {
+export function resolveVegetationVolume(volume: SceneVolumeLike): VegetationPlacement[] {
   const settings = readVegetationSettings(volume);
   if (settings === null || settings.density <= 0) return [];
   const area = vegetationFootprint(volume);
@@ -151,7 +151,7 @@ export function resolveVegetationVolume(volume: EditorVolume): VegetationPlaceme
  * mesh/entity via its render catalog and places it grounded.
   * @internal
   */
-export function resolveVegetation(doc: EditorDocument): VegetationPlacement[] {
+export function resolveVegetation(doc: SceneDocumentLike): VegetationPlacement[] {
   const out: VegetationPlacement[] = [];
   for (const volume of doc.volumes) {
     if (!isVegetationVolume(volume)) continue;
@@ -168,7 +168,7 @@ export function resolveVegetation(doc: EditorDocument): VegetationPlacement[] {
  * the blades-per-m² the shell renders, so the editor slider drives it directly.
   * @internal
   */
-export function grassPatchesFromVegetation(doc: EditorDocument): GrassEnvironmentConfig[] {
+export function grassPatchesFromVegetation(doc: SceneDocumentLike): GrassEnvironmentConfig[] {
   const patches: GrassEnvironmentConfig[] = [];
   for (const volume of doc.volumes) {
     if (!isVegetationVolume(volume)) continue;

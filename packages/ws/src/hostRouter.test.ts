@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import type { CommandAuthorize, CommandCatalog, CommandLimits } from "./commandMiddleware";
 import { createGameHost, memoryPersistence, type GameHost } from "./host";
-import { createHostRouter, loopbackPipe, type HostRouter } from "./hostRouter";
+import { createHostRouter, loopbackPipe, MAX_QUEUED_MESSAGES, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
 import type { WsChatMessage, WsPresenceRow } from "./protocol";
 
@@ -359,6 +359,49 @@ test("loopback: concurrent frames on one socket are serialized", async () => {
     expect(first).toEqual({ v: 1, t: "reply", id: 1, ok: true, result: { userId: "alice" } });
     expect(second).toEqual({ v: 1, t: "reply", id: 2, ok: false, reason: "Already authenticated" });
     expect(maxActive).toBe(1);
+    connection.close();
+  } finally {
+    router.close();
+    await host.stop();
+  }
+});
+
+test("loopback: a flood of frames past the queue bound gets rejected instead of piling up", async () => {
+  let released: (() => void) | undefined;
+  const host = createGameHost({ persistence: memoryPersistence() });
+  const router = createHostRouter({
+    host,
+    authenticate: ({ userId }) =>
+      new Promise((resolve) => {
+        released = () => resolve(userId);
+      }),
+  });
+  try {
+    const replies = channel<{ id: number; ok: boolean; reason?: string }>();
+    const connection = router.connect({
+      send: (data) => replies.push(JSON.parse(data) as { id: number; ok: boolean; reason?: string }),
+      close: () => undefined,
+    });
+    const total = MAX_QUEUED_MESSAGES + 5;
+    for (let id = 1; id <= total; id += 1) {
+      connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id, userId: "alice" }));
+    }
+    const overflow: { id: number; ok: boolean; reason?: string }[] = [];
+    for (let i = 0; i < 5; i += 1) overflow.push(await replies.next());
+    for (const reply of overflow) {
+      expect(reply.ok).toBe(false);
+      expect(reply.reason).toBe("Too many pending requests");
+    }
+    expect(overflow.map((reply) => reply.id)).toEqual([
+      MAX_QUEUED_MESSAGES + 1,
+      MAX_QUEUED_MESSAGES + 2,
+      MAX_QUEUED_MESSAGES + 3,
+      MAX_QUEUED_MESSAGES + 4,
+      MAX_QUEUED_MESSAGES + 5,
+    ]);
+    released?.();
+    const first = await replies.next();
+    expect(first).toMatchObject({ id: 1, ok: true });
     connection.close();
   } finally {
     router.close();
