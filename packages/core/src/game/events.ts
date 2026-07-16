@@ -1,10 +1,8 @@
+import type { DeathReason } from "../combat/deathReason";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CameraShake } from "../combat/hitReaction";
 
-export type DeathReason =
-  | { kind: "player_kill"; killerUserId: string; via?: { item?: string } }
-  | { kind: "environment"; source: string }
-  | { kind: "self"; source: string };
+export type { DeathReason };
 
 export interface EntityDiedEvent {
   instanceId: string;

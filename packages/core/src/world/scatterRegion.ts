@@ -1,4 +1,3 @@
-import type { EditorDocument, EditorPath } from "../editor/types";
 import {
   masksInfluence,
   type Aabb,
@@ -8,6 +7,7 @@ import {
   type Vec2,
 } from "./geometry";
 import { scatter } from "./scatter";
+import type { SceneDocumentLike, ScenePathLike } from "./sceneShapes";
 import type { TerrainNormal } from "./terrain";
 
 /** The editor path kind that marks a closed polyline as a foliage/scatter region. */
@@ -306,12 +306,12 @@ export function readScatterPalette(meta: Record<string, unknown> | undefined): S
 }
 
 /** True when an editor path is a foliage/scatter region. */
-export function isScatterPath(path: EditorPath): boolean {
+export function isScatterPath(path: ScenePathLike): boolean {
   return path.kind === SCATTER_PATH_KIND;
 }
 
 /** The path's scatter rules with defaults filled in; null for non-scatter paths. */
-export function readScatterRules(path: EditorPath): ScatterRegionRules | null {
+export function readScatterRules(path: ScenePathLike): ScatterRegionRules | null {
   if (!isScatterPath(path)) return null;
   const meta = path.meta;
   return {
@@ -358,7 +358,7 @@ export function readAvoidZones(meta: Record<string, unknown> | undefined): Avoid
 }
 
 /** Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null. */
-export function scatterRegionFromPath(path: EditorPath): ScatterRegion | null {
+export function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null {
   const rules = readScatterRules(path);
   if (rules === null || path.points.length < 3) return null;
   return {
@@ -369,7 +369,7 @@ export function scatterRegionFromPath(path: EditorPath): ScatterRegion | null {
 }
 
 /** Estimated placement count for a scatter path — density × polygon area, for a live UI readout. */
-export function scatterRegionEstimate(path: EditorPath): { area: number; count: number } {
+export function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } {
   const rules = readScatterRules(path);
   if (rules === null) return { area: 0, count: 0 };
   const area = polygonArea(path.points.map((point) => [point.x, point.z] as Vec2));
@@ -408,7 +408,7 @@ export interface ClearanceOptions {
  * or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see
  * {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
  */
-export function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidZone[] {
+export function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] {
   const kinds = options.ids !== undefined ? [] : options.kinds ?? DEFAULT_CLEARANCE_KINDS;
   const idSet = options.ids === undefined ? null : new Set(options.ids);
   const defaultClearance = options.defaultClearance ?? DEFAULT_MARKER_CLEARANCE;
@@ -434,7 +434,7 @@ export function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOption
  * this is what `resolveScatter` auto-avoids. Set `includePaths: false` to drop the path corridors.
  * @internal — `resolveScatter` builds these automatically; games rarely call it directly.
  */
-export function clearanceMasksFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidMasks {
+export function clearanceMasksFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidMasks {
   const kinds = options.ids !== undefined ? [] : options.kinds ?? DEFAULT_CLEARANCE_KINDS;
   const idSet = options.ids === undefined ? null : new Set(options.ids);
   const defaultClearance = options.defaultClearance ?? DEFAULT_MARKER_CLEARANCE;
@@ -471,7 +471,7 @@ export interface ResolveScatterOptions extends ClearanceOptions {
  * — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
  */
 export function resolveScatter(
-  doc: EditorDocument,
+  doc: SceneDocumentLike,
   terrain?: ScatterTerrain,
   options: ResolveScatterOptions = {},
 ): ScatterInstance[] {
