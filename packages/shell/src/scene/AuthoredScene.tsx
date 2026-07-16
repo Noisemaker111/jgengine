@@ -257,21 +257,22 @@ export interface AuthoredSceneProps {
   /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
   assets?: AssetCatalog;
   /**
-   * When true (or `{ verticalOffset }`), place every marker with a catalog id into the object
-   * store — WorldScene renders them via the game's `objectModels` seam. Omit when the game places
-   * props itself in onInit with `placeAuthoredObjects`.
+   * When true (default), subscribe to the global document live-sync bus if the editor host is
+   * mounted so headless/RPC document patches hot-apply without a full reload. Pass false to pin
+   * the `document` prop (tests, one-shot previews).
    */
-  placeObjects?: boolean | { verticalOffset?: number };
+  live?: boolean;
 }
 
 /**
- * Renders an editor document's scene content — draped paths, GPU-instanced foliage, studios,
- * generator assets, and optionally catalog prop objects — from one mount, grounded on the live
- * `field`. The runtime counterpart to authoring a scene in the editor: drag paths, foliage, and
- * prop markers, save `editor.scene.json`, and the game plays them with no bespoke render code.
- * Terrain/collision come from the world's ground field (`environment({ sculpt })`). Pass
- * `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the
- * stylized proxy. Pass `placeObjects` to place catalog-id markers into the object store.
+ * Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one
+ * mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor:
+ * drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke
+ * render code. When a live-sync bus is installed (editor host), document patches stream in and
+ * re-render automatically — document is authoritative; runtime overrides stay ephemeral unless
+ * written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`);
+ * place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to
+ * real catalog GLBs; unmapped items keep the stylized proxy.
  */
 export function AuthoredScene({
   document,
@@ -279,9 +280,10 @@ export function AuthoredScene({
   pathKinds,
   scatterModels,
   assets,
-  placeObjects,
+  live = true,
 }: AuthoredSceneProps) {
-  const instances = useMemo(() => resolveScatter(document, field), [document, field]);
+  const liveDocument = useLiveEditorDocument(document, live);
+  const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
   const resolveItem = useMemo(
     () => createModelMapResolver(scatterModels, assets, "scatterModels"),
     [scatterModels, assets],
@@ -292,11 +294,11 @@ export function AuthoredScene({
     <>
       <AuthoredPaths document={liveDocument} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
-      <AuthoredStudios document={document} context={{ document, field, ...(assets === undefined ? {} : { assets }) }} />
-      <AuthoredGenerators document={document} field={field} />
-      {shouldPlaceObjects ? (
-        <AuthoredObjects document={document} field={field} verticalOffset={objectVerticalOffset} />
-      ) : null}
+      <AuthoredStudios
+        document={liveDocument}
+        context={{ document: liveDocument, field, ...(assets === undefined ? {} : { assets }) }}
+      />
+      <AuthoredGenerators document={liveDocument} field={field} />
     </>
   );
 }

@@ -2842,6 +2842,7 @@
   "@jgengine/shell/structures#InstancedBuildingPlacement",
   "@jgengine/shell/structures#InstancedBuildings",
   "@jgengine/shell/structures#InstancedBuildingsProps",
+  "@jgengine/shell/structures#PlacementGhost",
   "@jgengine/shell/structures#PlacementGhostProps",
   "@jgengine/shell/structures/GeneratedBuilding#BuildingBlock",
   "@jgengine/shell/structures/GeneratedBuilding#BuildingBlockProps",

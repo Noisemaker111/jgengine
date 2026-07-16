@@ -1,6 +1,7 @@
 import {
   createDocumentLiveSync,
   createEditorSession,
+  createRuntimePlayControl,
   editorChildren,
   editorDocumentBounds,
   editorParentOf,
@@ -9,12 +10,17 @@ import {
   findEditorCatalogEntry,
   findEditorCollection,
   findEditorPrefab,
+  getRuntimeInspectorValue,
   installDocumentLiveSync,
   listEditorKinds,
   normalizeEditorLayers,
-  seedEditorCatalogs,
+  planRuntimeInspectorSet,
+  runtimeEntityMetaWriteBackCommand,
+  runtimeEntityWriteBackCommand,
   summarizeEditorSession,
-  type EditorCatalogDefinition,
+  summarizeRuntimeInspector,
+  type DocumentLiveSync,
+  type DocumentPatch,
   type EditorCommand,
   type EditorDocument,
   type EditorKindVisibility,
@@ -22,6 +28,7 @@ import {
   type EditorSession,
   type EditorSessionState,
   type RuntimeEntityState,
+  type RuntimePlayControl,
 } from "@jgengine/core/editor/index";
 import {
   createTerrainSnapshot,
@@ -50,7 +57,7 @@ import { TERRAIN_MATERIALS } from "./uiStore";
 
 registerBuiltinSceneKinds();
 
-/** Which document collection an object lives in, plus its current kind + meta — for generic `set_meta`. */
+/** Which document collection an object lives in, plus its current kind + meta ΓÇö for generic `set_meta`. */
 function findMetaTarget(
   doc: EditorDocument,
   id: string,
@@ -187,6 +194,21 @@ export type EditorBridgeRequest =
     }
   | { method: "pull_runtime_deltas"; sinceSeq?: number; includeSnapshot?: boolean }
   | { method: "runtime_snapshot" }
+  | { method: "runtime_summary" }
+  | { method: "runtime_get"; id: string; path?: string }
+  | {
+      method: "runtime_set";
+      id: string;
+      path?: string;
+      value?: unknown;
+      position?: { x: number; y: number; z: number };
+      rotationY?: number;
+      values?: Record<string, unknown>;
+      writeBack?: boolean;
+    }
+  | { method: "runtime_pause" }
+  | { method: "runtime_resume" }
+  | { method: "runtime_step"; frames?: number }
   | { method: "set_runtime_override"; entity: RuntimeEntityState }
   | { method: "clear_runtime_override"; id: string }
   | { method: "write_back_override"; id: string };
@@ -241,6 +263,10 @@ export interface EditorHostApi {
   getMode(): EditorRunMode;
   setMode(mode: EditorRunMode): void;
   subscribeMode(listener: (mode: EditorRunMode) => void): () => void;
+  /** Play-mode pause/step gate consumed by the runtime publisher. */
+  getPlayControl(): RuntimePlayControl;
+  setPlayControl(next: RuntimePlayControl): void;
+  subscribePlayControl(listener: (play: RuntimePlayControl) => void): () => void;
   handle(request: EditorBridgeRequest): EditorBridgeResponse;
 }
 
@@ -277,18 +303,27 @@ export function createEditorHost(options: {
   const catalogDefinitions = options.catalogs ?? [];
   const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);
-  const catalogById = new Map(catalogDefinitions.map((catalog) => [catalog.id, catalog]));
+  const liveSync = createDocumentLiveSync(document);
+  const uninstallLiveSync = installDocumentLiveSync(liveSync);
+  let lastMirroredDocument = session.getState().document;
+  const unsubscribeSessionMirror = session.subscribe((state) => {
+    if (state.document === lastMirroredDocument) return;
+    lastMirroredDocument = state.document;
+    liveSync.replaceDocument(state.document);
+  });
   let visibility: EditorKindVisibility = {};
   let focusTarget: { x: number; y: number; z: number } | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
   let perf: EditorPerfSample | null = null;
   let mode: EditorRunMode = "edit";
+  let playControl: RuntimePlayControl = createRuntimePlayControl(false);
   const visibilityListeners = new Set<() => void>();
   const focusListeners = new Set<(target: { x: number; y: number; z: number } | null) => void>();
   const modeListeners = new Set<(mode: EditorRunMode) => void>();
+  const playControlListeners = new Set<(play: RuntimePlayControl) => void>();
 
-  /** Dispatches a command and reports whether it actually mutated the session — a rejected
-   * mutation (locked target, cyclic parent, nothing to undo/redo, …) returns the session's prior
+  /** Dispatches a command and reports whether it actually mutated the session ΓÇö a rejected
+   * mutation (locked target, cyclic parent, nothing to undo/redo, ΓÇª) returns the session's prior
    * state object unchanged, so identity tells the RPC layer apart from a real edit landing. */
   const dispatchGuarded = (command: EditorCommand): { applied: boolean; state: EditorSessionState } => {
     const before = session.getState();
@@ -297,7 +332,7 @@ export function createEditorHost(options: {
   };
 
   const kinds = listEditorKinds(document);
-  // Heavy / dense kinds off by default — turn on from the Layers panel when needed.
+  // Heavy / dense kinds off by default ΓÇö turn on from the Layers panel when needed.
   const defaultOff = new Set([
     "aggro",
     "leash",
@@ -351,12 +386,30 @@ export function createEditorHost(options: {
     setMode(next) {
       if (next === mode) return;
       mode = next;
+      if (next === "play") {
+        playControl = createRuntimePlayControl(false);
+        for (const listener of playControlListeners) listener(playControl);
+      }
       for (const listener of modeListeners) listener(mode);
     },
     subscribeMode(listener) {
       modeListeners.add(listener);
       return () => {
         modeListeners.delete(listener);
+      };
+    },
+    getPlayControl: () => playControl,
+    setPlayControl(next) {
+      playControl = {
+        paused: next.paused,
+        pendingSteps: Math.max(0, Math.floor(next.pendingSteps)),
+      };
+      for (const listener of playControlListeners) listener(playControl);
+    },
+    subscribePlayControl(listener) {
+      playControlListeners.add(listener);
+      return () => {
+        playControlListeners.delete(listener);
       };
     },
     handle(request) {
@@ -389,7 +442,7 @@ export function createEditorHost(options: {
             if (devtoolsGlobal?.snapshot === undefined) {
               return {
                 ok: false,
-                error: "engine devtools not mounted — open the browser editor (F2+D panel) first",
+                error: "engine devtools not mounted ΓÇö open the browser editor (F2+D panel) first",
               };
             }
             return { ok: true, result: { perf, report: devtoolsGlobal.snapshot() } };
@@ -721,6 +774,101 @@ export function createEditorHost(options: {
             };
           case "runtime_snapshot":
             return { ok: true, result: liveSync.getRuntimeState() };
+          case "runtime_summary":
+            return {
+              ok: true,
+              result: summarizeRuntimeInspector(
+                liveSync.getRuntimeState(),
+                liveSync.getRuntimeOverrides(),
+                playControl,
+              ),
+            };
+          case "runtime_get": {
+            if (request.id.length === 0) return { ok: false, error: "runtime_get requires id" };
+            const got = getRuntimeInspectorValue(
+              liveSync.getRuntimeState(),
+              liveSync.getRuntimeOverrides(),
+              request.id,
+              request.path,
+            );
+            if (got.kind === "missing") {
+              return { ok: false, error: `runtime entity/tunable not found: ${request.id}` };
+            }
+            return { ok: true, result: got };
+          }
+          case "runtime_set": {
+            if (request.id.length === 0) return { ok: false, error: "runtime_set requires id" };
+            const plan = planRuntimeInspectorSet(session.getState().document, {
+              id: request.id,
+              ...(request.path === undefined ? {} : { path: request.path }),
+              ...(request.value === undefined ? {} : { value: request.value }),
+              ...(request.position === undefined ? {} : { position: request.position }),
+              ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
+              ...(request.values === undefined ? {} : { values: request.values }),
+              ...(request.writeBack === undefined ? {} : { writeBack: request.writeBack }),
+            });
+            if (plan.error !== undefined) return { ok: false, error: plan.error };
+            if (plan.tunable !== undefined) {
+              liveSync.pushRuntimeDelta({
+                at: Date.now(),
+                tunables: { [plan.tunable.key]: plan.tunable.value },
+              });
+              return {
+                ok: true,
+                result: {
+                  kind: "tunable",
+                  key: plan.tunable.key,
+                  value: plan.tunable.value,
+                  writeBack: false,
+                  ...summarizeRuntimeInspector(
+                    liveSync.getRuntimeState(),
+                    liveSync.getRuntimeOverrides(),
+                    playControl,
+                  ),
+                },
+              };
+            }
+            if (plan.entity === undefined) return { ok: false, error: "runtime_set produced no entity" };
+            liveSync.setRuntimeOverride(plan.entity);
+            liveSync.pushRuntimeDelta({ at: Date.now(), entities: [plan.entity] });
+            let wroteBack = false;
+            let lastState = session.getState();
+            for (const command of plan.writeBackCommands) {
+              const { applied, state } = dispatchGuarded(command);
+              if (!applied) {
+                return { ok: false, error: `runtime_set write-back rejected: ${command.type}` };
+              }
+              lastState = state;
+              wroteBack = true;
+            }
+            if (wroteBack) liveSync.clearRuntimeOverride(plan.entity.id);
+            return {
+              ok: true,
+              result: {
+                kind: "entity",
+                entity: plan.entity,
+                writeBack: wroteBack,
+                revision: liveSync.getRevision(),
+                ...summarizeEditorSession(lastState),
+              },
+            };
+          }
+          case "runtime_pause": {
+            api.setPlayControl({ paused: true, pendingSteps: 0 });
+            liveSync.pushRuntimeDelta({ at: Date.now(), tunables: { paused: true } });
+            return { ok: true, result: { play: playControl } };
+          }
+          case "runtime_resume": {
+            api.setPlayControl({ paused: false, pendingSteps: 0 });
+            liveSync.pushRuntimeDelta({ at: Date.now(), tunables: { paused: false } });
+            return { ok: true, result: { play: playControl } };
+          }
+          case "runtime_step": {
+            const frames = request.frames === undefined ? 1 : Math.max(1, Math.floor(request.frames));
+            api.setPlayControl({ paused: true, pendingSteps: playControl.pendingSteps + frames });
+            liveSync.pushRuntimeDelta({ at: Date.now(), tunables: { paused: true, pendingSteps: playControl.pendingSteps } });
+            return { ok: true, result: { play: playControl } };
+          }
           case "set_runtime_override": {
             liveSync.setRuntimeOverride(request.entity);
             return { ok: true, result: { overrides: liveSync.getRuntimeOverrides() } };
@@ -734,21 +882,27 @@ export function createEditorHost(options: {
             if (entity === undefined) {
               return { ok: false, error: `no runtime override for "${request.id}"` };
             }
-            const command = runtimeEntityWriteBackCommand(session.getState().document, entity);
-            if (command === null) {
+            const transform = runtimeEntityWriteBackCommand(session.getState().document, entity);
+            const meta = runtimeEntityMetaWriteBackCommand(session.getState().document, entity);
+            if (transform === null && meta === null) {
               return {
                 ok: false,
                 error: `override "${request.id}" has nothing to write back into the document`,
               };
             }
-            const { applied, state } = dispatchGuarded(command);
-            if (!applied) return { ok: false, error: `write_back_override rejected for "${request.id}"` };
+            let lastState = session.getState();
+            for (const command of [transform, meta]) {
+              if (command === null) continue;
+              const { applied, state } = dispatchGuarded(command);
+              if (!applied) return { ok: false, error: `write_back_override rejected for "${request.id}"` };
+              lastState = state;
+            }
             liveSync.clearRuntimeOverride(request.id);
             return {
               ok: true,
               result: {
                 revision: liveSync.getRevision(),
-                ...summarizeEditorSession(state),
+                ...summarizeEditorSession(lastState),
               },
             };
           }
@@ -809,7 +963,7 @@ export function createEditorHost(options: {
           }
           case "sculpt_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const edit: TerraformEdit = {
               mode: request.mode,
@@ -853,7 +1007,7 @@ export function createEditorHost(options: {
           }
           case "paint_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const delta = live.paintDelta({
               mode: "paint",
@@ -868,7 +1022,7 @@ export function createEditorHost(options: {
           }
           case "fill_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const delta = live.fillSurfaceDelta(request.surface);
             if (delta.indices.length === 0) return { ok: true, result: { changed: 0 } };
@@ -877,7 +1031,7 @@ export function createEditorHost(options: {
           }
           case "auto_paint": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const rule: TerrainSurfaceRule = {
               surface: request.surface,
@@ -899,14 +1053,14 @@ export function createEditorHost(options: {
           }
           case "set_terrain_layers": {
             if (session.getState().document.terrain === undefined) {
-              return { ok: false, error: "no terrain — call create_terrain first" };
+              return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             }
             session.dispatch({ type: "setTerrainLayers", layers: request.layers });
             return { ok: true, result: { layers: session.getState().document.terrain?.layers ?? [] } };
           }
           case "blend_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             // Auto-add the surface as a layer if the stack does not carry it yet.
             const layers = terrain.layers ?? [];
             if (!layers.some((layer) => layer.surface === request.surface)) {

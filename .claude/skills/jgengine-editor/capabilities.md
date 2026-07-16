@@ -4,11 +4,17 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## editor-catalogs — Persist gameplay tuning rows on the scene document.
+## editor-live-sync — apply a versioned document patch onto a live scene document
 
-- `EditorCatalogData` (interface) · `import { EditorCatalogData } from "@jgengine/core/editor"`
-- `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/core/editor"`
-- `EditorCatalogEntry` (interface) · `import { EditorCatalogEntry } from "@jgengine/core/editor"`
-- `findEditorCatalog` (function) · `import { findEditorCatalog } from "@jgengine/core/editor"`
-- `findEditorCatalogEntry` (function) · `import { findEditorCatalogEntry } from "@jgengine/core/editor"`
-- `seedEditorCatalogs` (function) · `import { seedEditorCatalogs } from "@jgengine/core/editor"`
+- `applyDocumentPatch` (function) · `import { applyDocumentPatch } from "@jgengine/core/editor"`
+- `applyRuntimeStateDelta` (function) · `import { applyRuntimeStateDelta } from "@jgengine/core/editor"`
+- `createDocumentLiveSync` (function) · `import { createDocumentLiveSync } from "@jgengine/core/editor"`
+- `runtimeEntityWriteBackCommand` (function) · `import { runtimeEntityWriteBackCommand } from "@jgengine/core/editor"`
+
+## editor-runtime-inspector — gate a play-mode frame against pause/step control
+
+- `consumeRuntimePlayStep` (function) · `import { consumeRuntimePlayStep } from "@jgengine/core/editor"`
+- `getRuntimeInspectorValue` (function) · `import { getRuntimeInspectorValue } from "@jgengine/core/editor"`
+- `planRuntimeInspectorSet` (function) · `import { planRuntimeInspectorSet } from "@jgengine/core/editor"`
+- `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
+- `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
