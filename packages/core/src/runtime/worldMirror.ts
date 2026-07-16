@@ -12,8 +12,17 @@ import type { WorldSnapshot } from "./worldSnapshot";
  */
 export interface WorldMirror {
   applyBaseline(revision: number, snapshot: WorldSnapshot): void;
+  /**
+   * Fold one {@link WorldDiff} onto the mirror. A diff whose `revision` doesn't advance past the mirror's own
+   * (stale or a duplicate resend) is ignored. A diff carrying `baseRevision` that doesn't match the mirror's
+   * current revision means frames were skipped in transit — the diff is ignored and {@link needsResync} flips
+   * true until the next {@link applyBaseline} instead of folding a gap onto local state. A diff without
+   * `baseRevision` (legacy producer) always applies, matching the pre-revision-checking behavior.
+   */
   applyDiff(diff: WorldDiff): void;
   revision(): number;
+  /** True after `applyDiff` detected a skipped revision; the caller should fetch a fresh baseline instead of more diffs. */
+  needsResync(): boolean;
 }
 
 /** Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
@@ -22,18 +31,27 @@ export interface WorldMirror {
 export function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror {
   let mirror: WorldSnapshot = {};
   let revision = 0;
+  let resyncNeeded = false;
   return {
     applyBaseline(nextRevision, snapshot) {
       mirror = snapshot;
       revision = nextRevision;
+      resyncNeeded = false;
       ctx.hydrate(snapshot);
     },
     applyDiff(diff) {
+      if (diff.revision <= revision) return;
+      if (diff.baseRevision !== undefined && diff.baseRevision !== revision) {
+        resyncNeeded = true;
+        return;
+      }
+      resyncNeeded = false;
       mirror = applyWorldDiff(mirror, diff);
       revision = diff.revision;
       ctx.hydrate(mirror);
     },
     revision: () => revision,
+    needsResync: () => resyncNeeded,
   };
 }
 
