@@ -5,8 +5,8 @@
  * curated path instead of guessing deep file paths (critique #40).
  *
  * A barrel re-exports the domain's INTENDED public surface: non-`@internal`
- * exports that a game/example/app/sibling package actually imports, or that a
- * skill body references. Internal machinery and test fixtures stay out.
+ * exports already reviewed into the barrel. Consumer imports and prose do not
+ * silently expand public API; add a symbol to the barrel deliberately.
  *
  * Regenerate: `bun run gen:barrels`. Verified by scripts/barrels.test.ts.
  */
@@ -15,7 +15,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { extractPackageSurface } from "./apiSurface";
-import { collectAdoption, collectSkillTokens } from "./apiAdoption";
 import { skillForModule } from "./skillRouting";
 
 const TYPE_KINDS = new Set(["interface", "type"]);
@@ -39,22 +38,39 @@ export interface Reexport {
   types: string[];
 }
 
+function existingBarrelExports(root: string, skill: string): Map<string, Set<string>> {
+  const barrel = CORE_BARRELS.find((entry) => entry.skill === skill)?.barrel;
+  if (barrel === undefined) return new Map();
+  const path = join(root, "packages", "core", "src", `${barrel}.ts`);
+  if (!existsSync(path)) return new Map();
+  const exportsByModule = new Map<string, Set<string>>();
+  for (const block of readFileSync(path, "utf8").matchAll(/export\s*\{([\s\S]*?)\}\s*from\s*["']\.\/([^"']+)["']/g)) {
+    const modulePath = block[2] ?? "";
+    const symbols = exportsByModule.get(modulePath) ?? new Set<string>();
+    for (const raw of (block[1] ?? "").split(",")) {
+      const name = raw.trim().replace(/^type\s+/, "");
+      if (name !== "") symbols.add(name);
+    }
+    exportsByModule.set(modulePath, symbols);
+  }
+  return exportsByModule;
+}
+
 export function collectBarrelReexports(root: string, skill: string): Reexport[] {
   const surface = extractPackageSurface(join(root, "packages", "core"));
-  const adoption = collectAdoption(root);
-  const tokens = collectSkillTokens(root, skill);
-  const used = (name: string): boolean => adoption.names.has(name) || tokens.has(name);
+  const existing = existingBarrelExports(root, skill);
 
   const seen = new Set<string>();
   const byModule: Reexport[] = [];
   const sorted = [...surface.modules].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   for (const module of sorted) {
     if (!module.path.includes("/")) continue;
-    if (skillForModule("core", module.path) !== skill) continue;
+    const existingSymbols = existing.get(module.path) ?? new Set<string>();
+    if (skillForModule("core", module.path) !== skill && existingSymbols.size === 0) continue;
     const values: string[] = [];
     const types: string[] = [];
     for (const e of [...module.exports].sort((a, b) => (a.name < b.name ? -1 : 1))) {
-      if (!used(e.name) || seen.has(e.name)) continue;
+      if (!existingSymbols.has(e.name) || seen.has(e.name)) continue;
       seen.add(e.name);
       (TYPE_KINDS.has(e.kind) ? types : values).push(e.name);
     }

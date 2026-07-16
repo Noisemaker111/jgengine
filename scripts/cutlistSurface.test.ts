@@ -64,8 +64,8 @@ describe("CUTLIST surface diet", () => {
     expect(adoptionSrc).toMatch(/packages\/\*\/src\/\*\*\/\*\.ts/);
     // Real path: ws host imports createGameRuntime from core — must register as adopted.
     const adoption = collectAdoption(root);
-    expect(adoption.names.has("createGameRuntime")).toBe(true);
-    expect(adoption.names.has("createGameContext") || adoption.names.has("defineGame")).toBe(true);
+    expect([...adoption.bindings].some((key) => key.endsWith("#createGameRuntime"))).toBe(true);
+    expect([...adoption.bindings].some((key) => /#(?:createGameContext|defineGame)$/.test(key))).toBe(true);
   });
 
   test("skill routing omits tooling packages github and jgengine CLI", () => {
@@ -78,7 +78,7 @@ describe("CUTLIST surface diet", () => {
     expect(block).toMatch(/react\s*:/);
   });
 
-  test("curated core barrels route to domain skills (not MAIN) so skill examples count", async () => {
+  test("curated core barrels route to domain skills", async () => {
     const { skillForModule } = await import("./skillRouting");
     expect(skillForModule("core", "gameplay")).toBe("jgengine-gameplay");
     expect(skillForModule("core", "world")).toBe("jgengine-world");

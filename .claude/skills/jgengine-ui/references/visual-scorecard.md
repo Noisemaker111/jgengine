@@ -1,6 +1,6 @@
 # Visual scorecard
 
-"Judged by eye, harshly" (CLAUDE.md) is a principle, not a number — this turns it into a repeatable 0–3 rubric so "looks shipped" means the same thing every session, and a fresh-eyes reviewer with no context can apply it. Use it at milestone shots (per "Visual quality bar" above), not per tweak, and paste the scored table into the PR body alongside the screenshots.
+This repeatable 0–3 rubric makes "looks shipped" consistent across sessions and usable by a fresh-eyes reviewer. Apply it to milestone shots, not every tweak, and place the scored table beside PR screenshots.
 
 Structure and thresholds adapted (concept only, reworded for this stack — not copied verbatim) from `majidmanzarpour/threejs-game-skills`' `visual-scorecard.md` (MIT); see `CREDITS.md`.
 
@@ -17,7 +17,7 @@ Score each category independently against what's actually in the shot, not what 
 
 ## The 10 categories
 
-Score all ten from one `--mode play` shot plus one `summarizeEnvironment`-proven world (data existing is a prerequisite, not a substitute — see "Prove content in data, beauty by eye" above).
+Score all ten from one `--mode play` shot plus deterministic world/document evidence from `jgengine-verify`. Data presence is a prerequisite, not a substitute for visual judgment.
 
 1. **Art direction** — one coherent palette and mood across ground, props, sky, and UI; not three unrelated hue choices stapled together.
 2. **Hero/player** — an authored silhouette and material set the player is meant to be, not a default primitive or a capsule with an emissive glow standing in for a character.
@@ -27,7 +27,7 @@ Score all ten from one `--mode play` shot plus one `summarizeEnvironment`-proven
 6. **Materials/textures** — terrain and props carry texture and color variation (`environment({ sculpt, materialRegions })`, catalog GLBs via `jgengine-assets`), not flat untextured solids.
 7. **Lighting/render** — a tuned daylight/sun+hemisphere rig and post stack (per `look: "cinematic"`, #773), not the bare untouched three.js default light.
 8. **VFX/motion** — particle/motion feedback tied to actual gameplay events (hits, pickups, weather), not absent, and not one looping default effect standing in everywhere.
-9. **UI/HUD** — a game-specific `HudCanvas`/`HudPanel` composition per the Rejection test above; fails automatically if it could pass for an admin dashboard.
+9. **UI/HUD** — a game-specific `HudCanvas`/`HudPanel` composition; fails automatically if it could pass for a generic admin dashboard.
 10. **Performance evidence** — the look holds at the scale the game actually runs (`InstancedScatter` density, many entities), not only a hand-posed hero shot with three objects in frame.
 
 ## Measured-evidence row
@@ -48,7 +48,7 @@ Any metric over threshold caps the affected category at **1** regardless of how 
 - **Premium**: every category ≥ 2, average ≥ 2.3.
 - **Showcase**: at least 6 categories at 3, no category < 2, average ≥ 2.7.
 
-Below "premium" on any milestone shot is not shippable per "Visual work is judged by eye, harshly" — say so plainly and keep working the art stack (CLAUDE.md → Rules that always apply).
+Below "premium" on a claimed milestone is not shippable; keep working the art stack or narrow the claim.
 
 ## Automatic failures
 
@@ -60,10 +60,6 @@ Any one of these fails the shot regardless of the averaged score:
 - **Fog/bloom hiding missing geometry** — atmosphere used to obscure an empty or unfinished scene instead of to add depth to a populated one.
 - **No active-play shot** — only editor/menu/poster shots submitted. `--mode play` (or `drive` past the menu) evidence is mandatory; a scene that only looks good in the editor camera hasn't proven anything about how the game actually reads.
 
-## Calibration anchors
-
-Three reference shots — one at ~1, one at ~2, one at ~2.5–3 — from our own `Games/*`, captured with `bun run shoot <id> --mode play`, so scoring stays comparative instead of absolute. **Not yet captured**: `bun run shoot` needs a headless Chrome + dev-server boot that failed to come up in this session's container (`Dev server failed to start on :4517` on two attempts, no hang — a fast, clean failure, consistent with `jgengine-verify`'s "flaky headless" warning). Capturing these three anchors and committing them under `shots/calibration/` (referenced here by path, pushed via `pr-shots` per the PR-evidence step) is tracked as a follow-up rather than blocking this doc — see the PR for the tracking note.
-
 ## Fresh-eyes review and the lower-score rule
 
 Hand a reviewer **only** the screenshots, this rubric, and the measured-evidence JSON — no PR description, no "here's what I was going for." A reviewer who knows the intent scores the intent; a fresh reviewer scores the pixels, which is the only thing a player ever sees.
@@ -74,4 +70,4 @@ Hand a reviewer **only** the screenshots, this rubric, and the measured-evidence
 
 ## Using this in a PR
 
-Any PR that changes what a player sees pastes the ten-category table (score + one-line reason per category below 2), the measured-evidence row, and the reconciled score next to the embedded screenshots. The reconciled premium/showcase verdict is the `score` row of the done-ledger — see `jgengine-verify` → "PR evidence — visual work ships its pixels" and "The done-ledger".
+Any PR that changes what a player sees pastes the ten-category table (score + one-line reason per category below 2), the measured-evidence row, and the reconciled score next to embedded screenshots. Report that verdict through `jgengine-verify`'s evidence format.

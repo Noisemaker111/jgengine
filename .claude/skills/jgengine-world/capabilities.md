@@ -106,6 +106,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
+## touch-controls — default on-screen button silhouette for a touch action
+
+- `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+
 ## volumetric-clouds — raymarched cloud layer sky option
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`

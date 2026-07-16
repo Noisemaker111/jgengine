@@ -149,6 +149,114 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
+## @jgengine/core/input/actionBindings
+
+- `ActionBinding` (interface): interface ActionBinding<TCode extends string = string> — Action-binding model: games bind semantic actions ("jump", "interact") to physical control codes; capture layers resolve raw events through this map so gameplay code never sees keycodes. Control codes are plain strings, so the same model serves keyboard codes, mouse buttons, touch controls, or gamepad inputs.
+- `ActionBindingConfig` (type): type ActionBindingConfig<TCode extends string = string> = ActionBinding<TCode>[] | ActionBindingModes<TCode> — ⚠ undocumented
+- `ActionBindingMap` (type): type ActionBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBinding<TCode> > — ⚠ undocumented
+- `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> — ⚠ undocumented
+- `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
+- `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
+- `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
+
+## @jgengine/core/input/axisInput
+
+- `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
+- `AxisBinding` (interface): interface AxisBinding — ⚠ undocumented
+- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
+- `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
+- `AxisInput` (interface): interface AxisInput — ⚠ undocumented
+- `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
+- `AxisRange` (interface): interface AxisRange — ⚠ undocumented
+- `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — ⚠ undocumented
+- `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
+- `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> — ⚠ undocumented
+- `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+
+## @jgengine/core/input/bindingOverrides
+
+- `BINDING_OVERRIDES_STORAGE_PREFIX` (const): const BINDING_OVERRIDES_STORAGE_PREFIX: "jgengine:keybinds:" — ⚠ undocumented
+- `BindingOverrides` (type): type BindingOverrides = Record<string, ActionCodes> — Player-rebound keys, keyed by action name. Values mirror an `ActionCodes` entry so hold/toggle/repeat semantics survive a rebind — the settings menu only swaps which physical codes drive the action.
+- `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
+- `bindingOverridesStorageKey` (function): function bindingOverridesStorageKey(gameId: string): string — ⚠ undocumented
+- `clearAllBindingOverrides` (function): function clearAllBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "removeItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
+- `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
+- `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
+- `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
+
+## @jgengine/core/input/gestureSurface
+
+- `DEFAULT_GESTURE_TUNING` (const): const DEFAULT_GESTURE_TUNING: GestureSurfaceTuning — ⚠ undocumented
+- `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker — ⚠ undocumented
+- `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning — ⚠ undocumented
+- `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
+
+## @jgengine/core/input/lookChannel
+
+- `LookChannel` (interface): interface LookChannel — ⚠ undocumented
+- `LookChannelOptions` (interface): interface LookChannelOptions — ⚠ undocumented
+- `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
+- `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
+
+## @jgengine/core/input/pointer
+
+- `DragCapture` (interface): interface DragCapture — Renderer-agnostic drag-capture / pull-vector state machine for slingshot-style aiming, drawback abilities, and similar gestures.
+- `DragCaptureConfig` (interface): interface DragCaptureConfig — ⚠ undocumented
+- `DragResult` (type): type DragResult = DragState — ⚠ undocumented
+- `DragState` (interface): interface DragState — Snapshot of an in-progress or just-released drag: origin/current cursor points plus the clamped pull vector.
+- `PointerButton` (type): type PointerButton = "primary" | "secondary" | "middle" — ⚠ undocumented
+- `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
+- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `createDragCapture` (function): function createDragCapture(config: DragCaptureConfig = {}): DragCapture — ⚠ undocumented
+- `groundOf` (function): function groundOf(hit: PointerHit): readonly [number, number] — Project a pointer hit onto the XZ plane for navmesh routing (`findPath` takes `[x, z]`).
+- `moveTargetFromHit` (function): function moveTargetFromHit(hit: PointerHit): PointerVec3 — The move-to target of a pointer hit — sugar over `hit.point`.
+
+## @jgengine/core/input/pointerAxis
+
+- `PointerAxisBinding` (interface): interface PointerAxisBinding — Maps one pointer axis onto an analog axis target — the pointer-backed counterpart of an `AxisBinding`'s key lists.
+- `PointerAxisState` (interface): interface PointerAxisState — ⚠ undocumented
+- `PointerSurfaceRect` (interface): interface PointerSurfaceRect — ⚠ undocumented
+- `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
+- `pointerAxisValue` (function): function pointerAxisValue(binding: PointerAxisBinding, state: PointerAxisState | null | undefined): number | null — Resolve a pointer binding against the current pointer state: `null` when no pointer is active (callers fall back to their digital target), otherwise the deadzone/curve-shaped value in `[-1, 1]`.
+
+## @jgengine/core/input/touchGestures
+
+- `TouchGestureEnd` (type): type TouchGestureEnd = "tap" | "hold-end" | null — ⚠ undocumented
+- `TouchGestureTracker` (interface): interface TouchGestureTracker — ⚠ undocumented
+- `TouchGestureTuning` (interface): interface TouchGestureTuning — Single-finger gesture disambiguation for touch look controls: one touch stream drives look-drag, tap, and long-press-hold without fighting. Movement past the tap threshold commits the gesture to "look" and cancels tap/hold; a still finger that lifts quickly is a tap; a still finger held past the long-press delay is a hold. Timestamps are injected so the state machine stays pure; the capture layer owns timers and touch identifiers.
+- `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
+
+## @jgengine/core/input/touchScheme
+
+- `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
+- `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions — ⚠ undocumented
+- `ResolvedTouchLayout` (interface): interface ResolvedTouchLayout — The dock zone each cluster resolved to, after applying game config over the bottom-layout defaults.
+- `TOUCH_CODE_PREFIX` (const): const TOUCH_CODE_PREFIX: "touch:" — ⚠ undocumented
+- `TOUCH_STYLES` (const): const TOUCH_STYLES: readonly TouchStyle[] — Every touch skin id, in menu order.
+- `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
+- `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
+- `TouchButton` (interface): interface TouchButton — ⚠ undocumented
+- `TouchButtonKind` (type): type TouchButtonKind = "primary" | "utility" — ⚠ undocumented
+- `TouchButtonShape` (type): type TouchButtonShape = "circle" | "square" | "pedal" | "lever" | "trigger" | "wheel" | "tab" — Physical silhouette a touch button wears. The capture layer draws each as its own shape — a `pedal` reads as a foot pedal, a `lever` as a pull handle, a `trigger` as a firing paddle — so a control looks like the thing it does instead of a labelled circle. `circle`/`square` are the neutral fallbacks.
+- `TouchButtonSpec` (interface): interface TouchButtonSpec — ⚠ undocumented
+- `TouchControlsConfig` (interface): interface TouchControlsConfig — ⚠ undocumented
+- `TouchDragBinding` (interface): interface TouchDragBinding — ⚠ undocumented
+- `TouchGestureBindings` (interface): interface TouchGestureBindings — ⚠ undocumented
+- `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
+- `TouchLayoutConfig` (interface): interface TouchLayoutConfig — Where each touch cluster docks; unset falls back to the classic bottom layout.
+- `TouchMovementConfig` (interface): interface TouchMovementConfig — Restricts the virtual joystick to one axis — a `horizontal` zone reads as a steering control, freeing throttle/brake to become pedal buttons.
+- `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
+- `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
+- `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
+- `touchActionLabel` (function): function touchActionLabel(action: string): string — ⚠ undocumented
+- `touchButtonKind` (function): function touchButtonKind(action: string): TouchButtonKind — ⚠ undocumented
+- `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
+- `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
+- `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
+
 ## @jgengine/core/interaction/contextMenu
 
 - `BuildContextMenuInput` (interface): interface BuildContextMenuInput — ⚠ undocumented

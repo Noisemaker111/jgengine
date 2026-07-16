@@ -54,7 +54,7 @@ export function runOrphanRatchet(root: string, ref: string = DEFAULT_REF): strin
   if (added.length === 0) return [];
   return [
     `${ORPHAN_BASELINE_REL} grew by ${added.length} entr(ies) vs ${ref} — the orphan baseline is shrink-only; ` +
-      `adopt the primitive in a game, add a skill example, or mark it @internal instead of baselining it:`,
+      `add an exact consumer import, tag its @capability intent, or mark it @internal instead of baselining it:`,
     ...added.map((key) => `  ${key}`),
   ];
 }

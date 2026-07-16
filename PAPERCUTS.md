@@ -226,3 +226,15 @@ drive/shoot hardcode DEV_PORT=4517 with no override — a concurrent worktree se
 
 bun run pr-shots fails in a git worktree checkout — it hardcodes GIT_INDEX_FILE=.git/pr-shots-index-PID, but .git is a file (not a dir) under a worktree, so git errors 'Not a directory'; had to hand-run the same plumbing with an absolute tmp index path
 
+
+2026-07-16T22:47:43.971Z — gpt-5 — NoisemakerJon
+
+running gen:skill-api before ensure-ready rebuilt all package dist -> later check-types reported newly stale multiplayer api.md
+
+2026-07-16T22:52:59.697Z — gpt-5 — NoisemakerJon
+
+running a clean export-manifest test after incremental builds -> stale dist files from removed source leaked seven phantom public subpaths, including prohibited Kenney output
+
+2026-07-16T22:58:49.747Z — gpt-5 — NoisemakerJon
+
+running ship:preflight immediately before commit as documented -> script rejected the required dirty tree and uncommitted branch as a no-op

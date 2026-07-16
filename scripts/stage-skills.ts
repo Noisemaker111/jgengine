@@ -3,9 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SKILL_DIRS } from "./skillRouting";
-
-const ALL_GAME_SKILLS = [...SKILL_DIRS, "jgengine-verify"] as const;
+import { GAME_SKILLS } from "../packages/jgengine/src/skills";
 
 const PACKAGE_SKILLS: Record<string, readonly string[]> = {
   core: ["jgengine", "jgengine-gameplay", "jgengine-combat", "jgengine-world"],
@@ -18,7 +16,7 @@ const PACKAGE_SKILLS: Record<string, readonly string[]> = {
   assets: ["jgengine", "jgengine-assets"],
   github: ["jgengine"],
   editor: ["jgengine", "jgengine-editor"],
-  jgengine: ALL_GAME_SKILLS,
+  jgengine: GAME_SKILLS,
 };
 
 function main(): void {
