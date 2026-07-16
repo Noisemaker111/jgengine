@@ -34,6 +34,9 @@ const CRYPT_MOB_IDS = new Set(["crypt_shambler", "hollow_acolyte", "sexton_marro
 const AGGRO_INTEREST = 130;
 const MELEE_REACH = 2.6;
 const RESPAWN_SEC = 35;
+const WORLD_HALF_WIDTH = 168;
+const WORLD_WIDTH = WORLD_HALF_WIDTH * 2;
+const ZONE_EDGE_MARGIN = 14;
 
 export function isMobInstance(ctx: GameContext, instanceId: string): boolean {
   return runtimesOf(ctx).has(instanceId);
@@ -85,13 +88,13 @@ function placementFor(def: MobDef, roll: () => number, index: number): readonly 
   }
   const zone = zoneById(def.zone);
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    const x = -168 + roll() * 336;
-    const z = zone.zMin + 14 + roll() * (zone.zMax - zone.zMin - 28);
+    const x = -WORLD_HALF_WIDTH + roll() * WORLD_WIDTH;
+    const z = zone.zMin + ZONE_EDGE_MARGIN + roll() * (zone.zMax - zone.zMin - ZONE_EDGE_MARGIN * 2);
     const hub = zone.hub;
     const hubDist = Math.hypot(x - hub.x, z - hub.z);
     const graveDist = Math.hypot(x - zone.graveyard.x, z - zone.graveyard.z);
     const cryptDist = Math.hypot(x - CRYPT.x, z - CRYPT.z);
-    if (hubDist > hub.radius + 14 && graveDist > 14 && cryptDist > CRYPT.radius + 8) return [x, z];
+    if (hubDist > hub.radius + ZONE_EDGE_MARGIN && graveDist > ZONE_EDGE_MARGIN && cryptDist > CRYPT.radius + 8) return [x, z];
   }
   return [zone.hub.x + 40 + index * 3, (zone.zMin + zone.zMax) / 2];
 }
@@ -108,15 +111,30 @@ export function spawnMobAt(
   ctx.scene.entity.stats.set(instanceId, "level", { current: level });
   const hp = mobHp(def.hpBase, def.hpPerLevel, level);
   ctx.scene.entity.stats.set(instanceId, "health", { max: hp, current: hp });
+  const spawn: readonly [number, number, number] = [position[0], y, position[1]];
+  const brain = createMobBrain(
+    {
+      aggroRadius: 0,
+      attackRange: MELEE_REACH,
+      leashDistance: LEASH_DISTANCE,
+      stickiness: 1.15,
+      wander: { radius: 8, speedScale: 0.35, arriveRadius: 0.6, intervalSeconds: 3 + (instanceId.length % 4) },
+      threat: { decayPerSecond: 1, forgetBelow: 0.5 },
+    },
+    {
+      home: spawn,
+      position: () => ctx.scene.entity.get(instanceId)?.position ?? null,
+      targetPosition: (targetId) => ctx.scene.entity.get(targetId)?.position ?? null,
+      candidates: () => [],
+      rng: seededRng(`wander:${instanceId}`),
+    },
+  );
   runtimesOf(ctx).set(instanceId, {
     defId: def.id,
     level,
-    spawn: [position[0], y, position[1]],
-    threat: createThreatTable({ decayPerSecond: 1, forgetBelow: 0.5 }),
-    evading: false,
+    spawn,
+    brain,
     nextSwingAt: 0,
-    nextWanderAt: 0,
-    wanderTo: null,
     frenzyUntil: 0,
     abilityAt: new Map(),
     telegraphedAt: 0,
@@ -141,7 +159,7 @@ export function applyMobCc(
   cc: { kind: "stun" | "root" | "taunt" | "armorShred"; durationSec: number },
 ): boolean {
   const runtime = runtimesOf(ctx).get(instanceId);
-  if (runtime === undefined || runtime.evading) return false;
+  if (runtime === undefined || runtime.brain.mode() === "evade") return false;
   const now = ctx.time.now();
   if (cc.kind === "stun") {
     runtime.stunnedUntil = Math.max(runtime.stunnedUntil, now + cc.durationSec);
@@ -150,7 +168,7 @@ export function applyMobCc(
     runtime.rootedUntil = Math.max(runtime.rootedUntil, now + cc.durationSec);
     ctx.scene.entity.floatText({ instanceId, text: "Rooted", kind: "info" });
   } else if (cc.kind === "taunt") {
-    runtime.threat.taunt(sourceId, cc.durationSec);
+    runtime.brain.threat.taunt(sourceId, cc.durationSec);
   }
   return true;
 }
@@ -197,8 +215,8 @@ function socialPull(ctx: GameContext, def: MobDef, instanceId: string, targetId:
   for (const allyId of ctx.scene.entity.inRadius(self.position, radius, (id) => isMobInstance(ctx, id))) {
     if (allyId === instanceId) continue;
     const ally = runtimesOf(ctx).get(allyId);
-    if (ally === undefined || ally.defId !== def.id || ally.evading) continue;
-    if (ally.threat.highest() === null) ally.threat.add(targetId, 1);
+    if (ally === undefined || ally.defId !== def.id || ally.brain.mode() === "evade") continue;
+    if (ally.brain.threat.highest() === null) ally.brain.addThreat(targetId, 1);
     if (def.packFrenzy !== undefined) ally.frenzyUntil = ctx.time.now() + def.packFrenzy.duration;
   }
 }
@@ -291,35 +309,12 @@ function runBossMechanics(
           Math.max(addDef.minLevel, runtime.level - 1),
         );
         const addRuntime = runtimesOf(ctx).get(addId);
-        addRuntime?.threat.add(targetId, 5);
+        addRuntime?.brain.addThreat(targetId, 5);
         runtime.summonedIds.push(addId);
       }
       ctx.scene.entity.floatText({ instanceId, text: "Rise!", kind: "info" });
     }
   }
-}
-
-function moveMob(
-  ctx: GameContext,
-  instanceId: string,
-  target: readonly [number, number, number] | string,
-  speed: number,
-  dt: number,
-  stopDistance: number,
-): void {
-  const next = ctx.scene.entity.moveToward(instanceId, target as [number, number, number] | string, {
-    speed,
-    dt,
-    stopDistance,
-  });
-  if (next === null) return;
-  const self = ctx.scene.entity.get(instanceId);
-  if (self === null) return;
-  const dx = next[0] - self.position[0];
-  const dz = next[2] - self.position[2];
-  const grounded: [number, number, number] = [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]];
-  const rotationY = Math.abs(dx) + Math.abs(dz) > 0.0001 ? Math.atan2(dx, dz) : self.rotationY;
-  ctx.scene.entity.setPose(instanceId, { position: grounded, rotationY, dt });
 }
 
 export function tickMobs(ctx: GameContext, dt: number): void {
@@ -331,72 +326,48 @@ export function tickMobs(ctx: GameContext, dt: number): void {
     const def = mobById(runtime.defId);
     const self = ctx.scene.entity.get(instanceId);
     if (def === null || self === null) continue;
-    if (runtime.evading) {
-      const home = runtime.spawn;
-      const distHome = Math.hypot(self.position[0] - home[0], self.position[2] - home[2]);
-      if (distHome < 1.2) {
-        runtime.evading = false;
-        const maxHp = ctx.scene.entity.stats.get(instanceId, "health")?.max ?? 1;
-        ctx.scene.entity.stats.set(instanceId, "health", { current: maxHp });
-      } else {
-        moveMob(ctx, instanceId, home, def.moveSpeed * 1.4, dt, 0);
-      }
-      continue;
-    }
-    if (player === null || playerDead) {
-      runtime.threat.clear();
-    }
-    const playerDist =
-      player === null ? Number.POSITIVE_INFINITY : Math.hypot(self.position[0] - player.position[0], self.position[2] - player.position[2]);
-    if (playerDist > AGGRO_INTEREST) continue;
-    runtime.threat.decay(dt);
-    let targetId = runtime.threat.highest({ stickiness: 1.15 });
-    if (targetId === null && player !== null && !playerDead) {
-      const playerLevel = ctx.scene.entity.stats.get(playerId, "level")?.current ?? 1;
-      const aggroRadius = Math.max(4, def.aggroRadius + Math.min(4, Math.max(-4, runtime.level - playerLevel)));
-      if (playerDist <= aggroRadius) {
-        runtime.threat.add(playerId, 1);
-        targetId = playerId;
-        socialPull(ctx, def, instanceId, playerId);
-        if (def.packFrenzy !== undefined) runtime.frenzyUntil = now + def.packFrenzy.duration;
-      }
-    }
-    if (targetId !== null && (ctx.scene.entity.get(targetId) === null || playerDead)) {
-      runtime.threat.clear();
-      targetId = null;
-    }
-    if (targetId !== null) {
-      if (now < runtime.stunnedUntil) continue;
-      const distHome = Math.hypot(self.position[0] - runtime.spawn[0], self.position[2] - runtime.spawn[2]);
-      if (distHome > LEASH_DISTANCE) {
-        runtime.threat.clear();
-        runtime.evading = true;
-        continue;
-      }
-      const targetDist = ctx.scene.entity.distance(instanceId, targetId);
-      if (targetDist === null) continue;
-      if (targetDist > MELEE_REACH) {
-        if (now >= runtime.rootedUntil) {
-          moveMob(ctx, instanceId, targetId, def.moveSpeed, dt, MELEE_REACH - 0.4);
+    const brain = runtime.brain;
+    if (brain.mode() !== "evade") {
+      if (player === null || playerDead) brain.threat.clear();
+      const playerDist =
+        player === null
+          ? Number.POSITIVE_INFINITY
+          : Math.hypot(self.position[0] - player.position[0], self.position[2] - player.position[2]);
+      if (playerDist > AGGRO_INTEREST) continue;
+      if (brain.threat.highest({ stickiness: 1.15 }) === null && player !== null && !playerDead) {
+        const playerLevel = ctx.scene.entity.stats.get(playerId, "level")?.current ?? 1;
+        const aggroRadius = Math.max(4, def.aggroRadius + Math.min(4, Math.max(-4, runtime.level - playerLevel)));
+        if (playerDist <= aggroRadius) {
+          brain.addThreat(playerId, 1);
+          socialPull(ctx, def, instanceId, playerId);
+          if (def.packFrenzy !== undefined) runtime.frenzyUntil = now + def.packFrenzy.duration;
         }
-      } else {
-        swingAtPlayer(ctx, def, runtime, instanceId, targetId);
       }
+    }
+    const step = brain.tick(dt);
+    if (step.arrivedHome) {
+      const maxHp = ctx.scene.entity.stats.get(instanceId, "health")?.max ?? 1;
+      ctx.scene.entity.stats.set(instanceId, "health", { current: maxHp });
+    }
+    if (step.targetId !== null && now < runtime.stunnedUntil) continue;
+    if (step.moveTo !== null) {
+      const chasing = step.mode === "chase";
+      if (!(chasing && now < runtime.rootedUntil)) {
+        ctx.scene.entity.moveTowardCommit(instanceId, step.moveTo, {
+          speed: def.moveSpeed * step.speedScale,
+          dt,
+          stopDistance: chasing ? MELEE_REACH - 0.4 : 0,
+          face: true,
+          groundSnap: true,
+        });
+      }
+    }
+    if (step.inAttackRange && step.targetId !== null) {
+      swingAtPlayer(ctx, def, runtime, instanceId, step.targetId);
+    }
+    if (step.targetId !== null) {
       if (def.abilities !== undefined) castMobAbility(ctx, def, runtime, instanceId);
-      if (def.mechanics !== undefined) runBossMechanics(ctx, def, runtime, instanceId, targetId, now);
-      continue;
-    }
-    if (now >= runtime.nextWanderAt) {
-      runtime.nextWanderAt = now + 3 + (instanceId.length % 4);
-      const roll = Math.sin(now * 13.37 + instanceId.length) * 0.5 + 0.5;
-      const angle = roll * Math.PI * 2;
-      runtime.wanderTo = [runtime.spawn[0] + Math.cos(angle) * 8, runtime.spawn[2] + Math.sin(angle) * 8];
-    }
-    if (runtime.wanderTo !== null) {
-      const [wx, wz] = runtime.wanderTo;
-      const wanderDist = Math.hypot(self.position[0] - wx, self.position[2] - wz);
-      if (wanderDist < 0.6) runtime.wanderTo = null;
-      else moveMob(ctx, instanceId, [wx, ctx.world.groundHeightAt(wx, wz), wz], def.moveSpeed * 0.35, dt, 0);
+      if (def.mechanics !== undefined) runBossMechanics(ctx, def, runtime, instanceId, step.targetId, now);
     }
   }
 }
