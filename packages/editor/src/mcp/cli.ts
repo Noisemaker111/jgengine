@@ -4,14 +4,18 @@
  *
  * Usage:
  *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"scene_summary"}'
+ *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc-file payload.json
+ *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc - < payload.json
  *   bun packages/editor/src/mcp/cli.ts --game the-robots --serve
  *   bun packages/editor/src/mcp/cli.ts --game the-robots --stdio
  */
 
 import { createEditorHost } from "../session";
 import { startEditorBridgeServerNode } from "./bridgeServer.node.ts";
+import { loadGameCatalogs } from "./loadGameCatalogs.ts";
 import { loadGameLayers } from "./loadGameLayers.ts";
 import { decodeEditorBridgeRequest } from "./rpcRequest.ts";
+import { loadRpcPayload, type RpcPayloadSource } from "./rpcPayload.ts";
 import { runEditorMcpStdio } from "./stdioServer.ts";
 import { EDITOR_MCP_TOOLS } from "./tools";
 
@@ -20,11 +24,58 @@ function printHelp(): void {
 
   --game <id>          game id under Games/ (default the-robots)
   --port <n>           HTTP bridge port (default 17373)
-  --rpc '<json>'       run one RPC and exit
+  --rpc '<json>'       run an RPC and exit; repeat to run several in order on one session
   --stdio              MCP JSON-RPC over stdin/stdout
   --tools              list MCP tool names
-  --serve              keep the localhost HTTP bridge up (default when no --rpc/--stdio)
+  --serve              keep the localhost HTTP bridge up (default when no --rpc/--rpc-file/--stdio)
 `);
+}
+
+/** Parsed CLI flags for the headless editor control plane. */
+export type EditorCliOptions = {
+  gameId: string;
+  port: number;
+  rpcSource: RpcPayloadSource | null;
+  serve: boolean;
+  stdio: boolean;
+};
+
+/**
+ * Parses argv into editor-mcp flags. `--rpc -` and `--rpc-file` both set a non-inline
+ * {@link RpcPayloadSource} so large documents never ride a shell argument.
+ */
+export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
+  let gameId = "the-robots";
+  let port = 17373;
+  let rpcSource: RpcPayloadSource | null = null;
+  let serve = true;
+  let stdio = false;
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!;
+    if (arg === "--game") gameId = argv[++i] ?? gameId;
+    else if (arg === "--port") port = Number(argv[++i] ?? port);
+    else if (arg === "--rpc") {
+      const value = argv[++i];
+      if (value === undefined || value === "") {
+        rpcSource = { kind: "inline", raw: "" };
+      } else if (value === "-") {
+        rpcSource = { kind: "stdin" };
+      } else {
+        rpcSource = { kind: "inline", raw: value };
+      }
+      serve = false;
+    } else if (arg === "--rpc-file") {
+      const path = argv[++i];
+      rpcSource = { kind: "file", path: path ?? "" };
+      serve = false;
+    } else if (arg === "--stdio") {
+      stdio = true;
+      serve = false;
+    } else if (arg === "--serve") serve = true;
+  }
+
+  return { gameId, port, rpcSource, serve, stdio };
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -41,7 +92,7 @@ async function main(argv: string[]): Promise<number> {
 
   let gameId = "the-robots";
   let port = 17373;
-  let rpcRaw: string | null = null;
+  const rpcRaws: string[] = [];
   let serve = true;
   let stdio = false;
 
@@ -50,7 +101,8 @@ async function main(argv: string[]): Promise<number> {
     if (arg === "--game") gameId = argv[++i] ?? gameId;
     else if (arg === "--port") port = Number(argv[++i] ?? port);
     else if (arg === "--rpc") {
-      rpcRaw = argv[++i] ?? null;
+      const raw = argv[++i];
+      if (raw !== undefined) rpcRaws.push(raw);
       serve = false;
     } else if (arg === "--stdio") {
       stdio = true;
@@ -63,38 +115,52 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const layers = await loadGameLayers(gameId);
+  const [layers, catalogs] = await Promise.all([loadGameLayers(gameId), loadGameCatalogs(gameId)]);
   if (!layers.ok) {
-    console.error(`invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
+    console.error(
+      `invalid editorLayers for ${options.gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`,
+    );
+    return 1;
+  }
+  if (!catalogs.ok) {
+    console.error(`invalid editorCatalogs for ${gameId}: ${catalogs.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
     return 1;
   }
   const { api, dispose } = createEditorHost({
-    gameId,
+    gameId: options.gameId,
     layers: layers.document,
+    catalogs: catalogs.catalogs,
   });
 
-  if (rpcRaw !== null) {
-    const decoded = decodeEditorBridgeRequest(JSON.parse(rpcRaw));
-    if (!decoded.ok) {
-      console.log(
-        JSON.stringify(
-          { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
-          null,
-          2,
-        ),
-      );
-      dispose();
-      return 1;
+  if (rpcRaws.length > 0) {
+    let allOk = true;
+    for (const rpcRaw of rpcRaws) {
+      const decoded = decodeEditorBridgeRequest(JSON.parse(rpcRaw));
+      if (!decoded.ok) {
+        console.log(
+          JSON.stringify(
+            { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
+            null,
+            2,
+          ),
+        );
+        allOk = false;
+        break;
+      }
+      const response = api.handle(decoded.request);
+      console.log(JSON.stringify(response, null, 2));
+      if (!response.ok) {
+        allOk = false;
+        break;
+      }
     }
-    const response = api.handle(decoded.request);
-    console.log(JSON.stringify(response, null, 2));
     dispose();
-    return response.ok ? 0 : 1;
+    return allOk ? 0 : 1;
   }
 
-  if (serve) {
-    const server = startEditorBridgeServerNode({ host: api, port });
-    console.log(`editor bridge for ${gameId} at ${server.url}`);
+  if (options.serve) {
+    const server = startEditorBridgeServerNode({ host: api, port: options.port });
+    console.log(`editor bridge for ${options.gameId} at ${server.url}`);
     console.log(`POST ${server.url}/rpc  body: {"method":"scene_summary"}`);
     console.log("tools:", EDITOR_MCP_TOOLS.map((tool) => tool.name).join(", "));
     await new Promise(() => undefined);
@@ -104,4 +170,6 @@ async function main(argv: string[]): Promise<number> {
   return 0;
 }
 
-void main(process.argv.slice(2)).then((code) => process.exit(code));
+if (import.meta.main) {
+  void main(process.argv.slice(2)).then((code) => process.exit(code));
+}

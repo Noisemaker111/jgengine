@@ -40,6 +40,7 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
 | `createRegionField({ regions })` → `RegionField` | `sampleRegion(x,z)` blends content-agnostic biomes by nearest selector — height + `tint`/`water`/`fog`/`speedMultiplier` + opaque `data`. Extends `TerrainField`, so it ground-snaps too |
 | `scatterItems(field, area, layersFor)` → `ScatterInstance[]` | Region-driven content scatter — density per region, grounded, above-water/slope-aware. `pickWeighted` for weighted rolls. (vs `scatter`'s pure geometric points) |
 | `resolveScatterRegion(region, terrain?)` / `resolveScatter(doc, terrain?)` | Deterministic instanced placements for a **freehand polygon** scatter region (the editor's foliage lasso): `density`/`minSpacing`/`seed`, `minScale`/`maxScale`, weighted `palette`, `maxSlope`/`minHeight`/`maxHeight` masks, `edgeFalloff` feathering, `alignToNormal`. Regions ride editor paths of `kind` `SCATTER_PATH_KIND` — `scatterRegionFromPath`/`readScatterRules`/`readScatterPalette` build one from a path's meta, `scatterRegionEstimate` gives the live count readout, `resolveScatter` walks every scatter path in a document. Polygon helpers: `pointInPolygon`, `distanceToPolygonEdge`, `polygonArea`, `polygonBounds`, `isScatterPath`. Same seed → same field; GPU-instanced, never one node per instance. |
+| `resolveAuthoredObjects(doc)` / `placeAuthoredObjects(store, objects, sampleHeight, opts?)` / `placeAuthoredObjectsFromDocument` / `markerCatalogId(marker)` | Catalog mesh props from editor markers: every marker with first-class `catalogId` or `meta.catalogId` → `{ catalogId, x, z, rotationY, instanceId, verticalOffset }[]`. `placeAuthoredObjects` grounds on `sampleHeight` and calls `store.place` (WorldScene renders via `objectModels`). Shell: `<AuthoredObjects document field />` or `<AuthoredScene placeObjects />`. Never hand-loop `document.markers` for prop placement. |
 | `buildingIndex(district)` → `BuildingIndex` | `at`/`within`/`nearest`/`isInside`/`blockers` over a generated district — placement avoidance, pathfinding |
 
 **Voxel field (`world/voxelField`).** `createVoxelField<T extends string>({ chunkSize? })` (default 16) is a logical block lattice for voxel games and instanced renderers — distinct from the `voxel()` `WorldFeature` descriptor above (that's the runner-level world kind; this is the block data structure a voxel game's gameplay reads and writes). `set`/`remove`/`get`/`has`/`fill`/`clear`/`count`/`cells`/`bounds` are the block CRUD (`set` returns `false` only when the identical type is already there — a no-op write). `neighbors(x, y, z)` returns the 6-adjacent occupied cells; `exposedFaces(x, y, z)` returns the `VoxelFace`s (`"px"|"nx"|"py"|"ny"|"pz"|"nz"`) not touching another voxel — feed that straight into greedy-meshing/face-culling. `raycast(origin, direction, maxDistance)` runs a 3D DDA and returns `{ x, y, z, type, face, adjacent, distance }`, where `adjacent` is the empty cell just in front of the hit — the placement target for block-place tools. Renderers dirty-track via `chunkOf(x, y, z)` + `chunkVersion(chunk)` and `subscribe(listener)`, so an instanced mesh only rebuilds the chunks that changed. For a non-`environment()` voxel world, assert on `field.summary()` (`{ blocks, types, bounds }`) the same way an `environment()` world asserts on `summarizeEnvironment` (see `jgengine-verify`).
@@ -60,10 +61,12 @@ The `survival/` domain — decay-over-time meters and per-part health, both feed
 - **Moodles** (`survival/moodle`): the shared status stack, distinct from raw bars. `stackMoodles(...groups)` folds meter, ailment, and buff `Moodle[]` into one worst-first display (same-id stacks add, worst severity wins). `createMoodleStack()` holds timed buffs (`add({ id, label, duration })` — Valheim's concurrent food buffs) and expires them on `tick(dt)`.
 - **Multi-region health** (`survival/regionHealth`): `createMultiRegionHealth({ regions, ailments })` → `MultiRegionHealth` gives per-part pools (head/thorax/arms/legs, Tarkov/DayZ style) — `damage(regionId, amount)` scales by `vulnerability` and kills when a `vital` part empties; a stacking **ailment queue** (`applyAilment`, `tick(dt)` drains like bleed) carries per-injury treatment (`treat(itemId)` clears wounds via bandage/tourniquet/splint). `ailmentMoodles()` shares the moodle display with the meters (#78 + #90).
 ### Interactive building & terraform (renderer-free tools)
-Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum. All pure `@jgengine/core/world`; the shell renders the ghost/tint/brush (`shell/structures/PlacementGhost`, `shell/terrain/EditableGround`, `shell/terrain/TerraformBrushCursor`) driven by `pointer.worldHit()`.
+Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum. Pure `@jgengine/core/world` math + `@jgengine/shell/structures` render (`PlacementGhost`, `TransformGizmo`); terraform brush via `shell/terrain/*`. Demo: `apps/dev` `builder-sandbox`.
 | Primitive | Answers |
 |-----------|---------|
 | `createPlacementController({ footprint, rules, snapMode, grid })` | Owns the ghost: `hover(hit)` → `PlacementPreview` (`valid` tint wraps `validatePlacement`), `rotate()`, `setSnapMode`/`cycleSnapMode` (`"grid"`/`"free"`/`"surface"`), `commit()` → `PlacementCommit` (`rotationY` via `quarterTurnsToRotationY`). Feed it `pointer.worldHit()`. |
+| `placeAssetFromCommit(commit, assetId, opts?)` / `resolvePlaceAsset` | **One place-asset verb** for editor `place_asset` and in-game builds → `PlaceAssetResult`. `toStructureInput(result)` → structure store; `toEditorMarker(result)` → scene-document marker. |
+| `PlacementGhost` / `TransformGizmo` (`@jgengine/shell/structures`) | Ghost preview (valid/invalid tint). Runtime select/move/rotate/scale gizmo — editor `SelectionGizmo` mounts the same `TransformGizmo`. |
 | `snapToNearest(registry, placed, movingDef, cursor, { snapDistance })` | Typed connector sockets — snaps a piece's socket onto the nearest **compatible** placed socket (`socketsCompatible` = both sides `accept` the other type). `worldSockets`/`socketWorldPosition` expand a piece's sockets to world space. |
 | `solveSupport(pieces, links, { maxDistance })` → `SupportResult` | Walks the connector graph to any `grounded` piece: `supported` stays, `unsupported` collapses, `distance` (hops-to-ground) drives the white→red decay tint. `toDebrisBodies(pieces, unsupported)` → `AddBodyOptions[]` for the `PhysicsWorld` debris sink. |
 | `createWallDrawTool({ snap, closeTolerance })` | Drag wall points → auto-encloses when the path returns to the start (`isEnclosed`), `footprint()` derives the room `EnclosedFootprint`, `roof()` auto-fits a hip/gable/flat `RoofPlan`. `createSurfacePaint()` stores per-tile floor/wall surfaces. |
@@ -130,6 +133,32 @@ ctx.scene.entity.bind("racers").sync(
   dt,
 );
 ```
+
+### Authored behavior triggers (volumes / markers)
+
+Schema'd `on`/`action` meta on editor volumes and markers — "when player enters this volume, spawn wave 2" is scene data, not game code. `@jgengine/core/scene/authoredTriggers`:
+
+```ts
+registerTriggerAction({
+  id: "spawn_wave",
+  label: "Spawn wave",
+  schema: { fields: [{ type: "number", key: "wave", default: 1, min: 1 }] },
+});
+// volume.meta: { on: "enter"|"exit"|"interact", action: "spawn_wave", wave: 2 }
+const runtime = createAuthoredTriggerRuntime({
+  document: editorLayers,
+  handlers: { spawn_wave: (e: TriggerDispatchEvent) => startWave(e.params.wave as number) },
+});
+// each tick:
+runtime.step({
+  actors: [{ id: playerId, position: entity.position }],
+  interact: ctx.input.justPressed("interact") ? [playerId] : [],
+});
+// discovery: listTriggerActions() / getTriggerAction(id) / collectAuthoredTriggers(doc) / pointInVolume(volume, point)
+// types: TriggerEvent · TriggerActionDefinition · AuthoredTrigger · TriggerHandlers · TriggerSourceKind · AuthoredTriggerRuntime
+```
+
+Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector renders action params from the declared schema when the game has registered actions.
 
 ### Spawn placement
 

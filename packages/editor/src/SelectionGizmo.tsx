@@ -1,8 +1,6 @@
-import { TransformControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo } from "react";
 import * as THREE from "three";
-import type { Group } from "three";
 
 import type { EditorSession, EditorVec3 } from "@jgengine/core/editor/index";
 import {
@@ -11,7 +9,12 @@ import {
   findEditorPath,
   findEditorVolume,
 } from "@jgengine/core/editor/index";
+import {
+  TransformGizmo,
+  type TransformGizmoPose,
+} from "@jgengine/shell/structures/TransformGizmo";
 
+import { isPointerClick } from "./viewportContextMenu";
 import type { EditorHostApi } from "./session";
 import { newPlacementId, type EditorUiState, type EditorUiStore, type GizmoMode, type SnapMode } from "./uiStore";
 import { useStoreSelector } from "./useStoreSelector";
@@ -95,7 +98,7 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
     const ndc = new THREE.Vector2();
     const projected = new THREE.Vector3();
     const planeHit = new THREE.Vector3();
-    let down: { x: number; y: number } | null = null;
+    let down: { x: number; y: number; button: number } | null = null;
 
     const session = () => api.getSession();
     const screenDistance = (
@@ -169,50 +172,9 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
       if (!keepTool) ui.cancelPlacement();
     };
 
-    const onDown = (event: PointerEvent) => {
-      if (ui.getState().tool === "terrain") return;
-      if (event.button === 0) down = { x: event.clientX, y: event.clientY };
-    };
-    const onUp = (event: PointerEvent) => {
-      if (ui.getState().tool === "terrain") return;
-      if (event.button !== 0 || down === null) return;
-      const start = down;
-      down = null;
-      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > CLICK_SLOP_PX) return;
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const clickY = event.clientY - rect.top;
-      const additive = event.shiftKey || event.ctrlKey || event.metaKey;
-
-      if (ui.getState().placement !== null) {
-        const point = groundPoint(clickX, clickY, rect);
-        if (point !== null) place(point, event.shiftKey || ui.getState().placement?.tool === "path");
-        return;
-      }
-
+    const pickDocumentId = (clickX: number, clickY: number, rect: DOMRect, cycleFrom?: string): string | null => {
       const state = session().getState();
       const visibility = api.getVisibility();
-      const selection = state.selection;
-
-      const selectedPathId = selection.length === 1 ? selection[0] : undefined;
-      const selectedPath =
-        selectedPathId === undefined ? undefined : findEditorPath(state.document, selectedPathId);
-      if (selectedPath !== undefined) {
-        let bestIndex = -1;
-        let bestHandle = PATH_HANDLE_RADIUS_PX;
-        selectedPath.points.forEach((point, index) => {
-          const distance = screenDistance(point, 0.8, clickX, clickY, rect);
-          if (distance !== null && distance < bestHandle) {
-            bestHandle = distance;
-            bestIndex = index;
-          }
-        });
-        if (bestIndex >= 0) {
-          ui.patch({ pathPoint: { pathId: selectedPath.id, index: bestIndex } });
-          return;
-        }
-      }
-
       const candidates: { id: string; distance: number }[] = [];
       const consider = (id: string, kind: string, point: EditorVec3, lift: number) => {
         if (visibility[kind] === false) return;
@@ -234,26 +196,15 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
         if (best !== null) candidates.push({ id: path.id, distance: best });
       }
       candidates.sort((a, b) => a.distance - b.distance);
-
-      if (candidates.length > 0) {
-        let pickedId = candidates[0]!.id;
-        const primary = selection[0];
-        if (!additive && primary !== undefined) {
-          const at = candidates.findIndex((candidate) => candidate.id === primary);
-          if (at >= 0) pickedId = candidates[(at + 1) % candidates.length]!.id;
-        }
-        if (additive) {
-          const next = selection.includes(pickedId)
-            ? selection.filter((id) => id !== pickedId)
-            : [...selection, pickedId];
-          session().dispatch({ type: "select", ids: next });
-        } else {
-          session().dispatch({ type: "select", ids: [pickedId] });
-        }
-        ui.patch({ pathPoint: null });
-        return;
+      if (candidates.length === 0) return null;
+      if (cycleFrom !== undefined) {
+        const at = candidates.findIndex((candidate) => candidate.id === cycleFrom);
+        if (at >= 0) return candidates[(at + 1) % candidates.length]!.id;
       }
+      return candidates[0]!.id;
+    };
 
+    const pickTaggedId = (clickX: number, clickY: number, rect: DOMRect): string | null => {
       ndc.set((clickX / rect.width) * 2 - 1, -(clickY / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
       for (const hit of raycaster.intersectObjects(scene.children, true)) {
@@ -273,31 +224,123 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
           node = node.parent;
         }
         if (gizmoHit) continue;
-        if (taggedId !== null) {
-          if (additive) {
-            const next = selection.includes(taggedId)
-              ? selection.filter((id) => id !== taggedId)
-              : [...selection, taggedId];
-            session().dispatch({ type: "select", ids: next });
-          } else {
-            session().dispatch({ type: "select", ids: [taggedId] });
-          }
-          ui.patch({ pathPoint: null });
-          return;
-        }
+        if (taggedId !== null) return taggedId;
         break;
       }
+      return null;
+    };
+
+    const onDown = (event: PointerEvent) => {
+      if (ui.getState().tool === "terrain") return;
+      if (event.button === 0 || event.button === 2) down = { x: event.clientX, y: event.clientY, button: event.button };
+    };
+    const onUp = (event: PointerEvent) => {
+      if (ui.getState().tool === "terrain") return;
+      if (down === null || event.button !== down.button) return;
+      const start = down;
+      down = null;
+      const slop = event.button === 2 ? undefined : CLICK_SLOP_PX;
+      if (!isPointerClick(start.x, start.y, event.clientX, event.clientY, slop)) return;
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      if (event.button === 2) {
+        const docId = pickDocumentId(clickX, clickY, rect);
+        const taggedId = docId === null ? pickTaggedId(clickX, clickY, rect) : null;
+        const hitId = docId ?? taggedId;
+        if (hitId !== null) {
+          const selection = session().getState().selection;
+          if (!selection.includes(hitId)) {
+            session().dispatch({ type: "select", ids: [hitId] });
+          }
+        }
+        ui.patch({
+          pathPoint: null,
+          contextMenu: {
+            clientX: event.clientX,
+            clientY: event.clientY,
+            hitId,
+            ground: groundPoint(clickX, clickY, rect),
+          },
+        });
+        return;
+      }
+
+      const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+
+      if (ui.getState().placement !== null) {
+        const point = groundPoint(clickX, clickY, rect);
+        if (point !== null) place(point, event.shiftKey || ui.getState().placement?.tool === "path");
+        return;
+      }
+
+      const state = session().getState();
+      const selection = state.selection;
+
+      const selectedPathId = selection.length === 1 ? selection[0] : undefined;
+      const selectedPath =
+        selectedPathId === undefined ? undefined : findEditorPath(state.document, selectedPathId);
+      if (selectedPath !== undefined) {
+        let bestIndex = -1;
+        let bestHandle = PATH_HANDLE_RADIUS_PX;
+        selectedPath.points.forEach((point, index) => {
+          const distance = screenDistance(point, 0.8, clickX, clickY, rect);
+          if (distance !== null && distance < bestHandle) {
+            bestHandle = distance;
+            bestIndex = index;
+          }
+        });
+        if (bestIndex >= 0) {
+          ui.patch({ pathPoint: { pathId: selectedPath.id, index: bestIndex } });
+          return;
+        }
+      }
+
+      const primary = selection[0];
+      const docId = pickDocumentId(clickX, clickY, rect, !additive && primary !== undefined ? primary : undefined);
+      if (docId !== null) {
+        if (additive) {
+          const next = selection.includes(docId)
+            ? selection.filter((id) => id !== docId)
+            : [...selection, docId];
+          session().dispatch({ type: "select", ids: next });
+        } else {
+          session().dispatch({ type: "select", ids: [docId] });
+        }
+        ui.patch({ pathPoint: null, contextMenu: null });
+        return;
+      }
+
+      const taggedId = pickTaggedId(clickX, clickY, rect);
+      if (taggedId !== null) {
+        if (additive) {
+          const next = selection.includes(taggedId)
+            ? selection.filter((id) => id !== taggedId)
+            : [...selection, taggedId];
+          session().dispatch({ type: "select", ids: next });
+        } else {
+          session().dispatch({ type: "select", ids: [taggedId] });
+        }
+        ui.patch({ pathPoint: null, contextMenu: null });
+        return;
+      }
       if (!additive) {
-        ui.patch({ pathPoint: null });
+        ui.patch({ pathPoint: null, contextMenu: null });
         if (selection.length > 0) session().dispatch({ type: "clearSelection" });
       }
+    };
+    const onContextMenu = (event: Event) => {
+      event.preventDefault();
     };
 
     canvas.addEventListener("pointerdown", onDown);
     canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("contextmenu", onContextMenu);
     return () => {
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("contextmenu", onContextMenu);
     };
   }, [gl, camera, scene, api, ui]);
 
@@ -346,10 +389,8 @@ function effectiveMode(mode: GizmoMode, kind: GizmoTarget["kind"]): GizmoMode {
 
 /**
  * Drag-to-transform gizmo bound to the current selection, dispatching editor commands on
- * release. Translating with a multi-selection moves every selected object by the drag delta;
- * scaling a volume resizes its true shape (radius, height, or box half-extents); a selected
- * path vertex moves just that point. Snapping follows the UI store: terrain height, grid
- * quantization, or free movement.
+ * release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor
+ * commands (multi-select translate, volume scale, path vertex move).
  */
 export const SelectionGizmo = memo(function SelectionGizmo({
   session,
@@ -360,10 +401,6 @@ export const SelectionGizmo = memo(function SelectionGizmo({
   ui: EditorUiStore;
   groundSnap?: (x: number, z: number) => number;
 }) {
-  const groupRef = useRef<Group>(null);
-  const [object, setObject] = useState<Group | null>(null);
-  const draggingRef = useRef(false);
-  const controls = useThree((state) => state.controls) as { enabled?: boolean } | null;
   const uiState = useGizmoUiState(ui);
   const state = session.getState();
   const selectedId = state.selection[0];
@@ -372,47 +409,11 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     [state, selectedId, uiState.pathPoint, session],
   );
   const mode = target === null ? "translate" : effectiveMode(uiState.gizmoMode, target.kind);
-  const anchorKey = uiState.pathPoint === null ? selectedId : `${uiState.pathPoint.pathId}:${uiState.pathPoint.index}`;
-
-  useEffect(() => {
-    setObject(groupRef.current);
-  }, [anchorKey]);
-
-  useEffect(() => {
-    const group = groupRef.current;
-    if (group === null || target === null) return;
-    if (draggingRef.current) return;
-    group.position.set(target.position.x, target.position.y + target.lift, target.position.z);
-    group.rotation.set(0, target.rotationY, 0);
-    group.scale.set(1, 1, 1);
-  }, [target?.position.x, target?.position.y, target?.position.z, target?.rotationY, anchorKey, mode]);
 
   if (target === null) return null;
 
-  const snapProps =
-    uiState.snapMode === "grid"
-      ? { translationSnap: uiState.gridSize, rotationSnap: Math.PI / 12 }
-      : { rotationSnap: Math.PI / 12 };
-
-  const onRelease = () => {
-    draggingRef.current = false;
-    if (controls !== null && "enabled" in controls) controls.enabled = true;
-    const current = groupRef.current;
-    if (current === null) return;
-    const dropped: EditorVec3 = {
-      x: current.position.x,
-      y: current.position.y - target.lift,
-      z: current.position.z,
-    };
-    if (
-      mode === "translate" &&
-      uiState.snapMode === "ground" &&
-      groundSnap !== undefined &&
-      target.kind !== "path"
-    ) {
-      dropped.y = groundSnap(dropped.x, dropped.z);
-      current.position.y = dropped.y + target.lift;
-    }
+  const onRelease = (pose: TransformGizmoPose) => {
+    const dropped: EditorVec3 = pose.position;
 
     if (target.kind === "pathPoint" && uiState.pathPoint !== null) {
       const path = findEditorPath(session.getState().document, uiState.pathPoint.pathId);
@@ -429,9 +430,9 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     if (mode === "scale" && target.kind === "volume" && selectedId !== undefined) {
       const volume = findEditorVolume(session.getState().document, selectedId);
       if (volume === undefined) return;
-      const sx = Math.abs(current.scale.x);
-      const sy = Math.abs(current.scale.y);
-      const sz = Math.abs(current.scale.z);
+      const sx = Math.abs(pose.scale.x);
+      const sy = Math.abs(pose.scale.y);
+      const sz = Math.abs(pose.scale.z);
       if (sx === 1 && sy === 1 && sz === 1 && vecEqual(dropped, volume.center)) return;
       if (volume.shape === "box" && volume.halfExtents !== undefined) {
         session.dispatch({
@@ -462,12 +463,12 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     }
 
     if (mode === "rotate" && target.kind === "marker" && selectedId !== undefined) {
-      if (vecEqual(dropped, target.position) && current.rotation.y === target.rotationY) return;
+      if (vecEqual(dropped, target.position) && pose.rotationY === target.rotationY) return;
       session.dispatch({
         type: "setTransform",
         id: selectedId,
         position: dropped,
-        rotationY: current.rotation.y,
+        rotationY: pose.rotationY,
       });
       return;
     }
@@ -487,22 +488,21 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     session.dispatch({ type: "setTransform", id: selectedId, position: dropped });
   };
 
+  const snapMode =
+    uiState.snapMode === "grid" ? "grid" : uiState.snapMode === "ground" ? "ground" : "free";
+
   return (
-    <>
-      <group ref={groupRef} />
-      {object !== null ? (
-        <TransformControls
-          object={object}
-          mode={mode}
-          size={0.85}
-          {...snapProps}
-          onMouseDown={() => {
-            draggingRef.current = true;
-            if (controls !== null && "enabled" in controls) controls.enabled = false;
-          }}
-          onMouseUp={onRelease}
-        />
-      ) : null}
-    </>
+    <TransformGizmo
+      position={target.position}
+      rotationY={target.rotationY}
+      mode={mode}
+      snapMode={snapMode}
+      gridSize={uiState.gridSize}
+      lift={target.lift}
+      groundSnap={
+        mode === "translate" && target.kind !== "path" ? groundSnap : undefined
+      }
+      onRelease={onRelease}
+    />
   );
 });

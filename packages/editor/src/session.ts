@@ -1,20 +1,34 @@
 import {
+  createDocumentLiveSync,
   createEditorSession,
+  createRuntimePlayControl,
   editorChildren,
   editorDocumentBounds,
   editorParentOf,
   editorRoots,
+  findEditorCatalog,
+  findEditorCatalogEntry,
   findEditorCollection,
   findEditorPrefab,
+  getRuntimeInspectorValue,
+  installDocumentLiveSync,
   listEditorKinds,
   normalizeEditorLayers,
+  planRuntimeInspectorSet,
+  runtimeEntityMetaWriteBackCommand,
+  runtimeEntityWriteBackCommand,
   summarizeEditorSession,
+  summarizeRuntimeInspector,
+  type DocumentLiveSync,
+  type DocumentPatch,
   type EditorCommand,
   type EditorDocument,
   type EditorKindVisibility,
   type EditorLayersInput,
   type EditorSession,
   type EditorSessionState,
+  type RuntimeEntityState,
+  type RuntimePlayControl,
 } from "@jgengine/core/editor/index";
 import {
   createTerrainSnapshot,
@@ -24,6 +38,7 @@ import {
   type TerrainMaterialLayer,
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
+import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAsset";
 
 import {
   resolveScatter,
@@ -42,7 +57,7 @@ import { TERRAIN_MATERIALS } from "./uiStore";
 
 registerBuiltinSceneKinds();
 
-/** Which document collection an object lives in, plus its current kind + meta — for generic `set_meta`. */
+/** Which document collection an object lives in, plus its current kind + meta ΓÇö for generic `set_meta`. */
 function findMetaTarget(
   doc: EditorDocument,
   id: string,
@@ -78,6 +93,9 @@ export type EditorBridgeRequest =
   | { method: "set_mode"; mode: EditorRunMode }
   | { method: "perf_report" }
   | { method: "list_layers" }
+  | { method: "list_catalogs" }
+  | { method: "get_catalog_entry"; catalogId: string; entryId: string }
+  | { method: "set_catalog_entry"; catalogId: string; entryId: string; patch: Record<string, unknown>; label?: string }
   | { method: "list_selection" }
   | { method: "get_marker"; id: string }
   | { method: "get_volume"; id: string }
@@ -163,7 +181,37 @@ export type EditorBridgeRequest =
   | { method: "set_collection_flags"; id: string; color?: string; locked?: boolean; visible?: boolean }
   | { method: "select_collection"; id: string }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
-  | { method: "assign_material"; ids: string[]; materialId: string };
+  | { method: "assign_material"; ids: string[]; materialId: string }
+  | { method: "push_document_patch"; patch: DocumentPatch; force?: boolean }
+  | { method: "pull_document_patches"; sinceRevision?: number }
+  | { method: "document_revision"; includeDocument?: boolean }
+  | {
+      method: "push_runtime_delta";
+      at?: number;
+      entities?: RuntimeEntityState[];
+      removeIds?: string[];
+      tunables?: Record<string, unknown>;
+    }
+  | { method: "pull_runtime_deltas"; sinceSeq?: number; includeSnapshot?: boolean }
+  | { method: "runtime_snapshot" }
+  | { method: "runtime_summary" }
+  | { method: "runtime_get"; id: string; path?: string }
+  | {
+      method: "runtime_set";
+      id: string;
+      path?: string;
+      value?: unknown;
+      position?: { x: number; y: number; z: number };
+      rotationY?: number;
+      values?: Record<string, unknown>;
+      writeBack?: boolean;
+    }
+  | { method: "runtime_pause" }
+  | { method: "runtime_resume" }
+  | { method: "runtime_step"; frames?: number }
+  | { method: "set_runtime_override"; entity: RuntimeEntityState }
+  | { method: "clear_runtime_override"; id: string }
+  | { method: "write_back_override"; id: string };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -199,6 +247,8 @@ export interface EditorPerfSample {
 export interface EditorHostApi {
   gameId: string;
   getSession(): EditorSession;
+  /** Two-way document/runtime live-sync bus shared with AuthoredScene and the bridge. */
+  getLiveSync(): DocumentLiveSync;
   getVisibility(): EditorKindVisibility;
   setVisibility(next: EditorKindVisibility): void;
   subscribeVisibility(listener: () => void): () => void;
@@ -207,11 +257,16 @@ export interface EditorHostApi {
   subscribeFocus(listener: (target: { x: number; y: number; z: number } | null) => void): () => void;
   getAssets(): readonly EditorAssetInfo[];
   setAssets(assets: readonly EditorAssetInfo[]): void;
+  getCatalogDefinitions(): readonly EditorCatalogDefinition[];
   getPerf(): EditorPerfSample | null;
   setPerf(sample: EditorPerfSample): void;
   getMode(): EditorRunMode;
   setMode(mode: EditorRunMode): void;
   subscribeMode(listener: (mode: EditorRunMode) => void): () => void;
+  /** Play-mode pause/step gate consumed by the runtime publisher. */
+  getPlayControl(): RuntimePlayControl;
+  setPlayControl(next: RuntimePlayControl): void;
+  subscribePlayControl(listener: (play: RuntimePlayControl) => void): () => void;
   handle(request: EditorBridgeRequest): EditorBridgeResponse;
 }
 
@@ -236,6 +291,8 @@ export function getEditorHost(): EditorHostApi | null {
 export function createEditorHost(options: {
   gameId: string;
   layers: EditorLayersInput | undefined;
+  /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */
+  catalogs?: readonly EditorCatalogDefinition[];
   assets?: readonly EditorAssetInfo[];
   onFocus?: (target: { x: number; y: number; z: number } | null) => void;
 }): {
@@ -243,19 +300,30 @@ export function createEditorHost(options: {
   api: EditorHostApi;
   dispose: () => void;
 } {
-  const document = normalizeEditorLayers(options.layers);
+  const catalogDefinitions = options.catalogs ?? [];
+  const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);
+  const liveSync = createDocumentLiveSync(document);
+  const uninstallLiveSync = installDocumentLiveSync(liveSync);
+  let lastMirroredDocument = session.getState().document;
+  const unsubscribeSessionMirror = session.subscribe((state) => {
+    if (state.document === lastMirroredDocument) return;
+    lastMirroredDocument = state.document;
+    liveSync.replaceDocument(state.document);
+  });
   let visibility: EditorKindVisibility = {};
   let focusTarget: { x: number; y: number; z: number } | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
   let perf: EditorPerfSample | null = null;
   let mode: EditorRunMode = "edit";
+  let playControl: RuntimePlayControl = createRuntimePlayControl(false);
   const visibilityListeners = new Set<() => void>();
   const focusListeners = new Set<(target: { x: number; y: number; z: number } | null) => void>();
   const modeListeners = new Set<(mode: EditorRunMode) => void>();
+  const playControlListeners = new Set<(play: RuntimePlayControl) => void>();
 
-  /** Dispatches a command and reports whether it actually mutated the session — a rejected
-   * mutation (locked target, cyclic parent, nothing to undo/redo, …) returns the session's prior
+  /** Dispatches a command and reports whether it actually mutated the session ΓÇö a rejected
+   * mutation (locked target, cyclic parent, nothing to undo/redo, ΓÇª) returns the session's prior
    * state object unchanged, so identity tells the RPC layer apart from a real edit landing. */
   const dispatchGuarded = (command: EditorCommand): { applied: boolean; state: EditorSessionState } => {
     const before = session.getState();
@@ -264,7 +332,7 @@ export function createEditorHost(options: {
   };
 
   const kinds = listEditorKinds(document);
-  // Heavy / dense kinds off by default — turn on from the Layers panel when needed.
+  // Heavy / dense kinds off by default ΓÇö turn on from the Layers panel when needed.
   const defaultOff = new Set([
     "aggro",
     "leash",
@@ -281,6 +349,7 @@ export function createEditorHost(options: {
   const api: EditorHostApi = {
     gameId: options.gameId,
     getSession: () => session,
+    getLiveSync: () => liveSync,
     getVisibility: () => visibility,
     setVisibility(next) {
       visibility = { ...next };
@@ -308,6 +377,7 @@ export function createEditorHost(options: {
     setAssets(next) {
       assets = [...next];
     },
+    getCatalogDefinitions: () => catalogDefinitions,
     getPerf: () => perf,
     setPerf(sample) {
       perf = sample;
@@ -316,12 +386,30 @@ export function createEditorHost(options: {
     setMode(next) {
       if (next === mode) return;
       mode = next;
+      if (next === "play") {
+        playControl = createRuntimePlayControl(false);
+        for (const listener of playControlListeners) listener(playControl);
+      }
       for (const listener of modeListeners) listener(mode);
     },
     subscribeMode(listener) {
       modeListeners.add(listener);
       return () => {
         modeListeners.delete(listener);
+      };
+    },
+    getPlayControl: () => playControl,
+    setPlayControl(next) {
+      playControl = {
+        paused: next.paused,
+        pendingSteps: Math.max(0, Math.floor(next.pendingSteps)),
+      };
+      for (const listener of playControlListeners) listener(playControl);
+    },
+    subscribePlayControl(listener) {
+      playControlListeners.add(listener);
+      return () => {
+        playControlListeners.delete(listener);
       };
     },
     handle(request) {
@@ -354,7 +442,7 @@ export function createEditorHost(options: {
             if (devtoolsGlobal?.snapshot === undefined) {
               return {
                 ok: false,
-                error: "engine devtools not mounted — open the browser editor (F2+D panel) first",
+                error: "engine devtools not mounted ΓÇö open the browser editor (F2+D panel) first",
               };
             }
             return { ok: true, result: { perf, report: devtoolsGlobal.snapshot() } };
@@ -369,6 +457,74 @@ export function createEditorHost(options: {
                 document: state.document,
               },
             };
+          }
+          case "list_catalogs": {
+            const state = session.getState();
+            const catalogs = catalogDefinitions.map((definition) => {
+              const data = findEditorCatalog(state.document, definition.id);
+              return {
+                id: definition.id,
+                label: definition.label,
+                schema: definition.schema,
+                entryCount: data?.entries.length ?? definition.entries.length,
+                entries: (data?.entries ?? definition.entries).map((entry) => ({
+                  id: entry.id,
+                  label: entry.label,
+                })),
+              };
+            });
+            return { ok: true, result: { catalogs } };
+          }
+          case "get_catalog_entry": {
+            const definition = catalogById.get(request.catalogId);
+            if (definition === undefined) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+            const entry = findEditorCatalogEntry(session.getState().document, request.catalogId, request.entryId);
+            if (entry === undefined) return { ok: false, error: `catalog entry not found: ${request.catalogId}/${request.entryId}` };
+            return {
+              ok: true,
+              result: {
+                catalogId: request.catalogId,
+                label: definition.label,
+                schema: definition.schema,
+                entry,
+              },
+            };
+          }
+          case "set_catalog_entry": {
+            const definition = catalogById.get(request.catalogId);
+            if (definition === undefined) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+            const current = findEditorCatalogEntry(session.getState().document, request.catalogId, request.entryId);
+            if (current === undefined) return { ok: false, error: `catalog entry not found: ${request.catalogId}/${request.entryId}` };
+            const merged = { ...current.meta, ...request.patch };
+            const invalid = validateParams(definition.schema, merged);
+            if (invalid.length > 0) {
+              return {
+                ok: false,
+                error: `invalid ${request.catalogId} params: ${invalid.map((issue) => `${issue.key} (${issue.message})`).join(", ")}`,
+              };
+            }
+            const coalesceKey =
+              Object.keys(request.patch).length === 1
+                ? `catalog:${request.catalogId}:${request.entryId}:${Object.keys(request.patch)[0]}`
+                : `catalog:${request.catalogId}:${request.entryId}`;
+            const before = session.getState();
+            const state = session.dispatch(
+              {
+                type: "setCatalogEntry",
+                catalogId: request.catalogId,
+                entryId: request.entryId,
+                patch: {
+                  meta: merged,
+                  ...(request.label === undefined ? {} : { label: request.label }),
+                },
+              },
+              { coalesce: coalesceKey },
+            );
+            if (state === before) {
+              return { ok: false, error: `set_catalog_entry rejected: ${request.catalogId}/${request.entryId}` };
+            }
+            const entry = findEditorCatalogEntry(state.document, request.catalogId, request.entryId);
+            return { ok: true, result: { catalogId: request.catalogId, entry } };
           }
           case "list_selection":
             return { ok: true, result: { selection: session.getState().selection } };
@@ -548,6 +704,208 @@ export function createEditorHost(options: {
           case "import_document":
             session.dispatch({ type: "importJson", json: request.json });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
+          case "push_document_patch": {
+            const force = request.force === true;
+            const patch = request.patch;
+            if (!force && patch.baseRevision !== liveSync.getRevision()) {
+              return {
+                ok: false,
+                error: `baseRevision mismatch: patch=${patch.baseRevision} current=${liveSync.getRevision()}`,
+              };
+            }
+            if (patch.type === "snapshot") {
+              session.dispatch({ type: "replaceDocument", document: patch.document });
+              return {
+                ok: true,
+                result: {
+                  revision: liveSync.getRevision(),
+                  ...summarizeEditorSession(session.getState()),
+                },
+              };
+            }
+            if (patch.commands.length === 0) return { ok: false, error: "commands patch is empty" };
+            for (const command of patch.commands) {
+              const { applied } = dispatchGuarded(command);
+              if (!applied && command.type !== "select" && command.type !== "clearSelection") {
+                return { ok: false, error: `${command.type} rejected while applying patch` };
+              }
+            }
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                ...summarizeEditorSession(session.getState()),
+              },
+            };
+          }
+          case "pull_document_patches":
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                patches: liveSync.pullPatches(request.sinceRevision ?? 0),
+              },
+            };
+          case "document_revision":
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                ...(request.includeDocument === true ? { document: liveSync.getDocument() } : {}),
+              },
+            };
+          case "push_runtime_delta": {
+            const delta = liveSync.pushRuntimeDelta({
+              at: request.at ?? Date.now(),
+              ...(request.entities === undefined ? {} : { entities: request.entities }),
+              ...(request.removeIds === undefined ? {} : { removeIds: request.removeIds }),
+              ...(request.tunables === undefined ? {} : { tunables: request.tunables }),
+            });
+            return { ok: true, result: delta };
+          }
+          case "pull_runtime_deltas":
+            return {
+              ok: true,
+              result: {
+                seq: liveSync.getRuntimeState().seq,
+                deltas: liveSync.pullRuntimeDeltas(request.sinceSeq ?? 0),
+                ...(request.includeSnapshot === true ? { snapshot: liveSync.getRuntimeState() } : {}),
+              },
+            };
+          case "runtime_snapshot":
+            return { ok: true, result: liveSync.getRuntimeState() };
+          case "runtime_summary":
+            return {
+              ok: true,
+              result: summarizeRuntimeInspector(
+                liveSync.getRuntimeState(),
+                liveSync.getRuntimeOverrides(),
+                playControl,
+              ),
+            };
+          case "runtime_get": {
+            if (request.id.length === 0) return { ok: false, error: "runtime_get requires id" };
+            const got = getRuntimeInspectorValue(
+              liveSync.getRuntimeState(),
+              liveSync.getRuntimeOverrides(),
+              request.id,
+              request.path,
+            );
+            if (got.kind === "missing") {
+              return { ok: false, error: `runtime entity/tunable not found: ${request.id}` };
+            }
+            return { ok: true, result: got };
+          }
+          case "runtime_set": {
+            if (request.id.length === 0) return { ok: false, error: "runtime_set requires id" };
+            const plan = planRuntimeInspectorSet(session.getState().document, {
+              id: request.id,
+              ...(request.path === undefined ? {} : { path: request.path }),
+              ...(request.value === undefined ? {} : { value: request.value }),
+              ...(request.position === undefined ? {} : { position: request.position }),
+              ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
+              ...(request.values === undefined ? {} : { values: request.values }),
+              ...(request.writeBack === undefined ? {} : { writeBack: request.writeBack }),
+            });
+            if (plan.error !== undefined) return { ok: false, error: plan.error };
+            if (plan.tunable !== undefined) {
+              liveSync.pushRuntimeDelta({
+                at: Date.now(),
+                tunables: { [plan.tunable.key]: plan.tunable.value },
+              });
+              return {
+                ok: true,
+                result: {
+                  kind: "tunable",
+                  key: plan.tunable.key,
+                  value: plan.tunable.value,
+                  writeBack: false,
+                  ...summarizeRuntimeInspector(
+                    liveSync.getRuntimeState(),
+                    liveSync.getRuntimeOverrides(),
+                    playControl,
+                  ),
+                },
+              };
+            }
+            if (plan.entity === undefined) return { ok: false, error: "runtime_set produced no entity" };
+            liveSync.setRuntimeOverride(plan.entity);
+            liveSync.pushRuntimeDelta({ at: Date.now(), entities: [plan.entity] });
+            let wroteBack = false;
+            let lastState = session.getState();
+            for (const command of plan.writeBackCommands) {
+              const { applied, state } = dispatchGuarded(command);
+              if (!applied) {
+                return { ok: false, error: `runtime_set write-back rejected: ${command.type}` };
+              }
+              lastState = state;
+              wroteBack = true;
+            }
+            if (wroteBack) liveSync.clearRuntimeOverride(plan.entity.id);
+            return {
+              ok: true,
+              result: {
+                kind: "entity",
+                entity: plan.entity,
+                writeBack: wroteBack,
+                revision: liveSync.getRevision(),
+                ...summarizeEditorSession(lastState),
+              },
+            };
+          }
+          case "runtime_pause": {
+            api.setPlayControl({ paused: true, pendingSteps: 0 });
+            liveSync.pushRuntimeDelta({ at: Date.now(), tunables: { paused: true } });
+            return { ok: true, result: { play: playControl } };
+          }
+          case "runtime_resume": {
+            api.setPlayControl({ paused: false, pendingSteps: 0 });
+            liveSync.pushRuntimeDelta({ at: Date.now(), tunables: { paused: false } });
+            return { ok: true, result: { play: playControl } };
+          }
+          case "runtime_step": {
+            const frames = request.frames === undefined ? 1 : Math.max(1, Math.floor(request.frames));
+            api.setPlayControl({ paused: true, pendingSteps: playControl.pendingSteps + frames });
+            liveSync.pushRuntimeDelta({ at: Date.now(), tunables: { paused: true, pendingSteps: playControl.pendingSteps } });
+            return { ok: true, result: { play: playControl } };
+          }
+          case "set_runtime_override": {
+            liveSync.setRuntimeOverride(request.entity);
+            return { ok: true, result: { overrides: liveSync.getRuntimeOverrides() } };
+          }
+          case "clear_runtime_override": {
+            liveSync.clearRuntimeOverride(request.id);
+            return { ok: true, result: { overrides: liveSync.getRuntimeOverrides() } };
+          }
+          case "write_back_override": {
+            const entity = liveSync.getRuntimeOverrides()[request.id];
+            if (entity === undefined) {
+              return { ok: false, error: `no runtime override for "${request.id}"` };
+            }
+            const transform = runtimeEntityWriteBackCommand(session.getState().document, entity);
+            const meta = runtimeEntityMetaWriteBackCommand(session.getState().document, entity);
+            if (transform === null && meta === null) {
+              return {
+                ok: false,
+                error: `override "${request.id}" has nothing to write back into the document`,
+              };
+            }
+            let lastState = session.getState();
+            for (const command of [transform, meta]) {
+              if (command === null) continue;
+              const { applied, state } = dispatchGuarded(command);
+              if (!applied) return { ok: false, error: `write_back_override rejected for "${request.id}"` };
+              lastState = state;
+            }
+            liveSync.clearRuntimeOverride(request.id);
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                ...summarizeEditorSession(lastState),
+              },
+            };
+          }
           case "dispatch": {
             const { applied, state } = dispatchGuarded(request.command);
             if (!applied) return { ok: false, error: `${request.command.type} rejected: no effect` };
@@ -567,33 +925,27 @@ export function createEditorHost(options: {
             return { ok: true, result: { assets } };
           case "place_asset": {
             const focus = focusTarget ?? { x: 0, y: 0, z: 0 };
-            const position = {
-              x: request.x ?? focus.x,
-              y: request.y ?? focus.y,
-              z: request.z ?? focus.z,
-            };
             const asset = assets.find((entry) => entry.id === request.id);
-            const id = `placed_${request.id}_${Date.now().toString(36)}`;
-            session.dispatch({
-              type: "addMarker",
-              marker: {
-                id,
-                kind: request.kind ?? asset?.kind ?? "prop",
-                position,
-                label: asset?.label ?? request.id,
-                color: "#e2e8f0",
-                meta: {
-                  assetId: request.id,
-                  ...(asset?.url === undefined ? {} : { url: asset.url }),
-                },
+            const placed = resolvePlaceAsset({
+              assetId: request.id,
+              position: {
+                x: request.x ?? focus.x,
+                y: request.y ?? focus.y,
+                z: request.z ?? focus.z,
               },
+              kind: request.kind,
+              knownKind: asset?.kind,
+              knownLabel: asset?.label,
+              knownUrl: asset?.url,
             });
+            const marker = toEditorMarker(placed);
+            session.dispatch({ type: "addMarker", marker });
             return {
               ok: true,
               result: {
-                id,
-                position,
-                marker: session.getState().document.markers.find((marker) => marker.id === id),
+                id: marker.id,
+                position: marker.position,
+                marker: session.getState().document.markers.find((entry) => entry.id === marker.id),
               },
             };
           }
@@ -611,7 +963,7 @@ export function createEditorHost(options: {
           }
           case "sculpt_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const edit: TerraformEdit = {
               mode: request.mode,
@@ -655,7 +1007,7 @@ export function createEditorHost(options: {
           }
           case "paint_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const delta = live.paintDelta({
               mode: "paint",
@@ -670,7 +1022,7 @@ export function createEditorHost(options: {
           }
           case "fill_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const delta = live.fillSurfaceDelta(request.surface);
             if (delta.indices.length === 0) return { ok: true, result: { changed: 0 } };
@@ -679,7 +1031,7 @@ export function createEditorHost(options: {
           }
           case "auto_paint": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             const live = editableTerrainFromSnapshot(terrain);
             const rule: TerrainSurfaceRule = {
               surface: request.surface,
@@ -701,14 +1053,14 @@ export function createEditorHost(options: {
           }
           case "set_terrain_layers": {
             if (session.getState().document.terrain === undefined) {
-              return { ok: false, error: "no terrain — call create_terrain first" };
+              return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             }
             session.dispatch({ type: "setTerrainLayers", layers: request.layers });
             return { ok: true, result: { layers: session.getState().document.terrain?.layers ?? [] } };
           }
           case "blend_terrain": {
             const terrain = session.getState().document.terrain;
-            if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+            if (terrain === undefined) return { ok: false, error: "no terrain ΓÇö call create_terrain first" };
             // Auto-add the surface as a layer if the stack does not carry it yet.
             const layers = terrain.layers ?? [];
             if (!layers.some((layer) => layer.surface === request.surface)) {
@@ -889,7 +1241,12 @@ export function createEditorHost(options: {
     },
   };
 
-  const dispose = installEditorHost(api);
+  const uninstallHost = installEditorHost(api);
+  const dispose = () => {
+    unsubscribeSessionMirror();
+    uninstallLiveSync();
+    uninstallHost();
+  };
   return { session, api, dispose };
 }
 

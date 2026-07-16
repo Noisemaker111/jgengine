@@ -22,13 +22,15 @@ export interface SceneMarkerLike {
   meta?: Record<string, unknown>;
 }
 
-/** The minimal volume shape vegetation/clearance read; any `EditorVolume` satisfies it. */
+/** The minimal volume shape vegetation/clearance/triggers read; any `EditorVolume` satisfies it. */
 export interface SceneVolumeLike {
   id: string;
   kind: string;
   shape: "sphere" | "cylinder" | "box";
   center: ScenePoint3;
   radius?: number;
+  /** Cylinder height (m); containment and editors use this when shape is `cylinder`. */
+  height?: number;
   halfExtents?: ScenePoint3;
   meta?: Record<string, unknown>;
 }

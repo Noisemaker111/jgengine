@@ -1,8 +1,10 @@
 import type { AssetAlias } from "./manifest";
+import { starterAliases } from "./packs/starter";
 
 /**
  * Semantic keys → live catalog ids. Prefer these in games so re-homes only
- * touch this table. Never point at kenney-*.
+ * touch this table. Never point at kenney-*. Curated starter theme ids
+ * (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
  */
 export const aliases: readonly AssetAlias[] = [
   { key: "nature/tree_pine", target: "quaternius-stylized-nature/Pine_1" },
@@ -26,4 +28,5 @@ export const aliases: readonly AssetAlias[] = [
   { key: "city/car_police", target: "kaykit-city-builder/car_police" },
   { key: "city/building_a", target: "kaykit-city-builder/building_A" },
   { key: "city/streetlight", target: "kaykit-city-builder/streetlight" },
+  ...starterAliases(),
 ];

@@ -16,7 +16,7 @@ export interface GameInspectionCameraProps {
   config?: InspectionCameraConfig;
 }
 
-/** Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state. */
+/** Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state. */
 export function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps) {
   const config = resolveInspectionCameraConfig(configPatch);
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -60,7 +60,7 @@ export function GameInspectionCamera({ config: configPatch }: GameInspectionCame
       minPolarAngle={config.minPolarAngle}
       maxPolarAngle={config.maxPolarAngle}
       screenSpacePanning
-      mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }}
+      mouseButtons={{ LEFT: undefined, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE }}
     />
   );
 }

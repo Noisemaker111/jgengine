@@ -9,6 +9,7 @@ import {
   editorDocumentSize,
   exportEditorDocumentJson,
   extractEditorFragment,
+  findEditorCatalogEntry,
   findEditorCollection,
   findEditorPrefab,
   importEditorDocumentJson,
@@ -16,6 +17,7 @@ import {
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
+  seedEditorCatalogs,
   summarizeEditorSession,
   editorParentOf,
   editorChildren,
@@ -87,11 +89,27 @@ describe("editor document", () => {
     const original = normalizeEditorLayers({
       markers: [{ id: "boss_warrior", kind: "boss", position: { x: -80, y: 0, z: -660 }, label: "Warrior" }],
       collections: [{ id: "c1", name: "Pack", memberIds: ["boss_warrior"], locked: true }],
+      catalogs: [{ id: "weapons", entries: [{ id: "bow", meta: { damage: 8 } }] }],
     });
     const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(original)));
     expect(decoded.ok).toBe(true);
     if (!decoded.ok) throw new Error("expected decode success");
     expect(decoded.document).toEqual(original);
+  });
+
+  test("decodeEditorDocument round-trips ui panel layout", () => {
+    const original = normalizeEditorLayers({
+      ui: {
+        panels: {
+          health: { anchor: "top-left", dx: 16, dy: 16, width: 220, height: 28, type: "health-bar" },
+          build: { anchor: "bottom", dx: 0, dy: -12, visible: true },
+        },
+      },
+    });
+    const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(original)));
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error("expected decode success");
+    expect(decoded.document.ui).toEqual(original.ui);
   });
 
   test("json round-trip", () => {

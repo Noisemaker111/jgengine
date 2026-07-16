@@ -55,6 +55,7 @@ export {
   type LifecycleConfig,
   type PhysicsConfig,
 } from "./game/defineGame";
+export { defineSystem, type SystemDefinition, type SystemEventHandlers, type SystemTick } from "./game/defineSystem";
 export { createGameDialogue, dialogueSlot } from "./game/dialogue";
 export {
   createGameEvents,
@@ -167,6 +168,13 @@ export {
   type WorldInviteTarget,
 } from "./game/social";
 export { createSpawnPoints } from "./game/spawnPoints";
+export { composeGameLoop } from "./game/systemRuntime";
+export {
+  DEFAULT_FIXED_STAGES,
+  DEFAULT_FRAME_STAGES,
+  compileSystemSchedule,
+  type CompiledSystemSchedule,
+} from "./game/systemSchedule";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";

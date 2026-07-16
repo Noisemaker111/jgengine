@@ -93,6 +93,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Concept | Import path (`@jgengine/core/…`) | Export(s) |
 |---------|----------------------------------|-----------|
 | Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` — use `ctx.scene.entity` (never deprecated `GameDefinition.scene`) |
+| Composable systems | `game/defineSystem`, `game/systemSchedule`, `game/systemRuntime` | `defineSystem`, `SystemDefinition`, `SystemTick`, `compileSystemSchedule`, `composeGameLoop`, `DEFAULT_FIXED_STAGES`, `DEFAULT_FRAME_STAGES` — `defineGame({ systems })`; [reference-systems.md](reference-systems.md) |
 | Entity meta | `scene/entityStore` | `entityMetaOf(entity, isMeta)` — type-guard narrow of `meta` (prefer over `as T`) |
 | Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `CameraProjection`, `SideScrollCameraConfig`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
@@ -107,7 +108,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
 | Form / shapeshift | `scene/form` | `createForms`, `Forms`, `FormDef`, `FormsDeps`, `FormChangedEvent` |
-| Multiplayer adapters | `runtime/adapter` | `offline`, `ws`, `convex`, `socketIo`, `p2p`, `lan`, `fly`, `servers`, `MultiplayerTopology`, `ServersPoolConfig`, `resolveAuthority`, `isPresenceOnly`, `isServerAuthoritative`, `isOffline` — unset/`"client"` authority is presence-only; `"server"` is host-authoritative |
+| Multiplayer adapters | `runtime/adapter`, `runtime/worldProjection` | `offline`, `ws`, `convex`, `socketIo`, `p2p`, `lan`, `fly`, `servers`, `MultiplayerTopology`, `ServersPoolConfig`, `resolveAuthority`, `isPresenceOnly`, `isServerAuthoritative`, `isOffline`, `visibleEntityIds`, `projectEntitiesForViewer`, `projectPerUserForViewer`, `projectByVisibleIds`, `policyProjectsViewers` — unset/`"client"` authority is presence-only; `"server"` is host-authoritative |
 | Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` |
 | Dropped-item entity | `game/worldItem` | `WORLD_ITEM_ENTITY_NAME`, `WorldItemRecord`, `WorldItemSpawnInput`, `createWorldItemStore`, `resolveDeathDrops`, `scatterOffset`, `scatterPosition`, `selectNearestWorldItem`, `resolveWorldItemPresentation`, `RarityStyle`, `WorldItemPresentation`, `DEFAULT_RARITY`, `DEFAULT_PICKUP_RADIUS`, `DEFAULT_SCATTER` |
 | Loot filter | `game/lootFilter` | `lootFilter`, `evaluateLootFilter`, `LootFilterRule`, `LootFilterCondition`, `LootFilterItem`, `LootFilterOverride` |
@@ -161,6 +162,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | World geometry | `world/geometry` | `footprintAabb`, `aabbOverlap`, `snapToGrid`, `resolveMove`, `Aabb`, `Footprint` |
 | Placement | `world/placement` | `validatePlacement`, `footprintObstacle`, `PlacementRules`, `PlacementResult` |
 | Placement ghost | `world/placementController` | `createPlacementController`, `PlacementController`, `PlacementPreview`, `PlacementCommit`, `SnapMode`, `quarterTurnsToRotationY` |
+| Place asset verb | `world/placeAsset` | `resolvePlaceAsset`, `placeAssetFromCommit`, `toStructureInput`, `toEditorMarker`, `PlaceAssetResult` |
 | Connector sockets | `world/connectors` | `snapToNearest`, `socketsCompatible`, `worldSockets`, `socketWorldPosition`, `ConnectorSocket`, `ConnectorPieceDef`, `PlacedPiece`, `SnapResult` |
 | Structural support | `world/support` | `solveSupport`, `toDebrisBodies`, `SupportPiece`, `SupportLink`, `SupportResult` |
 | Wall/roof authoring | `world/walls` | `createWallDrawTool`, `footprintFromWalls`, `autoRoof`, `wallSegments`, `createSurfacePaint`, `WallDrawTool`, `RoofPlan`, `EnclosedFootprint` |
@@ -417,9 +419,10 @@ src/
   game.config.ts       single entry — export const game = defineGame({...}) from "@jgengine/shell/defineGame"
   index.tsx            barrel — export { game } from "./game.config" (+ any UI-preview scenario re-export)
   main.tsx             standalone host — mounts <GameHost playable={game}/> from "@jgengine/shell/GameHost"
-  loop.ts              onInit, onNewPlayer, onTick
+  loop.ts              onInit / onNewPlayer (boot); prefer systems for per-frame work
   world.ts             WorldFeature + PhysicsConfig (only for games that have one)
   game/
+    systems.ts           defineSystem capabilities listed in defineGame({ systems })
     keybinds.ts          ActionCodesMap — named actions + hotbarSlotBindings(n)
     inventories.ts       inventory declarations
     assets.ts             Render catalog
@@ -441,35 +444,23 @@ src/
 
 **Smart defaults** — omit any of these and the call still resolves: `multiplayer` → `offline()`; `assets` → an empty asset catalog; `loop` hooks (`onInit`/`onNewPlayer`/`onTick`) → no-ops; `content` → `{}`; `GameUI` → an empty component; `camera` → third-person orbit; `feed` → 20-entry ring buffers per action; a `world` of kind `environment()` auto-renders as the backdrop with no `environment` component supplied — a non-`environment()` world (`flat()`, `voxel()`, …) still needs the game to hand it one.
 
-**Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` / `loot` / `economy` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { quest, trade, unlocks, cosmetics, roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` (`cosmetics` hangs off `ctx.player`) — a puzzle game isn't handed a quest journal, a shop, a card pile, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`).
+**Composable systems (`systems`)** — preferred runtime path: list meaningful capabilities (`combat()`, `mobs()`), each a `defineSystem({ id, tick, update, events?, feature?, save?, … })`. Engine compiles fixed/frame/interval/event/manual schedules with deterministic stage order. `feature` enables `ctx.game.*` without a redundant flag. Classic `loop` still works for boot/join. Full contract: [reference-systems.md](reference-systems.md).
 
-**Offline whole-world save (`persist`)** — `defineGame({ persist: true })` binds `ctx.game.save` for an offline game and autosaves the entire world with no per-field code. Full authoring guide (modes, save points, slots, cloud swap): `jgengine-gameplay` → "Save the *whole* game automatically".
+**Opt-in `features`** — `defineGame({ features: { quest, trade, … } })` when not installing a system; omit and `ctx.game.<name>` is `undefined`. `chat` implies `social`.
+
+**Offline whole-world save (`persist`)** — `defineGame({ persist: true })` binds `ctx.game.save`. Guide: `jgengine-gameplay` → whole-game save.
 
 ```ts
-// game.config.ts — imports only, nothing inline
+// game.config.ts — imports only
 import { defineGame } from "@jgengine/shell/defineGame";
-import { assets } from "./game/assets";
-import { content } from "./game/content";
-import { GameUI } from "./game/ui/GameUI";
-import { inventories } from "./game/inventories";
-import { keybinds } from "./game/keybinds";
+import { systems } from "./game/systems";
 import { loop } from "./loop";
-import { physics, world } from "./world";
+// …assets, content, GameUI, inventories, keybinds, physics, world
 
 export const game = defineGame({
   name: "My Game",
-  assets,
-  world,
-  physics,
-  inventories,
-  input: keybinds,
-  server: "persistent",            // or { mode: "ffa", scoreLimit: 30 } — rules live in game code
-  save: { auto: "5m", scope: "player+chunks" },   // or "none"
-  multiplayer: offline(),          // or wsPresence({ topology, url? }) / ws({ topology, url?, authority: "server" }) / fly({ app }) / convexPresence({ topology }) / convex({ topology, authority: "server" }) / socketIo({ topology, url? }) / p2p({ room? }) / lan({ port?, path? }) / servers({ …, adapter }) — defaults to offline(); see jgengine-multiplayer → Authority for presence-only vs shared-world
-  content,
-  loop,                            // Partial<GameLoop<GameContext>> — missing hooks default to no-ops
-  GameUI,
-  camera: { perspective: "third" },  // optional — this is the default
+  assets, world, physics, inventories, input: keybinds,
+  multiplayer: offline(), content, systems, loop, GameUI,
 });
 ```
 
@@ -684,31 +675,22 @@ The `ctx` surface above is the **stateful runtime** — it's what game code uses
 
 `createSpatialApi`'s optional `grid: { cellSize }` opts `inRadius`/`queryArc` into a lazily-built x/z broadphase index over `candidates()` instead of a linear scan — worth it once candidate counts run into the hundreds+. The index is reused across calls until `invalidate()` is called, so call it after any position change (move, spawn, despawn); a candidate outside the index at query time still resolves exactly (never silently skipped), only a *moved* one can be missed until invalidated.
 
-## `loop` — lifecycle
+## `systems` + `loop` — lifecycle
+
+Prefer `defineSystem` + `defineGame({ systems })` for per-frame work (no giant `onTick` fan-out). `loop` keeps boot/join:
 
 ```ts
-export function onInit(ctx: GameContext) {
-  ctx.item.use.register(itemUseHandlers);
-  ctx.player.loadout.register(loadouts);
-  for (const table of lootTables) ctx.game.loot.register(table);
-  ctx.game.quest.register(quests);
-  ctx.game.quest.bind("entity.died");
-  ctx.game.feed.bind("entity.died");
-  ctx.game.events.on("entity.died", (evt) => onEntityDied(ctx, evt));
-  setupWorld(ctx);
-}
-
-export function onNewPlayer(ctx: GameContext) {
-  ctx.scene.entity.spawn("player_default", { id: ctx.player.userId, position: spawnPoint });
-  if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
-}
-
-export function onTick(ctx: GameContext, dt: number) {
-  // AI, regen, respawn timers — dt is GAME time (see ctx.time). Never death detection (see entity.died)
-}
+// game/systems.ts
+import { defineSystem } from "@jgengine/core/game/defineSystem";
+export const combat = defineSystem({
+  id: "combat", tick: { type: "frame", stage: "combat" },
+  update(ctx, dt) { /* dt is game time */ },
+});
+export const systems = [combat];
+// loop.ts — onInit registers catalogs/quests; onNewPlayer spawns player
 ```
 
-`onInit` runs once per boot; register everything there. Loot tables register through `ctx.game.loot.register` — `lootTable()` is a pure validating factory, there is no global side-effect registry.
+`composeGameLoop` installs systems on `onInit`, ticks before residual `loop.onTick`. Stages: `input→movement→combat→ai→activities→cleanup` (+ frame `animation→camera→effects`). See [reference-systems.md](reference-systems.md).
 
 ## `ctx.time` — the simulation clock
 
@@ -828,12 +810,14 @@ Report the above as the done-ledger (`jgengine-verify` → "The done-ledger"), n
 ## Quick reference
 
 ```
-defineGame (shell) engine fields (assets, world, physics, inventories, input, server, save, time, feed, multiplayer)
-                   + presentation fields (content, loop, GameUI, camera, environment, shadows, movement, devtools, …) in one call — smart defaults fill the rest
-defineGame (core)  the underlying engine-only primitive: assets, world, physics, inventories, input, server, save, time, feed, multiplayer, loop
-PlayableGame       { game, content, loop, GameUI, camera, … } — the runner contract `defineGame` (shell) returns
+defineGame (shell) engine fields (assets, world, physics, inventories, input, systems, server, save, time, feed, multiplayer)
+                   + presentation fields (content, loop, GameUI, camera, …) — smart defaults fill the rest
+defineGame (core)  systems + loop composed; features OR-merged from system.feature
+defineSystem       id, tick (fixed|frame|interval|manual), events, create/start/update, save/replicate/reset/dispose
+composeGameLoop    compileSystemSchedule → installSystems; systems tick before residual loop.onTick
+PlayableGame       { game, content, loop, GameUI, camera, … } — runner contract
 GameContext        ctx.scene / ctx.game / ctx.player / ctx.item / ctx.camera / ctx.input + subscribe/version
-scene.object       place, remove, move, rotate, at, setVisual (per-instance ObjectVisual: scale/color/opacity override)
-scene.entity       spawn (anchor/offset), despawn, setPose, update; stats; targeting; effects;
+scene.object       place, remove, move, rotate, at, setVisual
+scene.entity       spawn, despawn, setPose, update; stats; targeting; effects;
 
 

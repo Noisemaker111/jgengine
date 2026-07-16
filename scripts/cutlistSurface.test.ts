@@ -39,6 +39,8 @@ describe("CUTLIST surface diet", () => {
   test("desktop default game id is a tracked real game, not a missing id", () => {
     const desktop = readFileSync(join(root, "apps/desktop/src/main.tsx"), "utf8");
     expect(desktop).toMatch(/DEFAULT_GAME_ID\s*=\s*"studio-showcase"/);
+    expect(desktop).toMatch(/SHOW_LAUNCHER/);
+    expect(desktop).toMatch(/Launcher/);
     expect(desktop).not.toMatch(/"voxel-mine"/);
     const gamesDir = join(root, "Games");
     const tracked = readdirSync(gamesDir).filter((name) => {
@@ -74,6 +76,17 @@ describe("CUTLIST surface diet", () => {
     expect(block).not.toMatch(/jgengine\s*:/);
     expect(block).toMatch(/shell\s*:/);
     expect(block).toMatch(/react\s*:/);
+  });
+
+  test("curated core barrels route to domain skills (not MAIN) so skill examples count", async () => {
+    const { skillForModule } = await import("./skillRouting");
+    expect(skillForModule("core", "gameplay")).toBe("jgengine-gameplay");
+    expect(skillForModule("core", "world")).toBe("jgengine-world");
+    expect(skillForModule("core", "combat")).toBe("jgengine-combat");
+    expect(skillForModule("core", "multiplayer")).toBe("jgengine-multiplayer");
+    expect(skillForModule("core", "ui")).toBe("jgengine-ui");
+    expect(skillForModule("core", "runtime/worldProjection")).toBe("jgengine-multiplayer");
+    expect(skillForModule("core", "authoring")).toBe("jgengine");
   });
 
   test("core package.json does not market ECS as a keyword", () => {

@@ -35,3 +35,4 @@ export {
   type VoiceRoute,
   type VoiceTransport,
 } from "./multiplayer/voiceContract";
+export { type ReplicationPolicy } from "./runtime/worldProjection";

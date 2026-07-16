@@ -79,25 +79,23 @@ Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2+D devtools), chi
 ## Game opt-in (optional, thin)
 
 ```ts
-// Games/<id>/src/index.tsx
+// Games/<id>/src/index.tsx — also export editorCatalogs for Data-panel tuning
 export { game } from "./game.config";
 export { editorLayers } from "./editorLayers";
 ```
 
-`editorLayers` returns an `EditorDocument` (markers, volumes, paths). Live entities from `onInit` still render without it.
+`editorLayers` → doc. Optional `editorCatalogs` seeds `document.catalogs` (`list|get|set_catalog_entry`; `findEditorCatalogEntry`).
 
 ## Author the scene, don't hardcode it — render it at runtime
 
 Scene content (paths, foliage, terrain, gameplay spots) belongs in the **editor document**, not in
 bespoke render code with hardcoded coordinates. Author it in the 3D editor, save `editor.scene.json`,
-and render it generically at runtime with **`<AuthoredScene document={doc} field={ctx.world.ground} />`**
-from `@jgengine/shell/scene` — it draws every non-scatter path as a **ground-draped ribbon**
-(`buildRoadRibbon`, so a path hugs the terrain instead of clipping through it) and instances the foliage
-(`resolveScatter` → `InstancedScatter`), all from the document. `<AuthoredPaths>` renders just the paths.
-Terrain/collision come from `environment({ sculpt, clearings })`. **Gameplay reads the same document** —
-derive enemy waypoints from a `route` path and tower plots from markers, so there is one source of truth
-(`Games/tower-guard`: `editor.scene.json` drives rendering *and* pathing; no hand-rolled path meshes, no
-duplicated coordinates). Never draw a path or scatter field with hand-written per-segment meshes.
+and render it generically at runtime with **`<AuthoredScene document={doc} field={ctx.world.ground} placeObjects />`**
+from `@jgengine/shell/scene` — draped paths, foliage (`resolveScatter`), studios/generators, and catalog props
+(`resolveAuthoredObjects` → object store / `objectModels`). Or onInit: `placeAuthoredObjects(ctx.scene.object,
+resolveAuthoredObjects(doc), heightAt)` / `placeAuthoredObjectsFromDocument` / `markerCatalogId`.
+`<AuthoredPaths>` / `<AuthoredObjects document field />` for one slice. Terrain: `environment({ sculpt })`.
+Never hand-roll path meshes or `markers.filter(meta.catalogId)` place loops.
 
 This rule is **gated**: `bun run check-content-gate` (wired into `check-types`) fails a game that hard-codes
 world geometry instead of rendering an editor document, and flags source files dense with hand-placed
@@ -111,7 +109,7 @@ browserless by `scripts/editor-mvp.test.ts`.
 ## The F2 chord family — three modes, all agent-usable headless
 
 - **F2+D — debug mode**: engine devtools overlay (Perf/Tune/Logs/Net/Keys/Col). A plain F2 tap does nothing; F2 is only the chord holder.
-- **F2+C — canvas mode**: HUD layout editing — drag `HudPanel`s live (`HudCanvas` `editChord`).
+- **F2+C — canvas mode**: HUD layout (`document.ui.panels`) — drag/resize; TSX props fallback-only.
 - **F2+E — editor mode**: this scene editor.
 
 Agents never need a user-launched server: `bun run drive` boots the dev server **and** headless Chromium itself, and every `GamePlayerShell` page installs `window.__jgengineAgent` — one RPC surface covering all three modes (`--rpc` prefers it, falls back to the raw editor host). Unknown verbs delegate to the live editor host, so all editor verbs below work through it too.
@@ -126,9 +124,11 @@ bun run drive <id> --rpc '{"method":"editor_summon"}' --wait 2000 --rpc '{"metho
 bun run drive <id> --mode editor --rpc '{"method":"set_transform","id":"boss","x":-90,"z":-650}' --rpc '{"method":"export_document"}'
 ```
 
-Canvas verbs: `canvas_state`, `canvas_set_editing {editing}`, `canvas_move_panel {id, anchor, dx?, dy?}`, `canvas_reset {id?}`. Debug verbs: `debug_open {open?}`, `debug_snapshot`, `debug_report`. Editor extras: `save_scene` writes the live document to `Games/<id>/src/editor.scene.json` through the dev-server save endpoint — the headless Ctrl+S. Menu-gated games: `--click`/`--key` steps first, then RPC. For pure document edits without WebGL, use the headless CLI below.
+Canvas verbs: `canvas_state`, `canvas_set_editing`, `canvas_move_panel`, `canvas_resize_panel`, `canvas_list_panel_types`, `canvas_reset`. Debug: `debug_open`, `debug_snapshot`, `debug_report`. Editor extras: `save_scene` → `editor.scene.json`. Menu-gated: `--click`/`--key` first. Pure document edits: headless CLI below.
 
 ## Agent RPC (same verbs as UI)
+
+**Agent panel** (toolbar): shared GUI/RPC undo — `packAgentContext` / `routeToolCall` / `runAgentTurn` / `undoAgentPatch`; `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (see `reference.md`).
 
 Browser console / injected host:
 
@@ -139,22 +139,17 @@ window.__jgengineEditorHost.handle({ method: "set_transform", id: "boss_warrior"
 window.__jgengineEditorHost.handle({ method: "export_document" })
 ```
 
-Headless against the live rendered editor (screenshots + RPC in one run):
+Headless (live editor + screenshots, or document-only CLI):
 
 ```
 bun run drive the-robots --mode editor --wait 3000 --rpc '{"method":"editor_status"}' --shot check
 bun run drive the-robots --mode editor --rpc '{"method":"set_mode","mode":"play"}' --wait 2000 --shot playing
-```
-
-Headless document tools (no WebGL — document verbs only, no camera/perf):
-
-```
 bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'
 bun packages/editor/src/mcp/cli.ts --game the-robots --serve   # POST localhost:17373/rpc
 bun packages/editor/src/mcp/cli.ts --game the-robots --stdio   # MCP JSON-RPC on stdin/stdout
 ```
 
-The CLI/HTTP bridge validates every RPC payload and a game's `editorLayers` export at load time — malformed JSON, an unknown `method`, or a wrong-shaped document/marker/volume/path field is rejected with a path-specific diagnostic (`$.markers[2].position expected {x,y,z} numbers`) instead of crashing or silently passing through.
+The CLI/HTTP bridge validates every RPC payload and a game's `editorLayers` export at load time — malformed JSON, unknown `method`, or wrong-shaped document fields get path-specific diagnostics instead of crashing.
 
 Viewport: click anything to select — editor gizmos hit directly, world geometry snaps to the nearest marker/volume/path/note, repeat-click cycles stacked candidates, shift/ctrl-click multi-selects — then TransformControls (W move / E rotate marker / R scale volume: radius, cylinder height, or box half-extents). Multi-selection drags move every selected object. Snap button cycles ground / grid / off (grid also snaps rotation to 15°); `G` toggles the reference grid. Outliner groups by kind (notes included) with ×N dedup rows; `N` cycles instances of the selected row; ctrl-click adds to selection.
 
@@ -366,11 +361,11 @@ Full copyable walkthrough (pole-line + bookcase, zero engine edits): **`examples
 
 ### Drive studio sliders headlessly (agents)
 
-Parametric params live in `meta`; patch them via the RPC/CLI — `set_meta` (any object), `set_path` / `set_marker` / `set_note` (fuller patches). Patches **merge** into `meta` and are **validated against the kind schema** (out-of-range/unknown values are rejected):
+Parametric params live in `meta`; patch via `set_meta` / `set_path` / `set_marker` / `set_note` (merge + schema validate). Catalogs: same SchemaInspector + coalesce via `list|get|set_catalog_entry`:
 
 ```
 bun run drive <id> --mode editor --rpc '{"method":"set_meta","id":"grove","patch":{"density":0.6,"seed":"r2"}}'
-bun run drive <id> --mode editor --rpc '{"method":"set_path","id":"wires","meta":{"spacing":6,"wireCount":4}}'
+bun packages/editor/src/mcp/cli.ts --game tower-guard --rpc '{"method":"set_catalog_entry","catalogId":"towers","entryId":"tower_archer","patch":{"damage":12}}'
 ```
 
 ## Core APIs (`editor/`)
@@ -379,9 +374,9 @@ bun run drive <id> --mode editor --rpc '{"method":"set_path","id":"wires","meta"
 - `@jgengine/core/editor/types` — markers, volumes, paths
 - `@jgengine/core/editor/document` — normalize/merge/export
 - `@jgengine/core/editor/commands` — `createEditorSession`
-- `@jgengine/editor` — `EditorApp`, host RPC, bridge server (dev-only package)
+- `@jgengine/editor` — `EditorApp`, host RPC, bridge server, agent panel (dev-only package)
 
 ## Do not
 
-- Statically import `@jgengine/editor` from `GameHost` or game entry code — summon it only as a lazy chunk (`await import("@jgengine/editor")`), the pattern the scaffolded `main.tsx` ships
+- Statically import `@jgengine/editor` from `GameHost` or game entry code — summon it only as a lazy chunk (`await import("@jgengine/editor")`)
 - Treat mesh modeling as in-scope (placement/world tools only)

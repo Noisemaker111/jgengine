@@ -119,6 +119,21 @@ export { Glide, Grapple } from "./physics/traversal";
 export { DEFAULT_GRIP_CURVE, createVehicleBody, sampleGripCurve, type GripCurve } from "./physics/vehicleBody";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
 export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
+export {
+  collectAuthoredTriggers,
+  createAuthoredTriggerRuntime,
+  getTriggerAction,
+  listTriggerActions,
+  pointInVolume,
+  registerTriggerAction,
+  type AuthoredTrigger,
+  type AuthoredTriggerRuntime,
+  type TriggerActionDefinition,
+  type TriggerDispatchEvent,
+  type TriggerEvent,
+  type TriggerHandlers,
+  type TriggerSourceKind,
+} from "./scene/authoredTriggers";
 export { selectAutoTarget, type AutoTargetPolicy } from "./scene/autoTarget";
 export { advanceBehaviors } from "./scene/behaviorRuntime";
 export { patrol, player, talkable, wander, type BehaviorDescriptor } from "./scene/behaviors";
@@ -174,6 +189,12 @@ export { type VisibilityConfig } from "./visibility/config";
 export { distance } from "./visibility/distance";
 export { type CameraView, type Frustum } from "./visibility/frustum";
 export { createVisibilitySystem, type Renderable, type VisibilitySystem } from "./visibility/visibilitySystem";
+export {
+  markerCatalogId,
+  placeAuthoredObjects,
+  placeAuthoredObjectsFromDocument,
+  resolveAuthoredObjects,
+} from "./world/authoredObjects";
 export { createContributionPool, createPlotPermissions, type BuildRole } from "./world/buildPermissions";
 export { buildingIndex, type BuildingIndex } from "./world/buildingIndex";
 export { type BuildingPaletteOverrides, type BuildingStyle } from "./world/buildings";
@@ -251,6 +272,13 @@ export {
   type WorldXZ,
 } from "./world/minimap";
 export { placeAlongPath } from "./world/pathInstances";
+export {
+  placeAssetFromCommit,
+  resolvePlaceAsset,
+  toEditorMarker,
+  toStructureInput,
+  type PlaceAssetResult,
+} from "./world/placeAsset";
 export { createPlacedStructureStore, type PlacedStructure } from "./world/placedStructureStore";
 export { validatePlacement, type PlacementRules } from "./world/placement";
 export {

@@ -3,12 +3,10 @@
  * handshake), pull pixels via CDP Page.captureScreenshot, write binary PNG.
  * No Playwright. PNG never travels through the page console.
  *
- * Warm loop: `--keep` on the first shot leaves the dev server and Chrome
- * (fixed debug port) running after this process exits; every later shot in
- * the same edit/re-shoot loop passes `--connect <port>` to reuse both,
- * skipping vite's ~60-90s boot and Chrome's cold launch. `--size half`
- * halves both dimensions (~1/4 the pixels) for cheap mid-loop judge shots;
- * drop it for the final full-res shot. See `jgengine-verify` / `jgengine-ui`.
+ * Persistent service: `bun run shoot --serve` (or `shoot daemon start`) keeps
+ * one Vite + headless Chrome warm; later plain `shoot <id>` calls attach in
+ * seconds. Manual warm loop still works: `--keep` / `--connect <port>` /
+ * `--size half`. See `jgengine-verify` / `jgengine-ui`.
  */
 import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
@@ -17,6 +15,7 @@ import {
   type CdpSession,
   DEVICES,
   applyDevice,
+  checkoutIdentity,
   ensureDevServer,
   isUp,
   killProcessTree,
@@ -30,6 +29,14 @@ import {
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
 import { computeShotMetrics, evaluateThresholds } from "./shot-metrics";
+import {
+  attachDaemon,
+  isDaemonArgv,
+  runDaemonCommand,
+  startDaemon,
+  writeDaemonState,
+  type ShootDaemonState,
+} from "./shoot-daemon";
 
 type Mode = "ui" | "play" | "poster" | "preview";
 type DeviceArg = Device | "both";
@@ -70,13 +77,19 @@ const HELP = `bun run shoot [game] [options]
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this shot — pair with --connect <port>
                       on every following shot in the loop (warm-loop pattern)
+  --serve             start the persistent screenshot daemon (Vite + Chrome stay warm)
   --inspect           run the pixel-metrics pass on the PNG we already have
                       in memory (no second browser launch) and write
                       shots/<name>.metrics.json beside it
   --timeout <s>       per-shot timeout in seconds (default 60)
   --help              show this text
 
-Warm loop:
+Persistent daemon (preferred for multi-shot loops):
+  bun run shoot --serve                      # keep Vite + Chrome warm
+  bun run shoot daemon start|status|stop     # managed background service
+  bun run shoot <game> --mode play           # auto-attaches when daemon is live (<5s)
+
+Manual warm loop (still supported):
   bun run shoot <game> --mode play --keep                       # first shot: cold boot, stays warm
   bun run shoot <game> --mode play --connect <port> --size half # re-shots: <10s, cheap judge PNG
   bun run shoot <game> --mode play --connect <port>             # final full-res shot for the PR
@@ -307,7 +320,17 @@ async function shootOne(
   }
 }
 
-const args = parseArgs(process.argv.slice(2));
+const rawArgv = process.argv.slice(2);
+if (isDaemonArgv(rawArgv)) {
+  if (rawArgv.includes("--serve")) {
+    await startDaemon({ foreground: true });
+    process.exit(0);
+  }
+  const daemonArgv = rawArgv[0] === "daemon" ? rawArgv.slice(1) : rawArgv;
+  process.exit(await runDaemonCommand(daemonArgv));
+}
+
+const args = parseArgs(rawArgv);
 if (args.help) {
   console.log(HELP);
   process.exit(0);
@@ -322,9 +345,17 @@ try {
 }
 const targets = devicesFor(args.device);
 
+const daemon: ShootDaemonState | null =
+  args.connect === undefined && args.url === undefined ? await attachDaemon() : null;
+
 let server: ChildProcess | null = null;
 let devBase = "";
-if (args.url === undefined) {
+let attachedDaemon = false;
+if (daemon !== null) {
+  devBase = daemon.devBase;
+  attachedDaemon = true;
+  console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, dev ${daemon.devBase}`);
+} else if (args.url === undefined) {
   const dev = await ensureDevServer();
   server = dev.child;
   devBase = dev.base;
@@ -343,39 +374,55 @@ if (args.url === undefined) {
 }
 let chrome: ChildProcess | null = null;
 const warmPort = resolveWarmChromePort();
-const debugPort = args.connect ?? (args.keep ? warmPort : pickDebugPort());
+const debugPort =
+  args.connect ??
+  (daemon !== null ? daemon.chromePort : args.keep ? warmPort : pickDebugPort());
 let exitCode = 0;
+const leaveWarm = args.keep || attachedDaemon;
 
 const hardDeadlineMs = args.timeoutMs * Math.max(targets.length, 1) + 120_000;
 const watchdog = setTimeout(() => {
   console.error(`shoot: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline — force-killing Chrome and dev server`);
-  killProcessTree(chrome);
-  killProcessTree(server);
+  if (!attachedDaemon) {
+    killProcessTree(chrome);
+    killProcessTree(server);
+  }
   process.exit(124);
 }, hardDeadlineMs);
 watchdog.unref();
 
 try {
-  if (args.connect === undefined) {
+  if (args.connect !== undefined || attachedDaemon) {
+    await waitForDebugger(debugPort, attachedDaemon ? 5_000 : 5_000);
+  } else {
     chrome = launchChrome(debugPort, "jg-shoot-");
     await waitForDebugger(debugPort, 30_000);
-  } else {
-    await waitForDebugger(debugPort, 5_000);
   }
 
   for (const device of targets) {
     const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir), devBase);
     if (!fits) exitCode = 1;
   }
-  if (args.keep) {
+  if (args.keep && !attachedDaemon) {
+    const devPort = Number(new URL(devBase).port);
+    writeDaemonState({
+      identity: checkoutIdentity(),
+      chromePort: debugPort,
+      devPort,
+      devBase,
+      chromePid: chrome?.pid,
+      devPid: server?.pid,
+      startedAt: new Date().toISOString(),
+    });
     console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
-    console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);
+    console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} (daemon auto-attach)`);
+    console.error(`shoot: or explicit → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);
   }
 } catch (error) {
   exitCode = 1;
   console.error(error instanceof Error ? error.message : error);
 } finally {
-  if (!args.keep) {
+  if (!leaveWarm) {
     killProcessTree(chrome);
     killProcessTree(server);
   }

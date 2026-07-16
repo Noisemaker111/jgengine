@@ -5,6 +5,7 @@ import { GameIcon } from "@jgengine/react/gameIcons";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 
 import { GOLD_CURRENCY } from "../../entities/base/catalog";
+import { editorLayers } from "../../../editorLayers";
 import { TOWER_IDS, towerDef } from "../../entities/towers/catalog";
 import { keybinds } from "../../keybinds";
 import { session } from "../../session";
@@ -19,7 +20,7 @@ export function BuildBar() {
       <HudLabel>Build</HudLabel>
       <div style={{ display: "flex", gap: 10 }}>
         {TOWER_IDS.map((id, index) => {
-          const def = towerDef(id);
+          const def = towerDef(id, editorLayers);
           const affordable = gold >= def.cost;
           const isSelected = selected === id;
           return (

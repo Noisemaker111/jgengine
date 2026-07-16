@@ -1,4 +1,7 @@
+import type { EditorUiDocument } from "../ui/hudDocument";
 import type { TerraformSnapshot } from "../world/terraform";
+
+export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../ui/hudDocument";
 
 /** A world-space point used across editor markers, volumes, and paths. */
 export type EditorVec3 = { x: number; y: number; z: number };
@@ -14,6 +17,11 @@ export interface EditorMarker {
   rotationY?: number;
   color?: string;
   label?: string;
+  /**
+   * Catalog object id for a placed prop mesh. Prefer this over `meta.catalogId` for new content;
+   * `resolveAuthoredObjects` still reads `meta.catalogId` as the migration alias.
+   */
+  catalogId?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
   meta?: Record<string, unknown>;
@@ -100,6 +108,44 @@ export interface EditorCollection {
   visible?: boolean;
 }
 
+/**
+ * One row in a gameplay data catalog — id + optional label + a meta bag matching the catalog's
+ * `ParamSchema`. Values persist on the scene document; the schema lives in the game export.
+ * @capability editor-catalogs Persist and load one gameplay catalog entry's tuned params.
+ */
+export interface EditorCatalogEntry {
+  id: string;
+  label?: string;
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * Persisted values for one gameplay data catalog (weapons, waves, economy, …). Schemas are not
+ * stored here — they come from the game's `editorCatalogs` export and drive SchemaInspector.
+ * @capability editor-catalogs Persist gameplay tuning rows on the scene document.
+ */
+export interface EditorCatalogData {
+  id: string;
+  entries: EditorCatalogEntry[];
+}
+
+/**
+ * Game-exported catalog definition: a `ParamSchema` plus default entries. Schemas stay in code;
+ * entry values merge into `document.catalogs` and are what the editor/RPC edits and saves.
+ * @capability editor-catalogs Export typed gameplay catalogs for in-editor tuning.
+ */
+export interface EditorCatalogDefinition {
+  id: string;
+  label: string;
+  schema: ParamSchema;
+  entries: readonly EditorCatalogEntry[];
+}
+
+/** Accepted shape for a game's `editorCatalogs` export: definitions, or a factory. */
+export type EditorCatalogsInput =
+  | readonly EditorCatalogDefinition[]
+  | (() => readonly EditorCatalogDefinition[]);
+
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   version: 1;
@@ -113,6 +159,11 @@ export interface EditorDocument {
   prefabs: EditorPrefab[];
   /** Named selection sets / production groups — restore, add-to, lock, color, visibility. */
   collections: EditorCollection[];
+  /**
+   * HUD layout owned by the scene document — panel id → anchor/offset/size/visibility.
+   * Canvas mode (F2+C) and `canvas_move_panel` / `canvas_resize_panel` write here; HudPanel reads it.
+   */
+  ui?: EditorUiDocument;
 }
 
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */

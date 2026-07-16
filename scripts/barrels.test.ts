@@ -5,7 +5,7 @@
  * package exports. Regenerate barrels with `bun run gen:barrels`.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { extractPackageSurface } from "./apiSurface";
@@ -54,6 +54,8 @@ describe("core domain barrels", () => {
       });
 
       test("stays in sync with the generator (run `bun run gen:barrels`)", () => {
+        // Retired skills keep a frozen hand-curated barrel — generator skips them.
+        if (!existsSync(join(root, ".claude", "skills", skill))) return;
         expect(src).toBe(renderBarrel(collectBarrelReexports(root, skill)));
       });
 
@@ -87,5 +89,15 @@ describe("core domain barrels", () => {
     const index = readFileSync(join(root, "packages/core/src/index.ts"), "utf8");
     expect(index).toMatch(/VERSION/);
     expect(index).not.toMatch(/from\s+["']\.\/(world|combat|gameplay|multiplayer|ui|procedural)["']/);
+  });
+
+  test("procedural barrel remains a static survival compatibility entrypoint", () => {
+    const src = readFileSync(join(root, "packages/core/src/procedural.ts"), "utf8");
+    expect(src).toMatch(/createDecayMeterSet/);
+    expect(src).toMatch(/from\s+["']\.\/survival\//);
+    expect(pkg.exports["./procedural"]).toEqual({
+      types: "./dist/procedural.d.ts",
+      default: "./dist/procedural.js",
+    });
   });
 });

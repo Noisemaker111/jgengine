@@ -73,6 +73,76 @@
 - `saveSettingValue` (function): function saveSettingValue(id: string, value: SettingValue, storage: Pick<WebStorageLike, "setItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
 - `settingStorageKey` (function): function settingStorageKey(id: string): string — ⚠ undocumented
 
+## @jgengine/core/ui
+
+- `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
+- `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
+- `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
+- `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
+- `DEFAULT_UI_SCALE` (const): const DEFAULT_UI_SCALE: 1 — Player-controlled multiplier on the HUD's computed fit scale — one lever on desktop and mobile alike.
+- `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
+- `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
+- `GRAPHICS_QUALITY_DPR` (const): const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> — Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
+- `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
+- `GameLayoutMode` (type): type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait" — The explicit composition mode a game renders for — not a scaled desktop layout.
+- `GameSettingDef` (interface): interface GameSettingDef — Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`.
+- `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
+- `GameViewportLayout` (interface): interface GameViewportLayout — The shared live geometry the engine allocates once and every UI subsystem reads.
+- `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
+- `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
+- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented
+- `HudLayoutStore` (interface): interface HudLayoutStore — ⚠ undocumented
+- `HudPlacement` (interface): interface HudPlacement — ⚠ undocumented
+- `HudPlatform` (type): type HudPlatform = "web" | "mobile" — Where a game is meant to be played. `"web"` alone keeps today's desktop-first HUD; adding `"mobile"` turns on design-resolution fit scaling on compact displays.
+- `HudPriority` (type): type HudPriority = "critical" | "secondary" | "tertiary" — Gameplay-importance tier of a HUD element.
+- `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
+- `HudSize` (interface): interface HudSize — ⚠ undocumented
+- `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
+- `Insets` (interface): interface Insets — Edge insets in CSS pixels (safe areas, reservations).
+- `LayoutCollision` (interface): interface LayoutCollision — One detected forbidden/warned overlap between two regions.
+- `LayoutCollisionPolicy` (type): type LayoutCollisionPolicy = "forbid" | "allow" | "warn" — How a region participates in collision reporting.
+- `LayoutOrientation` (type): type LayoutOrientation = "portrait" | "landscape" — A concrete device orientation.
+- `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
+- `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
+- `LookPreset` (type): type LookPreset = "cinematic" | "flat" — Named default-look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
+- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
+- `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
+- `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption — ⚠ undocumented
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented
+- `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
+- `SettingsStore` (interface): interface SettingsStore — ⚠ undocumented
+- `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
+- `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
+- `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
+- `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
+- `UI_SCALE_MIN` (const): const UI_SCALE_MIN: 0.5 — ⚠ undocumented
+- `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
+- `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
+- `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
+- `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
+- `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
+- `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
+- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
+- `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
+- `listHudPanelTypes` (function): function listHudPanelTypes(): HudPanelTypeDef[] — Every registered panel type, sorted by id — editor palette / agent listing.
+- `orientationGateActive` (function): function orientationGateActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — The rotate gate blocks gameplay: a hard requirement (or `unsupported`) the live orientation doesn't satisfy.
+- `orientationHintActive` (function): function orientationHintActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — An advisory rotate hint applies: a preference (not a hard gate) the live orientation doesn't satisfy.
+- `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate.
+- `registerHudPanelType` (function): function registerHudPanelType(def: HudPanelTypeDef): void — Register a HUD panel type so the editor can list/add/configure it and canvas resize knows axes.
+- `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"cinematic"`, so a scene reads lit-like-a-game out of the box; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+- `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
+- `resolveHudPanelLayout` (function): function resolveHudPanelLayout(docPanel: EditorUiPanelLayout | undefined, fallback: HudPanelFallback): ResolvedHudPanelLayout — Resolve a panel's layout: document entry wins field-by-field over TSX fallback. TSX props are fallback-only — the scene document is the source of truth once authored.
+- `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.
+- `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
+
 ## @jgengine/core/ui/gameLayout
 
 - `DetectCollisionsOptions` (interface): interface DetectCollisionsOptions — Options for `detectLayoutCollisions`.
@@ -88,6 +158,19 @@
 - `LayoutRegionKind` (type): type LayoutRegionKind = "hud" | "control" | "system" | "screen" — What kind of UI a registered region belongs to.
 - `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
 - `ZERO_INSETS` (const): const ZERO_INSETS: Insets — All-zero insets.
+
+## @jgengine/core/ui/hudDocument
+
+- `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
+- `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
+- `HudPanelFallback` (interface): interface HudPanelFallback — TSX-declared fallback when the document has no entry for a panel.
+- `HudPanelTypeDef` (interface): interface HudPanelTypeDef — Declared panel type: growable axes, size limits, optional ParamSchema for the editor.
+- `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
+- `ResolvedHudPanelLayout` (interface): interface ResolvedHudPanelLayout — Fully resolved panel layout after document + fallback merge.
+- `listHudPanelTypes` (function): function listHudPanelTypes(): HudPanelTypeDef[] — Every registered panel type, sorted by id — editor palette / agent listing.
+- `registerHudPanelType` (function): function registerHudPanelType(def: HudPanelTypeDef): void — Register a HUD panel type so the editor can list/add/configure it and canvas resize knows axes.
+- `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
+- `resolveHudPanelLayout` (function): function resolveHudPanelLayout(docPanel: EditorUiPanelLayout | undefined, fallback: HudPanelFallback): ResolvedHudPanelLayout — Resolve a panel's layout: document entry wins field-by-field over TSX fallback. TSX props are fallback-only — the scene document is the source of truth once authored.
 
 ## @jgengine/core/ui/hudLayout
 
@@ -192,7 +275,7 @@
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
-- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the r… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
@@ -303,7 +386,7 @@
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; }): HudLayoutStore — ⚠ undocumented
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** When true (defau… — ⚠ undocumented
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
@@ -502,9 +585,9 @@
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
-- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the r… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; }): HudLayoutStore — ⚠ undocumented
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** When true (defau… — ⚠ undocumented
 
 ## @jgengine/react/hudViewport
 
@@ -709,7 +792,7 @@
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
-- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
+- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
@@ -735,7 +818,7 @@
 
 ## @jgengine/shell/camera/GameInspectionCamera
 
-- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer style rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
+- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
 
 ## @jgengine/shell/camera/GameOrbitCamera
@@ -1124,16 +1207,20 @@
 
 ## @jgengine/shell/scene
 
+- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
+- `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 
 ## @jgengine/shell/scene/AuthoredScene
 
+- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
+- `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 
 ## @jgengine/shell/scene/GeneratedAssetRenderer
@@ -1200,8 +1287,13 @@
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
 - `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — ⚠ undocumented
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
 
 ## @jgengine/shell/structures
 
@@ -1212,8 +1304,13 @@
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
 - `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — ⚠ undocumented
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
 
 ## @jgengine/shell/structures/GeneratedBuilding
 
@@ -1233,8 +1330,16 @@
 
 ## @jgengine/shell/structures/PlacementGhost
 
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — ⚠ undocumented
+- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
+
+## @jgengine/shell/structures/TransformGizmo
+
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
+- `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
+- `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
+- `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
 
 ## @jgengine/shell/terrain
 

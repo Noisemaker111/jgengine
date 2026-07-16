@@ -9,6 +9,10 @@ export interface PlacementGhostProps {
   invalidColor?: string;
 }
 
+/**
+ * Cursor-following build ghost: valid/invalid tint from a placement controller preview.
+ * @capability placement-ghost render valid/invalid placement preview mesh
+ */
 export function PlacementGhost({
   preview,
   height = 1,

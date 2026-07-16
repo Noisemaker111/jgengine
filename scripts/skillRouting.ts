@@ -18,6 +18,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   faction: "jgengine-world",
   format: "jgengine-ui",
   game: "jgengine-gameplay",
+  gameplay: "jgengine-gameplay",
   input: "jgengine-gameplay",
   interaction: "jgengine-world",
   inventory: "jgengine-gameplay",
@@ -28,6 +29,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   multiplayer: "jgengine-multiplayer",
   nav: "jgengine-world",
   physics: "jgengine-world",
+  procedural: "jgengine-world",
   puzzle: "jgengine-gameplay",
   random: "jgengine-gameplay",
   render: "jgengine-ui",
@@ -65,6 +67,23 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
   shell: { cartridge: MAIN },
 };
 
+/** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
+export const CORE_MODULE_OVERRIDES: Record<string, string> = {
+  "runtime/worldProjection": "jgengine-multiplayer",
+};
+
+/**
+ * Curated top-level domain barrels (`@jgengine/core/world`, `gameplay`, …) have no `/` segment,
+ * so they would otherwise land on MAIN and ignore domain skill examples in the orphan gate.
+ */
+export const CORE_BARREL_SKILLS: Record<string, string> = {
+  world: "jgengine-world",
+  combat: "jgengine-combat",
+  gameplay: "jgengine-gameplay",
+  multiplayer: "jgengine-multiplayer",
+  ui: "jgengine-ui",
+};
+
 export const SKILL_DIRS = [
   MAIN,
   "jgengine-world",
@@ -82,9 +101,18 @@ export function skillForModule(pkg: string, modulePath: string): string | null {
     const override = domain === undefined ? undefined : PACKAGE_DOMAIN_OVERRIDES[pkg]?.[domain];
     return override ?? PACKAGE_SKILLS[pkg] ?? null;
   }
+  const moduleOverride = CORE_MODULE_OVERRIDES[modulePath];
+  if (moduleOverride !== undefined) return moduleOverride;
   const domain = modulePath.split("/")[0];
   if (domain === undefined || CORE_INTERNAL_DOMAINS.has(domain)) return null;
-  if (!modulePath.includes("/")) return MAIN;
+  // Top-level barrels (`core/world`, `core/gameplay`, …) share the domain skill so
+  // re-exported primitives inherit that skill's examples instead of orphaning under MAIN.
+  if (!modulePath.includes("/")) {
+    if (domain === "gameplay") return "jgengine-gameplay";
+    return CORE_DOMAIN_SKILLS[domain] ?? MAIN;
+  }
+  // Host-side wire projection lives under runtime/ but is multiplayer surface.
+  if (modulePath.startsWith("runtime/worldProjection")) return "jgengine-multiplayer";
   const skill = CORE_DOMAIN_SKILLS[domain];
   if (skill === undefined) {
     throw new Error(

@@ -95,6 +95,25 @@ const PAINT_TINT = new THREE.Color();
 const BLEND_A = new THREE.Color();
 const BLEND_B = new THREE.Color();
 
+/** World-unit spacing between topographic relief bands drawn on the sculpt preview. */
+const CONTOUR_INTERVAL = 1.5;
+
+/**
+ * Topographic relief baked into a vertex's color so elevation reads from the editor's high camera,
+ * where lighting alone leaves gentle hills invisible. Smooth cosine bands every `CONTOUR_INTERVAL`
+ * darken slopes toward each band trough (a contour-map look) and higher ground brightens slightly —
+ * a `multiply`, so painted grass/dirt/rock keep their hue. Flat ground at a band height (the common
+ * unsculpted case at y=0) is left untouched: only varying height shows the bands. `strength` 0 is a
+ * no-op.
+ */
+function applyRelief(out: THREE.Color, height: number, strength: number): void {
+  if (strength <= 0) return;
+  const band = 0.5 + 0.5 * Math.cos((height / CONTOUR_INTERVAL) * Math.PI * 2);
+  const relief = 1 - strength * 0.4 * (1 - band);
+  const lift = 1 + Math.max(-0.12, Math.min(0.22, height * 0.03)) * strength;
+  out.multiplyScalar(relief * lift);
+}
+
 /**
  * The vertex tone under a world point: weighted layer blend, painted surface, or a height gradient.
  * With no painted layer/surface at the point, `paletteAt` (the game's runtime terrain palette
@@ -164,6 +183,7 @@ function displace(
   region: Aabb | null,
   paletteAt: PaletteSampler | null,
   heightRange: readonly [number, number],
+  contourStrength: number,
 ): void {
   const started = performance.now();
   const position = geometry.attributes.position as THREE.BufferAttribute;
@@ -183,6 +203,7 @@ function displace(
     const height = terrain.sampleHeight(x, z);
     position.setY(index, height);
     toneAt(terrain, x, z, height, tone, paletteAt, heightRange);
+    applyRelief(tone, height, contourStrength);
     colors.setXYZ(index, tone.r, tone.g, tone.b);
   }
   position.needsUpdate = true;
@@ -201,6 +222,7 @@ function SculptMesh({
   meshRef,
   paletteAt,
   heightRange,
+  contourStrength,
 }: {
   terrain: EditableTerrain;
   bounds: Aabb;
@@ -210,6 +232,7 @@ function SculptMesh({
   meshRef: React.MutableRefObject<THREE.Mesh | null>;
   paletteAt: PaletteSampler | null;
   heightRange: readonly [number, number];
+  contourStrength: number;
 }) {
   const geometry = useMemo(() => {
     const width = Math.max(1, bounds.maxX - bounds.minX);
@@ -222,9 +245,9 @@ function SculptMesh({
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => {
-    displace(geometry, terrain, bounds, regionRef.current, paletteAt, heightRange);
+    displace(geometry, terrain, bounds, regionRef.current, paletteAt, heightRange, contourStrength);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geometry, terrain, revision, paletteAt, heightRange]);
+  }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength]);
 
   return (
     <mesh ref={meshRef} geometry={geometry} receiveShadow>
@@ -487,6 +510,7 @@ export const TerrainSculpt = memo(function TerrainSculpt({
         meshRef={meshRef}
         paletteAt={paletteAt}
         heightRange={heightRange}
+        contourStrength={toolActive ? 1 : 0.45}
       />
       {toolActive && cursor !== null ? (
         <TerraformBrushCursor

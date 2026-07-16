@@ -81,7 +81,11 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     ...engineFields
   } = config;
 
-  const game = defineEngineGame({ ...engineFields, multiplayer: multiplayer ?? offline() });
+  const game = defineEngineGame({
+    ...engineFields,
+    multiplayer: multiplayer ?? offline(),
+    loop,
+  });
 
   function withPhaseSync<A extends unknown[]>(
     inner: ((ctx: GameContext, ...args: A) => void) | undefined,
@@ -92,14 +96,18 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     };
   }
 
+  const composed = game.loop;
+
   return {
     game,
     content: content ?? {},
     loop: {
-      onInit: withPhaseSync(loop?.onInit),
-      onNewPlayer: withPhaseSync(loop?.onNewPlayer),
-      onTick: withPhaseSync(loop?.onTick),
-      onPlayerLeave: loop?.onPlayerLeave ?? noop,
+      onInit: withPhaseSync(composed?.onInit),
+      onNewPlayer: withPhaseSync(composed?.onNewPlayer),
+      onTick: withPhaseSync(composed?.onTick),
+      onPlayerLeave: composed?.onPlayerLeave ?? noop,
+      onReset: composed?.onReset,
+      onDispose: composed?.onDispose,
     },
     GameUI: GameUI ?? emptyUi,
     environment:

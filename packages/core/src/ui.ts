@@ -46,6 +46,15 @@ export {
   type MobileHudBehavior,
 } from "./ui/gameLayout";
 export {
+  listHudPanelTypes,
+  registerHudPanelType,
+  resizePanelSize,
+  resolveHudPanelLayout,
+  type EditorUiDocument,
+  type EditorUiPanelLayout,
+  type HudResizeAxes,
+} from "./ui/hudDocument";
+export {
   HUD_ANCHOR_FRACTIONS,
   type HudAnchor,
   type HudLayoutStore,

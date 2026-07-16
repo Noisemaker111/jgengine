@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Glob } from "bun";
 
@@ -65,6 +65,8 @@ const IDENTIFIER = /[A-Za-z_$][\w$]*/g;
 export function collectSkillTokens(root: string, skill: string): Set<string> {
   const dir = join(root, ".claude", "skills", skill);
   const tokens = new Set<string>();
+  // Retired skills (e.g. jgengine-procedural) leave barrel mappings without a dir — empty tokens, not throw.
+  if (!existsSync(dir)) return tokens;
   for (const file of new Glob("*.md").scanSync({ cwd: dir, absolute: true })) {
     if (file.endsWith("api.md")) continue;
     for (const token of readFileSync(file, "utf8").match(IDENTIFIER) ?? []) tokens.add(token);

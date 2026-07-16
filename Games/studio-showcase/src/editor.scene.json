@@ -104,6 +104,26 @@
         "mossCoverage": 0.3,
         "seed": "cracked"
       }
+    },
+    {
+      "id": "announce_zone",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": 0,
+        "y": 1,
+        "z": -6
+      },
+      "radius": 4,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "Announce zone (behavior trigger)",
+      "meta": {
+        "on": "enter",
+        "action": "announce",
+        "message": "Welcome — authored trigger fired",
+        "tone": "good"
+      }
     }
   ],
   "paths": [

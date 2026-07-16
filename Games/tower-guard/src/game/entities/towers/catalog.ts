@@ -1,3 +1,4 @@
+import { findEditorCatalogEntry, type EditorDocument } from "@jgengine/core/editor/index";
 import type { AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
 
 export interface SlowSpec {
@@ -73,8 +74,27 @@ export const TOWER_CATALOG: Record<string, TowerDef> = {
 
 export const TOWER_IDS: readonly string[] = Object.keys(TOWER_CATALOG);
 
-export function towerDef(id: string): TowerDef {
+function num(meta: Record<string, unknown> | undefined, key: string, fallback: number): number {
+  const value = meta?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * Resolves a tower definition, overlaying in-editor catalog edits from the scene document when present
+ * (`document.catalogs` / `findEditorCatalogEntry`).
+ */
+export function towerDef(id: string, document?: EditorDocument): TowerDef {
   const def = TOWER_CATALOG[id];
   if (def === undefined) throw new Error(`tower-guard: unknown tower id "${id}"`);
-  return def;
+  if (document === undefined) return def;
+  const entry = findEditorCatalogEntry(document, "towers", id);
+  if (entry?.meta === undefined) return def;
+  return {
+    ...def,
+    cost: num(entry.meta, "cost", def.cost),
+    range: num(entry.meta, "range", def.range),
+    damage: num(entry.meta, "damage", def.damage),
+    fireRateHz: num(entry.meta, "fireRateHz", def.fireRateHz),
+    splashRadius: num(entry.meta, "splashRadius", def.splashRadius),
+  };
 }

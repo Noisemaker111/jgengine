@@ -57,7 +57,7 @@ export interface TreatResult {
   treated: readonly string[];
 }
 
-/** Health tracked per body region (head, torso, limbs), each with its own damage, bleed, and treatment state. */
+/** Per-limb / per-region health track with treat/damage/heal APIs. */
 export interface MultiRegionHealth {
   damage(regionId: string, amount: number): DamageResult;
   heal(regionId: string, amount: number): RegionHealthState;

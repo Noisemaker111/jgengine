@@ -297,4 +297,138 @@ describe("editor host RPC", () => {
     unsub();
     dispose();
   });
+
+  test("live-sync: session edits publish document patches; reverse channel is ephemeral until write-back", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "boss", kind: "boss", position: { x: 0, y: 0, z: 0 } }],
+      },
+    });
+
+    const revisions: number[] = [];
+    const unsub = api.getLiveSync().subscribeDocument((event) => revisions.push(event.revision));
+
+    const moved = api.handle({ method: "set_transform", id: "boss", x: 12, z: -4 });
+    expect(moved.ok).toBe(true);
+    expect(revisions.length).toBeGreaterThanOrEqual(1);
+
+    const rev = api.handle({ method: "document_revision", includeDocument: true });
+    expect(rev.ok).toBe(true);
+    const revResult = rev.result as { revision: number; document: { markers: { position: { x: number } }[] } };
+    expect(revResult.revision).toBeGreaterThanOrEqual(1);
+    expect(revResult.document.markers[0]?.position.x).toBe(12);
+
+    const pulled = api.handle({ method: "pull_document_patches", sinceRevision: 0 });
+    expect((pulled.result as { patches: unknown[] }).patches.length).toBeGreaterThanOrEqual(1);
+
+    const commandPatch = api.handle({
+      method: "push_document_patch",
+      patch: {
+        type: "commands",
+        baseRevision: revResult.revision,
+        commands: [{ type: "setTransform", id: "boss", position: { x: 99, y: 0, z: 0 } }],
+      },
+    });
+    expect(commandPatch.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+
+    const stale = api.handle({
+      method: "push_document_patch",
+      patch: {
+        type: "commands",
+        baseRevision: 0,
+        commands: [{ type: "setTransform", id: "boss", position: { x: 1, y: 0, z: 0 } }],
+      },
+    });
+    expect(stale.ok).toBe(false);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+
+    const runtime = api.handle({
+      method: "push_runtime_delta",
+      entities: [{ id: "boss", position: { x: 7, y: 0, z: 7 } }],
+      tunables: { paused: true },
+    });
+    expect(runtime.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+
+    const snap = api.handle({ method: "runtime_snapshot" });
+    expect((snap.result as { entities: { boss: { position: { x: number } } } }).entities.boss.position.x).toBe(7);
+
+    api.handle({ method: "set_runtime_override", entity: { id: "boss", position: { x: 3, y: 0, z: 3 } } });
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(99);
+    const written = api.handle({ method: "write_back_override", id: "boss" });
+    expect(written.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(3);
+
+    const deltas = api.handle({ method: "pull_runtime_deltas", sinceSeq: 0, includeSnapshot: true });
+    expect((deltas.result as { deltas: unknown[] }).deltas.length).toBeGreaterThanOrEqual(1);
+
+    unsub();
+    dispose();
+  });
+
+  test("runtime_summary/get/set write back to the document and pause/step control works", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 }, meta: { team: "red" } }],
+      },
+    });
+
+    api.handle({
+      method: "push_runtime_delta",
+      entities: [{ id: "spawn", position: { x: 0, y: 0, z: 0 }, values: { team: "red" } }],
+      tunables: { wind: 1 },
+    });
+
+    const summary = api.handle({ method: "runtime_summary" });
+    expect(summary.ok).toBe(true);
+    expect((summary.result as { entityCount: number }).entityCount).toBe(1);
+    expect((summary.result as { tunableKeys: string[] }).tunableKeys).toContain("wind");
+    expect((summary.result as { play: { paused: boolean } }).play.paused).toBe(false);
+
+    const got = api.handle({ method: "runtime_get", id: "spawn", path: "values.team" });
+    expect(got.ok).toBe(true);
+    expect((got.result as { value: string }).value).toBe("red");
+
+    const setPos = api.handle({
+      method: "runtime_set",
+      id: "spawn",
+      position: { x: 40, y: 0, z: -10 },
+    });
+    expect(setPos.ok).toBe(true);
+    expect((setPos.result as { writeBack: boolean }).writeBack).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(40);
+
+    const setMeta = api.handle({
+      method: "runtime_set",
+      id: "spawn",
+      path: "values.team",
+      value: "blue",
+    });
+    expect(setMeta.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.meta?.team).toBe("blue");
+
+    const undone = api.handle({ method: "undo" });
+    expect(undone.ok).toBe(true);
+
+    const pause = api.handle({ method: "runtime_pause" });
+    expect(pause.ok).toBe(true);
+    expect(api.getPlayControl().paused).toBe(true);
+
+    const step = api.handle({ method: "runtime_step", frames: 3 });
+    expect(step.ok).toBe(true);
+    expect(api.getPlayControl().pendingSteps).toBe(3);
+
+    const resume = api.handle({ method: "runtime_resume" });
+    expect(resume.ok).toBe(true);
+    expect(api.getPlayControl().paused).toBe(false);
+
+    const tunable = api.handle({ method: "runtime_set", id: "tunable:wind", value: 4 });
+    expect(tunable.ok).toBe(true);
+    expect(api.getLiveSync().getRuntimeState().tunables.wind).toBe(4);
+
+    dispose();
+  });
 });

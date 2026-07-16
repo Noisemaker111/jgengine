@@ -2,6 +2,79 @@
 
 # jgengine-combat — exported API surface
 
+## @jgengine/core/combat
+
+- `AbilityKit` (interface): interface AbilityKit — ⚠ undocumented
+- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
+- `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
+- `AnimationClip` (interface): interface AnimationClip — ⚠ undocumented
+- `BuildupProc` (interface): interface BuildupProc — ⚠ undocumented
+- `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
+- `CheckResult` (interface): interface CheckResult — ⚠ undocumented
+- `ComboStep` (interface): interface ComboStep — ⚠ undocumented
+- `DEFAULT_EYE_HEIGHT` (const): const DEFAULT_EYE_HEIGHT: number — Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top.
+- `DEFAULT_FIRE_PULSE_SECONDS` (const): const DEFAULT_FIRE_PULSE_SECONDS: 0.12 — Default `RenderCueTuning.firePulseSeconds`.
+- `DEFAULT_HIT_PULSE_SECONDS` (const): const DEFAULT_HIT_PULSE_SECONDS: 0.2 — Default `RenderCueTuning.hitPulseSeconds`.
+- `DEFAULT_RENDER_CUES` (const): const DEFAULT_RENDER_CUES: Readonly<EntityRenderCues> — Neutral starting cue set: idle, unarmed, undamaged.
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
+- `EntityRenderCues` (interface): interface EntityRenderCues — Per-entity render cues: the motion/animation signal a custom `renderEntity` or first-person viewmodel component needs to drive gait, muzzle flash, reload poses, and hit reactions — without diffing the parent group's position itself or reading a game-side module map for attack timing.
+- `EventMeter` (interface): interface EventMeter — ⚠ undocumented
+- `EventMeterFeedResult` (interface): interface EventMeterFeedResult — ⚠ undocumented
+- `FrameRange` (interface): interface FrameRange — ⚠ undocumented
+- `HitReactionConfig` (interface): interface HitReactionConfig — ⚠ undocumented
+- `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
+- `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
+- `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
+- `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
+- `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
+- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps — ⚠ undocumented
+- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
+- `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
+- `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
+- `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
+- `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "converge"; muzzle?: EntityPosition; height?: number } | { kind: "eye"; height?: number } | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `converge` — the shot leaves the gun `muzzle` yet still passes through whatever the shooter's sightline (crosshair) covers: origin is the muzzle offset, direction is bent from the muzzle to the eye ray's aim point. The projectile system's default for a free `{ yaw, pitch }` aim, so a bullet visibly comes from the barrel without missing the reticle. Needs a scene raycast to find the aim point (`convergeShot`); a bare `resolveShot` degrades to a straight muzzle ray. Passes an explicit `{ origin, direction }` aim through untouched. - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the shot traces the shooter's sightline, so what the crosshair covers is what gets hit. - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
+- `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
+- `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
+- `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
+- `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
+- `advanceMotionCues` (function): function advanceMotionCues(cues: EntityRenderCues, speed: number, dt: number, tuning?: RenderCueTuning): EntityRenderCues — Advances `bobPhase` and decays `recoil` from a live `speed` sample (e.g. `groundSpeed(entity)`); leaves event-driven fields untouched.
+- `applyRenderAnimationEvent` (function): function applyRenderAnimationEvent(cues: EntityRenderCues, event: string): EntityRenderCues — Applies a `entity.animation` event (`"fire"` / `"reload"` / `"reloadEnd"`, or any game-defined name) to the cue set. Unknown event names are a no-op.
+- `applyRenderDeathEvent` (function): function applyRenderDeathEvent(cues: EntityRenderCues): EntityRenderCues — Marks the cue set dead after `entity.died`; sticky for the lifetime of the render component.
+- `applyRenderHitEvent` (function): function applyRenderHitEvent(cues: EntityRenderCues): EntityRenderCues — Marks a `combat.hitReaction` pulse; the caller clears `hit` again after its own pulse window.
+- `attackMeta` (function): function attackMeta(tags: readonly AttackTag[], extra?: Omit<AttackMeta, "tags">): AttackMeta — ⚠ undocumented
+- `convergeShot` (function): function convergeShot(deps: ShotOriginDeps, from: string, aim: Aim, range: number, sightHit: (origin: EntityPosition, direction: EntityPosition) => EntityPosition | null, muzzleOffset?: EntityPosition): ResolvedShot | null — Resolves a `converge` shot with scene knowledge: fires from the gun muzzle but bends the direction so the shot passes through the aim point the shooter's eye ray covers. `sightHit` casts the eye ray and returns where it lands (first impact), or `null` to fall back to a point `range` metres down the sightline. A `{ origin, direction }` aim is passed through unchanged (nothing to converge).
+- `counters` (function): function counters(meta: AttackMeta, move: CounterMove): boolean — ⚠ undocumented
+- `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
+- `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
+- `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+- `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
+- `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
+- `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
+- `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
+- `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
+- `createDotField` (function): function createDotField(): DotField — Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
+- `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
+- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
+- `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
+- `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
+- `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
+- `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
+- `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
+- `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+- `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
+- `eyeHeightFromColliders` (function): function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number — Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
+- `impactPresets` (const): const impactPresets: { readonly pickup: { readonly hitstopMs: 0; readonly trauma: 0.15; }; readonly jumpLand: { readonly hitstopMs: 0; readonly trauma: 0.2; }; readonly enemyKilled: { readonly hitstopMs: 40; readonly trauma: 0.3; }; readonly playerHit: { readonly hitstopMs: 70; readonly trauma: 0.4;… — Calibrated per-event impact feel — hitstop and trauma numbers harvested from a shipped game-feel reference, not hand-invented per game. `explosion` and `playerHit` are "heavy hit" events (60–90ms hitstop @ 0.05 timescale); `pickup`/`jumpLand` are light events with no hitstop. Trauma is later clamped to 1.0 by `resolveHitReaction`.
+- `isBlockable` (function): function isBlockable(meta: AttackMeta): boolean — ⚠ undocumented
+- `isDodgeable` (function): function isDodgeable(meta: AttackMeta): boolean — ⚠ undocumented
+- `isParryable` (function): function isParryable(meta: AttackMeta): boolean — ⚠ undocumented
+- `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
+- `resolveDefense` (function): function resolveDefense(input: ResolveDefenseInput): DefenseResolution — ⚠ undocumented
+- `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig | ImpactPresetName, input: HitReactionInput): HitReaction — Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", input)`) or a raw `HitReactionConfig` override.
+- `resolveResistance` (function): function resolveResistance<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): ResistanceResult — ⚠ undocumented
+- `resolveShot` (function): function resolveShot(deps: ShotOriginDeps, from: string, aim: Aim, policy: ShotOriginPolicy = { kind: "eye" }): ResolvedShot | null — ⚠ undocumented
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
+- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
+
 ## @jgengine/core/combat/abilityKit
 
 - `AbilityCastReason` (type): type AbilityCastReason = "unknown-slot" | "cooldown" | "group-cooldown" | "no-resource" — ⚠ undocumented

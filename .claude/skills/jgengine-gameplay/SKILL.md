@@ -7,6 +7,8 @@ description: Gameplay systems: items, quests, economy, crafting, turns, objectiv
 
 **Import from the curated barrel** `@jgengine/core/gameplay` (stable, re-exports this domain's public API) — deep paths `@jgengine/core/<domain>/<file>` still work for anything not re-exported.
 
+**Composable systems** — `defineSystem` / `composeGameLoop` / `compileSystemSchedule` / `DEFAULT_FIXED_STAGES` / `DEFAULT_FRAME_STAGES` / `SystemDefinition` / `SystemTick` / `SystemEventHandlers` / `CompiledSystemSchedule`: list capabilities in `defineGame({ systems })` instead of a manual `onTick` fan-out. Full contract: [reference-systems.md](reference-systems.md).
+
 ## Content catalogs
 
 ### Object catalog fields

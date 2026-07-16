@@ -13,12 +13,18 @@ import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/s
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
+import { AgentPanel } from "./agent/AgentPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
+import { EditorContextMenu } from "./EditorContextMenu";
 import { OutlinerPanel } from "./OutlinerPanel";
 import { PrefabsPanel } from "./PrefabsPanel";
+import {
+  buildEditorContextMenu,
+  type EditorContextAction,
+} from "./viewportContextMenu";
 import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi, EditorPerfSample } from "./session";
-import { type EditorUiStore, type PlacementTool, type SnapMode } from "./uiStore";
+import { newPlacementId, type EditorUiStore, type PlacementTool, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { BTN, MICRO } from "./chromeStyles";
 import { TerrainPanel } from "./TerrainPanel";
@@ -26,7 +32,7 @@ import { InspectorPanel } from "./InspectorPanel";
 
 const PERF_POLL_MS = 500;
 
-type WorkspacePanel = "outliner" | "assets" | "collections" | "prefabs";
+type WorkspacePanel = "outliner" | "assets" | "collections" | "prefabs" | "catalogs";
 
 const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] = [
   { label: "Zone (sphere)", tool: { tool: "volume", kind: "zone", shape: "sphere" } },
@@ -79,6 +85,9 @@ const SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: "Delete", action: "Remove selection" },
   { keys: "Enter / Esc", action: "Finish · cancel path drawing" },
   { keys: "Shift+click", action: "Multi-select · keep placing" },
+  { keys: "RMB drag", action: "Orbit camera" },
+  { keys: "MMB drag", action: "Pan camera" },
+  { keys: "RMB click", action: "Context menu" },
   { keys: "F2+E", action: "Toggle editor ↔ play" },
   { keys: "F2+D", action: "Engine devtools" },
   { keys: "?", action: "This help" },
@@ -124,8 +133,8 @@ function useDocumentSave(
 
 /**
  * The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays,
- * the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI
- * store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+ * the selector-subscribed {@link InspectorPanel}, the embedded {@link AgentPanel}, and the asset
+ * browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
  */
 export function EditorChrome({
   gameId,
@@ -148,6 +157,7 @@ export function EditorChrome({
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("outliner");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  const [agentOpen, setAgentOpen] = useState(false);
   const [bottomOpen, setBottomOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -196,19 +206,129 @@ export function EditorChrome({
 
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
   useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
-  useEffect(() => {
-    const copySelection = (): number => {
-      const state = session.getState();
-      if (state.selection.length === 0) return 0;
-      const fragment = extractEditorFragment(state.document, state.selection);
-      const count = editorDocumentSize(fragment);
-      if (count === 0) return 0;
-      clipboardFragment = fragment;
-      if (typeof navigator !== "undefined" && navigator.clipboard !== undefined) {
-        void navigator.clipboard.writeText(JSON.stringify(fragment, null, 2)).catch(() => {});
+
+  const copySelection = useCallback((): number => {
+    const current = session.getState();
+    if (current.selection.length === 0) return 0;
+    const fragment = extractEditorFragment(current.document, current.selection);
+    const count = editorDocumentSize(fragment);
+    if (count === 0) return 0;
+    clipboardFragment = fragment;
+    if (typeof navigator !== "undefined" && navigator.clipboard !== undefined) {
+      void navigator.clipboard.writeText(JSON.stringify(fragment, null, 2)).catch(() => {});
+    }
+    return count;
+  }, [session]);
+
+  const closeContextMenu = useCallback(() => {
+    if (ui.getState().contextMenu !== null) ui.patch({ contextMenu: null });
+  }, [ui]);
+
+  const runContextAction = useCallback(
+    (action: EditorContextAction) => {
+      const menu = ui.getState().contextMenu;
+      closeContextMenu();
+      const current = session.getState();
+      const selection = current.selection;
+      const ground = menu?.ground ?? null;
+      switch (action.id) {
+        case "frame": {
+          const id = selection[0] ?? menu?.hitId;
+          if (id !== undefined && id !== null) api.handle({ method: "camera_goto", id });
+          else api.handle({ method: "camera_frame" });
+          return;
+        }
+        case "frameAll":
+          api.handle({ method: "camera_frame" });
+          return;
+        case "duplicate":
+          if (selection.length > 0) session.dispatch({ type: "duplicate", ids: selection });
+          return;
+        case "delete":
+          if (selection.length > 0) session.dispatch({ type: "removeMany", ids: selection });
+          return;
+        case "copy": {
+          const count = copySelection();
+          if (count > 0) notify(`Copied ${count} object${count === 1 ? "" : "s"}`);
+          return;
+        }
+        case "paste":
+          if (clipboardFragment === null) return;
+          {
+            const count = editorDocumentSize(clipboardFragment);
+            session.dispatch({
+              type: "addFragment",
+              fragment: clipboardFragment,
+              offset: { x: 2, y: 0, z: 2 },
+            });
+            notify(`Pasted ${count} object${count === 1 ? "" : "s"}`);
+          }
+          return;
+        case "createPrefab":
+          if (selection.length === 0) return;
+          {
+            const id = `prefab_${Date.now().toString(36)}`;
+            const name = `Prefab ${current.document.prefabs.length + 1}`;
+            api.handle({ method: "create_prefab", id, name, ids: [...selection] });
+            showPanel("prefabs");
+            notify(`Created prefab “${name}”`);
+          }
+          return;
+        case "addMarker":
+          if (ground !== null) {
+            session.dispatch({
+              type: "addMarker",
+              marker: {
+                id: newPlacementId("player_spawn"),
+                kind: "player_spawn",
+                position: ground,
+                label: "player_spawn",
+              },
+            });
+          } else {
+            ui.startPlacement({ tool: "marker", kind: "player_spawn" });
+          }
+          return;
+        case "addVolume":
+          if (ground !== null) {
+            session.dispatch({
+              type: "addVolume",
+              volume: {
+                id: newPlacementId("zone"),
+                kind: "zone",
+                shape: "sphere",
+                center: ground,
+                radius: 10,
+                label: "zone",
+              },
+            });
+          } else {
+            ui.startPlacement({ tool: "volume", kind: "zone", shape: "sphere" });
+          }
+          return;
+        case "addPath":
+          ui.startPlacement({ tool: "path", kind: "route" });
+          if (ground !== null) ui.pushDraftPoint(ground);
+          return;
+        case "addNote":
+          if (ground !== null) {
+            session.dispatch({
+              type: "addNote",
+              note: { id: newPlacementId("note"), text: "New note", position: ground },
+            });
+          } else {
+            ui.startPlacement({ tool: "note" });
+          }
+          return;
+        case "openAssets":
+          showPanel("assets");
+          return;
       }
-      return count;
-    };
+    },
+    [api, closeContextMenu, copySelection, notify, session, ui],
+  );
+
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -287,6 +407,10 @@ export function EditorChrome({
       if (event.key === "Escape") {
         setHelpOpen(false);
         const current = ui.getState();
+        if (current.contextMenu !== null) {
+          ui.patch({ contextMenu: null });
+          return;
+        }
         if (current.placement !== null || current.pathDraft.length > 0) {
           ui.cancelPlacement();
           return;
@@ -365,7 +489,7 @@ export function EditorChrome({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [session, ui, api, notify]);
+  }, [session, ui, api, notify, copySelection]);
 
   const kinds = useMemo(() => listEditorKinds(state.document), [state.document]);
 
@@ -527,6 +651,18 @@ export function EditorChrome({
         <button type="button" className={BTN} onClick={() => showPanel("assets")}>Assets</button>
         <div className="ml-auto flex items-center gap-2">
           <button type="button" className={BTN} onClick={() => setRightOpen((value) => !value)}>Inspector</button>
+          <button
+            type="button"
+            className={`rounded-md px-2 py-1 ring-1 ring-inset transition-colors ${
+              agentOpen
+                ? "bg-violet-500/25 text-violet-100 ring-violet-400/40"
+                : "bg-white/[0.04] text-neutral-300 ring-white/[0.06] hover:bg-white/10 hover:text-neutral-100"
+            }`}
+            onClick={() => setAgentOpen((value) => !value)}
+            title="Embedded agent panel — same RPC/undo as the GUI"
+          >
+            Agent
+          </button>
           <button type="button" className={BTN} onClick={() => api.setMode("walk")}>Walk</button>
           <button type="button" className="rounded-md bg-gradient-to-b from-emerald-500 to-emerald-600 px-3 py-1 font-semibold text-white shadow-md shadow-emerald-950/50 transition-colors hover:from-emerald-400 hover:to-emerald-500" onClick={() => api.setMode("play")}>▶ Play</button>
           <button type="button" className={BTN} onClick={() => importInputRef.current?.click()}>Import</button>
@@ -577,6 +713,7 @@ export function EditorChrome({
               <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "outliner" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("outliner")}>Hierarchy</button>
               <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "collections" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("collections")}>Sets {state.document.collections.length}</button>
               <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "prefabs" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("prefabs")}>Prefabs {state.document.prefabs.length}</button>
+              <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "catalogs" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("catalogs")}>Data {api.getCatalogDefinitions().length}</button>
               <button type="button" className="rounded-md px-2 py-1 text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-200" onClick={() => showPanel("assets")}>Assets {assets.length}</button>
               <button type="button" className="ml-auto rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => setLeftOpen(false)} aria-label="Close hierarchy panel">×</button>
             </div>
@@ -584,6 +721,8 @@ export function EditorChrome({
               <CollectionsPanel session={session} />
             ) : activePanel === "prefabs" ? (
               <PrefabsPanel session={session} api={api} />
+            ) : activePanel === "catalogs" ? (
+              <CatalogsPanel session={session} definitions={api.getCatalogDefinitions()} />
             ) : (
               <>
                 <div className="border-b border-white/[0.08] p-2">
@@ -630,14 +769,28 @@ export function EditorChrome({
               </div>
             </div>
           ) : null}
+          {uiState.contextMenu !== null ? (
+            <EditorContextMenu
+              x={uiState.contextMenu.clientX}
+              y={uiState.contextMenu.clientY}
+              actions={buildEditorContextMenu({
+                hitId: uiState.contextMenu.hitId,
+                selection: state.selection,
+                canPaste: clipboardFragment !== null,
+              })}
+              onPick={runContextAction}
+              onClose={closeContextMenu}
+            />
+          ) : null}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[0.08] bg-black/70 px-4 py-1.5 text-[11px] text-neutral-400 shadow-lg shadow-black/40 backdrop-blur-md">
-            <span>Orbit · click select · W/E/R transform · Ctrl+C/V copy/paste · F frame · ? help · F2+E play</span>
+            <span>RMB orbit · MMB pan · click select · RMB menu · W/E/R · Ctrl+C/V · F frame · ? help</span>
             <span className="ml-3 text-neutral-500">{sceneStats.objects} objs{sceneStats.foliage > 0 ? ` · ≈${formatTriangles(sceneStats.foliage)} foliage` : ""}</span>
             {perf !== null ? <span className={`ml-3 ${perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}`}>{perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris</span> : null}
           </div>
         </main>
 
         {rightOpen ? <InspectorPanel session={session} ui={ui} onClose={() => setRightOpen(false)} /> : null}
+        {agentOpen ? <AgentPanel api={api} onClose={() => setAgentOpen(false)} /> : null}
       </div>
 
       {bottomOpen ? (

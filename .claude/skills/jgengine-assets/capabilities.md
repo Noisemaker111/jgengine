@@ -2,4 +2,8 @@
 
 # jgengine-assets — capability index
 
-No capabilities tagged in this domain yet.
+Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+
+## starter-packs — themed CC0 model ids (people/props/nature/urban) ready for entityModels
+
+- `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`

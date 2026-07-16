@@ -98,6 +98,47 @@
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
 
+## @jgengine/core/multiplayer
+
+- `AuthSession` (interface): interface AuthSession — ⚠ undocumented
+- `BoardSnapshot` (interface): interface BoardSnapshot — ⚠ undocumented
+- `ChatActions` (interface): interface ChatActions — ⚠ undocumented
+- `ChatSendOutcome` (interface): interface ChatSendOutcome — ⚠ undocumented
+- `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host React hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
+- `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
+- `EnsurePresenceResult` (interface): interface EnsurePresenceResult — ⚠ undocumented
+- `FeedWriteGate` (type): type FeedWriteGate = { allowedActions: readonly string[]; } — ⚠ undocumented
+- `MatchFilter` (interface): interface MatchFilter — ⚠ undocumented
+- `PlayerIdentity` (interface): interface PlayerIdentity — ⚠ undocumented
+- `PlayerPose` (interface): interface PlayerPose — ⚠ undocumented
+- `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
+- `PoseSyncTuning` (interface): interface PoseSyncTuning — ⚠ undocumented
+- `PresenceActions` (interface): interface PresenceActions<TGameId extends string = string> — ⚠ undocumented
+- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> — ⚠ undocumented
+- `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
+- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> — ⚠ undocumented
+- `PresenceTransport` (interface): interface PresenceTransport<TRow, TLocation, TGameId extends string = string> — Backend seam for multiplayer presence. Feeds are reactive data and change identity whenever any player's pose updates; actions MUST be identity-stable for the lifetime of a mounted session so join/leave lifecycle effects can depend on them without re-running per pose tick. The use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends.
+- `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
+- `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
+- `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
+- `SessionListing` (interface): interface SessionListing — ⚠ undocumented
+- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
+- `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `VoiceParticipant` (interface): interface VoiceParticipant — ⚠ undocumented
+- `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
+- `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
+- `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
+- `createFeedWriteGate` (function): function createFeedWriteGate(allowedActions: readonly string[] = []): FeedWriteGate — ⚠ undocumented
+- `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
+- `createPoseSyncGate` (function): function createPoseSyncGate(tuning: PoseSyncTuning): PoseSyncGate — ⚠ undocumented
+- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
+- `findByJoinCode` (function): function findByJoinCode(listings: readonly SessionListing[], code: string): SessionListing | null — ⚠ undocumented
+- `normalizeJoinCode` (function): function normalizeJoinCode(code: string): string — ⚠ undocumented
+- `quickMatch` (function): function quickMatch(listings: readonly SessionListing[], filter: MatchFilter = {}): SessionListing | null — ⚠ undocumented
+- `resolveGuestSession` (function): function resolveGuestSession(seed?: string): AuthSession — ⚠ undocumented
+- `sessionPlayer` (function): function sessionPlayer(session: AuthSession): PlayerIdentity — ⚠ undocumented
+- `validateFeedWrite` (function): function validateFeedWrite(gate: FeedWriteGate | undefined, action: string): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
+
 ## @jgengine/core/multiplayer/chatContract
 
 - `ChatActions` (interface): interface ChatActions — ⚠ undocumented
@@ -200,6 +241,10 @@
 - `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
 - `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
 - `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
+
+## @jgengine/core/runtime/worldProjection
+
+- `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
 
 ## @jgengine/node
 

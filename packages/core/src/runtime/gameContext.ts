@@ -463,6 +463,16 @@ export interface GameContext {
     players?: ConnectedPlayers;
     /** Whole-world save/load bound to a pluggable backend — present only when `defineGame({ save })` is set (offline/single-player). Drive save points and quest/area checkpoints with `checkpoint()`, restore on boot with `load()`. */
     save?: RuntimeSave;
+    /**
+     * Register a save-only snapshot module after boot (system-owned persistence).
+     * Used by `composeGameLoop` / `installSystems` when a system declares `save`.
+     */
+    registerSave?(module: SnapshotModule): void;
+    /**
+     * Register a host→client replication module after boot (system-owned replication).
+     * Used by `composeGameLoop` / `installSystems` when a system declares `replicate`.
+     */
+    registerReplicate?(module: SnapshotModule): void;
   };
   player: {
     /** The acting player's id — the command actor inside `runAs`, the local player everywhere else. */
@@ -1179,12 +1189,27 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
    * own `save`, so a new persistent feature can't silently fall out of the save. Keeping the two sets
    * distinct leaves `ctx.snapshot()`/`ctx.hydrate()` — the host→client payload — byte-identical for
    * every multiplayer game, while `ctx.game.save` still persists everything.
+   * Mutable so game systems can register save modules at install time via `ctx.game.registerSave`.
    */
   const saveModules: SnapshotModule[] = [
     ...snapshotModules,
     ...baselineBuilds.flatMap((build) => (build.save === undefined ? [] : [build.save])),
     ...featureSaveModules,
   ];
+
+  function registerSave(module: SnapshotModule): void {
+    saveModules.push(module);
+  }
+
+  function registerReplicate(module: SnapshotModule): void {
+    const project = projectorFor(module.key);
+    replicationModules.push({
+      ...module,
+      version: () => signal.version(),
+      ...(project === undefined ? {} : { project }),
+    });
+    saveModules.push(module);
+  }
 
   const ctx: GameContext = {
     scene: {
@@ -1310,6 +1335,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       turn: featureValue<GameContextTurn>("turn"),
       race: featureValue<GameContextRace>("race"),
       players: featureValue<ConnectedPlayers>("players"),
+      registerSave,
+      registerReplicate,
     },
     player: {
       get userId() {

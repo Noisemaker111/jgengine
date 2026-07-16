@@ -4,6 +4,7 @@
  */
 
 import { createEditorHost, type EditorBridgeRequest, type EditorHostApi, type EditorRunMode } from "../session";
+import { loadGameCatalogs } from "./loadGameCatalogs.ts";
 import { loadGameLayers } from "./loadGameLayers.ts";
 import { EDITOR_MCP_TOOLS } from "./tools";
 
@@ -32,6 +33,22 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
       return { method: "editor_status" };
     case "list_layers":
       return { method: "list_layers" };
+    case "list_catalogs":
+      return { method: "list_catalogs" };
+    case "get_catalog_entry":
+      return {
+        method: "get_catalog_entry",
+        catalogId: String(args.catalogId ?? ""),
+        entryId: String(args.entryId ?? ""),
+      };
+    case "set_catalog_entry":
+      return {
+        method: "set_catalog_entry",
+        catalogId: String(args.catalogId ?? ""),
+        entryId: String(args.entryId ?? ""),
+        patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
+        ...(typeof args.label === "string" ? { label: args.label } : {}),
+      };
     case "list_selection":
       return { method: "list_selection" };
     case "get_marker":
@@ -130,17 +147,92 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         id: String(args.id ?? ""),
         patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
       };
+    case "push_document_patch":
+      return {
+        method: "push_document_patch",
+        patch: args.patch as never,
+        ...(args.force === true ? { force: true } : {}),
+      };
+    case "pull_document_patches":
+      return {
+        method: "pull_document_patches",
+        ...(typeof args.sinceRevision === "number" ? { sinceRevision: args.sinceRevision } : {}),
+      };
+    case "document_revision":
+      return {
+        method: "document_revision",
+        ...(args.includeDocument === true ? { includeDocument: true } : {}),
+      };
+    case "push_runtime_delta":
+      return {
+        method: "push_runtime_delta",
+        ...(typeof args.at === "number" ? { at: args.at } : {}),
+        ...(Array.isArray(args.entities) ? { entities: args.entities as never } : {}),
+        ...(Array.isArray(args.removeIds) ? { removeIds: args.removeIds.map(String) } : {}),
+        ...(typeof args.tunables === "object" && args.tunables !== null
+          ? { tunables: args.tunables as Record<string, unknown> }
+          : {}),
+      };
+    case "pull_runtime_deltas":
+      return {
+        method: "pull_runtime_deltas",
+        ...(typeof args.sinceSeq === "number" ? { sinceSeq: args.sinceSeq } : {}),
+        ...(args.includeSnapshot === true ? { includeSnapshot: true } : {}),
+      };
+    case "runtime_snapshot":
+      return { method: "runtime_snapshot" };
+    case "runtime_summary":
+      return { method: "runtime_summary" };
+    case "runtime_get":
+      return {
+        method: "runtime_get",
+        id: String(args.id ?? ""),
+        ...(typeof args.path === "string" ? { path: args.path } : {}),
+      };
+    case "runtime_set":
+      return {
+        method: "runtime_set",
+        id: String(args.id ?? ""),
+        ...(typeof args.path === "string" ? { path: args.path } : {}),
+        ...(args.value !== undefined ? { value: args.value } : {}),
+        ...(typeof args.position === "object" && args.position !== null
+          ? { position: args.position as { x: number; y: number; z: number } }
+          : {}),
+        ...(typeof args.rotationY === "number" ? { rotationY: args.rotationY } : {}),
+        ...(typeof args.values === "object" && args.values !== null
+          ? { values: args.values as Record<string, unknown> }
+          : {}),
+        ...(typeof args.writeBack === "boolean" ? { writeBack: args.writeBack } : {}),
+      };
+    case "runtime_pause":
+      return { method: "runtime_pause" };
+    case "runtime_resume":
+      return { method: "runtime_resume" };
+    case "runtime_step":
+      return {
+        method: "runtime_step",
+        ...(typeof args.frames === "number" ? { frames: args.frames } : {}),
+      };
+    case "set_runtime_override":
+      return { method: "set_runtime_override", entity: args.entity as never };
+    case "clear_runtime_override":
+      return { method: "clear_runtime_override", id: String(args.id ?? "") };
+    case "write_back_override":
+      return { method: "write_back_override", id: String(args.id ?? "") };
     default:
       throw new Error(`unknown tool: ${name}`);
   }
 }
 
 async function resolveEditorHost(gameId: string): Promise<EditorHostApi> {
-  const layers = await loadGameLayers(gameId);
+  const [layers, catalogs] = await Promise.all([loadGameLayers(gameId), loadGameCatalogs(gameId)]);
   if (!layers.ok) {
     throw new Error(`invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
   }
-  return createEditorHost({ gameId, layers: layers.document }).api;
+  if (!catalogs.ok) {
+    throw new Error(`invalid editorCatalogs for ${gameId}: ${catalogs.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
+  }
+  return createEditorHost({ gameId, layers: layers.document, catalogs: catalogs.catalogs }).api;
 }
 
 /** Runs the editor as a stdio MCP server so an agent can drive it via tools/call. */

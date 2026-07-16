@@ -25,6 +25,7 @@ import {
   VALE_CUP_STADIUM,
   YUMI_SHRINE,
 } from "./game/world/setup";
+import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { physics, world } from "./world";
@@ -65,7 +66,7 @@ const objectStyles = {
 export const game = defineGame({
   capture: { play: [{ name: "class.select", input: { classId: "warrior" } }] },
   name: "World of ClaudeCraft",
-  features: { players: true, quest: true, trade: true, chat: true },
+  features: { quest: true, trade: true, chat: true },
   multiplayer: ws({ authority: "server" }),
   assets,
   world,
@@ -73,6 +74,7 @@ export const game = defineGame({
   inventories,
   input: keybinds,
   content,
+  systems,
   loop,
   GameUI,
   entitySprites,

@@ -8,6 +8,11 @@ import {
 } from "../packages/core/src/editor/index";
 import { environment, terrain } from "../packages/core/src/world/features";
 import { summarizeEnvironment } from "../packages/core/src/world/environmentSummary";
+import {
+  placeAuthoredObjects,
+  resolveAuthoredObjects,
+} from "../packages/core/src/world/authoredObjects";
+import { createObjectStore } from "../packages/core/src/scene/objectStore";
 import { buildRoadRibbon } from "../packages/core/src/world/roads";
 import { resolveScatter } from "../packages/core/src/world/scatterRegion";
 import {
@@ -37,6 +42,16 @@ describe("editor MVP → AuthoredScene parity", () => {
   session.dispatch({
     type: "addMarker",
     marker: { id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: -30 } },
+  });
+  session.dispatch({
+    type: "addMarker",
+    marker: {
+      id: "crate_prop",
+      kind: "prop",
+      position: { x: 12, y: 0, z: -8 },
+      rotationY: 0.4,
+      meta: { catalogId: "wood_crate" },
+    },
   });
   session.dispatch({
     type: "addPath",
@@ -79,12 +94,12 @@ describe("editor MVP → AuthoredScene parity", () => {
   const savedJson = session.exportJson();
   const doc: EditorDocument = importEditorDocumentJson(savedJson);
   test("save/load round-trips every authored object", () => {
-    expect(doc.markers.length).toBe(1);
+    expect(doc.markers.length).toBe(2);
     expect(doc.paths.length).toBe(2);
   });
 
   test("document carries the authored marker, route, scatter region, and terrain", () => {
-    expect(doc.markers.map((m) => m.id)).toContain("spawn");
+    expect(doc.markers.map((m) => m.id)).toEqual(expect.arrayContaining(["spawn", "crate_prop"]));
     expect(doc.paths.map((p) => p.id)).toEqual(expect.arrayContaining(["route", "grove"]));
     expect(doc.terrain).toBeDefined();
     expect(doc.terrain?.offsets.some((o) => o !== 0)).toBe(true);
@@ -94,6 +109,27 @@ describe("editor MVP → AuthoredScene parity", () => {
     const instances = resolveScatter(doc);
     expect(instances.length).toBeGreaterThan(0);
     expect(new Set(instances.map((i) => i.item))).toContain("tree");
+  });
+
+  test("AuthoredScene object resolver places catalog props from markers", () => {
+    const objects = resolveAuthoredObjects(doc);
+    expect(objects).toEqual([
+      {
+        catalogId: "wood_crate",
+        x: 12,
+        z: -8,
+        rotationY: 0.4,
+        instanceId: "crate_prop",
+        verticalOffset: 0,
+      },
+    ]);
+    const store = createObjectStore();
+    placeAuthoredObjects(store, objects, () => 3, { verticalOffset: 0.5 });
+    const placed = store.get("crate_prop");
+    expect(placed).not.toBeNull();
+    expect(placed!.catalogId).toBe("wood_crate");
+    expect(placed!.position[1]).toBeCloseTo(3.5, 5);
+    expect(placed!.rotationY).toBe(0.4);
   });
 
   test("AuthoredScene path resolver drapes the route into ribbon geometry", () => {

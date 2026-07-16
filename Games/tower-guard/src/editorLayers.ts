@@ -1,8 +1,14 @@
-import { normalizeEditorLayers, type EditorDocument, type EditorLayersInput } from "@jgengine/core/editor/index";
+import {
+  normalizeEditorLayers,
+  seedEditorCatalogs,
+  type EditorDocument,
+  type EditorLayersInput,
+} from "@jgengine/core/editor/index";
 import type { AvoidZone } from "@jgengine/core/world/geometry";
 import { clearanceZonesFrom } from "@jgengine/core/world/scatterRegion";
 import { createEditableTerrain, migrateTerrainSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
 
+import { editorCatalogs } from "./editorCatalogs";
 import sceneJson from "./editor.scene.json";
 
 type Vec2 = readonly [number, number];
@@ -40,10 +46,13 @@ function buildSculpt(): TerraformSnapshot {
 /** The sculpted heightfield layered into the runtime ground via `environment({ sculpt })`. */
 export const TERRAIN_SCULPT: TerraformSnapshot = buildSculpt();
 
-export const editorLayers: EditorDocument = {
-  ...normalizeEditorLayers(sceneJson as unknown as EditorLayersInput),
-  terrain: TERRAIN_SCULPT,
-};
+export const editorLayers: EditorDocument = seedEditorCatalogs(
+  {
+    ...normalizeEditorLayers(sceneJson as unknown as EditorLayersInput),
+    terrain: TERRAIN_SCULPT,
+  },
+  editorCatalogs,
+);
 
 /** Clearance discs derived from the authored gameplay spots — flattened into the runtime ground. */
 export const CLEARINGS: readonly AvoidZone[] = clearanceZonesFrom(editorLayers);

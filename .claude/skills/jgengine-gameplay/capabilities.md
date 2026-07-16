@@ -6,158 +6,174 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## best-record — persist personal-best times/scores with safe storage fallback
 
-- `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/game/recordBook"`
+- `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
+
+## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
+
+- `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
 
 ## consumables — use/consume items with cooldowns and effects
 
-- `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/item/use"`
+- `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/gameplay"`
 
 ## cosmetics — equip cosmetic skins and customizations by slot
 
-- `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/game/cosmetics"`
+- `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/gameplay"`
 
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/survival/decayMeter"`
+- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
+
+## define-game — single public game-authoring path — compose systems, world, and loop in one definition
+
+- `defineGame` (function) · `import { defineGame } from "@jgengine/core/gameplay"`
 
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
-- `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/game/dialogue"`
+- `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/gameplay"`
 
 ## durability — track item wear, breakage, and repair
 
-- `applyWear` (function) · `import { applyWear } from "@jgengine/core/item/durability"`
+- `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
 
 ## event-bus — typed publish/subscribe bus for gameplay events
 
-- `createGameEvents` (function) · `import { createGameEvents } from "@jgengine/core/game/events"`
+- `createGameEvents` (function) · `import { createGameEvents } from "@jgengine/core/gameplay"`
 
 ## event-feed — a rolling feed of recent gameplay events for a HUD ticker or killfeed
 
-- `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/game/feed"`
+- `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/gameplay"`
 
 ## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
 
-- `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/game/saveStore"`
+- `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
+
+## game-system — declare a composable capability with its own schedule and lifecycle
+
+- `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
 ## item-instance-registry — a runtime store for procedurally generated item instances
 
-- `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/item/itemInstanceRegistry"`
-- `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/item/itemInstanceRegistry"`
+- `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
+- `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/gameplay"`
 
 ## lap-splits — per-lap durations from a cumulative split book
 
-- `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/game/race"`
-- `parDelta` (function) · `import { parDelta } from "@jgengine/core/game/race"`
-- `splitSegments` (function) · `import { splitSegments } from "@jgengine/core/game/race"`
+- `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/gameplay"`
+- `parDelta` (function) · `import { parDelta } from "@jgengine/core/gameplay"`
+- `splitSegments` (function) · `import { splitSegments } from "@jgengine/core/gameplay"`
 
 ## lap-timer — wall-clock current/last/best lap timing with splits
 
-- `createLapTimer` (function) · `import { createLapTimer } from "@jgengine/core/game/race"`
+- `createLapTimer` (function) · `import { createLapTimer } from "@jgengine/core/gameplay"`
 
 ## leaderboard — ranked score tracking across global, server, and per-profile scopes
 
-- `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/game/leaderboard"`
+- `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/gameplay"`
 
 ## lifecycle — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
 
-- `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/game/defineGame"`
+- `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/gameplay"`
 
 ## limb-health — per-body-part/region health tracked separately
 
-- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/survival/regionHealth"`
+- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/gameplay"`
 
 ## listing-book — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
 
-- `createListingBook` (function) · `import { createListingBook } from "@jgengine/core/economy/listingBook"`
+- `createListingBook` (function) · `import { createListingBook } from "@jgengine/core/gameplay"`
 
 ## loadouts — save and swap named equipment loadouts
 
-- `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/game/loadout"`
+- `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/gameplay"`
 
 ## local-save — persist a game to on-device localStorage (offline)
 
-- `localSaveBackend` (function) · `import { localSaveBackend } from "@jgengine/core/game/saveStore"`
+- `localSaveBackend` (function) · `import { localSaveBackend } from "@jgengine/core/gameplay"`
 
 ## loot-filter — filter and highlight drops by rarity/name rules
 
-- `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/game/lootFilter"`
+- `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
 
 ## loot-table — register loot tables and roll weighted randomized drops
 
-- `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/game/lootTable"`
-- `lootTable` (function) · `import { lootTable } from "@jgengine/core/game/lootTable"`
+- `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`
+- `lootTable` (function) · `import { lootTable } from "@jgengine/core/gameplay"`
 
 ## modular-item — attach parts into item mount slots to compute combined stats
 
-- `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/item/modularItem"`
+- `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/gameplay"`
 
 ## name-generator — generate procedural names from templates and word banks
 
-- `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/random/nameGen"`
+- `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/gameplay"`
 
 ## objectives — check progress of a threshold objective against a live metric
 
-- `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/game/objectives"`
+- `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
 
 ## ping-wheel — contextual ping/marker communication between teammates
 
-- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/game/ping"`
+- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
 
 ## production-building — a factory building converting inputs to outputs over time
 
-- `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/crafting/production"`
+- `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/gameplay"`
 
 ## quest-log — track accepted quests and their per-objective progress
 
-- `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/game/quest"`
+- `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/gameplay"`
 
 ## race-placements — look up one racer's place + win/lose within a finish order
 
-- `placementOf` (function) · `import { placementOf } from "@jgengine/core/game/race"`
-- `racePlacements` (function) · `import { racePlacements } from "@jgengine/core/game/race"`
+- `placementOf` (function) · `import { placementOf } from "@jgengine/core/gameplay"`
+- `racePlacements` (function) · `import { racePlacements } from "@jgengine/core/gameplay"`
 
 ## race-session — pure idle→countdown→racing→finished clock every racer wraps around its state
 
-- `idleRaceSession` (function) · `import { idleRaceSession } from "@jgengine/core/game/race"`
+- `idleRaceSession` (function) · `import { idleRaceSession } from "@jgengine/core/gameplay"`
 
 ## race-track — a checkpoint race with laps, standings, splits, and win conditions
 
-- `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/game/race"`
+- `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
 
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
-- `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/game/runDraft"`
+- `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
 
 ## social-emotes — emotes and social interactions between nearby players
 
-- `createSocial` (function) · `import { createSocial } from "@jgengine/core/game/social"`
+- `createSocial` (function) · `import { createSocial } from "@jgengine/core/gameplay"`
 
 ## spawn-points — register spawn locations and pick where entities respawn
 
-- `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/game/spawnPoints"`
+- `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
+
+## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
+
+- `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
 
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
-- `appendToast` (function) · `import { appendToast } from "@jgengine/core/game/toasts"`
-- `createToastQueue` (function) · `import { createToastQueue } from "@jgengine/core/game/toasts"`
+- `appendToast` (function) · `import { appendToast } from "@jgengine/core/gameplay"`
+- `createToastQueue` (function) · `import { createToastQueue } from "@jgengine/core/gameplay"`
 
 ## touch-controls — default on-screen button silhouette for a touch action
 
-- `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+- `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 
-- `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/game/unlocks"`
+- `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
 
 ## wallet — hold currency balances with charge and affordability checks
 
-- `createEmptyWallet` (function) · `import { createEmptyWallet } from "@jgengine/core/economy/wallet"`
+- `createEmptyWallet` (function) · `import { createEmptyWallet } from "@jgengine/core/gameplay"`
 
 ## weapon-stats — resolve per-weapon stat values for combat math
 
-- `createWeaponStats` (function) · `import { createWeaponStats } from "@jgengine/core/item/weapon"`
+- `createWeaponStats` (function) · `import { createWeaponStats } from "@jgengine/core/gameplay"`
 
 ## weighted-pick — pick one item from a set with an injected random source
 
-- `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/random/pick"`
+- `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`

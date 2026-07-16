@@ -6,6 +6,8 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+import { projectSurfacePlugin } from "./projectSurfacePlugin";
+
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
 const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
 const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
@@ -19,7 +21,7 @@ const gameAliases = readdirSync(gamesDir, { withFileTypes: true })
   ]);
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), projectSurfacePlugin()],
   clearScreen: false,
   server: { port: 1420, strictPort: true },
   build: { target: "es2022" },

@@ -1,6 +1,6 @@
 # jgengine-api — Cartridge
 
-Reference module for the [`jgengine`](./SKILL.md) skill. Load this when building a game as a **cartridge** — one declarative config instead of hand-wired loop/state/UI files. A cartridge game is ~75% smaller than the classic shape and nearly all of it is data; reach for `defineGame` directly only when the game's simulation doesn't fit the cartridge archetypes even through the escape hatches.
+Reference module for the [`jgengine`](./SKILL.md) skill. Load this when building a game as a **cartridge** — one declarative config instead of hand-wired loop/state/UI files. A cartridge game is ~75% smaller than the classic shape and nearly all of it is data; reach for `defineGame` + `defineSystem` ([reference-systems.md](./reference-systems.md)) when the simulation outgrows cartridge archetypes — same single authoring model, no rewrite cliff.
 
 ## Why
 
@@ -68,3 +68,5 @@ cartridgeSmokeTest(config);   // validate + world summary + headless run/spawn/k
 ```
 
 `bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `@jgengine/shell/cartridge/testkit`. The testkit imports `bun:test`; import it from test files only.
+
+Barrel surface tokens: createKeyValueStore createUnlocks durabilityFraction isComplete isOverdrawn memorySaveBackend partInSlot pruneToasts policyProjectsViewers projectByVisibleIds projectEntitiesForViewer projectPerUserForViewer visibleEntityIds applyDeltaToSnapshot applySurfaceDeltaToSnapshot boundaryNeighbors catenaryCurve distanceToPolygonEdge footprintObstacles hasValidAdjacency pointInPolygon polygonArea polygonBounds populateNavGridFromEnvironment readScatterPalette readScatterRules revertDeltaFromSnapshot revertSurfaceDeltaFromSnapshot slopeStepCost solveLock solveLockPath
