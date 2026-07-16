@@ -27,6 +27,8 @@
     "check-skill-api": "bun scripts/gen-skill-api.ts --check",
     "gen:capabilities": "bun scripts/gen-capability-index.ts",
     "check-capabilities": "bun scripts/gen-capability-index.ts --check",
+    "gen:export-manifest": "bun scripts/gen-export-manifest.ts",
+    "check-export-manifest": "bun scripts/gen-export-manifest.ts --check",
     "check-game-shape": "bun scripts/check-game-shape.ts",
     "check-types": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun run check-artifacts && bun run check-skills && bun run check-skill-api && bun run check-capabilities && bun run check-game-shape && bun scripts/check-types-all.ts'",
     "build:registry": "bun scripts/build-registry.ts",
