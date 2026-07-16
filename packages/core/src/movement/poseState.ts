@@ -45,12 +45,21 @@ export interface PoseRejection {
   reason: string;
 }
 
+export interface PoseSnapshot {
+  poses: Record<string, MovementPose>;
+  aims: Record<string, AimMode>;
+}
+
 export interface PoseState {
   getPose(instanceId: string): MovementPose;
   setPose(instanceId: string, pose: MovementPose): PoseRejection | null;
   getAim(instanceId: string): AimMode;
   setAim(instanceId: string, mode: AimMode): PoseRejection | null;
   clear(instanceId: string): void;
+  /** Snapshot every entity's pose and aim for a whole-world save. */
+  snapshotAll(): PoseSnapshot;
+  /** Restore every entity's pose and aim from a {@link snapshotAll} payload. */
+  hydrateAll(state: PoseSnapshot): void;
 }
 
 /**
@@ -96,6 +105,15 @@ export function createPoseState(
     clear(instanceId) {
       poses.delete(instanceId);
       aims.delete(instanceId);
+    },
+    snapshotAll() {
+      return { poses: Object.fromEntries(poses), aims: Object.fromEntries(aims) };
+    },
+    hydrateAll(state) {
+      poses.clear();
+      for (const [id, pose] of Object.entries(state.poses)) poses.set(id, pose);
+      aims.clear();
+      for (const [id, aim] of Object.entries(state.aims)) aims.set(id, aim);
     },
   };
 }

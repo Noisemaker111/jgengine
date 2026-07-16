@@ -2,16 +2,43 @@ import { describe, expect, test } from "bun:test";
 import { worldObjectById } from "../objects/catalog";
 import { terrainField } from "../../world";
 import {
+  AUTHORED_PIECES,
   NPC_PLACEMENTS,
   ROUTES,
   SIDE_POIS,
   SPUR_ROUTES,
-  poiSetPieces,
+  authoredScene,
   roadFlattenMasks,
-  roadsidePieces,
-  zoneSetPieces,
 } from "./level";
 import { ZONES } from "./zones";
+
+const pieceById = new Map(AUTHORED_PIECES.map((piece) => [piece.instanceId, piece]));
+
+describe("authored document", () => {
+  test("every placed prop is a document marker with a resolvable catalog id", () => {
+    expect(AUTHORED_PIECES.length).toBe(395);
+    for (const piece of AUTHORED_PIECES) expect(worldObjectById(piece.catalogId)).toBeDefined();
+  });
+
+  test("routes and spurs are authored paths, not generated in code", () => {
+    expect(authoredScene.paths.filter((path) => path.kind === "road").length).toBe(
+      ROUTES.length + SPUR_ROUTES.length,
+    );
+    expect(ROUTES.length).toBe(5);
+    expect(SPUR_ROUTES.length).toBe(3);
+  });
+
+  test("piece ids are unique", () => {
+    const ids = AUTHORED_PIECES.map((piece) => piece.instanceId);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test("landmarks keep their exact authored positions", () => {
+    expect(pieceById.get("crash_bus")).toMatchObject({ catalogId: "bus_wreck", x: -510, z: 606 });
+    expect(pieceById.get("coretown_tower")).toMatchObject({ catalogId: "water_tower", x: -22, z: 12 });
+    expect(pieceById.get("reactor_gate")).toMatchObject({ catalogId: "reactor_gate", x: -80, z: -640 });
+  });
+});
 
 describe("roads", () => {
   test("routes chain every zone into the campaign path", () => {
@@ -39,8 +66,8 @@ describe("roads", () => {
     expect(maxStep).toBeLessThan(6);
   });
 
-  test("roadside props exist and resolve to catalog entries", () => {
-    const pieces = roadsidePieces();
+  test("roadside props are authored and resolve to catalog entries", () => {
+    const pieces = AUTHORED_PIECES.filter((piece) => piece.instanceId.startsWith("roadside_"));
     expect(pieces.length).toBeGreaterThan(15);
     for (const piece of pieces) expect(worldObjectById(piece.catalogId)).toBeDefined();
   });
@@ -85,36 +112,25 @@ describe("guided openness", () => {
   });
 
   test("side POIs are dressed with a reward chest", () => {
-    const pieces = poiSetPieces();
-    const chests = pieces.filter((piece) => piece.catalogId === "red_chest");
+    const chests = AUTHORED_PIECES.filter(
+      (piece) => piece.catalogId === "red_chest" && piece.instanceId.startsWith("poi_chest_"),
+    );
     expect(chests.length).toBe(SIDE_POIS.length);
   });
 });
 
 describe("set pieces", () => {
-  const allPieces = ZONES.flatMap((zone) => zoneSetPieces(zone));
-
-  test("every zone composes a real place", () => {
-    for (const zone of ZONES) expect(zoneSetPieces(zone).length).toBeGreaterThanOrEqual(8);
-  });
-
-  test("piece ids are unique and catalog ids resolve", () => {
-    const ids = allPieces.map((piece) => piece.instanceId);
-    expect(new Set(ids).size).toBe(ids.length);
-    for (const piece of allPieces) expect(worldObjectById(piece.catalogId)).toBeDefined();
-  });
-
   test("camp walls leave a gate opening toward the road", () => {
-    const shelfWall = zoneSetPieces(ZONES[1]!).filter((piece) => piece.instanceId.startsWith("shelf_wall"));
+    const shelfWall = AUTHORED_PIECES.filter((piece) => piece.instanceId.startsWith("shelf_wall"));
     expect(shelfWall.length).toBeGreaterThan(6);
     expect(shelfWall.length).toBeLessThan(14);
   });
 
   test("landmarks anchor key zones", () => {
-    const ids = allPieces.map((piece) => piece.instanceId);
-    expect(ids).toContain("crash_bus");
-    expect(ids).toContain("coretown_tower");
-    expect(ids).toContain("reactor_gate");
+    const ids = new Set(AUTHORED_PIECES.map((piece) => piece.instanceId));
+    expect(ids.has("crash_bus")).toBe(true);
+    expect(ids.has("coretown_tower")).toBe(true);
+    expect(ids.has("reactor_gate")).toBe(true);
   });
 
   test("named NPCs stand in the hub", () => {
