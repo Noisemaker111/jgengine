@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { extractPackageSurface, type ApiExport, type ApiPackage } from "./apiSurface";
 import { collectAdoption, collectSkillTokens } from "./apiAdoption";
 import { PACKAGE_SKILLS, SKILL_DIRS, skillForModule } from "./skillRouting";
+import { runOrphanRatchet } from "./orphanRatchet";
 
 const BASELINE_PATH = "scripts/api-doc-baseline.json";
 const ORPHAN_BASELINE_PATH = "scripts/api-orphan-baseline.json";
@@ -125,6 +126,8 @@ function main(): void {
       ...newOrphans.map((key) => `  ${key}`),
     );
   }
+
+  if (check) failures.push(...runOrphanRatchet(root));
 
   const outDir = check ? mkdtempSync(join(tmpdir(), "jg-skill-api-")) : undefined;
   for (const skill of SKILL_DIRS) {

@@ -1,0 +1,580 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "ride_carousel-1",
+      "kind": "prop",
+      "position": {
+        "x": -20,
+        "y": 0,
+        "z": 8
+      },
+      "label": "Carousel",
+      "meta": {
+        "catalogId": "ride_carousel"
+      }
+    },
+    {
+      "id": "ride_coaster-2",
+      "kind": "prop",
+      "position": {
+        "x": 20,
+        "y": 0,
+        "z": 4
+      },
+      "label": "Coaster Station",
+      "meta": {
+        "catalogId": "ride_coaster"
+      }
+    },
+    {
+      "id": "stall_food-3",
+      "kind": "prop",
+      "position": {
+        "x": -12,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Burger Stall",
+      "meta": {
+        "catalogId": "stall_food"
+      }
+    },
+    {
+      "id": "stall_food-4",
+      "kind": "prop",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Burger Stall",
+      "meta": {
+        "catalogId": "stall_food"
+      }
+    },
+    {
+      "id": "path_walk-5",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 48
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-6",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 44
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-7",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 40
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-8",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 36
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-9",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 32
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-10",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-11",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 24
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-12",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 20
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-13",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 16
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-14",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 20
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-15",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 20
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-16",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-17",
+      "kind": "prop",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-18",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-19",
+      "kind": "prop",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-20",
+      "kind": "prop",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-21",
+      "kind": "prop",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-22",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "path_walk-23",
+      "kind": "prop",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Path",
+      "meta": {
+        "catalogId": "path_walk"
+      }
+    },
+    {
+      "id": "deco_tree-24",
+      "kind": "prop",
+      "position": {
+        "x": -32,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-25",
+      "kind": "prop",
+      "position": {
+        "x": 32,
+        "y": 0,
+        "z": 12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-26",
+      "kind": "prop",
+      "position": {
+        "x": -28,
+        "y": 0,
+        "z": -8
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-27",
+      "kind": "prop",
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-28",
+      "kind": "prop",
+      "position": {
+        "x": -20,
+        "y": 0,
+        "z": 32
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-29",
+      "kind": "prop",
+      "position": {
+        "x": 20,
+        "y": 0,
+        "z": 32
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-30",
+      "kind": "prop",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": -12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-31",
+      "kind": "prop",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": -12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-32",
+      "kind": "prop",
+      "position": {
+        "x": -16,
+        "y": 0,
+        "z": 44
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-33",
+      "kind": "prop",
+      "position": {
+        "x": 16,
+        "y": 0,
+        "z": 44
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-34",
+      "kind": "prop",
+      "position": {
+        "x": -32,
+        "y": 0,
+        "z": 32
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-35",
+      "kind": "prop",
+      "position": {
+        "x": 32,
+        "y": 0,
+        "z": 32
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-36",
+      "kind": "prop",
+      "position": {
+        "x": -24,
+        "y": 0,
+        "z": -12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-37",
+      "kind": "prop",
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": -12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-38",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -12
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    },
+    {
+      "id": "deco_tree-39",
+      "kind": "prop",
+      "position": {
+        "x": -32,
+        "y": 0,
+        "z": -20
+      },
+      "label": "Tree",
+      "meta": {
+        "catalogId": "deco_tree"
+      }
+    }
+  ],
+  "volumes": [],
+  "paths": [
+    {
+      "id": "coaster-track",
+      "kind": "route",
+      "points": [
+        {
+          "x": 28,
+          "y": 0,
+          "z": 4
+        },
+        {
+          "x": 28,
+          "y": 0,
+          "z": 8
+        },
+        {
+          "x": 28,
+          "y": 0,
+          "z": 12
+        },
+        {
+          "x": 28,
+          "y": 0,
+          "z": 16
+        },
+        {
+          "x": 24,
+          "y": 0,
+          "z": 16
+        },
+        {
+          "x": 20,
+          "y": 0,
+          "z": 16
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 16
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 12
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 8
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 4
+        }
+      ],
+      "width": 2.4,
+      "color": "#ff5a3c",
+      "label": "Coaster track",
+      "meta": {
+        "catalogId": "track_piece"
+      }
+    }
+  ],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}
