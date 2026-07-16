@@ -52,6 +52,24 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("src/ holds only the skeleton (everything else under src/game/)");
   });
 
+  test("passes installSaveEndpoint gating out of the box", () => {
+    const dir = scaffold();
+    expect(failingLabels(dir)).not.toContain("installSaveEndpoint calls gated behind import.meta.env.DEV");
+  });
+
+  test("flags an unguarded installSaveEndpoint call", () => {
+    const dir = scaffold();
+    const mainPath = join(dir, "src", "main.tsx");
+    const guarded = readFileSync(mainPath, "utf8");
+    const unguarded = guarded.replace(
+      /if \(import\.meta\.env\.DEV\) installSaveEndpoint\(/,
+      "installSaveEndpoint(",
+    );
+    expect(unguarded).not.toBe(guarded);
+    writeFileSync(mainPath, unguarded);
+    expect(failingLabels(dir)).toContain("installSaveEndpoint calls gated behind import.meta.env.DEV");
+  });
+
   test("reports a missing project", () => {
     const dir = mkdtempSync(join(tmpdir(), "jgengine-doctor-empty-"));
     expect(failingLabels(dir)).toContain("package.json readable");

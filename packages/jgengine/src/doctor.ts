@@ -19,6 +19,31 @@ function allEngineDeps(pkg: PackageJson): Record<string, string> {
   );
 }
 
+const SAVE_ENDPOINT_CALL = /\binstallSaveEndpoint\s*\(/;
+const DEV_GUARD = /import\.meta\.env\.DEV/;
+
+function collectSourceFiles(root: string): string[] {
+  if (!existsSync(root)) return [];
+  const out: string[] = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const full = join(root, entry.name);
+    if (entry.isDirectory()) out.push(...collectSourceFiles(full));
+    else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.includes(".test.")) out.push(full);
+  }
+  return out;
+}
+
+function unguardedSaveEndpointCallers(srcDir: string): string[] {
+  return collectSourceFiles(srcDir).filter((file) => {
+    const lines = readFileSync(file, "utf8").split("\n");
+    return lines.some((line, index) => {
+      if (!SAVE_ENDPOINT_CALL.test(line)) return false;
+      const window = lines.slice(Math.max(0, index - 2), index + 1).join("\n");
+      return !DEV_GUARD.test(window);
+    });
+  });
+}
+
 /** @internal */
 export function diagnose(dir: string): Finding[] {
   const findings: Finding[] = [];
@@ -156,6 +181,13 @@ export function diagnose(dir: string): Finding[] {
       ok: strays.length === 0,
       label: "src/ holds only the skeleton (everything else under src/game/)",
       fix: `move ${strays.join(", ")} under src/game/ — src/ is only game.config.ts, index.tsx, main.tsx, loop.ts, world.ts, index.css`,
+    });
+
+    const unguardedCallers = unguardedSaveEndpointCallers(srcDir);
+    findings.push({
+      ok: unguardedCallers.length === 0,
+      label: "installSaveEndpoint calls gated behind import.meta.env.DEV",
+      fix: `${unguardedCallers[0] ?? "src/main.tsx"} calls installSaveEndpoint without an import.meta.env.DEV guard — wrap it: if (import.meta.env.DEV) installSaveEndpoint(...); installSaveEndpoint itself now refuses production too, but the call site should stay honest`,
     });
   }
 
