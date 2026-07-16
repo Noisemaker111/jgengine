@@ -37,10 +37,12 @@ export const AXIS_RANGE: Record<AxisName, AxisRange> = {
   handbrake: { min: 0, max: 1 },
 };
 
+/** @internal */
 export function clampAxis(value: number, range: AxisRange): number {
   return value < range.min ? range.min : value > range.max ? range.max : value;
 }
 
+/** @internal */
 export function rampToward(current: number, target: number, rate: number, dt: number): number {
   if (!Number.isFinite(rate)) return target;
   const delta = target - current;
@@ -61,7 +63,8 @@ function digitalTarget(binding: AxisBinding, isDown: (code: string) => boolean):
  * a gamepad axis via `setAnalog`. `sample(dt, isDown, pointer?)` folds the current held-key state into
  * the smoothed value; a binding's `pointer` source takes over from its keys while a pointer is active,
  * and a `setAnalog` override replaces both for that axis until cleared.
- */
+  * @internal
+  */
 export class AxisChannel {
   private readonly bindings: AxisBindingMap;
   private readonly smoothing: number;
@@ -142,7 +145,8 @@ const BIPOLAR_RANGE: AxisRange = { min: -1, max: 1 };
  * `AxisChannel` ramps toward, exposed as a pure read for `ctx.input.axis` and headless sampling.
  * Each axis is its binding's positive-minus-negative held state (or its pointer source while a pointer
  * is active), clamped to the axis range; axes without a listed range default to bipolar `[-1, 1]`.
- */
+  * @internal
+  */
 export function sampleAxisBindings<TAxes extends string>(
   bindings: Record<TAxes, AxisBinding>,
   isDown: (code: string) => boolean,
@@ -159,6 +163,7 @@ export function sampleAxisBindings<TAxes extends string>(
   return out;
 }
 
+/** @internal */
 export function createAxisChannel<TAxes extends string>(config: GenericAxisConfig<TAxes>): GenericAxisChannel<TAxes> {
   const axes = Object.keys(config.bindings) as TAxes[];
   const smoothing = config.smoothing ?? 6;

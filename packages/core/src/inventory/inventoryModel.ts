@@ -28,7 +28,8 @@ export type MoveResult =
  * A bag of stackable items supporting add, remove, count, and move — the base inventory model.
  *
  * @capability inventory-grid a bag of stackable items with add, remove, and move
- */
+  * @internal
+  */
 export function createEmptyInventory(layout: InventoryLayout): InventoryState {
   return { slots: new Array(layout.slots).fill(null) };
 }
@@ -113,6 +114,7 @@ function explicitPut(
   return { status: "ok", state: { slots } };
 }
 
+/** @internal */
 export function putItem(
   state: InventoryState,
   layout: InventoryLayout,
@@ -125,6 +127,7 @@ export function putItem(
   return autoPut(state, layout, traits, itemId, count);
 }
 
+/** @internal */
 export function takeItem(state: InventoryState, itemId: string, count: number): TakeResult {
   if (count <= 0) return { status: "ok", state };
   if (countItem(state, itemId) < count) return { status: "rejected", reason: "insufficient" };
@@ -143,16 +146,19 @@ export function takeItem(state: InventoryState, itemId: string, count: number): 
   return { status: "ok", state: { slots } };
 }
 
+/** @internal */
 export function countItem(state: InventoryState, itemId: string): number {
   let total = 0;
   for (const slot of state.slots) if (slot !== null && slot.itemId === itemId) total += slot.count;
   return total;
 }
 
+/** @internal */
 export function hasItem(state: InventoryState, itemId: string, count: number): boolean {
   return countItem(state, itemId) >= count;
 }
 
+/** @internal */
 export function moveItem(
   from: InventoryState,
   fromSlot: number,
@@ -221,6 +227,7 @@ export interface InventorySet<TId extends string> {
   replaceState(id: TId, state: InventoryState): void;
 }
 
+/** @internal */
 export function createInventorySet<TId extends string>(
   layouts: Record<TId, InventoryLayout>,
   traits: ItemTraits,

@@ -6,12 +6,16 @@ export interface InputSink {
   send(frame: InputFrame): void;
 }
 
-/** Discards input — the single-player / client-authoritative default, where the client integrates movement itself. */
+/** Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
+ * @internal
+ */
 export function noopInputSink(): InputSink {
   return { send() {} };
 }
 
-/** Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via {@link INPUT_COMMAND}. */
+/** Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via {@link INPUT_COMMAND}.
+ * @internal
+ */
 export function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink {
   return {
     send(frame) {
@@ -22,7 +26,9 @@ export function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, ser
   };
 }
 
-/** The sink a server-authoritative shell sends its per-frame input through: remote when `authority: "server"` and a server is joined, a no-op otherwise. */
+/** The sink a server-authoritative shell sends its per-frame input through: remote when `authority: "server"` and a server is joined, a no-op otherwise.
+ * @internal
+ */
 export function resolveInputSink(opts: {
   serverAuthoritative: boolean;
   backend: Pick<LiveGameBackend, "transport"> | null;
@@ -34,7 +40,9 @@ export function resolveInputSink(opts: {
   return noopInputSink();
 }
 
-/** Whether two input frames carry identical intent — the shell skips resending unchanged frames so a still player floods the host with nothing. */
+/** Whether two input frames carry identical intent — the shell skips resending unchanged frames so a still player floods the host with nothing.
+ * @internal
+ */
 export function inputFramesEqual(a: InputFrame, b: InputFrame): boolean {
   if (a.held.length !== b.held.length) return false;
   for (let i = 0; i < a.held.length; i++) if (a.held[i] !== b.held[i]) return false;

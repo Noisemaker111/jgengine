@@ -233,14 +233,6 @@
 - `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
 - `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
-- `hazardCycleAt` (function): function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardCycleSample — Deterministic repeating hazard timing — windup → active → cooldown as a pure function of absolute time, for recurring flame vents, crushers, lightning rings. Sample `hazardCycleAt` each tick: draw the telegraph during `windup`, apply the effect during `active`, rest through `cooldown`.
-- `nextHazardActiveAt` (function): function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): number — Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam.
-- `pointInTelegraph` (function): function pointInTelegraph(config: TelegraphConfig, point: EntityPosition): boolean — ⚠ undocumented
-- `telegraphFired` (function): function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean — ⚠ undocumented
-- `telegraphFiredAtTurn` (function): function telegraphFiredAtTurn(config: TelegraphConfig, startedTurn: number, currentTurn: number): boolean — ⚠ undocumented
-- `telegraphProgress` (function): function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: number): number — ⚠ undocumented
-- `telegraphTurnProgress` (function): function telegraphTurnProgress(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
-- `telegraphTurnsRemaining` (function): function telegraphTurnsRemaining(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
 
 ## @jgengine/core/stats/accumulatorMeter
 

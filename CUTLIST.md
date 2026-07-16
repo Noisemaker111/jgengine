@@ -6,13 +6,13 @@ Concrete diet plan after the 2026-07 engine critique. **One PR stacks all batche
 
 | Metric | Kickoff | Now |
 | --- | --- | --- |
-| Orphan baseline | 1411 | **583** (−828) |
-| API doc debt baseline | ~3476 | **2878** (−598) |
+| Orphan baseline | 1411 | **362** (−1049) ✅ under 400 |
+| API doc debt baseline | ~3476 | **2679** (−797) |
 | Tracked games with source | 10 | 10 |
 | Local empty `Games/*` | ~51 | **0** |
 | Core package root | host runtime barrel | **VERSION/CHANGELOG only** |
 
-**Success bar:** orphan count **&lt; 400**, core barrel not a second API, zero missing-game refs. Orphans past Batch 3 gate (&lt;700).
+**Success bar:** orphan count **&lt; 400** ✅ (362), core barrel not a second API ✅, zero missing-game refs ✅.
 
 ---
 

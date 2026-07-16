@@ -10,6 +10,7 @@ export interface EventfulEngineStore<TEventMap extends object> {
   on<K extends keyof TEventMap>(eventName: K, listener: (payload: TEventMap[K]) => void): () => void;
 }
 
+/** @internal */
 export function useEngineState<TState>(store: ReadableEngineStore<TState>): TState {
   const subscribe = useCallback(
     (onChange: () => void) => store.subscribe(() => onChange()),
@@ -19,6 +20,7 @@ export function useEngineState<TState>(store: ReadableEngineStore<TState>): TSta
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+/** @internal */
 export function useEngineStore<TState, TSelected>(
   store: ReadableEngineStore<TState>,
   selector: (state: TState) => TSelected,
@@ -49,6 +51,7 @@ export function useEngineStore<TState, TSelected>(
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+/** @internal */
 export function useEngineEvent<TEventMap extends object, K extends keyof TEventMap>(
   store: EventfulEngineStore<TEventMap>,
   eventName: K,

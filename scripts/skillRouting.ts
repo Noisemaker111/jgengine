@@ -57,8 +57,8 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   react: "jgengine-ui",
   shell: "jgengine-ui",
   assets: "jgengine-assets",
-  github: MAIN,
-  jgengine: MAIN,
+  // github + jgengine CLI are tooling, not game-authoring surface — omit so they
+  // leave skill api.md / orphan gate (still published; agents use CLI docs, not api.md).
 };
 
 export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {

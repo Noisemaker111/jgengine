@@ -1,6 +1,7 @@
 import type { SkillCheckConfig, SkillCheckResult } from "@jgengine/core/interaction/skillCheck";
 import type { QteStep } from "@jgengine/core/interaction/qte";
 
+/** @internal */
 export function paintSkillCheckDom(
   root: HTMLElement,
   zone: HTMLElement,
@@ -18,6 +19,7 @@ export function paintSkillCheckDom(
   root.dataset.timedOut = result.timedOut ? "true" : "false";
 }
 
+/** @internal */
 export function paintQteStepDom(
   elements: ReadonlyMap<string, HTMLElement>,
   steps: readonly QteStep[],

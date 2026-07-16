@@ -13,7 +13,8 @@ export { attachObject3D, Object3DBehaviour } from "./behaviourAttach";
  * receive — pass the game clock's scaling to keep behaviours on game time, or
  * omit for real-time seconds. Games driving `world.update` themselves from
  * `loop.onTick` should not also render this.
- */
+  * @internal
+  */
 export function useBehaviourWorld(world: BehaviourWorld, scaleDt?: (rawDt: number) => number): void {
   const driverRef = useRef(createBehaviourWorldDriver(world));
   useEffect(() => {

@@ -4,10 +4,12 @@ export type SelectCache<TSnapshot, TSelected> = {
   value: TSelected;
 };
 
+/** @internal */
 export function createSelectCache<TSnapshot, TSelected>(): SelectCache<TSnapshot, TSelected> {
   return { ready: false, snapshot: undefined as TSnapshot, value: undefined as TSelected };
 }
 
+/** @internal */
 export function readSelectSnapshot<TSnapshot, TSelected>(
   cache: SelectCache<TSnapshot, TSelected>,
   snapshot: TSnapshot,

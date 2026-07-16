@@ -274,8 +274,6 @@
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
-- `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
-- `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
@@ -286,11 +284,7 @@
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
-- `useDisplayProfile` (function): function useDisplayProfile(): DisplayProfile — ⚠ undocumented
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
-- `useEngineEvent` (function): function useEngineEvent<TEventMap extends object, K extends keyof TEventMap>(store: EventfulEngineStore<TEventMap>, eventName: K, handler: (payload: TEventMap[K]) => void): void — ⚠ undocumented
-- `useEngineState` (function): function useEngineState<TState>(store: ReadableEngineStore<TState>): TState — ⚠ undocumented
-- `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
 - `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
@@ -393,8 +387,6 @@
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
 - `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
-- `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
-- `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
@@ -402,7 +394,6 @@
 ## @jgengine/react/display
 
 - `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
-- `useDisplayProfile` (function): function useDisplayProfile(): DisplayProfile — ⚠ undocumented
 
 ## @jgengine/react/dragLayer
 
@@ -419,17 +410,11 @@
 
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
-- `useEngineEvent` (function): function useEngineEvent<TEventMap extends object, K extends keyof TEventMap>(store: EventfulEngineStore<TEventMap>, eventName: K, handler: (payload: TEventMap[K]) => void): void — ⚠ undocumented
-- `useEngineState` (function): function useEngineState<TState>(store: ReadableEngineStore<TState>): TState — ⚠ undocumented
-- `useEngineStore` (function): function useEngineStore<TState, TSelected>(store: ReadableEngineStore<TState>, selector: (state: TState) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 
 ## @jgengine/react/fogOverlay
 
 - `FogCellRect` (interface): interface FogCellRect — ⚠ undocumented
 - `FogPaintSurface` (interface): interface FogPaintSurface — ⚠ undocumented
-- `createFogDataUrl` (function): function createFogDataUrl(fog: FogCells, canvasSize: { width: number; height: number }, cellRect: (col: number, row: number) => FogCellRect | null, fill = "rgba(11, 15, 20, 0.82)"): string | null — ⚠ undocumented
-- `forEachUnrevealedFogCell` (function): function forEachUnrevealedFogCell(fog: FogCells, visit: (col: number, row: number) => void): number — ⚠ undocumented
-- `paintFogOverlay` (function): function paintFogOverlay(surface: FogPaintSurface, canvasSize: { width: number; height: number }, fog: FogCells, cellRect: (col: number, row: number) => FogCellRect | null, fill = "rgba(11, 15, 20, 0.82)"): number — ⚠ undocumented
 
 ## @jgengine/react/gameIcons
 
@@ -597,8 +582,6 @@
 ## @jgengine/react/selectSnapshot
 
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
-- `createSelectCache` (function): function createSelectCache<TSnapshot, TSelected>(): SelectCache<TSnapshot, TSelected> — ⚠ undocumented
-- `readSelectSnapshot` (function): function readSelectSnapshot<TSnapshot, TSelected>(cache: SelectCache<TSnapshot, TSelected>, snapshot: TSnapshot, select: (snapshot: TSnapshot) => TSelected, isEqual: (previous: TSelected, next: TSelected) => boolean = Object.is): TSelected — ⚠ undocumented
 
 ## @jgengine/react/settings
 
@@ -614,11 +597,6 @@
 - `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
-
-## @jgengine/react/skillCheckPaint
-
-- `paintQteStepDom` (function): function paintQteStepDom(elements: ReadonlyMap<string, HTMLElement>, steps: readonly QteStep[], elapsed: number, activeId: string | null, stepClassName?: string, activeClassName?: string, doneClassName?: string): void — ⚠ undocumented
-- `paintSkillCheckDom` (function): function paintSkillCheckDom(root: HTMLElement, zone: HTMLElement, marker: HTMLElement, config: SkillCheckConfig, result: SkillCheckResult): void — ⚠ undocumented
 
 ## @jgengine/react/social
 
@@ -718,38 +696,17 @@
 
 ## @jgengine/shell/behaviour
 
-- `Object3DBehaviour` (class): class Object3DBehaviour extends Behaviour — ⚠ undocumented
 - `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-- `createBehaviourWorldDriver` (function): function createBehaviourWorldDriver(world: BehaviourWorld): { start(): void; stop(): void; isRunning(): boolean; step(dt: number): void; } — ⚠ undocumented
-- `useBehaviourWorld` (function): function useBehaviourWorld(world: BehaviourWorld, scaleDt?: (rawDt: number) => number): void — Bootstraps `world` on mount and dispatches `world.update` every frame at simulation priority. Stops driving updates on unmount so remount does not double-step. `scaleDt` maps the raw frame delta to the dt behaviours receive — pass the game clock's scaling to keep behaviours on game time, or omit for real-time seconds. Games driving `world.update` themselves from `loop.onTick` should not also render this.
 
 ## @jgengine/shell/behaviourAttach
 
-- `Object3DBehaviour` (class): class Object3DBehaviour extends Behaviour — ⚠ undocumented
 - `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-
-## @jgengine/shell/behaviourDriver
-
-- `createBehaviourWorldDriver` (function): function createBehaviourWorldDriver(world: BehaviourWorld): { start(): void; stop(): void; isRunning(): boolean; step(dt: number): void; } — ⚠ undocumented
 
 ## @jgengine/shell/camera
 
-- `CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND: 1.4 — Calibrated trauma decay for `traumaShake`/`impactPresets` (trauma/second).
-- `CALIBRATED_TRAUMA_SHAKE_FREQUENCY` (const): const CALIBRATED_TRAUMA_SHAKE_FREQUENCY: 32 — Calibrated shake noise frequency (Hz) for `traumaShake`.
-- `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
-- `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
-- `CAMERA_POST_FRAME_PRIORITY` (const): const CAMERA_POST_FRAME_PRIORITY: number — ⚠ undocumented
-- `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — ⚠ undocumented
-- `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
-- `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
-- `CameraPose` (interface): interface CameraPose — ⚠ undocumented
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
-- `ChaseRig` (function): function ChaseRig(props: RigProps): null — ⚠ undocumented
-- `CinematicRig` (function): function CinematicRig(props: RigProps): null — ⚠ undocumented
-- `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
-- `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
@@ -759,38 +716,9 @@
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
-- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
-- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
-- `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
-- `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
-- `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
-- `OrbitCameraConfig` (interface): interface OrbitCameraConfig — ⚠ undocumented
-- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — ⚠ undocumented
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
-- `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
-- `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
-- `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
-- `PlayerFovBounds` (interface): interface PlayerFovBounds — ⚠ undocumented
 - `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
-- `ResolvedChase` (interface): interface ResolvedChase — ⚠ undocumented
-- `ResolvedDirectedCamera` (interface): interface ResolvedDirectedCamera — ⚠ undocumented
-- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
-- `ResolvedObserver` (interface): interface ResolvedObserver — ⚠ undocumented
-- `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
-- `ResolvedShoulder` (interface): interface ResolvedShoulder — ⚠ undocumented
-- `ResolvedSideScroll` (interface): interface ResolvedSideScroll — ⚠ undocumented
-- `ResolvedTopDown` (interface): interface ResolvedTopDown — ⚠ undocumented
-- `RigProps` (interface): interface RigProps — ⚠ undocumented
-- `RtsRig` (function): function RtsRig(props: RigProps & { panKeysEnabled?: boolean }): null — ⚠ undocumented
-- `ShakeOffset` (interface): interface ShakeOffset — ⚠ undocumented
-- `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
-- `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
-- `StaticCameraValues` (interface): interface StaticCameraValues — ⚠ undocumented
-- `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
-- `TraumaState` (interface): interface TraumaState — ⚠ undocumented
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
@@ -905,9 +833,6 @@
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
-- `localCommandSink` (function): function localCommandSink(ctx: GameContext): CommandSink — Runs commands on the local `ctx` — the default, client-authoritative path.
-- `remoteCommandSink` (function): function remoteCommandSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): CommandSink — Sends commands to the authoritative host over the transport; the result replicates back through world sync.
-- `resolveCommandSink` (function): function resolveCommandSink(ctx: GameContext, opts: { serverAuthoritative: boolean; backend: Pick<LiveGameBackend, "transport"> | null; serverId: string | null; }): CommandSink — The sink a server-authoritative shell should dispatch gameplay commands through: remote when the game opts into `authority: "server"` and a server is joined, local otherwise. Client-only UI commands (targeting, hotbar scroll) keep calling `ctx.game.commands.run` directly — only authoritative gameplay verbs route to the host.
 
 ## @jgengine/shell/defineGame
 
@@ -1032,10 +957,6 @@
 ## @jgengine/shell/inputSink
 
 - `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
-- `inputFramesEqual` (function): function inputFramesEqual(a: InputFrame, b: InputFrame): boolean — Whether two input frames carry identical intent — the shell skips resending unchanged frames so a still player floods the host with nothing.
-- `noopInputSink` (function): function noopInputSink(): InputSink — Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
-- `remoteInputSink` (function): function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink — Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via {@link INPUT_COMMAND}.
-- `resolveInputSink` (function): function resolveInputSink(opts: { serverAuthoritative: boolean; backend: Pick<LiveGameBackend, "transport"> | null; serverId: string | null; }): InputSink — The sink a server-authoritative shell sends its per-frame input through: remote when `authority: "server"` and a server is joined, a no-op otherwise.
 
 ## @jgengine/shell/map
 
@@ -1640,7 +1561,3 @@
 - `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
 - `Projectable` (interface): interface Projectable — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
-
-## @jgengine/shell/worldSync
-
-- `attachWorldSync` (function): function attachWorldSync(feeds: Pick<GameRuntimeFeeds, "subscribeServer">, serverId: string, ctx: Pick<GameContext, "hydrate">): () => void — Client half of host-authoritative play: subscribe to the server-state channel and mirror each authoritative `WorldSnapshot` (carried in `serverState`) into the local `ctx`, so the game renders the host's world instead of a locally-simulated one. Pure and transport-agnostic — the backend's `feeds.subscribeServer` is the only dependency; returns the unsubscribe. The shell attaches this (and gates its local sim) when the game's adapter opts into `authority: "server"`.

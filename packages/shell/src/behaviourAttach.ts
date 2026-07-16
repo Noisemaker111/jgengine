@@ -1,6 +1,7 @@
 import type { Object3D } from "three";
 import { Behaviour, type BehaviourWorld } from "@jgengine/core/behaviour/behaviour";
 
+/** @internal */
 export class Object3DBehaviour extends Behaviour {
   /** @internal */ _object: Object3D | null = null;
 

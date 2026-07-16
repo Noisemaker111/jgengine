@@ -58,7 +58,8 @@ export interface HostedWorldOutcome<T> {
  * The reconstruct → op → save core of the stateless hosted path, Convex-agnostic so it unit-tests against
  * `memoryWorldStore`: build a fresh {@link createHostedWorldSession} from `store.load()`, resume persisted
  * members and replay held inputs, run the op, then persist the snapshot at `revision + 1` iff the world changed.
- */
+  * @internal
+  */
 export function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): HostedWorldOutcome<T> {
   const { game, store, members = [], inputs = {}, now, op } = invocation;
   const loaded = store.load();
@@ -172,7 +173,8 @@ async function persistWorldRow(
  * reconstructing a hosted session from the persisted `jgHostedWorlds` row on every invocation via
  * {@link invokeHostedWorld}. Destructure + re-export the returned functions from a `convex/` module and
  * drive `tickHostedWorlds` from a cron. Requires {@link jgengineHostedTables} in the deployment schema.
- */
+  * @internal
+  */
 export function createHostedGameServerFunctions(options: {
   games: Record<string, HostedGameConfig>;
   auth?: JgAuthMode;

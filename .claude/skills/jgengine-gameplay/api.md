@@ -156,11 +156,6 @@
 - `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
 - `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> — ⚠ undocumented
 - `CurrencyOperation` (type): type CurrencyOperation = "add" | "deduct" — ⚠ undocumented
-- `applyCurrencyOperation` (function): function applyCurrencyOperation(currency: CurrencyDefinition, current: number, operation: CurrencyOperation, amount: number): CurrencyAdjustment — ⚠ undocumented
-- `formatCurrencyAmount` (function): function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string — Format a currency amount with its symbol and grouping for HUD display.
-- `insufficientCurrencyReason` (function): function insufficientCurrencyReason(currency: CurrencyDefinition, needed: number, current: number): string — ⚠ undocumented
-- `resolveCurrencyDelta` (function): function resolveCurrencyDelta(current: number, delta: number): { operation: CurrencyOperation; amount: number } — Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
-- `sanitizeCurrencyAmount` (function): function sanitizeCurrencyAmount(amount: number): number — ⚠ undocumented
 
 ## @jgengine/core/economy/listingBook
 
@@ -639,11 +634,6 @@
 - `TradeSystem` (interface): interface TradeSystem — ⚠ undocumented
 - `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
 - `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
-- `applyTradeOutcome` (function): function applyTradeOutcome(outcome: TradeOutcome, appliers: { adjustItem(itemId: string, count: number): { reason: string } | null; adjustCurrency(delta: Record<string, number>): void; }): { reason: string } | null — ⚠ undocumented
-- `canAffordCosts` (function): function canAffordCosts(balances: Record<string, number>, costs: Record<string, number>): string | null — ⚠ undocumented
-- `createTradeSystem` (function): function createTradeSystem(deps: TradeSystemDeps): TradeSystem — Buy and sell goods against player currency balances, resolving affordability and price.
-- `resolveBuy` (function): function resolveBuy(itemId: string, trade: TradeField | null | undefined, shopId: string, count: number, balances: Record<string, number>): TradeResolution — ⚠ undocumented
-- `resolveSell` (function): function resolveSell(itemId: string, trade: TradeField | null | undefined, count: number): TradeResolution — ⚠ undocumented
 
 ## @jgengine/core/game/unlocks
 
@@ -672,12 +662,6 @@
 - `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput — ⚠ undocumented
 - `WorldItemStore` (interface): interface WorldItemStore — ⚠ undocumented
 - `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps — ⚠ undocumented
-- `createWorldItemStore` (function): function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore — Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
-- `resolveDeathDrops` (function): function resolveDeathDrops(drops: readonly Drop[], options: ResolveDeathDropsOptions): ResolvedDeathDrops — Splits rolled death drops between direct grants and scattered ground items. `mode: "grant"` is the legacy behavior (loot straight to inventory); `mode: "world"` routes item drops through a scatter impulse and leaves currency drops granting directly (coins fly to the killer, gear hits the ground).
-- `resolveWorldItemPresentation` (function): function resolveWorldItemPresentation(item: LootFilterItem, rarityStyle: Record<string, RarityStyle> | undefined, rules: readonly LootFilterRule[] | undefined): WorldItemPresentation — Composes the baseline rarity→beam/color/label render binding (#32, catalog data the game supplies) with the loot-filter rule overrides (#33). A matching rule wins field-by-field; unmatched fields fall back to the rarity's baseline style.
-- `scatterOffset` (function): function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
-- `scatterPosition` (function): function scatterPosition(origin: EntityPosition, rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition — ⚠ undocumented
-- `selectNearestWorldItem` (function): function selectNearestWorldItem(candidates: readonly { instanceId: string; position: EntityPosition }[], from: EntityPosition, radius: number): string | null — Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts).
 
 ## @jgengine/core/input/actionBindings
 
@@ -690,26 +674,12 @@
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
-- `actionLabel` (function): function actionLabel(map: ActionCodesMap, action: string): string | null — Short display label for an action's first bound code, or null when unbound.
-- `actionRepeatMs` (function): function actionRepeatMs(codes: ActionCodes | undefined): number | undefined — ⚠ undocumented
-- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
-- `bindingMatches` (function): function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean — ⚠ undocumented
-- `createActionStateTracker` (function): function createActionStateTracker<TAction extends string, TCode extends string = string>(map: ActionStateBindingMap<TAction, TCode>): ActionStateTracker<TAction> — ⚠ undocumented
-- `hotbarSlotActionIndex` (function): function hotbarSlotActionIndex(action: string): number | null — 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null.
-- `hotbarSlotBindings` (function): function hotbarSlotBindings(count: number, options?: { action?: (slot: number) => string }): ActionCodesMap — ⚠ undocumented
-- `isHotbarSlotAction` (function): function isHotbarSlotAction(action: string): boolean — ⚠ undocumented
-- `normalizeKeyCode` (function): function normalizeKeyCode(code: string): string — Collapse left/right modifier variants of a KeyboardEvent.code so bindings store one logical key.
-- `resolveActionCommand` (function): function resolveActionCommand(action: string, has: (command: string) => boolean, reserved: ReadonlySet<string>): string | null — Convention mapping a bound input action to the command it fires: the action's own name when a command by that name exists, otherwise a `ui.<action>` fallback. Reserved actions (consumed natively by the shell) and hotbar slots yield null so the shell can handle them itself.
-- `resolveBoundAction` (function): function resolveBoundAction<TAction extends string, TCode extends string>(code: TCode, bindings: ActionBindingMap<TAction, TCode>): TAction | null — First action (in the map's key order) bound to the given control code, or null.
-- `shouldDispatchAction` (function): function shouldDispatchAction({ pressed, down, repeatMs, lastFiredAt, now }: ShouldDispatchActionInput): boolean — ⚠ undocumented
-- `toActionStateBindingMap` (function): function toActionStateBindingMap<TAction extends string, TCode extends string>(map: ActionCodesMap<TAction, TCode>): ActionStateBindingMap<TAction, TCode> — ⚠ undocumented
 
 ## @jgengine/core/input/axisInput
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisBinding` (interface): interface AxisBinding — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
-- `AxisChannel` (class): class AxisChannel — Analog control channel — distinct from the digital action bindings. Throttle/brake/steer/handbrake are continuous values ramped from held keys (a keyboard feels like a pedal) or driven directly from a gamepad axis via `setAnalog`. `sample(dt, isDown, pointer?)` folds the current held-key state into the smoothed value; a binding's `pointer` source takes over from its keys while a pointer is active, and a `setAnalog` override replaces both for that axis until cleared.
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
 - `AxisInput` (interface): interface AxisInput — ⚠ undocumented
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
@@ -718,10 +688,6 @@
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
 - `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> — ⚠ undocumented
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
-- `clampAxis` (function): function clampAxis(value: number, range: AxisRange): number — ⚠ undocumented
-- `createAxisChannel` (function): function createAxisChannel<TAxes extends string>(config: GenericAxisConfig<TAxes>): GenericAxisChannel<TAxes> — ⚠ undocumented
-- `rampToward` (function): function rampToward(current: number, target: number, rate: number, dt: number): number — ⚠ undocumented
-- `sampleAxisBindings` (function): function sampleAxisBindings<TAxes extends string>(bindings: Record<TAxes, AxisBinding>, isDown: (code: string) => boolean, pointer?: PointerAxisState | null, ranges?: Partial<Record<TAxes, AxisRange>>): Record<TAxes, number> — Instantaneous (unsmoothed) analog sample of an axis binding map — the per-frame target an `AxisChannel` ramps toward, exposed as a pure read for `ctx.input.axis` and headless sampling. Each axis is its binding's positive-minus-negative held state (or its pointer source while a pointer is active), clamped to the axis range; axes without a listed range default to bipolar `[-1, 1]`.
 
 ## @jgengine/core/input/bindingOverrides
 
@@ -815,13 +781,6 @@
 - `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented
 - `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented
 - `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented
-- `countItem` (function): function countItem(state: InventoryState, itemId: string): number — ⚠ undocumented
-- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — A bag of stackable items supporting add, remove, count, and move — the base inventory model.
-- `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — ⚠ undocumented
-- `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — ⚠ undocumented
-- `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — ⚠ undocumented
-- `putItem` (function): function putItem(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, itemId: string, count: number, options?: { slot?: number }): PutResult — ⚠ undocumented
-- `takeItem` (function): function takeItem(state: InventoryState, itemId: string, count: number): TakeResult — ⚠ undocumented
 
 ## @jgengine/core/inventory/shapedGrid
 
@@ -976,10 +935,6 @@
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
-- `dailySeed` (function): function dailySeed(nowMs: number, salt?: string): string — ⚠ undocumented
-- `seedFromSearch` (function): function seedFromSearch(search: string, param = DEFAULT_SEED_PARAM): string | null — ⚠ undocumented
-- `seedFromUrl` (function): function seedFromUrl(url: string, param = DEFAULT_SEED_PARAM): string | null — ⚠ undocumented
-- `withSeedParam` (function): function withSeedParam(url: string, seed: string | number, param = DEFAULT_SEED_PARAM): string — ⚠ undocumented
 
 ## @jgengine/core/session/contestedChannel
 
