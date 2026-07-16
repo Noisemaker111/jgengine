@@ -91,25 +91,7 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  let gameId = "the-robots";
-  let port = 17373;
-  const rpcRaws: string[] = [];
-  let serve = true;
-  let stdio = false;
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i]!;
-    if (arg === "--game") gameId = argv[++i] ?? gameId;
-    else if (arg === "--port") port = Number(argv[++i] ?? port);
-    else if (arg === "--rpc") {
-      const raw = argv[++i];
-      if (raw !== undefined) rpcRaws.push(raw);
-      serve = false;
-    } else if (arg === "--stdio") {
-      stdio = true;
-      serve = false;
-    } else if (arg === "--serve") serve = true;
-  }
+  const { gameId, port, rpcSource, serve, stdio } = parseEditorCliArgs(argv);
 
   if (stdio) {
     await runEditorMcpStdio({ gameId });
@@ -119,7 +101,7 @@ async function main(argv: string[]): Promise<number> {
   const [layers, catalogs] = await Promise.all([loadGameLayers(gameId), loadGameCatalogs(gameId)]);
   if (!layers.ok) {
     console.error(
-      `invalid editorLayers for ${options.gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`,
+      `invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`,
     );
     return 1;
   }
@@ -128,40 +110,39 @@ async function main(argv: string[]): Promise<number> {
     return 1;
   }
   const { api, dispose } = createEditorHost({
-    gameId: options.gameId,
+    gameId: gameId,
     layers: layers.document,
     catalogs: catalogs.catalogs,
   });
 
-  if (rpcRaws.length > 0) {
-    let allOk = true;
-    for (const rpcRaw of rpcRaws) {
-      const decoded = decodeEditorBridgeRequest(JSON.parse(rpcRaw));
-      if (!decoded.ok) {
-        console.log(
-          JSON.stringify(
-            { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
-            null,
-            2,
-          ),
-        );
-        allOk = false;
-        break;
-      }
-      const response = api.handle(decoded.request);
-      console.log(JSON.stringify(response, null, 2));
-      if (!response.ok) {
-        allOk = false;
-        break;
-      }
+  if (rpcSource !== null) {
+    const payload = await loadRpcPayload(rpcSource);
+    if (!payload.ok) {
+      console.error(payload.error);
+      dispose();
+      return 1;
     }
+    const decoded = decodeEditorBridgeRequest(payload.value);
+    if (!decoded.ok) {
+      console.log(
+        JSON.stringify(
+          { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
+          null,
+          2,
+        ),
+      );
+      dispose();
+      return 1;
+    }
+    const response = api.handle(decoded.request);
+    console.log(JSON.stringify(response, null, 2));
     dispose();
-    return allOk ? 0 : 1;
+    return response.ok ? 0 : 1;
   }
 
   if (options.serve) {
     const server = startEditorBridgeServerNode({ host: api, port: options.port });
-    console.log(`editor bridge for ${options.gameId} at ${server.url}`);
+    console.log(`editor bridge for ${gameId} at ${server.url}`);
     console.log(`POST ${server.url}/rpc  body: {"method":"scene_summary"}`);
     console.log("tools:", EDITOR_MCP_TOOLS.map((tool) => tool.name).join(", "));
     await new Promise(() => undefined);

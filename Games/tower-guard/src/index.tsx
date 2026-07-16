@@ -1,3 +1,3 @@
 export { game } from "./game.config";
-export { editorCatalogs } from "./game/editorCatalogs";
+export { editorCatalogs } from "./editorCatalogs";
 export { editorLayers } from "./editorLayers";

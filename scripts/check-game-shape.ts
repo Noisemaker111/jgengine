@@ -11,6 +11,8 @@ const SKELETON_FILES = new Set([
   "index.css",
   "style.css",
   "editorLayers.ts",
+  "editorCatalogs.ts",
+  "editorCatalogs.test.ts",
   "editorLayers.test.ts",
   "editor.scene.json",
 ]);

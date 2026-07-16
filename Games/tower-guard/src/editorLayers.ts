@@ -8,7 +8,7 @@ import type { AvoidZone } from "@jgengine/core/world/geometry";
 import { clearanceZonesFrom } from "@jgengine/core/world/scatterRegion";
 import { createEditableTerrain, migrateTerrainSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
 
-import { editorCatalogs } from "./game/editorCatalogs";
+import { editorCatalogs } from "./editorCatalogs";
 import sceneJson from "./editor.scene.json";
 
 type Vec2 = readonly [number, number];

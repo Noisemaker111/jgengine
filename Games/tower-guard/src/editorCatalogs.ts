@@ -1,7 +1,7 @@
 import type { EditorCatalogDefinition } from "@jgengine/core/editor/index";
 import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
 
-import { TOWER_CATALOG, TOWER_IDS } from "./entities/towers/catalog";
+import { TOWER_CATALOG, TOWER_IDS } from "./game/entities/towers/catalog";
 
 /** Tunable tower combat/economy fields — drives the editor Data panel via SchemaInspector. */
 export const TOWER_SCHEMA: ParamSchema = {
