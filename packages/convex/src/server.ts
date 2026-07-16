@@ -70,7 +70,10 @@ export function jgengineTables() {
       dirtyAt: v.optional(v.number()),
       createdAt: v.number(),
       updatedAt: v.number(),
-    }).index("by_game_and_status", ["gameId", "status"]),
+    })
+      .index("by_game_and_status", ["gameId", "status"])
+      .index("by_status", ["status"])
+      .index("by_dirty", ["dirtyAt"]),
     jgPlayerProfiles: defineTable({
       userId: v.string(),
       gameId: v.string(),
@@ -146,7 +149,9 @@ export function jgengineHostedTables() {
       tickAnchorMs: v.number(),
       createdAt: v.number(),
       updatedAt: v.number(),
-    }).index("by_game_and_server", ["gameId", "serverId"]),
+    })
+      .index("by_game_and_server", ["gameId", "serverId"])
+      .index("by_tick_anchor", ["tickAnchorMs"]),
   };
 }
 
@@ -900,12 +905,14 @@ export function createGameServerFunctions(options?: {
     args: {},
     handler: async (ctx) => {
       const now = Date.now();
-      const servers = await ctx.db.query("jgGameServers").collect();
+      const servers = await ctx.db
+        .query("jgGameServers")
+        .withIndex("by_status", (q) => q.eq("status", "running"))
+        .collect();
       let ticked = 0;
       let saved = 0;
 
       for (const server of servers) {
-        if (server.status !== "running") continue;
         if (server.memberUserIds.length === 0) continue;
 
         const elapsedMs = now - server.tickAnchorMs;
@@ -932,11 +939,13 @@ export function createGameServerFunctions(options?: {
     args: {},
     handler: async (ctx) => {
       const now = Date.now();
-      const servers = await ctx.db.query("jgGameServers").collect();
+      const servers = await ctx.db
+        .query("jgGameServers")
+        .withIndex("by_dirty", (q) => q.gt("dirtyAt", 0))
+        .collect();
       let saved = 0;
 
       for (const server of servers) {
-        if (server.dirtyAt === undefined) continue;
         const runtime = resolveRuntime(registry, server.gameId);
         const snapshot = await loadServerSnapshot(ctx, server, runtime);
         await persistServerSnapshot(ctx, server, clearDirtyFlags(snapshot), server.save as SaveConfig);
