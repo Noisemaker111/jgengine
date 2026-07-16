@@ -242,6 +242,31 @@ describe("determinism", () => {
   });
 });
 
+describe("precision", () => {
+  test("omitting precision matches the standard preset exactly", () => {
+    const w = world();
+    expect(w.solverIterations).toBe(4);
+    expect(w.correctionFactor).toBe(0.2);
+    expect(w.sleepSteps).toBe(30);
+    expect(w.wakeThreshold).toBe(0.5);
+    expect(w.jointCorrection).toBe(0.5);
+  });
+
+  test("low and high precision presets diverge from standard", () => {
+    const low = world({ precision: "low" });
+    const high = world({ precision: "high" });
+    expect(low.solverIterations).toBeLessThan(4);
+    expect(high.solverIterations).toBeGreaterThan(4);
+    expect(low.jointCorrection).toBeLessThan(0.5);
+    expect(high.jointCorrection).toBeGreaterThan(0.5);
+  });
+
+  test("an explicit deprecated knob always wins over the precision preset", () => {
+    const w = world({ precision: "low", solverIterations: 9 });
+    expect(w.solverIterations).toBe(9);
+  });
+});
+
 describe("counters", () => {
   test("stats report counts and a non-negative step time", () => {
     const w = world();
