@@ -150,11 +150,11 @@ Headless document tools (no WebGL — document verbs only, no camera/perf):
 
 ```
 bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'
-bun packages/editor/src/mcp/cli.ts --game the-robots --serve   # POST localhost:17373/rpc
+bun packages/editor/src/mcp/cli.ts --game the-robots --rpc-file payload.json  # large import_document / --rpc -
 bun packages/editor/src/mcp/cli.ts --game the-robots --stdio   # MCP JSON-RPC on stdin/stdout
 ```
 
-The CLI/HTTP bridge validates every RPC payload and a game's `editorLayers` export at load time — malformed JSON, an unknown `method`, or a wrong-shaped document/marker/volume/path field is rejected with a path-specific diagnostic (`$.markers[2].position expected {x,y,z} numbers`) instead of crashing or silently passing through.
+The CLI/HTTP bridge validates every RPC payload and a game's `editorLayers` export at load time — malformed JSON (inline oversized/`--rpc-file` path/stdin), an unknown `method`, or a wrong-shaped document/marker/volume/path field is rejected with a path-specific diagnostic (`$.markers[2].position expected {x,y,z} numbers`) instead of crashing or silently passing through.
 
 Viewport: click anything to select — editor gizmos hit directly, world geometry snaps to the nearest marker/volume/path/note, repeat-click cycles stacked candidates, shift/ctrl-click multi-selects — then TransformControls (W move / E rotate marker / R scale volume: radius, cylinder height, or box half-extents). Multi-selection drags move every selected object. Snap button cycles ground / grid / off (grid also snaps rotation to 15°); `G` toggles the reference grid. Outliner groups by kind (notes included) with ×N dedup rows; `N` cycles instances of the selected row; ctrl-click adds to selection.
 

@@ -13,6 +13,7 @@
   "exclude": [
     "src/**/*.test.ts",
     "src/mcp/cli.ts",
+    "src/mcp/rpcPayload.ts",
     "src/mcp/bridgeServer.node.ts",
     "src/mcp/stdioServer.ts",
     "src/mcp/loadGameLayers.ts"
