@@ -1,4 +1,6 @@
 import { createDotField } from "@jgengine/core/combat/dotField";
+import { createRegenShield, type RegenShield } from "@jgengine/core/combat/regenShield";
+import { resistanceScale, type ResistanceMatrix } from "@jgengine/core/combat/resistance";
 import { pickWeighted } from "@jgengine/core/random/pick";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
@@ -348,13 +350,12 @@ export function consumeRound(gun: GunDef): boolean {
   return true;
 }
 
-export interface ShieldWatch {
-  lastHitAtMs: number;
-  lastShield: number;
+interface ShieldTracker {
+  shield: RegenShield;
   lastHealth: number;
 }
 
-const shieldWatch = new Map<string, ShieldWatch>();
+const shieldTrackers = new Map<string, ShieldTracker>();
 
 export const SHIELD_REGEN_DELAY_MS = 5000;
 
@@ -363,27 +364,43 @@ export function tickShields(ctx: GameContext, nowMs: number, dt: number, regenBo
     const shield = ctx.scene.entity.stats.get(entity.id, "shield");
     if (shield === null || shield.max <= 0) continue;
     const health = ctx.scene.entity.stats.get(entity.id, "health");
-    let watch = shieldWatch.get(entity.id);
-    if (watch === undefined) {
-      watch = { lastHitAtMs: 0, lastShield: shield.current, lastHealth: health?.current ?? 0 };
-      shieldWatch.set(entity.id, watch);
-    }
     const currentHealth = health?.current ?? 0;
-    if (shield.current < watch.lastShield || currentHealth < watch.lastHealth) {
-      watch.lastHitAtMs = nowMs;
-      if (entity.id === ctx.player.userId) notePlayerHurt(nowMs);
-    }
-    watch.lastShield = shield.current;
-    watch.lastHealth = currentHealth;
-    if (shield.current >= shield.max) continue;
     const isLocalPlayer = entity.id === ctx.player.userId;
-    const delay = isLocalPlayer
-      ? SHIELD_REGEN_DELAY_MS * (1 - Math.min(0.6, bonus("shieldDelay")))
-      : SHIELD_REGEN_DELAY_MS;
-    if (nowMs - watch.lastHitAtMs < delay) continue;
-    const rate = Math.max(6, shield.max * 0.12) * regenBonus * (isLocalPlayer ? 1 + bonus("shieldRegen") : 1);
-    ctx.scene.entity.stats.delta(entity.id, "shield", rate * dt);
-    watch.lastShield = ctx.scene.entity.stats.get(entity.id, "shield")?.current ?? shield.current;
+    let tracker = shieldTrackers.get(entity.id);
+    if (tracker === undefined) {
+      tracker = {
+        shield: createRegenShield({
+          max: shield.max,
+          current: shield.current,
+          regenPerSecond: 0,
+          regenDelayMs: SHIELD_REGEN_DELAY_MS,
+        }),
+        lastHealth: currentHealth,
+      };
+      shieldTrackers.set(entity.id, tracker);
+    }
+    const regen = tracker.shield;
+    const shieldHit = regen.observeValue(shield.current);
+    regen.setMax(shield.max);
+    regen.setRegenPerSecond(
+      Math.max(6, shield.max * 0.12) * regenBonus * (isLocalPlayer ? 1 + bonus("shieldRegen") : 1),
+    );
+    regen.setRegenDelayMs(
+      isLocalPlayer ? SHIELD_REGEN_DELAY_MS * (1 - Math.min(0.6, bonus("shieldDelay"))) : SHIELD_REGEN_DELAY_MS,
+    );
+    const healthHit = currentHealth < tracker.lastHealth;
+    tracker.lastHealth = currentHealth;
+    if (shieldHit || healthHit) {
+      regen.poke();
+      if (isLocalPlayer) notePlayerHurt(nowMs);
+      continue;
+    }
+    if (shield.current >= shield.max) continue;
+    regen.tick(dt);
+    const regenerated = regen.current();
+    if (regenerated !== shield.current) {
+      ctx.scene.entity.stats.delta(entity.id, "shield", regenerated - shield.current);
+    }
   }
 }
 
@@ -400,6 +417,17 @@ export function isFluxed(targetId: string, nowMs: number): boolean {
   return (fluxedUntil.get(targetId) ?? 0) > nowMs;
 }
 
+type ShieldSituation = "shielded" | "armor" | "flesh";
+
+const ELEMENTAL_MATRIX: ResistanceMatrix<ShieldSituation, GunElement> = {
+  categories: {
+    shielded: { shock: 2, incendiary: 0.75, corrosive: 0.75, flux: 0.75 },
+    armor: { corrosive: 1.5, incendiary: 0.75 },
+    flesh: { incendiary: 1.5, corrosive: 0.9 },
+  },
+  default: "normal",
+};
+
 export function elementalDamageMult(
   element: GunElement,
   surface: Surface,
@@ -407,14 +435,8 @@ export function elementalDamageMult(
   targetId: string,
   nowMs: number,
 ): number {
-  let mult = 1;
-  if (targetShielded) {
-    mult = element === "shock" ? 2 : element === "none" || element === "explosive" ? 1 : 0.75;
-  } else if (surface === "armor") {
-    mult = element === "corrosive" ? 1.5 : element === "incendiary" ? 0.75 : 1;
-  } else {
-    mult = element === "incendiary" ? 1.5 : element === "corrosive" ? 0.9 : 1;
-  }
+  const situation: ShieldSituation = targetShielded ? "shielded" : surface === "armor" ? "armor" : "flesh";
+  let mult = resistanceScale(ELEMENTAL_MATRIX, situation, [element]);
   if (isFluxed(targetId, nowMs) && element !== "flux") mult *= FLUX_DAMAGE_MULT;
   return mult;
 }
@@ -522,7 +544,7 @@ export function markRespawned(ctx: GameContext): void {
 
 export function resetHandrollState(): void {
   magazines.clear();
-  shieldWatch.clear();
+  shieldTrackers.clear();
   dotField.clear();
   dotMeta.clear();
   fluxedUntil.clear();
