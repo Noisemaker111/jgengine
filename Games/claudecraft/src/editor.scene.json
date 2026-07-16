@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "spawn:player",
+      "kind": "player_spawn",
+      "position": {
+        "x": 6,
+        "y": 0,
+        "z": -288
+      },
+      "label": "Player spawn"
+    },
+    {
+      "id": "hub:vale",
+      "kind": "goal",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -300
+      },
+      "label": "vale hub",
+      "meta": {
+        "radius": 26
+      }
+    },
+    {
+      "id": "graveyard:vale",
+      "kind": "travel",
+      "position": {
+        "x": -34,
+        "y": 0,
+        "z": -270
+      },
+      "label": "vale graveyard"
+    },
+    {
+      "id": "hub:marsh",
+      "kind": "goal",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "label": "marsh hub",
+      "meta": {
+        "radius": 20
+      }
+    },
+    {
+      "id": "graveyard:marsh",
+      "kind": "travel",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 32
+      },
+      "label": "marsh graveyard"
+    },
+    {
+      "id": "hub:peaks",
+      "kind": "goal",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 300
+      },
+      "label": "peaks hub",
+      "meta": {
+        "radius": 20
+      }
+    },
+    {
+      "id": "graveyard:peaks",
+      "kind": "travel",
+      "position": {
+        "x": -28,
+        "y": 0,
+        "z": 330
+      },
+      "label": "peaks graveyard"
+    },
+    {
+      "id": "hub:crypt",
+      "kind": "poi",
+      "position": {
+        "x": 110,
+        "y": 0,
+        "z": 392
+      },
+      "label": "Hollow Crypt",
+      "meta": {
+        "radius": 24
+      }
+    },
+    {
+      "id": "graveyard:crypt",
+      "kind": "travel",
+      "position": {
+        "x": 86,
+        "y": 0,
+        "z": 360
+      },
+      "label": "Crypt graveyard"
+    },
+    {
+      "id": "npc:marshal_redbrook",
+      "kind": "npc",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": -294
+      },
+      "label": "marshal_redbrook",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:trader_wilkes",
+      "kind": "vendor",
+      "position": {
+        "x": -7,
+        "y": 0,
+        "z": -297
+      },
+      "label": "trader_wilkes",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:wilkes_hand",
+      "kind": "npc",
+      "position": {
+        "x": -9,
+        "y": 0,
+        "z": -299
+      },
+      "label": "wilkes_hand",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:apothecary_lin",
+      "kind": "npc",
+      "position": {
+        "x": 11,
+        "y": 0,
+        "z": -303
+      },
+      "label": "apothecary_lin",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:brother_aldric",
+      "kind": "npc",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": -310
+      },
+      "label": "brother_aldric",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:fisherman_brandt",
+      "kind": "npc",
+      "position": {
+        "x": -16,
+        "y": 0,
+        "z": -294
+      },
+      "label": "fisherman_brandt",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:foreman_odell",
+      "kind": "npc",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": -314
+      },
+      "label": "foreman_odell",
+      "meta": {
+        "zone": "vale"
+      }
+    },
+    {
+      "id": "npc:warden_fenwick",
+      "kind": "npc",
+      "position": {
+        "x": 3,
+        "y": 0,
+        "z": 4
+      },
+      "label": "warden_fenwick",
+      "meta": {
+        "zone": "marsh"
+      }
+    },
+    {
+      "id": "npc:provisioner_hale",
+      "kind": "vendor",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 8
+      },
+      "label": "provisioner_hale",
+      "meta": {
+        "zone": "marsh"
+      }
+    },
+    {
+      "id": "npc:hale_dockhand",
+      "kind": "npc",
+      "position": {
+        "x": -6,
+        "y": 0,
+        "z": 10
+      },
+      "label": "hale_dockhand",
+      "meta": {
+        "zone": "marsh"
+      }
+    },
+    {
+      "id": "npc:herbalist_yara",
+      "kind": "npc",
+      "position": {
+        "x": 10,
+        "y": 0,
+        "z": -5
+      },
+      "label": "herbalist_yara",
+      "meta": {
+        "zone": "marsh"
+      }
+    },
+    {
+      "id": "npc:scout_maren",
+      "kind": "npc",
+      "position": {
+        "x": 6,
+        "y": 0,
+        "z": 12
+      },
+      "label": "scout_maren",
+      "meta": {
+        "zone": "marsh"
+      }
+    },
+    {
+      "id": "npc:brother_aldric_fen",
+      "kind": "npc",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": -4
+      },
+      "label": "brother_aldric_fen",
+      "meta": {
+        "zone": "marsh"
+      }
+    },
+    {
+      "id": "npc:captain_thessaly",
+      "kind": "npc",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 304
+      },
+      "label": "captain_thessaly",
+      "meta": {
+        "zone": "peaks"
+      }
+    },
+    {
+      "id": "npc:quartermaster_bree",
+      "kind": "vendor",
+      "position": {
+        "x": -5,
+        "y": 0,
+        "z": 308
+      },
+      "label": "quartermaster_bree",
+      "meta": {
+        "zone": "peaks"
+      }
+    },
+    {
+      "id": "npc:bree_clerk",
+      "kind": "npc",
+      "position": {
+        "x": -7,
+        "y": 0,
+        "z": 310
+      },
+      "label": "bree_clerk",
+      "meta": {
+        "zone": "peaks"
+      }
+    },
+    {
+      "id": "npc:scout_maren_highwatch",
+      "kind": "npc",
+      "position": {
+        "x": 7,
+        "y": 0,
+        "z": 310
+      },
+      "label": "scout_maren_highwatch",
+      "meta": {
+        "zone": "peaks"
+      }
+    },
+    {
+      "id": "npc:loremaster_caddis",
+      "kind": "npc",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": 295
+      },
+      "label": "loremaster_caddis",
+      "meta": {
+        "zone": "peaks"
+      }
+    },
+    {
+      "id": "npc:brother_aldric_highwatch",
+      "kind": "npc",
+      "position": {
+        "x": -10,
+        "y": 0,
+        "z": 296
+      },
+      "label": "brother_aldric_highwatch",
+      "meta": {
+        "zone": "peaks"
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "id": "zone:vale",
+      "kind": "zone",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": -300
+      },
+      "halfExtents": {
+        "x": 180,
+        "y": 60,
+        "z": 150
+      },
+      "label": "vale band"
+    },
+    {
+      "id": "zone:marsh",
+      "kind": "zone",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "halfExtents": {
+        "x": 180,
+        "y": 60,
+        "z": 150
+      },
+      "label": "marsh band"
+    },
+    {
+      "id": "zone:peaks",
+      "kind": "zone",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 300
+      },
+      "halfExtents": {
+        "x": 180,
+        "y": 60,
+        "z": 150
+      },
+      "label": "peaks band"
+    }
+  ],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}
