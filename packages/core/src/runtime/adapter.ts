@@ -21,12 +21,32 @@ export type MultiplayerAdapterConfig =
   | { kind: "lan"; topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority }
   | { kind: "offline" };
 
+/**
+ * Convex transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer
+ * `convexPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared,
+ * host-authoritative world — see `examples/HOSTED.md`.
+ */
 export function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "convex", topology: config?.topology ?? "shared", authority: config?.authority };
 }
 
+/** Presence-only Convex transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `convex({ ...config, authority: "client" })`. */
+export function convexPresence(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig {
+  return { kind: "convex", topology: config?.topology ?? "shared", authority: "client" };
+}
+
+/**
+ * WebSocket transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer
+ * `wsPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared,
+ * host-authoritative world — see `examples/HOSTED.md`.
+ */
 export function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
+}
+
+/** Presence-only WebSocket transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `ws({ ...config, authority: "client" })`. */
+export function wsPresence(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig {
+  return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: "client" };
 }
 
 export function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {

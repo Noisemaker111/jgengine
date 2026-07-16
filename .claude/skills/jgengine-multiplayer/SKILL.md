@@ -25,10 +25,12 @@ Games never need `createGameRuntime` for single-player or client loops. Hosts re
 | unset / `"client"` | **Presence-only** — each client runs its own `onTick`; presence/feeds/chat sync. Not a shared competitive sim. `isPresenceOnly(multiplayer)` / `resolveAuthority(multiplayer) === "client"` |
 | `"server"` | Host-authoritative world; shell mirrors host state. `isServerAuthoritative(multiplayer)` / `resolveAuthority === "server"` |
 
+`wsPresence()` / `convexPresence()` name the presence-only case explicitly — no silent default to trip over. `ws()` / `convex()` stay the primary form for a genuinely shared world: pass `{ authority: "server" }` and follow `examples/HOSTED.md`'s host recipe. A bare `ws()`/`convex()` (authority omitted) still resolves to presence-only for compatibility, but prefer `wsPresence()`/`convexPresence()` so the intent reads at the call site.
+
 ```ts
-import { ws, isPresenceOnly, isServerAuthoritative, resolveAuthority } from "@jgengine/core/runtime/adapter";
-ws({ topology: "shared" }); // presence-only default — resolveAuthority → "client"
-ws({ topology: "shared", authority: "server" }); // shared world
+import { wsPresence, ws, isPresenceOnly, isServerAuthoritative, resolveAuthority } from "@jgengine/core/runtime/adapter";
+wsPresence({ topology: "shared" }); // presence-only, explicit — resolveAuthority → "client"
+ws({ topology: "shared", authority: "server" }); // shared world — needs a host, see examples/HOSTED.md
 ```
 
 ## Multiplayer and the backend seam

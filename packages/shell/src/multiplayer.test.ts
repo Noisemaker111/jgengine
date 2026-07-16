@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { defineGame, type GameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { lan, offline, p2p, ws } from "@jgengine/core/runtime/adapter";
+import { lan, offline, p2p, ws, wsPresence } from "@jgengine/core/runtime/adapter";
 
 import { resolveShellMultiplayer } from "./multiplayer";
 
@@ -44,7 +44,7 @@ describe("resolveShellMultiplayer", () => {
   });
 
   test("ws adapter with url in config resolves that url", () => {
-    const game = makeGame(ws({ url: "ws://configured.example/ws" }));
+    const game = makeGame(wsPresence({ url: "ws://configured.example/ws" }));
     const result = resolveShellMultiplayer({ game, gameId: "g1" });
     expect(result).not.toBeNull();
     expect(connectedUrl(result)).toBe("ws://configured.example/ws");

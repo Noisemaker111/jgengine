@@ -24,8 +24,10 @@ VITE_CONVEX_URL=<url> bun run dev --filter @jgengine-apps/dev
 ```
 
 or set `VITE_CONVEX_URL` in `apps/dev/.env.local`. Any game whose `game.config.ts` declares
-`multiplayer: convex({ topology: "shared" })` joins a shared server as soon as it loads — no
-extra wiring on the client or server side.
+`multiplayer: convexPresence({ topology: "shared" })` joins a shared server as soon as it loads — no
+extra wiring on the client or server side. That's presence-only (pose/chat/feeds); for a
+host-authoritative shared sim use `convex({ topology: "shared", authority: "server" })` instead — see
+[HOSTED.md](../HOSTED.md).
 
 **Flagship WS path (recommended first):** the in-repo multiplayer reference game is
 `claudecraft` (`multiplayer: ws({ authority: "server" })`) with `examples/express-host` —
