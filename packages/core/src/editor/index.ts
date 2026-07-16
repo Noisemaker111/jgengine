@@ -10,6 +10,25 @@ export type { EditorFragmentContent } from "./types";
 export type { EditorPrefab } from "./types";
 /** A named, persisted list of object ids — selection bookmark and/or locked production group. */
 export type { EditorCollection } from "./types";
+/** One row in a gameplay data catalog — id + optional label + meta matching the catalog schema. */
+export type { EditorCatalogEntry } from "./types";
+/** Persisted values for one gameplay data catalog on the scene document. */
+export type { EditorCatalogData } from "./types";
+/**
+ * Game-exported catalog definition: ParamSchema + default entries for in-editor tuning.
+ * @example
+ * ```ts
+ * import type { EditorCatalogDefinition } from "@jgengine/core/editor/index";
+ * export const editorCatalogs: EditorCatalogDefinition[] = [{
+ *   id: "towers", label: "Towers",
+ *   schema: { fields: [{ key: "damage", type: "number", default: 8, min: 1, max: 100 }] },
+ *   entries: [{ id: "tower_archer", label: "Archer", meta: { damage: 8 } }],
+ * }];
+ * ```
+ */
+export type { EditorCatalogDefinition } from "./types";
+/** Accepted shape for a game's `editorCatalogs` export: definitions, or a factory. */
+export type { EditorCatalogsInput } from "./types";
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */
 export type { EditorLayersInput } from "./types";
 /** A placeable point object in the scene — spawn, mob, chest, POI, etc. */
@@ -43,6 +62,8 @@ export {
   editorRoots,
   exportEditorDocumentJson,
   extractEditorFragment,
+  findEditorCatalog,
+  findEditorCatalogEntry,
   findEditorCollection,
   findEditorMarker,
   findEditorNote,
@@ -54,6 +75,7 @@ export {
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
+  seedEditorCatalogs,
   wouldCreateCycle,
 } from "./document";
 /** One field-level failure surfaced while decoding an untrusted editor document. */

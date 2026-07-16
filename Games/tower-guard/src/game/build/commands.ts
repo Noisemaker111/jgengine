@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
 import { GOLD_CURRENCY } from "../entities/base/catalog";
+import { editorLayers } from "../../editorLayers";
 import { TOWER_IDS, towerDef } from "../entities/towers/catalog";
 import { nearestPlot } from "../world/path";
 import { session, nextTowerInstanceId } from "../session";
@@ -18,7 +19,7 @@ function rejectBuild(ctx: GameContext, input: BuildPlaceInput): { reason: string
   const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS);
   if (plot === null) return { reason: "no-plot" };
   if (session.plotOccupant.get(plot.id) !== null) return { reason: "plot-occupied" };
-  const def = towerDef(towerId);
+  const def = towerDef(towerId, editorLayers);
   if (ctx.game.economy.balance(ctx.player.userId, GOLD_CURRENCY) < def.cost) {
     return { reason: "insufficient-gold" };
   }
@@ -28,7 +29,7 @@ function rejectBuild(ctx: GameContext, input: BuildPlaceInput): { reason: string
 function placeTower(ctx: GameContext, input: BuildPlaceInput): GameContext {
   const towerId = session.selectedTowerId!;
   const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS)!;
-  const def = towerDef(towerId);
+  const def = towerDef(towerId, editorLayers);
   ctx.game.economy.charge(ctx.player.userId, GOLD_CURRENCY, def.cost);
   const instanceId = nextTowerInstanceId();
   ctx.scene.entity.spawn(towerId, {

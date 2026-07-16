@@ -42,6 +42,7 @@ const gameModules = import.meta.glob<{
   game: PlayableGame;
   uiScenario?: UiPreviewScenario;
   editorLayers?: import("@jgengine/core/editor/index").EditorLayersInput;
+  editorCatalogs?: import("@jgengine/core/editor/index").EditorCatalogsInput;
 }>("../../../Games/*/src/index.tsx");
 
 const gameStyleModules = import.meta.glob<Record<string, unknown>>("../../../Games/*/src/style.css");
@@ -345,21 +346,31 @@ function EditorModeApp({ gameId, playable }: { gameId: string; playable: Playabl
     gameId: string;
     playable: PlayableGame;
     layers?: import("@jgengine/core/editor/index").EditorLayersInput;
+    catalogs?: readonly import("@jgengine/core/editor/index").EditorCatalogDefinition[];
   }> | null>(null);
   const [layers, setLayers] = useState<import("@jgengine/core/editor/index").EditorLayersInput | undefined>(
     undefined,
   );
+  const [catalogs, setCatalogs] = useState<
+    readonly import("@jgengine/core/editor/index").EditorCatalogDefinition[] | undefined
+  >(undefined);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Lazy chunk: the editor ships with production /play too, but only downloads when summoned.
+    const gameLoader = gameLoaders.find(([id]) => id === gameId)?.[1];
     void Promise.all([
       import("@jgengine/editor"),
       editorLayerRegistry[gameId]?.() ?? Promise.resolve(undefined),
+      gameLoader?.() ?? Promise.resolve(undefined),
     ])
-      .then(([mod, resolvedLayers]) => {
+      .then(([mod, resolvedLayers, gameModule]) => {
         setEditorApp(() => mod.EditorApp);
         setLayers(() => resolvedLayers);
+        const raw = gameModule?.editorCatalogs;
+        const resolved =
+          raw === undefined ? undefined : typeof raw === "function" ? raw() : raw;
+        setCatalogs(() => resolved);
       })
       .catch((err: unknown) => setError(formatLoadError(err)));
   }, [gameId]);
@@ -376,7 +387,7 @@ function EditorModeApp({ gameId, playable }: { gameId: string; playable: Playabl
       </div>
     );
   }
-  return <EditorApp gameId={gameId} playable={playable} layers={layers} />;
+  return <EditorApp gameId={gameId} playable={playable} layers={layers} catalogs={catalogs} />;
 }
 
 function DevApp({ gameId }: { gameId: string }) {

@@ -18,6 +18,36 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
+    name: "list_catalogs",
+    description: "List gameplay data catalogs exported by the game (id, label, schema, entry ids).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "get_catalog_entry",
+    description: "Fetch one gameplay catalog entry by catalogId + entryId, including its schema and meta.",
+    inputSchema: {
+      type: "object",
+      properties: { catalogId: { type: "string" }, entryId: { type: "string" } },
+      required: ["catalogId", "entryId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "set_catalog_entry",
+    description: "Merge-patch a gameplay catalog entry's meta (and optional label). Validated against the catalog ParamSchema; coalesces undo like meta patches.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        catalogId: { type: "string" },
+        entryId: { type: "string" },
+        patch: { type: "object" },
+        label: { type: "string" },
+      },
+      required: ["catalogId", "entryId", "patch"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "list_selection",
     description: "Return currently selected editor object ids.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },

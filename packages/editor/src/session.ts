@@ -5,15 +5,16 @@ import {
   editorDocumentBounds,
   editorParentOf,
   editorRoots,
+  findEditorCatalog,
+  findEditorCatalogEntry,
   findEditorCollection,
   findEditorPrefab,
   installDocumentLiveSync,
   listEditorKinds,
   normalizeEditorLayers,
-  runtimeEntityWriteBackCommand,
+  seedEditorCatalogs,
   summarizeEditorSession,
-  type DocumentLiveSync,
-  type DocumentPatch,
+  type EditorCatalogDefinition,
   type EditorCommand,
   type EditorDocument,
   type EditorKindVisibility,
@@ -84,6 +85,9 @@ export type EditorBridgeRequest =
   | { method: "set_mode"; mode: EditorRunMode }
   | { method: "perf_report" }
   | { method: "list_layers" }
+  | { method: "list_catalogs" }
+  | { method: "get_catalog_entry"; catalogId: string; entryId: string }
+  | { method: "set_catalog_entry"; catalogId: string; entryId: string; patch: Record<string, unknown>; label?: string }
   | { method: "list_selection" }
   | { method: "get_marker"; id: string }
   | { method: "get_volume"; id: string }
@@ -230,6 +234,7 @@ export interface EditorHostApi {
   subscribeFocus(listener: (target: { x: number; y: number; z: number } | null) => void): () => void;
   getAssets(): readonly EditorAssetInfo[];
   setAssets(assets: readonly EditorAssetInfo[]): void;
+  getCatalogDefinitions(): readonly EditorCatalogDefinition[];
   getPerf(): EditorPerfSample | null;
   setPerf(sample: EditorPerfSample): void;
   getMode(): EditorRunMode;
@@ -259,6 +264,8 @@ export function getEditorHost(): EditorHostApi | null {
 export function createEditorHost(options: {
   gameId: string;
   layers: EditorLayersInput | undefined;
+  /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */
+  catalogs?: readonly EditorCatalogDefinition[];
   assets?: readonly EditorAssetInfo[];
   onFocus?: (target: { x: number; y: number; z: number } | null) => void;
 }): {
@@ -266,16 +273,10 @@ export function createEditorHost(options: {
   api: EditorHostApi;
   dispose: () => void;
 } {
-  const document = normalizeEditorLayers(options.layers);
+  const catalogDefinitions = options.catalogs ?? [];
+  const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);
-  const liveSync = createDocumentLiveSync(document);
-  const uninstallLiveSync = installDocumentLiveSync(liveSync);
-  let lastMirroredDocument = session.getState().document;
-  const unsubscribeSessionMirror = session.subscribe((state) => {
-    if (state.document === lastMirroredDocument) return;
-    lastMirroredDocument = state.document;
-    liveSync.replaceDocument(state.document);
-  });
+  const catalogById = new Map(catalogDefinitions.map((catalog) => [catalog.id, catalog]));
   let visibility: EditorKindVisibility = {};
   let focusTarget: { x: number; y: number; z: number } | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
@@ -340,6 +341,7 @@ export function createEditorHost(options: {
     setAssets(next) {
       assets = [...next];
     },
+    getCatalogDefinitions: () => catalogDefinitions,
     getPerf: () => perf,
     setPerf(sample) {
       perf = sample;
@@ -401,6 +403,74 @@ export function createEditorHost(options: {
                 document: state.document,
               },
             };
+          }
+          case "list_catalogs": {
+            const state = session.getState();
+            const catalogs = catalogDefinitions.map((definition) => {
+              const data = findEditorCatalog(state.document, definition.id);
+              return {
+                id: definition.id,
+                label: definition.label,
+                schema: definition.schema,
+                entryCount: data?.entries.length ?? definition.entries.length,
+                entries: (data?.entries ?? definition.entries).map((entry) => ({
+                  id: entry.id,
+                  label: entry.label,
+                })),
+              };
+            });
+            return { ok: true, result: { catalogs } };
+          }
+          case "get_catalog_entry": {
+            const definition = catalogById.get(request.catalogId);
+            if (definition === undefined) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+            const entry = findEditorCatalogEntry(session.getState().document, request.catalogId, request.entryId);
+            if (entry === undefined) return { ok: false, error: `catalog entry not found: ${request.catalogId}/${request.entryId}` };
+            return {
+              ok: true,
+              result: {
+                catalogId: request.catalogId,
+                label: definition.label,
+                schema: definition.schema,
+                entry,
+              },
+            };
+          }
+          case "set_catalog_entry": {
+            const definition = catalogById.get(request.catalogId);
+            if (definition === undefined) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+            const current = findEditorCatalogEntry(session.getState().document, request.catalogId, request.entryId);
+            if (current === undefined) return { ok: false, error: `catalog entry not found: ${request.catalogId}/${request.entryId}` };
+            const merged = { ...current.meta, ...request.patch };
+            const invalid = validateParams(definition.schema, merged);
+            if (invalid.length > 0) {
+              return {
+                ok: false,
+                error: `invalid ${request.catalogId} params: ${invalid.map((issue) => `${issue.key} (${issue.message})`).join(", ")}`,
+              };
+            }
+            const coalesceKey =
+              Object.keys(request.patch).length === 1
+                ? `catalog:${request.catalogId}:${request.entryId}:${Object.keys(request.patch)[0]}`
+                : `catalog:${request.catalogId}:${request.entryId}`;
+            const before = session.getState();
+            const state = session.dispatch(
+              {
+                type: "setCatalogEntry",
+                catalogId: request.catalogId,
+                entryId: request.entryId,
+                patch: {
+                  meta: merged,
+                  ...(request.label === undefined ? {} : { label: request.label }),
+                },
+              },
+              { coalesce: coalesceKey },
+            );
+            if (state === before) {
+              return { ok: false, error: `set_catalog_entry rejected: ${request.catalogId}/${request.entryId}` };
+            }
+            const entry = findEditorCatalogEntry(state.document, request.catalogId, request.entryId);
+            return { ok: true, result: { catalogId: request.catalogId, entry } };
           }
           case "list_selection":
             return { ok: true, result: { selection: session.getState().selection } };

@@ -12,6 +12,7 @@
 
 import { createEditorHost } from "../session";
 import { startEditorBridgeServerNode } from "./bridgeServer.node.ts";
+import { loadGameCatalogs } from "./loadGameCatalogs.ts";
 import { loadGameLayers } from "./loadGameLayers.ts";
 import { decodeEditorBridgeRequest } from "./rpcRequest.ts";
 import { loadRpcPayload, type RpcPayloadSource } from "./rpcPayload.ts";
@@ -98,16 +99,21 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const layers = await loadGameLayers(options.gameId);
+  const [layers, catalogs] = await Promise.all([loadGameLayers(gameId), loadGameCatalogs(gameId)]);
   if (!layers.ok) {
     console.error(
       `invalid editorLayers for ${options.gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`,
     );
     return 1;
   }
+  if (!catalogs.ok) {
+    console.error(`invalid editorCatalogs for ${gameId}: ${catalogs.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
+    return 1;
+  }
   const { api, dispose } = createEditorHost({
     gameId: options.gameId,
     layers: layers.document,
+    catalogs: catalogs.catalogs,
   });
 
   if (options.rpcSource !== null) {
