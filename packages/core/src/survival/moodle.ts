@@ -2,6 +2,7 @@ export type MoodleSeverity = "good" | "neutral" | "warning" | "critical";
 
 export type MoodleSource = "meter" | "ailment" | "buff";
 
+/** One status icon (buff/debuff) with severity tiers, shown while its trigger condition holds. */
 export interface Moodle {
   id: string;
   label: string;
@@ -72,6 +73,7 @@ interface TimedMoodleState {
   total: number | null;
 }
 
+/** Evaluates all registered moodles against current stats and returns the active, severity-ordered set. */
 export interface MoodleStack {
   /** Add or refresh a timed moodle (Valheim food buff, a temporary shelter status). */
   add(input: TimedMoodleInput): void;

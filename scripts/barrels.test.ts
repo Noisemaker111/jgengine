@@ -36,7 +36,6 @@ const KEY_SYMBOL: Record<string, string> = {
   gameplay: "defineGame",
   multiplayer: "ChatTransport",
   ui: "formatDuration",
-  procedural: "createDecayMeterSet",
 };
 
 const pkg = JSON.parse(readFileSync(join(root, "packages/core/package.json"), "utf8")) as {

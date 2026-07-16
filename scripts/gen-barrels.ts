@@ -31,7 +31,6 @@ export const CORE_BARRELS: readonly BarrelDomain[] = [
   { skill: "jgengine-gameplay", barrel: "gameplay" },
   { skill: "jgengine-multiplayer", barrel: "multiplayer" },
   { skill: "jgengine-ui", barrel: "ui" },
-  { skill: "jgengine-procedural", barrel: "procedural" },
 ] as const;
 
 export interface Reexport {

@@ -992,7 +992,7 @@
 ## @jgengine/core/survival/decayMeter
 
 - `DecayMeterConfig` (interface): interface DecayMeterConfig — ⚠ undocumented
-- `DecayMeterSet` (interface): interface DecayMeterSet — ⚠ undocumented
+- `DecayMeterSet` (interface): interface DecayMeterSet — Live handle over a set of survival meters (hunger, thirst, oxygen) that drain or refill as game time advances.
 - `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
 - `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
@@ -1000,10 +1000,10 @@
 ## @jgengine/core/survival/moodle
 
 - `MOODLE_SEVERITY_ORDER` (const): const MOODLE_SEVERITY_ORDER: Record<MoodleSeverity, number> — ⚠ undocumented
-- `Moodle` (interface): interface Moodle — ⚠ undocumented
+- `Moodle` (interface): interface Moodle — One status icon (buff/debuff) with severity tiers, shown while its trigger condition holds.
 - `MoodleSeverity` (type): type MoodleSeverity = "good" | "neutral" | "warning" | "critical" — ⚠ undocumented
 - `MoodleSource` (type): type MoodleSource = "meter" | "ailment" | "buff" — ⚠ undocumented
-- `MoodleStack` (interface): interface MoodleStack — ⚠ undocumented
+- `MoodleStack` (interface): interface MoodleStack — Evaluates all registered moodles against current stats and returns the active, severity-ordered set.
 - `TimedMoodleInput` (interface): interface TimedMoodleInput — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
@@ -1014,7 +1014,7 @@
 - `AilmentInstance` (interface): interface AilmentInstance — ⚠ undocumented
 - `DamageResult` (interface): interface DamageResult — ⚠ undocumented
 - `HealthRegionConfig` (interface): interface HealthRegionConfig — ⚠ undocumented
-- `MultiRegionHealth` (interface): interface MultiRegionHealth — ⚠ undocumented
+- `MultiRegionHealth` (interface): interface MultiRegionHealth — Health tracked per body region (head, torso, limbs), each with its own damage, bleed, and treatment state.
 - `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig — ⚠ undocumented
 - `RegionHealthState` (interface): interface RegionHealthState — ⚠ undocumented
 - `TreatResult` (interface): interface TreatResult — ⚠ undocumented

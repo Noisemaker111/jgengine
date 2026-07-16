@@ -36,6 +36,7 @@ export interface DecayMeterState {
   fraction: number;
 }
 
+/** Live handle over a set of survival meters (hunger, thirst, oxygen) that drain or refill as game time advances. */
 export interface DecayMeterSet {
   /** Drain/fill every meter by `rate * rateModifier * dt`. Call once per game tick. */
   tick(dt: number): void;
