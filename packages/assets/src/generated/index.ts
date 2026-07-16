@@ -2,7 +2,9 @@
 import type { IndexEntry } from "../manifest";
 import s_kaykit_adventurers from "./kaykit-adventurers.json" with { type: "json" };
 import s_kaykit_dungeon from "./kaykit-dungeon.json" with { type: "json" };
+import s_kaykit_furniture from "./kaykit-furniture.json" with { type: "json" };
 import s_kaykit_skeletons from "./kaykit-skeletons.json" with { type: "json" };
+import s_kaykit_space_base from "./kaykit-space-base.json" with { type: "json" };
 import s_quaternius_medieval_village from "./quaternius-medieval-village.json" with { type: "json" };
 import s_quaternius_modular_scifi from "./quaternius-modular-scifi.json" with { type: "json" };
 import s_quaternius_stylized_nature from "./quaternius-stylized-nature.json" with { type: "json" };
@@ -10,7 +12,9 @@ import s_quaternius_stylized_nature from "./quaternius-stylized-nature.json" wit
 export const generatedBySource: Record<string, IndexEntry[]> = {
   "kaykit-adventurers": s_kaykit_adventurers as IndexEntry[],
   "kaykit-dungeon": s_kaykit_dungeon as IndexEntry[],
+  "kaykit-furniture": s_kaykit_furniture as IndexEntry[],
   "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[],
+  "kaykit-space-base": s_kaykit_space_base as IndexEntry[],
   "quaternius-medieval-village": s_quaternius_medieval_village as IndexEntry[],
   "quaternius-modular-scifi": s_quaternius_modular_scifi as IndexEntry[],
   "quaternius-stylized-nature": s_quaternius_stylized_nature as IndexEntry[],

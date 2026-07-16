@@ -17,14 +17,14 @@ const FAMILY_MUZZLE_Z: Record<GunFamily, number> = {
   launcher: 0.56,
 };
 
-/** Preferred Quaternius scifi weapon ids — soft-resolve; missing → box primitive. */
+/** Preferred KayKit / scifi weapon ids — soft-resolve; missing → box primitive. */
 const FAMILY_BLASTER: Record<GunFamily, { model: string; fallbackModel?: string }> = {
-  pistol: { model: "quaternius-modular-scifi/weapon_gun", fallbackModel: "quaternius-modular-scifi/astronautA" },
-  smg: { model: "quaternius-modular-scifi/weapon_smg", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
-  shotgun: { model: "quaternius-modular-scifi/weapon_shotgun", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
-  rifle: { model: "quaternius-modular-scifi/weapon_rifle", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
-  sniper: { model: "quaternius-modular-scifi/weapon_sniper", fallbackModel: "quaternius-modular-scifi/weapon_rifle" },
-  launcher: { model: "quaternius-modular-scifi/weapon_launcher", fallbackModel: "quaternius-modular-scifi/weapon_gun" },
+  pistol: { model: "kaykit-adventurers/dagger", fallbackModel: "kaykit-adventurers/wand" },
+  smg: { model: "kaykit-adventurers/crossbow_1handed", fallbackModel: "kaykit-adventurers/sword_1handed" },
+  shotgun: { model: "kaykit-adventurers/axe_2handed", fallbackModel: "kaykit-adventurers/sword_2handed" },
+  rifle: { model: "kaykit-adventurers/crossbow_2handed", fallbackModel: "kaykit-adventurers/staff" },
+  sniper: { model: "kaykit-adventurers/staff", fallbackModel: "kaykit-adventurers/wand" },
+  launcher: { model: "kaykit-adventurers/axe_1handed", fallbackModel: "kaykit-adventurers/sword_2handed" },
 };
 
 const FAMILY_SCALE: Record<GunFamily, number> = {

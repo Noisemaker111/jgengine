@@ -110,26 +110,26 @@ describe("cmdPull mirror resolution", () => {
   test("falls through to the primary provider path when no mirror is configured", async () => {
     process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
     const dir = makeTmpDir();
+    const primaryUrl =
+      typeof source.download === "object" && "url" in source.download
+        ? source.download.url
+        : "https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip";
     const calls: string[] = [];
     globalThis.fetch = fetchFrom(
       {
-        "https://quaternius.com/packs/stylizednaturemegakit.html": () =>
-          new Response('<a href="https://quaternius.com/media/stylizednaturemegakit.zip">zip</a>', {
-            status: 200,
-          }),
-        "https://quaternius.com/media/stylizednaturemegakit.zip": () =>
-          new Response(zipWithGlb("from-primary"), { status: 200 }),
+        [primaryUrl]: () => new Response(zipWithGlb("from-primary"), { status: 200 }),
       },
       calls,
     );
 
     await cmdPull(["quaternius-stylized-nature", "--dir", dir]);
 
-    expect(calls).toEqual([
-      "https://quaternius.com/packs/stylizednaturemegakit.html",
-      "https://quaternius.com/media/stylizednaturemegakit.zip",
-    ]);
+    expect(calls).toEqual([primaryUrl]);
+    expect(readFileSync(join(dir, "models", "quaternius-stylized-nature", "model.glb"), "utf8")).toBe(
+      "from-primary",
+    );
 
     rmSync(dir, { recursive: true, force: true });
   });
 });
+

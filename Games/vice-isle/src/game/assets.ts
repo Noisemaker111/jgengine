@@ -5,9 +5,11 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   sources: [
-    "quaternius-downtown-city",
     "quaternius-stylized-nature",
-    "quaternius-base-characters",
+    "quaternius-medieval-village",
     "kaykit-adventurers",
+    "kaykit-furniture",
+    "kaykit-dungeon",
+    "kaykit-space-base",
   ],
 });

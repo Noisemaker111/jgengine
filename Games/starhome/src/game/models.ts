@@ -8,33 +8,33 @@ export const HAB_WALL_SCALE = 3;
 
 const SCIFI = "quaternius-modular-scifi";
 const NATURE = "quaternius-stylized-nature";
-const PROPS = "quaternius-fantasy-props";
+const FURN = "kaykit-furniture";
+const SPACE = "kaykit-space-base";
 const CHAR = "kaykit-adventurers";
-const CHAR_FB = "quaternius-base-characters";
 
 /** Art plan: preferred catalog ids. Soft-resolve; missing → shell primitives. */
 const FURNITURE_PLAN: Record<string, ModelPick> = {
-  nutrient_font: { model: `${PROPS}/Table`, fallbackModel: `${SCIFI}/crate` },
-  sleep_pod: { model: `${PROPS}/Bed`, fallbackModel: `${SCIFI}/crate` },
-  chat_ring: { model: `${PROPS}/Sofa`, fallbackModel: `${SCIFI}/crate` },
-  holo_arcade: { model: `${SCIFI}/desk_computer`, fallbackModel: `${SCIFI}/astronautA` },
-  bloom_planter: { model: `${NATURE}/plant_bush`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
-  work_console: { model: `${SCIFI}/desk_computer`, fallbackModel: `${SCIFI}/astronautA` },
+  nutrient_font: { model: `${FURN}/table_medium`, fallbackModel: `${FURN}/table_small` },
+  sleep_pod: { model: `${FURN}/bed_double_A`, fallbackModel: `${FURN}/bed_single_A` },
+  chat_ring: { model: `${FURN}/couch`, fallbackModel: `${FURN}/armchair` },
+  holo_arcade: { model: `${SCIFI}/Prop_Computer`, fallbackModel: `${SCIFI}/Prop_AccessPoint` },
+  bloom_planter: { model: `${FURN}/cactus_medium_A`, fallbackModel: `${NATURE}/Plant_1` },
+  work_console: { model: `${SCIFI}/Prop_Computer`, fallbackModel: `${SCIFI}/Prop_ItemHolder` },
 };
 
 const DECOR_PLAN: Record<string, ModelPick> = {
-  decor_spire: { model: `${SCIFI}/satelliteDish_large`, fallbackModel: `${SCIFI}/astronautA` },
-  decor_boulder: { model: `${SCIFI}/rock_crystalsLargeA`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
-  decor_frond: { model: `${NATURE}/mushroom_redTall`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
-  decor_frond_tan: { model: `${NATURE}/mushroom_tanTall`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
-  decor_crystal: { model: `${SCIFI}/rock_crystalsLargeB`, fallbackModel: `${NATURE}/tree_pineDefaultA` },
+  decor_spire: { model: `${SPACE}/windturbine_tall`, fallbackModel: `${SCIFI}/Column_Large_Straight` },
+  decor_boulder: { model: `${NATURE}/Rock_Medium_1`, fallbackModel: `${SPACE}/rock_A` },
+  decor_frond: { model: `${NATURE}/Mushroom_Common`, fallbackModel: `${NATURE}/Plant_1` },
+  decor_frond_tan: { model: `${NATURE}/Mushroom_Laetiporus`, fallbackModel: `${NATURE}/Fern_1` },
+  decor_crystal: { model: `${NATURE}/Rock_Medium_2`, fallbackModel: `${SPACE}/rock_B` },
 };
 
 const STRUCTURE_PLAN: Record<string, ModelPick> = {
-  hab_wall: { model: `${SCIFI}/corridor_windowClosed`, fallbackModel: `${SCIFI}/astronautA` },
-  hab_wall_window: { model: `${SCIFI}/corridor_window`, fallbackModel: `${SCIFI}/astronautA` },
-  hab_corner: { model: `${SCIFI}/corridor_wallCorner`, fallbackModel: `${SCIFI}/astronautA` },
-  hab_gate: { model: `${SCIFI}/gate_complex`, fallbackModel: `${SCIFI}/astronautA` },
+  hab_wall: { model: `${SCIFI}/WallAstra_Straight`, fallbackModel: `${SCIFI}/WallBand_Straight` },
+  hab_wall_window: { model: `${SCIFI}/WallAstra_Straight_Window`, fallbackModel: `${SCIFI}/WallWindow_Straight` },
+  hab_corner: { model: `${SCIFI}/WallAstra_Corner_Square_Outer`, fallbackModel: `${SCIFI}/WallBand_Corner_Square_Outer` },
+  hab_gate: { model: `${SCIFI}/Door_Metal`, fallbackModel: `${SCIFI}/Door_Frame_Square` },
 };
 
 function furniturePick(def: FurnitureDef): ModelPick | null {
@@ -97,9 +97,9 @@ export const ALIEN_MESH_IDS: readonly string[] = [
   `${CHAR}/Rogue`,
   `${CHAR}/Mage`,
   `${CHAR}/Knight`,
-  `${CHAR_FB}/Character_Male_1`,
-  `${CHAR_FB}/Character_Female_1`,
-  `${SCIFI}/astronautA`,
+  `${CHAR}/Barbarian`,
+  `${CHAR}/Rogue_Hooded`,
+  `${SCIFI}/Alien_Cyclop`,
 ];
 
 export function alienMeshUrl(id: string): string | null {

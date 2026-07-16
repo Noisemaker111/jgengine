@@ -8,9 +8,9 @@ export const assets: AssetCatalog = buildCatalog({
   sources: [
     "quaternius-modular-scifi",
     "quaternius-stylized-nature",
-    "quaternius-fantasy-props",
-    "quaternius-base-characters",
     "kaykit-adventurers",
+    "kaykit-furniture",
+    "kaykit-space-base",
   ],
 });
 

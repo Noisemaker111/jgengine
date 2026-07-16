@@ -9,5 +9,6 @@ export const assets: AssetCatalog = buildCatalog({
     "quaternius-stylized-nature",
     "kaykit-dungeon",
     "kaykit-adventurers",
+    "kaykit-skeletons",
   ],
 });

@@ -9,6 +9,7 @@ const VILLAGE = "quaternius-medieval-village";
 const NATURE = "quaternius-stylized-nature";
 const DUNGEON = "kaykit-dungeon";
 const CHAR = "kaykit-adventurers";
+const SKEL = "kaykit-skeletons";
 
 const RAIDER_HEIGHT = 1.8;
 const RAIDER_CLIPS = { idle: "idle", walk: "walk" } as const;
@@ -16,7 +17,7 @@ const RAIDER_CLIPS = { idle: "idle", walk: "walk" } as const;
 function raiderPick(def: CreepDef): ModelPick {
   return {
     model: `${CHAR}/Rogue`,
-    fallbackModel: `${CHAR}/Knight`,
+    fallbackModel: `${SKEL}/Skeleton_Rogue`,
     style: {
       targetHeight: RAIDER_HEIGHT * def.scale,
       material: { color: def.color },
@@ -27,18 +28,18 @@ function raiderPick(def: CreepDef): ModelPick {
 
 const TOWER_PLAN: Record<string, ModelPick> = {
   tower_archer: {
-    model: `${DUNGEON}/weapon_ballista`,
-    fallbackModel: `${VILLAGE}/tower`,
+    model: `${DUNGEON}/wall_archedwindow_gated`,
+    fallbackModel: `${DUNGEON}/wall_pillar`,
     style: { targetHeight: 2.1 },
   },
   tower_cannon: {
-    model: `${DUNGEON}/weapon_cannon`,
-    fallbackModel: `${VILLAGE}/tower`,
+    model: `${DUNGEON}/wall_scaffold`,
+    fallbackModel: `${DUNGEON}/wall_arched`,
     style: { targetHeight: 1.55 },
   },
   tower_frost: {
-    model: `${VILLAGE}/tower_round`,
-    fallbackModel: `${VILLAGE}/tower`,
+    model: `${DUNGEON}/wall_corner_gated`,
+    fallbackModel: `${DUNGEON}/pillar_decorated`,
     style: {
       targetHeight: 2,
       material: { emissive: "#3fb9d1", emissiveIntensity: 0.5 },
@@ -47,8 +48,8 @@ const TOWER_PLAN: Record<string, ModelPick> = {
 };
 
 const KEEP_PLAN: ModelPick = {
-  model: `${VILLAGE}/tower_square`,
-  fallbackModel: `${VILLAGE}/tower`,
+  model: `${DUNGEON}/wall_arched`,
+  fallbackModel: `${VILLAGE}/Wall_UnevenBrick_Straight`,
   style: { scale: 1.6 },
 };
 
@@ -67,10 +68,9 @@ export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
 /** Scatter palette item → catalog id when live; else InstancedScatter stylized proxy. */
 export const scatterModels: Record<string, string> = {};
-for (const id of [`${NATURE}/tree_pineDefaultA`, `${NATURE}/tree_pine`] as const) {
+for (const id of [`${NATURE}/Pine_1`, `${NATURE}/Pine_2`, "nature/tree_pine"] as const) {
   if (assets.resolve(id) !== null) {
     scatterModels.pine = id;
     break;
   }
 }
-
