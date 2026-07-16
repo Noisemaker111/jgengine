@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { balance } from "@jgengine/core/economy/wallet";
 
 import { game } from "../../game.config";
 import { onInit, onTick } from "../../loop";
@@ -8,6 +9,7 @@ import { content } from "../content";
 import { generateBodyPlan, walkSpeedOf } from "../creatures/bodyPlan";
 import { decayNeeds, emptyNeeds, lowestNeed, moodOf } from "../needs/needs";
 import { householdStore } from "../session/store";
+import { CREDITS } from "../session/types";
 import { chooseDesire, type RoleAvailability } from "./ai";
 import { crossedMilestone, relationLabel } from "./social";
 
@@ -97,8 +99,8 @@ describe("simulation loop", () => {
     member.action = { kind: "use", goal: "work", objId: "starter:work_console" };
     member.assignedByPlayer = true;
     householdStore.write(ctx, { ...before, members: { ...before.members } });
-    const creditsBefore = householdStore.read(ctx).credits;
+    const creditsBefore = balance(householdStore.read(ctx).wallet, CREDITS);
     onTick(ctx, 1);
-    expect(householdStore.read(ctx).credits).toBeGreaterThan(creditsBefore);
+    expect(balance(householdStore.read(ctx).wallet, CREDITS)).toBeGreaterThan(creditsBefore);
   });
 });

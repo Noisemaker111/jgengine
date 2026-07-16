@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { connectedTo, type GridCell } from "@jgengine/core/world/footprintGrid";
 
 import { GRID, snapToGrid, withinPark } from "../catalog";
 import { buildableDef, type BuildableDef } from "../objects/catalog";
@@ -8,13 +9,13 @@ function footprintN(def: BuildableDef): number {
   return Math.max(1, Math.round(def.footprint / GRID));
 }
 
-export function footprintCells(def: BuildableDef, gx: number, gz: number): string[] {
+export function footprintCells(def: BuildableDef, gx: number, gz: number): GridCell[] {
   const n = footprintN(def);
   const start = -Math.floor((n - 1) / 2);
-  const cells: string[] = [];
+  const cells: GridCell[] = [];
   for (let i = 0; i < n; i += 1) {
     for (let j = 0; j < n; j += 1) {
-      cells.push(`${gx + (start + i) * GRID},${gz + (start + j) * GRID}`);
+      cells.push({ col: gx / GRID + start + i, row: gz / GRID + start + j });
     }
   }
   return cells;
@@ -28,21 +29,8 @@ export function blockCenter(def: BuildableDef, gx: number, gz: number): [number,
   return [gx + (min + max) / 2, gz + (min + max) / 2];
 }
 
-function neighborsConnected(gx: number, gz: number): boolean {
-  const offsets: readonly [number, number][] = [
-    [GRID, 0],
-    [-GRID, 0],
-    [0, GRID],
-    [0, -GRID],
-  ];
-  for (const [dx, dz] of offsets) {
-    const occ = session.occupied.get(`${gx + dx},${gz + dz}`);
-    if (occ === undefined) continue;
-    const placed = session.placed.get(occ);
-    if (placed === undefined) continue;
-    if (placed.catalogId === "track_piece" || placed.catalogId === "ride_coaster") return true;
-  }
-  return false;
+function connectsToTrack(kind: string): boolean {
+  return kind === "track_piece" || kind === "ride_coaster";
 }
 
 export interface PlacementCheck {
@@ -55,14 +43,11 @@ export function canPlace(catalogId: string, x: number, z: number): PlacementChec
   const gx = snapToGrid(x);
   const gz = snapToGrid(z);
   const cells = footprintCells(def, gx, gz);
-  for (const key of cells) {
-    const [cxRaw, czRaw] = key.split(",");
-    const cx = Number(cxRaw);
-    const cz = Number(czRaw);
-    if (!withinPark(cx, cz)) return { ok: false, reason: "Outside the fence" };
-    if (session.occupied.has(key)) return { ok: false, reason: "Space is taken" };
+  for (const cell of cells) {
+    if (!withinPark(cell.col * GRID, cell.row * GRID)) return { ok: false, reason: "Outside the fence" };
+    if (!session.grid.isFree([cell])) return { ok: false, reason: "Space is taken" };
   }
-  if (def.category === "track" && !neighborsConnected(gx, gz)) {
+  if (def.category === "track" && !connectedTo(session.grid, cells, connectsToTrack)) {
     return { ok: false, reason: "Track must touch the station or existing track" };
   }
   return { ok: true };
@@ -86,7 +71,7 @@ export function placeObject(ctx: GameContext, catalogId: string, x: number, z: n
     occupants: 0,
   };
   session.placed.set(id, placed);
-  for (const key of footprintCells(def, gx, gz)) session.occupied.set(key, id);
+  session.grid.reserve(id, catalogId, footprintCells(def, gx, gz));
   ctx.scene.object.place(catalogId, cx, 0, cz, { instanceId: id });
   return placed;
 }
@@ -94,9 +79,7 @@ export function placeObject(ctx: GameContext, catalogId: string, x: number, z: n
 export function removeObject(ctx: GameContext, instanceId: string): boolean {
   const placed = session.placed.get(instanceId);
   if (placed === undefined) return false;
-  for (const [key, occ] of session.occupied) {
-    if (occ === instanceId) session.occupied.delete(key);
-  }
+  session.grid.release(instanceId);
   session.placed.delete(instanceId);
   for (const guest of session.guests.values()) {
     if (guest.targetId === instanceId) {

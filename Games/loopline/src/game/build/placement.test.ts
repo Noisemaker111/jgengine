@@ -8,7 +8,7 @@ function register(catalogId: string, x: number, z: number): void {
   const def = buildableDef(catalogId);
   const placed: PlacedObject = { id: `${catalogId}@${x},${z}`, catalogId, x, z, stock: 0, soldTotal: 0, occupants: 0 };
   session.placed.set(placed.id, placed);
-  for (const key of footprintCells(def, x, z)) session.occupied.set(key, placed.id);
+  session.grid.reserve(placed.id, catalogId, footprintCells(def, x, z));
 }
 
 describe("loopline placement", () => {

@@ -1,6 +1,7 @@
 import { createEmptyWallet, grant, type WalletState } from "@jgengine/core/economy/wallet";
+import { createFootprintGrid, type FootprintGrid } from "@jgengine/core/world/footprintGrid";
 
-import { CASH, STARTING_CASH } from "./catalog";
+import { CASH, GRID, STARTING_CASH } from "./catalog";
 
 export interface PlacedObject {
   id: string;
@@ -43,7 +44,7 @@ export interface Session {
   selectedTool: string | null;
   selectedObject: string | null;
   placed: Map<string, PlacedObject>;
-  occupied: Map<string, string>;
+  grid: FootprintGrid;
   guests: Map<string, GuestState>;
   wallet: WalletState;
   rating: number;
@@ -71,7 +72,7 @@ function freshSession(): Session {
     selectedTool: null,
     selectedObject: null,
     placed: new Map(),
-    occupied: new Map(),
+    grid: createFootprintGrid({ cellSize: GRID }),
     guests: new Map(),
     wallet: grant(createEmptyWallet(), CASH, STARTING_CASH),
     rating: 0,

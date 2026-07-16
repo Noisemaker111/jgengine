@@ -44,7 +44,3 @@ export function snapToGrid(value: number): number {
 export function withinPark(x: number, z: number): boolean {
   return Math.abs(x) <= PARK_HALF - GRID && Math.abs(z) <= PARK_HALF - GRID;
 }
-
-export function cellKey(x: number, z: number): string {
-  return `${snapToGrid(x)},${snapToGrid(z)}`;
-}
