@@ -105,4 +105,85 @@ describe("command registry", () => {
     expect(registry.has("missing")).toBe(false);
     expect(registry.names()).toEqual(["increment"]);
   });
+
+  describe("decode codec", () => {
+    function decodeAmount(input: unknown): { ok: true; value: { amount: number } } | { ok: false; reason: string } {
+      if (
+        typeof input !== "object" ||
+        input === null ||
+        typeof (input as Record<string, unknown>).amount !== "number"
+      ) {
+        return { ok: false, reason: "expected { amount: number }" };
+      }
+      return { ok: true, value: { amount: (input as Record<string, unknown>).amount as number } };
+    }
+
+    test("rejects a malformed payload before validate/apply run", () => {
+      const registry = createCommandRegistry<CounterState>();
+      let validateCalls = 0;
+      let applyCalls = 0;
+      registry.define<{ amount: number }>("increment", {
+        decode: decodeAmount,
+        validate() {
+          validateCalls += 1;
+          return null;
+        },
+        apply(state, input) {
+          applyCalls += 1;
+          return { count: state.count + input.amount };
+        },
+      });
+
+      const result = registry.run({ count: 1 }, "increment", { amount: "five" });
+
+      expect(result).toEqual({ status: "rejected", reason: "expected { amount: number }" });
+      expect(validateCalls).toBe(0);
+      expect(applyCalls).toBe(0);
+    });
+
+    test("rejects an unknown command regardless of any declared codec", () => {
+      const registry = createCommandRegistry<CounterState>();
+      registry.define<{ amount: number }>("increment", { decode: decodeAmount, apply: (state) => state });
+
+      const result = registry.run({ count: 0 }, "nonexistent", { amount: 1 });
+
+      expect(result).toEqual({ status: "unknown-command" });
+    });
+
+    test("passes a valid payload through unchanged to validate/apply", () => {
+      const registry = createCommandRegistry<CounterState>();
+      let seenByValidate: unknown;
+      let seenByApply: unknown;
+      registry.define<{ amount: number }>("increment", {
+        decode: decodeAmount,
+        validate(_state, input) {
+          seenByValidate = input;
+          return null;
+        },
+        apply(state, input) {
+          seenByApply = input;
+          return { count: state.count + input.amount };
+        },
+      });
+
+      const result = registry.run({ count: 1 }, "increment", { amount: 5 });
+
+      expect(result).toEqual({ status: "applied", state: { count: 6 } });
+      expect(seenByValidate).toEqual({ amount: 5 });
+      expect(seenByApply).toEqual({ amount: 5 });
+    });
+
+    test("commands without a decoder keep passing raw input through unchanged", () => {
+      const registry = createCommandRegistry<CounterState>();
+      registry.define<{ amount: unknown }>("legacy", {
+        apply(state, input) {
+          return { count: state.count + (input.amount as number) };
+        },
+      });
+
+      const result = registry.run({ count: 1 }, "legacy", { amount: 5 });
+
+      expect(result).toEqual({ status: "applied", state: { count: 6 } });
+    });
+  });
 });

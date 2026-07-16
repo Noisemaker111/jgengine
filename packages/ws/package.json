@@ -2,7 +2,7 @@
   "name": "@jgengine/ws",
   "version": "0.10.0",
   "description": "Browser-safe WebSocket client backend for JGengine: protocol codec, createWsBackend, and HTTP read helpers.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

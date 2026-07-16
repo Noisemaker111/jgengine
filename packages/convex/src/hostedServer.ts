@@ -414,7 +414,10 @@ export function createHostedGameServerFunctions(options: {
     args: {},
     handler: async (ctx) => {
       const nowMs = Date.now();
-      const rows = await ctx.db.query("jgHostedWorlds").collect();
+      const rows = await ctx.db
+        .query("jgHostedWorlds")
+        .withIndex("by_tick_anchor", (q) => q.lte("tickAnchorMs", nowMs - tickMs))
+        .collect();
       let ticked = 0;
       let saved = 0;
 
@@ -424,7 +427,6 @@ export function createHostedGameServerFunctions(options: {
         if (row.memberUserIds.length === 0) continue;
 
         const elapsedMs = nowMs - row.tickAnchorMs;
-        if (elapsedMs < tickMs) continue;
 
         const { store, captured } = worldStoreForRow(row);
         const outcome = invokeHostedWorld({

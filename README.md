@@ -4,7 +4,7 @@
 
 # jgengine
 
-**TypeScript game framework SDK for AI agents** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
+**agent-first game framework SDK** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
 
 > Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is software — a pure-TypeScript **framework** (entity stores, commands, catalogs, multiplayer seams, R3F shell), not an ECS and not a general-purpose 3D engine.
 
@@ -95,6 +95,6 @@ and go star his work.
 
 ## License
 
-[AGPL-3.0-only](LICENSE).
+[Apache-2.0](LICENSE), with a [`NOTICE`](NOTICE) attribution file. Full FAQ: [LICENSING.md](LICENSING.md).
 
-**Who this fits.** AGPL is intentional for network-hosted engine derivatives: if you modify the engine and run it as a service, share the source. It is a good fit for OSS, research, and agent-built prototypes. **Shipping a closed commercial product on the engine needs a legal read** (and often a dual-license conversation with the maintainer) — do not assume AGPL is “permissive free.”
+**In short.** Apache-2.0 permits commercial and closed-source use — ship a paid game on the engine, no dual-license conversation needed. The one condition: keep the [`NOTICE`](NOTICE). Apache §4(d) requires derivative works to retain it, and it credits jgengine.com. This replaces the project's prior AGPL-3.0 copyleft. Third-party and ported code and assets keep their own licenses — see [CREDITS.md](CREDITS.md).

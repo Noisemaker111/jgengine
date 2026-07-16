@@ -135,17 +135,20 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
   }
 }
 
+async function resolveEditorHost(gameId: string): Promise<EditorHostApi> {
+  const layers = await loadGameLayers(gameId);
+  if (!layers.ok) {
+    throw new Error(`invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
+  }
+  return createEditorHost({ gameId, layers: layers.document }).api;
+}
+
 /** Runs the editor as a stdio MCP server so an agent can drive it via tools/call. */
 export async function runEditorMcpStdio(options: {
   gameId: string;
   host?: EditorHostApi;
 }): Promise<void> {
-  const host =
-    options.host ??
-    createEditorHost({
-      gameId: options.gameId,
-      layers: (await loadGameLayers(options.gameId)) as never,
-    }).api;
+  const host = options.host ?? (await resolveEditorHost(options.gameId));
 
   let buffer = "";
   process.stdin.setEncoding("utf8");

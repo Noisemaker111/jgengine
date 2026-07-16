@@ -178,10 +178,17 @@ export function createGameHost(options: GameHostOptions): GameHost {
     opLedgers.delete(opLedgerKey(serverId, userId));
   };
 
-  let queue: Promise<unknown> = Promise.resolve();
-  const enqueue = <T>(operation: () => Promise<T>): Promise<T> => {
-    const run = queue.then(operation);
-    queue = run.catch(() => undefined);
+  const roomQueues = new Map<string, Promise<unknown>>();
+  const enqueueRoom = <T>(roomId: string, operation: () => Promise<T>): Promise<T> => {
+    const previous = roomQueues.get(roomId) ?? Promise.resolve();
+    const run = previous.then(operation);
+    const settled = run.catch(() => undefined);
+    roomQueues.set(roomId, settled);
+    void settled.finally(() => {
+      if (roomQueues.get(roomId) === settled) {
+        roomQueues.delete(roomId);
+      }
+    });
     return run;
   };
 
@@ -256,34 +263,42 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
   let interval: ReturnType<typeof setInterval> | null = null;
 
-  const tickOnce = () =>
-    enqueue(async () => {
-      const timestamp = now();
-      let ticked = 0;
-      let saved = 0;
-      for (const entry of live.values()) {
-        if (entry.record.status !== "running") continue;
-        if (entry.record.memberUserIds.length === 0) continue;
-        const elapsedMs = timestamp - entry.record.tickAnchorMs;
-        if (elapsedMs < tickMs) continue;
+  const tickOnce = async () => {
+    const timestamp = now();
+    const outcomes = await Promise.all(
+      [...live.values()].map((entry) =>
+        enqueueRoom(entry.record.serverId, async () => {
+          if (entry.record.status !== "running") return { ticked: 0, saved: 0 };
+          if (entry.record.memberUserIds.length === 0) return { ticked: 0, saved: 0 };
+          const elapsedMs = timestamp - entry.record.tickAnchorMs;
+          if (elapsedMs < tickMs) return { ticked: 0, saved: 0 };
 
-        const runtime = resolveRuntime(entry.record.gameId);
-        const before = entry.snapshot.revision;
-        entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
-        entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
-        ticked += 1;
-        if (entry.snapshot.revision !== before) {
-          markMutated(entry);
-          emit({ type: "server", serverId: entry.record.serverId });
-        }
+          const runtime = resolveRuntime(entry.record.gameId);
+          const before = entry.snapshot.revision;
+          entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
+          entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
+          if (entry.snapshot.revision !== before) {
+            markMutated(entry);
+            emit({ type: "server", serverId: entry.record.serverId });
+          }
 
-        if (shouldAutoSave(entry.record.save, entry.record.dirtyAt, entry.record.lastSavedAt, timestamp)) {
-          await flushServer(entry);
-          saved += 1;
-        }
-      }
-      return { ticked, saved };
-    });
+          let saved = 0;
+          if (shouldAutoSave(entry.record.save, entry.record.dirtyAt, entry.record.lastSavedAt, timestamp)) {
+            await flushServer(entry);
+            saved = 1;
+          }
+          return { ticked: 1, saved };
+        }),
+      ),
+    );
+    let ticked = 0;
+    let saved = 0;
+    for (const outcome of outcomes) {
+      ticked += outcome.ticked;
+      saved += outcome.saved;
+    }
+    return { ticked, saved };
+  };
 
   const collectListings = async (
     gameId: string,
@@ -315,8 +330,8 @@ export function createGameHost(options: GameHostOptions): GameHost {
   };
 
   const host: GameHost = {
-    joinServer: (args) =>
-      enqueue(async () => {
+    joinServer: (args) => {
+      const joinOperation = async (): Promise<JoinServerResult> => {
         const timestamp = now();
         const runtime = resolveRuntime(args.gameId);
 
@@ -393,7 +408,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
         emit({ type: "player", serverId: entry.record.serverId, userId: args.userId });
 
         return { serverId: entry.record.serverId, isNew };
-      }),
+      };
+      return args.serverId === undefined ? joinOperation() : enqueueRoom(args.serverId, joinOperation);
+    },
 
     browseServers: async (args) =>
       browseSessions(await collectListings(args.gameId), args.filter ?? {}, { limit: args.limit }),
@@ -413,7 +430,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     },
 
     leaveServer: (args) =>
-      enqueue(async () => {
+      enqueueRoom(args.serverId, async () => {
         const entry = await getLive(args.serverId);
         if (entry === null) return;
         if (!entry.record.memberUserIds.includes(args.userId)) return;
@@ -444,7 +461,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
       }),
 
     runCommand: (args) =>
-      enqueue(async () => {
+      enqueueRoom(args.serverId, async () => {
         const entry = await getLive(args.serverId);
         if (entry === null) {
           return { ok: false as const, reason: "Server not found" };
@@ -530,7 +547,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     },
 
     pushFeedEntry: (args) =>
-      enqueue(async () => {
+      enqueueRoom(args.serverId, async () => {
         const allowed = validateFeedWrite(feedWriteGate, args.action);
         if (!allowed.ok) {
           throw new Error(allowed.reason);
@@ -559,16 +576,18 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
     tickOnce,
 
-    flushAll: () =>
-      enqueue(async () => {
-        let saved = 0;
-        for (const entry of live.values()) {
-          if (entry.record.dirtyAt === undefined) continue;
-          await flushServer(entry);
-          saved += 1;
-        }
-        return saved;
-      }),
+    flushAll: async () => {
+      const outcomes = await Promise.all(
+        [...live.values()].map((entry) =>
+          enqueueRoom(entry.record.serverId, async (): Promise<number> => {
+            if (entry.record.dirtyAt === undefined) return 0;
+            await flushServer(entry);
+            return 1;
+          }),
+        ),
+      );
+      return outcomes.reduce((total, saved) => total + saved, 0);
+    },
 
     start: () => {
       if (interval !== null) return;
@@ -582,12 +601,15 @@ export function createGameHost(options: GameHostOptions): GameHost {
         clearInterval(interval);
         interval = null;
       }
-      await enqueue(async () => {
-        for (const entry of live.values()) {
-          if (entry.record.dirtyAt === undefined) continue;
-          await flushServer(entry);
-        }
-      });
+      await Promise.all(roomQueues.values());
+      await Promise.all(
+        [...live.values()].map((entry) =>
+          enqueueRoom(entry.record.serverId, async () => {
+            if (entry.record.dirtyAt === undefined) return;
+            await flushServer(entry);
+          }),
+        ),
+      );
     },
 
     subscribe: (listener) => {

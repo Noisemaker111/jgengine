@@ -2,7 +2,7 @@
   "name": "@jgengine/node",
   "version": "0.10.0",
   "description": "Standalone authoritative game host for JGengine: in-memory server snapshots, tick loop, save-cadence flush, WebSocket server, memory/file persistence.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

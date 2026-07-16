@@ -2,7 +2,7 @@
   "name": "@jgengine/convex",
   "version": "0.10.0",
   "description": "Convex adapters for JGengine: game transport, presence transport, and backend wiring over @jgengine/core.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

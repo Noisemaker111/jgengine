@@ -3,6 +3,27 @@ export interface PhysicsBounds {
   max: readonly [number, number, number];
 }
 
+/**
+ * Simulation fidelity intent: `low` (cheap — many bodies, loose stacks, forgiving sleep), `standard`
+ * (default), `high` (tight stacks, accurate joints, worth the extra solver work). Sets the solver
+ * knobs below to a matched preset; an individual knob left explicit always wins over the preset.
+ */
+export type PhysicsPrecision = "low" | "standard" | "high";
+
+interface PhysicsPrecisionPreset {
+  solverIterations: number;
+  correctionFactor: number;
+  sleepThresholdSteps: number;
+  wakeThreshold: number;
+  jointCorrection: number;
+}
+
+const PHYSICS_PRECISION_PRESETS: Record<PhysicsPrecision, PhysicsPrecisionPreset> = {
+  low: { solverIterations: 2, correctionFactor: 0.15, sleepThresholdSteps: 15, wakeThreshold: 0.75, jointCorrection: 0.35 },
+  standard: { solverIterations: 4, correctionFactor: 0.2, sleepThresholdSteps: 30, wakeThreshold: 0.5, jointCorrection: 0.5 },
+  high: { solverIterations: 8, correctionFactor: 0.3, sleepThresholdSteps: 45, wakeThreshold: 0.35, jointCorrection: 0.65 },
+};
+
 export interface PhysicsWorldConfig {
   /** Maximum bodies the SoA buffers can hold. Fixed at construction; no reallocation later. */
   capacity: number;
@@ -10,8 +31,8 @@ export interface PhysicsWorldConfig {
   bounds: PhysicsBounds;
   /** Downward acceleration applied to awake bodies each substep. Default -20. */
   gravity?: number;
-  /** Broadphase cell edge; tune to ≈ small-body diameter. Default 1. */
-  cellSize?: number;
+  /** Simulation fidelity intent. Default "standard" — see {@link PhysicsPrecision}. */
+  precision?: PhysicsPrecision;
   /** Fixed substep length in seconds. Default 1/60. */
   fixedDt?: number;
   /** Cap on substeps per `step()` — bounds catch-up work, drops the rest. Default 4. */
@@ -24,21 +45,27 @@ export interface PhysicsWorldConfig {
   friction?: number;
   /** Per-second linear velocity damping (physical energy bleed so piles settle and sleep). Default 0.2. */
   linearDamping?: number;
-  /** Sequential-impulse velocity iterations per substep (higher = more stable stacks). Default 4. */
-  solverIterations?: number;
-  /** Baumgarte positional-correction fraction per substep, 0..1. Default 0.2. */
-  correctionFactor?: number;
-  /** Penetration tolerated before correction kicks in. Default 0.005. */
-  slop?: number;
   /** Speed at or below which a body counts as still. Default 0.08. */
   sleepLinearVelocity?: number;
-  /** Consecutive still substeps before a body sleeps. Default 30. */
-  sleepThresholdSteps?: number;
-  /** Approach speed a contact must exceed to wake a sleeping body (resting contacts don't). Default 0.5. */
-  wakeThreshold?: number;
   /** Maximum simultaneous joints the constraint buffers can hold. Default 256. */
   jointCapacity?: number;
-  /** Baumgarte fraction applied to hard-joint positional error per iteration, 0..1. Default 0.5. */
+  /**
+   * @deprecated Advanced escape hatch — tune only when profiling shows the broadphase grid is the
+   * bottleneck; most games never set this. Broadphase cell edge; ideally ≈ small-body diameter.
+   * Default 1.
+   */
+  cellSize?: number;
+  /** @deprecated Advanced escape hatch — prefer `precision`. Sequential-impulse velocity iterations per substep (higher = more stable stacks). */
+  solverIterations?: number;
+  /** @deprecated Advanced escape hatch — prefer `precision`. Baumgarte positional-correction fraction per substep, 0..1. */
+  correctionFactor?: number;
+  /** @deprecated Advanced escape hatch — prefer `precision`. Penetration tolerated before correction kicks in. Default 0.005. */
+  slop?: number;
+  /** @deprecated Advanced escape hatch — prefer `precision`. Consecutive still substeps before a body sleeps. */
+  sleepThresholdSteps?: number;
+  /** @deprecated Advanced escape hatch — prefer `precision`. Approach speed a contact must exceed to wake a sleeping body (resting contacts don't). */
+  wakeThreshold?: number;
+  /** @deprecated Advanced escape hatch — prefer `precision`. Baumgarte fraction applied to hard-joint positional error per iteration, 0..1. */
   jointCorrection?: number;
 }
 
@@ -250,6 +277,7 @@ export class PhysicsWorld {
   };
 
   constructor(config: PhysicsWorldConfig) {
+    const preset = PHYSICS_PRECISION_PRESETS[config.precision ?? "standard"];
     this.capacity = config.capacity;
     this.bounds = { min: config.bounds.min, max: config.bounds.max };
     this.gravity = config.gravity ?? -20;
@@ -260,16 +288,16 @@ export class PhysicsWorld {
     this.restitutionThreshold = config.restitutionThreshold ?? 1;
     this.friction = config.friction ?? 0.4;
     this.linearDamping = config.linearDamping ?? 0.2;
-    this.solverIterations = Math.max(1, config.solverIterations ?? 4);
-    this.correctionFactor = config.correctionFactor ?? 0.2;
+    this.solverIterations = Math.max(1, config.solverIterations ?? preset.solverIterations);
+    this.correctionFactor = config.correctionFactor ?? preset.correctionFactor;
     this.slop = config.slop ?? 0.005;
     const sleepV = config.sleepLinearVelocity ?? 0.08;
     const sleepMoveEps = sleepV * this.fixedDt;
     this.sleepMove2 = sleepMoveEps * sleepMoveEps;
-    this.sleepSteps = config.sleepThresholdSteps ?? 30;
-    this.wakeThreshold = config.wakeThreshold ?? 0.5;
+    this.sleepSteps = config.sleepThresholdSteps ?? preset.sleepThresholdSteps;
+    this.wakeThreshold = config.wakeThreshold ?? preset.wakeThreshold;
     this.jointCapacity = Math.max(0, config.jointCapacity ?? 256);
-    this.jointCorrection = config.jointCorrection ?? 0.5;
+    this.jointCorrection = config.jointCorrection ?? preset.jointCorrection;
 
     const cap = config.capacity;
     this.posX = new Float32Array(cap);

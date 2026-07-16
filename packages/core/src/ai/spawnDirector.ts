@@ -1,4 +1,5 @@
 import type { NavPoint } from "../nav/navGrid";
+import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 
 export interface SpawnEntry {
   id: string;
@@ -36,7 +37,8 @@ export interface SpawnDirectorState {
   alert: number;
   spawnedThisWave: number;
   spawnedTotal: number;
-  rng: number;
+  /** Opaque PRNG cursor — round-trip it as part of the state, never read or set it directly. */
+  rng: RandomSeed;
   done: boolean;
 }
 
@@ -57,13 +59,27 @@ export interface SpawnRequest {
 /** Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted. */
 export type SpawnPointDistanceBias = "near" | "far" | "none";
 
+/** How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent. */
+export type SpawnPointBiasStrength = "subtle" | "moderate" | "strong";
+
+const BIAS_STRENGTH_EXPONENT: Record<SpawnPointBiasStrength, number> = {
+  subtle: 0.5,
+  moderate: 1,
+  strong: 2,
+};
+
+function biasStrengthFromMagnitude(magnitude: number): SpawnPointBiasStrength {
+  return magnitude <= 0.5 ? "subtle" : magnitude >= 1.5 ? "strong" : "moderate";
+}
+
 /** Semantic options for selecting a spawn point without exposing weighting internals. */
 export interface SpawnPointSelectionOptions {
   candidates: readonly NavPoint[];
   avoid?: readonly NavPoint[];
   random: () => number;
   distanceBias?: SpawnPointDistanceBias;
-  biasStrength?: number;
+  /** Default `"moderate"`. */
+  biasStrength?: SpawnPointBiasStrength;
 }
 
 export interface DirectorStep {
@@ -73,14 +89,6 @@ export interface DirectorStep {
 
 const DEFAULT_MAX_SPAWNS_PER_TICK = 64;
 const DEFAULT_ALERT_DECAY = 0.1;
-
-function nextRandom(seed: number): [number, number] {
-  const next = (seed + 0x6d2b79f5) | 0;
-  let t = Math.imul(next ^ (next >>> 15), 1 | next);
-  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-  const value = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  return [value, next];
-}
 
 function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
@@ -96,7 +104,7 @@ export function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDire
     alert: 0,
     spawnedThisWave: 0,
     spawnedTotal: 0,
-    rng: (config.seed ?? 1) | 0,
+    rng: randomSeedFrom(config.seed ?? 1),
     done: config.waves.length === 0,
   };
 }
@@ -125,8 +133,8 @@ function pickEntry(
   entries: readonly SpawnEntry[],
   wave: number,
   budget: number,
-  rng: number,
-): { entry: SpawnEntry; rng: number } | null {
+  rng: RandomSeed,
+): { entry: SpawnEntry; rng: RandomSeed } | null {
   let total = 0;
   const affordable: SpawnEntry[] = [];
   for (const entry of entries) {
@@ -136,7 +144,7 @@ function pickEntry(
     total += entry.weight ?? 1;
   }
   if (affordable.length === 0 || total <= 0) return null;
-  const [roll, nextRng] = nextRandom(rng);
+  const [roll, nextRng] = stepRandomSeed(rng);
   let cursor = roll * total;
   for (const entry of affordable) {
     cursor -= entry.weight ?? 1;
@@ -203,7 +211,7 @@ export function advanceSpawnDirector(
     budget -= picked.entry.cost;
     const spawn: SpawnRequest = { entryId: picked.entry.id, cost: picked.entry.cost, wave };
     if (spawnPoints !== undefined && spawnPoints.length > 0) {
-      const [roll, nextRng] = nextRandom(rng);
+      const [roll, nextRng] = stepRandomSeed(rng);
       rng = nextRng;
       const bias = config.spawnPointBias ?? 1;
       const point = pickSpawnPoint({
@@ -211,7 +219,7 @@ export function advanceSpawnDirector(
         avoid: playerPositions,
         random: () => roll,
         distanceBias: bias < 0 ? "far" : bias > 0 ? "near" : "none",
-        biasStrength: Math.abs(bias),
+        biasStrength: biasStrengthFromMagnitude(Math.abs(bias)),
       });
       if (point !== null) {
         spawn.point = point;
@@ -251,18 +259,19 @@ export function pickSpawnPoint(
       avoid: legacyPlayers,
       random: () => legacyOptions.roll,
       distanceBias: legacyBias < 0 ? "far" : legacyBias > 0 ? "near" : "none",
-      biasStrength: Math.abs(legacyBias),
+      biasStrength: biasStrengthFromMagnitude(Math.abs(legacyBias)),
     };
   } else {
     options = optionsOrPoints as SpawnPointSelectionOptions;
   }
-  const { candidates, avoid = [], random, distanceBias = "near", biasStrength = 1 } = options;
+  const { candidates, avoid = [], random, distanceBias = "near", biasStrength = "moderate" } = options;
   if (candidates.length === 0) return null;
-  if (distanceBias === "none" || avoid.length === 0 || biasStrength === 0) {
+  if (distanceBias === "none" || avoid.length === 0) {
     return candidates[Math.min(candidates.length - 1, Math.floor(clamp01(random()) * candidates.length))]!;
   }
 
-  const exponent = distanceBias === "far" ? biasStrength : -biasStrength;
+  const strength = BIAS_STRENGTH_EXPONENT[biasStrength];
+  const exponent = distanceBias === "far" ? strength : -strength;
   const weights: number[] = [];
   let total = 0;
   for (const point of candidates) {

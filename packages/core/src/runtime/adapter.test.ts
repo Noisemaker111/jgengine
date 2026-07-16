@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
   convex,
+  convexPresence,
   isPresenceOnly,
   isServerAuthoritative,
   offline,
   resolveAuthority,
   ws,
+  wsPresence,
 } from "@jgengine/core/runtime/adapter";
 
 describe("isServerAuthoritative", () => {
@@ -37,5 +39,30 @@ describe("resolveAuthority / isPresenceOnly", () => {
   test("server authority is not presence-only", () => {
     expect(resolveAuthority(ws({ authority: "server" }))).toBe("server");
     expect(isPresenceOnly(convex({ authority: "server" }))).toBe(false);
+  });
+});
+
+describe("wsPresence / convexPresence", () => {
+  test("always resolve to presence-only, matching the deprecated client-default form", () => {
+    expect(resolveAuthority(wsPresence())).toBe("client");
+    expect(resolveAuthority(convexPresence())).toBe("client");
+    expect(isPresenceOnly(wsPresence({ topology: "shared" }))).toBe(true);
+    expect(isPresenceOnly(convexPresence({ topology: "lobbies" }))).toBe(true);
+    expect(isServerAuthoritative(wsPresence())).toBe(false);
+    expect(isServerAuthoritative(convexPresence())).toBe(false);
+  });
+
+  test("carry through topology/url like their un-suffixed counterparts", () => {
+    expect(wsPresence({ topology: "lobbies", url: "ws://example/ws" })).toEqual({
+      kind: "ws",
+      topology: "lobbies",
+      url: "ws://example/ws",
+      authority: "client",
+    });
+    expect(convexPresence({ topology: "lobbies" })).toEqual({
+      kind: "convex",
+      topology: "lobbies",
+      authority: "client",
+    });
   });
 });
