@@ -17,6 +17,8 @@ Good isolated implementation legs are changes with separate file ownership and n
 
 Do not fan out quick greps, small edits, screenshots, pushes, waiting, or tasks whose outputs must be reconciled line by line. Never let workers rewrite overlapping files in a shared tree.
 
+Never spawn recon or scout agents. Exploratory codebase discovery — locating files, mapping symbols, understanding structure before acting — is done directly by the main agent with search tools, not delegated to a worker. Delegated recon burns tokens re-reading what the main agent must read anyway and returns summaries that still need verification. Workers are for substantial bounded legs, never for finding out what the work is.
+
 Concurrency does not decide PR boundaries. The `workflow` skill decides whether results form one coherent PR or separate changes. Multiple workers may contribute evidence or non-overlapping edits to one PR when the root cause and verification story are shared.
 
 After workers finish, inspect their evidence and the combined diff. Raw worker claims are not completion proof.
