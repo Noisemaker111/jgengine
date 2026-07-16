@@ -43,6 +43,7 @@ export type EditorCliOptions = {
 /**
  * Parses argv into editor-mcp flags. `--rpc -` and `--rpc-file` both set a non-inline
  * {@link RpcPayloadSource} so large documents never ride a shell argument.
+ * @internal
  */
 export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
   let gameId = "the-robots";

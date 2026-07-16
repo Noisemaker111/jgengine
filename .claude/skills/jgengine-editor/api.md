@@ -194,11 +194,9 @@
 - `blankWorld` (function): function blankWorld(seed = "standalone"): EnvironmentWorldFeature — The default flat-ground world the standalone editor opens on when the host supplies none.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
-- `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */ catalogs?: readonly EditorCatalogDefinition[]; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: num… — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
 - `downloadSaver` (function): function downloadSaver(filename = "editor.scene.json"): EditorSaveFn — A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening.
-- `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 - `packAgentContext` (function): function packAgentContext(api: EditorHostApi): AgentEditorContext — Packs the live host's selection, mode, focus, and document counts for agent prompts. Injected into every embedded-panel turn so the agent shares the human's current view.
@@ -326,7 +324,6 @@
 ## @jgengine/editor/mcp/cli
 
 - `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSource: RpcPayloadSource | null; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
-- `parseEditorCliArgs` (function): function parseEditorCliArgs(argv: string[]): EditorCliOptions — Parses argv into editor-mcp flags. `--rpc -` and `--rpc-file` both set a non-inline {@link RpcPayloadSource} so large documents never ride a shell argument.
 
 ## @jgengine/editor/mcp/loadGameCatalogs
 
@@ -342,12 +339,6 @@
 
 - `RpcPayloadResult` (type): type RpcPayloadResult = | { ok: true; value: unknown; raw: string; sourceLabel: string } | { ok: false; error: string } — Result of reading or JSON-decoding an RPC payload for the CLI.
 - `RpcPayloadSource` (type): type RpcPayloadSource = | { kind: "inline"; raw: string } | { kind: "file"; path: string } | { kind: "stdin" } — Where an RPC JSON body is read from for the headless editor CLI.
-- `formatRpcParseError` (function): function formatRpcParseError(raw: string, error: unknown, source: RpcPayloadSource): string — Builds a clear diagnostic when JSON.parse fails on an RPC body — names the source, size, and (for inline args) points agents at `--rpc-file` / `--rpc -` instead of a bare SyntaxError.
-- `loadRpcPayload` (function): function loadRpcPayload(source: RpcPayloadSource, readStdin?: () => Promise<string>): Promise<RpcPayloadResult> — Load + parse an RPC payload from the resolved CLI source.
-- `looksTruncatedJson` (function): function looksTruncatedJson(raw: string): boolean — True when braces/brackets/quotes look cut off — common when a shell truncates a long --rpc arg.
-- `parseRpcJson` (function): function parseRpcJson(raw: string, source: RpcPayloadSource): RpcPayloadResult — JSON.parse with a source-aware diagnostic (never throws).
-- `readRpcText` (function): function readRpcText(source: RpcPayloadSource, readStdin: () => Promise<string> = defaultReadStdin): Promise<{ ok: true; raw: string } | { ok: false; error: string }> — Reads the raw RPC text from an inline arg, file path, or stdin.
-- `rpcSourceLabel` (function): function rpcSourceLabel(source: RpcPayloadSource): string — Human-readable label for error messages (and tests).
 
 ## @jgengine/editor/mcp/rpcRequest
 
@@ -390,8 +381,6 @@
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" — How the editor hosts the game: frozen placement view, roamable world, or the real game.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
-- `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */ catalogs?: readonly EditorCatalogDefinition[]; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: num… — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
-- `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 
 ## @jgengine/editor/uiStore

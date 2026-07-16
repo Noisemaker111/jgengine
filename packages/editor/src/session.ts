@@ -283,13 +283,13 @@ export function installEditorHost(api: EditorHostApi): () => void {
   };
 }
 
-/** Retrieves the globally installed editor host, or null if none is mounted. */
+/** Retrieves the globally installed editor host, or null if none is mounted. @internal */
 export function getEditorHost(): EditorHostApi | null {
   const root = globalThis as typeof globalThis & { [GLOBAL_KEY]?: EditorHostApi };
   return root[GLOBAL_KEY] ?? null;
 }
 
-/** Builds and installs an editor host for a game: session, visibility, assets, and RPC handling. */
+/** Builds and installs an editor host for a game: session, visibility, assets, and RPC handling. @internal */
 export function createEditorHost(options: {
   gameId: string;
   layers: EditorLayersInput | undefined;
