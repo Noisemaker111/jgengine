@@ -92,6 +92,14 @@ export type PlacementTool =
   | { tool: "note" }
   | { tool: "path"; kind: string };
 
+/** @internal Open viewport context menu state (#866); null when closed. */
+export interface EditorContextMenuState {
+  clientX: number;
+  clientY: number;
+  hitId: string | null;
+  ground: EditorVec3 | null;
+}
+
 /** Transient editor UI state shared between chrome, viewport, and gizmos. */
 export interface EditorUiState {
   gizmoMode: GizmoMode;
@@ -105,6 +113,7 @@ export interface EditorUiState {
   terrainMode: TerrainMode;
   sculpt: SculptSettings;
   paint: PaintSettings;
+  contextMenu: EditorContextMenuState | null;
 }
 
 /** Subscribable store for the editor's transient UI state (gizmo, snapping, placement). */
@@ -140,6 +149,7 @@ export function createEditorUiStore(): EditorUiStore {
     terrainMode: "sculpt",
     sculpt: { ...DEFAULT_SCULPT_SETTINGS },
     paint: { ...DEFAULT_PAINT_SETTINGS },
+    contextMenu: null,
   };
   const listeners = new Set<() => void>();
   const emit = () => {

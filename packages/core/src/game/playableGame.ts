@@ -79,7 +79,7 @@ export interface FirstPersonCameraConfig {
  * - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input.
  * - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`.
  * - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input.
- * - `inspection` — model-viewer rig (#207.7): left-drag orbit, middle/right-drag pan, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input.
+ * - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input.
  * - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
  */
 export type CameraRigKind =
@@ -280,7 +280,7 @@ export interface InspectionCameraConfig {
   /** Vertical orbit clamp (radians). Unset allows a full pole-to-pole orbit, unlike the tighter default on the classic orbit rig. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
-  /** Middle-mouse/right-drag pan. Default true for this rig. */
+  /** Middle-mouse pan. Default true for this rig. */
   pan?: boolean;
   rotateSpeed?: number;
   zoomSpeed?: number;
