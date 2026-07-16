@@ -62,6 +62,45 @@ export interface GameLoop<TContext = unknown> {
 }
 
 /**
+ * A scope cleanups register onto, run in LIFO order exactly once — the shared shape behind every
+ * teardown path in this codebase (a looping audio handle's source/gain nodes, a GPU texture swap on
+ * entity/scene replacement). Registering after `dispose()` has already run invokes the cleanup
+ * immediately instead of dropping it, so a resource created by a still-in-flight async step (e.g. a
+ * decoded audio buffer) never leaks past a `stop()`/unmount that raced ahead of it.
+ * @internal
+ */
+export interface DisposerScope {
+  onDispose(cleanup: () => void): void;
+}
+
+/** @internal */
+export interface Disposer extends DisposerScope {
+  dispose(): void;
+}
+
+/** @internal */
+export function createDisposer(): Disposer {
+  const cleanups: Array<() => void> = [];
+  let disposed = false;
+  return {
+    onDispose(cleanup) {
+      if (disposed) {
+        cleanup();
+        return;
+      }
+      cleanups.push(cleanup);
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      while (cleanups.length > 0) {
+        cleanups.pop()!();
+      }
+    },
+  };
+}
+
+/**
  * Opt-in `ctx.game.*` subsystems. Absent = off: the game doesn't carry (or expose) it, and `ctx.game.<name>`
  * is `undefined`. Present (`true`) builds it. The universal base — `commands`, `events`, `store`, `feed` — is
  * always on and not listed here. This is what keeps core genre-agnostic: a puzzle game isn't handed an MMO's
