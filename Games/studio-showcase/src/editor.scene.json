@@ -4,7 +4,11 @@
     {
       "id": "bookcase_1",
       "kind": "prop",
-      "position": { "x": 0, "y": 0, "z": 10 },
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 10
+      },
       "rotationY": 3.14159,
       "label": "Bookcase (generator)",
       "meta": {
@@ -26,8 +30,16 @@
       "id": "pond_1",
       "kind": "water",
       "shape": "box",
-      "center": { "x": -20, "y": -0.3, "z": 14 },
-      "halfExtents": { "x": 9, "y": 0.5, "z": 8 },
+      "center": {
+        "x": -20,
+        "y": -0.3,
+        "z": 14
+      },
+      "halfExtents": {
+        "x": 9,
+        "y": 0.5,
+        "z": 8
+      },
       "label": "Pond (water studio)",
       "meta": {
         "color": "#1c6c86",
@@ -44,8 +56,16 @@
       "id": "meadow_1",
       "kind": "grass_field",
       "shape": "box",
-      "center": { "x": 20, "y": 0.5, "z": 14 },
-      "halfExtents": { "x": 9, "y": 0.5, "z": 8 },
+      "center": {
+        "x": 20,
+        "y": 0.5,
+        "z": 14
+      },
+      "halfExtents": {
+        "x": 9,
+        "y": 0.5,
+        "z": 8
+      },
       "label": "Meadow (grass studio)",
       "meta": {
         "density": 6,
@@ -59,6 +79,31 @@
         "roughness": 0.85,
         "seed": "meadow"
       }
+    },
+    {
+      "id": "cracked_1",
+      "kind": "soil",
+      "shape": "box",
+      "center": {
+        "x": -4,
+        "y": 0.1,
+        "z": 12
+      },
+      "halfExtents": {
+        "x": 10,
+        "y": 0.3,
+        "z": 9
+      },
+      "label": "Cracked yard (soil studio)",
+      "meta": {
+        "baseColor": "#8a7256",
+        "crackScale": 3.2,
+        "crackColor": "#3a2818",
+        "crackIntensity": 0.75,
+        "mossColor": "#5c7a3a",
+        "mossCoverage": 0.3,
+        "seed": "cracked"
+      }
     }
   ],
   "paths": [
@@ -68,10 +113,26 @@
       "width": 4,
       "label": "Power line (pole studio)",
       "points": [
-        { "x": -26, "y": 0, "z": 22 },
-        { "x": -9, "y": 0, "z": 20 },
-        { "x": 9, "y": 0, "z": 20 },
-        { "x": 26, "y": 0, "z": 22 }
+        {
+          "x": -26,
+          "y": 0,
+          "z": 22
+        },
+        {
+          "x": -9,
+          "y": 0,
+          "z": 20
+        },
+        {
+          "x": 9,
+          "y": 0,
+          "z": 20
+        },
+        {
+          "x": 26,
+          "y": 0,
+          "z": 22
+        }
       ],
       "meta": {
         "spacing": 8,

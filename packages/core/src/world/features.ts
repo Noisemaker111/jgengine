@@ -1,6 +1,7 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
 import type { AvoidZone } from "./geometry";
 import type { TerraformSnapshot } from "./terraform";
+import type { VolumetricCloudsConfig } from "./volumetricClouds";
 
 export interface WorldBounds {
   w: number;
@@ -302,6 +303,8 @@ export interface SkyEnvironmentConfig {
   /** Sun-glow brightness multiplier around the sun disc. Default 1. */
   sunGlowStrength?: number;
   fog?: { color?: string; near?: number; far?: number };
+  /** Raymarched volumetric cloud layer over the sky dome. Off by default — omit for no clouds. */
+  volumetricClouds?: VolumetricCloudsConfig;
 }
 
 export interface BuildingEnvironmentConfig {
@@ -646,6 +649,7 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
       ...(config.hazeStrength === undefined ? {} : { hazeStrength: config.hazeStrength }),
       ...(config.sunGlowStrength === undefined ? {} : { sunGlowStrength: config.sunGlowStrength }),
       ...(config.fog === undefined ? {} : { fog: config.fog }),
+      ...(config.volumetricClouds === undefined ? {} : { volumetricClouds: config.volumetricClouds }),
     },
   );
 }

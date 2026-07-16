@@ -1131,7 +1131,7 @@
 
 ## @jgengine/shell/environment
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
+- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
@@ -1145,6 +1145,7 @@
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
+- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
 - `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
 - `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
 - `resolveSkyLightOwnership` (function): function resolveSkyLightOwnership(hasAuthoredLighting: boolean): SkyLightOwnership — ⚠ undocumented
@@ -1152,7 +1153,7 @@
 
 ## @jgengine/shell/environment
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
+- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
@@ -1166,6 +1167,7 @@
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylight` (function): function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps): React.JSX.Element — Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock` are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so only dome colors and fog track the day fraction.
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
+- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
 - `daylightStateAt` (function): function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState — Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk), lerping sun position/intensity, ambient intensity, and sky colors through a dawn/day/dusk/night keyframe table. `config` overrides the noon (peak-day) colors and intensities only.
 - `lerpHexColor` (function): function lerpHexColor(a: string, b: string, t: number): string — ⚠ undocumented
 - `resolveSkyLightOwnership` (function): function resolveSkyLightOwnership(hasAuthoredLighting: boolean): SkyLightOwnership — ⚠ undocumented
@@ -1173,7 +1175,7 @@
 
 ## @jgengine/shell/environment/Daylight
 
-- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
+- `Daylight` (function): function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}): React.JSX.Element — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `SkyDaylight` (function): function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps): React.JSX.Element — Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
 - `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
@@ -1195,6 +1197,10 @@
 ## @jgengine/shell/environment/RoadRibbons
 
 - `RoadRibbons` (function): function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; field: TerrainField }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon plus optional dashed centerline, draped on the terrain.
+
+## @jgengine/shell/environment/VolumetricClouds
+
+- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
 
 ## @jgengine/shell/environment/daylightCycle
 

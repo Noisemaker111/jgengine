@@ -1,14 +1,16 @@
 /**
  * Registers the engine's built-in *environment* scene kinds against the {@link registerSceneKind}
  * seam: `scatter` (the proof adopter — its inspector, `+ Add` entry, and parse now come from the
- * registry) and `water` (a reusable parametric water surface). These are genre-agnostic engine
- * primitives, like terrain. Domain studios (poles, bookcases, …) are NOT built in — they register
- * themselves from example/game code via the same public seam, needing zero engine edits (see
- * `examples/studios`). Call {@link registerBuiltinSceneKinds} once at startup (idempotent).
+ * registry), `water` (a reusable parametric water surface), `grass_field` (GPU vertex-wind grass), and
+ * `soil` (crack/moss ground-variation patch). These are genre-agnostic engine primitives, like terrain.
+ * Domain studios (poles, bookcases, …) are NOT built in — they register themselves from example/game
+ * code via the same public seam, needing zero engine edits (see `examples/studios`). Call
+ * {@link registerBuiltinSceneKinds} once at startup (idempotent).
  */
 import { SCATTER_PATH_KIND } from "../world/scatterRegion";
 import { registerWaterKind } from "../world/waterKind";
 import { registerGrassKind } from "../world/grassKind";
+import { registerSoilKind } from "../world/soilKind";
 import { registerBuildingGenerator } from "../world/buildingGenerator";
 import { registerSceneKind, type ParamSchema } from "./sceneKinds";
 
@@ -58,5 +60,6 @@ export function registerBuiltinSceneKinds(): void {
 
   registerWaterKind();
   registerGrassKind();
+  registerSoilKind();
   registerBuildingGenerator();
 }

@@ -9,6 +9,7 @@ export {
   type TimeOfDayDaylightProps,
 } from "./Daylight";
 export { EnvironmentScene, type EnvironmentSceneProps } from "./EnvironmentScene";
+export { VolumetricClouds, type VolumetricCloudsProps } from "./VolumetricClouds";
 export {
   daylightStateAt,
   lerpHexColor,
