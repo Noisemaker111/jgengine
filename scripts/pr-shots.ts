@@ -118,7 +118,10 @@ const baseRef = hasArchive ? ARCHIVE_BRANCH : "main";
 git(["fetch", "-q", "origin", baseRef]);
 const baseCommit = git(["rev-parse", `origin/${baseRef}`]);
 
-const indexFile = `.git/pr-shots-index-${process.pid}`;
+// `git rev-parse --git-dir`, not a hardcoded `.git/` — in a linked worktree `.git` is a file
+// (a `gitdir: <path>` pointer), not a directory, so `.git/pr-shots-index-N` fails with ENOTDIR.
+const gitDir = git(["rev-parse", "--git-dir"]);
+const indexFile = `${gitDir}/pr-shots-index-${process.pid}`;
 const indexEnv: NodeJS.ProcessEnv = { ...process.env, GIT_INDEX_FILE: indexFile };
 let commit: string;
 try {
