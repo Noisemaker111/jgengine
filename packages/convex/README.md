@@ -44,6 +44,6 @@ No game-specific code lives there — any JGengine game can point at the same de
 
 Every factory defaults to `auth: "anonymous"` — the client's `externalId` is trusted as claimed, fine for local dev but spoofable. Pass `{ auth: "required" }` to every factory for production; the resolved actor becomes `ctx.auth.getUserIdentity()`'s `subject`, and `externalId` is only cross-checked against it, never trusted alone.
 
-See `examples/convex-host` for the reference thin consumer (`bunx convex dev` codegens `convex/_generated/` and prints the dev URL). Point any game that declares `multiplayer: convex({ topology: "shared" })` at the same deployment. No Convex Cloud account is needed — `examples/convex-host/docker-compose.yml` runs the open-source backend anywhere Docker runs, with `CONVEX_SELF_HOSTED_URL`/`CONVEX_SELF_HOSTED_ADMIN_KEY` pointing the same CLI at it.
+See `examples/convex-host` for the reference thin consumer (`bunx convex dev` codegens `convex/_generated/` and prints the dev URL). Point any game that declares `multiplayer: convexPresence({ topology: "shared" })` (or `convex({ topology: "shared", authority: "server" })` for a shared sim) at the same deployment. No Convex Cloud account is needed — `examples/convex-host/docker-compose.yml` runs the open-source backend anywhere Docker runs, with `CONVEX_SELF_HOSTED_URL`/`CONVEX_SELF_HOSTED_ADMIN_KEY` pointing the same CLI at it.
 
 Part of [JGengine](https://github.com/Noisemaker111/jgengine). AGPL-3.0-only.

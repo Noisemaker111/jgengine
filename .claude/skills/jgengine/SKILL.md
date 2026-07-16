@@ -466,7 +466,7 @@ export const game = defineGame({
   input: keybinds,
   server: "persistent",            // or { mode: "ffa", scoreLimit: 30 } — rules live in game code
   save: { auto: "5m", scope: "player+chunks" },   // or "none"
-  multiplayer: offline(),          // or ws({ topology, url? }) / fly({ app }) / convex({ topology }) / socketIo({ topology, url? }) / p2p({ room? }) / lan({ port?, path? }) / servers({ …, adapter }) — defaults to offline()
+  multiplayer: offline(),          // or wsPresence({ topology, url? }) / ws({ topology, url?, authority: "server" }) / fly({ app }) / convexPresence({ topology }) / convex({ topology, authority: "server" }) / socketIo({ topology, url? }) / p2p({ room? }) / lan({ port?, path? }) / servers({ …, adapter }) — defaults to offline(); see jgengine-multiplayer → Authority for presence-only vs shared-world
   content,
   loop,                            // Partial<GameLoop<GameContext>> — missing hooks default to no-ops
   GameUI,
