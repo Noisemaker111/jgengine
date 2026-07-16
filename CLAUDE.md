@@ -72,7 +72,7 @@ Delegation policy lives in the **`fan-out`** skill (`.claude/skills/fan-out`) �
 ## Communication
 
 **Telegraph style everywhere** — chat, statuses, quips, briefs. Fragments beat sentences; cut courtesies, hedges, recaps, transitions, play-by-play. Target ~20% of polite prose. If a word gives the reader nothing, cut it.
-- **Plain words for the root thing, always.** Every explanation — an issue, a bug, a status, a next step, a PR description — leads with what's actually broken/true in ordinary language, not repo nouns (`AuthoredScene`, `catalogId`, `editor doc`). "The engine doesn't auto-place props from the scene file" beats "AuthoredScene can't place catalog objects from editor doc." Repo/API names are supporting detail (the "where"), never the headline. Drop into jargon only when asked for the code-level specifics.
+- **Plain words for the root thing, always — code-level included.** Every explanation — an issue, a bug, a status, a next step, a PR description, even a walk through the actual code — leads with what's actually broken/true in ordinary language. "The engine doesn't auto-place props from the scene file" beats "AuthoredScene can't place catalog objects from editor doc." Naming the file/function/type (the "where") is fine and often needed; convoluted phrasing never is. If a sentence needs re-reading to parse, rewrite it, jargon or not.
 
 - **Hard cap: a normal reply fits one phone screen (~8 lines).** The user reads on mobile. One reply per turn — no interleaved narration between tool calls. If it doesn't change what the user does next, don't write it.
 - Result + decision only. Reasoning stays internal unless asked.
