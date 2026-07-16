@@ -14,6 +14,7 @@ import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
 import { AgentPanel } from "./agent/AgentPanel";
+import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
 import { OutlinerPanel } from "./OutlinerPanel";

@@ -106,8 +106,8 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
       onNewPlayer: withPhaseSync(composed?.onNewPlayer),
       onTick: withPhaseSync(composed?.onTick),
       onPlayerLeave: composed?.onPlayerLeave ?? noop,
-      onReset: composed?.onReset,
-      onDispose: composed?.onDispose,
+      onReset: composed?.onReset?.bind(composed) ?? noop,
+      onDispose: composed?.onDispose?.bind(composed) ?? noop,
     },
     GameUI: GameUI ?? emptyUi,
     environment:

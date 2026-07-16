@@ -528,6 +528,7 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         annotations: state.document.annotations,
         prefabs: state.document.prefabs,
         collections: state.document.collections,
+        catalogs: state.document.catalogs,
         ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
       };
       return { ...state, document: nextDoc };

@@ -17,10 +17,12 @@ import {
   planRuntimeInspectorSet,
   runtimeEntityMetaWriteBackCommand,
   runtimeEntityWriteBackCommand,
+  seedEditorCatalogs,
   summarizeEditorSession,
   summarizeRuntimeInspector,
   type DocumentLiveSync,
   type DocumentPatch,
+  type EditorCatalogDefinition,
   type EditorCommand,
   type EditorDocument,
   type EditorKindVisibility,
@@ -301,6 +303,7 @@ export function createEditorHost(options: {
   dispose: () => void;
 } {
   const catalogDefinitions = options.catalogs ?? [];
+  const catalogById = new Map(catalogDefinitions.map((definition) => [definition.id, definition]));
   const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);
   const liveSync = createDocumentLiveSync(document);
