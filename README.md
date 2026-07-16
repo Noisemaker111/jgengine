@@ -79,7 +79,7 @@ bun run build        # tsgo + import-extension rewrite, per package
 bun run check-types
 bun run test
 bun dev              # jgengine.com locally, games playable at /games/<id>
-bun run games:<id>   # one game standalone, e.g. bun run games:voxel-mine
+bun run games:<id>   # one game standalone, e.g. bun run games:studio-showcase
 ```
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.

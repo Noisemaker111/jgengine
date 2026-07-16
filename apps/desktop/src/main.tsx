@@ -27,10 +27,11 @@ const gameRegistry: GameRegistry = {
 };
 
 const urlParams = new URLSearchParams(window.location.search);
+const DEFAULT_GAME_ID = "studio-showcase";
 const GAME_ID =
   urlParams.get("game") ??
   (import.meta.env.VITE_GAME_ID as string | undefined) ??
-  "voxel-mine";
+  DEFAULT_GAME_ID;
 const MODE = urlParams.get("mode") ?? "play";
 const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 
@@ -39,7 +40,7 @@ function DesktopApp() {
   const [multiplayer, setMultiplayer] = useState<ShellMultiplayer | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
-    const load = gameRegistry[GAME_ID] ?? gameRegistry["voxel-mine"];
+    const load = gameRegistry[GAME_ID] ?? gameRegistry[DEFAULT_GAME_ID];
     if (load === undefined) {
       setLoadError(`Unknown game "${GAME_ID}"`);
       return;

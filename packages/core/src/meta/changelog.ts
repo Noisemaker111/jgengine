@@ -1,5 +1,7 @@
+/** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
 export const VERSION = "0.10.0";
 
+/** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
   migrate: readonly string[];
   added: readonly string[];
@@ -7,6 +9,7 @@ export interface ChangelogEntry {
   removed: readonly string[];
 }
 
+/** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
   "0.10.0": {
     migrate: [

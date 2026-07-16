@@ -4,114 +4,9 @@
 
 ## @jgengine/core
 
-- `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's position and reach, as seen by the visibility system.
-- `CommandDef` (type): type CommandDef<TInput = unknown> = { validate: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => CommandValidationError | null; apply: ( snapshot: GameRuntimeSnapshot, input: TInput, actorUserId: string, ) => GameRuntimeSnapshot; } — ⚠ undocumented
-- `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
-- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
-- `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
-- `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
-- `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
-- `GameBackend` (type): type GameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = { transport: GameRuntimeTransport; feeds?: GameRuntimeFeeds; presence?: PresenceTransport<TPresenceRow, TPresenceLocation, TGameId>; } — ⚠ undocumented
-- `GameRuntime` (type): type GameRuntime = { gameId: string; save: SaveConfig; hydrate: (input: HydrateInput) => GameRuntimeSnapshot; runCommand: ( snapshot: GameRuntimeSnapshot, actorUserId: string, commandName: string, input: unknown, ) => ReturnType<typeof runCommand>; tick: (snapshot: GameRuntimeSnapshot, dtSeconds: nu… — ⚠ undocumented
-- `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
-- `GameRuntimeFeedView` (type): type GameRuntimeFeedView = { action: string; entries: unknown[]; } — ⚠ undocumented
-- `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
-- `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeSnapshot` (type): type GameRuntimeSnapshot = { version: number; gameId: string; serverId: string; server: RuntimeServerRow; players: Record<string, RuntimePlayerRow>; chunks: Record<string, RuntimeChunkRow>; revision: number; dirty: { server: boolean; players: string[]; chunks: string[]; }; } — ⚠ undocumented
-- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string }) => Promise<JoinServerResult>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
-- `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.
-- `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
-- `HostedWorldRecord` (interface): interface HostedWorldRecord — One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves.
-- `HostedWorldSession` (interface): interface HostedWorldSession — The stateful host substrate a long-lived backend binds (ws server, browser P2P host): a live {@link HostedGameRunner} loaded from a {@link HostedWorldStore}, auto-persisted on tick, serving each client a baseline then diffs. The stateless Convex path doesn't use this — it reconstructs a runner from the same store per invocation and diffs with `diffSnapshots`. Either way the store seam and the game code are identical.
-- `HostedWorldSessionOptions` (interface): interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedWorldSession}: the game, its persistence store, and the auto-save cadence.
-- `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
-- `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
-- `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; } — ⚠ undocumented
-- `INPUT_COMMAND` (const): const INPUT_COMMAND: "engine.input" — Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire.
-- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
-- `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
-- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
-- `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
-- `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
-- `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
-- `PresencePoseRow` (type): type PresencePoseRow = { userId: string; position: { x: number; y: number; z: number }; rotationY: number; rotationPitch: number; lastSeenAt: number; } — ⚠ undocumented
-- `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
-- `RUNTIME_SNAPSHOT_VERSION` (const): const RUNTIME_SNAPSHOT_VERSION: 1 — ⚠ undocumented
-- `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
-- `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
-- `RuntimeChunkRow` (type): type RuntimeChunkRow = { chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string, unknown>; } — ⚠ undocumented
-- `RuntimeEntityRow` (type): type RuntimeEntityRow = { instanceId: string; catalogId: string; position?: [number, number, number]; rotationY?: number; parentSpace?: string; group?: string; stats?: Record<string, { current: number; max: number; min?: number }>; targetInstanceId?: string | null; userId?: string; } — ⚠ undocumented
-- `RuntimeInitContext` (type): type RuntimeInitContext = { snapshot: GameRuntimeSnapshot; setSnapshot: (snapshot: GameRuntimeSnapshot) => void; } — ⚠ undocumented
-- `RuntimeInventorySlot` (type): type RuntimeInventorySlot = { item: string; count: number; slot?: number; } — ⚠ undocumented
-- `RuntimeLoopContext` (type): type RuntimeLoopContext = RuntimeInitContext & { player: { userId: string; isNew: boolean; }; } — ⚠ undocumented
-- `RuntimeObjectRow` (type): type RuntimeObjectRow = { instanceId: string; catalogId: string; position: [number, number, number]; rotationY?: number; parentSpace?: string; flags?: Record<string, unknown>; } — ⚠ undocumented
-- `RuntimePlayerRow` (type): type RuntimePlayerRow = { userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Record<string, unknown>; } — ⚠ undocumented
-- `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
-- `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented
-- `RuntimeWorldContext` (type): type RuntimeWorldContext = RuntimeInitContext & { playerIds: readonly string[]; } — ⚠ undocumented
-- `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented
-- `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
-- `ServerLoopHooks` (type): type ServerLoopHooks = { onInit?: (ctx: RuntimeInitContext) => void; onNewPlayer?: (ctx: RuntimeLoopContext) => void; onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void; } — ⚠ undocumented
-- `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
-- `SnapshotModule` (interface): interface SnapshotModule<T = unknown> — The replication seam for host-authoritative shared worlds: the opt-in feature manifest *is* the replication schema. Each live subsystem a game opts into registers a {@link SnapshotModule} keyed by name; the host serializes exactly the registered set into a {@link WorldSnapshot} and a client hydrates the same keys back. Adding a replicated subsystem is a registration, never a new branch.
-- `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
-- `VisibilityBounds` (interface): interface VisibilityBounds — Sphere bounds used for visibility/streaming distance checks.
-- `VisibilityDecision` (interface): interface VisibilityDecision — Result of evaluating one object against the active cameras this tick.
-- `VisibilityDefaults` (interface): interface VisibilityDefaults — Baseline policy settings a `VisibilitySystem` is constructed with.
-- `VisibilityId` (type): type VisibilityId = string | number — Stable identifier for a visibility-tracked object or camera.
-- `VisibilityObject` (interface): interface VisibilityObject — An entity/asset tracked by `VisibilitySystem.evaluate`.
-- `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
-- `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
-- `VisibilitySystem` (class): class VisibilitySystem — Engine-level visibility and asset-residency policy.
-- `WorldClientFrame` (type): type WorldClientFrame = | { t: "join"; isNew: boolean } | { t: "leave" } | { t: "command"; name: string; input: unknown } | { t: "input"; frame: InputFrame } — Client→host frame: a player's session verbs. What a transport marshals upstream.
-- `WorldClientLink` (interface): interface WorldClientLink — The client end of a {@link WorldHost} connection: applies server frames to a local `ctx`, sends session verbs upstream.
-- `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
-- `WorldHost` (interface): interface WorldHost — The transport-agnostic host: fans one {@link HostedWorldSession} out to many connections, each tracking its own revision cursor so a joiner gets a baseline and everyone else gets diffs. A ws server, a Convex function, or an in-process loopback all drive the same shape — decode a frame → `connection.receive`; after `session.tick` → `broadcast`. No wire format is assumed; frames are plain data a transport serializes however it likes.
-- `WorldHostConnection` (interface): interface WorldHostConnection — One client's link on the host side: routes its upstream frames into the shared session, pushes it sync frames.
-- `WorldMirror` (interface): interface WorldMirror — The client end of host-authoritative replication: folds a host's baseline + {@link WorldDiff} stream onto a local {@link GameContext}. It keeps the last full {@link WorldSnapshot}, advances it with each diff, and pushes the result through `ctx.hydrate` — so the client mirrors exactly the subsystems its own game opted into and silently ignores host modules it lacks. This is the inverse of a {@link HostedWorldSession}; the transport in between (loopback, ws, Convex) is irrelevant.
-- `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
-- `WorldServerFrame` (type): type WorldServerFrame = | { t: "baseline"; revision: number; snapshot: WorldSnapshot } | { t: "diff"; diff: WorldDiff } — Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream.
-- `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
-- `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
-- `applyWorldDiff` (function): function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot — Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities, stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
-- `applyWorldSnapshot` (function): function applyWorldSnapshot(modules: readonly SnapshotModule[], snapshot: WorldSnapshot): void — Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
-- `clearDirtyFlags` (function): function clearDirtyFlags(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
-- `composeWorldSnapshot` (function): function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot — Serialize every registered module into one keyed baseline — the host→client full-world send.
-- `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
-- `createEmptyPlayerRow` (function): function createEmptyPlayerRow(userId: string): RuntimePlayerRow — ⚠ undocumented
-- `createEmptyServerRow` (function): function createEmptyServerRow(): RuntimeServerRow — ⚠ undocumented
-- `createGameRuntime` (function): function createGameRuntime(definition: GameRuntimeDefinition): GameRuntime — ⚠ undocumented
-- `createHostedGameRunner` (function): function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>): HostedGameRunner — Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
-- `createHostedWorldSession` (function): function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>): HostedWorldSession — Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
-- `createRuntimeSnapshot` (function): function createRuntimeSnapshot(args: { gameId: string; serverId: string; server?: RuntimeServerRow; players?: Record<string, RuntimePlayerRow>; chunks?: Record<string, RuntimeChunkRow>; revision?: number; }): GameRuntimeSnapshot — ⚠ undocumented
-- `createWorldClientLink` (function): function createWorldClientLink(ctx: Pick<GameContext, "hydrate">, send: (frame: WorldClientFrame) => void): WorldClientLink — Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream.
-- `createWorldHost` (function): function createWorldHost(session: HostedWorldSession): WorldHost — Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections.
-- `createWorldMirror` (function): function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror — Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
-- `createWorldReplicator` (function): function createWorldReplicator(takeSnapshot: () => WorldSnapshot): { commit: () => number; diff: (sinceRevision: number) => WorldDiff; revision: () => number; } — Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)` then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per commit; dirty-hint acceleration is a later optimization behind the same seam.
-- `diffSnapshots` (function): function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff — Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
-- `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
-- `isSaveEnabled` (function): function isSaveEnabled(config: SaveConfig): config is Exclude<SaveConfig, "none"> — ⚠ undocumented
-- `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
-- `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
-- `markPlayerDirty` (function): function markPlayerDirty(snapshot: GameRuntimeSnapshot, userId: string): GameRuntimeSnapshot — ⚠ undocumented
-- `markServerDirty` (function): function markServerDirty(snapshot: GameRuntimeSnapshot): GameRuntimeSnapshot — ⚠ undocumented
-- `memoryWorldStore` (function): function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
-- `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
-- `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
-- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `parseSaveAutoMs` (function): function parseSaveAutoMs(auto: string): number — ⚠ undocumented
-- `pullWorld` (function): function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void — Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
-- `runCommand` (function): function runCommand<TInput>(snapshot: GameRuntimeSnapshot, commands: Record<string, CommandDef<TInput>>, commandName: string, input: TInput, actorUserId: string): RunCommandResult — ⚠ undocumented
-- `saveScopeIncludesChunks` (function): function saveScopeIncludesChunks(scope: SaveScope): boolean — ⚠ undocumented
-- `saveScopeIncludesPlayer` (function): function saveScopeIncludesPlayer(scope: SaveScope): boolean — ⚠ undocumented
-- `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
-- `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `splitProfilePlayer` (function): function splitProfilePlayer(player: RuntimePlayerRow): { persistent: RuntimePlayerRow; session: Record<string, unknown>; } — ⚠ undocumented
-- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
+- `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
+- `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/authoring
 
@@ -287,9 +182,9 @@
 
 ## @jgengine/core/meta/changelog
 
-- `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — ⚠ undocumented
-- `ChangelogEntry` (interface): interface ChangelogEntry — ⚠ undocumented
-- `VERSION` (const): const VERSION: "0.10.0" — ⚠ undocumented
+- `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
+- `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
+- `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/runtime/adapter
 

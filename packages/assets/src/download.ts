@@ -190,6 +190,7 @@ function dedupeByBasename(archive: Uint8Array, pattern: RegExp): { file: string;
  * the shell only ever deal in one-file models. Strips buffer `uri` fields so
  * the binary chunk is self-contained. External image URIs stay as-is (loaders
  * resolve relative to the catalog URL only for GLB-embedded images).
+ * @internal
  */
 export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uint8Array {
   const json = JSON.parse(new TextDecoder().decode(gltfBytes)) as {
