@@ -9,6 +9,8 @@ import {
   type WorldFeature,
 } from "@jgengine/core/world/features";
 
+import { groundMaterial } from "./game/assets";
+
 export const world: WorldFeature = environment({
   terrain: terrain({
     bounds: { w: 220, d: 220 },
@@ -16,6 +18,12 @@ export const world: WorldFeature = environment({
     material: "grass",
     colors: { low: "#5c9440", high: "#84bd54", waterline: "#4a7d8a" },
     segments: 160,
+    detail: {
+      strength: 1,
+      macroScale: 22,
+      detailScale: 3,
+      material: { maps: groundMaterial.maps, repeat: 26, strength: 0.9 },
+    },
   }),
   sky: sky({
     preset: "day",
