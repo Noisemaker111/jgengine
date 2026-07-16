@@ -174,6 +174,32 @@ describe("world mirror (revision continuity)", () => {
     expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "combat"]]);
   });
 
+  test("a diff that arrives out of order is dropped for good; only a diff matching the current revision recovers the mirror", () => {
+    const hydrated: WorldSnapshot[] = [];
+    const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });
+    mirror.applyBaseline(1, { store: [["phase", "lobby"]] });
+
+    // Network reorders: revision 3 (built on 2) arrives before revision 2.
+    mirror.applyDiff(stubDiff({ revision: 3, baseRevision: 2, store: [["phase", "endgame"]] }));
+    expect(mirror.needsResync()).toBe(true);
+    expect(mirror.revision()).toBe(1);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "lobby"]]);
+
+    // The missing revision 2 finally arrives, matching the mirror's current revision — it recovers.
+    mirror.applyDiff(stubDiff({ revision: 2, baseRevision: 1, store: [["phase", "combat"]] }));
+    expect(mirror.needsResync()).toBe(false);
+    expect(mirror.revision()).toBe(2);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "combat"]]);
+
+    // The reordered revision-3 diff is gone for good: its "endgame" payload never lands.
+    expect(hydrated.some((snapshot) => JSON.stringify(snapshot["store"]).includes("endgame"))).toBe(false);
+
+    // A diff built on the dropped revision (baseRevision 3) re-triggers resync until a fresh baseline.
+    mirror.applyDiff(stubDiff({ revision: 4, baseRevision: 3, store: [["phase", "overtime"]] }));
+    expect(mirror.needsResync()).toBe(true);
+    expect(mirror.revision()).toBe(2);
+  });
+
   test("a removed module is dropped client-side on apply", () => {
     const hydrated: WorldSnapshot[] = [];
     const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });

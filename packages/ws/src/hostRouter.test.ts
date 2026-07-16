@@ -470,6 +470,29 @@ test("security: single-session lock evicts the older connection for the same use
   }
 });
 
+test("security: a mid-session reconnect evicts the stale connection but keeps room membership live", async () => {
+  const stack = startStack({ singleSession: true });
+  try {
+    const alice1 = stack.connect("alice");
+    const { serverId } = await alice1.transport.joinServer({ gameId: "test-game" });
+    await alice1.transport.runCommand({ serverId, command: "engine.ping", input: null });
+
+    // A second connection for the same userId (e.g. a browser tab refresh) evicts the first
+    // without the server ever seeing the player leave.
+    const alice2 = stack.connect("alice");
+    const pingAfterReconnect = await alice2.transport.runCommand({
+      serverId,
+      command: "engine.ping",
+      input: null,
+    });
+    expect(pingAfterReconnect).toEqual({ ok: true });
+    expect(await stack.host.isMember({ userId: "alice", serverId })).toBe(true);
+    expect((await stack.host.getServerView({ userId: "alice", serverId }))?.memberUserIds).toEqual(["alice"]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("security: pose chat and voice reject cross-room non-members", async () => {
   const stack = startStack();
   try {

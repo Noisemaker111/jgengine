@@ -172,6 +172,48 @@ test("the op ledger evicts the oldest ID once past its bound", async () => {
   expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(OP_LEDGER_LIMIT + 2);
 });
 
+test("two concurrent writers on the same room both apply, no update lost to a stale snapshot read", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+  await host.joinServer({ userId: "bob", gameId: "shop", serverId });
+
+  const [first, second] = await Promise.all([
+    host.runCommand({ userId: "alice", serverId, command: "buy", input: {} }),
+    host.runCommand({ userId: "bob", serverId, command: "buy", input: {} }),
+  ]);
+
+  expect(first).toEqual({ ok: true });
+  expect(second).toEqual({ ok: true });
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(2);
+});
+
+test("a burst of concurrent runCommand calls from one player serializes through the host queue", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+
+  const results = await Promise.all(
+    Array.from({ length: 10 }, () => host.runCommand({ userId: "alice", serverId, command: "buy", input: {} })),
+  );
+
+  expect(results.every((result) => result.ok === true)).toBe(true);
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(10);
+});
+
+test("a concurrent join and runCommand on a fresh server never race past server creation", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+  const [joinResult, commandResult] = await Promise.all([
+    host.joinServer({ userId: "bob", gameId: "shop", serverId }),
+    host.runCommand({ userId: "alice", serverId, command: "buy", input: {} }),
+  ]);
+
+  expect(joinResult.serverId).toBe(serverId);
+  expect(commandResult).toEqual({ ok: true });
+  expect(await host.isMember({ userId: "bob", serverId })).toBe(true);
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(1);
+});
+
 test("a stalled mutation in one room does not block another room's mutation", async () => {
   const base = memoryPersistence();
   let slowServerId = "";
