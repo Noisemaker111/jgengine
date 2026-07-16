@@ -38,8 +38,7 @@ This skill is the foundation for every task (packages, project shape, defineGame
 
 | Need | Read |
 | --- | --- |
-| Terrain, scenes, camera, movement, physics, maps, sensors | `jgengine-world` |
-| Seeded generation, terrain/environment generation, grids, buildings, simulation | `jgengine-procedural` |
+| Terrain, scenes, camera, movement, physics, maps, sensors, seeded/environment generation, grids, buildings | `jgengine-world` |
 | Damage, effects, weapons, targeting, projectiles, loot, death | `jgengine-combat` |
 | Items, quests, dialogue, economy, crafting, objectives, turns, social systems | `jgengine-gameplay` |
 | Networking adapters, authority, rooms/topology, persistence/backend seams | `jgengine-multiplayer` |
@@ -444,7 +443,7 @@ src/
 
 **Opt-in `ctx.game.*` subsystems (`features`)** — core is genre-agnostic: the always-on base is `commands` / `events` / `store` / `feed` / `loot` / `economy` (plus `audio`), and genre subsystems are opt-in via `defineGame({ features: { quest, trade, unlocks, cosmetics, roster, cards, turn, race, leaderboard, social, chat } })`. Omit one and `ctx.game.<name>` is `undefined` (`cosmetics` hangs off `ctx.player`) — a puzzle game isn't handed a quest journal, a shop, a card pile, or party/chat it never asked for. Declare only what the game uses (`chat` implies `social`).
 
-**Offline whole-world save (`persist`)** — `defineGame({ persist: true })` binds `ctx.game.save` for a single-player/offline game (auto-wired only when `isOffline(multiplayer)` — never for a host-authoritative world). It autosaves the *entire* world to `localStorage` through the same `ctx.snapshot()`/`ctx.hydrate()` seam multiplayer replicates over — every `defineStore` slot, all entities/stats/inventories — no per-field code. `createRuntimeSave` is the underlying bridge (any `{ snapshot, hydrate, subscribe }` target + a swappable `SaveBackend`). Modes/save-points/slots and cloud-swap: `jgengine-gameplay` → "Save the *whole* game automatically".
+**Offline whole-world save (`persist`)** — `defineGame({ persist: true })` binds `ctx.game.save` for an offline game and autosaves the entire world with no per-field code. Full authoring guide (modes, save points, slots, cloud swap): `jgengine-gameplay` → "Save the *whole* game automatically".
 
 ```ts
 // game.config.ts — imports only, nothing inline

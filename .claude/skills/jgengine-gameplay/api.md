@@ -230,7 +230,7 @@
 
 ## @jgengine/core/game/connectedPlayers
 
-- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
+- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`. Frozen by the registry (see {@link ConnectedPlayers.get}); fields are `readonly` so a caller can't edit its own copy and assume the change stuck.
 - `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
 - `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
 
@@ -281,7 +281,7 @@
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
-- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — ⚠ undocumented
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
 - `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
@@ -928,9 +928,12 @@
 
 ## @jgengine/core/random/rng
 
+- `RandomSeed` (type): type RandomSeed = number & { readonly __randomSeed: unique symbol } — Opaque, serializable PRNG cursor for state machines that must persist their own random stream (a spawn director, a heat/pursuit meter) instead of holding a closure — the state round-trips through save/load and multiplayer sync, so it can't carry a function. Never read or do arithmetic on the raw value directly; thread it through {@link stepRandomSeed} only.
 - `hashString` (function): function hashString(text: string): number — Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
+- `randomSeedFrom` (function): function randomSeedFrom(seed: number): RandomSeed — Wraps an already-integer seed (e.g. a `config.seed`) as a {@link RandomSeed} — no hashing.
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
+- `stepRandomSeed` (function): function stepRandomSeed(seed: RandomSeed): readonly [value: number, next: RandomSeed] — One step of the {@link seededRng} recurrence in pure (seed in, seed out) form — the same mulberry32-style generator, shared by every state machine that persists its own PRNG cursor instead of closing over a generator.
 
 ## @jgengine/core/random/seedLink
 
@@ -985,6 +988,37 @@
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
+
+## @jgengine/core/survival/decayMeter
+
+- `DecayMeterConfig` (interface): interface DecayMeterConfig — ⚠ undocumented
+- `DecayMeterSet` (interface): interface DecayMeterSet — ⚠ undocumented
+- `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
+- `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
+- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
+
+## @jgengine/core/survival/moodle
+
+- `MOODLE_SEVERITY_ORDER` (const): const MOODLE_SEVERITY_ORDER: Record<MoodleSeverity, number> — ⚠ undocumented
+- `Moodle` (interface): interface Moodle — ⚠ undocumented
+- `MoodleSeverity` (type): type MoodleSeverity = "good" | "neutral" | "warning" | "critical" — ⚠ undocumented
+- `MoodleSource` (type): type MoodleSource = "meter" | "ailment" | "buff" — ⚠ undocumented
+- `MoodleStack` (interface): interface MoodleStack — ⚠ undocumented
+- `TimedMoodleInput` (interface): interface TimedMoodleInput — ⚠ undocumented
+- `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
+- `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
+
+## @jgengine/core/survival/regionHealth
+
+- `AilmentConfig` (interface): interface AilmentConfig — ⚠ undocumented
+- `AilmentInstance` (interface): interface AilmentInstance — ⚠ undocumented
+- `DamageResult` (interface): interface DamageResult — ⚠ undocumented
+- `HealthRegionConfig` (interface): interface HealthRegionConfig — ⚠ undocumented
+- `MultiRegionHealth` (interface): interface MultiRegionHealth — ⚠ undocumented
+- `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig — ⚠ undocumented
+- `RegionHealthState` (interface): interface RegionHealthState — ⚠ undocumented
+- `TreatResult` (interface): interface TreatResult — ⚠ undocumented
+- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 
 ## @jgengine/core/turn/commit
 

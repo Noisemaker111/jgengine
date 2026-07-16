@@ -44,6 +44,8 @@
 
 ## @jgengine/core/commands/commandRegistry
 
+- `CommandDecodeResult` (type): type CommandDecodeResult<TInput> = | { ok: true; value: TInput } | { ok: false; reason: string } — ⚠ undocumented
+- `CommandDecoder` (type): type CommandDecoder<TInput> = (input: unknown) => CommandDecodeResult<TInput> — Parses raw `unknown` transport input into `TInput`, rejecting anything that doesn't match the command's declared shape. Runs before `validate`/`apply`, so a malformed payload never reaches game logic.
 - `CommandDefinition` (interface): interface CommandDefinition<TState, TInput> — ⚠ undocumented
 - `CommandRegistry` (interface): interface CommandRegistry<TState> — ⚠ undocumented
 - `CommandRejection` (interface): interface CommandRejection — ⚠ undocumented
@@ -143,7 +145,8 @@
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
 - `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
-- `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — Convex transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer `convexPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared, host-authoritative world — see `examples/HOSTED.md`.
+- `convexPresence` (function): function convexPresence(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — Presence-only Convex transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `convex({ ...config, authority: "client" })`.
 - `fly` (function): function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `isOffline` (function): function isOffline(multiplayer: unknown): boolean — True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save.
 - `isPresenceOnly` (function): function isPresenceOnly(multiplayer: unknown): boolean — True when multiplayer is on but the world sim is not host-authoritative — presence/feeds/chat only. Equivalent to `resolveAuthority(m) === "client"`.
@@ -155,7 +158,8 @@
 - `resolveAuthority` (function): function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null — Resolved authority for a multiplayer config. - `offline` / missing adapter → `null` (single-player; not multiplayer authority). - unset or `"client"` → `"client"` (presence-only; each client ticks). - `"server"` → host-authoritative shared sim.
 - `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
 - `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
-- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — WebSocket transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer `wsPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared, host-authoritative world — see `examples/HOSTED.md`.
+- `wsPresence` (function): function wsPresence(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig — Presence-only WebSocket transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `ws({ ...config, authority: "client" })`.
 
 ## @jgengine/core/runtime/cameraDirector
 

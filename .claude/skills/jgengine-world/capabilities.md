@@ -20,9 +20,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/movement/poseState"`
 
-## dash-move — a dash/dodge burst with i-frames and cooldown
+## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
-- `dashDisplacement` (function) · `import { dashDisplacement } from "@jgengine/core/movement/dash"`
+- `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/scene/entityStore"`
 
 ## follow-trail — trailing follower/snake formation that chases a leader
 
@@ -71,10 +71,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world/soilKind"`
-
-## visitor-loop — many-agent seek/travel/dwell/depart state machine over weighted POIs
-
-- `createVisitorLoop` (function) · `import { createVisitorLoop } from "@jgengine/core/ai/crowd"`
 
 ## volumetric-clouds — raymarched cloud layer sky option
 

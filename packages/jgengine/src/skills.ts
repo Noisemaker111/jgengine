@@ -1,4 +1,4 @@
-﻿import { spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -9,12 +9,12 @@ export const SKILLS_SOURCE = "Noisemaker111/jgengine";
 export const GAME_SKILLS = [
   "jgengine",
   "jgengine-world",
-  "jgengine-procedural",
   "jgengine-combat",
   "jgengine-gameplay",
   "jgengine-multiplayer",
   "jgengine-ui",
   "jgengine-assets",
+  "jgengine-editor",
   "jgengine-verify",
 ] as const;
 

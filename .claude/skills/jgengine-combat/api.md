@@ -93,6 +93,10 @@
 - `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
 - `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
 
+## @jgengine/core/combat/deathReason
+
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
+
 ## @jgengine/core/combat/defensiveWindow
 
 - `DefenseKind` (type): type DefenseKind = "parry" | "block" | "dodge" — ⚠ undocumented

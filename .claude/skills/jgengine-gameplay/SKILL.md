@@ -1,4 +1,4 @@
-﻿---
+---
 name: jgengine-gameplay
 description: Gameplay systems: items, quests, economy, crafting, turns, objectives.
 ---
@@ -148,10 +148,6 @@ Config: `persist: true` or `persist: { mode?: "autosave" | "manual", storage?: "
 - **Save slots** — `switchSlot(id)` / `slots()` / `hasSave()` back a save/load menu and a title-screen "Continue".
 
 Offline↔cloud is the same one-line swap as `createSaveStore`: the shell can inject a Convex backend via the `createGameContext({ save })` seam instead of the default `localStorage` one — game code unchanged. `createRuntimeSave({ target, backend, mode, ... })` is the underlying bridge if you need to wire it by hand (`target` is any `{ snapshot, hydrate, subscribe }` — a `GameContext` satisfies it). The save captures economy/quest/unlocks/roster automatically now (via `snapshotAll`/`hydrateAll` on each subsystem) — the only state left out of the snapshot is a **module-level singleton** (a bare `let` in a game module), which escapes both save and replication: re-derive it from the restored `defineStore` slots/stats after `load()` (see the-robots' `resumeBuild`, which rebuilds its `activeCharacter`/`talentTree` singletons from the restored `characterId`/`talentRanks` stores).
-
-## Race sessions
-
-`@jgengine/core/game/race` layers a start-line lifecycle and results math over the existing `createRaceState`/`createLapTimer` position tracker. `idleRaceSession()` is the pre-race grid state; `startRaceCountdown({ seconds? })` drops the lights into a `countdown` phase (or straight to `racing` for a standing start); `tickRaceSession(session, dt)` bleeds the countdown and accumulates `elapsed` while racing; `finishRaceSession(session)` freezes it at the flag. Once a finish order exists, `racePlacements(finishOrder, options?)` turns it into every racer's 1-based `place` + win/lose `outcome`, `placementOf(finishOrder, racerId, options?)` reads one racer's placement, and `raceOutcomeOf(finishOrder, racerId, options?)` is the plain win/lose shortcut — all three share a `winningPlaces` cutoff (default 1, pass 3 for a podium finish) instead of a hand-rolled `ranking[0] === player` check.
 
 ## Combat — effects, projectiles, death, feel, abilities
 ## Card, board & shaped-inventory primitives

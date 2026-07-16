@@ -23,7 +23,6 @@
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material: color, normal, roughness, ao, or displacement.
 - `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`displacement` files may be absent from a rare pack.
 - `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
-- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
@@ -40,7 +39,7 @@
 - `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
@@ -89,7 +88,7 @@
 
 ## @jgengine/assets/catalogs/starter
 
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
 
 ## @jgengine/assets/cli/pull
 
@@ -99,7 +98,6 @@
 
 ## @jgengine/assets/dims
 
-- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 
 ## @jgengine/assets/download
@@ -111,6 +109,10 @@
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
 - `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
+- `MAX_ARCHIVE_COMPRESSION_RATIO` (const): const MAX_ARCHIVE_COMPRESSION_RATIO: 100 — Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb.
+- `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
+- `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
+- `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
 
 ## @jgengine/assets/find
 
@@ -147,7 +149,6 @@
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
-- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented

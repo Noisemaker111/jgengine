@@ -1,5 +1,7 @@
-﻿import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+
+import { SKILL_DIRS } from "./skillRouting";
 
 const root = process.cwd();
 
@@ -12,17 +14,7 @@ if (existsSync(join(root, "skills"))) {
 }
 
 const skillsRoot = join(root, ".claude", "skills");
-const requiredSkills = [
-  "jgengine",
-  "jgengine-world",
-  "jgengine-procedural",
-  "jgengine-combat",
-  "jgengine-gameplay",
-  "jgengine-multiplayer",
-  "jgengine-ui",
-  "jgengine-assets",
-  "jgengine-verify",
-];
+const requiredSkills = [...SKILL_DIRS, "jgengine-verify"];
 
 for (const required of requiredSkills) {
   if (!existsSync(join(skillsRoot, required, "SKILL.md"))) {
@@ -43,7 +35,15 @@ for (const required of requiredSkills) {
 for (const name of readdirSync(skillsRoot)) {
   const skillPath = join(skillsRoot, name, "SKILL.md");
   if (!existsSync(skillPath)) continue;
-  const frontmatter = readFileSync(skillPath, "utf8").match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+  const raw = readFileSync(skillPath, "utf8");
+  if (raw.charCodeAt(0) === 0xfeff) {
+    console.error(
+      `check-skill-sync: .claude/skills/${name}/SKILL.md starts with a UTF-8 BOM — ` +
+        "the frontmatter parser anchors on byte 0, so the description turns invisible. Strip the BOM.",
+    );
+    process.exit(1);
+  }
+  const frontmatter = raw.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
   if (/disable-model-invocation:\s*true/.test(frontmatter)) continue;
   const description = (frontmatter.match(/^description:\s*>?-?\s*([\s\S]*?)(?=\n\S|$)/m)?.[1] ?? "")
     .replace(/\n\s+/g, " ")

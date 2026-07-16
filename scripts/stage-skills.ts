@@ -3,20 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ALL_GAME_SKILLS = [
-  "jgengine",
-  "jgengine-world",
-  "jgengine-procedural",
-  "jgengine-combat",
-  "jgengine-gameplay",
-  "jgengine-multiplayer",
-  "jgengine-ui",
-  "jgengine-assets",
-  "jgengine-verify",
-] as const;
+import { SKILL_DIRS } from "./skillRouting";
+
+const ALL_GAME_SKILLS = [...SKILL_DIRS, "jgengine-verify"] as const;
 
 const PACKAGE_SKILLS: Record<string, readonly string[]> = {
-  core: ["jgengine", "jgengine-gameplay", "jgengine-combat", "jgengine-world", "jgengine-procedural"],
+  core: ["jgengine", "jgengine-gameplay", "jgengine-combat", "jgengine-world"],
   ws: ["jgengine", "jgengine-multiplayer"],
   sql: ["jgengine", "jgengine-multiplayer"],
   convex: ["jgengine", "jgengine-multiplayer"],

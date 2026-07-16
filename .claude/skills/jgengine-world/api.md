@@ -69,6 +69,7 @@
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState — ⚠ undocumented
 - `SpawnEntry` (interface): interface SpawnEntry — ⚠ undocumented
+- `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent.
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
 - `SpawnRequest` (interface): interface SpawnRequest — ⚠ undocumented
@@ -453,6 +454,7 @@
 - `JointOptions` (interface): interface JointOptions — ⚠ undocumented
 - `MAX_BROADPHASE_CELLS` (const): const MAX_BROADPHASE_CELLS: 1000000 — Cap on `nx*ny*nz` broadphase cells — guards a huge-bounds/tiny-cellSize config from hanging `step()`.
 - `PhysicsBounds` (interface): interface PhysicsBounds — ⚠ undocumented
+- `PhysicsPrecision` (type): type PhysicsPrecision = "low" | "standard" | "high" — Simulation fidelity intent: `low` (cheap — many bodies, loose stacks, forgiving sleep), `standard` (default), `high` (tight stacks, accurate joints, worth the extra solver work). Sets the solver knobs below to a matched preset; an individual knob left explicit always wins over the preset.
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PhysicsWorldConfig` (interface): interface PhysicsWorldConfig — ⚠ undocumented
@@ -1412,18 +1414,26 @@
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
 - `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
-- `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: EditorDocument, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
+- `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
-- `isScatterPath` (function): function isScatterPath(path: EditorPath): boolean — True when an editor path is a foliage/scatter region.
+- `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
-- `readScatterRules` (function): function readScatterRules(path: EditorPath): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
-- `resolveScatter` (function): function resolveScatter(doc: EditorDocument, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
+- `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
+- `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
-- `scatterRegionEstimate` (function): function scatterRegionEstimate(path: EditorPath): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
-- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: EditorPath): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+- `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
+- `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+
+## @jgengine/core/world/sceneShapes
+
+- `SceneDocumentLike` (interface): interface SceneDocumentLike — The minimal document shape scatter/vegetation resolve against — markers, volumes, and paths only. Any `EditorDocument` satisfies it structurally; this module never imports the editor domain, so world stays the one-directional dependency editor already builds on.
+- `SceneMarkerLike` (interface): interface SceneMarkerLike — The minimal point-object shape clearance reads from a document's markers; any `EditorMarker` satisfies it.
+- `ScenePathLike` (interface): interface ScenePathLike — The minimal polyline shape {@link resolveScatterRegion} et al. read; any `EditorPath` satisfies it.
+- `ScenePoint3` (interface): interface ScenePoint3 — A world-space point — structurally compatible with the editor's `EditorVec3`.
+- `SceneVolumeLike` (interface): interface SceneVolumeLike — The minimal volume shape vegetation/clearance read; any `EditorVolume` satisfies it.
 
 ## @jgengine/core/world/segment
 
