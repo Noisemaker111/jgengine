@@ -1,3 +1,5 @@
+import { createDotField } from "@jgengine/core/combat/dotField";
+import { pickWeighted } from "@jgengine/core/random/pick";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { bonus } from "./characters";
@@ -206,13 +208,8 @@ function pick<T>(rng: () => number, list: readonly T[]): T {
 }
 
 export function rollRarity(rng: () => number, luck = 1): Rarity {
-  const total = RARITY_TIERS.reduce((sum, tier) => sum + tier.weight * (tier.id === "common" ? 1 : luck), 0);
-  let roll = rng() * total;
-  for (const tier of RARITY_TIERS) {
-    roll -= tier.weight * (tier.id === "common" ? 1 : luck);
-    if (roll <= 0) return tier.id;
-  }
-  return "common";
+  const tier = pickWeighted(rng, RARITY_TIERS, (candidate) => candidate.weight * (candidate.id === "common" ? 1 : luck));
+  return tier?.id ?? "common";
 }
 
 export interface RollGunOptions {
@@ -390,16 +387,9 @@ export function tickShields(ctx: GameContext, nowMs: number, dt: number, regenBo
   }
 }
 
-interface DotEntry {
-  targetId: string;
-  fromId: string;
-  element: GunElement;
-  dps: number;
-  untilMs: number;
-  nextTickMs: number;
-}
-
-const activeDots: DotEntry[] = [];
+const dotField = createDotField();
+const dotMeta = new Map<string, { targetId: string; fromId: string }>();
+let dotSerial = 0;
 const fluxedUntil = new Map<string, number>();
 
 export const DOT_DURATION_MS = 4000;
@@ -442,13 +432,14 @@ export function applyElementalProc(
     fluxedUntil.set(targetId, nowMs + FLUX_DURATION_MS);
     return;
   }
-  activeDots.push({
-    targetId,
-    fromId,
-    element: gun.element,
-    dps: Math.round(gun.elementDps * (1 + bonus("dotDamage"))),
-    untilMs: nowMs + DOT_DURATION_MS,
-    nextTickMs: nowMs + 500,
+  const dps = Math.round(gun.elementDps * (1 + bonus("dotDamage")));
+  const id = `dot_${(dotSerial += 1)}`;
+  dotMeta.set(id, { targetId, fromId });
+  dotField.apply(id, {
+    damagePerTick: Math.max(1, Math.round(dps / 2)),
+    intervalMs: 500,
+    durationMs: DOT_DURATION_MS,
+    status: gun.element,
   });
 }
 
@@ -462,21 +453,25 @@ export function playerLastHurtAtMs(): number {
   return playerHurtAtMs;
 }
 
-export function tickDots(ctx: GameContext, nowMs: number): void {
-  for (let index = activeDots.length - 1; index >= 0; index -= 1) {
-    const dot = activeDots[index]!;
-    if (nowMs >= dot.untilMs || ctx.scene.entity.get(dot.targetId) === null) {
-      activeDots.splice(index, 1);
-      continue;
+export function tickDots(ctx: GameContext, dt: number): void {
+  for (const [id, meta] of dotMeta) {
+    if (ctx.scene.entity.get(meta.targetId) === null) {
+      dotField.cancel(id);
+      dotMeta.delete(id);
     }
-    if (nowMs < dot.nextTickMs) continue;
-    dot.nextTickMs = nowMs + 500;
-    ctx.scene.entity.effect({
-      from: dot.fromId,
-      to: dot.targetId,
-      effect: "damage",
-      via: { amount: Math.max(1, Math.round(dot.dps / 2)) },
-    });
+  }
+  for (const tick of dotField.tick(dt)) {
+    const meta = dotMeta.get(tick.id);
+    if (meta === undefined) continue;
+    if (tick.damage > 0 && ctx.scene.entity.get(meta.targetId) !== null) {
+      ctx.scene.entity.effect({
+        from: meta.fromId,
+        to: meta.targetId,
+        effect: "damage",
+        via: { amount: tick.damage },
+      });
+    }
+    if (tick.expired) dotMeta.delete(tick.id);
   }
 }
 
@@ -528,7 +523,8 @@ export function markRespawned(ctx: GameContext): void {
 export function resetHandrollState(): void {
   magazines.clear();
   shieldWatch.clear();
-  activeDots.length = 0;
+  dotField.clear();
+  dotMeta.clear();
   fluxedUntil.clear();
   ffyl.phase = "up";
   ffyl.downedUntilMs = 0;

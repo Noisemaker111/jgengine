@@ -266,7 +266,7 @@ function onTick(ctx: GameContext, dt: number): void {
   if (activeCharacter() === null) return;
   tickEnemies(ctx, dt);
   tickShields(ctx, nowMs, dt);
-  tickDots(ctx, nowMs);
+  tickDots(ctx, dt);
   finishReloads(ctx, nowMs);
   tickFfyl(ctx, nowMs);
   tickZoneAndStations(ctx, nowMs);

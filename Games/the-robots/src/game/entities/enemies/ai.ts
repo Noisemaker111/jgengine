@@ -1,6 +1,9 @@
+import { createMobBrain, type MobBrain } from "@jgengine/core/ai/mobBrain";
 import { aimToPoint } from "@jgengine/core/input/pointer";
+import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
+import { distance as vecDistance, length as vecLength } from "@jgengine/core/world/vec2";
 import { cameraShake } from "@jgengine/shell/camera";
 import { ffylPhase } from "../../handroll";
 import { zoneLevelAt } from "../../world/zones";
@@ -9,7 +12,11 @@ import { enemyById, levelDamageMult, type EnemyDef } from "./catalog";
 const nextAttackAt = new Map<string, number>();
 const nextNovaAt = new Map<string, number>();
 const homes = new Map<string, EntityPosition>();
-const wanderTargets = new Map<string, { target: EntityPosition; untilMs: number }>();
+const brains = new Map<string, MobBrain>();
+
+let activeCtx: GameContext | null = null;
+let activePlayerId = "";
+let playerDowned = false;
 
 export const FLYNT_NOVA = { intervalMs: 7000, windupMs: 1500, radius: 4.2, damage: 40 };
 export const LEASH_RADIUS = 46;
@@ -18,7 +25,7 @@ export function resetAiState(): void {
   nextAttackAt.clear();
   nextNovaAt.clear();
   homes.clear();
-  wanderTargets.clear();
+  brains.clear();
 }
 
 export function rememberHome(id: string, position: EntityPosition): void {
@@ -39,23 +46,37 @@ function flankOffset(id: string, spread: number): readonly [number, number] {
 }
 
 function distance2d(a: EntityPosition, b: EntityPosition): number {
-  return Math.hypot(a[0] - b[0], a[2] - b[2]);
+  return vecDistance([a[0], a[2]], [b[0], b[2]]);
 }
 
-function wander(ctx: GameContext, def: EnemyDef, id: string, position: EntityPosition, nowMs: number, dt: number): void {
-  const home = homes.get(id) ?? position;
-  let plan = wanderTargets.get(id);
-  if (plan === undefined || nowMs > plan.untilMs) {
-    const hash = idHash(`${id}:${Math.floor(nowMs / 4000)}`);
-    const angle = ((hash % 360) / 360) * Math.PI * 2;
-    const radius = 3 + (Math.abs(hash >> 4) % 6);
-    plan = {
-      target: [home[0] + Math.cos(angle) * radius, home[1], home[2] + Math.sin(angle) * radius],
-      untilMs: nowMs + 3500 + (Math.abs(hash) % 2500),
-    };
-    wanderTargets.set(id, plan);
+function brainFor(def: EnemyDef, id: string): MobBrain {
+  let brain = brains.get(id);
+  if (brain === undefined) {
+    const home = homes.get(id) ?? activeCtx?.scene.entity.get(id)?.position ?? [0, 0, 0];
+    brain = createMobBrain(
+      {
+        aggroRadius: def.aggroRadius,
+        attackRange: def.attack.kind === "melee" ? def.attack.reach : def.attack.preferRange,
+        leashDistance: LEASH_RADIUS,
+        wander: { radius: 9, intervalSeconds: 4, speedScale: 0.45, arriveRadius: 0.6 },
+        evadeSpeedScale: 1,
+        homeArriveRadius: 2,
+      },
+      {
+        home: [home[0], home[1], home[2]],
+        position: () => activeCtx?.scene.entity.get(id)?.position ?? null,
+        targetPosition: (targetId) => {
+          if (activeCtx === null) return null;
+          if (playerDowned && targetId === activePlayerId) return null;
+          return activeCtx.scene.entity.get(targetId)?.position ?? null;
+        },
+        candidates: () => (playerDowned ? [] : [activePlayerId]),
+        rng: seededRng(`ai:${id}`),
+      },
+    );
+    brains.set(id, brain);
   }
-  ctx.scene.entity.moveToward(id, plan.target, { speed: def.walkSpeed * 0.45, stopDistance: 0.6, dt });
+  return brain;
 }
 
 function steerTarget(ctx: GameContext, enemyId: string, enemyPos: EntityPosition, playerPos: EntityPosition): EntityPosition {
@@ -63,7 +84,7 @@ function steerTarget(ctx: GameContext, enemyId: string, enemyPos: EntityPosition
   const target: EntityPosition = [playerPos[0] + ox, playerPos[1], playerPos[2] + oz];
   const dx = target[0] - enemyPos[0];
   const dz = target[2] - enemyPos[2];
-  const length = Math.hypot(dx, dz);
+  const length = vecLength([dx, dz]);
   if (length < 0.001) return target;
   const direction: EntityPosition = [dx / length, 0, dz / length];
   const blocked = ctx.scene.object.raycast({
@@ -164,7 +185,9 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
   if (playerEntity === null) return;
   const playerPos = playerEntity.position;
   const nowMs = ctx.time.now() * 1000;
-  const playerDowned = ffylPhase() === "downed";
+  activeCtx = ctx;
+  activePlayerId = playerId;
+  playerDowned = ffylPhase() === "downed";
 
   if (nextAttackAt.size > 512) {
     for (const key of nextAttackAt.keys()) {
@@ -175,27 +198,19 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
   for (const entity of ctx.scene.entity.list()) {
     const def = enemyById(entity.name);
     if (def === undefined) continue;
-    const home = homes.get(entity.id);
-    if (home === undefined) rememberHome(entity.id, entity.position);
-    const anchor = homes.get(entity.id) ?? entity.position;
-    const playerDistance = distance2d(entity.position, playerPos);
-    const leashed = distance2d(entity.position, anchor) > LEASH_RADIUS;
-    const engaged = !playerDowned && !leashed && playerDistance <= def.aggroRadius;
+    if (!homes.has(entity.id)) rememberHome(entity.id, entity.position);
+    const step = brainFor(def, entity.id).tick(dt);
 
-    if (!engaged) {
-      if (leashed) {
-        ctx.scene.entity.moveToward(entity.id, anchor, { speed: def.walkSpeed, stopDistance: 2, dt });
+    if (step.mode === "chase" || step.mode === "engage") {
+      if (def.attack.kind === "melee") {
+        tickMelee(ctx, def, entity.id, entity.position, playerId, playerPos, dt, nowMs);
       } else {
-        wander(ctx, def, entity.id, entity.position, nowMs, dt);
+        tickRanged(ctx, def, entity.id, entity.position, playerPos, dt, nowMs);
+        tickRuskNova(ctx, def, entity.id, playerPos, nowMs);
       }
-      continue;
-    }
-
-    if (def.attack.kind === "melee") {
-      tickMelee(ctx, def, entity.id, entity.position, playerId, playerPos, dt, nowMs);
-    } else {
-      tickRanged(ctx, def, entity.id, entity.position, playerPos, dt, nowMs);
-      tickRuskNova(ctx, def, entity.id, playerPos, nowMs);
+    } else if (step.moveTo !== null) {
+      const stopDistance = step.mode === "evade" ? 2 : 0.6;
+      ctx.scene.entity.moveToward(entity.id, step.moveTo, { speed: def.walkSpeed * step.speedScale, stopDistance, dt });
     }
 
     const moved = ctx.scene.entity.get(entity.id);
