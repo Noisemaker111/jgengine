@@ -55,6 +55,19 @@ export {
   type LifecycleConfig,
   type PhysicsConfig,
 } from "./game/defineGame";
+export {
+  defineSystem,
+  type SystemDefinition,
+  type SystemEventHandlers,
+  type SystemTick,
+} from "./game/defineSystem";
+export {
+  DEFAULT_FIXED_STAGES,
+  DEFAULT_FRAME_STAGES,
+  compileSystemSchedule,
+  type CompiledSystemSchedule,
+} from "./game/systemSchedule";
+export { composeGameLoop } from "./game/systemRuntime";
 export { createGameDialogue, dialogueSlot } from "./game/dialogue";
 export {
   createGameEvents,

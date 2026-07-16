@@ -2,45 +2,22 @@ import type { GameLoop } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { mobRuntimeOf, onMobDied, tickMobs } from "./game/ai/mobs";
-import { startAuctionSweep, tickAuction } from "./game/auction/systems";
-import { setupAudioCues, tickMusic } from "./game/audio/setup";
-import { onFiestaEntityDied, tickFiesta } from "./game/arena/fiesta";
-import { tickAuras, tickHero } from "./game/combat/engine";
+import { mobRuntimeOf, onMobDied } from "./game/ai/mobs";
+import { startAuctionSweep } from "./game/auction/systems";
+import { setupAudioCues } from "./game/audio/setup";
+import { onFiestaEntityDied } from "./game/arena/fiesta";
 import { buildLootTables } from "./game/content";
-import { tickDelve } from "./game/delves/systems";
 import { useHandlers } from "./game/items/use-handlers";
 import { loadouts } from "./game/loadouts";
-import { tickMail } from "./game/mail/systems";
-import { tickValeCup } from "./game/minigames/valeCup";
-import { tickProtectYumi } from "./game/minigames/yumi";
 import { CLASS_ENTITY_ID } from "./game/model";
-import { tickPets } from "./game/pets/systems";
 import { killXp, levelTrack } from "./game/progression/curves";
 import { registerCommands } from "./game/session/commands";
 import { applySheet, clearAuras, grantTalentPoint, heroOf } from "./game/session/hero";
 import { castStore, corpseStore, deadStore, deathStatsStore, restedStore } from "./game/session/stores";
 import { QUESTS } from "./game/quests/catalog";
 import { setupWorld } from "./game/world/setup";
-import { isWorldBoss, onWorldBossKilled, tickWorldBoss } from "./game/world/worldBoss";
+import { isWorldBoss, onWorldBossKilled } from "./game/world/worldBoss";
 import { PLAYER_SPAWN } from "./game/world/zones";
-import { resolvePlayerMovementTuning, stepPlayerMovement } from "@jgengine/core/movement/playerMovement";
-import { physics, world } from "./world";
-
-const movementTuning = resolvePlayerMovementTuning({ physics, world });
-const EMPTY_INPUT = { held: [] as readonly string[], pointer: null };
-
-function tickPlayerSystems(ctx: GameContext, userId: string, dt: number): void {
-  tickHero(ctx, userId, dt);
-  tickPets(ctx, userId, dt);
-  tickDelve(ctx, userId, dt);
-  tickMail(ctx, userId);
-  tickAuction(ctx, userId);
-  tickValeCup(ctx, userId, dt);
-  tickProtectYumi(ctx, userId, dt);
-  tickFiesta(ctx, userId, dt);
-  tickMusic(ctx, userId);
-}
 
 function onPlayerDied(
   ctx: GameContext,
@@ -88,6 +65,7 @@ function onKill(ctx: GameContext, killerUserId: string, victimInstanceId: string
   });
 }
 
+/** Boot + join only — per-frame work lives in `game/systems.ts` via `defineGame({ systems })`. */
 export const loop: GameLoop<GameContext> = {
   onInit(ctx) {
     ctx.item.use.register(useHandlers);
@@ -127,20 +105,5 @@ export const loop: GameLoop<GameContext> = {
       id: userId,
       position: [x, ctx.world.groundHeightAt(x, z), z],
     });
-  },
-  onTick(ctx, dt) {
-    const clamped = Math.min(dt, 0.25);
-    tickWorldBoss(ctx);
-    tickMobs(ctx, clamped);
-    tickAuras(ctx);
-    const members = ctx.game.players?.list() ?? [];
-    if (members.length === 0) {
-      tickPlayerSystems(ctx, ctx.player.userId, clamped);
-      return;
-    }
-    for (const member of members) {
-      stepPlayerMovement(ctx, member.userId, member.input ?? EMPTY_INPUT, dt, movementTuning);
-      tickPlayerSystems(ctx, member.userId, clamped);
-    }
   },
 };
