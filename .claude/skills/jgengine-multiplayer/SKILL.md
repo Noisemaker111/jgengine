@@ -35,6 +35,26 @@ ws({ topology: "shared", authority: "server" }); // shared world
 
 The transport/host/persistence seam — `createWsBackend`, protocol codec, browser-safe authoritative host + router, WebRTC P2P, the Node/Convex/SQL adapters, presence, and save cadence. Full surface: **[reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-multiplayer/reference.md)**.
 
+## Host command middleware — rate limits, validation, authorization
+
+`createHostRouter` (`@jgengine/ws`) ships a composable rate-limit → validate → authorize pipeline over `pose`/`runCommand`/`join`/`browse`/`voice`, wired via three opt-in `HostRouterOptions` fields — an unconfigured router behaves exactly as before:
+
+```ts
+import { createHostRouter, DEFAULT_COMMAND_LIMITS } from "@jgengine/ws";
+
+createHostRouter({
+  host,
+  limits: DEFAULT_COMMAND_LIMITS, // per-op sliding-window budgets; omit for no rate limiting
+  validate: {
+    "move.to": { validate: (input) => (isVector3(input) ? null : { reason: "expected a Vector3" }) },
+  }, // declared commands only — any other runCommand name is rejected as unknown
+  authorize: ({ userId, op, command }) =>
+    op !== "runCommand" || command !== "admin.kick" || isModerator(userId), // default allow
+});
+```
+
+`createCommandMiddleware`/`createCommandRateLimiter`/`validateCommandInput` (`@jgengine/ws/commandMiddleware`) are the underlying composable pieces if a host wants the pipeline without the router.
+
 ## Per-world state — never a module-global `Map`
 
 One host process serves many worlds, so authoritative runtime state (heroes, mobs, auras, active sessions) must be **per-`GameContext`, never a module-scoped `Map`** — a module global is process-global and bleeds between `serverId`s on the same host. `createGameContext` already mints a fresh `EntityStore` per world; for game-side state use `perContext` (`@jgengine/core/runtime/perContext`): `const heroRuntimes = perContext(() => new Map())` at module scope, then `heroRuntimes(ctx).get(userId)` per world. It keys on context identity through a `WeakMap`, so state is isolated per world and reclaimed when the context is.
