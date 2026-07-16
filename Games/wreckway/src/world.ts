@@ -2,6 +2,7 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import type { BuildingPaletteOverrides } from "@jgengine/core/world/buildings";
 import { building, environment, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 
+import { YARD_FLOOR_MATERIAL } from "./game/assets";
 import { ZONES, type ZoneDef } from "./game/zones/catalog";
 
 function zoneMid(start: number, end: number): number {
@@ -20,7 +21,12 @@ export const world: WorldFeature = environment({
     octaves: 3,
     baseHeight: 0,
     seed: "wreckway-yard",
+    segments: 260,
     colors: { low: "#1c1a17", high: "#6b4226", waterline: "#1c1a17" },
+    detail: {
+      rockColor: "#4a3423",
+      material: { maps: YARD_FLOOR_MATERIAL, repeat: 5, strength: 0.85 },
+    },
   }),
   sky: sky({
     preset: "day",
