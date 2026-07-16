@@ -24,10 +24,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/survival/decayMeter"`
 
-## define-game — single public game-authoring path — compose systems, world, and loop in one definition
-
-- `defineGame` (function) · `import { defineGame } from "@jgengine/core/game/defineGame"`
-
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
 - `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/gameplay"`

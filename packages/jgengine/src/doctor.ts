@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { findWorkspaceRoot, readPackageJson, type PackageJson } from "./pkg";
+import { assessPrototypeLook } from "./prototypeLook";
 import { IN_REPO_TSCONFIG_PATHS } from "./templates";
 
 export interface Finding {
@@ -196,6 +197,21 @@ export function diagnose(dir: string): Finding[] {
       ok: existsSync(join(dir, "node_modules", "@jgengine", "core")),
       label: "engine installed in node_modules",
       fix: "run bun install (or npm install)",
+    });
+  }
+
+  if (existsSync(configPath)) {
+    const configText = readFileSync(configPath, "utf8");
+    const related: string[] = [configText];
+    const modelsPath = join(dir, "src", "game", "models.ts");
+    if (existsSync(modelsPath)) related.push(readFileSync(modelsPath, "utf8"));
+    const assetsPath = join(dir, "src", "game", "assets.ts");
+    if (existsSync(assetsPath)) related.push(readFileSync(assetsPath, "utf8"));
+    const prototype = assessPrototypeLook(related);
+    findings.push({
+      ok: !prototype.isPrototype,
+      label: "shipped look (models + cinematic lighting, not prototype boxes/flat)",
+      fix: prototype.fix,
     });
   }
 

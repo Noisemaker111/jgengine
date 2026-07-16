@@ -41,6 +41,7 @@ const files: Record<string, string> = {
         test: "bun test src",
       },
       dependencies: {
+        "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
@@ -236,17 +237,40 @@ function onTick(ctx: GameContext, dt: number): void {
 
 export const loop = { onInit, onNewPlayer, onTick };
 `,
+  "src/game/assets.ts": `import { createStarterCatalog } from "@jgengine/assets";
+
+/** Curated people/props/nature/urban starter packs — resolve asset:person_casual etc. */
+export const assets = createStarterCatalog({ basePath: "/models" });
+`,
+  "src/game/models.ts": `import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { resolveModelPlan } from "@jgengine/shell/render/resolveModel";
+
+import { assets } from "./assets";
+
+/** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
+export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
+});
+
+export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  crate: { model: "asset:prop_crate", style: { targetHeight: 1.2 } },
+  tree: { model: "asset:nature_tree", style: { targetHeight: 4.5 } },
+});
+`,
   "src/game.config.ts": `import { offline } from "@jgengine/core/runtime/adapter";
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
+import { entityModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
   name: ${JSON.stringify(title)},
+  assets,
   world,
   physics,
   input: keybinds,
@@ -256,6 +280,8 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  entityModels,
+  objectModels,
   camera: { perspective: "third" },
 });
 `,
@@ -357,5 +383,10 @@ if (install.exitCode !== 0) console.error("bun install failed — run it by hand
 console.log(`Games/${id} scaffolded.`);
 console.log(`  play it:   bun run games:${id}`);
 console.log(`  verify:    bun run check-types && bun test Games/${id}`);
+console.log(`  models:    pull starter packs once so GLBs resolve:`);
+console.log(`             bun run --cwd packages/assets src/cli/pull.ts pull kaykit-adventurers --dir ../../apps/dev/public`);
+console.log(`             bun run --cwd packages/assets src/cli/pull.ts pull kaykit-dungeon --dir ../../apps/dev/public`);
+console.log(`             bun run --cwd packages/assets src/cli/pull.ts pull quaternius-stylized-nature --dir ../../apps/dev/public`);
+console.log(`  shoot:     bun run shoot --serve   # then: bun run shoot ${id} --mode play`);
 console.log(`  note:      if check-types reports TS2688 vite/client for the new game, run: bun install --force`);
 console.log(`  next:      build catalogs under src/game/ per the jgengine skill intake`);

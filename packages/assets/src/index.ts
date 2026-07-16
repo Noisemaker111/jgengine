@@ -39,6 +39,14 @@ export { buildCatalog, entryUrl, type BuildCatalogOptions } from "./catalogs/bui
 export { buildSpriteCatalog, type BuildSpriteCatalogOptions } from "./catalogs/buildSprites";
 export { createStarterCatalog } from "./catalogs/starter";
 export {
+  STARTER_ASSETS,
+  STARTER_PACKS,
+  STARTER_SOURCE_PACKS,
+  STARTER_THEMES,
+  type StarterAsset,
+  type StarterTheme,
+} from "./packs/starter";
+export {
   findAssets,
   rankAssets,
   type AssetKind,

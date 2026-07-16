@@ -32,21 +32,20 @@ A JGengine scene is derived deterministically from an `environment()` descriptor
 
 ## The warm loop — cutting shot→judge→edit→re-shoot cost
 
-The ladder above is the correctness gate; once step 2 is green and step 4 starts iterating on *look*, the mechanics of getting there are free to be cheap — the judgment isn't:
+Once step 2 is green and step 4 iterates on *look*, keep the browser warm:
 
-1. **Scoped typecheck between edits.** `bun run --cwd Games/<id> check-types` (`tsgo -p Games/<id>/tsconfig.json`, ~5s) proves the edited game compiles; save the full-repo `bun run check-types` gate for the final ship, not every tweak.
-2. **Warm dev server + warm Chrome.** The first `shoot`/`drive` call of a loop pays vite's ~60-90s boot; `--keep` leaves that dev server *and* a headless Chrome (fixed debug port 9223, so nothing needs parsing from stdout) running after the process exits instead of tearing both down. Every later re-shot in the same loop passes `--connect 9223` to reuse both — <10s per re-shot, since it skips vite's boot and Chrome's cold launch entirely. HMR carries the edit to the already-open page.
-3. **Half-res mid-loop judge shots.** `--size half` halves both dimensions (~1/4 the pixels) on `shoot`/`drive` — plenty to judge composition, palette, and layout each iteration. Drop it (full-res, the default) only for the milestone/PR shot.
+1. **Scoped typecheck.** `bun run --cwd Games/<id> check-types` (~5s); full-repo gate only at ship.
+2. **Persistent daemon.** `bun run shoot --serve` (or `daemon start|status|stop`) keeps Vite + Chrome warm; later plain `shoot <id> --mode play` auto-attaches in seconds (folds `--keep`/`--connect`).
+3. **Half-res mid-loop.** `--size half` for judge shots; full-res for the PR milestone.
 
 ```
-bun run shoot <id> --mode play --keep                        # first shot: cold boot, stays warm
-bun run shoot <id> --mode play --connect 9223 --size half     # every re-shot: <10s, cheap judge PNG
-bun run shoot <id> --mode play --connect 9223                 # final shot for the PR: full-res, no --size
+bun run shoot --serve                         # once: Vite + Chrome stay warm
+bun run shoot <id> --mode play --size half    # re-shot attaches to daemon
+bun run shoot <id> --mode play                # final full-res
+bun run shoot daemon stop
 ```
-
-`drive` takes the same `--keep`/`--connect <port>`/`--size half` flags for menu-gated games. `bun run shoot --help` / `bun run drive --help` print the full flag list.
-
-4. **Read/edit discipline.** Re-reading a whole game file every pass burns tokens for no new information; offset `Read` to the changed region, read-before-edit once, then batch the next edit before re-shooting instead of one edit per read.
+Manual fallback: `--keep` then `--connect <port>`. `drive` shares the flags.
+4. **Read/edit discipline.** Offset `Read` to the changed region; batch edits before re-shooting.
 
 ## Adding the scene gate to a game
 

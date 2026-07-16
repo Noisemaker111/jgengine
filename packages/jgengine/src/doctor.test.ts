@@ -74,4 +74,32 @@ describe("diagnose", () => {
     const dir = mkdtempSync(join(tmpdir(), "jgengine-doctor-empty-"));
     expect(failingLabels(dir)).toContain("package.json readable");
   });
+
+  test("scaffold passes the prototype-look gate (models + cinematic default)", () => {
+    const dir = scaffold();
+    expect(failingLabels(dir)).not.toContain(
+      "shipped look (models + cinematic lighting, not prototype boxes/flat)",
+    );
+  });
+
+  test("flags a flat-look prototype without models", () => {
+    const dir = scaffold();
+    writeFileSync(
+      join(dir, "src", "game.config.ts"),
+      `import { defineGame } from "@jgengine/shell/defineGame";
+export const game = defineGame({
+  name: "Boxes",
+  look: "flat",
+  world: {},
+  loop: {},
+  content: { entityById: () => null },
+  GameUI: () => null,
+  camera: { perspective: "third" },
+});
+`,
+    );
+    expect(failingLabels(dir)).toContain(
+      "shipped look (models + cinematic lighting, not prototype boxes/flat)",
+    );
+  });
 });

@@ -244,11 +244,6 @@
 ## @jgengine/core/runtime/worldProjection
 
 - `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
-- `policyProjectsViewers` (function): function policyProjectsViewers(policy: ReplicationPolicy | undefined): boolean — True when at least one field of the policy would change the wire payload. A no-op policy needs no projection.
-- `projectByVisibleIds` (function): function projectByVisibleIds<T>(byId: Record<string, T>, visible: Set<string>): Record<string, T> — Keep only the entries of an entity-id-keyed record whose id is in `visible` — the projection for entity stats under area-of-interest.
-- `projectEntitiesForViewer` (function): function projectEntitiesForViewer(entities: readonly SceneEntity[], viewer: SnapshotViewer, radius: number): readonly SceneEntity[] — Cull an entity list to a viewer's area of interest: keep the viewer's own entity plus every entity within `radius` of it. When the viewer has no locatable entity the full list is returned (fail-open — a spectator or not-yet-spawned player still sees the world rather than an empty one).
-- `projectPerUserForViewer` (function): function projectPerUserForViewer<T>(byUser: Record<string, T>, viewer: SnapshotViewer): Record<string, T> — Narrow a `userId → state` record to only the viewer's own entry — the projection for private per-user state (inventory, wallets) so one client never receives another player's private data.
-- `visibleEntityIds` (function): function visibleEntityIds(entities: readonly SceneEntity[], viewer: SnapshotViewer, radius: number): Set<string> — The set of entity ids a viewer can see under an area-of-interest radius — the visibility set entity-keyed modules cull against.
 
 ## @jgengine/node
 

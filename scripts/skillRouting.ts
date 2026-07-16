@@ -105,9 +105,14 @@ export function skillForModule(pkg: string, modulePath: string): string | null {
   if (moduleOverride !== undefined) return moduleOverride;
   const domain = modulePath.split("/")[0];
   if (domain === undefined || CORE_INTERNAL_DOMAINS.has(domain)) return null;
+  // Top-level barrels (`core/world`, `core/gameplay`, …) share the domain skill so
+  // re-exported primitives inherit that skill's examples instead of orphaning under MAIN.
   if (!modulePath.includes("/")) {
-    return CORE_BARREL_SKILLS[modulePath] ?? MAIN;
+    if (domain === "gameplay") return "jgengine-gameplay";
+    return CORE_DOMAIN_SKILLS[domain] ?? MAIN;
   }
+  // Host-side wire projection lives under runtime/ but is multiplayer surface.
+  if (modulePath.startsWith("runtime/worldProjection")) return "jgengine-multiplayer";
   const skill = CORE_DOMAIN_SKILLS[domain];
   if (skill === undefined) {
     throw new Error(
