@@ -1,4 +1,4 @@
-import { createCardPile, type CardPile, type CardPileConfig } from "../cards/cardPile";
+import { type CardPile, type CardPileConfig } from "../cards/cardPile";
 import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
@@ -12,14 +12,11 @@ import {
 } from "../combat/effects";
 import { createProjectileSystem, type ProjectileSystem } from "../combat/projectiles";
 import {
-  resolveHitReaction,
   type HitReaction,
   type HitReactionConfig,
   type ImpactPresetName,
 } from "../combat/hitReaction";
 import {
-  pointInTelegraph,
-  type TelegraphConfig,
   type TelegraphShape,
 } from "../combat/telegraph";
 import {
@@ -48,10 +45,8 @@ import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "..
 import { type GameDialogue } from "../game/dialogue";
 import { type QuestJournal } from "../game/quest";
 import {
-  createWorldItemStore,
   resolveDeathDrops,
   DEFAULT_RARITY,
-  WORLD_ITEM_ENTITY_NAME,
   type WorldItemRecord,
   type WorldItemSpawnInput,
 } from "../game/worldItem";
@@ -137,13 +132,16 @@ import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions, type Runt
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock, type SimClock } from "../time/simClock";
-import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
-import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
+import { type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
+import { RaceState, type RaceStateConfig } from "../game/race";
 import { createCameraDirector, type CameraDirector } from "./cameraDirector";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
 import { createMotionIntents, type MotionIntents } from "./motionIntents";
 import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
 import { featureDescriptors, type FeatureDeps } from "./descriptors/features";
+import { createCombatFx } from "./context/combatFx";
+import { createContextRegistries } from "./context/registries";
+import { createWorldItemContext } from "./context/worldItems";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -896,42 +894,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return created;
   }
 
-  const worldItems = notifyAfter(
-    createWorldItemStore({
-      spawnEntity: (position) => entities.spawn(WORLD_ITEM_ENTITY_NAME, { position, role: "prop" }),
-      despawnEntity,
-      resolvePosition: (instanceId) => entities.get(instanceId)?.position,
-    }),
-    ["spawn", "take", "remove"],
-    signal.notify,
-  );
-
-  function spawnWorldItem(input: WorldItemSpawnInput): WorldItemRecord {
-    const record = worldItems.spawn(input);
-    events.emit("worldItem.dropped", {
-      instanceId: record.instanceId,
-      itemId: record.itemId,
-      rarity: record.rarity,
-      count: record.count,
-      position: [input.position[0], input.position[1], input.position[2]],
-      ...(record.source !== undefined ? { source: record.source } : {}),
-    });
-    return record;
-  }
-
-  function pickupWorldItem(instanceId: string, userId: string): WorldItemPickupResult {
-    const record = worldItems.take(instanceId);
-    if (record === null) return { status: "rejected", reason: "not-found" };
-    loot.grantToPlayer(userId, [{ item: record.itemId, count: record.count }], "worldItem.pickup");
-    events.emit("worldItem.picked_up", {
-      instanceId,
-      userId,
-      itemId: record.itemId,
-      rarity: record.rarity,
-      count: record.count,
-    });
-    return { status: "ok", record };
-  }
+  const { worldItems, spawnWorldItem, pickupWorldItem } = createWorldItemContext({
+    entities,
+    events,
+    despawnEntity,
+    grantToPlayer: loot.grantToPlayer,
+    signalNotify: signal.notify,
+  });
 
   const death = createDeathSystem({
     resolveOnDeath: (instanceId) => catalogEntry(instanceId)?.onDeath,
@@ -996,148 +965,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signal.notify,
   );
 
-  function emitFloatText(input: FloatTextInput): void {
-    const position =
-      input.position ??
-      (input.instanceId === undefined ? undefined : entities.get(input.instanceId)?.position);
-    if (position === undefined) return;
-    const text = input.text ?? (input.amount === undefined ? "" : String(Math.round(input.amount)));
-    const event: GameEventMap["entity.floatText"] = {
-      position: [position[0], position[1], position[2]],
-      text,
-      kind: input.kind ?? "info",
-    };
-    if (input.instanceId !== undefined) event.instanceId = input.instanceId;
-    if (input.amount !== undefined) event.amount = input.amount;
-    if (input.hitType !== undefined) event.hitType = input.hitType;
-    if (input.element !== undefined) event.element = input.element;
-    if (input.crit !== undefined) event.crit = input.crit;
-    if (input.scale !== undefined) event.scale = input.scale;
-    events.emit("entity.floatText", event);
-  }
-
-  const vfxDefaultDurationMs: Record<VfxKind, number> = {
-    projectile: 380,
-    beam: 260,
-    nova: 520,
-    glow: 700,
-    spark: 240,
-  };
-  let vfxSeq = 0;
-
-  function resolveVfxPoint(
-    ref: string | readonly [number, number, number] | undefined,
-  ): [number, number, number] | undefined {
-    if (ref === undefined) return undefined;
-    if (typeof ref === "string") {
-      const entity = entities.get(ref);
-      if (entity === null) return undefined;
-      return [entity.position[0], entity.position[1], entity.position[2]];
-    }
-    return [ref[0], ref[1], ref[2]];
-  }
-
-  function emitVfx(input: VfxInput): void {
-    const to = resolveVfxPoint(input.to);
-    const from = resolveVfxPoint(input.from) ?? to;
-    if (from === undefined) return;
-    const event: GameEventMap["combat.vfx"] = {
-      id: vfxSeq++,
-      kind: input.kind,
-      color: input.color,
-      from,
-      durationMs: input.durationMs ?? vfxDefaultDurationMs[input.kind],
-    };
-    if (to !== undefined) event.to = to;
-    if (input.radius !== undefined) event.radius = input.radius;
-    events.emit("combat.vfx", event);
-  }
-
-  let telegraphSeq = 0;
-
-  function fireTelegraph(input: TelegraphInput): () => void {
-    const id = telegraphSeq++;
-    const telegraphEvent: GameEventMap["combat.telegraph"] = {
-      id,
-      shape: input.shape,
-      position: [input.at[0], input.at[1], input.at[2]],
-      windupMs: input.windupMs,
-      kind: input.kind ?? "danger",
-    };
-    if (input.dir !== undefined) telegraphEvent.dir = input.dir;
-    events.emit("combat.telegraph", telegraphEvent);
-    const cancelVisual = () => events.emit("combat.telegraphCancelled", { id });
-    const bound = input.effect;
-    if (bound === undefined) return cancelVisual;
-    const config: TelegraphConfig = { shape: input.shape, at: input.at, windupMs: input.windupMs };
-    if (input.dir !== undefined) config.dir = input.dir;
-    const cancelEffect = time.after(input.windupMs / 1000, () => {
-      const targets = entities.list().filter((entity) => pointInTelegraph(config, entity.position));
-      for (const target of targets) {
-        applyEffectAndFloat({
-          from: input.from,
-          to: target.id,
-          effect: bound.effect,
-          ...(bound.via === undefined ? {} : { via: bound.via }),
-        });
-      }
-    });
-    return () => {
-      cancelEffect();
-      cancelVisual();
-    };
-  }
-
-  function applyHitReaction(input: HitReactionInput): HitReaction | null {
-    const attacker = entities.get(input.from);
-    const target = entities.get(input.to);
-    if (target === null) return null;
-    const attackerPos = attacker?.position ?? target.position;
-    const reaction = resolveHitReaction(input.config, {
-      attackerPos,
-      targetPos: target.position,
-      ...(input.power === undefined ? {} : { power: input.power }),
-    });
-    entities.setPose(input.to, {
-      position: [
-        target.position[0] + reaction.impulse[0],
-        target.position[1] + reaction.impulse[1],
-        target.position[2] + reaction.impulse[2],
-      ],
-      rotationY: target.rotationY,
-    });
-    const reactionEvent: GameEventMap["combat.hitReaction"] = {
-      instanceId: input.to,
-      position: [target.position[0], target.position[1], target.position[2]],
-      hitstopMs: reaction.hitstopMs,
-    };
-    if (reaction.shake !== null) reactionEvent.shake = reaction.shake;
-    if (reaction.trauma !== null) reactionEvent.trauma = reaction.trauma;
-    events.emit("combat.hitReaction", reactionEvent);
-    return reaction;
-  }
-
-  function applyEffectAndFloat(input: EffectInput): EffectResult[] {
-    const positionsBefore = new Map<string, EntityPosition>();
-    for (const entity of entities.list()) positionsBefore.set(entity.id, entity.position);
-    const results = effects.applyEffect(input);
-    for (const result of results) {
-      let total = 0;
-      for (const delta of result.applied) total += delta.delta;
-      if (total === 0) continue;
-      const position = entities.get(result.instanceId)?.position ?? positionsBefore.get(result.instanceId);
-      if (position === undefined) continue;
-      const magnitude = Math.abs(total);
-      emitFloatText({
-        instanceId: result.instanceId,
-        position: [position[0], position[1], position[2]],
-        text: String(Math.round(magnitude)),
-        kind: total < 0 ? "damage" : "heal",
-        amount: magnitude,
-      });
-    }
-    return results;
-  }
+  const { emitFloatText, emitVfx, fireTelegraph, applyHitReaction, applyEffectAndFloat } = createCombatFx({
+    entities,
+    events,
+    time,
+    applyEffect: (input) => effects.applyEffect(input),
+  });
 
   const floatingEffects: EffectSystem = {
     canReceive: effects.canReceive,
@@ -1234,96 +1067,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
-  const cardPiles = new Map<string, CardPile>();
-  function pile(id: string, config?: CardPileConfig): CardPile {
-    const existing = cardPiles.get(id);
-    if (existing !== undefined) return existing;
-    if (config === undefined) {
-      throw new Error(`cardPile "${id}" has not been created yet; pass a config on first access`);
-    }
-    const created = notifyAfter(
-      createCardPile(config),
-      ["shuffle", "draw", "discard", "exhaust", "move", "reset"],
-      signal.notify,
-    );
-    cardPiles.set(id, created);
-    return created;
-  }
-
-  const turnLoops = new Map<string, TurnLoop>();
-  function loop(id: string, config?: TurnLoopConfig): TurnLoop {
-    const existing = turnLoops.get(id);
-    if (existing !== undefined) return existing;
-    if (config === undefined) {
-      throw new Error(`turn loop "${id}" has not been created yet; pass a config on first access`);
-    }
-    const raw = createTurnLoop(config);
-    const wrappedCommit = notifyAfter(
-      raw.commit,
-      ["submit", "expected", "commit", "discard", "clear"],
-      signal.notify,
-    );
-    const wrapped: TurnLoop = {
-      ...notifyAfter(
-        raw,
-        [
-          "setOrder",
-          "addParticipant",
-          "removeParticipant",
-          "advancePhase",
-          "advanceTurn",
-          "advanceRound",
-          "spend",
-          "gain",
-          "refill",
-          "restore",
-        ],
-        signal.notify,
-      ),
-      commit: wrappedCommit,
-    };
-    turnLoops.set(id, wrapped);
-    return wrapped;
-  }
-
-  class NotifyingRaceState extends RaceState {
-    override addRacer(racerId: string, startTime?: number): void {
-      super.addRacer(racerId, startTime);
-      signal.notify();
-    }
-    override removeRacer(racerId: string): void {
-      super.removeRacer(racerId);
-      signal.notify();
-    }
-    override reset(): void {
-      super.reset();
-      signal.notify();
-    }
-    override eliminate(racerId: string): void {
-      super.eliminate(racerId);
-      signal.notify();
-    }
-    override update(
-      now: number,
-      positions: Record<string, readonly [number, number, number]> | Map<string, readonly [number, number, number]>,
-    ): readonly RaceEvent[] {
-      const raceEvents = super.update(now, positions);
-      if (raceEvents.length > 0) signal.notify();
-      return raceEvents;
-    }
-  }
-
-  const raceStates = new Map<string, RaceState>();
-  function raceState(id: string, config?: RaceStateConfig): RaceState {
-    const existing = raceStates.get(id);
-    if (existing !== undefined) return existing;
-    if (config === undefined) {
-      throw new Error(`race "${id}" has not been created yet; pass a config on first access`);
-    }
-    const created = new NotifyingRaceState(config);
-    raceStates.set(id, created);
-    return created;
-  }
+  const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
 
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const input = createInputSnapshot();

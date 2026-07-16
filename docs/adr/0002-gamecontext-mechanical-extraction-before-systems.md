@@ -31,7 +31,7 @@ Why this order, against the repo's own principles:
    - `runtime/descriptors/features.ts` — the `FeatureDeps`/`FeatureBuild`/`FeatureDescriptor` contract and the 13 opt-in descriptors, moved verbatim.
    - `runtime/descriptors/baseline.ts` — new `BaselineDescriptor` list owning the serialization of the always-on subsystems: `entities`/`stats`/`store`/`feed`/`inventory` (replicate + save) and `economy`/`time`/`pose`/`possession`/`motion` (save-only). `createGameContext` composes `snapshotModules`/`saveModules` from one pass over this list — membership is no longer two hand-maintained arrays. Descriptor order fixes snapshot key order and is load-bearing.
 2. **Baseline construction moves behind `create(deps)`** — each baseline descriptor also *builds* its subsystem (today `createGameContext` still calls `createSimClock`, `createPoseState`, … inline), pulling `FeatureDeps`/`BaselineDeps` together per ADR 0001 §2's widened `FeatureKey`.
-3. **Facade assembly extraction** — the inline `ctx.scene.entity` combat/projectile/world-item wiring (effects, death, telegraphs, spawn helpers, ~600 lines) moves to `runtime/context/*` builders; `createGameContext` approaches the ADR target: deps + one descriptor loop + the `ctx` literal.
+3. **Facade assembly extraction** *(this PR, first cut)* — cohesive inline clusters move to `runtime/context/*` builders: `combatFx.ts` (float text, VFX, telegraphs, hit reactions, effect-with-float wrapper), `worldItems.ts` (ground-item store + spawn/pickup verbs), `registries.ts` (card piles, turn loops, race states). Remaining inline clusters (effects/death/projectile construction, spawn/despawn helpers, loadouts, the `ctx` literal) follow the same pattern in later cuts; `createGameContext` approaches the ADR target: deps + one descriptor loop + the `ctx` literal.
 4. **`tick`/`dispose` on the descriptor contract** (ADR 0001's `FeatureInstance`) — the last substrate piece #842 needs.
 
 ### Sequencing #842
@@ -40,7 +40,7 @@ After phase 4, `defineSystem()` is largely a rename-plus-schedule layer: public 
 
 ## Consequences
 
-- `gameContext.ts` drops ~2043 → ~1550 lines in phase 1 with zero public-API or behavioral delta; later phases continue toward "deps + loop + ctx literal".
+- `gameContext.ts` drops ~2043 → ~1404 lines across phases 1 and 3's first cut, with zero public-API or behavioral delta; later cuts continue toward "deps + loop + ctx literal".
 - Save/replication membership is now structurally owned (ADR 0001 §2 realized for serialization); a new baseline subsystem registers one descriptor instead of editing two distant arrays.
 - Snapshot key order is pinned by descriptor order — reordering `baselineDescriptors` would reorder save payload keys; documented on the list, not enforced by types.
 - Type-only imports from `descriptors/features.ts` back into `gameContext.ts` create a type-level cycle (no runtime cycle); acceptable, dissolves in phase 3 when the `GameContext*` interface types move to their own module.
