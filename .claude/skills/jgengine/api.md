@@ -140,10 +140,10 @@
 
 ## @jgengine/core/procedural
 
-- `DecayMeterSet` (interface): interface DecayMeterSet — ⚠ undocumented
-- `Moodle` (interface): interface Moodle — ⚠ undocumented
-- `MoodleStack` (interface): interface MoodleStack — ⚠ undocumented
-- `MultiRegionHealth` (interface): interface MultiRegionHealth — ⚠ undocumented
+- `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
+- `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
+- `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
+- `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.

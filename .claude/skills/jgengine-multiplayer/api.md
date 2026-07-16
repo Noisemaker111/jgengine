@@ -120,6 +120,7 @@
 - `PresenceTransport` (interface): interface PresenceTransport<TRow, TLocation, TGameId extends string = string> — Backend seam for multiplayer presence. Feeds are reactive data and change identity whenever any player's pose updates; actions MUST be identity-stable for the lifetime of a mounted session so join/leave lifecycle effects can depend on them without re-running per pose tick. The use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends.
 - `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
 - `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
+- `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
 - `SessionListing` (interface): interface SessionListing — ⚠ undocumented
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented

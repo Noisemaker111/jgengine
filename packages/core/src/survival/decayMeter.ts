@@ -36,7 +36,7 @@ export interface DecayMeterState {
   fraction: number;
 }
 
-/** Named hunger/thirst/etc. meters that drain over time and surface threshold moodles. */
+/** Set of named survival meters (hunger/thirst/…) that drain and refill over game time. */
 export interface DecayMeterSet {
   /** Drain/fill every meter by `rate * rateModifier * dt`. Call once per game tick. */
   tick(dt: number): void;
