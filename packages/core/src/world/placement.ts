@@ -30,6 +30,10 @@ export type PlacementResult =
   | { status: "rejected"; reason: "out-of-bounds" }
   | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number };
 
+/**
+ * Footprint validity: bounds + obstacle overlap after optional grid snap.
+ * @capability placement-math grid/surface footprint validity for build mode
+ */
 export function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult {
   const center = rules.snap === undefined ? request.center : snapToGrid(request.center, rules.snap);
   const aabb = footprintAabb(center, request.footprint, request.quarterTurns ?? 0);

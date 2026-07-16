@@ -4,17 +4,9 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
-
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
-
 ## headless-runner — play a real game loop with no renderer — tick, feed input, read the world snapshot
 
 - `HeadlessRunner` (interface) · `import { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner"`
-
-## limb-health — per-body-part/region health tracked separately
-
-- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
 
 ## loot-table — validate a loot table definition for use with the registry
 

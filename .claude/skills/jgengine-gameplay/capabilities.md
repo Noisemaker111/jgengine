@@ -18,7 +18,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
+- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/survival/decayMeter"`
 
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
