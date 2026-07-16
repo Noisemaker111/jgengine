@@ -63,7 +63,7 @@ export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch)
 /**
  * Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the
  * archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g.
- * `https://my-mirror.example.com/quaternius/quaternius-stylized-nature.zip`.
+ * `https://my-mirror.example.com/kenney/kenney-nature.zip`.
  */
 export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string {
   const base = baseUrl.replace(/\/+$/, "");
@@ -185,8 +185,98 @@ function dedupeByBasename(archive: Uint8Array, pattern: RegExp): { file: string;
   );
 }
 
+/**
+ * Pack a `.gltf` + optional external `.bin` into a single `.glb` so reindex /
+ * the shell only ever deal in one-file models. Strips buffer `uri` fields so
+ * the binary chunk is self-contained. External image URIs stay as-is (loaders
+ * resolve relative to the catalog URL only for GLB-embedded images).
+ */
+export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uint8Array {
+  const json = JSON.parse(new TextDecoder().decode(gltfBytes)) as {
+    buffers?: { uri?: string; byteLength?: number }[];
+  };
+  if (Array.isArray(json.buffers)) {
+    for (const buffer of json.buffers) {
+      delete buffer.uri;
+      if (binBytes !== undefined) buffer.byteLength = binBytes.byteLength;
+    }
+  }
+  const jsonText = JSON.stringify(json);
+  const jsonPad = (4 - (jsonText.length % 4)) % 4;
+  const jsonChunk = new Uint8Array(jsonText.length + jsonPad);
+  new TextEncoder().encodeInto(jsonText, jsonChunk);
+  for (let i = jsonText.length; i < jsonChunk.length; i++) jsonChunk[i] = 0x20;
+
+  const binPad = binBytes === undefined ? 0 : (4 - (binBytes.byteLength % 4)) % 4;
+  const binChunkLen = binBytes === undefined ? 0 : binBytes.byteLength + binPad;
+  const total =
+    12 +
+    8 +
+    jsonChunk.byteLength +
+    (binBytes === undefined ? 0 : 8 + binChunkLen);
+
+  const out = new Uint8Array(total);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, 0x46546c67, true); // glTF
+  view.setUint32(4, 2, true);
+  view.setUint32(8, total, true);
+  let o = 12;
+  view.setUint32(o, jsonChunk.byteLength, true);
+  view.setUint32(o + 4, 0x4e4f534a, true); // JSON
+  out.set(jsonChunk, o + 8);
+  o += 8 + jsonChunk.byteLength;
+  if (binBytes !== undefined) {
+    view.setUint32(o, binChunkLen, true);
+    view.setUint32(o + 4, 0x004e4942, true); // BIN
+    out.set(binBytes, o + 8);
+  }
+  return out;
+}
+
+/**
+ * Pull every GLB out of an archive. Also converts co-located `.gltf` + `.bin`
+ * pairs (Quaternius Standard packs on OpenGameArt) into `.glb` so the catalog
+ * stays one-file-per-model. GLB wins when both formats share a basename.
+ */
 export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
-  return dedupeByBasename(archive, /\.glb$/i);
+  const entries = unzipSync(archive, {
+    filter: (file) => /\.(glb|gltf|bin)$/i.test(file.name),
+  });
+  const byDirBase = new Map<string, { glb?: Uint8Array; gltf?: Uint8Array; bin?: Uint8Array }>();
+  for (const [path, bytes] of Object.entries(entries)) {
+    const parts = path.replace(/\\/g, "/").split("/");
+    const file = parts.pop();
+    if (file === undefined || file.length === 0) continue;
+    const dir = parts.join("/");
+    // KayKit ships some files as `name.gltf.glb` — strip both suffixes for a clean id.
+    const base = file.replace(/\.gltf\.glb$/i, "").replace(/\.(glb|gltf|bin)$/i, "");
+    if (base.length === 0 || base === file) continue;
+    const extMatch = file.match(/\.(glb|gltf|bin)$/i);
+    if (extMatch === null) continue;
+    const ext = extMatch[1]!.toLowerCase();
+    const key = `${dir}\0${base}`;
+    const slot = byDirBase.get(key) ?? {};
+    if (ext === "glb") slot.glb = bytes;
+    else if (ext === "gltf") slot.gltf = bytes;
+    else if (ext === "bin") slot.bin = bytes;
+    byDirBase.set(key, slot);
+  }
+
+  const byName = new Map<string, Uint8Array>();
+  for (const [key, slot] of byDirBase) {
+    const base = key.split("\0")[1]!;
+    const file = `${base}.glb`;
+    if (slot.glb !== undefined) {
+      if (!byName.has(file)) byName.set(file, slot.glb);
+      continue;
+    }
+    if (slot.gltf !== undefined) {
+      if (!byName.has(file)) byName.set(file, packGltfToGlb(slot.gltf, slot.bin));
+    }
+  }
+  return Array.from(byName, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
+    a.file.localeCompare(b.file),
+  );
 }
 
 /** One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`. */

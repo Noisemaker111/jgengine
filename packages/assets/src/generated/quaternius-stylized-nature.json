@@ -1,0 +1,1430 @@
+[
+  {
+    "id": "quaternius-stylized-nature/Bush_Common_Flowers",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Bush_Common_Flowers.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9148447513580322,
+        "d": 1.9651408791542053
+      },
+      "center": {
+        "x": 0.033946216106414795,
+        "z": 0.008181244134902954
+      },
+      "minY": -0.234694704413414
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Bush_Common",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Bush_Common.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.9148447513580322,
+        "d": 1.9651408791542053
+      },
+      "center": {
+        "x": 0.033946216106414795,
+        "z": 0.008181244134902954
+      },
+      "minY": -0.234694704413414
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Clover_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Clover_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.796289324760437,
+        "d": 0.7638857662677765
+      },
+      "center": {
+        "x": -0.104153573513031,
+        "z": -0.017619088292121887
+      },
+      "minY": -0.012792191468179226
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Clover_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Clover_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8511282801628113,
+        "d": 0.8366343677043915
+      },
+      "center": {
+        "x": -0.07673409581184387,
+        "z": -0.053993359208106995
+      },
+      "minY": -0.0023507503792643547
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/CommonTree_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "CommonTree_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.311422824859619,
+        "d": 4.577713966369629
+      },
+      "center": {
+        "x": -0.038747310638427734,
+        "z": 0.06433796882629395
+      },
+      "minY": -0.24277201294898987
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/CommonTree_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "CommonTree_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.464301586151123,
+        "d": 4.27585244178772
+      },
+      "center": {
+        "x": 0.009137153625488281,
+        "z": 0.28645646572113037
+      },
+      "minY": -0.24277201294898987
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/CommonTree_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "CommonTree_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.0628461837768555,
+        "d": 4.241076946258545
+      },
+      "center": {
+        "x": 0.044957876205444336,
+        "z": 0.05957293510437012
+      },
+      "minY": -0.24277201294898987
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/CommonTree_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "CommonTree_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.8255257606506348,
+        "d": 3.755373477935791
+      },
+      "center": {
+        "x": 0.11566758155822754,
+        "z": -0.20192360877990723
+      },
+      "minY": -0.24277201294898987
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/CommonTree_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "CommonTree_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.671165347099304,
+        "d": 4.219650030136108
+      },
+      "center": {
+        "x": -0.07677191495895386,
+        "z": -0.05262291431427002
+      },
+      "minY": -0.24277201294898987
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/DeadTree_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "DeadTree_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 6.148936033248901,
+        "d": 5.74866795539856
+      },
+      "center": {
+        "x": 0.48214423656463623,
+        "z": -0.02916586399078369
+      },
+      "minY": -0.3355545997619629
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/DeadTree_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "DeadTree_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 6.7296178340911865,
+        "d": 6.378535985946655
+      },
+      "center": {
+        "x": 1.0324651002883911,
+        "z": 0.6663919687271118
+      },
+      "minY": -0.3355545997619629
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/DeadTree_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "DeadTree_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 6.387573719024658,
+        "d": 6.430059194564819
+      },
+      "center": {
+        "x": -0.653782844543457,
+        "z": -0.1716710329055786
+      },
+      "minY": -0.3355545997619629
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/DeadTree_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "DeadTree_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 7.960942029953003,
+        "d": 7.732445240020752
+      },
+      "center": {
+        "x": 0.6177026033401489,
+        "z": 0.2672722339630127
+      },
+      "minY": -0.3355545997619629
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/DeadTree_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "DeadTree_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 8.356394290924072,
+        "d": 8.413267612457275
+      },
+      "center": {
+        "x": 0.20766425132751465,
+        "z": -0.5905969142913818
+      },
+      "minY": -0.3355545997619629
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Fern_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Fern_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 9.046188354492188,
+        "d": 8.48742389678955
+      },
+      "center": {
+        "x": 0.103118896484375,
+        "z": 0.15239620208740234
+      },
+      "minY": -0.2474701851606369
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Flower_3_Group",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Flower_3_Group.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.488476574420929,
+        "d": 1.5911270380020142
+      },
+      "center": {
+        "x": 0.13063696026802063,
+        "z": -0.006198227405548096
+      },
+      "minY": -0.03458359092473984
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Flower_3_Single",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Flower_3_Single.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9066098928451538,
+        "d": 0.8775360584259033
+      },
+      "center": {
+        "x": -0.027433693408966064,
+        "z": -0.08195233345031738
+      },
+      "minY": -0.018326954916119576
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Flower_4_Group",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Flower_4_Group.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.7805257439613342,
+        "d": 1.3675287365913391
+      },
+      "center": {
+        "x": -0.041122883558273315,
+        "z": 0.047613948583602905
+      },
+      "minY": -0.05699761211872101
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Flower_4_Single",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Flower_4_Single.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0722883939743042,
+        "d": 0.7728647589683533
+      },
+      "center": {
+        "x": 0.03113776445388794,
+        "z": -0.015370190143585205
+      },
+      "minY": -0.03043048270046711
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Grass_Common_Short",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Grass_Common_Short.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6388704776763916,
+        "d": 0.7372654974460602
+      },
+      "center": {
+        "x": -0.0362071692943573,
+        "z": -0.11074553430080414
+      },
+      "minY": -0.022385215386748314
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Grass_Common_Tall",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Grass_Common_Tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8950892686843872,
+        "d": 0.9931118488311768
+      },
+      "center": {
+        "x": 0.04397696256637573,
+        "z": 0.017522573471069336
+      },
+      "minY": -0.031362250447273254
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Grass_Wispy_Short",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Grass_Wispy_Short.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.32218599319458,
+        "d": 1.2097443342208862
+      },
+      "center": {
+        "x": -0.06695055961608887,
+        "z": 0.022061169147491455
+      },
+      "minY": -0.08575008809566498
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Grass_Wispy_Tall",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Grass_Wispy_Tall.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.5400726795196533,
+        "d": 1.5937159657478333
+      },
+      "center": {
+        "x": 0.030791640281677246,
+        "z": -0.02173265814781189
+      },
+      "minY": -0.03605181723833084
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Mushroom_Common",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Mushroom_Common.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5637008845806122,
+        "d": 0.779112696647644
+      },
+      "center": {
+        "x": -0.051525428891181946,
+        "z": -0.05565434694290161
+      },
+      "minY": -0.017470968887209892
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Mushroom_Laetiporus",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Mushroom_Laetiporus.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3660326600074768,
+        "d": 1.1031825244426727
+      },
+      "center": {
+        "x": 0.033197253942489624,
+        "z": 0.2232901006937027
+      },
+      "minY": -0.16022536158561707
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Round_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Round_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.500038743019104,
+        "d": 0.367022842168808
+      },
+      "center": {
+        "x": 0.03021031618118286,
+        "z": 0.023898735642433167
+      },
+      "minY": -0.0077979713678359985
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Round_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Round_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4494768977165222,
+        "d": 0.4110587388277054
+      },
+      "center": {
+        "x": 0.009534969925880432,
+        "z": -0.01674375683069229
+      },
+      "minY": -0.0029801998753100634
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Round_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Round_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4496912956237793,
+        "d": 0.4848102927207947
+      },
+      "center": {
+        "x": -0.0022526532411575317,
+        "z": 0.020919114351272583
+      },
+      "minY": -0.0017530163750052452
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Round_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Round_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.40628112852573395,
+        "d": 0.4523976892232895
+      },
+      "center": {
+        "x": -0.0074065253138542175,
+        "z": -0.004537932574748993
+      },
+      "minY": -0.00563192879781127
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Round_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Round_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4185932129621506,
+        "d": 0.3462583124637604
+      },
+      "center": {
+        "x": -0.007277064025402069,
+        "z": -0.027869820594787598
+      },
+      "minY": -0.00414585554972291
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Square_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Square_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.43463730812072754,
+        "d": 0.4396430104970932
+      },
+      "center": {
+        "x": -0.016030922532081604,
+        "z": 0.017945952713489532
+      },
+      "minY": -0.0022022530902177095
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Square_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Square_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.39109599590301514,
+        "d": 0.2802542448043823
+      },
+      "center": {
+        "x": -0.005083546042442322,
+        "z": 0.020737797021865845
+      },
+      "minY": -0.005164282396435738
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Square_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Square_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.37333619594573975,
+        "d": 0.31874918937683105
+      },
+      "center": {
+        "x": 0.000016450881958007812,
+        "z": -0.007117018103599548
+      },
+      "minY": -0.00811817031353712
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Square_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Square_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.33994340896606445,
+        "d": 0.29082560539245605
+      },
+      "center": {
+        "x": -0.001248285174369812,
+        "z": -0.012258291244506836
+      },
+      "minY": -0.0027762739919126034
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Square_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Square_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3520317077636719,
+        "d": 0.45043955743312836
+      },
+      "center": {
+        "x": 0.007452547550201416,
+        "z": -0.002312667667865753
+      },
+      "minY": -0.00795699656009674
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pebble_Square_6",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pebble_Square_6.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4620286226272583,
+        "d": 0.26292208582162857
+      },
+      "center": {
+        "x": 0.015992000699043274,
+        "z": 0.01083996519446373
+      },
+      "minY": -0.010146240703761578
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Petal_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Petal_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.46023906767368317,
+        "d": 0.4549616575241089
+      },
+      "center": {
+        "x": -0.02679681032896042,
+        "z": -0.0015149712562561035
+      },
+      "minY": 0.000001184918232866039
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Petal_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Petal_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6732153296470642,
+        "d": 0.6310947239398956
+      },
+      "center": {
+        "x": 0.015936046838760376,
+        "z": -0.013593986630439758
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Petal_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Petal_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.6194837689399719,
+        "d": 0.6063659191131592
+      },
+      "center": {
+        "x": -0.0052526891231536865,
+        "z": 0.02973228693008423
+      },
+      "minY": 2.0768348463207076e-7
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Petal_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Petal_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.3290932923555374,
+        "d": 0.24445198476314545
+      },
+      "center": {
+        "x": 0.0211518332362175,
+        "z": -0.00007016211748123169
+      },
+      "minY": -1.3743051852088684e-7
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Petal_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Petal_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.833962619304657,
+        "d": 0.7952134907245636
+      },
+      "center": {
+        "x": 0.016034692525863647,
+        "z": -0.021945104002952576
+      },
+      "minY": 0.0010437477612867951
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pine_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pine_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 4.944698095321655,
+        "d": 4.538403272628784
+      },
+      "center": {
+        "x": 0.023529887199401855,
+        "z": -0.20773112773895264
+      },
+      "minY": -0.23508860170841217
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pine_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pine_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.7280848026275635,
+        "d": 5.221206903457642
+      },
+      "center": {
+        "x": -0.0279158353805542,
+        "z": -0.08309543132781982
+      },
+      "minY": -0.23508860170841217
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pine_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pine_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.6113946437835693,
+        "d": 3.9958035945892334
+      },
+      "center": {
+        "x": -0.3080395460128784,
+        "z": -0.29443681240081787
+      },
+      "minY": -0.23508860170841217
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pine_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pine_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 5.8020243644714355,
+        "d": 5.370845556259155
+      },
+      "center": {
+        "x": 0.0291750431060791,
+        "z": -0.26048457622528076
+      },
+      "minY": -0.23508861660957336
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Pine_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Pine_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 6.420140743255615,
+        "d": 6.222001314163208
+      },
+      "center": {
+        "x": 0.22236394882202148,
+        "z": -0.6674035787582397
+      },
+      "minY": -0.23508861660957336
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Plant_1_Big",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Plant_1_Big.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.890458822250366,
+        "d": 3.1264467239379883
+      },
+      "center": {
+        "x": 0.05110788345336914,
+        "z": -0.09515869617462158
+      },
+      "minY": -0.05603840574622154
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Plant_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Plant_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2733909487724304,
+        "d": 1.386027455329895
+      },
+      "center": {
+        "x": -0.07402828335762024,
+        "z": -0.07057833671569824
+      },
+      "minY": -0.0350240021944046
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Plant_7_Big",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Plant_7_Big.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.3108200430870056,
+        "d": 1.3621740341186523
+      },
+      "center": {
+        "x": -0.04564675688743591,
+        "z": -0.16944092512130737
+      },
+      "minY": 0.05031152814626694
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Plant_7",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Plant_7.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0478354692459106,
+        "d": 0.9621210098266602
+      },
+      "center": {
+        "x": 0.07576650381088257,
+        "z": 0.017194628715515137
+      },
+      "minY": 0.07910457253456116
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Rock_Medium_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Rock_Medium_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.2251484394073486,
+        "d": 2.9891364574432373
+      },
+      "center": {
+        "x": -0.11471307277679443,
+        "z": 0.3446849584579468
+      },
+      "minY": -0.27113133668899536
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Rock_Medium_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Rock_Medium_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.048760414123535,
+        "d": 2.479071617126465
+      },
+      "center": {
+        "x": -0.18926167488098145,
+        "z": 0.08041048049926758
+      },
+      "minY": -0.05084158852696419
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/Rock_Medium_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "Rock_Medium_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 3.4200847148895264,
+        "d": 3.476110100746155
+      },
+      "center": {
+        "x": -0.11423695087432861,
+        "z": 0.8475930094718933
+      },
+      "minY": -0.31564441323280334
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Round_Small_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Round_Small_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.0565139055252075,
+        "d": 1.4763587713241577
+      },
+      "center": {
+        "x": -0.009798228740692139,
+        "z": 0.03483492136001587
+      },
+      "minY": -0.008882608264684677
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Round_Small_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Round_Small_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1395195126533508,
+        "d": 1.3542838096618652
+      },
+      "center": {
+        "x": 0.009483367204666138,
+        "z": -0.08165574073791504
+      },
+      "minY": -0.0077979713678359985
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Round_Small_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Round_Small_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.1790300011634827,
+        "d": 1.289994716644287
+      },
+      "center": {
+        "x": 0.0022340714931488037,
+        "z": -0.04527401924133301
+      },
+      "minY": -0.007797975093126297
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Round_Thin",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Round_Thin.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.4573510885238647,
+        "d": 2.0892062187194824
+      },
+      "center": {
+        "x": 0.03160262107849121,
+        "z": -0.04149830341339111
+      },
+      "minY": -0.008862055838108063
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Round_Wide",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Round_Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.1106141805648804,
+        "d": 2.129036545753479
+      },
+      "center": {
+        "x": 0.007331550121307373,
+        "z": -0.061413466930389404
+      },
+      "minY": -0.008882611989974976
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Square_Small_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Square_Small_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.018884301185608,
+        "d": 0.9738519787788391
+      },
+      "center": {
+        "x": -0.009482204914093018,
+        "z": 0.01260673999786377
+      },
+      "minY": -0.008622835390269756
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Square_Small_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Square_Small_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.9927218556404114,
+        "d": 0.9660682082176208
+      },
+      "center": {
+        "x": -0.001178354024887085,
+        "z": -0.010913431644439697
+      },
+      "minY": -0.013205458410084248
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Square_Small_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Square_Small_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.8358605802059174,
+        "d": 1.0762888193130493
+      },
+      "center": {
+        "x": 0.021814540028572083,
+        "z": -0.010609924793243408
+      },
+      "minY": -0.00811817031353712
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Square_Thin",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Square_Thin.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.559880554676056,
+        "d": 1.9869367480278015
+      },
+      "center": {
+        "x": 0.011750668287277222,
+        "z": -0.008791476488113403
+      },
+      "minY": -0.010146241635084152
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/RockPath_Square_Wide",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "RockPath_Square_Wide.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.051580786705017,
+        "d": 1.9869367480278015
+      },
+      "center": {
+        "x": 0.0020905137062072754,
+        "z": -0.006462782621383667
+      },
+      "minY": -0.010146240703761578
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/TwistedTree_1",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "TwistedTree_1.glb",
+    "dims": {
+      "footprint": {
+        "w": 13.515754699707031,
+        "d": 11.549364566802979
+      },
+      "center": {
+        "x": 4.583636283874512,
+        "z": -0.9520971775054932
+      },
+      "minY": -0.20147469639778137
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/TwistedTree_2",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "TwistedTree_2.glb",
+    "dims": {
+      "footprint": {
+        "w": 10.562872409820557,
+        "d": 9.202587842941284
+      },
+      "center": {
+        "x": -1.3385341167449951,
+        "z": -0.9394241571426392
+      },
+      "minY": -0.20147468149662018
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/TwistedTree_3",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "TwistedTree_3.glb",
+    "dims": {
+      "footprint": {
+        "w": 11.357495784759521,
+        "d": 11.505619049072266
+      },
+      "center": {
+        "x": 1.1887285709381104,
+        "z": -0.7672805786132812
+      },
+      "minY": -0.20147468149662018
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/TwistedTree_4",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "TwistedTree_4.glb",
+    "dims": {
+      "footprint": {
+        "w": 10.38081169128418,
+        "d": 11.293086051940918
+      },
+      "center": {
+        "x": 0.8630857467651367,
+        "z": -1.4962515830993652
+      },
+      "minY": -0.20147468149662018
+    }
+  },
+  {
+    "id": "quaternius-stylized-nature/TwistedTree_5",
+    "source": "quaternius-stylized-nature",
+    "categories": [
+      "nature",
+      "environment",
+      "prop"
+    ],
+    "file": "TwistedTree_5.glb",
+    "dims": {
+      "footprint": {
+        "w": 9.494712114334106,
+        "d": 9.387028455734253
+      },
+      "center": {
+        "x": 1.0009187459945679,
+        "z": -1.6454826593399048
+      },
+      "minY": -0.20147468149662018
+    }
+  }
+]
