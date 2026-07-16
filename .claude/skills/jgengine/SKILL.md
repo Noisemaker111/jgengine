@@ -25,7 +25,7 @@ State the reading as a short numbered list that is easy to correct, then proceed
 4. **Interaction:** collect ground items by walking over them; interact with people and doors at close range
 5. **Combat:** ranged weapons, damage, death, loot
 6. **Progression:** inventory, currency, quest rewards, upgrades
-7. **Players:** single-player, or name the multiplayer topology and synchronized systems
+7. **Players:** single-player, or name the topology, synchronized systems, and authority — presence-only (`wsPresence()`/`convexPresence()`, each client ticks its own world) or host-authoritative shared sim (`authority: "server"` + a host, see `examples/HOSTED.md`)
 8. **UI:** visible controls, objective tracker, health, inventory feedback
 9. **Art direction:** one aesthetic, palette, asset family, and UI voice
 10. **Done looks like:** one observable end-to-end play scenario
