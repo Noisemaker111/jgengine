@@ -4,7 +4,7 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## ability-button — cooldown/GCD/resource-aware ability button over an AbilityKit slot
+## ability-button — cooldown/GCD/resource-aware ability button over an AbilityKit slot, fully skinnable
 
 - `AbilityButton` (function) · `import { AbilityButton } from "@jgengine/react"`
 
@@ -25,6 +25,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
 
+## duration-compact — humanize a duration as short "2h 15m" / "45m" / "30s" countdown text
+
+- `formatDurationCompact` (function) · `import { formatDurationCompact } from "@jgengine/core/format/duration"`
+
 ## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
 
 - `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
@@ -32,6 +36,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
+
+## hud-tick — shared HUD re-render heartbeat replacing hand-rolled setInterval tickers
+
+- `useHudTick` (function) · `import { useHudTick } from "@jgengine/react"`
 
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
@@ -73,7 +81,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
 
-## stat-bar — tone-colored health/mana/pool meter, entity-bound or raw value/max
+## stat-bar — tone-colored health/mana/pool meter, entity-bound or raw value/max, fully skinnable
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
