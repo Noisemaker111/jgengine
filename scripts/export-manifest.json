@@ -357,6 +357,7 @@
     "./world/terraform",
     "./world/terrain",
     "./world/vec2",
+    "./world/vec3",
     "./world/vegetation",
     "./world/volumetricClouds",
     "./world/voxelField",
