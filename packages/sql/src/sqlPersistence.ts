@@ -6,7 +6,7 @@ import type {
   ServerPersistPlan,
   WorldChunkRecord,
 } from "@jgengine/core/runtime/hostPersistence";
-import { clampLimit, trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
+import { clampLimit, FEED_RING_LIMIT } from "@jgengine/core/runtime/hostPersistence";
 import { applyRunReset } from "@jgengine/core/runtime/persistenceScope";
 
 export type SqlQueryResult = { rows: Record<string, unknown>[] };
@@ -57,13 +57,15 @@ const SCHEMA_STATEMENTS = [
     PRIMARY KEY (game_id, scope, stat, server_id, user_id)
   )`,
   `CREATE INDEX IF NOT EXISTS jg_leaderboard_top ON jg_leaderboard_rows (game_id, scope, stat, value)`,
-  `CREATE TABLE IF NOT EXISTS jg_feed_buffers (
+  `CREATE TABLE IF NOT EXISTS jg_feed_entries (
     server_id text NOT NULL,
     action text NOT NULL,
+    seq bigserial NOT NULL,
+    entry jsonb NOT NULL,
     updated_at bigint NOT NULL,
-    entries jsonb NOT NULL,
-    PRIMARY KEY (server_id, action)
+    PRIMARY KEY (server_id, action, seq)
   )`,
+  `CREATE INDEX IF NOT EXISTS jg_feed_entries_order ON jg_feed_entries (server_id, action, seq)`,
 ];
 
 export async function ensureSchema(pool: SqlQueryable): Promise<void> {
@@ -175,7 +177,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
             await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [reset.serverId]);
           }
           if (reset.wipeServerSession) {
-            await client.query(`DELETE FROM jg_feed_buffers WHERE server_id = $1`, [reset.serverId]);
+            await client.query(`DELETE FROM jg_feed_entries WHERE server_id = $1`, [reset.serverId]);
             await client.query(`DELETE FROM jg_leaderboard_rows WHERE game_id = $1 AND server_id = $2`, [
               reset.gameId,
               reset.serverId,
@@ -193,7 +195,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
               await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [serverId]);
             }
             if (reset.wipeServerSession) {
-              await client.query(`DELETE FROM jg_feed_buffers WHERE server_id = $1`, [serverId]);
+              await client.query(`DELETE FROM jg_feed_entries WHERE server_id = $1`, [serverId]);
             }
           }
           if (reset.wipeServerSession) {
@@ -274,31 +276,35 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
 
     async loadFeed({ serverId, action }) {
       const result = await pool.query(
-        `SELECT entries FROM jg_feed_buffers WHERE server_id = $1 AND action = $2`,
+        `SELECT entry FROM jg_feed_entries WHERE server_id = $1 AND action = $2 ORDER BY seq ASC`,
         [serverId, action],
       );
-      const row = result.rows[0];
-      return row === undefined ? [] : asJson<unknown[]>(row.entries);
+      return result.rows.map((row) => asJson<unknown>(row.entry));
     },
 
     async appendFeed({ serverId, action, entry }) {
       let entries: unknown[] = [];
       await transact(async (client) => {
+        await client.query(
+          `INSERT INTO jg_feed_entries (server_id, action, entry, updated_at) VALUES ($1, $2, $3, $4)`,
+          [serverId, action, JSON.stringify(entry), now()],
+        );
+        await client.query(
+          `DELETE FROM jg_feed_entries
+           WHERE server_id = $1 AND action = $2
+           AND seq < (
+             SELECT seq FROM jg_feed_entries
+             WHERE server_id = $1 AND action = $2
+             ORDER BY seq DESC
+             LIMIT 1 OFFSET $3
+           )`,
+          [serverId, action, FEED_RING_LIMIT - 1],
+        );
         const result = await client.query(
-          `SELECT entries FROM jg_feed_buffers WHERE server_id = $1 AND action = $2`,
+          `SELECT entry FROM jg_feed_entries WHERE server_id = $1 AND action = $2 ORDER BY seq ASC`,
           [serverId, action],
         );
-        const row = result.rows[0];
-        const existing = row === undefined ? [] : asJson<unknown[]>(row.entries);
-        entries = trimFeedEntries([...existing, entry]);
-        await client.query(
-          `INSERT INTO jg_feed_buffers (server_id, action, updated_at, entries)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (server_id, action) DO UPDATE SET
-             updated_at = EXCLUDED.updated_at,
-             entries = EXCLUDED.entries`,
-          [serverId, action, now(), JSON.stringify(entries)],
-        );
+        entries = result.rows.map((row) => asJson<unknown>(row.entry));
       });
       return entries;
     },

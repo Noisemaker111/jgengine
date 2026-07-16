@@ -81,6 +81,19 @@ test("feed buffers append and trim to the ring limit", async () => {
   expect(entries[19]).toEqual({ index: 24 });
 });
 
+test("concurrent feed appends both survive", async () => {
+  const persistence = await makePersistence();
+  await Promise.all([
+    persistence.appendFeed({ serverId: "srv-1", action: "kill", entry: { who: "alice" } }),
+    persistence.appendFeed({ serverId: "srv-1", action: "kill", entry: { who: "bob" } }),
+  ]);
+  const entries = await persistence.loadFeed({ serverId: "srv-1", action: "kill" });
+  expect(entries).toHaveLength(2);
+  expect(entries).toEqual(
+    expect.arrayContaining([{ who: "alice" }, { who: "bob" }]),
+  );
+});
+
 test("leaderboard increments accumulate, order, and filter by server", async () => {
   const persistence = await makePersistence();
   await persistence.applyLeaderboardIncrements("demo", [

@@ -180,8 +180,9 @@ describe("editor host RPC", () => {
     expect(parented.ok).toBe(true);
     expect((api.handle({ method: "hierarchy" }).result as { roots: string[] }).roots).toEqual(["parent"]);
 
-    // Cycle refused: parent stays a root.
-    api.handle({ method: "set_parent", ids: ["parent"], parentId: "child" });
+    // Cycle refused: parent stays a root, and the RPC reports the rejection honestly.
+    const cyclic = api.handle({ method: "set_parent", ids: ["parent"], parentId: "child" });
+    expect(cyclic.ok).toBe(false);
     expect((api.handle({ method: "hierarchy" }).result as { roots: string[] }).roots).toEqual(["parent"]);
 
     api.handle({ method: "set_transform", id: "parent", x: 5, z: 5 });
@@ -245,7 +246,7 @@ describe("editor host RPC", () => {
 
     api.handle({ method: "set_collection_flags", id: "pack", locked: true });
     const moved = api.handle({ method: "set_transform", id: "a", x: 50 });
-    expect(moved.ok).toBe(true);
+    expect(moved.ok).toBe(false);
     expect(api.getSession().getState().document.markers.find((m) => m.id === "a")?.position.x).toBe(0);
 
     api.handle({ method: "set_collection_flags", id: "pack", locked: false });

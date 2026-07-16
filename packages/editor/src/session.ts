@@ -254,6 +254,15 @@ export function createEditorHost(options: {
   const focusListeners = new Set<(target: { x: number; y: number; z: number } | null) => void>();
   const modeListeners = new Set<(mode: EditorRunMode) => void>();
 
+  /** Dispatches a command and reports whether it actually mutated the session — a rejected
+   * mutation (locked target, cyclic parent, nothing to undo/redo, …) returns the session's prior
+   * state object unchanged, so identity tells the RPC layer apart from a real edit landing. */
+  const dispatchGuarded = (command: EditorCommand): { applied: boolean; state: EditorSessionState } => {
+    const before = session.getState();
+    const state = session.dispatch(command);
+    return { applied: state !== before, state };
+  };
+
   const kinds = listEditorKinds(document);
   // Heavy / dense kinds off by default — turn on from the Layers panel when needed.
   const defaultOff = new Set([
@@ -380,7 +389,7 @@ export function createEditorHost(options: {
             const volume = session.getState().document.volumes.find((v) => v.id === request.id);
             const base = marker?.position ?? volume?.center;
             if (base === undefined) return { ok: false, error: `id not found: ${request.id}` };
-            session.dispatch({
+            const { applied, state } = dispatchGuarded({
               type: "setTransform",
               id: request.id,
               position: {
@@ -390,7 +399,8 @@ export function createEditorHost(options: {
               },
               ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
             });
-            return { ok: true, result: summarizeEditorSession(session.getState()) };
+            if (!applied) return { ok: false, error: `set_transform rejected: ${request.id} is locked` };
+            return { ok: true, result: summarizeEditorSession(state) };
           }
           case "set_volume": {
             const volume = session.getState().document.volumes.find((v) => v.id === request.id);
@@ -538,15 +548,21 @@ export function createEditorHost(options: {
           case "import_document":
             session.dispatch({ type: "importJson", json: request.json });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
-          case "dispatch":
-            session.dispatch(request.command);
-            return { ok: true, result: summarizeEditorSession(session.getState()) };
-          case "undo":
-            session.dispatch({ type: "undo" });
-            return { ok: true, result: summarizeEditorSession(session.getState()) };
-          case "redo":
-            session.dispatch({ type: "redo" });
-            return { ok: true, result: summarizeEditorSession(session.getState()) };
+          case "dispatch": {
+            const { applied, state } = dispatchGuarded(request.command);
+            if (!applied) return { ok: false, error: `${request.command.type} rejected: no effect` };
+            return { ok: true, result: summarizeEditorSession(state) };
+          }
+          case "undo": {
+            const { applied, state } = dispatchGuarded({ type: "undo" });
+            if (!applied) return { ok: false, error: "nothing to undo" };
+            return { ok: true, result: summarizeEditorSession(state) };
+          }
+          case "redo": {
+            const { applied, state } = dispatchGuarded({ type: "redo" });
+            if (!applied) return { ok: false, error: "nothing to redo" };
+            return { ok: true, result: summarizeEditorSession(state) };
+          }
           case "list_assets":
             return { ok: true, result: { assets } };
           case "place_asset": {
@@ -760,8 +776,13 @@ export function createEditorHost(options: {
             return { ok: true, result: { regions, instances } };
           }
           case "set_parent": {
-            session.dispatch({ type: "setParent", ids: request.ids, parentId: request.parentId });
-            const doc = session.getState().document;
+            const { applied, state } = dispatchGuarded({
+              type: "setParent",
+              ids: request.ids,
+              parentId: request.parentId,
+            });
+            if (!applied) return { ok: false, error: "set_parent rejected: cyclic parent or empty selection" };
+            const doc = state.document;
             return {
               ok: true,
               result: { roots: editorRoots(doc), parents: request.ids.map((id) => ({ id, parentId: editorParentOf(doc, id) ?? null })) },

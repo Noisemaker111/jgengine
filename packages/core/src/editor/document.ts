@@ -8,7 +8,10 @@ import type {
   EditorNote,
   EditorPath,
   EditorPrefab,
+  EditorTerrain,
+  EditorVec3,
   EditorVolume,
+  EditorVolumeShape,
 } from "./types";
 
 /** Builds a fresh, empty editor document to start authoring a scene from scratch.
@@ -92,16 +95,46 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
   };
 }
 
-/** Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections into one.
+/**
+ * Reserves `id` in `taken` and returns it unchanged when free; otherwise mints the next free
+ * `<id>_copy`/`<id>_copyN` suffix and reserves that instead. The one place object ids are made
+ * unique across a document's markers/volumes/paths/annotations as a single global namespace, so a
+ * merged-in or imported object can never silently shadow an existing object in another collection.
+ * @internal
+ */
+export function ensureUniqueEditorId(id: string, taken: Set<string>): string {
+  if (!taken.has(id)) {
+    taken.add(id);
+    return id;
+  }
+  let candidate = `${id}_copy`;
+  let n = 2;
+  while (taken.has(candidate)) {
+    candidate = `${id}_copy${n}`;
+    n += 1;
+  }
+  taken.add(candidate);
+  return candidate;
+}
+
+/** Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections
+ * into one, re-idding any placeable object whose id collides with one already merged in — across
+ * all four collections, since selection/parenting/removal treat those ids as one document-global
+ * namespace.
  * @internal
  */
 export function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument {
   const out = createEmptyEditorDocument();
+  const taken = new Set<string>();
+  const remap = <T extends { id: string }>(item: T): T => {
+    const id = ensureUniqueEditorId(item.id, taken);
+    return id === item.id ? item : { ...item, id };
+  };
   for (const doc of docs) {
-    out.markers.push(...doc.markers);
-    out.volumes.push(...doc.volumes);
-    out.paths.push(...doc.paths);
-    out.annotations.push(...doc.annotations);
+    out.markers.push(...doc.markers.map(remap));
+    out.volumes.push(...doc.volumes.map(remap));
+    out.paths.push(...doc.paths.map(remap));
+    out.annotations.push(...doc.annotations.map(remap));
     out.prefabs.push(...doc.prefabs);
     out.collections.push(...doc.collections);
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
@@ -306,15 +339,259 @@ export function exportEditorDocumentJson(doc: EditorDocument, pretty = true): st
   return JSON.stringify(doc, null, pretty ? 2 : undefined);
 }
 
-/** Parses JSON text back into a normalized editor document.
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** One field-level failure surfaced while decoding an untrusted editor document, `path` pointing
+ * at the exact field that failed (e.g. `$.markers[2].position`).
+ * @internal
+ */
+export interface EditorDocumentDiagnostic {
+  path: string;
+  message: string;
+}
+
+/** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while
+ * decoding it.
+ * @internal
+ */
+export type DecodeEditorDocumentResult =
+  | { ok: true; document: EditorDocument }
+  | { ok: false; errors: EditorDocumentDiagnostic[] };
+
+type ItemDecoder<T> = (item: unknown, path: string, errors: EditorDocumentDiagnostic[]) => T | null;
+
+function decodeArray<T>(
+  value: unknown,
+  path: string,
+  decodeItem: ItemDecoder<T>,
+  errors: EditorDocumentDiagnostic[],
+): T[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    errors.push({ path, message: "expected an array" });
+    return [];
+  }
+  const out: T[] = [];
+  value.forEach((item, index) => {
+    const decoded = decodeItem(item, `${path}[${index}]`, errors);
+    if (decoded !== null) out.push(decoded);
+  });
+  return out;
+}
+
+function decodeVec3(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorVec3 | null {
+  if (!isPlainObject(value) || typeof value.x !== "number" || typeof value.y !== "number" || typeof value.z !== "number") {
+    errors.push({ path, message: "expected {x,y,z} numbers" });
+    return null;
+  }
+  return { x: value.x, y: value.y, z: value.z };
+}
+
+function decodeMeta(
+  value: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined;
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  return value;
+}
+
+function decodeMarker(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorMarker | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const position = decodeVec3(item.position, `${path}.position`, errors);
+  if (typeof item.id !== "string" || typeof item.kind !== "string" || position === null) return null;
+  const marker: EditorMarker = { id: item.id, kind: item.kind, position };
+  if (typeof item.rotationY === "number") marker.rotationY = item.rotationY;
+  if (typeof item.color === "string") marker.color = item.color;
+  if (typeof item.label === "string") marker.label = item.label;
+  if (typeof item.parentId === "string") marker.parentId = item.parentId;
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) marker.meta = meta;
+  return marker;
+}
+
+const VOLUME_SHAPES: ReadonlySet<string> = new Set(["sphere", "cylinder", "box"]);
+
+function decodeVolume(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorVolume | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const validShape = typeof item.shape === "string" && VOLUME_SHAPES.has(item.shape);
+  if (!validShape) errors.push({ path: `${path}.shape`, message: "expected sphere | cylinder | box" });
+  const center = decodeVec3(item.center, `${path}.center`, errors);
+  if (typeof item.id !== "string" || typeof item.kind !== "string" || !validShape || center === null) return null;
+  const volume: EditorVolume = { id: item.id, kind: item.kind, shape: item.shape as EditorVolumeShape, center };
+  if (typeof item.radius === "number") volume.radius = item.radius;
+  if (typeof item.height === "number") volume.height = item.height;
+  if (item.halfExtents !== undefined) {
+    const halfExtents = decodeVec3(item.halfExtents, `${path}.halfExtents`, errors);
+    if (halfExtents !== null) volume.halfExtents = halfExtents;
+  }
+  if (typeof item.color === "string") volume.color = item.color;
+  if (typeof item.label === "string") volume.label = item.label;
+  if (typeof item.parentId === "string") volume.parentId = item.parentId;
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) volume.meta = meta;
+  return volume;
+}
+
+function decodePath(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorPath | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const validPoints = Array.isArray(item.points);
+  if (!validPoints) errors.push({ path: `${path}.points`, message: "expected an array" });
+  const points = validPoints
+    ? decodeArray(item.points, `${path}.points`, decodeVec3, errors)
+    : [];
+  if (typeof item.id !== "string" || typeof item.kind !== "string" || !validPoints) return null;
+  const decodedPath: EditorPath = { id: item.id, kind: item.kind, points };
+  if (typeof item.width === "number") decodedPath.width = item.width;
+  if (typeof item.color === "string") decodedPath.color = item.color;
+  if (typeof item.label === "string") decodedPath.label = item.label;
+  if (typeof item.parentId === "string") decodedPath.parentId = item.parentId;
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) decodedPath.meta = meta;
+  return decodedPath;
+}
+
+function decodeNote(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorNote | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.text !== "string") errors.push({ path: `${path}.text`, message: "expected a string" });
+  const position = decodeVec3(item.position, `${path}.position`, errors);
+  if (typeof item.id !== "string" || typeof item.text !== "string" || position === null) return null;
+  const note: EditorNote = { id: item.id, text: item.text, position };
+  if (typeof item.color === "string") note.color = item.color;
+  if (typeof item.parentId === "string") note.parentId = item.parentId;
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) note.meta = meta;
+  return note;
+}
+
+function decodeFragmentContent(
+  value: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): EditorFragmentContent | null {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  return {
+    markers: decodeArray(value.markers, `${path}.markers`, decodeMarker, errors),
+    volumes: decodeArray(value.volumes, `${path}.volumes`, decodeVolume, errors),
+    paths: decodeArray(value.paths, `${path}.paths`, decodePath, errors),
+    annotations: decodeArray(value.annotations, `${path}.annotations`, decodeNote, errors),
+  };
+}
+
+function decodePrefab(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorPrefab | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.name !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
+  const fragment = decodeFragmentContent(item.fragment, `${path}.fragment`, errors);
+  if (typeof item.id !== "string" || typeof item.name !== "string" || fragment === null) return null;
+  return { id: item.id, name: item.name, fragment };
+}
+
+function decodeCollection(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorCollection | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.name !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
+  const memberIds: string[] = [];
+  if (!Array.isArray(item.memberIds)) {
+    errors.push({ path: `${path}.memberIds`, message: "expected an array of strings" });
+  } else {
+    item.memberIds.forEach((member: unknown, index: number) => {
+      if (typeof member === "string") memberIds.push(member);
+      else errors.push({ path: `${path}.memberIds[${index}]`, message: "expected a string" });
+    });
+  }
+  if (typeof item.id !== "string" || typeof item.name !== "string" || !Array.isArray(item.memberIds)) return null;
+  const collection: EditorCollection = { id: item.id, name: item.name, memberIds };
+  if (typeof item.color === "string") collection.color = item.color;
+  if (typeof item.locked === "boolean") collection.locked = item.locked;
+  if (typeof item.visible === "boolean") collection.visible = item.visible;
+  return collection;
+}
+
+/**
+ * The authoritative decoder/migrator for an editor document arriving from outside this process
+ * (disk, network, an agent's `import_document` RPC): validates every field with a path-specific
+ * diagnostic on failure instead of trusting the shape, then migrates forward — routes any embedded
+ * terrain through {@link migrateTerrainSnapshot} and normalizes `version` to the one this build
+ * understands. Every other loader in this module funnels through here.
+ * @internal
+ */
+export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
+  if (!isPlainObject(raw)) {
+    return { ok: false, errors: [{ path: "$", message: "editor document must be an object" }] };
+  }
+  const errors: EditorDocumentDiagnostic[] = [];
+  const markers = decodeArray(raw.markers, "$.markers", decodeMarker, errors);
+  const volumes = decodeArray(raw.volumes, "$.volumes", decodeVolume, errors);
+  const paths = decodeArray(raw.paths, "$.paths", decodePath, errors);
+  const annotations = decodeArray(raw.annotations, "$.annotations", decodeNote, errors);
+  const prefabs = decodeArray(raw.prefabs, "$.prefabs", decodePrefab, errors);
+  const collections = decodeArray(raw.collections, "$.collections", decodeCollection, errors);
+  if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
+    errors.push({ path: "$.terrain", message: "expected an object" });
+  }
+  if (errors.length > 0) return { ok: false, errors };
+  const terrain = raw.terrain === undefined ? undefined : migrateTerrainSnapshot(raw.terrain as EditorTerrain);
+  return {
+    ok: true,
+    document: {
+      version: 1,
+      markers,
+      volumes,
+      paths,
+      annotations,
+      prefabs,
+      collections,
+      ...(terrain === undefined ? {} : { terrain }),
+    },
+  };
+}
+
+/** Parses JSON text back into a normalized editor document, throwing a message that names every
+ * field that failed to decode when the shape is malformed.
  * @internal
  */
 export function importEditorDocumentJson(raw: string): EditorDocument {
-  const parsed = JSON.parse(raw) as Partial<EditorDocument>;
-  if (parsed === null || typeof parsed !== "object") {
-    throw new Error("editor document must be an object");
+  const parsed: unknown = JSON.parse(raw);
+  const decoded = decodeEditorDocument(parsed);
+  if (!decoded.ok) {
+    throw new Error(`invalid editor document: ${decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
   }
-  return normalizeEditorLayers(parsed);
+  return decoded.document;
 }
 
 function upsertById<T extends { id: string }>(base: readonly T[], overlay: readonly T[]): T[] {

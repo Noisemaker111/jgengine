@@ -1,8 +1,42 @@
-import { unzipSync } from "fflate";
+import { unzipSync, type UnzipFileFilter, type UnzipFileInfo } from "fflate";
 
 import { isScrapeDownload, type AssetSource } from "./manifest";
 
 export type FetchLike = typeof fetch;
+
+/** Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response. */
+export const MAX_ARCHIVE_DOWNLOAD_BYTES = 256 * 1024 * 1024;
+/** Max total uncompressed size this module will inflate out of one archive, in bytes. */
+export const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 512 * 1024 * 1024;
+/** Max number of entries this module will extract out of one archive. */
+export const MAX_ARCHIVE_ENTRY_COUNT = 20_000;
+/** Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb. */
+export const MAX_ARCHIVE_COMPRESSION_RATIO = 100;
+
+/** @internal */
+export function boundedExtractFilter(matches: UnzipFileFilter): UnzipFileFilter {
+  let totalUncompressedBytes = 0;
+  let entryCount = 0;
+  return (file: UnzipFileInfo) => {
+    if (!matches(file)) return false;
+    if (file.size > 0 && file.originalSize / file.size > MAX_ARCHIVE_COMPRESSION_RATIO) {
+      throw new Error(
+        `archive entry "${file.name}" has a ${(file.originalSize / file.size).toFixed(0)}x compression ratio, exceeds the ${MAX_ARCHIVE_COMPRESSION_RATIO}x zip-bomb guard`,
+      );
+    }
+    totalUncompressedBytes += file.originalSize;
+    if (totalUncompressedBytes > MAX_ARCHIVE_UNCOMPRESSED_BYTES) {
+      throw new Error(
+        `archive would extract more than the ${MAX_ARCHIVE_UNCOMPRESSED_BYTES} byte uncompressed-size cap`,
+      );
+    }
+    entryCount += 1;
+    if (entryCount > MAX_ARCHIVE_ENTRY_COUNT) {
+      throw new Error(`archive has more than the ${MAX_ARCHIVE_ENTRY_COUNT} entry cap`);
+    }
+    return true;
+  };
+}
 
 export interface ExtractedGlb {
   file: string;
@@ -60,7 +94,18 @@ export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLik
 export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> {
   const response = await fetchImpl(url, { redirect: "follow" });
   if (!response.ok) throw new Error(`download ${url} -> HTTP ${response.status}`);
-  return new Uint8Array(await response.arrayBuffer());
+  const declaredLength = response.headers.get("content-length");
+  if (declaredLength !== null) {
+    const declared = Number(declaredLength);
+    if (Number.isFinite(declared) && declared > MAX_ARCHIVE_DOWNLOAD_BYTES) {
+      throw new Error(`download ${url} declares ${declared} bytes, exceeds the ${MAX_ARCHIVE_DOWNLOAD_BYTES} byte cap`);
+    }
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.byteLength > MAX_ARCHIVE_DOWNLOAD_BYTES) {
+    throw new Error(`download ${url} is ${bytes.byteLength} bytes, exceeds the ${MAX_ARCHIVE_DOWNLOAD_BYTES} byte cap`);
+  }
+  return bytes;
 }
 
 /**
@@ -180,7 +225,7 @@ export async function downloadPackArchive(
 }
 
 function dedupeByBasename(archive: Uint8Array, pattern: RegExp): { file: string; bytes: Uint8Array }[] {
-  const entries = unzipSync(archive, { filter: (file) => pattern.test(file.name) });
+  const entries = unzipSync(archive, { filter: boundedExtractFilter((file) => pattern.test(file.name)) });
   const byName = new Map<string, Uint8Array>();
   for (const [path, bytes] of Object.entries(entries)) {
     const base = path.split("/").pop();
@@ -249,7 +294,7 @@ export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uin
   */
 export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
   const entries = unzipSync(archive, {
-    filter: (file) => /\.(glb|gltf|bin)$/i.test(file.name),
+    filter: boundedExtractFilter((file) => /\.(glb|gltf|bin)$/i.test(file.name)),
   });
   const byDirBase = new Map<string, { glb?: Uint8Array; gltf?: Uint8Array; bin?: Uint8Array }>();
   for (const [path, bytes] of Object.entries(entries)) {
@@ -306,7 +351,7 @@ const TEXTURE_ENTRY = /(?:^|\/)(Textures\/[^/]+)$/i;
 /** @internal */
 export function extractTextures(archive: Uint8Array): ExtractedTexture[] {
   const entries = unzipSync(archive, {
-    filter: (file) => TEXTURE_ENTRY.test(file.name),
+    filter: boundedExtractFilter((file) => TEXTURE_ENTRY.test(file.name)),
   });
   const byRel = new Map<string, Uint8Array>();
   for (const [path, bytes] of Object.entries(entries)) {

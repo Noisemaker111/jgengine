@@ -5,6 +5,11 @@ import {
   decodeWsServerMessage,
   encodeWsMessage,
   inspectWsDecodeFailure,
+  MAX_APPEARANCE_ENTRIES,
+  MAX_APPEARANCE_VALUE_LENGTH,
+  MAX_COMMAND_LENGTH,
+  MAX_FEED_ACTION_LENGTH,
+  MAX_FEED_ENTRY_BYTES,
   subscriptionKey,
   type WsClientMessage,
   type WsServerMessage,
@@ -115,6 +120,62 @@ test("decoder rejects garbage, wrong versions, and malformed fields", () => {
   expect(decodeWsClientMessage(JSON.stringify({ v: 1, t: "voiceJoin", id: 1, serverId: "s", channelId: "c", streamId: 5 }))).toBeNull();
   expect(decodeWsServerMessage(JSON.stringify({ v: 1, t: "reply", id: 1, ok: false }))).toBeNull();
   expect(decodeWsServerMessage(JSON.stringify({ v: 1, t: "update", channel: "nope", serverId: "s" }))).toBeNull();
+});
+
+test("decoder caps command, feed, and appearance payload sizes", () => {
+  const overLongCommand = "x".repeat(MAX_COMMAND_LENGTH + 1);
+  expect(
+    decodeWsClientMessage(
+      JSON.stringify({ v: 1, t: "runCommand", id: 1, serverId: "s", command: overLongCommand, input: null }),
+    ),
+  ).toBeNull();
+  expect(inspectWsDecodeFailure(JSON.stringify({ v: 1, t: "runCommand", id: 1, serverId: "s", command: overLongCommand, input: null }))).toEqual({
+    reason: "Command exceeds max length",
+    id: 1,
+  });
+  expect(
+    decodeWsClientMessage(
+      JSON.stringify({ v: 1, t: "runCommand", id: 1, serverId: "s", command: "x".repeat(MAX_COMMAND_LENGTH), input: null }),
+    ),
+  ).not.toBeNull();
+
+  const overLongAction = "x".repeat(MAX_FEED_ACTION_LENGTH + 1);
+  expect(
+    decodeWsClientMessage(
+      JSON.stringify({ v: 1, t: "pushFeed", id: 2, serverId: "s", action: overLongAction, entry: {} }),
+    ),
+  ).toBeNull();
+  expect(inspectWsDecodeFailure(JSON.stringify({ v: 1, t: "pushFeed", id: 2, serverId: "s", action: overLongAction, entry: {} }))).toEqual({
+    reason: "Feed action exceeds max length",
+    id: 2,
+  });
+
+  const oversizedEntry = { blob: "x".repeat(MAX_FEED_ENTRY_BYTES) };
+  expect(
+    decodeWsClientMessage(JSON.stringify({ v: 1, t: "pushFeed", id: 3, serverId: "s", action: "kill", entry: oversizedEntry })),
+  ).toBeNull();
+  expect(
+    inspectWsDecodeFailure(JSON.stringify({ v: 1, t: "pushFeed", id: 3, serverId: "s", action: "kill", entry: oversizedEntry })),
+  ).toEqual({ reason: "Feed entry exceeds max size", id: 3 });
+
+  const base = { x: 1, y: 0, z: 2, rotationY: 0, rotationPitch: 0 };
+  const tooManyTags = Object.fromEntries(
+    Array.from({ length: MAX_APPEARANCE_ENTRIES + 1 }, (_, i) => [`k${i}`, "v"]),
+  );
+  expect(
+    decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: tooManyTags } })),
+  ).toBeNull();
+  expect(
+    inspectWsDecodeFailure(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: tooManyTags } })),
+  ).toEqual({ reason: "Appearance exceeds max entries" });
+
+  const tooLongTagValue = { skin: "x".repeat(MAX_APPEARANCE_VALUE_LENGTH + 1) };
+  expect(
+    decodeWsClientMessage(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: tooLongTagValue } })),
+  ).toBeNull();
+  expect(
+    inspectWsDecodeFailure(JSON.stringify({ v: 1, t: "pose", serverId: "s", pose: { ...base, appearance: tooLongTagValue } })),
+  ).toEqual({ reason: "Appearance value exceeds max length" });
 });
 
 test("subscriptionKey namespaces channel, server, and action", () => {
