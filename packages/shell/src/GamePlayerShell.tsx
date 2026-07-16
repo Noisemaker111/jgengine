@@ -17,18 +17,6 @@ import {
   type ReactNode,
 } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-
-/**
- * Dedicated LoadingManager for every GLB load instead of THREE.DefaultLoadingManager.
- * The shared default manager is process-wide; under repeated dev-server navigations its
- * AbortController can already be aborted, which silently stalls GLTFLoader.fetch forever
- * with no thrown error. A private manager sidesteps that (ported from the duet-keys ship).
- */
-const modelLoadingManager = new THREE.LoadingManager();
-const sharedGltfLoader = new GLTFLoader(modelLoadingManager);
-sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 import {
   createActionStateTracker,
@@ -43,16 +31,15 @@ import {
 } from "./boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "./hotbarActions";
 import { colorFromId, resolveWorldSky } from "./worldSky";
+import { pointerAimFor, pointerContextMenu } from "./shellPointer";
+import { shellDrivesPlayerPose } from "./shellMovement";
 import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
 import {
-  buildContextMenu,
   contextVerbInput,
   type ContextMenu,
   type ContextVerb,
 } from "@jgengine/core/interaction/contextMenu";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { aimToPoint } from "@jgengine/core/input/pointer";
-import { eyeHeightFromColliders } from "@jgengine/core/combat/shotOrigin";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
@@ -120,6 +107,7 @@ import { VERSION } from "@jgengine/core/meta/changelog";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
+import { attachAudioEventWire } from "./audio/audioWire";
 import { PostProcessing } from "./postfx/PostProcessing";
 import { DefaultSurface, detailMaps } from "./render/defaultSurface";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
@@ -135,7 +123,8 @@ import {
   resolveRigKind,
   rtsPanKeysConflict,
 } from "./camera";
-import { resolveModel, tryResolveCatalogModel } from "./render/resolveModel";
+import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "./render/resolveModel";
+import { sharedGltfLoader } from "./render/modelLoad";
 import { CullingProvider, useRenderVisibility } from "./visibility/CullingProvider";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
@@ -218,40 +207,6 @@ const EMPTY_RESERVED: ReadonlySet<string> = new Set();
 
 /** Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker. */
 const NO_ACTIONS: string[] = [];
-
-const SHELL_MOVEMENT_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"] as const;
-
-function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
-  const bound = input ?? {};
-  return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
-}
-
-function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
-  const hit = service.worldHit();
-  if (hit === null) return undefined;
-  const shooter =
-    ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId)) ??
-    ctx.scene.entity.get(ctx.player.userId);
-  if (shooter === null) return undefined;
-  const eye = eyeHeightFromColliders(ctx.scene.entity.collidersOf(shooter.id));
-  return aimToPoint(
-    [shooter.position[0], shooter.position[1] + eye, shooter.position[2]],
-    hit.point,
-  );
-}
-
-function pointerContextMenu(ctx: GameContext, playable: PlayableGame, hit: { point: readonly [number, number, number]; entity: string | null; object: string | null }): ContextMenu | null {
-  if (hit.entity !== null) {
-    const entity = ctx.scene.entity.get(hit.entity);
-    const verbs = entity === null ? undefined : playable.content.entityById?.(entity.name)?.verbs;
-    return buildContextMenu({ kind: "entity", targetId: hit.entity, verbs, point: hit.point });
-  }
-  if (hit.object !== null) {
-    const verbs = ctx.scene.object.catalog(hit.object)?.verbs;
-    return buildContextMenu({ kind: "object", targetId: hit.object, verbs, point: hit.point });
-  }
-  return null;
-}
 
 function GamePhaseStamp() {
   const { phase } = useGamePhase();
@@ -429,36 +384,6 @@ function ModelPartGroup({
       <EntityModel model={model} />
     </group>
   );
-}
-
-/** Resolves an entity model plus any bone attachments' or kit-of-parts' models through the asset catalog, so `EntityModel` receives fully-resolved `ModelConfig`s. */
-function resolveEntityModel(
-  value: string | ModelConfig | undefined,
-  assets: AssetCatalog,
-  key: string,
-): ModelConfig | undefined {
-  const model = resolveModel(value, assets, { seam: "entityModels", key });
-  if (model === undefined) return model;
-  if (model.attachments === undefined && model.parts === undefined) return model;
-  return {
-    ...model,
-    ...(model.attachments === undefined
-      ? {}
-      : {
-          attachments: model.attachments.map((attachment) => ({
-            ...attachment,
-            model: resolveModel(attachment.model, assets) ?? attachment.model,
-          })),
-        }),
-    ...(model.parts === undefined
-      ? {}
-      : {
-          parts: model.parts.map((part) => ({
-            ...part,
-            model: resolveModel(part.model, assets) ?? part.model,
-          })),
-        }),
-  };
 }
 
 function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps: ModelMaterialMaps }) {
@@ -1682,18 +1607,7 @@ export function GamePlayerShell({
   useEffect(() => () => audioEngine.dispose(), [audioEngine]);
   useEffect(() => {
     if (ctx === null) return;
-    const offPlay = ctx.game.events.on("audio.play", ({ sound, at }) => {
-      audioEngine.playOneShot(sound, at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] });
-    });
-    const offMusic = ctx.game.events.on("audio.music", ({ theme, transpose }) => {
-      audioEngine.playMusic(theme, transpose === undefined ? undefined : { transpose });
-    });
-    const offResume = ctx.game.events.on("audio.resume", () => audioEngine.resume());
-    return () => {
-      offPlay();
-      offMusic();
-      offResume();
-    };
+    return attachAudioEventWire(ctx.game.events, audioEngine);
   }, [ctx, audioEngine]);
   useEffect(() => {
     if (typeof document === "undefined") return;

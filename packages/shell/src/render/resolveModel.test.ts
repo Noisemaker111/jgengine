@@ -5,6 +5,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import {
   createModelMapResolver,
   pickModel,
+  resolveEntityModel,
   resolveModel,
   resolveModelPlan,
   tryResolveCatalogModel,
@@ -60,6 +61,28 @@ describe("tryResolveCatalogModel", () => {
 
   test("returns undefined without throwing when the catalog id is not a model", () => {
     expect(tryResolveCatalogModel("spawn-pad", assets)).toBeUndefined();
+  });
+});
+
+describe("resolveEntityModel", () => {
+  const assets = createAssetCatalog();
+  assets.register("hero", { url: "/models/hero.glb" });
+  assets.register("sword", { url: "/models/sword.glb" });
+
+  test("passes through a plain catalog id", () => {
+    expect(resolveEntityModel("hero", assets, "player")).toEqual({ url: "/models/hero.glb" });
+  });
+
+  test("resolves attachment models through the catalog", () => {
+    const resolved = resolveEntityModel(
+      {
+        url: "/models/hero.glb",
+        attachments: [{ bone: "hand_r", model: "sword" }],
+      },
+      assets,
+      "player",
+    );
+    expect(resolved?.attachments?.[0]?.model).toEqual({ url: "/models/sword.glb" });
   });
 });
 

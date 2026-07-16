@@ -84,7 +84,8 @@ const PKG_DIRS: Record<string, string> = {
 
 const ALLOW_DOC_REFS = new Set(["@jgengine/core/CHANGELOG", "@jgengine/react/dist", "@jgengine/shell/dist"]);
 
-const INTERNAL_DOMAINS = new Set(["store", "assets"]);
+// Pure helpers / non-game-facing packages under core/src (no skill domain table).
+const INTERNAL_DOMAINS = new Set(["store", "assets", "math"]);
 
 function resolves(pkg: string, sub: string): boolean {
   const base = join(root, PKG_DIRS[pkg], sub);

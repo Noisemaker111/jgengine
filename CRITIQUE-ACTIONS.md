@@ -41,7 +41,7 @@ Prefer extracting shell modules and skill/docs honesty over big rewrites.
 | API doc debt | ~3476 | ~2679 | downward only |
 | Tracked games w/ source | 10 / ~61 dirs | **10** (empty dirs purged) | honest count only |
 | Core package root | host runtime barrel | VERSION/CHANGELOG only | keep |
-| `GamePlayerShell.tsx` lines | ~2526 | **2442** + extracted modules | &lt; 800 long-term (⏸ full rewrite) |
+| `GamePlayerShell.tsx` lines | ~2526 | **2250** + extracts (pointer/audio/model/movement) | &lt; 800 long-term (⏸ full rewrite) |
 | `gameContext.ts` lines | ~1763 | ~1763 | split by domain over time |
 | Version lockstep claim | false (CLI 0.8.5, github 0.1.0) | **docs honest** (SDK set vs CLI/github) | keep honest or realign versions |
 | Keywords claim ECS | yes | **removed** | no false ECS marketing |
@@ -91,7 +91,7 @@ Prefer extracting shell modules and skill/docs honesty over big rewrites.
 | ID | Action | Done looks like | Status |
 | --- | --- | --- | --- |
 | G1 | **Extract shell composition seams** | First extract: pure helpers / submodules already separate; next: move one concern out of `GamePlayerShell.tsx` (input dispatch **or** audio wire **or** net sink) into named module, shell imports it | ✅ `boundActionDispatch.ts` |
-| G2 | **Plugin-shaped shell (progressive)** | Extracted seams: `boundActionDispatch`, `hotbarActions`, `worldSky` (full plugin rewrite to &lt;400-line entry is ⏸) | ✅ extracts shipped |
+| G2 | **Plugin-shaped shell (progressive)** | Extracted seams: `boundActionDispatch`, `hotbarActions`, `worldSky`, `shellPointer`, `shellMovement`, `audio/audioWire`, `render/modelLoad` + `resolveEntityModel` (full plugin rewrite to &lt;400-line entry is ⏸) | ✅ extracts shipped |
 | G3 | **`createGameContext` domain factories** | No big-bang rewrite; new subsystems attach via factories, not more lines in the god file when avoidable | ✅ rule recorded; enforce on new code |
 
 ---

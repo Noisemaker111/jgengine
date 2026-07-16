@@ -40,6 +40,40 @@ export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelC
 }
 
 /**
+ * Resolve an entity model plus bone-attachment / kit-of-parts models through the catalog
+ * so mounts receive fully-resolved `ModelConfig`s.
+ * @internal
+ */
+export function resolveEntityModel(
+  value: string | ModelConfig | undefined,
+  assets: AssetCatalog,
+  key: string,
+): ModelConfig | undefined {
+  const model = resolveModel(value, assets, { seam: "entityModels", key });
+  if (model === undefined) return model;
+  if (model.attachments === undefined && model.parts === undefined) return model;
+  return {
+    ...model,
+    ...(model.attachments === undefined
+      ? {}
+      : {
+          attachments: model.attachments.map((attachment) => ({
+            ...attachment,
+            model: resolveModel(attachment.model, assets) ?? attachment.model,
+          })),
+        }),
+    ...(model.parts === undefined
+      ? {}
+      : {
+          parts: model.parts.map((part) => ({
+            ...part,
+            model: resolveModel(part.model, assets) ?? part.model,
+          })),
+        }),
+  };
+}
+
+/**
  * Preferred + optional fallback catalog ids for a single entity/object slot.
  * Soft-resolves through the catalog: when neither id is live (pack not pulled/
  * reindexed yet), the mapping is omitted and the shell keeps its primitive.
