@@ -5,7 +5,7 @@
  * package exports. Regenerate barrels with `bun run gen:barrels`.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { extractPackageSurface } from "./apiSurface";
@@ -54,6 +54,8 @@ describe("core domain barrels", () => {
       });
 
       test("stays in sync with the generator (run `bun run gen:barrels`)", () => {
+        // Retired skills keep a frozen hand-curated barrel — generator skips them.
+        if (!existsSync(join(root, ".claude", "skills", skill))) return;
         expect(src).toBe(renderBarrel(collectBarrelReexports(root, skill)));
       });
 

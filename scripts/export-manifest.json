@@ -656,6 +656,7 @@
     "./indexGen",
     "./manifest",
     "./materials",
+    "./packs/starter",
     "./registry",
     "./singles",
     "./snippet",
@@ -692,6 +693,7 @@
     "./doctor",
     "./index",
     "./pkg",
+    "./prototypeLook",
     "./skills",
     "./templates"
   ]
