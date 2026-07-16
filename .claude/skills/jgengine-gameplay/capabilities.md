@@ -16,10 +16,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/game/cosmetics"`
 
-## currency-format — format a currency amount with its symbol for display
-
-- `formatCurrencyAmount` (function) · `import { formatCurrencyAmount } from "@jgengine/core/economy/currency"`
-
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
 - `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/game/dialogue"`
@@ -40,18 +36,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/game/saveStore"`
 
-## inventory-grid — a bag of stackable items with add, remove, and move
-
-- `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
-
 ## item-instance-registry — a runtime store for procedurally generated item instances
 
 - `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/item/itemInstanceRegistry"`
 - `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/item/itemInstanceRegistry"`
-
-## lane-board — a lane-based card-battler board with per-lane outcomes
-
-- `createLaneBoard` (function) · `import { createLaneBoard } from "@jgengine/core/board/laneBoard"`
 
 ## lap-splits — per-lap durations from a cumulative split book
 
@@ -92,10 +80,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/game/lootTable"`
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/game/lootTable"`
 
-## match-rounds — run buy/action/end round phases with per-round economy
-
-- `createRoundState` (function) · `import { createRoundState } from "@jgengine/core/session/roundState"`
-
 ## modular-item — attach parts into item mount slots to compute combined stats
 
 - `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/item/modularItem"`
@@ -133,21 +117,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/game/race"`
 
-## role-assign — assign hidden or team roles to players by ratio
-
-- `assignRoles` (function) · `import { assignRoles } from "@jgengine/core/session/roles"`
-
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/game/runDraft"`
-
-## shared-wallet — shared/group currency pools tracking per-member contributions
-
-- `createWalletBook` (function) · `import { createWalletBook } from "@jgengine/core/economy/sharedWallet"`
-
-## shop-trade — buy and sell goods against player currency balances
-
-- `createTradeSystem` (function) · `import { createTradeSystem } from "@jgengine/core/game/trade"`
 
 ## social-emotes — emotes and social interactions between nearby players
 
@@ -156,18 +128,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## spawn-points — register spawn locations and pick where entities respawn
 
 - `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/game/spawnPoints"`
-
-## tech-tree — research nodes with prerequisites that unlock recipes
-
-- `availableTech` (function) · `import { availableTech } from "@jgengine/core/economy/techTree"`
-
-## tetris-inventory — a spatial grid inventory holding shaped multi-cell items
-
-- `createShapedGrid` (function) · `import { createShapedGrid } from "@jgengine/core/inventory/shapedGrid"`
-
-## timeline-board — a step-sequencer timeline board of timed slots
-
-- `createTimelineBoard` (function) · `import { createTimelineBoard } from "@jgengine/core/board/timelineBoard"`
 
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
@@ -193,7 +153,3 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weighted-pick — pick one item from a set with an injected random source
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/random/pick"`
-
-## world-drops — spawn pickup-able items in the world, including death drops
-
-- `createWorldItemStore` (function) · `import { createWorldItemStore } from "@jgengine/core/game/worldItem"`

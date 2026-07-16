@@ -6,14 +6,14 @@
   "harvest": 32,
   "harvest-full-game": 32,
   "harvest-game": 28,
-  "jgengine": 827,
+  "jgengine": 841,
   "jgengine-assets": 68,
-  "jgengine-combat": 48,
-  "jgengine-editor": 379,
-  "jgengine-gameplay": 463,
-  "jgengine-multiplayer": 94,
-  "jgengine-procedural": 14,
-  "jgengine-ui": 136,
+  "jgengine-combat": 50,
+  "jgengine-editor": 388,
+  "jgengine-gameplay": 468,
+  "jgengine-multiplayer": 112,
+  "jgengine-procedural": 16,
+  "jgengine-ui": 138,
   "jgengine-verify": 140,
-  "jgengine-world": 169
+  "jgengine-world": 171
 }

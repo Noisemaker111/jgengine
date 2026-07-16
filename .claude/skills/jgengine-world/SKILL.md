@@ -52,7 +52,7 @@ movement: {
 | `PhysicsWorld` (`physics/physicsWorld`) | Debris, piles, joints, vehicles-lite, structure collapse — headless SoA sim. |
 | `ctx.scene.entity.bind(key).sync(bodies, dt)` (`scene/bodyBind`) | When a sim body **and** a scene entity must share pose — do not hand-write per-body `setPose` every tick. |
 
-ADR: `packages/core/src/physics/README.md`. Never feed the walk controller into `PhysicsWorld` “for realism” without a bind plan.
+Decision record: `packages/core/src/physics/README.md`. Never feed the walk controller into `PhysicsWorld` “for realism” without a bind plan.
 
 **Vertical motion intents** — `ctx.player.motion` (`@jgengine/core/runtime/motionIntents`): `impulse(vy)` adds to the vertical velocity the shell's controller is about to integrate, `setVerticalVelocity(vy)` replaces it outright, `setY(y)` wins over physics for that frame. The shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated; this is not reactive state (jump pads, launch abilities, bounce pads).
 

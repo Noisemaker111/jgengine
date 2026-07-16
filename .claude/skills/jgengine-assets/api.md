@@ -111,6 +111,10 @@
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
 - `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
+- `MAX_ARCHIVE_COMPRESSION_RATIO` (const): const MAX_ARCHIVE_COMPRESSION_RATIO: 100 — Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb.
+- `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
+- `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
+- `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
 
 ## @jgengine/assets/find
 

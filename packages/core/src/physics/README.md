@@ -1,4 +1,4 @@
-# Physics strategy (ADR)
+# Physics strategy (decision record)
 
 **Status:** accepted for current tree · critique action **Y1**
 
