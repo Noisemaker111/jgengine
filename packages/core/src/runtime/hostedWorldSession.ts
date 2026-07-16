@@ -48,7 +48,7 @@ export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMul
   now?: () => number;
   /** Where the authoritative snapshot persists; defaults to {@link memoryWorldStore}. */
   store?: HostedWorldStore;
-  /** Minimum elapsed `now()` ms between auto-saves on tick. Default `0` — persist on every revision-changing tick. */
+  /** Minimum elapsed ms between auto-saves on tick, measured against `now` (defaults to `Date.now` when omitted). Default `0` — persist on every revision-changing tick. */
   saveIntervalMs?: number;
 }
 
@@ -80,6 +80,7 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
   options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>,
 ): HostedWorldSession {
   const { definition, content, host, now, saveIntervalMs = 0 } = options;
+  const clock = now ?? Date.now;
   const store = options.store ?? memoryWorldStore();
   const loaded = store.load();
   const runner = createHostedGameRunner({
@@ -91,7 +92,7 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
   });
 
   let savedRevision = loaded?.revision ?? 0;
-  let lastSaveAt = now?.() ?? 0;
+  let lastSaveAt = clock();
 
   function persist(): void {
     savedRevision = runner.revision();
@@ -106,7 +107,7 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
     tick(dt) {
       const revision = runner.tick(dt);
       if (revision !== savedRevision) {
-        const at = now?.() ?? 0;
+        const at = clock();
         if (saveIntervalMs <= 0 || at - lastSaveAt >= saveIntervalMs) {
           lastSaveAt = at;
           persist();

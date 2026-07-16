@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -219,6 +220,27 @@ test("file deleteChunks drops keys permanently across reopen", async () => {
 
     const reopened = filePersistence(dir);
     expect((await reopened.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
+  } finally {
+    await clearFilePersistence(dir);
+  }
+});
+
+test("filePersistence sanitizes a \"..\" key so it cannot escape the base dir", async () => {
+  const dir = join(tmpdir(), `jg-node-traversal-${process.pid}-${Math.random().toString(36).slice(2)}`);
+  try {
+    const persistence = filePersistence(dir);
+    await persistence.applyLeaderboardIncrements("test-game", [
+      { userId: "alice", stat: "gold", scope: "profile", by: 8 },
+    ]);
+    const leaderboardBefore = await readFile(join(dir, "leaderboard.json"), "utf8");
+
+    await persistence.saveChunks("..", [
+      { serverId: "..", chunkKey: "leaderboard", snapshot: { chunkKey: "leaderboard", objects: [], entities: [] }, updatedAt: 1 },
+    ]);
+
+    const leaderboardAfter = await readFile(join(dir, "leaderboard.json"), "utf8");
+    expect(leaderboardAfter).toBe(leaderboardBefore);
+    expect((await persistence.loadChunks("..")).map((chunk) => chunk.chunkKey)).toEqual(["leaderboard"]);
   } finally {
     await clearFilePersistence(dir);
   }
