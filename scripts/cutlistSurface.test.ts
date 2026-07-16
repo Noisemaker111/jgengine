@@ -76,6 +76,17 @@ describe("CUTLIST surface diet", () => {
     expect(block).toMatch(/react\s*:/);
   });
 
+  test("curated core barrels route to domain skills (not MAIN) so skill examples count", async () => {
+    const { skillForModule } = await import("./skillRouting");
+    expect(skillForModule("core", "gameplay")).toBe("jgengine-gameplay");
+    expect(skillForModule("core", "world")).toBe("jgengine-world");
+    expect(skillForModule("core", "combat")).toBe("jgengine-combat");
+    expect(skillForModule("core", "multiplayer")).toBe("jgengine-multiplayer");
+    expect(skillForModule("core", "ui")).toBe("jgengine-ui");
+    expect(skillForModule("core", "runtime/worldProjection")).toBe("jgengine-multiplayer");
+    expect(skillForModule("core", "authoring")).toBe("jgengine");
+  });
+
   test("core package.json does not market ECS as a keyword", () => {
     const pkg = JSON.parse(readFileSync(join(root, "packages/core/package.json"), "utf8")) as {
       keywords?: string[];
