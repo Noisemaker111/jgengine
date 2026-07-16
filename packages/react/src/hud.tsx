@@ -318,6 +318,7 @@ export function AbilityButton({
   onDragStart,
   onDragOver,
   onDrop,
+  title,
   intervalMs,
   style,
   className,
@@ -372,6 +373,8 @@ export function AbilityButton({
   onDragStart?: DragEventHandler<HTMLButtonElement>;
   onDragOver?: DragEventHandler<HTMLButtonElement>;
   onDrop?: DragEventHandler<HTMLButtonElement>;
+  /** Native hover tooltip on the button. */
+  title?: string;
   intervalMs?: number;
   style?: CSSProperties;
   className?: string;
@@ -397,6 +400,7 @@ export function AbilityButton({
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      title={title}
       className={className}
       data-ability={slotId}
       data-locked={locked || undefined}

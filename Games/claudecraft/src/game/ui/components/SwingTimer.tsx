@@ -1,11 +1,10 @@
 import { useRef } from "react";
 import { useGameContext } from "@jgengine/react/provider";
-import { useGameStore, useTarget } from "@jgengine/react/hooks";
+import { useGameStore, useHudTick, useTarget } from "@jgengine/react/hooks";
 import { swingTimerState, type SwingTargetInput } from "@jgengine/core/ui/swingTimer";
 
 import { isMobInstance } from "../../ai/mobs";
 import { heroOf, heroSheet } from "../../session/hero";
-import { useHudTick } from "../useHudTick";
 
 export function SwingTimer() {
   useHudTick();

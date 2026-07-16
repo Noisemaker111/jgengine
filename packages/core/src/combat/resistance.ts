@@ -1,5 +1,13 @@
 export type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable";
 
+/**
+ * A single matrix cell: either a named {@link ResistVerdict} (resolved through the multiplier table)
+ * or a raw scalar multiplier for a value the four named verdicts can't express — e.g. `0.9` for a mild
+ * resistance that is neither `resist` (0.5) nor `normal` (1). A `0` scalar zeroes the damage but, unlike
+ * `"immune"`, does not set the `immune` flag.
+ */
+export type ResistanceCell = ResistVerdict | number;
+
 export class UnknownResistanceCategoryError extends Error {
   readonly category: string;
 
@@ -26,7 +34,7 @@ export interface ResistanceMatrix<
   TCategory extends string = string,
   TProperty extends string = string,
 > {
-  categories: Partial<Record<TCategory, Partial<Record<TProperty, ResistVerdict>>>>;
+  categories: Partial<Record<TCategory, Partial<Record<TProperty, ResistanceCell>>>>;
   categoryIds?: readonly TCategory[];
   propertyIds?: readonly TProperty[];
   multipliers?: Partial<Record<ResistVerdict, number>>;
@@ -51,6 +59,10 @@ function multiplierFor(matrix: ResistanceMatrix, verdict: ResistVerdict): number
   return matrix.multipliers?.[verdict] ?? DEFAULT_MULTIPLIERS[verdict];
 }
 
+function cellMultiplier(matrix: ResistanceMatrix, cell: ResistanceCell): number {
+  return typeof cell === "number" ? cell : multiplierFor(matrix, cell);
+}
+
 function summaryVerdict(matrix: ResistanceMatrix, immune: boolean, net: number): ResistVerdict {
   if (immune) return "immune";
   const normal = multiplierFor(matrix, "normal");
@@ -68,7 +80,7 @@ function fromVerdict(matrix: ResistanceMatrix, verdict: ResistVerdict): Resistan
 function categoryTable<TCategory extends string, TProperty extends string>(
   matrix: ResistanceMatrix<TCategory, TProperty>,
   category: string,
-): Partial<Record<TProperty, ResistVerdict>> | undefined {
+): Partial<Record<TProperty, ResistanceCell>> | undefined {
   return matrix.categories[category as TCategory];
 }
 
@@ -97,11 +109,11 @@ export function resolveResistance<TCategory extends string = string, TProperty e
     if (propertyCatalog !== null && !propertyCatalog.has(property)) {
       throw new UnknownResistancePropertyError(category, property);
     }
-    const verdict = byProperty[property as TProperty];
-    if (verdict === undefined) continue;
+    const cell = byProperty[property as TProperty];
+    if (cell === undefined) continue;
     matched = true;
-    if (verdict === "immune") immune = true;
-    net *= multiplierFor(matrix, verdict);
+    if (cell === "immune") immune = true;
+    net *= cellMultiplier(matrix, cell);
   }
   if (!matched) return fromVerdict(matrix, fallback);
   const multiplier = immune ? 0 : net;

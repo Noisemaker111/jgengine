@@ -64,6 +64,36 @@ describe("resolveResistance", () => {
     expect(result.verdict).toBe("resist");
   });
 
+  it("lets a cell carry an explicit scalar multiplier alongside named verdicts", () => {
+    const matrix: ResistanceMatrix = {
+      categories: {
+        shielded: { shock: 2, incendiary: 0.75 },
+        armor: { corrosive: 1.5, incendiary: 0.75 },
+        flesh: { incendiary: 1.5, corrosive: 0.9 },
+      },
+      default: "normal",
+    };
+    expect(resistanceScale(matrix, "shielded", ["shock"])).toBe(2);
+    expect(resistanceScale(matrix, "shielded", ["none"])).toBe(1);
+    expect(resistanceScale(matrix, "armor", ["corrosive"])).toBe(1.5);
+    expect(resistanceScale(matrix, "flesh", ["corrosive"])).toBe(0.9);
+    expect(resistanceScale(matrix, "flesh", ["incendiary"])).toBe(1.5);
+    expect(resistanceScale(matrix, "armor", ["incendiary"])).toBe(0.75);
+  });
+
+  it("reports verdict from a scalar cell relative to normal", () => {
+    const matrix: ResistanceMatrix = { categories: { flesh: { corrosive: 0.9 } } };
+    const result = resolveResistance(matrix, "flesh", ["corrosive"]);
+    expect(result.multiplier).toBe(0.9);
+    expect(result.verdict).toBe("resist");
+    expect(result.immune).toBe(false);
+  });
+
+  it("stacks scalar and named cells multiplicatively", () => {
+    const matrix: ResistanceMatrix = { categories: { fire: { wet: 0.9, armored: "resist" } } };
+    expect(resistanceScale(matrix, "fire", ["wet", "armored"])).toBeCloseTo(0.45);
+  });
+
   it("honors a custom multiplier table", () => {
     const matrix: ResistanceMatrix = {
       categories: { fire: { stone: "resist" } },

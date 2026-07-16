@@ -1,3 +1,4 @@
+import { StatBar } from "@jgengine/react";
 import { useGame, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
 
@@ -155,13 +156,22 @@ export function YumiHud() {
   const { userId } = usePlayer();
   const session = useKeyedStore(yumiStore, userId);
   if (session === null || !session.active) return null;
-  const frac = session.yumiMaxHp > 0 ? session.yumiHp / session.yumiMaxHp : 0;
   return (
     <div className="rounded-md border border-pink-800/70 bg-stone-950/85 px-3 py-2 text-sm text-pink-50 shadow-lg">
       <div className="font-semibold text-pink-200">Protect Yumi</div>
-      <div className="mt-1 h-2 overflow-hidden rounded bg-stone-900">
-        <div className="h-full bg-pink-500" style={{ width: `${Math.max(0, Math.min(1, frac)) * 100}%` }} />
-      </div>
+      <StatBar
+        value={session.yumiHp}
+        max={Math.max(1, session.yumiMaxHp)}
+        fill="#ec4899"
+        chromeless
+        showValue={false}
+        labelPlacement="none"
+        railHeight={8}
+        railRadius={4}
+        railStyle={{ background: "#1c1917" }}
+        width="100%"
+        style={{ marginTop: 4 }}
+      />
       <div className="mt-1 text-xs text-pink-100/80">
         Wave {session.wave} · {session.alive} hostiles · {session.status}
       </div>

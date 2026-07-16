@@ -19,6 +19,10 @@ export interface RegenShield {
   current(): number;
   max(): number;
   setMax(value: number): void;
+  /** Change the refill rate at runtime (a level-up or item pickup that alters shield recharge). */
+  setRegenPerSecond(value: number): void;
+  /** Change the post-damage grace period at runtime (a talent or item that shortens/lengthens it). */
+  setRegenDelayMs(value: number): void;
   fraction(): number;
   isFull(): boolean;
   isBroken(): boolean;
@@ -26,6 +30,17 @@ export interface RegenShield {
   suppressed(): boolean;
   /** Absorb `amount` and reset the regen grace timer; returns damage that got through (0 while the shield holds). */
   damage(amount: number): number;
+  /**
+   * Restart the regen grace timer without subtracting from the pool — for a hit the shield did not
+   * absorb (a health-only hit) or any event that should interrupt recharge.
+   */
+  poke(): void;
+  /**
+   * Mirror an externally-owned pool (one that another system, e.g. a shared damage pipeline or a stat
+   * store, writes to instead of {@link damage}). Sets `current` to `value`; a decrease since the last
+   * observation is treated as a hit and restarts the regen grace. Returns true when it detected a hit.
+   */
+  observeValue(value: number): boolean;
   /** Add `amount` without touching the regen timer (a pickup or scripted refill). */
   restore(amount: number): void;
   set(value: number): void;
@@ -40,8 +55,8 @@ export interface RegenShield {
  */
 export function createRegenShield(config: RegenShieldConfig): RegenShield {
   let max = Math.max(0, config.max);
-  const regenPerSecond = Math.max(0, config.regenPerSecond);
-  const regenDelayMs = Math.max(0, config.regenDelayMs);
+  let regenPerSecond = Math.max(0, config.regenPerSecond);
+  let regenDelayMs = Math.max(0, config.regenDelayMs);
 
   function clamp(value: number, ceiling: number): number {
     return Math.max(0, Math.min(ceiling, value));
@@ -57,6 +72,12 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
       max = Math.max(0, value);
       current = clamp(current, max);
     },
+    setRegenPerSecond(value) {
+      regenPerSecond = Math.max(0, value);
+    },
+    setRegenDelayMs(value) {
+      regenDelayMs = Math.max(0, value);
+    },
     fraction: () => (max <= 0 ? 0 : current / max),
     isFull: () => current >= max,
     isBroken: () => current <= 0,
@@ -67,6 +88,15 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
       const overflow = Math.max(0, amount - current);
       current = clamp(current - amount, max);
       return overflow;
+    },
+    poke() {
+      sinceDamageMs = 0;
+    },
+    observeValue(value) {
+      const dropped = value < current;
+      current = value;
+      if (dropped) sinceDamageMs = 0;
+      return dropped;
     },
     restore(amount) {
       if (amount > 0) current = clamp(current + amount, max);

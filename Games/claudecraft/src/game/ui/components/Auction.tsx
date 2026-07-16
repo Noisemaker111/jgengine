@@ -1,16 +1,11 @@
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { useGame, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { formatDurationCompact } from "@jgengine/core/format/duration";
 import { useState } from "react";
 
 import type { AuctionView } from "../../auction/systems";
 import { itemDefById } from "../../items/catalog";
 import { CLOSE_BUTTON, copperLabel, PANEL, PANEL_TITLE, QUALITY_COLORS } from "../theme";
-
-function formatExpiry(sec: number): string {
-  const hours = Math.floor(sec / 3600);
-  const minutes = Math.floor((sec % 3600) / 60);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
 
 export function AuctionPanel() {
   const { commands } = useGame();
@@ -102,7 +97,7 @@ export function AuctionPanel() {
                         {listing.count > 1 ? ` ×${listing.count}` : ""}
                       </span>
                       <span className="shrink-0 text-amber-300">{copperLabel(listing.price)}</span>
-                      <span className="shrink-0 text-stone-500">{formatExpiry(listing.expiresInSec)}</span>
+                      <span className="shrink-0 text-stone-500">{formatDurationCompact(listing.expiresInSec)}</span>
                       <button
                         type="button"
                         className="shrink-0 rounded border border-stone-700 bg-stone-900/70 px-1.5 py-0.5 text-[10px] hover:bg-stone-800"

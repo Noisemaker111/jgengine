@@ -1,0 +1,261 @@
+import { createLevelSequence } from "@jgengine/core/game/levelSequence";
+import { seededStreams } from "@jgengine/core/random/rng";
+import { perContext } from "@jgengine/core/runtime/perContext";
+import { despawnMob, isMobInstance, spawnMobAt } from "../ai/mobs";
+import { mobById } from "../entities/enemies/catalog";
+import { teleportHero } from "../session/hero";
+import { delveStore } from "../session/stores";
+import { DELVES, delveById, levelForTier } from "./catalog";
+const COMPANION_CATALOG = "delve_companion";
+const activeOf = perContext(() => new Map());
+export function delveSessionOf(ctx, userId) {
+    const session = activeOf(ctx).get(userId);
+    if (session === undefined)
+        return null;
+    const current = session.sequence.current();
+    const progress = session.sequence.progress();
+    return {
+        delveId: session.def.id,
+        tier: session.tier,
+        chamberIndex: progress.index,
+        chamberName: current?.config.name ?? session.def.name,
+        totalChambers: progress.total,
+        remaining: session.spawned.filter((id) => isMobInstance(ctx, id)).length,
+        companionId: session.companionId,
+        status: session.sequence.status() === "complete"
+            ? "complete"
+            : session.sequence.status() === "cleared"
+                ? "cleared"
+                : session.sequence.status() === "playing"
+                    ? "playing"
+                    : "idle",
+    };
+}
+function buildChambers(def, tier, seed) {
+    const stream = seededStreams(seed)("chambers");
+    const levels = def.chambers.map((template, index) => {
+        const level = levelForTier(def.baseLevel, tier, index);
+        const mobIds = [];
+        for (let i = 0; i < template.count; i += 1) {
+            const pick = template.mobPool[Math.floor(stream() * template.mobPool.length)] ?? template.mobPool[0];
+            if (pick !== undefined)
+                mobIds.push(pick);
+        }
+        return {
+            id: template.id,
+            config: {
+                templateId: template.id,
+                name: template.name,
+                mobIds,
+                level,
+                boss: template.boss === true,
+            },
+        };
+    });
+    return createLevelSequence({ levels, retriesPerLevel: 0 });
+}
+function clearSpawned(ctx, session) {
+    for (const id of session.spawned)
+        despawnMob(ctx, id);
+    session.spawned = [];
+}
+function spawnChamber(ctx, session) {
+    clearSpawned(ctx, session);
+    const current = session.sequence.current();
+    if (current === null)
+        return;
+    const { config } = current;
+    const roll = seededStreams(`${session.seed}:${config.templateId}`)("place");
+    for (let i = 0; i < config.mobIds.length; i += 1) {
+        const mobId = config.mobIds[i];
+        if (mobId === undefined)
+            continue;
+        const def = mobById(mobId);
+        if (def === null)
+            continue;
+        const angle = roll() * Math.PI * 2;
+        const radius = 4 + roll() * Math.max(3, session.def.radius - 8);
+        const x = session.def.center[0] + Math.cos(angle) * radius;
+        const z = session.def.center[1] + Math.sin(angle) * radius;
+        const level = config.boss && i === config.mobIds.length - 1 ? config.level + 1 : config.level;
+        session.spawned.push(spawnMobAt(ctx, def, [x, z], level, { noRespawn: true }));
+    }
+    ctx.scene.entity.floatText({
+        instanceId: ctx.player.userId,
+        text: `${config.name} — ${config.mobIds.length} hostiles`,
+        kind: "info",
+    });
+}
+function spawnCompanion(ctx, session, userId) {
+    const owner = ctx.scene.entity.get(userId);
+    if (owner === null)
+        return;
+    const x = owner.position[0] + 1.5;
+    const z = owner.position[2] + 1.5;
+    const id = ctx.scene.entity.spawn(COMPANION_CATALOG, {
+        id: `companion:${userId}`,
+        position: [x, ctx.world.groundHeightAt(x, z), z],
+    });
+    const level = levelForTier(session.def.baseLevel, session.tier, 0);
+    const hp = 80 + level * 18;
+    ctx.scene.entity.stats.set(id, "health", { max: hp, current: hp });
+    ctx.scene.entity.stats.set(id, "level", { current: level });
+    session.companionId = id;
+}
+function despawnCompanion(ctx, session) {
+    if (session.companionId === null)
+        return;
+    if (ctx.scene.entity.get(session.companionId) !== null) {
+        ctx.scene.entity.despawn(session.companionId);
+    }
+    session.companionId = null;
+}
+export function enterDelve(ctx, userId, delveId, tier = "normal") {
+    const def = delveById(delveId);
+    if (def === null)
+        return false;
+    if (activeOf(ctx).has(userId))
+        exitDelve(ctx, userId);
+    const hero = ctx.scene.entity.get(userId);
+    if (hero === null)
+        return false;
+    const seed = `${delveId}:${tier}:${Math.floor(ctx.time.now() * 1000)}`;
+    const sequence = buildChambers(def, tier, seed);
+    sequence.start();
+    const session = {
+        def,
+        tier,
+        sequence,
+        seed,
+        spawned: [],
+        companionId: null,
+        returnPos: [hero.position[0], hero.position[2]],
+    };
+    activeOf(ctx).set(userId, session);
+    teleportHero(ctx, userId, def.center[0], def.center[1] - def.radius * 0.55);
+    spawnCompanion(ctx, session, userId);
+    spawnChamber(ctx, session);
+    syncDelveStore(ctx, userId);
+    return true;
+}
+export function advanceDelve(ctx, userId) {
+    const session = activeOf(ctx).get(userId);
+    if (session === undefined)
+        return false;
+    if (session.sequence.status() !== "cleared")
+        return false;
+    if (!session.sequence.advance()) {
+        syncDelveStore(ctx, userId);
+        return true;
+    }
+    if (session.sequence.status() === "complete") {
+        ctx.scene.entity.floatText({ instanceId: userId, text: `${session.def.name} cleared!`, kind: "info" });
+        syncDelveStore(ctx, userId);
+        return true;
+    }
+    spawnChamber(ctx, session);
+    syncDelveStore(ctx, userId);
+    return true;
+}
+export function exitDelve(ctx, userId) {
+    const session = activeOf(ctx).get(userId);
+    if (session === undefined)
+        return false;
+    clearSpawned(ctx, session);
+    despawnCompanion(ctx, session);
+    const [x, z] = session.returnPos;
+    teleportHero(ctx, userId, x, z);
+    activeOf(ctx).delete(userId);
+    delveStore.clear(ctx, userId);
+    return true;
+}
+export function tickDelve(ctx, userId, dt) {
+    const session = activeOf(ctx).get(userId);
+    if (session === undefined)
+        return;
+    session.spawned = session.spawned.filter((id) => isMobInstance(ctx, id));
+    if (session.sequence.status() === "playing" && session.spawned.length === 0) {
+        session.sequence.clear();
+        ctx.scene.entity.floatText({
+            instanceId: userId,
+            text: "Chamber cleared — advance when ready",
+            kind: "info",
+        });
+    }
+    tickCompanion(ctx, userId, session, dt);
+    syncDelveStore(ctx, userId);
+}
+function tickCompanion(ctx, userId, session, dt) {
+    const companionId = session.companionId;
+    if (companionId === null)
+        return;
+    const companion = ctx.scene.entity.get(companionId);
+    const owner = ctx.scene.entity.get(userId);
+    if (companion === null || owner === null) {
+        session.companionId = null;
+        return;
+    }
+    const health = ctx.scene.entity.stats.get(companionId, "health");
+    if (health !== null && health.current <= 0) {
+        ctx.scene.entity.despawn(companionId);
+        session.companionId = null;
+        ctx.scene.entity.floatText({ instanceId: userId, text: "Companion fell!", kind: "info" });
+        return;
+    }
+    let targetId = null;
+    const ownerTarget = ctx.scene.entity.getTarget(userId);
+    if (ownerTarget !== null && isMobInstance(ctx, ownerTarget))
+        targetId = ownerTarget;
+    if (targetId === null) {
+        const nearby = ctx.scene.entity.inRadius(companion.position, 14, (id) => isMobInstance(ctx, id));
+        targetId = nearby[0] ?? null;
+    }
+    if (targetId !== null) {
+        const dist = ctx.scene.entity.distance(companionId, targetId);
+        if (dist !== null && dist > 2.4) {
+            ctx.scene.entity.moveTowardCommit(companionId, targetId, {
+                speed: 6.5,
+                dt,
+                stopDistance: 2.2,
+                face: true,
+                groundSnap: true,
+            });
+        }
+        else if (dist !== null && dist <= 2.8) {
+            const level = ctx.scene.entity.stats.get(companionId, "level")?.current ?? 5;
+            const amount = 4 + level * 1.2;
+            ctx.scene.entity.effect({
+                from: companionId,
+                to: targetId,
+                effect: "damage",
+                via: { amount: Math.round(amount) },
+            });
+        }
+        return;
+    }
+    const followDist = Math.hypot(companion.position[0] - owner.position[0], companion.position[2] - owner.position[2]);
+    if (followDist > 3.5) {
+        ctx.scene.entity.moveTowardCommit(companionId, userId, {
+            speed: 7,
+            dt,
+            stopDistance: 2.5,
+            groundSnap: true,
+        });
+    }
+}
+function syncDelveStore(ctx, userId) {
+    const view = delveSessionOf(ctx, userId);
+    if (view === null) {
+        delveStore.clear(ctx, userId);
+        return;
+    }
+    delveStore.write(ctx, userId, view);
+}
+export function placeDelveWorld(ctx) {
+    for (const delve of DELVES) {
+        const [x, z] = delve.entrance;
+        ctx.scene.object.place("delve_portal", x, ctx.world.groundHeightAt(x, z), z);
+    }
+}
+export const DELVE_PORTAL = "delve_portal";
+export const DELVE_COMPANION_CATALOG = COMPANION_CATALOG;

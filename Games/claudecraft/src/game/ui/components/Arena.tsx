@@ -1,3 +1,4 @@
+import { StatBar } from "@jgengine/react";
 import { useGame, usePlayer } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
 import { formatDuration } from "@jgengine/core/format/duration";
@@ -129,14 +130,19 @@ export function FiestaHud() {
             >
               {fighter.name}
             </span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded bg-stone-800">
-              <div
-                className={fighter.team === "a" ? "h-full bg-emerald-500" : "h-full bg-red-500"}
-                style={{
-                  width: `${fighter.dead ? 0 : Math.round((fighter.hp / Math.max(1, fighter.hpMax)) * 100)}%`,
-                }}
-              />
-            </div>
+            <StatBar
+              value={fighter.dead ? 0 : fighter.hp}
+              max={Math.max(1, fighter.hpMax)}
+              fill={fighter.team === "a" ? "#22c55e" : "#ef4444"}
+              chromeless
+              showValue={false}
+              labelPlacement="none"
+              railHeight={6}
+              railRadius={4}
+              railStyle={{ background: "#292524" }}
+              width="auto"
+              style={{ flex: 1 }}
+            />
             {fighter.dead && (
               <span className="text-[10px] text-stone-500">
                 {fighter.respawnIn > 0 ? `${Math.ceil(fighter.respawnIn)}s` : "down"}

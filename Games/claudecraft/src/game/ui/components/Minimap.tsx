@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { MinimapPanel } from "@jgengine/react/map";
-import { useGameClock } from "@jgengine/react/hooks";
+import { useGameClock, useHudTick } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { createMarkerSet } from "@jgengine/core/world/markers";
 import { padNumber } from "@jgengine/core/format/duration";
@@ -8,7 +8,6 @@ import { padNumber } from "@jgengine/core/format/duration";
 import { isMobInstance } from "../../ai/mobs";
 import { NPCS } from "../../entities/npcs/catalog";
 import { useZoneName } from "./Overlays";
-import { useHudTick } from "../useHudTick";
 
 function ClockReadout() {
   const { calendar } = useGameClock();
