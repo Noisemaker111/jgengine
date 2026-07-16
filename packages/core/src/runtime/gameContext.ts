@@ -1,4 +1,4 @@
-import { createCardPile, type CardPile, type CardPileConfig, type CardPileState } from "../cards/cardPile";
+import { createCardPile, type CardPile, type CardPileConfig } from "../cards/cardPile";
 import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
@@ -25,31 +25,28 @@ import {
 import {
   createCommandRegistry,
   type CommandDefinition,
-  type CommandRegistry,
   type CommandResult,
 } from "../commands/commandRegistry";
 import {
   balance as walletBalance,
-  canAfford as walletCanAfford,
   charge as walletCharge,
-  chargeAll as walletChargeAll,
   createEmptyWallet,
   grant as walletGrant,
   isOverdrawn as walletIsOverdrawn,
   type ChargeOptions as WalletChargeOptions,
   type WalletState,
 } from "../economy/wallet";
-import { createCosmetics, type Cosmetics } from "../game/cosmetics";
+import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
-import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
+import { createGameFeed, type GameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
-import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
+import { type Leaderboard } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
-import { createGameDialogue, type GameDialogue } from "../game/dialogue";
-import { createQuestJournal, type QuestJournal, type QuestSnapshotEntry } from "../game/quest";
+import { type GameDialogue } from "../game/dialogue";
+import { type QuestJournal } from "../game/quest";
 import {
   createWorldItemStore,
   resolveDeathDrops,
@@ -58,10 +55,10 @@ import {
   type WorldItemRecord,
   type WorldItemSpawnInput,
 } from "../game/worldItem";
-import { createChat, type Chat, type ChatSnapshot } from "../game/chat";
-import { createSocial, type Social, type SocialSnapshot } from "../game/social";
-import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
-import { createUnlocks, type Unlocks } from "../game/unlocks";
+import { type Chat } from "../game/chat";
+import { createSocial, type Social } from "../game/social";
+import { type TradeField, type TradeSystem } from "../game/trade";
+import { type Unlocks } from "../game/unlocks";
 import {
   createInventorySet,
   putItem,
@@ -80,16 +77,14 @@ import {
   type ItemUseResult,
 } from "../item/use";
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
-import { createPoseState, type PoseAllowedStates, type PoseSnapshot, type PoseState } from "../movement/poseState";
+import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createBodyBind, type BodyBind } from "../scene/bodyBind";
 import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
-  hydrateEntityStats,
   seedStatValues,
   setStatValue,
-  snapshotEntityStats,
   type EntityStatsApi,
   type StatCatalog,
   type StatValueMap,
@@ -108,10 +103,10 @@ import { createForms, type Forms } from "../scene/form";
 import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
-import { createRoster, type Roster, type RosterEntry } from "../scene/roster";
+import { type Roster } from "../scene/roster";
 import { createSelectionSet, type SelectionSet } from "../scene/selection";
-import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
-import { createPossession, type Possession, type PossessionSnapshot } from "../scene/possession";
+import { type ConnectedPlayers } from "../game/connectedPlayers";
+import { createPossession, type Possession } from "../scene/possession";
 import {
   createSceneRaycast,
   type SceneRaycastApi,
@@ -141,12 +136,14 @@ import {
 import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
-import { createSimClock, type ClockSnapshot, type SimClock } from "../time/simClock";
-import { createTurnLoop, type TurnLoop, type TurnLoopConfig, type TurnLoopSnapshot } from "../turn/turnLoop";
+import { createSimClock, type SimClock } from "../time/simClock";
+import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
 import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
 import { createCameraDirector, type CameraDirector } from "./cameraDirector";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
-import { createMotionIntents, type MotionIntentBatch, type MotionIntents } from "./motionIntents";
+import { createMotionIntents, type MotionIntents } from "./motionIntents";
+import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
+import { featureDescriptors, type FeatureDeps } from "./descriptors/features";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -524,344 +521,6 @@ export interface GameContext {
   /** True when a {@link GameContextOptions.replication} policy makes {@link snapshot} viewer-dependent (private/AOI projection is active). @internal */
   replicatesPerViewer(): boolean;
 }
-
-/**
- * Shared wiring every optional-feature descriptor draws from — the live core subsystems (entities,
- * spatial, economy, inventory) plus reactive plumbing (`signalNotify`) and a `feature` reader for the
- * few features that reference another (quest reads unlocks). Handed to each {@link FeatureDescriptor}'s
- * `create` so a new opt-in subsystem plugs into one registration, never a new `features.x ?` branch.
- */
-interface FeatureDeps {
-  features: GameFeatures;
-  signalNotify: () => void;
-  events: GameEvents;
-  now: () => number;
-  entities: EntityStore;
-  spatial: SpatialApi;
-  store: ObservableKeyedStore<unknown>;
-  commandRegistry: CommandRegistry<GameContext>;
-  economy: GameContextEconomy;
-  content: GameContextContent;
-  activeUserId: () => string;
-  walletOf: (userId: string) => WalletState;
-  setWallet: (userId: string, state: WalletState) => void;
-  layouts: Record<string, InventoryLayout>;
-  inventoryFor: (userId: string) => InventorySet<string>;
-  ensureInstanceStats: (instanceId: string) => StatValueMap;
-  seedUserPool: (userId: string, statId: string, pool: { current: number; max?: number; min?: number }) => void;
-  sharedSocial: () => Social;
-  pile: (id: string, config?: CardPileConfig) => CardPile;
-  loop: (id: string, config?: TurnLoopConfig) => TurnLoop;
-  cardPiles: ReadonlyMap<string, CardPile>;
-  turnLoops: ReadonlyMap<string, TurnLoop>;
-  raceState: (id: string, config?: RaceStateConfig) => RaceState;
-  feature: <T>(key: keyof GameFeatures) => T | undefined;
-}
-
-/** What a descriptor produces: the `ctx`-facing value plus its optional replication/save modules. */
-interface FeatureBuild {
-  value: unknown;
-  /** Registered into the host→client replication set when present (`ctx.snapshot`/`ctx.hydrate`). */
-  replicate?: SnapshotModule;
-  /** Registered into the whole-world save-only set when present (`ctx.game.save`). */
-  save?: SnapshotModule;
-}
-
-/**
- * One opt-in subsystem expressed as data: which `features` flag turns it on, how it wires itself from
- * {@link FeatureDeps}, and whether it replicates or persists. `createGameContext` iterates the
- * descriptor list instead of hand-wiring each `features.x ? create : undefined` branch — the seam a
- * new feature extends through.
- */
-interface FeatureDescriptor {
-  readonly key: keyof GameFeatures;
-  enabled(features: GameFeatures): boolean;
-  create(deps: FeatureDeps): FeatureBuild;
-}
-
-const featureDescriptors: readonly FeatureDescriptor[] = [
-  {
-    key: "unlocks",
-    enabled: (f) => f.unlocks === true,
-    create(d) {
-      const unlocks = notifyAfter(createUnlocks(), ["grant", "hydrate"], d.signalNotify);
-      return {
-        value: unlocks,
-        save: {
-          key: "unlocks",
-          snapshot: () => unlocks.snapshotAll(),
-          hydrate: (data) => unlocks.hydrateAll(data as Record<string, string[]>),
-        },
-      };
-    },
-  },
-  {
-    key: "social",
-    enabled: (f) => f.social === true,
-    create(d) {
-      const raw = d.sharedSocial();
-      const social: Social = {
-        friends: notifyAfter(
-          raw.friends,
-          ["request", "accept", "decline", "remove", "block", "hydrate"],
-          d.signalNotify,
-        ),
-        party: notifyAfter(
-          raw.party,
-          ["invite", "accept", "decline", "kick", "leave", "promote"],
-          d.signalNotify,
-        ),
-        presence: raw.presence,
-        emotes: raw.emotes,
-        worldInvites: notifyAfter(raw.worldInvites, ["invite", "accept", "decline"], d.signalNotify),
-        snapshot: raw.snapshot,
-        hydrate: (data) => {
-          raw.hydrate(data);
-          d.signalNotify();
-        },
-      };
-      return {
-        value: social,
-        replicate: {
-          key: "social",
-          snapshot: () => social.snapshot(),
-          hydrate: (data) => social.hydrate(data as SocialSnapshot),
-        },
-      };
-    },
-  },
-  {
-    key: "chat",
-    enabled: (f) => f.chat === true,
-    create(d) {
-      const raw = d.sharedSocial();
-      const chat = notifyAfter(
-        createChat({
-          events: d.events,
-          now: d.now,
-          party: raw.party,
-          proximity: {
-            entities: { get: (id) => d.entities.get(id) },
-            spatial: { inRadius: (center, radius, filter) => d.spatial.inRadius(center, radius, filter) },
-          },
-          blockedBy: (userId) => raw.friends.snapshot(userId).blocked,
-        }),
-        ["register", "send", "whisper", "hydrate"],
-        d.signalNotify,
-      );
-      return {
-        value: chat,
-        replicate: {
-          key: "chat",
-          snapshot: () => chat.snapshot(),
-          hydrate: (data) => chat.hydrate(data as ChatSnapshot),
-        },
-      };
-    },
-  },
-  {
-    key: "leaderboard",
-    enabled: (f) => f.leaderboard === true,
-    create(d) {
-      const leaderboard = notifyAfter(createLeaderboard(), ["increment", "hydrate"], d.signalNotify);
-      return {
-        value: leaderboard,
-        replicate: {
-          key: "leaderboard",
-          snapshot: () => leaderboard.snapshot(),
-          hydrate: (data) => leaderboard.hydrate(data as LeaderboardRow[]),
-        },
-      };
-    },
-  },
-  {
-    key: "roster",
-    enabled: (f) => f.roster === true,
-    create(d) {
-      const roster = notifyAfter(
-        createRoster({ now: d.now }),
-        ["capture", "release", "setEquipped", "hydrate"],
-        d.signalNotify,
-      );
-      return {
-        value: roster,
-        save: {
-          key: "roster",
-          snapshot: () => roster.snapshotAll(),
-          hydrate: (data) => roster.hydrateAll(data as Record<string, readonly RosterEntry[]>),
-        },
-      };
-    },
-  },
-  {
-    key: "cosmetics",
-    enabled: (f) => f.cosmetics === true,
-    create(d) {
-      const cosmetics = notifyAfter(createCosmetics({ events: d.events }), ["apply", "equip", "hydrate"], d.signalNotify);
-      return {
-        value: cosmetics,
-        save: {
-          key: "cosmetics",
-          snapshot: () => cosmetics.snapshotAll(),
-          hydrate: (data) => cosmetics.hydrateAll(data as Record<string, Record<string, string>>),
-        },
-      };
-    },
-  },
-  {
-    key: "trade",
-    enabled: (f) => f.trade === true,
-    create(d) {
-      return {
-        value: createTradeSystem({
-          resolveTrade: (itemId) => d.content.itemById?.(itemId)?.trade,
-          wallet: {
-            canAfford: (costs) =>
-              walletCanAfford(d.walletOf(d.activeUserId()), costs) ? null : "insufficient-funds",
-            charge(costs) {
-              const result = walletChargeAll(d.walletOf(d.activeUserId()), costs);
-              if (result.status === "ok") {
-                d.setWallet(d.activeUserId(), result.state);
-                d.signalNotify();
-              }
-            },
-            grant(gains) {
-              for (const [currencyId, amount] of Object.entries(gains)) {
-                d.economy.grant(d.activeUserId(), currencyId, amount);
-              }
-            },
-          },
-          inventory: {
-            put(inventoryId, itemId, count) {
-              if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-              const result = d.inventoryFor(d.activeUserId()).put(inventoryId, itemId, count);
-              return result.status === "ok" ? null : { reason: result.reason };
-            },
-            take(inventoryId, itemId, count) {
-              if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-              const result = d.inventoryFor(d.activeUserId()).take(inventoryId, itemId, count);
-              return result.status === "ok" ? null : { reason: result.reason };
-            },
-            count: (inventoryId, itemId) => d.inventoryFor(d.activeUserId()).count(inventoryId, itemId),
-          },
-        }),
-      };
-    },
-  },
-  {
-    key: "quest",
-    enabled: (f) => f.quest === true,
-    create(d) {
-      const quest = notifyAfter(
-        createQuestJournal({
-          events: d.events,
-          rewards: {
-            grantXp(userId, amount) {
-              const existing = d.ensureInstanceStats(userId)["xp"];
-              const current = (existing?.current ?? 0) + amount;
-              d.seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
-            },
-            grantEconomy: (userId, currencyId, amount) => d.economy.grant(userId, currencyId, amount),
-            grantItem(userId, inventoryId, itemId, count) {
-              if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-              const result = d.inventoryFor(userId).put(inventoryId, itemId, count);
-              return result.status === "ok" ? null : { reason: result.reason };
-            },
-            grantUnlock: (userId, unlockId) => d.feature<Unlocks>("unlocks")?.grant(userId, unlockId),
-          },
-          hasUnlock: (userId, id) => d.feature<Unlocks>("unlocks")?.has(userId, id) ?? false,
-        }),
-        ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
-        d.signalNotify,
-      );
-      return {
-        value: quest,
-        save: {
-          key: "quest",
-          snapshot: () => quest.snapshotAll(),
-          hydrate: (data) => quest.hydrateAll(data as Record<string, QuestSnapshotEntry[]>),
-        },
-      };
-    },
-  },
-  {
-    key: "dialogue",
-    enabled: (f) => f.dialogue === true,
-    create(d) {
-      const dialogue = createGameDialogue(d.store);
-      d.commandRegistry.define("dialogue.open", {
-        apply(state, input) {
-          const id = (input as { id?: string }).id;
-          if (id !== undefined) state.game.dialogue?.open(id);
-        },
-      });
-      d.commandRegistry.define("dialogue.close", {
-        apply(state) {
-          state.game.dialogue?.close();
-        },
-      });
-      return { value: dialogue };
-    },
-  },
-  {
-    key: "players",
-    enabled: (f) => f.players === true,
-    create(d) {
-      return { value: notifyAfter(createConnectedPlayers(), ["join", "leave"], d.signalNotify) };
-    },
-  },
-  {
-    key: "cards",
-    enabled: (f) => f.cards === true,
-    create(d) {
-      return {
-        value: { pile: d.pile } satisfies GameContextCards,
-        save: {
-          key: "cards",
-          snapshot: () => {
-            const out: Record<string, CardPileState> = {};
-            for (const [id, cardPile] of d.cardPiles) out[id] = cardPile.state();
-            return out;
-          },
-          hydrate: (data) => {
-            for (const [id, state] of Object.entries(data as Record<string, CardPileState>)) {
-              d.cardPiles.get(id)?.reset(state);
-            }
-          },
-        },
-      };
-    },
-  },
-  {
-    key: "turn",
-    enabled: (f) => f.turn === true,
-    create(d) {
-      return {
-        value: { loop: d.loop } satisfies GameContextTurn,
-        save: {
-          key: "turn",
-          snapshot: () => {
-            const out: Record<string, TurnLoopSnapshot> = {};
-            for (const [id, turnLoop] of d.turnLoops) out[id] = turnLoop.capture();
-            return out;
-          },
-          hydrate: (data) => {
-            for (const [id, state] of Object.entries(data as Record<string, TurnLoopSnapshot>)) {
-              d.turnLoops.get(id)?.restore(state);
-            }
-          },
-        },
-      };
-    },
-  },
-  {
-    key: "race",
-    enabled: (f) => f.race === true,
-    create(d) {
-      return { value: { state: d.raceState } satisfies GameContextRace };
-    },
-  },
-];
 
 export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: GameContextOptions<TAssetRef, TMultiplayer>,
@@ -1714,37 +1373,25 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     if (build.save !== undefined) featureSaveModules.push(build.save);
   }
 
+  const baselineDeps: BaselineDeps = {
+    signalNotify: signal.notify,
+    entities,
+    statsByInstance,
+    store,
+    feed,
+    inventoryIds,
+    inventoryByUser,
+    inventoryFor,
+    wallets,
+    time,
+    pose,
+    possession,
+    motionByUser,
+    motionFor,
+  };
+  const baselineBuilds = baselineDescriptors.map((descriptor) => descriptor.create(baselineDeps));
   const snapshotModules: SnapshotModule[] = [
-    { key: "entities", snapshot: () => entities.snapshot(), hydrate: (data) => entities.hydrate(data as SceneEntity[]) },
-    {
-      key: "stats",
-      snapshot: () => snapshotEntityStats(statsByInstance),
-      hydrate: (data) => hydrateEntityStats(statsByInstance, data as Record<string, StatValueMap>),
-    },
-    {
-      key: "store",
-      snapshot: () => store.snapshot(),
-      hydrate: (data) => store.hydrate(data as readonly (readonly [string, unknown])[]),
-    },
-    { key: "feed", snapshot: () => feed.snapshot(), hydrate: (data) => feed.hydrate(data as Record<string, FeedEntry[]>) },
-    {
-      key: "inventory",
-      snapshot: () => {
-        const byUser: Record<string, Record<string, InventoryState>> = {};
-        for (const [userId, set] of inventoryByUser) {
-          const states: Record<string, InventoryState> = {};
-          for (const inventoryId of inventoryIds) states[inventoryId] = set.state(inventoryId);
-          byUser[userId] = states;
-        }
-        return byUser;
-      },
-      hydrate: (data) => {
-        for (const [userId, states] of Object.entries(data as Record<string, Record<string, InventoryState>>)) {
-          const set = inventoryFor(userId);
-          for (const [inventoryId, state] of Object.entries(states)) set.replaceState(inventoryId, state);
-        }
-      },
-    },
+    ...baselineBuilds.flatMap((build) => (build.replicate === undefined ? [] : [build.replicate])),
     ...featureReplicateModules,
   ];
 
@@ -1791,37 +1438,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
    */
   const saveModules: SnapshotModule[] = [
     ...snapshotModules,
-    {
-      key: "economy",
-      snapshot: () => Object.fromEntries(wallets),
-      hydrate: (data) => {
-        wallets.clear();
-        for (const [userId, state] of Object.entries(data as Record<string, WalletState>)) {
-          wallets.set(userId, state);
-        }
-        signal.notify();
-      },
-    },
-    { key: "time", snapshot: () => time.snapshot(), hydrate: (data) => time.hydrate(data as ClockSnapshot) },
-    { key: "pose", snapshot: () => pose.snapshotAll(), hydrate: (data) => pose.hydrateAll(data as PoseSnapshot) },
-    {
-      key: "possession",
-      snapshot: () => possession.snapshotAll(),
-      hydrate: (data) => possession.hydrateAll(data as PossessionSnapshot),
-    },
-    {
-      key: "motion",
-      snapshot: () => {
-        const out: Record<string, MotionIntentBatch> = {};
-        for (const [userId, queue] of motionByUser) out[userId] = queue.snapshot();
-        return out;
-      },
-      hydrate: (data) => {
-        for (const [userId, batch] of Object.entries(data as Record<string, MotionIntentBatch>)) {
-          motionFor(userId).hydrate(batch);
-        }
-      },
-    },
+    ...baselineBuilds.flatMap((build) => (build.save === undefined ? [] : [build.save])),
     ...featureSaveModules,
   ];
 

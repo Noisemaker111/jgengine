@@ -194,6 +194,8 @@
     "./runtime/adapter",
     "./runtime/cameraDirector",
     "./runtime/commandRunner",
+    "./runtime/descriptors/baseline",
+    "./runtime/descriptors/features",
     "./runtime/gameContext",
     "./runtime/gameRuntime",
     "./runtime/headlessRunner",
