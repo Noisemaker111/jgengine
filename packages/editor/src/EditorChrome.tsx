@@ -13,7 +13,7 @@ import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/s
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
-import { CatalogsPanel } from "./CatalogsPanel";
+import { AgentPanel } from "./agent/AgentPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
 import { OutlinerPanel } from "./OutlinerPanel";
@@ -133,8 +133,8 @@ function useDocumentSave(
 
 /**
  * The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays,
- * the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI
- * store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+ * the selector-subscribed {@link InspectorPanel}, the embedded {@link AgentPanel}, and the asset
+ * browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
  */
 export function EditorChrome({
   gameId,
@@ -157,6 +157,7 @@ export function EditorChrome({
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("outliner");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  const [agentOpen, setAgentOpen] = useState(false);
   const [bottomOpen, setBottomOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -650,6 +651,18 @@ export function EditorChrome({
         <button type="button" className={BTN} onClick={() => showPanel("assets")}>Assets</button>
         <div className="ml-auto flex items-center gap-2">
           <button type="button" className={BTN} onClick={() => setRightOpen((value) => !value)}>Inspector</button>
+          <button
+            type="button"
+            className={`rounded-md px-2 py-1 ring-1 ring-inset transition-colors ${
+              agentOpen
+                ? "bg-violet-500/25 text-violet-100 ring-violet-400/40"
+                : "bg-white/[0.04] text-neutral-300 ring-white/[0.06] hover:bg-white/10 hover:text-neutral-100"
+            }`}
+            onClick={() => setAgentOpen((value) => !value)}
+            title="Embedded agent panel — same RPC/undo as the GUI"
+          >
+            Agent
+          </button>
           <button type="button" className={BTN} onClick={() => api.setMode("walk")}>Walk</button>
           <button type="button" className="rounded-md bg-gradient-to-b from-emerald-500 to-emerald-600 px-3 py-1 font-semibold text-white shadow-md shadow-emerald-950/50 transition-colors hover:from-emerald-400 hover:to-emerald-500" onClick={() => api.setMode("play")}>▶ Play</button>
           <button type="button" className={BTN} onClick={() => importInputRef.current?.click()}>Import</button>
@@ -777,6 +790,7 @@ export function EditorChrome({
         </main>
 
         {rightOpen ? <InspectorPanel session={session} ui={ui} onClose={() => setRightOpen(false)} /> : null}
+        {agentOpen ? <AgentPanel api={api} onClose={() => setAgentOpen(false)} /> : null}
       </div>
 
       {bottomOpen ? (
