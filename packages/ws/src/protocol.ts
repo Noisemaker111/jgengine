@@ -11,6 +11,17 @@ import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/mat
 
 export const WS_PROTOCOL_VERSION = 1;
 
+/** Max length of a `runCommand` command name, in UTF-16 code units. */
+export const MAX_COMMAND_LENGTH = 4_096;
+/** Max length of a `pushFeed` action name, in UTF-16 code units. */
+export const MAX_FEED_ACTION_LENGTH = 256;
+/** Max serialized size of a `pushFeed` entry payload, in bytes. */
+export const MAX_FEED_ENTRY_BYTES = 65_536;
+/** Max number of keys in a pose `appearance` tag map. */
+export const MAX_APPEARANCE_ENTRIES = 32;
+/** Max length of a single `appearance` tag string value, in UTF-16 code units. */
+export const MAX_APPEARANCE_VALUE_LENGTH = 256;
+
 export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice";
 
 /** Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only. */
@@ -102,10 +113,19 @@ function isWsChannel(value: unknown): value is WsChannel {
 }
 
 function isAppearance(value: unknown): value is WsAppearance {
-  return (
-    isRecord(value) &&
-    Object.values(value).every((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+  if (!isRecord(value)) return false;
+  const entries = Object.values(value);
+  if (entries.length > MAX_APPEARANCE_ENTRIES) return false;
+  return entries.every(
+    (v) =>
+      (typeof v === "string" && v.length <= MAX_APPEARANCE_VALUE_LENGTH) ||
+      typeof v === "number" ||
+      typeof v === "boolean",
   );
+}
+
+function withinFeedEntryBudget(entry: unknown): boolean {
+  return new TextEncoder().encode(JSON.stringify(entry)).length <= MAX_FEED_ENTRY_BYTES;
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -146,6 +166,24 @@ export function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure {
   if (typeof parsed.t !== "string") {
     return { reason: "Invalid message type", id };
   }
+  if (parsed.t === "runCommand" && typeof parsed.command === "string" && parsed.command.length > MAX_COMMAND_LENGTH) {
+    return { reason: "Command exceeds max length", id };
+  }
+  if (parsed.t === "pushFeed" && typeof parsed.action === "string" && parsed.action.length > MAX_FEED_ACTION_LENGTH) {
+    return { reason: "Feed action exceeds max length", id };
+  }
+  if (parsed.t === "pushFeed" && "entry" in parsed && !withinFeedEntryBudget(parsed.entry)) {
+    return { reason: "Feed entry exceeds max size", id };
+  }
+  if (parsed.t === "pose" && isRecord(parsed.pose) && isRecord(parsed.pose.appearance)) {
+    const values = Object.values(parsed.pose.appearance);
+    if (values.length > MAX_APPEARANCE_ENTRIES) {
+      return { reason: "Appearance exceeds max entries", id };
+    }
+    if (values.some((v) => typeof v === "string" && v.length > MAX_APPEARANCE_VALUE_LENGTH)) {
+      return { reason: "Appearance value exceeds max length", id };
+    }
+  }
   return { reason: "Malformed message", id };
 }
 
@@ -184,13 +222,16 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
     case "runCommand":
       return typeof message.id === "number" &&
         typeof message.serverId === "string" &&
-        typeof message.command === "string"
+        typeof message.command === "string" &&
+        message.command.length <= MAX_COMMAND_LENGTH
         ? (message as WsClientMessage)
         : null;
     case "pushFeed":
       return typeof message.id === "number" &&
         typeof message.serverId === "string" &&
-        typeof message.action === "string"
+        typeof message.action === "string" &&
+        message.action.length <= MAX_FEED_ACTION_LENGTH &&
+        withinFeedEntryBudget(message.entry)
         ? (message as WsClientMessage)
         : null;
     case "subscribe":
