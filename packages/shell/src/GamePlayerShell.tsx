@@ -137,6 +137,7 @@ import {
   cloneModelScene,
   createPaintCanvas,
   disposeClonedMaterials,
+  disposePaintCanvas,
   syncPaintCanvas,
   type MaterialCache,
   type PaintCanvas,
@@ -590,12 +591,18 @@ function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: s
   const paintVersionRef = useRef(-1);
   const materialCacheRef = useRef<MaterialCache | null>(null);
 
-  useEffect(() => {
-    paintCanvasRef.current = null;
-    paintDrawnCountRef.current = 0;
-    paintVersionRef.current = -1;
-    materialCacheRef.current = null;
-  }, [scene]);
+  useEffect(
+    () => () => {
+      if (paintCanvasRef.current !== null) {
+        disposePaintCanvas(paintCanvasRef.current);
+        paintCanvasRef.current = null;
+      }
+      paintDrawnCountRef.current = 0;
+      paintVersionRef.current = -1;
+      materialCacheRef.current = null;
+    },
+    [scene],
+  );
 
   useFrame((_state, delta) => {
     const stateMachine = stateActionsRef.current;

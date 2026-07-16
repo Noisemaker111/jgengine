@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext } from "../runtime/gameContext";
 import { flat } from "../world/features";
-import { defineGame } from "./defineGame";
+import { createDisposer, defineGame } from "./defineGame";
 
 const VALID = {
   name: "TestGame",
@@ -82,5 +82,51 @@ describe("defineGame", () => {
     expect(game.save).toEqual({ auto: "5m", scope: "player+chunks" });
     expect(game.ui).toBe("GameUI");
     expect(game.loop).toBe(loop);
+  });
+});
+
+describe("createDisposer", () => {
+  test("runs registered cleanups in LIFO order", () => {
+    const order: string[] = [];
+    const disposer = createDisposer();
+    disposer.onDispose(() => order.push("first"));
+    disposer.onDispose(() => order.push("second"));
+    disposer.onDispose(() => order.push("third"));
+    disposer.dispose();
+    expect(order).toEqual(["third", "second", "first"]);
+  });
+
+  test("dispose is idempotent — a second call (StrictMode double-unmount) runs nothing again", () => {
+    let runs = 0;
+    const disposer = createDisposer();
+    disposer.onDispose(() => {
+      runs += 1;
+    });
+    disposer.dispose();
+    disposer.dispose();
+    expect(runs).toBe(1);
+  });
+
+  test("registering after dispose runs the cleanup immediately instead of leaking it", () => {
+    const disposer = createDisposer();
+    disposer.dispose();
+    let ran = false;
+    disposer.onDispose(() => {
+      ran = true;
+    });
+    expect(ran).toBe(true);
+  });
+
+  test("a resource created by an async step that resolves after stop() is freed, not leaked", async () => {
+    const disposer = createDisposer();
+    let sourceStopped = false;
+    const pending = Promise.resolve().then(() => {
+      disposer.onDispose(() => {
+        sourceStopped = true;
+      });
+    });
+    disposer.dispose();
+    await pending;
+    expect(sourceStopped).toBe(true);
   });
 });

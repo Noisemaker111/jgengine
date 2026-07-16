@@ -99,6 +99,13 @@ export function createPaintCanvas(seed: THREE.MeshStandardMaterial, size = PAINT
 }
 
 /** @internal */
+export function disposePaintCanvas(paint: PaintCanvas): void {
+  paint.texture.dispose();
+  paint.canvas.width = 0;
+  paint.canvas.height = 0;
+}
+
+/** @internal */
 export function drawPaintStrokes(paint: PaintCanvas, strokes: readonly PaintStroke[]): void {
   const { canvas, context, texture } = paint;
   for (const stroke of strokes) {

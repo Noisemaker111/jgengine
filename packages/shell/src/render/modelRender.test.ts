@@ -6,7 +6,9 @@ import {
   cacheStandardMaterials,
   cloneModelScene,
   disposeClonedMaterials,
+  disposePaintCanvas,
   standardMaterialsOf,
+  type PaintCanvas,
 } from "./modelRender";
 
 function standardMesh(color = "#ffffff"): THREE.Mesh {
@@ -63,6 +65,24 @@ describe("cloneModelScene material lifecycle", () => {
     }
     disposeClonedMaterials(cloned);
     expect(disposed).toBe(2);
+  });
+});
+
+describe("disposePaintCanvas", () => {
+  test("disposes the GPU texture and frees the canvas backing store on replacement/unmount", () => {
+    const canvas = { width: 512, height: 512 } as unknown as HTMLCanvasElement;
+    const texture = new THREE.CanvasTexture(canvas);
+    let textureDisposed = false;
+    texture.dispose = () => {
+      textureDisposed = true;
+    };
+    const paint: PaintCanvas = { canvas, context: {} as CanvasRenderingContext2D, texture };
+
+    disposePaintCanvas(paint);
+
+    expect(textureDisposed).toBe(true);
+    expect(canvas.width).toBe(0);
+    expect(canvas.height).toBe(0);
   });
 });
 
