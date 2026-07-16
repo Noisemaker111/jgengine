@@ -2,7 +2,6 @@ export type BuildingStyle = "suburban" | "commercial" | "tower";
 
 export interface BuildingSpec {
   id: string;
-  /** Preferred catalog id (modular village / dungeon walls until city kit lands). */
   model: string;
   fallbackModel?: string;
   targetHeight: number;
@@ -10,42 +9,40 @@ export interface BuildingSpec {
   footprint: number;
 }
 
-const VILLAGE = "quaternius-medieval-village";
-const DUNGEON = "kaykit-dungeon";
+const CITY = "kaykit-city-builder";
 
-/** Placeholders until a free glTF city kit is mirrored — village walls stand in. */
 const suburban: readonly (readonly [string, string | undefined, number])[] = [
-  [`${VILLAGE}/Wall_Plaster_Straight`, `${VILLAGE}/Wall_UnevenBrick_Straight`, 11],
-  [`${VILLAGE}/Wall_Plaster_Window_Wide_Flat`, `${VILLAGE}/Wall_Plaster_Straight`, 12],
-  [`${VILLAGE}/Wall_Plaster_Door_Flat`, `${VILLAGE}/Wall_Plaster_Straight`, 11.5],
-  [`${VILLAGE}/Wall_UnevenBrick_Straight`, `${VILLAGE}/Wall_Plaster_Straight`, 12.5],
-  [`${VILLAGE}/Wall_UnevenBrick_Window_Wide_Flat`, `${VILLAGE}/Wall_UnevenBrick_Straight`, 13],
-  [`${VILLAGE}/Wall_Plaster_WoodGrid`, `${VILLAGE}/Wall_Plaster_Straight`, 12],
-  [`${VILLAGE}/Wall_Plaster_Straight_Base`, `${VILLAGE}/Wall_Plaster_Straight`, 13.5],
-  [`${VILLAGE}/Wall_UnevenBrick_Door_Flat`, `${VILLAGE}/Wall_UnevenBrick_Straight`, 14],
-  [`${VILLAGE}/Wall_Plaster_Window_Thin_Round`, `${VILLAGE}/Wall_Plaster_Straight`, 11],
-  [`${VILLAGE}/Wall_UnevenBrick_Window_Thin_Round`, `${VILLAGE}/Wall_UnevenBrick_Straight`, 12.5],
+  [`${CITY}/building_A`, `${CITY}/building_B`, 11],
+  [`${CITY}/building_B`, `${CITY}/building_A`, 12],
+  [`${CITY}/building_C`, `${CITY}/building_A`, 11.5],
+  [`${CITY}/building_D`, `${CITY}/building_B`, 12.5],
+  [`${CITY}/building_E`, `${CITY}/building_C`, 13],
+  [`${CITY}/building_F`, `${CITY}/building_D`, 12],
+  [`${CITY}/building_G`, `${CITY}/building_E`, 13.5],
+  [`${CITY}/building_H`, `${CITY}/building_F`, 14],
+  [`${CITY}/building_A_withoutBase`, `${CITY}/building_A`, 11],
+  [`${CITY}/building_B_withoutBase`, `${CITY}/building_B`, 12.5],
 ];
 
 const commercial: readonly (readonly [string, string | undefined, number])[] = [
-  [`${DUNGEON}/wall`, `${VILLAGE}/Wall_Plaster_Straight`, 16],
-  [`${DUNGEON}/wall_arched`, `${DUNGEON}/wall`, 18],
-  [`${DUNGEON}/wall_window_open`, `${DUNGEON}/wall`, 17],
-  [`${DUNGEON}/wall_doorway`, `${DUNGEON}/wall`, 15],
-  [`${DUNGEON}/wall_corner`, `${DUNGEON}/wall`, 19],
-  [`${DUNGEON}/wall_gated`, `${DUNGEON}/wall_arched`, 22],
-  [`${DUNGEON}/wall_scaffold`, `${DUNGEON}/wall`, 20],
-  [`${DUNGEON}/wall_Tsplit`, `${DUNGEON}/wall`, 21],
-  [`${DUNGEON}/wall_crossing`, `${DUNGEON}/wall`, 18],
-  [`${DUNGEON}/wall_archedwindow_open`, `${DUNGEON}/wall_window_open`, 24],
+  [`${CITY}/building_C`, `${CITY}/building_D`, 16],
+  [`${CITY}/building_D`, `${CITY}/building_E`, 18],
+  [`${CITY}/building_E`, `${CITY}/building_F`, 17],
+  [`${CITY}/building_F`, `${CITY}/building_G`, 15],
+  [`${CITY}/building_G`, `${CITY}/building_H`, 19],
+  [`${CITY}/building_H`, `${CITY}/building_C`, 22],
+  [`${CITY}/building_C_withoutBase`, `${CITY}/building_C`, 20],
+  [`${CITY}/building_D_withoutBase`, `${CITY}/building_D`, 21],
+  [`${CITY}/building_E_withoutBase`, `${CITY}/building_E`, 18],
+  [`${CITY}/building_F_withoutBase`, `${CITY}/building_F`, 24],
 ];
 
 const tower: readonly (readonly [string, string | undefined, number])[] = [
-  [`${DUNGEON}/wall_pillar`, `${DUNGEON}/pillar`, 40],
-  [`${DUNGEON}/pillar_decorated`, `${DUNGEON}/wall_pillar`, 46],
-  [`${DUNGEON}/wall_scaffold`, `${DUNGEON}/wall_arched`, 52],
-  [`${DUNGEON}/wall_archedwindow_gated`, `${DUNGEON}/wall_corner_gated`, 48],
-  [`${DUNGEON}/wall_corner_gated`, `${DUNGEON}/wall_corner`, 44],
+  [`${CITY}/watertower`, `${CITY}/building_H`, 40],
+  [`${CITY}/building_G_withoutBase`, `${CITY}/building_G`, 46],
+  [`${CITY}/building_H_withoutBase`, `${CITY}/building_H`, 52],
+  [`${CITY}/building_H`, `${CITY}/building_G`, 48],
+  [`${CITY}/building_G`, `${CITY}/watertower`, 44],
 ];
 
 function specs(
