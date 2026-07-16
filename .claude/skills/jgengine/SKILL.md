@@ -85,7 +85,7 @@ Any hiccup with JGengine — a doc that's wrong, a missing primitive, a rough ed
 
 ## Upgrading? Read the changelog
 
-All eight packages version in lockstep. When you bump (e.g. `0.6` → `0.7`) to pick up new capabilities, read [`CHANGELOG.md`](https://github.com/Noisemaker111/jgengine/blob/main/CHANGELOG.md) — each release leads with a **Migrate** block listing the concrete steps to move a game onto the new APIs. It ships inside every package too (`node_modules/@jgengine/core/CHANGELOG.md`), and as typed values: `import { VERSION, CHANGELOG } from "@jgengine/core/meta/changelog"` to diff your installed version against the latest programmatically.
+Lockstep SDK packages (`@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`) share one version line; CLI `jgengine` and `@jgengine/github` may lag. When you bump (e.g. `0.6` → `0.7`) to pick up new capabilities, read [`CHANGELOG.md`](https://github.com/Noisemaker111/jgengine/blob/main/CHANGELOG.md) — each release leads with a **Migrate** block. Same data as typed values: `import { VERSION, CHANGELOG } from "@jgengine/core/meta/changelog"`.
 
 ## Concept → Type Reference
 
@@ -93,7 +93,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 
 | Concept | Import path (`@jgengine/core/…`) | Export(s) |
 |---------|----------------------------------|-----------|
-| Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` |
+| Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` — use `ctx.scene.entity` (never deprecated `GameDefinition.scene`) |
+| Entity meta | `scene/entityStore` | `entityMetaOf(entity, isMeta)` — type-guard narrow of `meta` (prefer over `as T`) |
 | Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `CameraProjection`, `SideScrollCameraConfig`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |

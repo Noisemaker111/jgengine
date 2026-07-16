@@ -5,6 +5,10 @@ description: Multiplayer API: adapters, topology, authority, rooms, persistence.
 
 # jgengine-multiplayer
 
+## Flagship hosted path
+
+Real game + host, not a missing gallery id: **[examples/HOSTED.md](../../../examples/HOSTED.md)** — `claudecraft` with `ws({ authority: "server" })` + `examples/express-host` (or Convex).
+
 ## Two runtimes (do not confuse them)
 
 | Role | API | Who uses it |

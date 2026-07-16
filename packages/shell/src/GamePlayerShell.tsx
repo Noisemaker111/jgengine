@@ -32,7 +32,6 @@ sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 import {
   createActionStateTracker,
-  hotbarSlotActionIndex,
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
@@ -42,6 +41,8 @@ import {
   heldActionsFor,
   shouldFireBoundAction,
 } from "./boundActionDispatch";
+import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "./hotbarActions";
+import { colorFromId, resolveWorldSky } from "./worldSky";
 import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
 import {
   buildContextMenu,
@@ -69,7 +70,6 @@ import { attachWorldSync } from "./worldSync";
 import { resolveCommandSink, type CommandSink } from "./commandSink";
 import { inputFramesEqual, resolveInputSink, type InputSink } from "./inputSink";
 import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
-import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
@@ -233,39 +233,6 @@ export {
   RESERVED_INPUT_ACTIONS,
 } from "./boundActionDispatch";
 
-function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
-  return Object.keys(input ?? {}).flatMap((action) => {
-    const slot = hotbarSlotActionIndex(action);
-    return slot === null ? [] : [{ action, slot }];
-  });
-}
-
-function hotbarIdFor(playable: PlayableGame): string | null {
-  const declarations = Object.entries(playable.game.inventories ?? {});
-  const hud = declarations.find(([, declaration]) => declaration.hud === "hotbar");
-  return (hud ?? declarations[0])?.[0] ?? null;
-}
-
-function executeHotbarSlot(
-  ctx: GameContext,
-  fromId: string,
-  hotbarId: string,
-  slot: number,
-  yaw: number,
-  pitch: number,
-  aimOverride?: Aim,
-): { ok: boolean; error?: string } {
-  const stack = ctx.player.inventory.state(hotbarId).slots[slot];
-  if (stack === undefined || stack === null) return { ok: false, error: `Hotbar slot ${slot + 1} is empty` };
-  const result = ctx.item.use.use({
-    from: fromId,
-    itemId: stack.itemId,
-    inventoryId: hotbarId,
-    aim: aimOverride ?? { yaw, pitch },
-  });
-  return result.error === undefined ? { ok: true } : { ok: false, error: result.error };
-}
-
 function pointerAimFor(ctx: GameContext, service: PointerService): Aim | undefined {
   const hit = service.worldHit();
   if (hit === null) return undefined;
@@ -305,17 +272,7 @@ export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
 export { hasEnvironmentTerrain } from "@jgengine/core/world/terrain";
-
-/** The world's declared sky, when its world feature is an environment with one (#196.1). */
-export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironmentDescriptor | undefined {
-  return world?.kind === "environment" ? world.sky : undefined;
-}
-
-function colorFromId(id: string): string {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return `hsl(${hash % 360}, 65%, 55%)`;
-}
+export { resolveWorldSky, colorFromId } from "./worldSky";
 
 function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
   const size = entry.shadowCameraSize ?? 40;

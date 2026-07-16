@@ -24,8 +24,21 @@ export interface SceneEntity<TMeta = unknown> {
   role: EntityRole;
   movement: EntityMovement;
   behaviors: readonly BehaviorDescriptor[];
-  /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with a cast or type guard on read (#286.1); never encode state in the id/name string. */
+  /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
+}
+
+/**
+ * Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null`
+ * instead of lying to the type checker.
+ *
+ * @capability entity-meta cast-free narrow of SceneEntity.meta via a type guard
+ */
+export function entityMetaOf<T>(
+  entity: SceneEntity<unknown>,
+  isMeta: (value: unknown) => value is T,
+): T | null {
+  return isMeta(entity.meta) ? entity.meta : null;
 }
 
 /** Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code. */

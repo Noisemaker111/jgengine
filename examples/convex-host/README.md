@@ -27,6 +27,10 @@ or set `VITE_CONVEX_URL` in `apps/dev/.env.local`. Any game whose `game.config.t
 `multiplayer: convex({ topology: "shared" })` joins a shared server as soon as it loads — no
 extra wiring on the client or server side.
 
+**Flagship WS path (recommended first):** the in-repo multiplayer reference game is
+`claudecraft` (`multiplayer: ws({ authority: "server" })`) with `examples/express-host` —
+see [HOSTED.md](../HOSTED.md).
+
 ## Self-hosted Convex (no cloud account)
 
 The Convex backend is open source (FSL-1.1-Apache-2.0) and this directory ships a
