@@ -22,4 +22,8 @@ export const aliases: readonly AssetAlias[] = [
   { key: "furniture/bed", target: "kaykit-furniture/bed_double_A" },
   { key: "furniture/couch", target: "kaykit-furniture/couch" },
   { key: "furniture/table", target: "kaykit-furniture/table_medium" },
+  { key: "city/car_sedan", target: "kaykit-city-builder/car_sedan" },
+  { key: "city/car_police", target: "kaykit-city-builder/car_police" },
+  { key: "city/building_a", target: "kaykit-city-builder/building_A" },
+  { key: "city/streetlight", target: "kaykit-city-builder/streetlight" },
 ];

@@ -5,16 +5,11 @@ import { assets } from "../assets";
 import { BUILDING_SPECS } from "./buildings";
 
 const CHAR = "kaykit-adventurers";
+const CITY = "kaykit-city-builder";
 const NATURE = "quaternius-stylized-nature";
 const DUNGEON = "kaykit-dungeon";
 const FURN = "kaykit-furniture";
-const SPACE = "kaykit-space-base";
 
-/**
- * Art plan: preferred Quaternius/KayKit catalog ids. Soft-resolve via
- * resolveModelPlan — missing packs → shell primitives until pull/reindex.
- * Vehicles use space-base landers as temporary stand-ins until a CC0 car pack lands.
- */
 export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
   street_runner: {
     model: `${CHAR}/Rogue`,
@@ -68,23 +63,23 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
   },
 
   car_compact: {
-    model: `${SPACE}/spacetruck`,
-    fallbackModel: `${SPACE}/lander_B`,
+    model: `${CITY}/car_hatchback`,
+    fallbackModel: `${CITY}/car_sedan`,
     style: { targetHeight: 1.35 },
   },
   car_muscle: {
-    model: `${SPACE}/spacetruck_large`,
-    fallbackModel: `${SPACE}/spacetruck`,
+    model: `${CITY}/car_stationwagon`,
+    fallbackModel: `${CITY}/car_sedan`,
     style: { targetHeight: 1.4 },
   },
   car_sport: {
-    model: `${SPACE}/lander_A`,
-    fallbackModel: `${SPACE}/spacetruck`,
+    model: `${CITY}/car_sedan`,
+    fallbackModel: `${CITY}/car_hatchback`,
     style: { targetHeight: 1.3 },
   },
   car_cop: {
-    model: `${SPACE}/spacetruck`,
-    fallbackModel: `${SPACE}/lander_B`,
+    model: `${CITY}/car_police`,
+    fallbackModel: `${CITY}/car_taxi`,
     style: { targetHeight: 1.4 },
   },
 });
@@ -92,22 +87,22 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
 const objectPlan: Record<string, ModelPick> = {
   obj_palm_planter: {
     model: `${NATURE}/CommonTree_1`,
-    fallbackModel: `${NATURE}/Pine_1`,
+    fallbackModel: `${CITY}/bush`,
     style: { targetHeight: 5.6 },
   },
   obj_streetlight: {
-    model: `${FURN}/lamp_standing`,
-    fallbackModel: `${DUNGEON}/torch_mounted`,
+    model: `${CITY}/streetlight`,
+    fallbackModel: `${FURN}/lamp_standing`,
     style: { targetHeight: 4.3 },
   },
   obj_gunshop_sign: {
-    model: `${DUNGEON}/banner_red`,
-    fallbackModel: `${DUNGEON}/banner_blue`,
+    model: `${CITY}/trafficlight_A`,
+    fallbackModel: `${DUNGEON}/banner_red`,
     style: { targetHeight: 2.4 },
   },
   obj_crate_dock: {
-    model: `${DUNGEON}/box_large`,
-    fallbackModel: `${DUNGEON}/crates_stacked`,
+    model: `${CITY}/box_A`,
+    fallbackModel: `${CITY}/dumpster`,
     style: { targetHeight: 1 },
   },
 };
