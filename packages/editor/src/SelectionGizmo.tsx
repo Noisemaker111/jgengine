@@ -1,8 +1,6 @@
-import { TransformControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo } from "react";
 import * as THREE from "three";
-import type { Group } from "three";
 
 import type { EditorSession, EditorVec3 } from "@jgengine/core/editor/index";
 import {
@@ -11,6 +9,10 @@ import {
   findEditorPath,
   findEditorVolume,
 } from "@jgengine/core/editor/index";
+import {
+  TransformGizmo,
+  type TransformGizmoPose,
+} from "@jgengine/shell/structures/TransformGizmo";
 
 import { isPointerClick } from "./viewportContextMenu";
 import type { EditorHostApi } from "./session";
@@ -387,10 +389,8 @@ function effectiveMode(mode: GizmoMode, kind: GizmoTarget["kind"]): GizmoMode {
 
 /**
  * Drag-to-transform gizmo bound to the current selection, dispatching editor commands on
- * release. Translating with a multi-selection moves every selected object by the drag delta;
- * scaling a volume resizes its true shape (radius, height, or box half-extents); a selected
- * path vertex moves just that point. Snapping follows the UI store: terrain height, grid
- * quantization, or free movement.
+ * release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor
+ * commands (multi-select translate, volume scale, path vertex move).
  */
 export const SelectionGizmo = memo(function SelectionGizmo({
   session,
@@ -401,10 +401,6 @@ export const SelectionGizmo = memo(function SelectionGizmo({
   ui: EditorUiStore;
   groundSnap?: (x: number, z: number) => number;
 }) {
-  const groupRef = useRef<Group>(null);
-  const [object, setObject] = useState<Group | null>(null);
-  const draggingRef = useRef(false);
-  const controls = useThree((state) => state.controls) as { enabled?: boolean } | null;
   const uiState = useGizmoUiState(ui);
   const state = session.getState();
   const selectedId = state.selection[0];
@@ -413,47 +409,11 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     [state, selectedId, uiState.pathPoint, session],
   );
   const mode = target === null ? "translate" : effectiveMode(uiState.gizmoMode, target.kind);
-  const anchorKey = uiState.pathPoint === null ? selectedId : `${uiState.pathPoint.pathId}:${uiState.pathPoint.index}`;
-
-  useEffect(() => {
-    setObject(groupRef.current);
-  }, [anchorKey]);
-
-  useEffect(() => {
-    const group = groupRef.current;
-    if (group === null || target === null) return;
-    if (draggingRef.current) return;
-    group.position.set(target.position.x, target.position.y + target.lift, target.position.z);
-    group.rotation.set(0, target.rotationY, 0);
-    group.scale.set(1, 1, 1);
-  }, [target?.position.x, target?.position.y, target?.position.z, target?.rotationY, anchorKey, mode]);
 
   if (target === null) return null;
 
-  const snapProps =
-    uiState.snapMode === "grid"
-      ? { translationSnap: uiState.gridSize, rotationSnap: Math.PI / 12 }
-      : { rotationSnap: Math.PI / 12 };
-
-  const onRelease = () => {
-    draggingRef.current = false;
-    if (controls !== null && "enabled" in controls) controls.enabled = true;
-    const current = groupRef.current;
-    if (current === null) return;
-    const dropped: EditorVec3 = {
-      x: current.position.x,
-      y: current.position.y - target.lift,
-      z: current.position.z,
-    };
-    if (
-      mode === "translate" &&
-      uiState.snapMode === "ground" &&
-      groundSnap !== undefined &&
-      target.kind !== "path"
-    ) {
-      dropped.y = groundSnap(dropped.x, dropped.z);
-      current.position.y = dropped.y + target.lift;
-    }
+  const onRelease = (pose: TransformGizmoPose) => {
+    const dropped: EditorVec3 = pose.position;
 
     if (target.kind === "pathPoint" && uiState.pathPoint !== null) {
       const path = findEditorPath(session.getState().document, uiState.pathPoint.pathId);
@@ -470,9 +430,9 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     if (mode === "scale" && target.kind === "volume" && selectedId !== undefined) {
       const volume = findEditorVolume(session.getState().document, selectedId);
       if (volume === undefined) return;
-      const sx = Math.abs(current.scale.x);
-      const sy = Math.abs(current.scale.y);
-      const sz = Math.abs(current.scale.z);
+      const sx = Math.abs(pose.scale.x);
+      const sy = Math.abs(pose.scale.y);
+      const sz = Math.abs(pose.scale.z);
       if (sx === 1 && sy === 1 && sz === 1 && vecEqual(dropped, volume.center)) return;
       if (volume.shape === "box" && volume.halfExtents !== undefined) {
         session.dispatch({
@@ -503,12 +463,12 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     }
 
     if (mode === "rotate" && target.kind === "marker" && selectedId !== undefined) {
-      if (vecEqual(dropped, target.position) && current.rotation.y === target.rotationY) return;
+      if (vecEqual(dropped, target.position) && pose.rotationY === target.rotationY) return;
       session.dispatch({
         type: "setTransform",
         id: selectedId,
         position: dropped,
-        rotationY: current.rotation.y,
+        rotationY: pose.rotationY,
       });
       return;
     }
@@ -528,22 +488,21 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     session.dispatch({ type: "setTransform", id: selectedId, position: dropped });
   };
 
+  const snapMode =
+    uiState.snapMode === "grid" ? "grid" : uiState.snapMode === "ground" ? "ground" : "free";
+
   return (
-    <>
-      <group ref={groupRef} />
-      {object !== null ? (
-        <TransformControls
-          object={object}
-          mode={mode}
-          size={0.85}
-          {...snapProps}
-          onMouseDown={() => {
-            draggingRef.current = true;
-            if (controls !== null && "enabled" in controls) controls.enabled = false;
-          }}
-          onMouseUp={onRelease}
-        />
-      ) : null}
-    </>
+    <TransformGizmo
+      position={target.position}
+      rotationY={target.rotationY}
+      mode={mode}
+      snapMode={snapMode}
+      gridSize={uiState.gridSize}
+      lift={target.lift}
+      groundSnap={
+        mode === "translate" && target.kind !== "path" ? groundSnap : undefined
+      }
+      onRelease={onRelease}
+    />
   );
 });

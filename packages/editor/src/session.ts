@@ -31,6 +31,7 @@ import {
   type TerrainMaterialLayer,
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
+import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAsset";
 
 import {
   resolveScatter,
@@ -770,33 +771,27 @@ export function createEditorHost(options: {
             return { ok: true, result: { assets } };
           case "place_asset": {
             const focus = focusTarget ?? { x: 0, y: 0, z: 0 };
-            const position = {
-              x: request.x ?? focus.x,
-              y: request.y ?? focus.y,
-              z: request.z ?? focus.z,
-            };
             const asset = assets.find((entry) => entry.id === request.id);
-            const id = `placed_${request.id}_${Date.now().toString(36)}`;
-            session.dispatch({
-              type: "addMarker",
-              marker: {
-                id,
-                kind: request.kind ?? asset?.kind ?? "prop",
-                position,
-                label: asset?.label ?? request.id,
-                color: "#e2e8f0",
-                meta: {
-                  assetId: request.id,
-                  ...(asset?.url === undefined ? {} : { url: asset.url }),
-                },
+            const placed = resolvePlaceAsset({
+              assetId: request.id,
+              position: {
+                x: request.x ?? focus.x,
+                y: request.y ?? focus.y,
+                z: request.z ?? focus.z,
               },
+              kind: request.kind,
+              knownKind: asset?.kind,
+              knownLabel: asset?.label,
+              knownUrl: asset?.url,
             });
+            const marker = toEditorMarker(placed);
+            session.dispatch({ type: "addMarker", marker });
             return {
               ok: true,
               result: {
-                id,
-                position,
-                marker: session.getState().document.markers.find((marker) => marker.id === id),
+                id: marker.id,
+                position: marker.position,
+                marker: session.getState().document.markers.find((entry) => entry.id === marker.id),
               },
             };
           }

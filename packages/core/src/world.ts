@@ -261,6 +261,16 @@ export {
   type PlacementPreview,
   type SnapMode,
 } from "./world/placementController";
+export {
+  placeAssetFromCommit,
+  resolvePlaceAsset,
+  toEditorMarker,
+  toStructureInput,
+  type PlaceAssetFromCommitOptions,
+  type PlaceAssetResult,
+  type PlaceAssetVec3,
+  type ResolvePlaceAssetInput,
+} from "./world/placeAsset";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
 export { buildRoadRibbon, dashSegments } from "./world/roads";

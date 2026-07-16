@@ -18,6 +18,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   faction: "jgengine-world",
   format: "jgengine-ui",
   game: "jgengine-gameplay",
+  gameplay: "jgengine-gameplay",
   input: "jgengine-gameplay",
   interaction: "jgengine-world",
   inventory: "jgengine-gameplay",
@@ -28,6 +29,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   multiplayer: "jgengine-multiplayer",
   nav: "jgengine-world",
   physics: "jgengine-world",
+  procedural: "jgengine-world",
   puzzle: "jgengine-gameplay",
   random: "jgengine-gameplay",
   render: "jgengine-ui",
@@ -65,16 +67,9 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
   shell: { cartridge: MAIN },
 };
 
+/** Core modules whose skill differs from their top-level domain (e.g. AOI projection lives with multiplayer docs). */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
   "runtime/worldProjection": "jgengine-multiplayer",
-};
-
-export const CORE_BARREL_SKILLS: Record<string, string> = {
-  world: "jgengine-world",
-  combat: "jgengine-combat",
-  gameplay: "jgengine-gameplay",
-  multiplayer: "jgengine-multiplayer",
-  ui: "jgengine-ui",
 };
 
 export const SKILL_DIRS = [
@@ -98,9 +93,8 @@ export function skillForModule(pkg: string, modulePath: string): string | null {
   if (moduleOverride !== undefined) return moduleOverride;
   const domain = modulePath.split("/")[0];
   if (domain === undefined || CORE_INTERNAL_DOMAINS.has(domain)) return null;
-  if (!modulePath.includes("/")) {
-    return CORE_BARREL_SKILLS[modulePath] ?? MAIN;
-  }
+  // Domain barrels (`world.ts`, `gameplay.ts`, …) use the domain skill; root files stay on MAIN.
+  if (!modulePath.includes("/")) return CORE_DOMAIN_SKILLS[domain] ?? MAIN;
   const skill = CORE_DOMAIN_SKILLS[domain];
   if (skill === undefined) {
     throw new Error(

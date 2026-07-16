@@ -81,11 +81,17 @@ function distanceVec3(a: PlacementVec3, b: PlacementVec3): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
+/** Maps 0–3 quarter turns onto radians for ghost/commit rotation. */
 export function quarterTurnsToRotationY(quarterTurns: number): number {
   const turns = ((quarterTurns % 4) + 4) % 4;
   return turns === 0 ? 0 : -turns * (Math.PI / 2);
 }
 
+/**
+ * Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
+ * Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
+ * @capability placement-controller interactive build-mode ghost preview and commit
+ */
 export function createPlacementController(config: PlacementControllerConfig): PlacementController {
   let footprint = config.footprint;
   let rules = config.rules ?? {};

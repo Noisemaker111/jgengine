@@ -57,6 +57,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
 
+## placement-ghost — render valid/invalid placement preview mesh
+
+- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
+
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
@@ -72,6 +76,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
+
+## transform-gizmo — in-game select/move/rotate/scale gizmo
+
+- `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
