@@ -1,6 +1,6 @@
 import { TransformControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Group } from "three";
 
@@ -13,7 +13,8 @@ import {
 } from "@jgengine/core/editor/index";
 
 import type { EditorHostApi } from "./session";
-import { newPlacementId, type EditorUiStore, type GizmoMode } from "./uiStore";
+import { newPlacementId, type EditorUiState, type EditorUiStore, type GizmoMode, type SnapMode } from "./uiStore";
+import { useStoreSelector } from "./useStoreSelector";
 
 export type { GizmoMode } from "./uiStore";
 
@@ -25,10 +26,30 @@ const NOTE_LIFT = 1;
 const SELECT_TAGS = ["jgEditorId", "jgEntityId", "jgObjectId"] as const;
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-function useUiState(ui: EditorUiStore) {
-  const [, setTick] = useState(0);
-  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
-  return ui.getState();
+interface GizmoUiSlice {
+  gizmoMode: GizmoMode;
+  snapMode: SnapMode;
+  gridSize: number;
+  pathPoint: { pathId: string; index: number } | null;
+}
+
+function selectGizmoUi(state: EditorUiState): GizmoUiSlice {
+  return { gizmoMode: state.gizmoMode, snapMode: state.snapMode, gridSize: state.gridSize, pathPoint: state.pathPoint };
+}
+
+function gizmoUiEqual(a: GizmoUiSlice, b: GizmoUiSlice): boolean {
+  return a.gizmoMode === b.gizmoMode && a.snapMode === b.snapMode && a.gridSize === b.gridSize && a.pathPoint === b.pathPoint;
+}
+
+/** Reads only the gizmo-relevant UI slice (mode, snap, path-point anchor) — skips re-render on
+ * unrelated UI churn (sculpt/paint drags, tool switches, placement) that the old blanket
+ * `ui.subscribe` force-update re-rendered the gizmo for. */
+function useGizmoUiState(ui: EditorUiStore): GizmoUiSlice {
+  return useStoreSelector(ui, selectGizmoUi, gizmoUiEqual);
+}
+
+function vecEqual(a: EditorVec3, b: EditorVec3): boolean {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 function pathCentroid(points: readonly EditorVec3[]): EditorVec3 {
@@ -63,7 +84,7 @@ function isEditorOverlayNode(node: THREE.Object3D): boolean {
  * against the tagged scene graph. When a placement tool is armed, clicks author new
  * markers, volumes, notes, or path points at the ground hit instead of selecting.
  */
-export function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
+export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
@@ -281,7 +302,7 @@ export function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiSt
   }, [gl, camera, scene, api, ui]);
 
   return null;
-}
+});
 
 interface GizmoTarget {
   position: EditorVec3;
@@ -330,7 +351,7 @@ function effectiveMode(mode: GizmoMode, kind: GizmoTarget["kind"]): GizmoMode {
  * path vertex moves just that point. Snapping follows the UI store: terrain height, grid
  * quantization, or free movement.
  */
-export function SelectionGizmo({
+export const SelectionGizmo = memo(function SelectionGizmo({
   session,
   ui,
   groundSnap,
@@ -343,7 +364,7 @@ export function SelectionGizmo({
   const [object, setObject] = useState<Group | null>(null);
   const draggingRef = useRef(false);
   const controls = useThree((state) => state.controls) as { enabled?: boolean } | null;
-  const uiState = useUiState(ui);
+  const uiState = useGizmoUiState(ui);
   const state = session.getState();
   const selectedId = state.selection[0];
   const target = useMemo(
@@ -396,6 +417,8 @@ export function SelectionGizmo({
     if (target.kind === "pathPoint" && uiState.pathPoint !== null) {
       const path = findEditorPath(session.getState().document, uiState.pathPoint.pathId);
       if (path === undefined) return;
+      const original = path.points[uiState.pathPoint.index];
+      if (original !== undefined && vecEqual(original, dropped)) return;
       const points = path.points.map((point, index) =>
         index === uiState.pathPoint!.index ? dropped : point,
       );
@@ -409,6 +432,7 @@ export function SelectionGizmo({
       const sx = Math.abs(current.scale.x);
       const sy = Math.abs(current.scale.y);
       const sz = Math.abs(current.scale.z);
+      if (sx === 1 && sy === 1 && sz === 1 && vecEqual(dropped, volume.center)) return;
       if (volume.shape === "box" && volume.halfExtents !== undefined) {
         session.dispatch({
           type: "setVolume",
@@ -438,6 +462,7 @@ export function SelectionGizmo({
     }
 
     if (mode === "rotate" && target.kind === "marker" && selectedId !== undefined) {
+      if (vecEqual(dropped, target.position) && current.rotation.y === target.rotationY) return;
       session.dispatch({
         type: "setTransform",
         id: selectedId,
@@ -458,6 +483,7 @@ export function SelectionGizmo({
       return;
     }
     if (selectedId === undefined) return;
+    if (vecEqual(dropped, target.position)) return;
     session.dispatch({ type: "setTransform", id: selectedId, position: dropped });
   };
 
@@ -479,4 +505,4 @@ export function SelectionGizmo({
       ) : null}
     </>
   );
-}
+});

@@ -89,12 +89,16 @@ export const DEFAULT_POSE_RULES: PoseSyncRules = {
   keepAliveRefreshMs: 10_000,
 };
 
+/** Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises. */
+export const MAX_QUEUED_MESSAGES = 64;
+
 type Connection = {
   transport: HostRouterTransport;
   userId: string | null;
   subscriptions: Set<string>;
   joinedServers: Set<string>;
   queue: Promise<void>;
+  queuedMessages: number;
 };
 
 type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
@@ -631,24 +635,31 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         subscriptions: new Set(),
         joinedServers: new Set(),
         queue: Promise.resolve(),
+        queuedMessages: 0,
       };
       connections.add(connection);
       return {
         handleRaw: (raw) => {
+          const text = typeof raw === "string" ? raw : String(raw);
+          const message = decodeWsClientMessage(text);
+          if (message === null) {
+            const failure = inspectWsDecodeFailure(text);
+            if (failure.id !== undefined) {
+              replyError(connection, failure.id, failure.reason);
+            }
+            return;
+          }
+          if (connection.queuedMessages >= MAX_QUEUED_MESSAGES) {
+            if ("id" in message) replyError(connection, message.id, "Too many pending requests");
+            return;
+          }
+          connection.queuedMessages += 1;
           connection.queue = connection.queue
-            .then(async () => {
-              const text = typeof raw === "string" ? raw : String(raw);
-              const message = decodeWsClientMessage(text);
-              if (message === null) {
-                const failure = inspectWsDecodeFailure(text);
-                if (failure.id !== undefined) {
-                  replyError(connection, failure.id, failure.reason);
-                }
-                return;
-              }
-              await handleMessage(connection, message);
-            })
-            .catch(() => undefined);
+            .then(() => handleMessage(connection, message))
+            .catch(() => undefined)
+            .finally(() => {
+              connection.queuedMessages -= 1;
+            });
         },
         close: () => {
           if (connection.userId !== null && sessionsByUserId.get(connection.userId) === connection) {
