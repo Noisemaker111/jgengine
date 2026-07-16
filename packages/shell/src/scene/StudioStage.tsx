@@ -1,6 +1,8 @@
 import { useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+
+import { DEFAULT_FORWARD, yawToFace } from "@jgengine/core/scene/facing";
 
 /** Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette. */
 export type StudioMood = "studio" | "daylight" | "dusk" | "night";
@@ -34,6 +36,18 @@ export interface StudioStageProps {
   turntable?: number;
   /** Draw the seamless floor + set the scene background. Off for open-world scenes. Default true. */
   environment?: boolean;
+  /**
+   * Yaw the children every frame so `forward` points at the active camera — frame the declared front
+   * with zero `rotationY` tuning. Overrides `turntable` (the two are mutually exclusive: one spins the
+   * content, the other holds it facing whoever's looking). Default false.
+   */
+  faceCamera?: boolean;
+  /**
+   * The staged content's declared forward axis (`GeneratedAsset.forward`, or a scene kind's own
+   * convention) — the direction `faceCamera` turns to point at the camera. Default `[0, 0, 1]`, the
+   * engine-wide convention (`DEFAULT_FORWARD` in `@jgengine/core/scene/facing`).
+   */
+  forward?: readonly [number, number, number];
   children: ReactNode;
 }
 
@@ -42,14 +56,34 @@ export interface StudioStageProps {
  * seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like
  * a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing =
  * STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground
- * and use it purely as a lighting rig.
+ * and use it purely as a lighting rig. Set `faceCamera` to auto-orient the declared `forward` toward
+ * the camera instead of hand-tuning `rotationY` on the child.
  *
  * @capability studio-stage cinematic lighting rig + backdrop + turntable for parametric studios
  */
-export function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, children }: StudioStageProps) {
+export function StudioStage({
+  mood = "studio",
+  backdrop,
+  turntable = 0,
+  environment = true,
+  faceCamera = false,
+  forward = DEFAULT_FORWARD,
+  children,
+}: StudioStageProps) {
   const spin = useRef<THREE.Group>(null);
+  const camera = useThree((state) => state.camera);
+  const groupWorld = useRef(new THREE.Vector3()).current;
+  const cameraWorld = useRef(new THREE.Vector3()).current;
   useFrame((_, delta) => {
-    if (turntable !== 0 && spin.current !== null) spin.current.rotation.y += turntable * delta;
+    const group = spin.current;
+    if (group === null) return;
+    if (faceCamera) {
+      group.getWorldPosition(groupWorld);
+      camera.getWorldPosition(cameraWorld);
+      group.rotation.y = yawToFace(forward, [groupWorld.x, groupWorld.z], [cameraWorld.x, cameraWorld.z]);
+      return;
+    }
+    if (turntable !== 0) group.rotation.y += turntable * delta;
   });
   const rig = MOODS[mood];
   return (

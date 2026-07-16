@@ -1378,7 +1378,7 @@
 ## @jgengine/shell/scene/StudioStage
 
 - `StudioMood` (type): type StudioMood = "studio" | "daylight" | "dusk" | "night" — Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette.
-- `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, children }: StudioStageProps): React.JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig.
+- `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, faceCamera = false, forward = DEFAULT_FORWARD, children, }: StudioStageProps): React.JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig. Set `faceCamera` to auto-orient the declared `forward` toward the camera instead of hand-tuning `rotationY` on the child.
 - `StudioStageProps` (interface): interface StudioStageProps — Props for {@link StudioStage}.
 
 ## @jgengine/shell/scene/sceneKindRenderers

@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+
+import { resolveGeneratorAsset } from "@jgengine/core/scene/assetGenerator";
 import { STUDIO_STAGE_POST } from "@jgengine/core/render/postProcessing";
 import { flat } from "@jgengine/core/world/features";
 import { GeneratedAssetInstance } from "@jgengine/shell/scene/GeneratedAssetRenderer";
@@ -12,9 +15,10 @@ registerBookcaseStudio();
 const BOOKCASE_META = { assetId: "bookcase", width: 1.7, height: 2.25, depth: 0.34, shelves: 5, boardThickness: 0.045, bookDensity: 0.92, lean: 0.16, tint: "#6f4a2c", seed: "stage-7" };
 
 function BookcaseStage() {
+  const asset = useMemo(() => resolveGeneratorAsset(BOOKCASE_META), []);
   return (
-    <StudioStage mood="studio" backdrop="#0d0f14" turntable={0}>
-      <GeneratedAssetInstance meta={BOOKCASE_META} position={[0, 0, 0]} rotationY={Math.PI} />
+    <StudioStage mood="studio" backdrop="#0d0f14" turntable={0} faceCamera forward={asset?.forward}>
+      <GeneratedAssetInstance meta={BOOKCASE_META} position={[0, 0, 0]} />
     </StudioStage>
   );
 }
@@ -23,8 +27,9 @@ function BookcaseStage() {
  * A cinematic product shot for the bookcase generator studio — the direct analog of the reference
  * "Bookcase Studio": one parametric asset on a lit backdrop with the film grade and DoF. Built as a
  * BARE game (no entities/items/time/inventories) so there is zero gameplay HUD — proof that engine
- * chrome is data-driven and composable, not imposed. Just `StudioStage` + `GeneratedAssetInstance` +
- * `STUDIO_STAGE_POST` on a turntable rig, no bespoke render code.
+ * chrome is data-driven and composable, not imposed. The camera orbits (`camera.turntable`) while
+ * `StudioStage`'s `faceCamera` yaws the bookcase toward it every frame — the generator's declared
+ * `forward` (#816) keeps the open shelf face on camera with zero hand-tuned `rotationY`.
  */
 export const bookcaseStageGame = defineGame({
   name: "bookcase-stage",
