@@ -1,10 +1,11 @@
 import { p2p } from "@jgengine/core/runtime/adapter";
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import { objectStyles } from "./game/objects/catalog";
-import { DuetEnvironment, DuetVfx, renderHero } from "./game/render";
+import { DuetEnvironment, DuetVfx, renderDuetObject, renderHero } from "./game/render";
 import { ROOMS } from "./game/rooms/catalog";
 import { isWalkable } from "./game/rooms/engine";
 import { currentRoomState } from "./game/rooms/setup";
@@ -17,6 +18,7 @@ export const game = defineGame({
   name: "Duet Keys",
   world,
   physics,
+  assets,
   input: keybinds,
   server: { mode: "coop" },
   save: "none",
@@ -34,6 +36,7 @@ export const game = defineGame({
   environment: DuetEnvironment,
   WorldOverlay: DuetVfx,
   renderEntity: renderHero,
+  renderObject: renderDuetObject,
   objectStyles,
   shadows: true,
   camera: {

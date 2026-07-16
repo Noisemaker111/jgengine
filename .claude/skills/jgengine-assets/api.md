@@ -33,7 +33,7 @@
 - `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
 - `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
-- `aliases` (const): const aliases: readonly AssetAlias[] — ⚠ undocumented
+- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*.
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
@@ -75,7 +75,7 @@
 
 ## @jgengine/assets/aliases
 
-- `aliases` (const): const aliases: readonly AssetAlias[] — ⚠ undocumented
+- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*.
 
 ## @jgengine/assets/catalogs/build
 
@@ -127,11 +127,12 @@
 - `defaultReleaseUrl` (function): function defaultReleaseUrl(source: AssetSource): string — URL of `source`'s archive on the default GitHub-release mirror.
 - `downloadArchive` (function): function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> — ⚠ undocumented
 - `downloadPackArchive` (function): function downloadPackArchive(source: AssetSource, options: DownloadPackOptions = {}): Promise<DownloadPackResult> — Resolves and downloads a pack's archive, trying sources in order until one succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the default GitHub-release mirror at `defaultReleaseUrl` (skipped when `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror` URL. A pinned `sha256` is verified against whichever source supplied the bytes; a mismatch is treated as a failed attempt so the next source in the chain is tried. Throws with every attempted URL and its failure reason when all sources fail.
-- `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — ⚠ undocumented
+- `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — Pull every GLB out of an archive. Also converts co-located `.gltf` + `.bin` pairs (Quaternius Standard packs on OpenGameArt) into `.glb` so the catalog stays one-file-per-model. GLB wins when both formats share a basename.
 - `extractSpriteFiles` (function): function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] — Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
 - `extractTextures` (function): function extractTextures(archive: Uint8Array): ExtractedTexture[] — ⚠ undocumented
 - `findArchiveUrl` (function): function findArchiveUrl(html: string, pageUrl: string): string | null — ⚠ undocumented
-- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/quaternius/quaternius-stylized-nature.zip`.
+- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
+- `packGltfToGlb` (function): function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uint8Array — Pack a `.gltf` + optional external `.bin` into a single `.glb` so reindex / the shell only ever deal in one-file models. Strips buffer `uri` fields so the binary chunk is self-contained. External image URIs stay as-is (loaders resolve relative to the catalog URL only for GLB-embedded images).
 - `resolveArchiveUrl` (function): function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> — ⚠ undocumented
 - `sha256Hex` (function): function sha256Hex(bytes: Uint8Array): Promise<string> — ⚠ undocumented
 

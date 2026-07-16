@@ -20,6 +20,20 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
+/**
+ * A dedicated `LoadingManager` for every GLB load, instead of the implicit
+ * `THREE.DefaultLoadingManager` `useLoader`/`GLTFLoader` construct when none is passed. The shared
+ * default manager is process-wide singleton state — under repeated dev-server navigations (HMR,
+ * fast refresh) or several concurrent loaders racing it, its internal `AbortController` can end up
+ * signaling an already-aborted state, which `FileLoader.load()` composes into every future
+ * request's abort signal via `AbortSignal.any(...)`, silently stalling `GLTFLoader.load()` forever
+ * with no thrown error (`GLTFLoader.parse()` on already-fetched bytes still works fine — this is a
+ * fetch-stage-only hang). A private manager sidesteps the shared state entirely.
+ */
+const modelLoadingManager = new THREE.LoadingManager();
+const sharedGltfLoader = new GLTFLoader(modelLoadingManager);
+sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
 import {
   actionRepeatMs,
   createActionStateTracker,
@@ -462,9 +476,7 @@ function BoneAttachment({
   rotation?: [number, number, number];
   scale?: number;
 }) {
-  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, model.url);
   const weaponScene = useMemo(() => cloneModelScene(gltf.scene), [gltf]);
   const px = position?.[0] ?? 0;
   const py = position?.[1] ?? 0;
@@ -563,9 +575,7 @@ function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps
 }
 
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
-  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, model.url);
   const ctx = useGameContext();
   const material = model.material;
   const baseY = model.y ?? 0;

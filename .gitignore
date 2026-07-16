@@ -6,6 +6,8 @@ shots/
 .turbo/
 **/public/models/*
 !apps/dev/public/models/claudecraft/
+!apps/dev/public/models/kaykit-dungeon/
+!apps/dev/public/models/kaykit-adventurers/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 
