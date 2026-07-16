@@ -39,7 +39,7 @@ describe("jgengine CLI packaging", () => {
 
   test("publish workflow includes jgengine in the publish order", () => {
     const workflow = readFileSync(join(repoRoot, ".github", "workflows", "publish.yml"), "utf8");
-    expect(workflow).toMatch(/for p in core ws sql react convex node shell assets jgengine/);
+    expect(workflow).toMatch(/for p in core ws sql react convex node shell editor assets github jgengine/);
     expect(workflow).toContain("packages/*/package.json");
   });
 
