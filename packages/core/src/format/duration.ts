@@ -34,6 +34,24 @@ export function formatDuration(seconds: number, options: DurationFormat = {}): s
 }
 
 /**
+ * Format a duration as a short humanized string — the two most-significant non-zero units, e.g.
+ * `2h 15m`, `45m`, `1m 30s`, `30s`. Unlike {@link formatDuration}'s clock layout, this reads like a
+ * countdown label (auction expiry, cooldown-until, "ready in") rather than a stopwatch. Negative input
+ * clamps to `0s`; the value is floored to whole seconds.
+ *
+ * @capability duration-compact humanize a duration as short "2h 15m" / "45m" / "30s" countdown text
+ */
+export function formatDurationCompact(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  return `${s}s`;
+}
+
+/**
  * Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
  *
  * @capability clock-format format a signed time gap like a race split (+/- m:ss.ff)

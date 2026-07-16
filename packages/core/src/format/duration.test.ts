@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatDelta, formatDuration, formatOrdinal, padNumber } from "./duration";
+import { formatDelta, formatDuration, formatDurationCompact, formatOrdinal, padNumber } from "./duration";
 
 describe("formatDuration", () => {
   test("m:ss by default", () => {
@@ -17,6 +17,22 @@ describe("formatDuration", () => {
   });
   test("negative clamps to zero", () => {
     expect(formatDuration(-5)).toBe("0:00");
+  });
+});
+
+describe("formatDurationCompact", () => {
+  test("two most-significant units", () => {
+    expect(formatDurationCompact(8100)).toBe("2h 15m");
+    expect(formatDurationCompact(2700)).toBe("45m");
+    expect(formatDurationCompact(90)).toBe("1m 30s");
+    expect(formatDurationCompact(30)).toBe("30s");
+  });
+  test("drops a trailing zero unit", () => {
+    expect(formatDurationCompact(7200)).toBe("2h");
+    expect(formatDurationCompact(120)).toBe("2m");
+  });
+  test("negative clamps to 0s", () => {
+    expect(formatDurationCompact(-10)).toBe("0s");
   });
 });
 

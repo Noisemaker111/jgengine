@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type DragEventHandler, type ReactNode } from "react";
 
 import type { AbilityKit } from "@jgengine/core/combat/abilityKit";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
@@ -44,6 +44,17 @@ function useLocalPlayerId(entityId: string | undefined): string | null {
   return useGameStore((ctx) => entityId ?? localPlayerEntity(ctx)?.id ?? null);
 }
 
+/** Where {@link StatBar} draws its label/readout relative to the rail. */
+export type StatLabelPlacement = "above" | "inside" | "below" | "none";
+
+/** A dimmer fill drawn behind {@link StatBar}'s main fill — the rested-XP / ghost-health underlay. */
+export interface StatUnderlay {
+  /** Underlay fill fraction 0..1. */
+  fraction: number;
+  /** CSS color/background for the underlay. */
+  color: string;
+}
+
 /**
  * A polished stat bar (health/mana/stamina/shield/xp) — a rounded, glassy meter with a tone-colored
  * fill and an optional value readout. Two ways to feed it: bind to an entity stat (`statId` off
@@ -51,7 +62,15 @@ function useLocalPlayerId(entityId: string | undefined): string | null {
  * the engine doesn't own (a boss's hp, a sub-entity's shield). `value` wins when both are given;
  * `max` defaults to 100. The entity-bound form renders nothing until its stat exists.
  *
- * @capability stat-bar tone-colored health/mana/pool meter, entity-bound or raw value/max
+ * Skinnable enough to host a game's own art: `fill` overrides the tone ramp with any CSS color/gradient
+ * (a constant color no longer drains toward red); `capped` + `fillCapped` swap the fill once a pool tops
+ * out (rested-XP → gold); `underlay` draws a second fill behind the main one; `labelPlacement` moves the
+ * readout above/inside/below the rail (or hides it); `railHeight`/`railRadius`/`railClassName`/`railStyle`
+ * restyle the track (1.5px hairlines to fat cast bars, a game's own rail CSS); `chromeless` drops the
+ * engine glass so the bar sits inside the game's own panel; `gloss` adds a top-half sheen; and `width`
+ * takes a string (`"100%"`, or `flex:1` via `style`) for flexing bars.
+ *
+ * @capability stat-bar tone-colored health/mana/pool meter, entity-bound or raw value/max, fully skinnable
  */
 export function StatBar({
   statId = "health",
@@ -60,9 +79,22 @@ export function StatBar({
   max,
   min = 0,
   tone = "health",
+  fill,
+  fillCapped,
+  capped = false,
+  underlay,
   label,
   showValue = true,
+  labelPlacement = "above",
+  labelStyle,
+  labelClassName,
   width = 200,
+  railHeight = 8,
+  railRadius = 999,
+  railClassName,
+  railStyle,
+  gloss = false,
+  chromeless = false,
   icon,
   style,
   className,
@@ -76,9 +108,36 @@ export function StatBar({
   /** Raw pool minimum, paired with `value`; defaults to 0. */
   min?: number;
   tone?: StatTone;
+  /** Constant CSS color/gradient for the fill — overrides `tone` (opts out of the health amber→red drain). */
+  fill?: string;
+  /** Fill used when `capped` — the "pool topped out" swap (e.g. rested XP going gold at max level). */
+  fillCapped?: string;
+  /** Force a full bar and use `fillCapped` — the game decides when the pool is capped. */
+  capped?: boolean;
+  /** A dimmer fill drawn behind the main fill (rested XP, ghost health). */
+  underlay?: StatUnderlay;
   label?: string;
   showValue?: boolean;
-  width?: number;
+  /** Where the label/readout sits relative to the rail; defaults to `"above"` (the glassy header). */
+  labelPlacement?: StatLabelPlacement;
+  /** Style for the inside/below label text (font, color, shadow). */
+  labelStyle?: CSSProperties;
+  /** Class for the inside/below label text (e.g. a game's display-font class). */
+  labelClassName?: string;
+  /** Bar width — a number (px) or CSS string (`"100%"`); pair `style={{ flex: 1 }}` for a flexing bar. */
+  width?: number | string;
+  /** Rail (track) height in px; defaults to 8. */
+  railHeight?: number;
+  /** Rail/fill corner radius in px; defaults to 999 (pill). */
+  railRadius?: number;
+  /** Class applied to the rail track — supply the game's own rail CSS (its background wins over the default). */
+  railClassName?: string;
+  /** Extra style merged onto the rail track. */
+  railStyle?: CSSProperties;
+  /** Draw a top-half white sheen inside the fill. */
+  gloss?: boolean;
+  /** Drop the engine glass panel + padding so the bar sits bare inside the game's own chrome. */
+  chromeless?: boolean;
   icon?: ReactNode;
   style?: CSSProperties;
   className?: string;
@@ -93,11 +152,42 @@ export function StatBar({
         : stat;
   if (pool === null) return null;
   const range = pool.max - pool.min;
-  const fraction = range <= 0 ? 0 : Math.max(0, Math.min(1, (pool.current - pool.min) / range));
+  const rawFraction = range <= 0 ? 0 : Math.max(0, Math.min(1, (pool.current - pool.min) / range));
+  const fraction = capped ? 1 : rawFraction;
   const [from, to] = (TONES[tone] ?? TONES.neutral!)(fraction);
+  const resolvedFill =
+    capped && fillCapped !== undefined ? fillCapped : fill ?? `linear-gradient(90deg, ${from}, ${to})`;
+  const readout = `${Math.round(pool.current)} / ${Math.round(pool.max)}`;
+  const insideContent = label ?? (showValue ? readout : undefined);
+  const captionNode =
+    labelPlacement === "inside" || labelPlacement === "below" ? (
+      <span
+        className={labelClassName}
+        style={
+          labelPlacement === "inside"
+            ? { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 600, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.9)", ...labelStyle }
+            : { display: "block", marginTop: 2, textAlign: "center", fontSize: 10, opacity: 0.8, ...labelStyle }
+        }
+      >
+        {insideContent}
+      </span>
+    ) : null;
+  const needsRelative = underlay !== undefined || labelPlacement === "inside";
+  const rail = (
+    <div className={railClassName} style={{ position: needsRelative ? "relative" : undefined, height: railHeight, borderRadius: railRadius, background: railClassName !== undefined ? undefined : "rgba(255,255,255,0.10)", overflow: "hidden", ...railStyle }}>
+      {underlay !== undefined ? (
+        <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${Math.max(0, Math.min(1, underlay.fraction)) * 100}%`, background: underlay.color }} />
+      ) : null}
+      <div style={{ ...(underlay !== undefined ? { position: "absolute", top: 0, bottom: 0, left: 0 } : { height: "100%" }), width: `${fraction * 100}%`, borderRadius: railRadius, background: resolvedFill, transition: "width 160ms ease" }}>
+        {gloss ? <div style={{ height: "50%", width: "100%", background: "rgba(255,255,255,0.15)" }} /> : null}
+      </div>
+      {labelPlacement === "inside" ? captionNode : null}
+    </div>
+  );
+  const outerStyle: CSSProperties = chromeless ? { width, ...style } : { ...PANEL, padding: "6px 8px", width, ...style };
   return (
-    <div className={className} style={{ ...PANEL, padding: "6px 8px", width, ...style }} data-stat={statId}>
-      {(label !== undefined || icon !== undefined || showValue) && (
+    <div className={className} style={outerStyle} data-stat={statId}>
+      {labelPlacement === "above" && (label !== undefined || icon !== undefined || showValue) && (
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, fontSize: 11, fontWeight: 600, letterSpacing: 0.3 }}>
           {icon}
           <span style={{ textTransform: "uppercase", opacity: 0.75 }}>{label ?? statId}</span>
@@ -109,9 +199,8 @@ export function StatBar({
           ) : null}
         </div>
       )}
-      <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.10)", overflow: "hidden" }}>
-        <div style={{ width: `${fraction * 100}%`, height: "100%", borderRadius: 999, background: `linear-gradient(90deg, ${from}, ${to})`, transition: "width 160ms ease" }} />
-      </div>
+      {rail}
+      {labelPlacement === "below" ? captionNode : null}
     </div>
   );
 }
@@ -187,7 +276,16 @@ function cooldownLabel(remainingMs: number): string {
  * calls it only when the slot is castable and unlocked. The engine imposes no ability bar; place these
  * yourself.
  *
- * @capability ability-button cooldown/GCD/resource-aware ability button over an AbilityKit slot
+ * Every imposed visual is overridable so a game can host its own art on this behavior: `chromeless`
+ * drops the engine glass so a game skin (its own `className`) shows through; `cooldownText` reformats
+ * the remaining-time label (e.g. whole `Math.ceil` seconds); `noResourceStyle`/`flashStyle`/`dimStyle`
+ * replace the built-in blue tint / white flash / gcd dim with the game's own (a red text tint, a gold
+ * glow); `sweepColor` recolors the cooldown wipe; `dimmed`/`gcdRemainingMs` dim the button from an
+ * external global cooldown the kit doesn't own; `wrapKeyHint`/`wrapLock` let the game render the keycap
+ * and lock marker raw instead of the default `<Keycap>`/centered form; and `draggable`/`onDragStart`/
+ * `onDragOver`/`onDrop` (+ `keepEnabled`) make the button a drag-assign source/target even mid-cooldown.
+ *
+ * @capability ability-button cooldown/GCD/resource-aware ability button over an AbilityKit slot, fully skinnable
  */
 export function AbilityButton({
   kit,
@@ -195,14 +293,31 @@ export function AbilityButton({
   resourceAvailable,
   onActivate,
   keyHint,
+  wrapKeyHint = true,
   locked = false,
   lockLabel,
+  wrapLock = true,
   sweep = "radial",
+  sweepColor = "rgba(6,8,12,0.62)",
   size = 52,
   icon,
   label,
   children,
   showCooldownText = true,
+  cooldownText,
+  cooldownTextStyle,
+  cooldownTextClassName,
+  noResourceStyle,
+  flashStyle,
+  dimStyle,
+  dimmed = false,
+  gcdRemainingMs,
+  chromeless = false,
+  keepEnabled = false,
+  draggable,
+  onDragStart,
+  onDragOver,
+  onDrop,
   intervalMs,
   style,
   className,
@@ -215,17 +330,48 @@ export function AbilityButton({
   onActivate?: (slotId: string) => void;
   /** Keycap/binding hint rendered in the corner (e.g. a `<Keycap>` or a plain string). */
   keyHint?: ReactNode;
+  /** Wrap `keyHint` in the default `<Keycap>` + corner position; set false to render the node raw (game positions it). */
+  wrapKeyHint?: boolean;
   /** Level/unlock gate: greys the button out, blocks activation, and shows `lockLabel`. */
   locked?: boolean;
   lockLabel?: ReactNode;
+  /** Wrap `lockLabel` in the default centered overlay; set false to render it raw (game positions it). */
+  wrapLock?: boolean;
   /** Cooldown sweep shape; defaults to `"radial"`. */
   sweep?: AbilitySweep;
+  /** Color of the cooldown sweep wipe; defaults to the dark engine dim. */
+  sweepColor?: string;
   size?: number;
   /** Face content — `children` wins, else `icon` over `label`. */
   icon?: ReactNode;
   label?: ReactNode;
   children?: ReactNode;
   showCooldownText?: boolean;
+  /** Format the remaining-cooldown label; defaults to decimals under 10s, whole seconds above. */
+  cooldownText?: (remainingMs: number) => ReactNode;
+  /** Style for the cooldown-text overlay. */
+  cooldownTextStyle?: CSSProperties;
+  /** Class for the cooldown-text overlay (e.g. a game's display-font class). */
+  cooldownTextClassName?: string;
+  /** Replaces the default blue no-resource overlay — merged onto the button root (e.g. a red text tint). */
+  noResourceStyle?: CSSProperties;
+  /** Replaces the default white just-cast flash overlay — merged onto the button root (e.g. a gold glow). */
+  flashStyle?: CSSProperties;
+  /** Overlay style for the gcd dim; when set, replaces the default opacity dim with this overlay. */
+  dimStyle?: CSSProperties;
+  /** Dim the button from an external global cooldown the kit doesn't track. */
+  dimmed?: boolean;
+  /** Remaining ms on an external global cooldown; >0 dims the button (independent of the kit's groups). */
+  gcdRemainingMs?: number;
+  /** Drop the engine glass panel so the game's own `className` skin shows through. */
+  chromeless?: boolean;
+  /** Keep the button enabled (not `disabled`) when not castable — needed so drag events still fire mid-cooldown. */
+  keepEnabled?: boolean;
+  /** Drag props passed straight to the button so it can be a drag-assign source/target. */
+  draggable?: boolean;
+  onDragStart?: DragEventHandler<HTMLButtonElement>;
+  onDragOver?: DragEventHandler<HTMLButtonElement>;
+  onDrop?: DragEventHandler<HTMLButtonElement>;
   intervalMs?: number;
   style?: CSSProperties;
   className?: string;
@@ -235,27 +381,37 @@ export function AbilityButton({
   const remainingMs = slot?.cooldownRemainingMs ?? 0;
   const noResource = slot?.state === "no-resource";
   const flashing = slot?.justCast === true;
-  const gcdOnly = slot !== null && slot.groupRemainingMs > 0 && slot.cooldownRemainingMs === slot.groupRemainingMs;
+  const internalGcdOnly = slot !== null && slot.groupRemainingMs > 0 && slot.cooldownRemainingMs === slot.groupRemainingMs;
+  const dimActive = !locked && (internalGcdOnly || dimmed || (gcdRemainingMs ?? 0) > 0);
   const castable = !locked && slot !== null && slot.ready;
   const overlay: CSSProperties = { position: "absolute", inset: 0, pointerEvents: "none" };
+  const renderLabel = cooldownText ?? cooldownLabel;
   return (
     <button
       type="button"
-      disabled={!castable}
-      onClick={castable ? () => onActivate?.(slotId) : undefined}
+      disabled={keepEnabled ? undefined : !castable}
+      onClick={() => {
+        if (castable) onActivate?.(slotId);
+      }}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       className={className}
       data-ability={slotId}
       data-locked={locked || undefined}
       style={{
-        ...PANEL,
+        ...(chromeless ? {} : PANEL),
         position: "relative",
         width: size,
         height: size,
         padding: 0,
         overflow: "hidden",
         cursor: castable ? "pointer" : "default",
-        opacity: locked ? 0.5 : gcdOnly ? 0.82 : 1,
-        borderColor: flashing ? "rgba(250,250,255,0.95)" : PANEL.borderColor as string,
+        opacity: locked ? 0.5 : dimActive && dimStyle === undefined ? 0.82 : 1,
+        ...(!chromeless ? { borderColor: flashing && flashStyle === undefined ? "rgba(250,250,255,0.95)" : (PANEL.borderColor as string) } : {}),
+        ...(flashing ? flashStyle : undefined),
+        ...(noResource ? noResourceStyle : undefined),
         ...style,
       }}
     >
@@ -269,27 +425,36 @@ export function AbilityButton({
       </span>
       {fraction > 0 ? (
         sweep === "radial" ? (
-          <span style={{ ...overlay, background: `conic-gradient(rgba(6,8,12,0.62) ${fraction * 360}deg, transparent 0)` }} />
+          <span style={{ ...overlay, background: `conic-gradient(${sweepColor} ${fraction * 360}deg, transparent 0)` }} />
         ) : (
-          <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: `${fraction * 100}%`, background: "rgba(6,8,12,0.62)", pointerEvents: "none" }} />
+          <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: `${fraction * 100}%`, background: sweepColor, pointerEvents: "none" }} />
         )
       ) : null}
-      {noResource ? <span style={{ ...overlay, background: "rgba(37,99,235,0.28)" }} /> : null}
-      {flashing ? <span style={{ ...overlay, background: "rgba(255,255,255,0.35)" }} /> : null}
+      {noResource && noResourceStyle === undefined ? <span style={{ ...overlay, background: "rgba(37,99,235,0.28)" }} /> : null}
+      {flashing && flashStyle === undefined ? <span style={{ ...overlay, background: "rgba(255,255,255,0.35)" }} /> : null}
+      {dimActive && dimStyle !== undefined && fraction === 0 ? <span style={{ ...overlay, ...dimStyle }} /> : null}
       {showCooldownText && remainingMs > 0 && !locked ? (
-        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: "#f8fafc", textShadow: "0 1px 3px rgba(0,0,0,0.7)", fontVariantNumeric: "tabular-nums", pointerEvents: "none" }}>
-          {cooldownLabel(remainingMs)}
+        <span className={cooldownTextClassName} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: "#f8fafc", textShadow: "0 1px 3px rgba(0,0,0,0.7)", fontVariantNumeric: "tabular-nums", pointerEvents: "none", ...cooldownTextStyle }}>
+          {renderLabel(remainingMs)}
         </span>
       ) : null}
       {locked ? (
-        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#e2e8f0", pointerEvents: "none" }}>
-          {lockLabel ?? "🔒"}
-        </span>
+        wrapLock ? (
+          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#e2e8f0", pointerEvents: "none" }}>
+            {lockLabel ?? "🔒"}
+          </span>
+        ) : (
+          lockLabel
+        )
       ) : null}
       {keyHint !== undefined ? (
-        <span style={{ position: "absolute", top: 2, right: 3, fontSize: 9, fontWeight: 700, opacity: 0.7, pointerEvents: "none" }}>
-          <Keycap>{keyHint}</Keycap>
-        </span>
+        wrapKeyHint ? (
+          <span style={{ position: "absolute", top: 2, right: 3, fontSize: 9, fontWeight: 700, opacity: 0.7, pointerEvents: "none" }}>
+            <Keycap>{keyHint}</Keycap>
+          </span>
+        ) : (
+          keyHint
+        )
       ) : null}
     </button>
   );

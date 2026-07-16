@@ -343,6 +343,25 @@ export function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeter
   );
 }
 
+/**
+ * A shared HUD re-render heartbeat: returns a counter that increments every `intervalMs` while
+ * `active`, so a component reading imperative game state (cast progress, swing timer, gcd) re-renders
+ * on a steady beat without hand-rolling its own `useEffect`/`setInterval`. SSR-safe (no window → no
+ * timer); pass `active: false` to gate the beat off (e.g. only tick while a bar is animating) and stop
+ * the interval entirely.
+ *
+ * @capability hud-tick shared HUD re-render heartbeat replacing hand-rolled setInterval tickers
+ */
+export function useHudTick(intervalMs = 100, active = true): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!active || intervalMs <= 0 || typeof window === "undefined") return undefined;
+    const id = window.setInterval(() => setTick((value) => value + 1), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs, active]);
+  return tick;
+}
+
 function useEngineHeartbeat(intervalMs: number, shouldTick: () => boolean): void {
   const [, setTick] = useState(0);
   const shouldTickRef = useRef(shouldTick);

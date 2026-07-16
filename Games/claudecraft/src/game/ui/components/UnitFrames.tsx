@@ -1,3 +1,4 @@
+import { StatBar } from "@jgengine/react";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { useEntityStat, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
@@ -8,29 +9,23 @@ import { mobById } from "../../entities/enemies/catalog";
 import { NPCS } from "../../entities/npcs/catalog";
 import { mobRuntimeOf } from "../../ai/mobs";
 import { autoAttackStore, aurasStore, classStore, nameStore, petStore } from "../../session/stores";
-import { RESOURCE_COLORS } from "../theme";
+import { HP_FILL, RESOURCE_FILL } from "../theme";
 
-function Bar({
-  value,
-  max,
-  fill,
-  label,
-}: {
-  value: number;
-  max: number;
-  fill: string;
-  label?: string;
-}) {
-  const fraction = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+function Bar({ value, max, fill, label }: { value: number; max: number; fill: string; label?: string }) {
   return (
-    <div className="wcc-bar-rail relative h-[15px] overflow-hidden">
-      <div className={`h-full ${fill} transition-[width] duration-150`} style={{ width: `${fraction * 100}%` }}>
-        <div className="h-1/2 w-full bg-white/15" />
-      </div>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
-        {label ?? `${Math.round(value)} / ${Math.round(max)}`}
-      </span>
-    </div>
+    <StatBar
+      value={value}
+      max={Math.max(1, max)}
+      fill={fill}
+      label={label}
+      chromeless
+      width="100%"
+      railHeight={15}
+      railRadius={0}
+      railClassName="wcc-bar-rail"
+      gloss
+      labelPlacement="inside"
+    />
   );
 }
 
@@ -102,11 +97,11 @@ export function PlayerFrame() {
         <div className="wcc-panel w-[190px] rounded-l-none px-2 py-1.5">
           <div className="wcc-title truncate text-xs">{name ?? cls.name}</div>
           <div className="mt-0.5 space-y-0.5">
-            <Bar value={health.current} max={health.max} fill="bg-[#1eb838]" />
+            <Bar value={health.current} max={health.max} fill={HP_FILL} />
             <Bar
               value={resource?.current ?? 0}
               max={resource?.max ?? 100}
-              fill={RESOURCE_COLORS[cls.resource] ?? "bg-[#2b7bd4]"}
+              fill={RESOURCE_FILL[cls.resource] ?? "#2b7bd4"}
             />
           </div>
         </div>
@@ -122,7 +117,7 @@ export function PlayerFrame() {
             <span className="text-[#998d6a]">{pet.role}</span>
           </div>
           <div className="mt-0.5">
-            <Bar value={pet.hp} max={Math.max(1, pet.maxHp)} fill="bg-[#1eb838]" />
+            <Bar value={pet.hp} max={Math.max(1, pet.maxHp)} fill={HP_FILL} />
           </div>
         </div>
       )}
@@ -158,7 +153,7 @@ export function TargetFrame() {
             </span>
           </div>
           <div className="mt-0.5">
-            <Bar value={health.current} max={health.max} fill="bg-[#1eb838]" />
+            <Bar value={health.current} max={health.max} fill={HP_FILL} />
           </div>
         </div>
         <Portrait

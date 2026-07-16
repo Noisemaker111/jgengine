@@ -24,6 +24,14 @@ export const RESOURCE_COLORS: Record<string, string> = {
 
 export const HP_COLOR = "bg-[#1eb838]";
 
+export const HP_FILL = "#1eb838";
+
+export const RESOURCE_FILL: Record<string, string> = {
+  mana: "#2b7bd4",
+  rage: "#c0392b",
+  energy: "#e4c531",
+};
+
 export function copperLabel(copper: number): string {
   const gold = Math.floor(copper / 10000);
   const silver = Math.floor((copper % 10000) / 100);
