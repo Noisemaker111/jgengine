@@ -1,5 +1,6 @@
 import { useGame, usePlayer } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
+import { formatDuration } from "@jgengine/core/format/duration";
 
 import { fiestaRecordStore, fiestaStore } from "../../session/stores";
 import { CLOSE_BUTTON, PANEL, PANEL_TITLE } from "../theme";
@@ -76,8 +77,6 @@ export function FiestaBanner() {
   const { userId } = usePlayer();
   const view = useKeyedStore(fiestaStore, userId);
   if (view?.active !== true) return null;
-  const minutes = Math.floor(view.timeLeft / 60);
-  const seconds = Math.floor(view.timeLeft % 60);
   return (
     <div className="pointer-events-none flex flex-col items-center gap-1">
       <div
@@ -94,7 +93,7 @@ export function FiestaBanner() {
             ? `Steel yourself… ${view.countdown}`
             : view.status === "over"
               ? "The bout is decided. Returning to the world…"
-              : `First to ${view.scoreLimit} · ${minutes}:${String(seconds).padStart(2, "0")}${view.inRing ? "" : " · RING!"}`}
+              : `First to ${view.scoreLimit} · ${formatDuration(view.timeLeft)}${view.inRing ? "" : " · RING!"}`}
         </div>
       </div>
       {view.pop !== null && (

@@ -1,5 +1,5 @@
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { SettingsTrigger } from "@jgengine/react";
+import { SettingsTrigger, StartScreen } from "@jgengine/react";
 import { useGame, usePlayer } from "@jgengine/react/hooks";
 import { type MouseEvent, useCallback, useState } from "react";
 
@@ -23,11 +23,14 @@ export function ClassSelect() {
   }, []);
   const ready = classSelectReady(selected, name);
   return (
-    <div
+    <StartScreen
       className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center"
       style={{ background: "radial-gradient(ellipse at center, #15151f 0%, #08080d 80%)" }}
+      settings={
+        <SettingsTrigger className="pointer-events-auto absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md border border-[#6f5a2a] bg-[#15151f]/90 text-[#c8a838] transition hover:border-[#ffd100]" />
+      }
+      settingsWrapperClassName="contents"
     >
-      <SettingsTrigger className="pointer-events-auto absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-md border border-[#6f5a2a] bg-[#15151f]/90 text-[#c8a838] transition hover:border-[#ffd100]" />
       <div className="max-w-4xl px-6 text-center">
         <p
           className="text-sm uppercase tracking-[0.3em] text-[#c8a838]"
@@ -106,6 +109,6 @@ export function ClassSelect() {
           Play
         </button>
       </div>
-    </div>
+    </StartScreen>
   );
 }

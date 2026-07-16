@@ -1,33 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { MinimapPanel } from "@jgengine/react/map";
 import { useGameClock } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { createMarkerSet } from "@jgengine/core/world/markers";
+import { padNumber } from "@jgengine/core/format/duration";
 
 import { isMobInstance } from "../../ai/mobs";
 import { NPCS } from "../../entities/npcs/catalog";
 import { useZoneName } from "./Overlays";
-
-function pad(value: number): string {
-  return value.toString().padStart(2, "0");
-}
+import { useHudTick } from "../useHudTick";
 
 function ClockReadout() {
   const { calendar } = useGameClock();
   return (
     <span>
-      {pad(calendar.hour)}:{pad(calendar.minute)}
+      {padNumber(calendar.hour, 2)}:{padNumber(calendar.minute, 2)}
     </span>
   );
-}
-
-function useHudTicker(): number {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((value) => value + 1), 100);
-    return () => clearInterval(timer);
-  }, []);
-  return tick;
 }
 
 const QUESTGIVER_IDS = new Set(
@@ -35,7 +24,7 @@ const QUESTGIVER_IDS = new Set(
 );
 
 export function Minimap() {
-  const tick = useHudTicker();
+  const tick = useHudTick();
   const ctx = useGameContext();
   const markers = useMemo(() => createMarkerSet(() => ctx.time.now()), [ctx]);
 
