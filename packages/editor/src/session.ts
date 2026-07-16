@@ -237,6 +237,12 @@ export interface EditorPerfSample {
   drawCalls: number;
   triangles: number;
   sampledAt: number;
+  /**
+   * The render loop was idle/on-demand across this window — frames arrived far apart because nothing
+   * was moving, not because the frame was slow to draw. A low `fps` here is throttling, not a
+   * regression, so tools should show a neutral state instead of a danger cue.
+   */
+  idle?: boolean;
   /** Avg viewport raycast (pick) time this window — editor-authoring cost, not sim cost. */
   raycastMs?: number;
   /** Avg preview-mesh rebuild (displace) time this window — editor-authoring cost, not sim cost. */
