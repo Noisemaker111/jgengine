@@ -20,6 +20,16 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
+/**
+ * Dedicated LoadingManager for every GLB load instead of THREE.DefaultLoadingManager.
+ * The shared default manager is process-wide; under repeated dev-server navigations its
+ * AbortController can already be aborted, which silently stalls GLTFLoader.fetch forever
+ * with no thrown error. A private manager sidesteps that (ported from the duet-keys ship).
+ */
+const modelLoadingManager = new THREE.LoadingManager();
+const sharedGltfLoader = new GLTFLoader(modelLoadingManager);
+sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
 import {
   actionRepeatMs,
   createActionStateTracker,
@@ -462,9 +472,7 @@ function BoneAttachment({
   rotation?: [number, number, number];
   scale?: number;
 }) {
-  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, model.url);
   const weaponScene = useMemo(() => cloneModelScene(gltf.scene), [gltf]);
   const px = position?.[0] ?? 0;
   const py = position?.[1] ?? 0;
@@ -563,9 +571,7 @@ function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps
 }
 
 function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
-  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, model.url);
   const ctx = useGameContext();
   const material = model.material;
   const baseY = model.y ?? 0;
