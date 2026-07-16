@@ -1,3 +1,5 @@
+import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
+
 /** A world-space `[x, z]` used for the heat system's spawn ring and witness proximity checks. */
 export type HeatPoint = readonly [number, number];
 
@@ -33,7 +35,8 @@ export interface HeatState {
   level: number;
   sinceGain: number;
   standDownElapsed: number;
-  rng: number;
+  /** Opaque PRNG cursor — round-trip it as part of the state, never read or set it directly. */
+  rng: RandomSeed;
 }
 
 /** One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style). */
@@ -63,14 +66,6 @@ export interface HeatStep {
   standDown: boolean;
 }
 
-function nextRandom(seed: number): [number, number] {
-  const next = (seed + 0x6d2b79f5) | 0;
-  let t = Math.imul(next ^ (next >>> 15), 1 | next);
-  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-  const value = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  return [value, next];
-}
-
 function levelFor(levels: readonly HeatLevelDef[], heat: number): HeatLevelDef | null {
   let current: HeatLevelDef | null = null;
   for (const level of levels) {
@@ -85,14 +80,15 @@ function levelFor(levels: readonly HeatLevelDef[], heat: number): HeatLevelDef |
  * while a witness or pursuer is close), tiered pursuer budgets, ring-shaped spawn points around the
  * player, and a stand-down countdown once heat clears so pursuit doesn't vanish instantly. Pure and
  * seeded like `ai/spawnDirector` — the caller owns spawning/despawning the actual entities.
- */
+  * @internal
+  */
 export function createHeatState(config: HeatConfig): HeatState {
   return {
     heat: 0,
     level: 0,
     sinceGain: Number.POSITIVE_INFINITY,
     standDownElapsed: 0,
-    rng: (config.seed ?? 1) | 0,
+    rng: randomSeedFrom(config.seed ?? 1),
   };
 }
 
@@ -100,17 +96,17 @@ function ringPoints(
   around: HeatPoint,
   count: number,
   radius: readonly [number, number],
-  rng: number,
-): { points: HeatPoint[]; rng: number } {
+  rng: RandomSeed,
+): { points: HeatPoint[]; rng: RandomSeed } {
   const points: HeatPoint[] = [];
   let seed = rng;
   const [minR, maxR] = radius;
   for (let i = 0; i < count; i += 1) {
     let roll: number;
-    [roll, seed] = nextRandom(seed);
+    [roll, seed] = stepRandomSeed(seed);
     const angle = roll * Math.PI * 2;
     let spread: number;
-    [spread, seed] = nextRandom(seed);
+    [spread, seed] = stepRandomSeed(seed);
     const distance = minR + spread * Math.max(0, maxR - minR);
     points.push([around[0] + Math.sin(angle) * distance, around[1] + Math.cos(angle) * distance]);
   }
@@ -121,7 +117,8 @@ function ringPoints(
  * Advances {@link HeatState} by one tick: sums this tick's witnessed gains, bleeds heat once clear of
  * witnesses past `decayDelaySeconds`, resolves the current {@link HeatLevelDef}, and reports how many
  * pursuers to spawn (with ring points) or whether to stand pursuit down entirely.
- */
+  * @internal
+  */
 export function advanceHeat(
   config: HeatConfig,
   state: HeatState,

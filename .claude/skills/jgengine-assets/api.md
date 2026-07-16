@@ -44,7 +44,6 @@
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
-- `extractSpriteFiles` (function): function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] — Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
 - `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
@@ -92,23 +91,11 @@
 
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — ⚠ undocumented
 
-## @jgengine/assets/cli/paths
-
-- `resolveGeneratedDir` (function): function resolveGeneratedDir(cliDir: string): string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
-- `resolveGeneratedSpritesDir` (function): function resolveGeneratedSpritesDir(cliDir: string): string — Sprite-pack counterpart of `resolveGeneratedDir` — a separate generated tree, same sibling layout.
-- `resolvePackageRoot` (function): function resolvePackageRoot(cliDir: string): string — ⚠ undocumented
-- `resolvePackageTreeRoot` (function): function resolvePackageTreeRoot(cliDir: string): string — ⚠ undocumented
-
 ## @jgengine/assets/cli/pull
 
 - `cliFetch` (const): const cliFetch: typeof fetch — The runtime's own fetch, with a curl fallback for hosts it cannot reach — some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset host while curl (which honors SSL_CERT_FILE) gets through fine.
-- `cmdPull` (function): function cmdPull(argv: string[]): Promise<void> — ⚠ undocumented
-- `describeNetworkFailure` (function): function describeNetworkFailure(error: unknown): string — ⚠ undocumented
-- `flag` (function): function flag(argv: string[], name: string): string | undefined — ⚠ undocumented
 - `generatedDir` (const): const generatedDir: string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
 - `generatedSpritesDir` (const): const generatedSpritesDir: string — Sprite-pack counterpart of `generatedDir`.
-- `isPopulated` (function): function isPopulated(dir: string): boolean — ⚠ undocumented
-- `resolveGeneratedDir` (function): function resolveGeneratedDir(cliDir: string): string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
 
 ## @jgengine/assets/dims
 
@@ -124,17 +111,10 @@
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
 - `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
-- `defaultReleaseUrl` (function): function defaultReleaseUrl(source: AssetSource): string — URL of `source`'s archive on the default GitHub-release mirror.
-- `downloadArchive` (function): function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> — ⚠ undocumented
-- `downloadPackArchive` (function): function downloadPackArchive(source: AssetSource, options: DownloadPackOptions = {}): Promise<DownloadPackResult> — Resolves and downloads a pack's archive, trying sources in order until one succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the default GitHub-release mirror at `defaultReleaseUrl` (skipped when `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror` URL. A pinned `sha256` is verified against whichever source supplied the bytes; a mismatch is treated as a failed attempt so the next source in the chain is tried. Throws with every attempted URL and its failure reason when all sources fail.
-- `extractGlbs` (function): function extractGlbs(archive: Uint8Array): ExtractedGlb[] — Pull every GLB out of an archive. Also converts co-located `.gltf` + `.bin` pairs (Quaternius Standard packs on OpenGameArt) into `.glb` so the catalog stays one-file-per-model. GLB wins when both formats share a basename.
-- `extractSpriteFiles` (function): function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] — Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
-- `extractTextures` (function): function extractTextures(archive: Uint8Array): ExtractedTexture[] — ⚠ undocumented
-- `findArchiveUrl` (function): function findArchiveUrl(html: string, pageUrl: string): string | null — ⚠ undocumented
-- `mirrorOverrideUrl` (function): function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string — Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g. `https://my-mirror.example.com/kenney/kenney-nature.zip`.
-- `packGltfToGlb` (function): function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uint8Array — Pack a `.gltf` + optional external `.bin` into a single `.glb` so reindex / the shell only ever deal in one-file models. Strips buffer `uri` fields so the binary chunk is self-contained. External image URIs stay as-is (loaders resolve relative to the catalog URL only for GLB-embedded images).
-- `resolveArchiveUrl` (function): function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> — ⚠ undocumented
-- `sha256Hex` (function): function sha256Hex(bytes: Uint8Array): Promise<string> — ⚠ undocumented
+- `MAX_ARCHIVE_COMPRESSION_RATIO` (const): const MAX_ARCHIVE_COMPRESSION_RATIO: 100 — Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb.
+- `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
+- `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
+- `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
 
 ## @jgengine/assets/find
 

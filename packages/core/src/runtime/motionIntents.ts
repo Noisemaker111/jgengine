@@ -21,6 +21,10 @@ export interface MotionIntents {
   setVerticalVelocity(velocityY: number): void;
   setY(y: number): void;
   takePending(): MotionIntentBatch | null;
+  /** Non-draining copy of the pending intents for a whole-world save; unlike `takePending` it leaves the queue intact. */
+  snapshot(): MotionIntentBatch;
+  /** Replace the pending intents from a {@link snapshot} payload on save load. */
+  hydrate(batch: MotionIntentBatch): void;
 }
 
 export interface MotionIntentBatch {
@@ -30,6 +34,7 @@ export interface MotionIntentBatch {
   y: number | null;
 }
 
+/** @internal */
 export function createMotionIntents(): MotionIntents {
   let impulses: number[] = [];
   let horizontalImpulses: (readonly [number, number])[] = [];
@@ -60,10 +65,21 @@ export function createMotionIntents(): MotionIntents {
       y = null;
       return batch;
     },
+    snapshot() {
+      return { impulses: [...impulses], horizontalImpulses: [...horizontalImpulses], verticalVelocity, y };
+    },
+    hydrate(batch) {
+      impulses = [...batch.impulses];
+      horizontalImpulses = batch.horizontalImpulses.map(([x, z]) => [x, z] as const);
+      verticalVelocity = batch.verticalVelocity;
+      y = batch.y;
+    },
   };
 }
 
-/** Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}. */
+/** Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
+ * @internal
+ */
 export function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number {
   if (batch === null) return currentVelocity;
   let velocity = currentVelocity;
@@ -72,7 +88,9 @@ export function applyMotionImpulses(currentVelocity: number, batch: MotionIntent
   return velocity;
 }
 
-/** Fold a batch's horizontal pushes into a controller's velocity pair — shared by the walk and voxel drivers. */
+/** Fold a batch's horizontal pushes into a controller's velocity pair — shared by the walk and voxel drivers.
+ * @internal
+ */
 export function applyHorizontalImpulses(
   velocityX: number,
   velocityZ: number,

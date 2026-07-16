@@ -52,6 +52,7 @@ function appearanceEqual(
 
 export const DEFAULT_SPAWN_ORIGIN = { x: 0, y: 0, z: 0 } as const;
 
+/** @internal */
 export function spawnPresenceState(
   origin: { x: number; y: number; z: number } = DEFAULT_SPAWN_ORIGIN,
   nowMs: number,
@@ -65,6 +66,7 @@ export function spawnPresenceState(
   };
 }
 
+/** @internal */
 export function decidePoseSync(
   current: PresencePoseState,
   incoming: IncomingPose,
@@ -117,6 +119,7 @@ export function decidePoseSync(
   };
 }
 
+/** @internal */
 export function shouldRefreshKeepAlive(
   lastSeenAtMs: number | undefined,
   nowMs: number,
@@ -125,6 +128,7 @@ export function shouldRefreshKeepAlive(
   return nowMs - (lastSeenAtMs ?? 0) >= rules.keepAliveRefreshMs;
 }
 
+/** @internal */
 export function shouldPersistWorldSnapshot(
   lastSavedAtMs: number | undefined,
   nowMs: number,
@@ -139,6 +143,7 @@ export interface ActivePresenceResolution<T> {
   extras: T[];
 }
 
+/** @internal */
 export function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt?: number }>(
   rows: readonly T[],
 ): ActivePresenceResolution<T> {
@@ -148,6 +153,7 @@ export function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt
   return { active: sorted[0] ?? null, extras: sorted.slice(1) };
 }
 
+/** @internal */
 export function isPresenceExpired(
   lastSeenAtMs: number,
   nowMs: number,
@@ -156,7 +162,9 @@ export function isPresenceExpired(
   return nowMs - lastSeenAtMs >= idleCutoffMs;
 }
 
-/** Most-recently-seen row across an actor's rows, to reuse instead of inserting a new one. */
+/** Most-recently-seen row across an actor's rows, to reuse instead of inserting a new one.
+ * @internal
+ */
 export function pickReusablePresence<T extends { lastSeenAt?: number }>(
   rows: readonly T[],
 ): T | undefined {

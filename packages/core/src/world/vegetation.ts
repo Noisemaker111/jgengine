@@ -1,7 +1,7 @@
-import type { EditorDocument, EditorVolume } from "../editor/types";
 import type { Aabb } from "./geometry";
 import { scatter } from "./scatter";
 import type { GrassEnvironmentConfig } from "./features";
+import type { SceneDocumentLike, SceneVolumeLike } from "./sceneShapes";
 
 /** The editor volume kind that marks an area as vegetation fill. */
 export const VEGETATION_VOLUME_KIND = "vegetation";
@@ -46,13 +46,17 @@ function metaString(meta: Record<string, unknown> | undefined, key: string, fall
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
-/** True when an editor volume is a vegetation fill area. */
-export function isVegetationVolume(volume: EditorVolume): boolean {
+/** True when an editor volume is a vegetation fill area.
+ * @internal
+ */
+export function isVegetationVolume(volume: SceneVolumeLike): boolean {
   return volume.kind === VEGETATION_VOLUME_KIND;
 }
 
-/** The volume's vegetation settings with defaults filled in; null for non-vegetation volumes. */
-export function readVegetationSettings(volume: EditorVolume): VegetationSettings | null {
+/** The volume's vegetation settings with defaults filled in; null for non-vegetation volumes.
+ * @internal
+ */
+export function readVegetationSettings(volume: SceneVolumeLike): VegetationSettings | null {
   if (!isVegetationVolume(volume)) return null;
   return {
     item: metaString(volume.meta, "item", VEGETATION_DEFAULTS.item),
@@ -64,8 +68,10 @@ export function readVegetationSettings(volume: EditorVolume): VegetationSettings
   };
 }
 
-/** The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius. */
-export function vegetationFootprint(volume: EditorVolume): Aabb {
+/** The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius.
+ * @internal
+ */
+export function vegetationFootprint(volume: SceneVolumeLike): Aabb {
   const halfW = volume.shape === "box" ? (volume.halfExtents?.x ?? 5) : (volume.radius ?? 5);
   const halfD = volume.shape === "box" ? (volume.halfExtents?.z ?? 5) : (volume.radius ?? 5);
   return {
@@ -102,8 +108,9 @@ function placementHash(volumeId: string, seed: string, index: number, salt: numb
  * `density` items/m² (respecting `minDistance`), clip round shapes to their
  * radius, and derive per-instance scale/rotation from the volume id + seed, so
  * the same saved scene always grows the same field.
- */
-export function resolveVegetationVolume(volume: EditorVolume): VegetationPlacement[] {
+  * @internal
+  */
+export function resolveVegetationVolume(volume: SceneVolumeLike): VegetationPlacement[] {
   const settings = readVegetationSettings(volume);
   if (settings === null || settings.density <= 0) return [];
   const area = vegetationFootprint(volume);
@@ -142,8 +149,9 @@ export function resolveVegetationVolume(volume: EditorVolume): VegetationPlaceme
  * `item: "grass"`, which the shell renders as blades — see
  * `grassPatchesFromVegetation`). A game maps each placement's `item` to a
  * mesh/entity via its render catalog and places it grounded.
- */
-export function resolveVegetation(doc: EditorDocument): VegetationPlacement[] {
+  * @internal
+  */
+export function resolveVegetation(doc: SceneDocumentLike): VegetationPlacement[] {
   const out: VegetationPlacement[] = [];
   for (const volume of doc.volumes) {
     if (!isVegetationVolume(volume)) continue;
@@ -158,8 +166,9 @@ export function resolveVegetation(doc: EditorDocument): VegetationPlacement[] {
  * Grass-blade patches for every `item: "grass"` vegetation volume, ready to
  * spread into `environment()`'s `grass` list — the volume's density number is
  * the blades-per-m² the shell renders, so the editor slider drives it directly.
- */
-export function grassPatchesFromVegetation(doc: EditorDocument): GrassEnvironmentConfig[] {
+  * @internal
+  */
+export function grassPatchesFromVegetation(doc: SceneDocumentLike): GrassEnvironmentConfig[] {
   const patches: GrassEnvironmentConfig[] = [];
   for (const volume of doc.volumes) {
     if (!isVegetationVolume(volume)) continue;

@@ -16,11 +16,14 @@ export type ActionBindingMap<TAction extends string, TCode extends string = stri
   ActionBinding<TCode>
 >;
 
+/** @internal */
 export function bindingMatches<TCode extends string>(code: TCode, binding: ActionBinding<TCode>): boolean {
   return code === binding.primary || code === binding.secondary;
 }
 
-/** First action (in the map's key order) bound to the given control code, or null. */
+/** First action (in the map's key order) bound to the given control code, or null.
+ * @internal
+ */
 export function resolveBoundAction<TAction extends string, TCode extends string>(
   code: TCode,
   bindings: ActionBindingMap<TAction, TCode>,
@@ -34,7 +37,8 @@ export function resolveBoundAction<TAction extends string, TCode extends string>
 /**
  * Collapse left/right modifier variants of a KeyboardEvent.code so bindings
  * store one logical key.
- */
+  * @internal
+  */
 export function normalizeKeyCode(code: string): string {
   if (code === "ShiftLeft" || code === "ShiftRight") return "Shift";
   if (code === "ControlLeft" || code === "ControlRight") return "Control";
@@ -63,6 +67,7 @@ export type ActionCodesMap<TAction extends string = string, TCode extends string
   ActionCodes<TCode>
 >;
 
+/** @internal */
 export function actionRepeatMs(codes: ActionCodes | undefined): number | undefined {
   if (codes === undefined || Array.isArray(codes)) return undefined;
   return (codes as { repeatMs?: number }).repeatMs;
@@ -76,6 +81,7 @@ export interface ShouldDispatchActionInput {
   now: number;
 }
 
+/** @internal */
 export function shouldDispatchAction({ pressed, down, repeatMs, lastFiredAt, now }: ShouldDispatchActionInput): boolean {
   if (pressed) return true;
   if (repeatMs === undefined || repeatMs <= 0) return false;
@@ -87,6 +93,7 @@ function toBindings<TCode extends string>(codes: readonly TCode[]): ActionBindin
   return codes.map((code) => ({ primary: code, secondary: null }));
 }
 
+/** @internal */
 export function toActionStateBindingMap<TAction extends string, TCode extends string>(
   map: ActionCodesMap<TAction, TCode>,
 ): ActionStateBindingMap<TAction, TCode> {
@@ -116,6 +123,7 @@ const HOTBAR_DIGIT_CODES = [
   "Digit0",
 ] as const;
 
+/** @internal */
 export function hotbarSlotBindings(
   count: number,
   options?: { action?: (slot: number) => string },
@@ -133,12 +141,15 @@ export function hotbarSlotBindings(
 
 const HOTBAR_SLOT_ACTION = /^(?:hotbar)?slot(\d+)$/i;
 
-/** 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null. */
+/** 0-based slot index for a hotbar-slot action name (`slot1`, `hotbarSlot1`), or null.
+ * @internal
+ */
 export function hotbarSlotActionIndex(action: string): number | null {
   const match = HOTBAR_SLOT_ACTION.exec(action);
   return match === null ? null : Number(match[1]) - 1;
 }
 
+/** @internal */
 export function isHotbarSlotAction(action: string): boolean {
   return HOTBAR_SLOT_ACTION.test(action);
 }
@@ -148,7 +159,8 @@ export function isHotbarSlotAction(action: string): boolean {
  * own name when a command by that name exists, otherwise a `ui.<action>`
  * fallback. Reserved actions (consumed natively by the shell) and hotbar slots
  * yield null so the shell can handle them itself.
- */
+  * @internal
+  */
 export function resolveActionCommand(
   action: string,
   has: (command: string) => boolean,
@@ -184,7 +196,9 @@ const CODE_LABELS: Record<string, string> = {
   ArrowRight: "→",
 };
 
-/** Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`). */
+/** Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
+ * @internal
+ */
 export function bindingLabel(code: string): string {
   const direct = CODE_LABELS[code];
   if (direct !== undefined) return direct;
@@ -193,7 +207,9 @@ export function bindingLabel(code: string): string {
   return code.length === 1 ? code.toUpperCase() : code;
 }
 
-/** Short display label for an action's first bound code, or null when unbound. */
+/** Short display label for an action's first bound code, or null when unbound.
+ * @internal
+ */
 export function actionLabel(map: ActionCodesMap, action: string): string | null {
   const codes = map[action];
   if (codes === undefined) return null;
@@ -224,6 +240,7 @@ function resolveActionBindingModes<TCode extends string>(
   return { hold: config.hold ?? [], toggle: config.toggle ?? [] };
 }
 
+/** @internal */
 export function createActionStateTracker<TAction extends string, TCode extends string = string>(
   map: ActionStateBindingMap<TAction, TCode>,
 ): ActionStateTracker<TAction> {

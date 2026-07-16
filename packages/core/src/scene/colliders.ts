@@ -38,6 +38,7 @@ export const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition = [0.35, 0.9, 0.35
 /** Entity-local center of the default body hitbox (half its height above the feet). */
 export const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition = [0, 0.9, 0];
 
+/** @internal */
 export function defaultEntityColliders(): EntityColliderSet {
   return {
     hitboxes: [
@@ -56,7 +57,9 @@ export function defaultEntityColliders(): EntityColliderSet {
   };
 }
 
-/** Humanoid damage box uniformly scaled to match a visually scaled mesh, kept grounded (offset stays half its height). At scale 1 this equals `defaultEntityColliders()`. */
+/** Humanoid damage box uniformly scaled to match a visually scaled mesh, kept grounded (offset stays half its height). At scale 1 this equals `defaultEntityColliders()`.
+ * @internal
+ */
 export function scaledEntityColliders(scale: number): EntityColliderSet {
   return {
     hitboxes: [
@@ -83,6 +86,7 @@ export function scaledEntityColliders(scale: number): EntityColliderSet {
   };
 }
 
+/** @internal */
 export function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJECT_HALF_EXTENTS): EntityColliderSet {
   return {
     body: {
@@ -95,7 +99,9 @@ export function defaultObjectColliders(halfExtents: EntityPosition = DEFAULT_OBJ
   };
 }
 
-/** Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh). */
+/** Blocking physical body derived from an object's rendered scale: a grounded box spanning the visual (base at y=0, matching the shell's fallback mesh).
+ * @internal
+ */
 export function scaledObjectColliders(scale: readonly [number, number, number]): EntityColliderSet {
   return {
     body: {
@@ -112,6 +118,7 @@ export function scaledObjectColliders(scale: readonly [number, number, number]):
   };
 }
 
+/** @internal */
 export function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] {
   if (set === null || set === undefined) return [];
   const out: ResolvedCollider[] = [];
@@ -134,6 +141,7 @@ function resolveOne(def: ColliderDef): ResolvedCollider {
   };
 }
 
+/** @internal */
 export function worldOffset(
   local: EntityPosition | undefined,
   position: EntityPosition,
@@ -148,6 +156,7 @@ export function worldOffset(
   return [position[0] + lx * cos + lz * sin, position[1] + ly, position[2] - lx * sin + lz * cos];
 }
 
+/** @internal */
 export function colliderWorldCenter(
   collider: ResolvedCollider,
   position: EntityPosition,
@@ -156,6 +165,7 @@ export function colliderWorldCenter(
   return worldOffset(collider.shape.offset, position, rotationY);
 }
 
+/** @internal */
 export function colliderBounds(
   collider: ResolvedCollider,
   position: EntityPosition,

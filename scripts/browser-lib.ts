@@ -1,15 +1,20 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+/**
+ * Default port when no worktree key is needed — kept for docs/bench that still
+ * want a predictable single-session port. Prefer {@link resolveDevPort}.
+ */
 export const DEV_PORT = 4517;
+/** @deprecated Prefer {@link resolveDevBase} — fixed URL collides across worktrees. */
 export const DEV_BASE = `http://127.0.0.1:${DEV_PORT}`;
 
 /**
- * Fixed debug port a `--keep` launch binds to, so a later `--connect` call
- * never has to parse the previous call's stdout to find it — the warm-loop
- * pattern is `--keep` once, then `--connect 9223` for every re-shot.
+ * Default warm Chrome debug port. Prefer {@link resolveWarmChromePort} so
+ * parallel worktrees do not share one CDP endpoint.
  */
 export const WARM_CHROME_PORT = 9223;
 
@@ -100,20 +105,137 @@ export async function isUp(url: string): Promise<boolean> {
   }
 }
 
-export async function ensureDevServer(): Promise<ChildProcess | null> {
-  if (await isUp(DEV_BASE)) return null;
-  const child = spawn("bunx", ["vite", "--port", String(DEV_PORT), "--host", "127.0.0.1"], {
+/** Stable identity for this checkout (worktree path or monorepo root). */
+export function checkoutIdentity(cwd = process.cwd()): string {
+  try {
+    const top = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8",
+    });
+    if (top.status === 0 && top.stdout.trim().length > 0) return top.stdout.trim();
+  } catch {
+    /* fall through */
+  }
+  return resolve(cwd);
+}
+
+function hashPortOffset(identity: string, span: number): number {
+  const digest = createHash("sha256").update(identity).digest();
+  return digest.readUInt32BE(0) % span;
+}
+
+/**
+ * Per-checkout dev port so parallel worktrees do not share one Vite.
+ * Override with `JG_DEV_PORT`. Range 4517–4999 (483 ports).
+ */
+export function resolveDevPort(cwd = process.cwd()): number {
+  const override = process.env.JG_DEV_PORT;
+  if (override !== undefined && override.length > 0) {
+    const n = Number(override);
+    if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  }
+  return 4517 + hashPortOffset(checkoutIdentity(cwd), 483);
+}
+
+export function resolveDevBase(cwd = process.cwd()): string {
+  return `http://127.0.0.1:${resolveDevPort(cwd)}`;
+}
+
+/**
+ * Per-checkout warm Chrome debug port (`--keep` / `--connect` loop).
+ * Override with `JG_CHROME_PORT`. Range 9223–9322.
+ */
+export function resolveWarmChromePort(cwd = process.cwd()): number {
+  const override = process.env.JG_CHROME_PORT;
+  if (override !== undefined && override.length > 0) {
+    const n = Number(override);
+    if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  }
+  return 9223 + hashPortOffset(checkoutIdentity(cwd), 100);
+}
+
+interface DevServerMarker {
+  identity: string;
+  port: number;
+  pid?: number;
+}
+
+function markerPath(port: number): string {
+  return join(tmpdir(), `jgengine-dev-${port}.json`);
+}
+
+function readMarker(port: number): DevServerMarker | null {
+  try {
+    const raw = readFileSync(markerPath(port), "utf8");
+    return JSON.parse(raw) as DevServerMarker;
+  } catch {
+    return null;
+  }
+}
+
+function writeMarker(port: number, identity: string, pid?: number): void {
+  const body: DevServerMarker = { identity, port, pid };
+  writeFileSync(markerPath(port), `${JSON.stringify(body)}\n`);
+}
+
+/** True when something is listening *and* its marker matches this checkout. */
+export async function isOurDevServer(port: number, identity: string): Promise<boolean> {
+  const base = `http://127.0.0.1:${port}`;
+  if (!(await isUp(base))) return false;
+  const marker = readMarker(port);
+  return marker !== null && marker.identity === identity;
+}
+
+export interface EnsureDevServerResult {
+  child: ChildProcess | null;
+  port: number;
+  base: string;
+}
+
+/**
+ * Boot (or reuse) the apps/dev Vite server for **this** checkout only.
+ * Port is derived from the worktree path; a live server on that port is
+ * reused only when a marker file proves it belongs to this identity.
+ */
+export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
+  const identity = checkoutIdentity(cwd);
+  let port = resolveDevPort(cwd);
+  const base = `http://127.0.0.1:${port}`;
+
+  if (await isOurDevServer(port, identity)) {
+    return { child: null, port, base };
+  }
+
+  if (await isUp(base)) {
+    // Something else owns this port — try a few offsets rather than attach wrong.
+    for (let step = 1; step <= 20; step += 1) {
+      const candidate = 4517 + ((port - 4517 + step * 17) % 483);
+      if (await isOurDevServer(candidate, identity)) {
+        return { child: null, port: candidate, base: `http://127.0.0.1:${candidate}` };
+      }
+      if (!(await isUp(`http://127.0.0.1:${candidate}`))) {
+        port = candidate;
+        break;
+      }
+    }
+  }
+
+  const child = spawn("bunx", ["vite", "--port", String(port), "--host", "127.0.0.1", "--strictPort"], {
     cwd: resolve(import.meta.dir, "../apps/dev"),
     stdio: "ignore",
     detached: process.platform !== "win32",
+    env: { ...process.env, JG_DEV_PORT: String(port) },
   });
   child.unref();
+  writeMarker(port, identity, child.pid);
+
+  const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     await new Promise((r) => setTimeout(r, 500));
-    if (await isUp(DEV_BASE)) return child;
+    if (await isUp(finalBase)) return { child, port, base: finalBase };
   }
   child.kill();
-  throw new Error(`Dev server failed to start on :${DEV_PORT}`);
+  throw new Error(`Dev server failed to start on :${port} for ${identity}`);
 }
 
 export function killProcessTree(child: ChildProcess | null): void {

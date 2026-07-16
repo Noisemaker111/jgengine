@@ -183,7 +183,7 @@ export function Footer() {
           </div>
         </div>
         <p className="mt-12 border-t border-white/[0.05] pt-6 text-xs text-slate-600">
-          AGPL-3.0 · Open source ·{" "}
+          Apache-2.0 · Open source ·{" "}
           <a href={REPO_URL} className="text-slate-500 underline decoration-slate-700 underline-offset-2 transition hover:text-slate-300">
             Noisemaker111/jgengine
           </a>

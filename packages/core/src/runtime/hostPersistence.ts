@@ -92,6 +92,7 @@ function isLeaderboardIncrement(value: unknown): value is LeaderboardIncrement {
   );
 }
 
+/** @internal */
 export function drainPendingLeaderboardIncrements(session: Record<string, unknown>): {
   increments: LeaderboardIncrement[];
   session: Record<string, unknown>;
@@ -107,6 +108,7 @@ export function drainPendingLeaderboardIncrements(session: Record<string, unknow
 
 export const LEADERBOARD_TOP_LIMIT = 100;
 
+/** @internal */
 export function clampLimit(value: number | undefined, fallback: number, max: number): number {
   const candidate = value ?? fallback;
   if (!Number.isFinite(candidate)) return fallback;
@@ -123,10 +125,12 @@ export type LeaderboardRow = {
   updatedAt: number;
 };
 
+/** @internal */
 export function leaderboardRowKey(row: Omit<LeaderboardRow, "value" | "updatedAt">): string {
   return [row.gameId, row.scope, row.stat, row.serverId ?? "", row.userId].join("|");
 }
 
+/** @internal */
 export function applyLeaderboardRows(
   rows: Map<string, LeaderboardRow>,
   gameId: string,
@@ -152,6 +156,7 @@ export function applyLeaderboardRows(
   }
 }
 
+/** @internal */
 export function topLeaderboardRows(
   rows: Iterable<LeaderboardRow>,
   args: {
@@ -176,6 +181,7 @@ export function topLeaderboardRows(
     .map((row) => ({ userId: row.userId, value: row.value }));
 }
 
+/** @internal */
 export function profileLeaderboardStats(
   rows: Iterable<LeaderboardRow>,
   gameId: string,
@@ -192,11 +198,13 @@ export function profileLeaderboardStats(
 
 export const FEED_RING_LIMIT = 20;
 
+/** @internal */
 export function trimFeedEntries<T>(entries: T[], limit = FEED_RING_LIMIT): T[] {
   if (entries.length <= limit) return entries;
   return entries.slice(entries.length - limit);
 }
 
+/** @internal */
 export function shouldAutoSave(
   save: SaveConfig,
   dirtyAt: number | undefined,
@@ -227,6 +235,7 @@ export type ToServerListingOptions = {
   includeJoinCode?: boolean;
 };
 
+/** @internal */
 export function toServerListing(
   record: GameServerRecord,
   options: ToServerListingOptions = {},
@@ -250,6 +259,7 @@ export function toServerListing(
 export const OPEN_SERVER_LISTING_LIMIT = 20;
 export const OPEN_SERVER_LISTING_MAX = 100;
 
+/** @internal */
 export function toOpenServerListings(
   listings: Iterable<ServerListing>,
   limit: number = OPEN_SERVER_LISTING_LIMIT,
@@ -284,6 +294,7 @@ export type HostPersistence = {
   getLeaderboardProfile: (args: { gameId: string; userId: string }) => Promise<Record<string, number>>;
 };
 
+/** @internal */
 export function buildHydratePlayers(
   server: GameServerRecord,
   profiles: Record<string, PlayerProfileRecord | null>,
@@ -314,6 +325,7 @@ export type ServerPersistPlan = {
   leaderboard: LeaderboardIncrement[];
 };
 
+/** @internal */
 export function planServerPersist(
   server: GameServerRecord,
   snapshot: GameRuntimeSnapshot,

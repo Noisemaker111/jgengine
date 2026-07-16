@@ -1,0 +1,6647 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "crash_bus",
+      "kind": "prop",
+      "position": {
+        "x": -510,
+        "y": 0,
+        "z": 606
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "bus_wreck"
+      }
+    },
+    {
+      "id": "rustflat_debris_0",
+      "kind": "prop",
+      "position": {
+        "x": -512.0428359926057,
+        "y": 0,
+        "z": 594.1498784460061
+      },
+      "rotationY": 6.1370745382910155,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rustflat_debris_1",
+      "kind": "prop",
+      "position": {
+        "x": -516.5571284686984,
+        "y": 0,
+        "z": 603.7115490857678
+      },
+      "rotationY": 4.805803443174879,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rustflat_debris_2",
+      "kind": "prop",
+      "position": {
+        "x": -509.24733458882764,
+        "y": 0,
+        "z": 595.2403870862676
+      },
+      "rotationY": 5.109029883144655,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rustflat_debris_3",
+      "kind": "prop",
+      "position": {
+        "x": -508.15071757594825,
+        "y": 0,
+        "z": 596.3881150678164
+      },
+      "rotationY": 3.329096805101756,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rustflat_debris_4",
+      "kind": "prop",
+      "position": {
+        "x": -499.85305911218256,
+        "y": 0,
+        "z": 605.7550371143985
+      },
+      "rotationY": 4.161780354628193,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rustflat_wreck_spawn",
+      "kind": "prop",
+      "position": {
+        "x": -489,
+        "y": 0,
+        "z": 600
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "rustflat_spire_a",
+      "kind": "prop",
+      "position": {
+        "x": -516,
+        "y": 0,
+        "z": 604
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_spire_b",
+      "kind": "prop",
+      "position": {
+        "x": -484,
+        "y": 0,
+        "z": 582
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_spire_c",
+      "kind": "prop",
+      "position": {
+        "x": -510,
+        "y": 0,
+        "z": 576
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_bones_spawn",
+      "kind": "prop",
+      "position": {
+        "x": -496,
+        "y": 0,
+        "z": 606
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "rustflat_tree_spawn",
+      "kind": "prop",
+      "position": {
+        "x": -512,
+        "y": 0,
+        "z": 588
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "rustflat_banner_spawn",
+      "kind": "prop",
+      "position": {
+        "x": -492,
+        "y": 0,
+        "z": 586
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "sign_rustflat_spawn",
+      "kind": "prop",
+      "position": {
+        "x": -507,
+        "y": 0,
+        "z": 601
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "sign_rustflat",
+      "kind": "prop",
+      "position": {
+        "x": -492,
+        "y": 0,
+        "z": 568
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "rustflat_bones_0",
+      "kind": "prop",
+      "position": {
+        "x": -458,
+        "y": 0,
+        "z": 530
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "rustflat_bones_1",
+      "kind": "prop",
+      "position": {
+        "x": -480,
+        "y": 0,
+        "z": 552
+      },
+      "rotationY": 3.141592653589793,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "rustflat_bones_2",
+      "kind": "prop",
+      "position": {
+        "x": -502,
+        "y": 0,
+        "z": 530
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "rustflat_bones_3",
+      "kind": "prop",
+      "position": {
+        "x": -480,
+        "y": 0,
+        "z": 508
+      },
+      "rotationY": 6.283185307179586,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "rustflat_rocks_0",
+      "kind": "prop",
+      "position": {
+        "x": -511.2933988806379,
+        "y": 0,
+        "z": 596.7046385101836
+      },
+      "rotationY": 4.9849148087964785,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_rocks_1",
+      "kind": "prop",
+      "position": {
+        "x": -568.519271747587,
+        "y": 0,
+        "z": 553.2427860274524
+      },
+      "rotationY": 5.917845254191367,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_rocks_2",
+      "kind": "prop",
+      "position": {
+        "x": -536.1774015289425,
+        "y": 0,
+        "z": 609.396836596148
+      },
+      "rotationY": 4.045289159353754,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_rocks_3",
+      "kind": "prop",
+      "position": {
+        "x": -477.46601481975205,
+        "y": 0,
+        "z": 496.4116552669246
+      },
+      "rotationY": 4.547309472937734,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_rocks_4",
+      "kind": "prop",
+      "position": {
+        "x": -579.569420235464,
+        "y": 0,
+        "z": 515.057840367273
+      },
+      "rotationY": 4.954906878708599,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_rocks_5",
+      "kind": "prop",
+      "position": {
+        "x": -493.5867284813222,
+        "y": 0,
+        "z": 516.506389118032
+      },
+      "rotationY": 4.613342932524949,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "shelf_wall_0",
+      "kind": "prop",
+      "position": {
+        "x": -84,
+        "y": 0,
+        "z": 420
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_1",
+      "kind": "prop",
+      "position": {
+        "x": -86.5748094345371,
+        "y": 0,
+        "z": 431.2809772170565
+      },
+      "rotationY": 2.019595277307724,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_2",
+      "kind": "prop",
+      "position": {
+        "x": -93.78926515167292,
+        "y": 0,
+        "z": 440.3276185441688
+      },
+      "rotationY": 2.4683942278205517,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_3",
+      "kind": "prop",
+      "position": {
+        "x": -104.21445571713582,
+        "y": 0,
+        "z": 445.3481257167274
+      },
+      "rotationY": 2.9171931783333793,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_4",
+      "kind": "prop",
+      "position": {
+        "x": -115.78554428286418,
+        "y": 0,
+        "z": 445.3481257167274
+      },
+      "rotationY": 3.365992128846207,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_8",
+      "kind": "prop",
+      "position": {
+        "x": -133.4251905654629,
+        "y": 0,
+        "z": 408.7190227829435
+      },
+      "rotationY": 5.161187930897517,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_9",
+      "kind": "prop",
+      "position": {
+        "x": -126.21073484832708,
+        "y": 0,
+        "z": 399.6723814558312
+      },
+      "rotationY": 5.609986881410345,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_10",
+      "kind": "prop",
+      "position": {
+        "x": -115.78554428286418,
+        "y": 0,
+        "z": 394.6518742832726
+      },
+      "rotationY": 6.058785831923172,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_11",
+      "kind": "prop",
+      "position": {
+        "x": -104.21445571713583,
+        "y": 0,
+        "z": 394.6518742832726
+      },
+      "rotationY": 6.507584782436,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_12",
+      "kind": "prop",
+      "position": {
+        "x": -93.78926515167294,
+        "y": 0,
+        "z": 399.6723814558312
+      },
+      "rotationY": 6.956383732948828,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_wall_13",
+      "kind": "prop",
+      "position": {
+        "x": -86.5748094345371,
+        "y": 0,
+        "z": 408.7190227829435
+      },
+      "rotationY": 7.405182683461655,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "shelf_tower_1",
+      "kind": "prop",
+      "position": {
+        "x": -92,
+        "y": 0,
+        "z": 402
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
+      "id": "shelf_tents_0",
+      "kind": "prop",
+      "position": {
+        "x": -110.81373439732269,
+        "y": 0,
+        "z": 423.9802424463006
+      },
+      "rotationY": 6.2087669951067515,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "shelf_tents_1",
+      "kind": "prop",
+      "position": {
+        "x": -102.86946786632464,
+        "y": 0,
+        "z": 425.73734139958833
+      },
+      "rotationY": 5.450870312067777,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "shelf_tents_2",
+      "kind": "prop",
+      "position": {
+        "x": -100.5563968077183,
+        "y": 0,
+        "z": 419.71405932546753
+      },
+      "rotationY": 4.567723109350486,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "shelf_tents_3",
+      "kind": "prop",
+      "position": {
+        "x": -108.90834811005834,
+        "y": 0,
+        "z": 428.2293623125651
+      },
+      "rotationY": 3.527040808161155,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "shelf_cover_0",
+      "kind": "prop",
+      "position": {
+        "x": -122.1153337566909,
+        "y": 0,
+        "z": 415.15008851272233
+      },
+      "rotationY": 5.420338711435488,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "shelf_cover_1",
+      "kind": "prop",
+      "position": {
+        "x": -118.51616576080278,
+        "y": 0,
+        "z": 408.39295849003133
+      },
+      "rotationY": 5.954640941302287,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "shelf_cover_2",
+      "kind": "prop",
+      "position": {
+        "x": -122.50853976563428,
+        "y": 0,
+        "z": 430.3857403934773
+      },
+      "rotationY": 1.023907638388722,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "shelf_cover_3",
+      "kind": "prop",
+      "position": {
+        "x": -113.71846856914999,
+        "y": 0,
+        "z": 413.4254691338771
+      },
+      "rotationY": 3.3356696653106237,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "shelf_cover_4",
+      "kind": "prop",
+      "position": {
+        "x": -97.18188593900706,
+        "y": 0,
+        "z": 410.5853518047437
+      },
+      "rotationY": 4.555246564235159,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "shelf_cover_5",
+      "kind": "prop",
+      "position": {
+        "x": -118.20076446806192,
+        "y": 0,
+        "z": 418.64259583937536
+      },
+      "rotationY": 4.004092309533884,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "shelf_cover_6",
+      "kind": "prop",
+      "position": {
+        "x": -110.23460001649764,
+        "y": 0,
+        "z": 439.92029640588333
+      },
+      "rotationY": 0.6862393874592736,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rusk_banners_0",
+      "kind": "prop",
+      "position": {
+        "x": -44,
+        "y": 0,
+        "z": 560
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rusk_banners_1",
+      "kind": "prop",
+      "position": {
+        "x": -52,
+        "y": 0,
+        "z": 573.856406460551
+      },
+      "rotationY": 2.617993877991494,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rusk_banners_2",
+      "kind": "prop",
+      "position": {
+        "x": -68,
+        "y": 0,
+        "z": 573.856406460551
+      },
+      "rotationY": 3.665191429188092,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rusk_banners_3",
+      "kind": "prop",
+      "position": {
+        "x": -76,
+        "y": 0,
+        "z": 560
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rusk_banners_4",
+      "kind": "prop",
+      "position": {
+        "x": -68,
+        "y": 0,
+        "z": 546.143593539449
+      },
+      "rotationY": 5.759586531581287,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rusk_banners_5",
+      "kind": "prop",
+      "position": {
+        "x": -52,
+        "y": 0,
+        "z": 546.143593539449
+      },
+      "rotationY": 6.806784082777885,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rusk_cover_0",
+      "kind": "prop",
+      "position": {
+        "x": -49,
+        "y": 0,
+        "z": 560
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rusk_cover_1",
+      "kind": "prop",
+      "position": {
+        "x": -54.5,
+        "y": 0,
+        "z": 569.5262794416288
+      },
+      "rotationY": 2.617993877991494,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rusk_cover_2",
+      "kind": "prop",
+      "position": {
+        "x": -65.5,
+        "y": 0,
+        "z": 569.5262794416288
+      },
+      "rotationY": 3.665191429188092,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rusk_cover_3",
+      "kind": "prop",
+      "position": {
+        "x": -71,
+        "y": 0,
+        "z": 560
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rusk_cover_4",
+      "kind": "prop",
+      "position": {
+        "x": -65.5,
+        "y": 0,
+        "z": 550.4737205583712
+      },
+      "rotationY": 5.759586531581287,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "rusk_cover_5",
+      "kind": "prop",
+      "position": {
+        "x": -54.5,
+        "y": 0,
+        "z": 550.4737205583712
+      },
+      "rotationY": 6.806784082777885,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "sign_shelf",
+      "kind": "prop",
+      "position": {
+        "x": -140,
+        "y": 0,
+        "z": 430
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "coretown_tower",
+      "kind": "prop",
+      "position": {
+        "x": -22,
+        "y": 0,
+        "z": 12
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "water_tower"
+      }
+    },
+    {
+      "id": "coretown_crates_0",
+      "kind": "prop",
+      "position": {
+        "x": -8.4426417008044,
+        "y": 0,
+        "z": -4.060489304771046
+      },
+      "rotationY": 0.576450554290833,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "coretown_crates_1",
+      "kind": "prop",
+      "position": {
+        "x": -13.895499146348106,
+        "y": 0,
+        "z": -17.595350208501873
+      },
+      "rotationY": 4.666241393421032,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "coretown_crates_2",
+      "kind": "prop",
+      "position": {
+        "x": -8.193263442249012,
+        "y": 0,
+        "z": 14.971908244640073
+      },
+      "rotationY": 1.1555793575586288,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "coretown_crates_3",
+      "kind": "prop",
+      "position": {
+        "x": -10.54048449636504,
+        "y": 0,
+        "z": 17.365334891521574
+      },
+      "rotationY": 5.318150123899214,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "coretown_crates_4",
+      "kind": "prop",
+      "position": {
+        "x": -15.90542579070821,
+        "y": 0,
+        "z": -4.199590015294798
+      },
+      "rotationY": 3.591902814152626,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "coretown_crates_5",
+      "kind": "prop",
+      "position": {
+        "x": 10.94936932157871,
+        "y": 0,
+        "z": 16.7673795550209
+      },
+      "rotationY": 5.57964236522067,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "coretown_lamp_0",
+      "kind": "prop",
+      "position": {
+        "x": -18,
+        "y": 0,
+        "z": -14
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "street_lamp"
+      }
+    },
+    {
+      "id": "coretown_lamp_1",
+      "kind": "prop",
+      "position": {
+        "x": -6,
+        "y": 0,
+        "z": -14
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "street_lamp"
+      }
+    },
+    {
+      "id": "coretown_lamp_2",
+      "kind": "prop",
+      "position": {
+        "x": 6,
+        "y": 0,
+        "z": -14
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "street_lamp"
+      }
+    },
+    {
+      "id": "coretown_lamp_3",
+      "kind": "prop",
+      "position": {
+        "x": 18,
+        "y": 0,
+        "z": -14
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "street_lamp"
+      }
+    },
+    {
+      "id": "badlands_wall_0",
+      "kind": "prop",
+      "position": {
+        "x": 148,
+        "y": 0,
+        "z": 60
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_1",
+      "kind": "prop",
+      "position": {
+        "x": 145.86862691031604,
+        "y": 0,
+        "z": 70.71513610622252
+      },
+      "rotationY": 1.9634954084936207,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_2",
+      "kind": "prop",
+      "position": {
+        "x": 139.79898987322332,
+        "y": 0,
+        "z": 79.79898987322332
+      },
+      "rotationY": 2.356194490192345,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_3",
+      "kind": "prop",
+      "position": {
+        "x": 130.71513610622253,
+        "y": 0,
+        "z": 85.86862691031602
+      },
+      "rotationY": 2.748893571891069,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_4",
+      "kind": "prop",
+      "position": {
+        "x": 120,
+        "y": 0,
+        "z": 88
+      },
+      "rotationY": 3.141592653589793,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_5",
+      "kind": "prop",
+      "position": {
+        "x": 109.28486389377748,
+        "y": 0,
+        "z": 85.86862691031602
+      },
+      "rotationY": 3.5342917352885173,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_6",
+      "kind": "prop",
+      "position": {
+        "x": 100.20101012677668,
+        "y": 0,
+        "z": 79.79898987322333
+      },
+      "rotationY": 3.9269908169872414,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_7",
+      "kind": "prop",
+      "position": {
+        "x": 94.13137308968398,
+        "y": 0,
+        "z": 70.71513610622252
+      },
+      "rotationY": 4.319689898685965,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_11",
+      "kind": "prop",
+      "position": {
+        "x": 109.28486389377747,
+        "y": 0,
+        "z": 34.131373089683976
+      },
+      "rotationY": 5.890486225480862,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_12",
+      "kind": "prop",
+      "position": {
+        "x": 120,
+        "y": 0,
+        "z": 32
+      },
+      "rotationY": 6.283185307179586,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_13",
+      "kind": "prop",
+      "position": {
+        "x": 130.71513610622253,
+        "y": 0,
+        "z": 34.131373089683976
+      },
+      "rotationY": 6.675884388878311,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_14",
+      "kind": "prop",
+      "position": {
+        "x": 139.79898987322332,
+        "y": 0,
+        "z": 40.201010126776666
+      },
+      "rotationY": 7.0685834705770345,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_wall_15",
+      "kind": "prop",
+      "position": {
+        "x": 145.86862691031604,
+        "y": 0,
+        "z": 49.28486389377747
+      },
+      "rotationY": 7.461282552275758,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "badlands_tower",
+      "kind": "prop",
+      "position": {
+        "x": 100,
+        "y": 0,
+        "z": 76
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
+      "id": "badlands_tents_0",
+      "kind": "prop",
+      "position": {
+        "x": 121.37658876692798,
+        "y": 0,
+        "z": 47.41560089845812
+      },
+      "rotationY": 0.6584055672232242,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "badlands_tents_1",
+      "kind": "prop",
+      "position": {
+        "x": 113.8782514086199,
+        "y": 0,
+        "z": 57.071750827062814
+      },
+      "rotationY": 4.515700893959259,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "badlands_tents_2",
+      "kind": "prop",
+      "position": {
+        "x": 124.85415690587617,
+        "y": 0,
+        "z": 49.926410999426544
+      },
+      "rotationY": 4.3457742546898075,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "badlands_tents_3",
+      "kind": "prop",
+      "position": {
+        "x": 133.86232159161693,
+        "y": 0,
+        "z": 59.61769724884014
+      },
+      "rotationY": 2.3892194386597216,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "badlands_tents_4",
+      "kind": "prop",
+      "position": {
+        "x": 113.28352731568766,
+        "y": 0,
+        "z": 47.114466507863895
+      },
+      "rotationY": 1.4296706619216324,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "gully_bones_0",
+      "kind": "prop",
+      "position": {
+        "x": -52,
+        "y": 0,
+        "z": 110
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "gully_bones_1",
+      "kind": "prop",
+      "position": {
+        "x": -64.43769410125094,
+        "y": 0,
+        "z": 127.11901729331277
+      },
+      "rotationY": 2.827433388230814,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "gully_bones_2",
+      "kind": "prop",
+      "position": {
+        "x": -84.56230589874906,
+        "y": 0,
+        "z": 120.58013454126451
+      },
+      "rotationY": 4.084070449666731,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "gully_bones_3",
+      "kind": "prop",
+      "position": {
+        "x": -84.56230589874906,
+        "y": 0,
+        "z": 99.41986545873549
+      },
+      "rotationY": 5.340707511102648,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "gully_bones_4",
+      "kind": "prop",
+      "position": {
+        "x": -64.43769410125095,
+        "y": 0,
+        "z": 92.88098270668723
+      },
+      "rotationY": 6.5973445725385655,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "sign_coretown",
+      "kind": "prop",
+      "position": {
+        "x": 30,
+        "y": 0,
+        "z": 6
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "horns_bones_0",
+      "kind": "prop",
+      "position": {
+        "x": 520,
+        "y": 0,
+        "z": 370
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "horns_bones_1",
+      "kind": "prop",
+      "position": {
+        "x": 510,
+        "y": 0,
+        "z": 387.3205080756888
+      },
+      "rotationY": 2.617993877991494,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "horns_bones_2",
+      "kind": "prop",
+      "position": {
+        "x": 490,
+        "y": 0,
+        "z": 387.3205080756888
+      },
+      "rotationY": 3.665191429188092,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "horns_bones_3",
+      "kind": "prop",
+      "position": {
+        "x": 480,
+        "y": 0,
+        "z": 370
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "horns_bones_4",
+      "kind": "prop",
+      "position": {
+        "x": 490,
+        "y": 0,
+        "z": 352.6794919243112
+      },
+      "rotationY": 5.759586531581287,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "horns_bones_5",
+      "kind": "prop",
+      "position": {
+        "x": 510,
+        "y": 0,
+        "z": 352.6794919243112
+      },
+      "rotationY": 6.806784082777885,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "horns_wall_0",
+      "kind": "prop",
+      "position": {
+        "x": 384,
+        "y": 0,
+        "z": 250
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_3",
+      "kind": "prop",
+      "position": {
+        "x": 360,
+        "y": 0,
+        "z": 274
+      },
+      "rotationY": 3.141592653589793,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_4",
+      "kind": "prop",
+      "position": {
+        "x": 348,
+        "y": 0,
+        "z": 270.7846096908265
+      },
+      "rotationY": 3.665191429188092,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_5",
+      "kind": "prop",
+      "position": {
+        "x": 339.2153903091735,
+        "y": 0,
+        "z": 262
+      },
+      "rotationY": 4.188790204786391,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_6",
+      "kind": "prop",
+      "position": {
+        "x": 336,
+        "y": 0,
+        "z": 250
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_7",
+      "kind": "prop",
+      "position": {
+        "x": 339.2153903091735,
+        "y": 0,
+        "z": 238
+      },
+      "rotationY": 5.235987755982989,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_8",
+      "kind": "prop",
+      "position": {
+        "x": 348,
+        "y": 0,
+        "z": 229.21539030917347
+      },
+      "rotationY": 5.759586531581287,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_9",
+      "kind": "prop",
+      "position": {
+        "x": 360,
+        "y": 0,
+        "z": 226
+      },
+      "rotationY": 6.283185307179586,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_10",
+      "kind": "prop",
+      "position": {
+        "x": 372,
+        "y": 0,
+        "z": 229.21539030917347
+      },
+      "rotationY": 6.806784082777885,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_wall_11",
+      "kind": "prop",
+      "position": {
+        "x": 380.7846096908265,
+        "y": 0,
+        "z": 238
+      },
+      "rotationY": 7.330382858376184,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "horns_tents_0",
+      "kind": "prop",
+      "position": {
+        "x": 365.89347329311164,
+        "y": 0,
+        "z": 247.68010241847685
+      },
+      "rotationY": 4.783197218792037,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "horns_tents_1",
+      "kind": "prop",
+      "position": {
+        "x": 369.7258086929753,
+        "y": 0,
+        "z": 242.98282231702893
+      },
+      "rotationY": 4.320145957545504,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "horns_tents_2",
+      "kind": "prop",
+      "position": {
+        "x": 362.7247284069449,
+        "y": 0,
+        "z": 245.15574670168633
+      },
+      "rotationY": 1.3332519798222218,
+      "meta": {
+        "catalogId": "tent"
+      }
+    },
+    {
+      "id": "badmaw_cover_0",
+      "kind": "prop",
+      "position": {
+        "x": 512,
+        "y": 0,
+        "z": 380
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "badmaw_cover_1",
+      "kind": "prop",
+      "position": {
+        "x": 507.4818776223048,
+        "y": 0,
+        "z": 389.38197778961637
+      },
+      "rotationY": 2.4683942278205517,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "badmaw_cover_2",
+      "kind": "prop",
+      "position": {
+        "x": 497.32974879252424,
+        "y": 0,
+        "z": 391.69913494618186
+      },
+      "rotationY": 3.365992128846207,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "badmaw_cover_3",
+      "kind": "prop",
+      "position": {
+        "x": 489.18837358517095,
+        "y": 0,
+        "z": 385.2066048694107
+      },
+      "rotationY": 4.263590029871862,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "badmaw_cover_4",
+      "kind": "prop",
+      "position": {
+        "x": 489.18837358517095,
+        "y": 0,
+        "z": 374.7933951305893
+      },
+      "rotationY": 5.161187930897517,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "badmaw_cover_5",
+      "kind": "prop",
+      "position": {
+        "x": 497.32974879252424,
+        "y": 0,
+        "z": 368.30086505381814
+      },
+      "rotationY": 6.058785831923172,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "badmaw_cover_6",
+      "kind": "prop",
+      "position": {
+        "x": 507.4818776223048,
+        "y": 0,
+        "z": 370.61802221038363
+      },
+      "rotationY": 6.956383732948828,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "horns_tower",
+      "kind": "prop",
+      "position": {
+        "x": 450,
+        "y": 0,
+        "z": 274
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
+      "id": "sign_horns",
+      "kind": "prop",
+      "position": {
+        "x": 386,
+        "y": 0,
+        "z": 310
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "dust_wrecks_0",
+      "kind": "prop",
+      "position": {
+        "x": 503.0005851691607,
+        "y": 0,
+        "z": -259.1893936646304
+      },
+      "rotationY": 3.8767135088384057,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "dust_wrecks_1",
+      "kind": "prop",
+      "position": {
+        "x": 511.9183092211829,
+        "y": 0,
+        "z": -248.085047153166
+      },
+      "rotationY": 1.462291780630736,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "dust_wrecks_2",
+      "kind": "prop",
+      "position": {
+        "x": 513.0537944287117,
+        "y": 0,
+        "z": -245.71002564773522
+      },
+      "rotationY": 6.042632403345585,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "dust_wrecks_3",
+      "kind": "prop",
+      "position": {
+        "x": 524.8084346364479,
+        "y": 0,
+        "z": -230.1054310122957
+      },
+      "rotationY": 0.18651663645799724,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "dust_wrecks_4",
+      "kind": "prop",
+      "position": {
+        "x": 489.2840523615725,
+        "y": 0,
+        "z": -268.7097047801148
+      },
+      "rotationY": 5.458160808203347,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "dust_wall_0",
+      "kind": "prop",
+      "position": {
+        "x": 616,
+        "y": 0,
+        "z": -320
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_1",
+      "kind": "prop",
+      "position": {
+        "x": 612.5166604983954,
+        "y": 0,
+        "z": -307
+      },
+      "rotationY": 2.0943951023931953,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_2",
+      "kind": "prop",
+      "position": {
+        "x": 603,
+        "y": 0,
+        "z": -297.4833395016046
+      },
+      "rotationY": 2.617993877991494,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_3",
+      "kind": "prop",
+      "position": {
+        "x": 590,
+        "y": 0,
+        "z": -294
+      },
+      "rotationY": 3.141592653589793,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_6",
+      "kind": "prop",
+      "position": {
+        "x": 564,
+        "y": 0,
+        "z": -320
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_7",
+      "kind": "prop",
+      "position": {
+        "x": 567.4833395016046,
+        "y": 0,
+        "z": -333
+      },
+      "rotationY": 5.235987755982989,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_8",
+      "kind": "prop",
+      "position": {
+        "x": 577,
+        "y": 0,
+        "z": -342.51666049839537
+      },
+      "rotationY": 5.759586531581287,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_9",
+      "kind": "prop",
+      "position": {
+        "x": 590,
+        "y": 0,
+        "z": -346
+      },
+      "rotationY": 6.283185307179586,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_10",
+      "kind": "prop",
+      "position": {
+        "x": 603,
+        "y": 0,
+        "z": -342.5166604983954
+      },
+      "rotationY": 6.806784082777885,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_wall_11",
+      "kind": "prop",
+      "position": {
+        "x": 612.5166604983954,
+        "y": 0,
+        "z": -333
+      },
+      "rotationY": 7.330382858376184,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "dust_tower",
+      "kind": "prop",
+      "position": {
+        "x": 606,
+        "y": 0,
+        "z": -302
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
+      "id": "dust_cover_0",
+      "kind": "prop",
+      "position": {
+        "x": 591.2095858685418,
+        "y": 0,
+        "z": -311.66111108880136
+      },
+      "rotationY": 1.3950296980721568,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "dust_cover_1",
+      "kind": "prop",
+      "position": {
+        "x": 598.9402140888659,
+        "y": 0,
+        "z": -315.40954665325836
+      },
+      "rotationY": 0.1670248578728953,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "dust_cover_2",
+      "kind": "prop",
+      "position": {
+        "x": 584.0565322658474,
+        "y": 0,
+        "z": -328.92472588379337
+      },
+      "rotationY": 4.671313751722258,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "dust_cover_3",
+      "kind": "prop",
+      "position": {
+        "x": 583.3285937192715,
+        "y": 0,
+        "z": -324.2751147104687
+      },
+      "rotationY": 1.3843623964105107,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "dust_cover_4",
+      "kind": "prop",
+      "position": {
+        "x": 596.6902084465198,
+        "y": 0,
+        "z": -317.96320040028473
+      },
+      "rotationY": 5.852097549318412,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "dust_cover_5",
+      "kind": "prop",
+      "position": {
+        "x": 595.2418899419803,
+        "y": 0,
+        "z": -305.33988358859574
+      },
+      "rotationY": 2.53056210109752,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "sign_dust",
+      "kind": "prop",
+      "position": {
+        "x": 490,
+        "y": 0,
+        "z": -226
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "reactor_gate",
+      "kind": "prop",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -640
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "reactor_gate"
+      }
+    },
+    {
+      "id": "blight_banners_0",
+      "kind": "prop",
+      "position": {
+        "x": -58,
+        "y": 0,
+        "z": -660
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_1",
+      "kind": "prop",
+      "position": {
+        "x": -64.44365081389596,
+        "y": 0,
+        "z": -644.4436508138959
+      },
+      "rotationY": 2.356194490192345,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_2",
+      "kind": "prop",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -638
+      },
+      "rotationY": 3.141592653589793,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_3",
+      "kind": "prop",
+      "position": {
+        "x": -95.55634918610404,
+        "y": 0,
+        "z": -644.4436508138959
+      },
+      "rotationY": 3.9269908169872414,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_4",
+      "kind": "prop",
+      "position": {
+        "x": -102,
+        "y": 0,
+        "z": -660
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_5",
+      "kind": "prop",
+      "position": {
+        "x": -95.55634918610404,
+        "y": 0,
+        "z": -675.5563491861041
+      },
+      "rotationY": 5.497787143782138,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_6",
+      "kind": "prop",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -682
+      },
+      "rotationY": 6.283185307179586,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "blight_banners_7",
+      "kind": "prop",
+      "position": {
+        "x": -64.44365081389596,
+        "y": 0,
+        "z": -675.5563491861041
+      },
+      "rotationY": 7.0685834705770345,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "warrior_cover_0",
+      "kind": "prop",
+      "position": {
+        "x": -65,
+        "y": 0,
+        "z": -640
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_1",
+      "kind": "prop",
+      "position": {
+        "x": -69.39339828220179,
+        "y": 0,
+        "z": -629.3933982822018
+      },
+      "rotationY": 2.356194490192345,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_2",
+      "kind": "prop",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -625
+      },
+      "rotationY": 3.141592653589793,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_3",
+      "kind": "prop",
+      "position": {
+        "x": -90.60660171779821,
+        "y": 0,
+        "z": -629.3933982822018
+      },
+      "rotationY": 3.9269908169872414,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_4",
+      "kind": "prop",
+      "position": {
+        "x": -95,
+        "y": 0,
+        "z": -640
+      },
+      "rotationY": 4.71238898038469,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_5",
+      "kind": "prop",
+      "position": {
+        "x": -90.60660171779821,
+        "y": 0,
+        "z": -650.6066017177982
+      },
+      "rotationY": 5.497787143782138,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_6",
+      "kind": "prop",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -655
+      },
+      "rotationY": 6.283185307179586,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "warrior_cover_7",
+      "kind": "prop",
+      "position": {
+        "x": -69.39339828220179,
+        "y": 0,
+        "z": -650.6066017177982
+      },
+      "rotationY": 7.0685834705770345,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "blight_wall_0",
+      "kind": "prop",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": -520
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_1",
+      "kind": "prop",
+      "position": {
+        "x": -0.5835921350012612,
+        "y": 0,
+        "z": -505.89315394498067
+      },
+      "rotationY": 2.199114857512855,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_2",
+      "kind": "prop",
+      "position": {
+        "x": -12.583592135001261,
+        "y": 0,
+        "z": -497.1746436089163
+      },
+      "rotationY": 2.827433388230814,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_3",
+      "kind": "prop",
+      "position": {
+        "x": -27.416407864998735,
+        "y": 0,
+        "z": -497.1746436089163
+      },
+      "rotationY": 3.4557519189487724,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_4",
+      "kind": "prop",
+      "position": {
+        "x": -39.41640786499873,
+        "y": 0,
+        "z": -505.89315394498067
+      },
+      "rotationY": 4.084070449666731,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_7",
+      "kind": "prop",
+      "position": {
+        "x": -27.416407864998742,
+        "y": 0,
+        "z": -542.8253563910837
+      },
+      "rotationY": 5.969026041820607,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_8",
+      "kind": "prop",
+      "position": {
+        "x": -12.583592135001266,
+        "y": 0,
+        "z": -542.8253563910837
+      },
+      "rotationY": 6.5973445725385655,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_wall_9",
+      "kind": "prop",
+      "position": {
+        "x": -0.5835921350012647,
+        "y": 0,
+        "z": -534.1068460550193
+      },
+      "rotationY": 7.225663103256524,
+      "meta": {
+        "catalogId": "barricade"
+      }
+    },
+    {
+      "id": "blight_tower",
+      "kind": "prop",
+      "position": {
+        "x": -34,
+        "y": 0,
+        "z": -536
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
+      "id": "sign_blight",
+      "kind": "prop",
+      "position": {
+        "x": -54,
+        "y": 0,
+        "z": -520
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "poi_chest_0",
+      "kind": "prop",
+      "position": {
+        "x": -636,
+        "y": 0,
+        "z": 427
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "red_chest"
+      }
+    },
+    {
+      "id": "poi_sign_0",
+      "kind": "prop",
+      "position": {
+        "x": -658.2,
+        "y": 0,
+        "z": 430
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "poi_bones_0_0",
+      "kind": "prop",
+      "position": {
+        "x": -624.4,
+        "y": 0,
+        "z": 430
+      },
+      "rotationY": 1.5707963267948966,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "poi_bones_0_1",
+      "kind": "prop",
+      "position": {
+        "x": -635.1793348877508,
+        "y": 0,
+        "z": 444.8364816542044
+      },
+      "rotationY": 2.827433388230814,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "poi_bones_0_2",
+      "kind": "prop",
+      "position": {
+        "x": -652.6206651122492,
+        "y": 0,
+        "z": 439.1694499357626
+      },
+      "rotationY": 4.084070449666731,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "poi_bones_0_3",
+      "kind": "prop",
+      "position": {
+        "x": -652.6206651122492,
+        "y": 0,
+        "z": 420.8305500642374
+      },
+      "rotationY": 5.340707511102648,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "poi_bones_0_4",
+      "kind": "prop",
+      "position": {
+        "x": -635.1793348877508,
+        "y": 0,
+        "z": 415.1635183457956
+      },
+      "rotationY": 6.5973445725385655,
+      "meta": {
+        "catalogId": "bone_arch"
+      }
+    },
+    {
+      "id": "poi_chest_1",
+      "kind": "prop",
+      "position": {
+        "x": 184,
+        "y": 0,
+        "z": 207
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "red_chest"
+      }
+    },
+    {
+      "id": "poi_sign_1",
+      "kind": "prop",
+      "position": {
+        "x": 164.6,
+        "y": 0,
+        "z": 210
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "poi_crates_1_0",
+      "kind": "prop",
+      "position": {
+        "x": 175.15495797076906,
+        "y": 0,
+        "z": 213.1201838098463
+      },
+      "rotationY": 4.3042730476893825,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "poi_crates_1_1",
+      "kind": "prop",
+      "position": {
+        "x": 176.12071136460483,
+        "y": 0,
+        "z": 209.30031777272524
+      },
+      "rotationY": 1.248763141574407,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "poi_crates_1_2",
+      "kind": "prop",
+      "position": {
+        "x": 173.40144451823042,
+        "y": 0,
+        "z": 218.1428998959789
+      },
+      "rotationY": 2.2363273086259543,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "poi_crates_1_3",
+      "kind": "prop",
+      "position": {
+        "x": 174.660858167942,
+        "y": 0,
+        "z": 214.85031487095557
+      },
+      "rotationY": 6.042735964779334,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "poi_crates_1_4",
+      "kind": "prop",
+      "position": {
+        "x": 190.30794746605278,
+        "y": 0,
+        "z": 211.6342504833659
+      },
+      "rotationY": 4.231805860180146,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "poi_crates_1_5",
+      "kind": "prop",
+      "position": {
+        "x": 186.16092941478234,
+        "y": 0,
+        "z": 205.31878017980785
+      },
+      "rotationY": 1.6448843105025144,
+      "meta": {
+        "catalogId": "cover_crate"
+      }
+    },
+    {
+      "id": "poi_chest_2",
+      "kind": "prop",
+      "position": {
+        "x": 644,
+        "y": 0,
+        "z": 37
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "red_chest"
+      }
+    },
+    {
+      "id": "poi_sign_2",
+      "kind": "prop",
+      "position": {
+        "x": 620.4,
+        "y": 0,
+        "z": 40
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "signpost"
+      }
+    },
+    {
+      "id": "poi_wrecks_2_0",
+      "kind": "prop",
+      "position": {
+        "x": 647.2514867361009,
+        "y": 0,
+        "z": 50.20050592278295
+      },
+      "rotationY": 2.768003651742601,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "poi_wrecks_2_1",
+      "kind": "prop",
+      "position": {
+        "x": 630.4203298239561,
+        "y": 0,
+        "z": 33.54171767149923
+      },
+      "rotationY": 3.2231001598817364,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "poi_wrecks_2_2",
+      "kind": "prop",
+      "position": {
+        "x": 633.5243562563752,
+        "y": 0,
+        "z": 27.22179357693215
+      },
+      "rotationY": 3.7033008060061277,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "poi_wrecks_2_3",
+      "kind": "prop",
+      "position": {
+        "x": 626.9017861660244,
+        "y": 0,
+        "z": 38.67257562227116
+      },
+      "rotationY": 1.924341234113668,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "poi_wrecks_2_4",
+      "kind": "prop",
+      "position": {
+        "x": 642.5952998018039,
+        "y": 0,
+        "z": 44.848550026395216
+      },
+      "rotationY": 4.278148841797061,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_0_2",
+      "kind": "prop",
+      "position": {
+        "x": -494.0575730391113,
+        "y": 0,
+        "z": 566.006043774381
+      },
+      "rotationY": 3.1186681157879197,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_0_5",
+      "kind": "prop",
+      "position": {
+        "x": -466.95303692626334,
+        "y": 0,
+        "z": 534.9253684416569
+      },
+      "rotationY": 5.445543060772092,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_0_8",
+      "kind": "prop",
+      "position": {
+        "x": -425.20263903357113,
+        "y": 0,
+        "z": 540.2579174191369
+      },
+      "rotationY": 3.9234331070114834,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_0_11",
+      "kind": "prop",
+      "position": {
+        "x": -402.4726809160311,
+        "y": 0,
+        "z": 504.30159600663177
+      },
+      "rotationY": 2.794104838618945,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_0_14",
+      "kind": "prop",
+      "position": {
+        "x": -361.9693720442242,
+        "y": 0,
+        "z": 511.96844317401917
+      },
+      "rotationY": 0.3656301042928771,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_0_17",
+      "kind": "prop",
+      "position": {
+        "x": -331.43564748227715,
+        "y": 0,
+        "z": 482.97782718252694
+      },
+      "rotationY": 3.895036117442885,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_0_20",
+      "kind": "prop",
+      "position": {
+        "x": -293.2066091305213,
+        "y": 0,
+        "z": 501.1985815742091
+      },
+      "rotationY": 6.211532706104002,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_0_23",
+      "kind": "prop",
+      "position": {
+        "x": -260.70727513451686,
+        "y": 0,
+        "z": 475.13989532321835
+      },
+      "rotationY": 6.151061021135595,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_0_26",
+      "kind": "prop",
+      "position": {
+        "x": -220.51478525753944,
+        "y": 0,
+        "z": 487.7167102964362
+      },
+      "rotationY": 2.7708498758992612,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_1_2",
+      "kind": "prop",
+      "position": {
+        "x": -159.2932969721525,
+        "y": 0,
+        "z": 443.1084365391607
+      },
+      "rotationY": 0.09133266160624232,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_5",
+      "kind": "prop",
+      "position": {
+        "x": -164.4108959130101,
+        "y": 0,
+        "z": 401.3402687846814
+      },
+      "rotationY": 3.710680627919618,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_1_8",
+      "kind": "prop",
+      "position": {
+        "x": -131.27506613566996,
+        "y": 0,
+        "z": 374.5920366569037
+      },
+      "rotationY": 5.707713499211752,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_11",
+      "kind": "prop",
+      "position": {
+        "x": -143.00826634957414,
+        "y": 0,
+        "z": 333.9093786867827
+      },
+      "rotationY": 4.479428480941949,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_1_14",
+      "kind": "prop",
+      "position": {
+        "x": -113.68247210326643,
+        "y": 0,
+        "z": 302.95358379730703
+      },
+      "rotationY": 0.33316872014593046,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_17",
+      "kind": "prop",
+      "position": {
+        "x": -126.83180950980432,
+        "y": 0,
+        "z": 262.1319203473642
+      },
+      "rotationY": 5.356767192295118,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_20",
+      "kind": "prop",
+      "position": {
+        "x": -95.36042959665166,
+        "y": 0,
+        "z": 234.2443737598982
+      },
+      "rotationY": 1.2687573842434405,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_23",
+      "kind": "prop",
+      "position": {
+        "x": -101.50488855973914,
+        "y": 0,
+        "z": 192.09660688409593
+      },
+      "rotationY": 5.853131710978253,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_26",
+      "kind": "prop",
+      "position": {
+        "x": -65.10188573703654,
+        "y": 0,
+        "z": 170.36977158768244
+      },
+      "rotationY": 5.28490837828708,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_1_29",
+      "kind": "prop",
+      "position": {
+        "x": -65.66405261234503,
+        "y": 0,
+        "z": 127.76801665188323
+      },
+      "rotationY": 4.691298229413112,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_1_32",
+      "kind": "prop",
+      "position": {
+        "x": -28.539872154649498,
+        "y": 0,
+        "z": 106.38011239527454
+      },
+      "rotationY": 2.070636996307952,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_35",
+      "kind": "prop",
+      "position": {
+        "x": -33.18671670473045,
+        "y": 0,
+        "z": 64.55588289998876
+      },
+      "rotationY": 2.6500483007601994,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_1_38",
+      "kind": "prop",
+      "position": {
+        "x": 0.00768353870964944,
+        "y": 0,
+        "z": 38.025183222218466
+      },
+      "rotationY": 3.5760663660667116,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_2_2",
+      "kind": "prop",
+      "position": {
+        "x": 12.439759778638685,
+        "y": 0,
+        "z": 23.734884262032992
+      },
+      "rotationY": 0.6094683169046046,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_5",
+      "kind": "prop",
+      "position": {
+        "x": 54.339183240538866,
+        "y": 0,
+        "z": 25.811139584119296
+      },
+      "rotationY": 5.782162544267596,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_8",
+      "kind": "prop",
+      "position": {
+        "x": 74.70139571449727,
+        "y": 0,
+        "z": 63.05926307736548
+      },
+      "rotationY": 0.14407421283497918,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_2_11",
+      "kind": "prop",
+      "position": {
+        "x": 117.17189237291329,
+        "y": 0,
+        "z": 60.57851685149849
+      },
+      "rotationY": 3.084176309602888,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_14",
+      "kind": "prop",
+      "position": {
+        "x": 138.28775357250112,
+        "y": 0,
+        "z": 97.1066617814088
+      },
+      "rotationY": 2.3022925786756585,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_2_17",
+      "kind": "prop",
+      "position": {
+        "x": 180.8299301703875,
+        "y": 0,
+        "z": 98.02606963627153
+      },
+      "rotationY": 5.93248176127778,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_20",
+      "kind": "prop",
+      "position": {
+        "x": 195.5897276602581,
+        "y": 0,
+        "z": 137.27310064283563
+      },
+      "rotationY": 5.255582233855452,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_2_23",
+      "kind": "prop",
+      "position": {
+        "x": 237.27832165567708,
+        "y": 0,
+        "z": 145.8960654490592
+      },
+      "rotationY": 3.0095265317057156,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_26",
+      "kind": "prop",
+      "position": {
+        "x": 247.32307885820435,
+        "y": 0,
+        "z": 187.4160556218903
+      },
+      "rotationY": 3.6314417652457873,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_29",
+      "kind": "prop",
+      "position": {
+        "x": 288.52977771869917,
+        "y": 0,
+        "z": 197.30708509002534
+      },
+      "rotationY": 1.057528221266663,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_2_32",
+      "kind": "prop",
+      "position": {
+        "x": 301.5395736436877,
+        "y": 0,
+        "z": 237.90407200380162
+      },
+      "rotationY": 0.80612977968391,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_35",
+      "kind": "prop",
+      "position": {
+        "x": 343.3552277307657,
+        "y": 0,
+        "z": 241.26665077845442
+      },
+      "rotationY": 5.677198836244985,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_2_38",
+      "kind": "prop",
+      "position": {
+        "x": 362.4687291824288,
+        "y": 0,
+        "z": 279.05240260158087
+      },
+      "rotationY": 1.1871739612806917,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_2_41",
+      "kind": "prop",
+      "position": {
+        "x": 404.8934126513988,
+        "y": 0,
+        "z": 278.16895701699764
+      },
+      "rotationY": 0.201609663223144,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_3_2",
+      "kind": "prop",
+      "position": {
+        "x": 435.60199371932816,
+        "y": 0,
+        "z": 278.8454206296247
+      },
+      "rotationY": 5.0547545500848905,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_3_5",
+      "kind": "prop",
+      "position": {
+        "x": 423.3618157835714,
+        "y": 0,
+        "z": 238.02229819668193
+      },
+      "rotationY": 1.4683555438851008,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_3_8",
+      "kind": "prop",
+      "position": {
+        "x": 454.5875659302062,
+        "y": 0,
+        "z": 208.92991058605793
+      },
+      "rotationY": 3.3212834415638026,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_3_11",
+      "kind": "prop",
+      "position": {
+        "x": 442.86653123657686,
+        "y": 0,
+        "z": 168.19420577691443
+      },
+      "rotationY": 0.07530622873812762,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_14",
+      "kind": "prop",
+      "position": {
+        "x": 472.0648292767866,
+        "y": 0,
+        "z": 137.00988911728638
+      },
+      "rotationY": 0.3413887749099202,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_17",
+      "kind": "prop",
+      "position": {
+        "x": 455.16569656939936,
+        "y": 0,
+        "z": 98.30001910192154
+      },
+      "rotationY": 3.371026914813415,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_20",
+      "kind": "prop",
+      "position": {
+        "x": 479.40793629623175,
+        "y": 0,
+        "z": 63.04148054108891
+      },
+      "rotationY": 1.2967406474129595,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_23",
+      "kind": "prop",
+      "position": {
+        "x": 458.04981009528683,
+        "y": 0,
+        "z": 25.88169332320993
+      },
+      "rotationY": 2.634140912850785,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_3_26",
+      "kind": "prop",
+      "position": {
+        "x": 480.5788776253568,
+        "y": 0,
+        "z": -10.414954130949434
+      },
+      "rotationY": 0.07590324999503079,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_3_29",
+      "kind": "prop",
+      "position": {
+        "x": 460.6612907893485,
+        "y": 0,
+        "z": -48.43430683729612
+      },
+      "rotationY": 1.670926856307651,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_32",
+      "kind": "prop",
+      "position": {
+        "x": 487.0171068722202,
+        "y": 0,
+        "z": -81.43087417967578
+      },
+      "rotationY": 1.2682855990145492,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_35",
+      "kind": "prop",
+      "position": {
+        "x": 472.911091605819,
+        "y": 0,
+        "z": -121.66952920755658
+      },
+      "rotationY": 1.036704467473733,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_3_38",
+      "kind": "prop",
+      "position": {
+        "x": 503.6049288585053,
+        "y": 0,
+        "z": -151.09304490177553
+      },
+      "rotationY": 2.708584612403967,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_3_41",
+      "kind": "prop",
+      "position": {
+        "x": 492.64031850667095,
+        "y": 0,
+        "z": -192.19730176648508
+      },
+      "rotationY": 0.7963556933768401,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_3_44",
+      "kind": "prop",
+      "position": {
+        "x": 523.324032116754,
+        "y": 0,
+        "z": -221.96501518358977
+      },
+      "rotationY": 1.3322608908593883,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_2",
+      "kind": "prop",
+      "position": {
+        "x": 8.704404100150887,
+        "y": 0,
+        "z": -24.659482711417247
+      },
+      "rotationY": 0.004762835556932805,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_4_5",
+      "kind": "prop",
+      "position": {
+        "x": -14.898637964172078,
+        "y": 0,
+        "z": -59.9792007751553
+      },
+      "rotationY": 2.750802576117329,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_8",
+      "kind": "prop",
+      "position": {
+        "x": 6.244282375440626,
+        "y": 0,
+        "z": -96.97599879191162
+      },
+      "rotationY": 5.69801448986051,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_11",
+      "kind": "prop",
+      "position": {
+        "x": -17.60440995317964,
+        "y": 0,
+        "z": -131.72964096748382
+      },
+      "rotationY": 4.179318673832442,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_14",
+      "kind": "prop",
+      "position": {
+        "x": -0.3614890583687256,
+        "y": 0,
+        "z": -170.6593015868701
+      },
+      "rotationY": 5.311581203328734,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_17",
+      "kind": "prop",
+      "position": {
+        "x": -29.577208266029167,
+        "y": 0,
+        "z": -200.9832060052612
+      },
+      "rotationY": 6.007278954503964,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_20",
+      "kind": "prop",
+      "position": {
+        "x": -19.30161569188671,
+        "y": 0,
+        "z": -242.49907332312475
+      },
+      "rotationY": 3.637574723062383,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_23",
+      "kind": "prop",
+      "position": {
+        "x": -52.274490693041216,
+        "y": 0,
+        "z": -270.0074527485875
+      },
+      "rotationY": 1.8347088271012828,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_26",
+      "kind": "prop",
+      "position": {
+        "x": -43.106249466230196,
+        "y": 0,
+        "z": -311.60155854236996
+      },
+      "rotationY": 0.3765101537420368,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_29",
+      "kind": "prop",
+      "position": {
+        "x": -73.92565113249992,
+        "y": 0,
+        "z": -341.31441631373286
+      },
+      "rotationY": 1.587741434180921,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_32",
+      "kind": "prop",
+      "position": {
+        "x": -58.45360672710977,
+        "y": 0,
+        "z": -380.35204867603727
+      },
+      "rotationY": 3.694933166214629,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_35",
+      "kind": "prop",
+      "position": {
+        "x": -83.36739973474059,
+        "y": 0,
+        "z": -414.79179667199924
+      },
+      "rotationY": 3.8965193013263044,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_38",
+      "kind": "prop",
+      "position": {
+        "x": -62.220519445234125,
+        "y": 0,
+        "z": -451.6386518621994
+      },
+      "rotationY": 2.166493484841173,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_4_41",
+      "kind": "prop",
+      "position": {
+        "x": -84.67575335690003,
+        "y": 0,
+        "z": -487.6004586485112
+      },
+      "rotationY": 5.840066995260402,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_4_44",
+      "kind": "prop",
+      "position": {
+        "x": -64.59831941202489,
+        "y": 0,
+        "z": -525.2262092686855
+      },
+      "rotationY": 0.29053642438540433,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_5_2",
+      "kind": "prop",
+      "position": {
+        "x": -525.6533553527049,
+        "y": 0,
+        "z": 532.5943006245584
+      },
+      "rotationY": 1.4304673129796324,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_5_5",
+      "kind": "prop",
+      "position": {
+        "x": -567.5139953216752,
+        "y": 0,
+        "z": 528.279352602782
+      },
+      "rotationY": 1.4766871051909283,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_5_8",
+      "kind": "prop",
+      "position": {
+        "x": -582.8229366855985,
+        "y": 0,
+        "z": 491.3257866684659
+      },
+      "rotationY": 3.0584667722288894,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_5_11",
+      "kind": "prop",
+      "position": {
+        "x": -619.4027790182552,
+        "y": 0,
+        "z": 471.43599818032135
+      },
+      "rotationY": 2.911979827122498,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_6_2",
+      "kind": "prop",
+      "position": {
+        "x": 8.42215338322487,
+        "y": 0,
+        "z": 25.77209541728548
+      },
+      "rotationY": 2.457175190158111,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_6_5",
+      "kind": "prop",
+      "position": {
+        "x": 50.148800206975494,
+        "y": 0,
+        "z": 34.66832782945733
+      },
+      "rotationY": 1.9498559634645591,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_6_8",
+      "kind": "prop",
+      "position": {
+        "x": 59.181773363837394,
+        "y": 0,
+        "z": 75.34406027939882
+      },
+      "rotationY": 4.5455944750554735,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_6_11",
+      "kind": "prop",
+      "position": {
+        "x": 98.09626811171039,
+        "y": 0,
+        "z": 92.68121576915473
+      },
+      "rotationY": 1.2240634975122326,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_6_14",
+      "kind": "prop",
+      "position": {
+        "x": 98.0880869231677,
+        "y": 0,
+        "z": 135.83302162264036
+      },
+      "rotationY": 0.5559014443493503,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_6_17",
+      "kind": "prop",
+      "position": {
+        "x": 136.8334145202153,
+        "y": 0,
+        "z": 151.40481706572655
+      },
+      "rotationY": 5.264831447099452,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "roadside_6_20",
+      "kind": "prop",
+      "position": {
+        "x": 146.76238352299504,
+        "y": 0,
+        "z": 192.5131264744615
+      },
+      "rotationY": 1.9914463792094579,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_7_2",
+      "kind": "prop",
+      "position": {
+        "x": 519.4677382790976,
+        "y": 0,
+        "z": -233.12775104545014
+      },
+      "rotationY": 1.9806361577660578,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_7_5",
+      "kind": "prop",
+      "position": {
+        "x": 555.571287207242,
+        "y": 0,
+        "z": -211.07023452829492
+      },
+      "rotationY": 0.4581692124953199,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_7_8",
+      "kind": "prop",
+      "position": {
+        "x": 551.9632768571314,
+        "y": 0,
+        "z": -169.4465551963766
+      },
+      "rotationY": 5.481905397900817,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "roadside_7_11",
+      "kind": "prop",
+      "position": {
+        "x": 585.1280276459114,
+        "y": 0,
+        "z": -142.9062430586258
+      },
+      "rotationY": 1.0798714978281012,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_7_14",
+      "kind": "prop",
+      "position": {
+        "x": 572.3071851729986,
+        "y": 0,
+        "z": -102.4553827750857
+      },
+      "rotationY": 5.9370036410607945,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_7_17",
+      "kind": "prop",
+      "position": {
+        "x": 601.8852393284382,
+        "y": 0,
+        "z": -72.57530653924636
+      },
+      "rotationY": 6.2580592619960935,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_7_20",
+      "kind": "prop",
+      "position": {
+        "x": 593.1379413682919,
+        "y": 0,
+        "z": -30.977070702616075
+      },
+      "rotationY": 5.638810879838229,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "roadside_7_23",
+      "kind": "prop",
+      "position": {
+        "x": 628.6213782115102,
+        "y": 0,
+        "z": -8.201749529652625
+      },
+      "rotationY": 5.204581193800277,
+      "meta": {
+        "catalogId": "road_marker"
+      }
+    },
+    {
+      "id": "prop_0",
+      "kind": "prop",
+      "position": {
+        "x": 96.09605795703828,
+        "y": 0,
+        "z": -300.89150620624423
+      },
+      "rotationY": 1.408473787946749,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_1",
+      "kind": "prop",
+      "position": {
+        "x": -212.99182118382305,
+        "y": 0,
+        "z": 369.5325845852494
+      },
+      "rotationY": 2.6243319300958525,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_2",
+      "kind": "prop",
+      "position": {
+        "x": -316.11660013440996,
+        "y": 0,
+        "z": -286.65375753771514
+      },
+      "rotationY": 2.3708667612370413,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_3",
+      "kind": "prop",
+      "position": {
+        "x": 153.86562664061785,
+        "y": 0,
+        "z": -284.71159723121673
+      },
+      "rotationY": 0.8262102394299451,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_4",
+      "kind": "prop",
+      "position": {
+        "x": 528.43485516496,
+        "y": 0,
+        "z": 199.23931430093944
+      },
+      "rotationY": 2.015894835848668,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_5",
+      "kind": "prop",
+      "position": {
+        "x": -486.9133955799043,
+        "y": 0,
+        "z": -245.75716655235738
+      },
+      "rotationY": 0.2191923556585735,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_6",
+      "kind": "prop",
+      "position": {
+        "x": -397.6709410781041,
+        "y": 0,
+        "z": 25.455648195929825
+      },
+      "rotationY": 6.2542210374786364,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_7",
+      "kind": "prop",
+      "position": {
+        "x": -364.9764412548393,
+        "y": 0,
+        "z": 56.28727076109499
+      },
+      "rotationY": 3.3235585980932045,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_8",
+      "kind": "prop",
+      "position": {
+        "x": -343.88583039399236,
+        "y": 0,
+        "z": 390.22570659872144
+      },
+      "rotationY": 5.096743954792139,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_9",
+      "kind": "prop",
+      "position": {
+        "x": 246.68640757445246,
+        "y": 0,
+        "z": -494.1745559219271
+      },
+      "rotationY": 3.0996778225945545,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_10",
+      "kind": "prop",
+      "position": {
+        "x": 568.8952990341932,
+        "y": 0,
+        "z": 15.618416084907949
+      },
+      "rotationY": 1.7941719303482504,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_11",
+      "kind": "prop",
+      "position": {
+        "x": -561.4399768412113,
+        "y": 0,
+        "z": -452.8591674286872
+      },
+      "rotationY": 1.5735073114897193,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_12",
+      "kind": "prop",
+      "position": {
+        "x": -270.9469416877255,
+        "y": 0,
+        "z": -610.9570067143068
+      },
+      "rotationY": 2.060959079309577,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_13",
+      "kind": "prop",
+      "position": {
+        "x": 100.32163071446121,
+        "y": 0,
+        "z": 189.24524681642652
+      },
+      "rotationY": 1.1079533411953097,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_14",
+      "kind": "prop",
+      "position": {
+        "x": -275.126396631822,
+        "y": 0,
+        "z": 282.5274643721059
+      },
+      "rotationY": 4.621912724188313,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_15",
+      "kind": "prop",
+      "position": {
+        "x": -491.14898946136236,
+        "y": 0,
+        "z": 486.1989561468363
+      },
+      "rotationY": 2.415395363094899,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_16",
+      "kind": "prop",
+      "position": {
+        "x": 16.291185282170773,
+        "y": 0,
+        "z": -291.5953578893095
+      },
+      "rotationY": 1.0749928532872595,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_17",
+      "kind": "prop",
+      "position": {
+        "x": 612.4208535766229,
+        "y": 0,
+        "z": -280.01474409829825
+      },
+      "rotationY": 1.4254440107103583,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_18",
+      "kind": "prop",
+      "position": {
+        "x": 325.90164055582136,
+        "y": 0,
+        "z": -585.5722155654803
+      },
+      "rotationY": 3.498128662231369,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_19",
+      "kind": "prop",
+      "position": {
+        "x": 408.9640063000843,
+        "y": 0,
+        "z": 40.08760768920183
+      },
+      "rotationY": 3.2850265764398388,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_20",
+      "kind": "prop",
+      "position": {
+        "x": 193.0310551309958,
+        "y": 0,
+        "z": 544.0482894424349
+      },
+      "rotationY": 1.0316183475021352,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_21",
+      "kind": "prop",
+      "position": {
+        "x": -197.73601675406098,
+        "y": 0,
+        "z": -572.7361127501354
+      },
+      "rotationY": 2.167171908711679,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_22",
+      "kind": "prop",
+      "position": {
+        "x": -260.68810985889286,
+        "y": 0,
+        "z": -136.4852933678776
+      },
+      "rotationY": 2.2072194652188686,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_23",
+      "kind": "prop",
+      "position": {
+        "x": -24.93181109894067,
+        "y": 0,
+        "z": 375.70663790684193
+      },
+      "rotationY": 2.8987734277886705,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_24",
+      "kind": "prop",
+      "position": {
+        "x": 471.82203226257116,
+        "y": 0,
+        "z": -523.22369934991
+      },
+      "rotationY": 5.988267500200582,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_25",
+      "kind": "prop",
+      "position": {
+        "x": -435.05898665171117,
+        "y": 0,
+        "z": -69.39219927880913
+      },
+      "rotationY": 5.219761512887214,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_26",
+      "kind": "prop",
+      "position": {
+        "x": 68.0397936841473,
+        "y": 0,
+        "z": 552.2603060817346
+      },
+      "rotationY": 1.1126422145399908,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_27",
+      "kind": "prop",
+      "position": {
+        "x": 178.52466055192053,
+        "y": 0,
+        "z": 166.1253668135032
+      },
+      "rotationY": 0.9440644881438885,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_28",
+      "kind": "prop",
+      "position": {
+        "x": -229.48127447161824,
+        "y": 0,
+        "z": -390.52222720347345
+      },
+      "rotationY": 0.6266380495100282,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_29",
+      "kind": "prop",
+      "position": {
+        "x": 152.60726094711572,
+        "y": 0,
+        "z": -630.027830787003
+      },
+      "rotationY": 2.2193617525710176,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_30",
+      "kind": "prop",
+      "position": {
+        "x": 362.0211058994755,
+        "y": 0,
+        "z": 574.1011428181082
+      },
+      "rotationY": 6.039032148786245,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_31",
+      "kind": "prop",
+      "position": {
+        "x": 207.16864794958383,
+        "y": 0,
+        "z": -600.3671012585983
+      },
+      "rotationY": 0.877048120231739,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_32",
+      "kind": "prop",
+      "position": {
+        "x": -234.60192689672112,
+        "y": 0,
+        "z": 170.10037272702903
+      },
+      "rotationY": 3.398661409535328,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_33",
+      "kind": "prop",
+      "position": {
+        "x": -478.9392105303705,
+        "y": 0,
+        "z": 630.8537093689665
+      },
+      "rotationY": 0.6760021149557824,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_34",
+      "kind": "prop",
+      "position": {
+        "x": 344.48358069639653,
+        "y": 0,
+        "z": -508.3730600308627
+      },
+      "rotationY": 3.1859893733828053,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_35",
+      "kind": "prop",
+      "position": {
+        "x": 61.44726520869881,
+        "y": 0,
+        "z": -152.96197871211916
+      },
+      "rotationY": 1.492551126356801,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_36",
+      "kind": "prop",
+      "position": {
+        "x": -133.12151366844773,
+        "y": 0,
+        "z": 213.68083762936294
+      },
+      "rotationY": 3.9681532706772313,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_37",
+      "kind": "prop",
+      "position": {
+        "x": -329.8701975727454,
+        "y": 0,
+        "z": -135.3769267210737
+      },
+      "rotationY": 3.3069228071800243,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_38",
+      "kind": "prop",
+      "position": {
+        "x": -21.714636799879372,
+        "y": 0,
+        "z": 93.89863412361592
+      },
+      "rotationY": 3.147578522308109,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_39",
+      "kind": "prop",
+      "position": {
+        "x": 620.663558319211,
+        "y": 0,
+        "z": -324.5298177469522
+      },
+      "rotationY": 2.1760341245328254,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_40",
+      "kind": "prop",
+      "position": {
+        "x": 216.38238835148513,
+        "y": 0,
+        "z": -641.9221047312021
+      },
+      "rotationY": 4.1907132652171954,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_41",
+      "kind": "prop",
+      "position": {
+        "x": 52.249492378905416,
+        "y": 0,
+        "z": 556.6775593208149
+      },
+      "rotationY": 0.07242609560330769,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_42",
+      "kind": "prop",
+      "position": {
+        "x": -469.5304641034454,
+        "y": 0,
+        "z": -136.22938725166023
+      },
+      "rotationY": 3.894661429012751,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_43",
+      "kind": "prop",
+      "position": {
+        "x": 214.58745636045933,
+        "y": 0,
+        "z": 275.05898165982217
+      },
+      "rotationY": 1.8278058257807126,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_44",
+      "kind": "prop",
+      "position": {
+        "x": 425.4401861689985,
+        "y": 0,
+        "z": 111.10607485752553
+      },
+      "rotationY": 0.10706256390552571,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_45",
+      "kind": "prop",
+      "position": {
+        "x": 258.83213037159294,
+        "y": 0,
+        "z": 642.1155758667737
+      },
+      "rotationY": 5.459923179761768,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_46",
+      "kind": "prop",
+      "position": {
+        "x": -422.1680748742074,
+        "y": 0,
+        "z": -629.5089869992808
+      },
+      "rotationY": 4.047963214144583,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_48",
+      "kind": "prop",
+      "position": {
+        "x": -472.1693933941424,
+        "y": 0,
+        "z": 390.5124539742246
+      },
+      "rotationY": 2.219683641361835,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_49",
+      "kind": "prop",
+      "position": {
+        "x": -520.2773269498721,
+        "y": 0,
+        "z": -74.72708576824516
+      },
+      "rotationY": 0.6126750157793412,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_50",
+      "kind": "prop",
+      "position": {
+        "x": -34.87836511339992,
+        "y": 0,
+        "z": -69.17460123077035
+      },
+      "rotationY": 5.353166055596176,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_51",
+      "kind": "prop",
+      "position": {
+        "x": 146.61829331889749,
+        "y": 0,
+        "z": 177.4626353988424
+      },
+      "rotationY": 1.727825536491781,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_52",
+      "kind": "prop",
+      "position": {
+        "x": 137.6461894949898,
+        "y": 0,
+        "z": -480.32937119714916
+      },
+      "rotationY": 0.1839836610979778,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_53",
+      "kind": "prop",
+      "position": {
+        "x": 383.6783019360155,
+        "y": 0,
+        "z": -292.71164385136217
+      },
+      "rotationY": 5.959614454617651,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_54",
+      "kind": "prop",
+      "position": {
+        "x": 477.3429179331288,
+        "y": 0,
+        "z": 370.5442937556654
+      },
+      "rotationY": 0.976501952117321,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_55",
+      "kind": "prop",
+      "position": {
+        "x": 207.4677298311144,
+        "y": 0,
+        "z": 516.104245535098
+      },
+      "rotationY": 1.3581076338571234,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_56",
+      "kind": "prop",
+      "position": {
+        "x": 215.92907323502004,
+        "y": 0,
+        "z": 283.1397336209193
+      },
+      "rotationY": 0.26136009446843794,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_57",
+      "kind": "prop",
+      "position": {
+        "x": -421.58772291149944,
+        "y": 0,
+        "z": -49.47360137011856
+      },
+      "rotationY": 5.123812468452955,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_58",
+      "kind": "prop",
+      "position": {
+        "x": -83.04748630616814,
+        "y": 0,
+        "z": -427.938413224183
+      },
+      "rotationY": 1.848913096023241,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_59",
+      "kind": "prop",
+      "position": {
+        "x": 536.41010413412,
+        "y": 0,
+        "z": -375.6867191521451
+      },
+      "rotationY": 6.12745871923927,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_60",
+      "kind": "prop",
+      "position": {
+        "x": 325.8997645461932,
+        "y": 0,
+        "z": 60.506963660009205
+      },
+      "rotationY": 0.7418749870996004,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_61",
+      "kind": "prop",
+      "position": {
+        "x": -333.80814427509904,
+        "y": 0,
+        "z": -230.49203262198716
+      },
+      "rotationY": 4.341992289612924,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_62",
+      "kind": "prop",
+      "position": {
+        "x": 232.89673493709415,
+        "y": 0,
+        "z": 155.89664678554982
+      },
+      "rotationY": 3.011218915800306,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_63",
+      "kind": "prop",
+      "position": {
+        "x": -41.91588289104402,
+        "y": 0,
+        "z": 532.7466880436987
+      },
+      "rotationY": 4.548045803494571,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_64",
+      "kind": "prop",
+      "position": {
+        "x": 290.4973916243762,
+        "y": 0,
+        "z": 222.0500292489305
+      },
+      "rotationY": 3.38723137457135,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_65",
+      "kind": "prop",
+      "position": {
+        "x": -270.51649736240506,
+        "y": 0,
+        "z": 280.6151694850996
+      },
+      "rotationY": 0.32120644486343525,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_66",
+      "kind": "prop",
+      "position": {
+        "x": 194.80098455678672,
+        "y": 0,
+        "z": 233.9421765645966
+      },
+      "rotationY": 3.4406711531926315,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_67",
+      "kind": "prop",
+      "position": {
+        "x": -496.98262088932097,
+        "y": 0,
+        "z": 161.88934373203665
+      },
+      "rotationY": 2.649003826990817,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_68",
+      "kind": "prop",
+      "position": {
+        "x": 506.3856875291094,
+        "y": 0,
+        "z": -636.3282039063051
+      },
+      "rotationY": 6.250088264646345,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_69",
+      "kind": "prop",
+      "position": {
+        "x": -1.9417656119912863,
+        "y": 0,
+        "z": -646.7454187106341
+      },
+      "rotationY": 2.269716529546741,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_70",
+      "kind": "prop",
+      "position": {
+        "x": 33.00924417562783,
+        "y": 0,
+        "z": -549.5889401063323
+      },
+      "rotationY": 1.593365612496237,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_71",
+      "kind": "prop",
+      "position": {
+        "x": -474.16925930883735,
+        "y": 0,
+        "z": 645.0850148918107
+      },
+      "rotationY": 5.5012017657405625,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_72",
+      "kind": "prop",
+      "position": {
+        "x": 608.2655149511993,
+        "y": 0,
+        "z": 503.2492358237505
+      },
+      "rotationY": 5.688123380347525,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_73",
+      "kind": "prop",
+      "position": {
+        "x": 488.1201964337379,
+        "y": 0,
+        "z": -529.7832251293585
+      },
+      "rotationY": 1.9553539621697023,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_74",
+      "kind": "prop",
+      "position": {
+        "x": 237.83562146127224,
+        "y": 0,
+        "z": 603.6139645148069
+      },
+      "rotationY": 6.273761456626955,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_75",
+      "kind": "prop",
+      "position": {
+        "x": -131.73706699162722,
+        "y": 0,
+        "z": 91.8708874611184
+      },
+      "rotationY": 0.4090432984095257,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_76",
+      "kind": "prop",
+      "position": {
+        "x": -301.8803639570251,
+        "y": 0,
+        "z": -477.89800066966563
+      },
+      "rotationY": 2.731730786683604,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_77",
+      "kind": "prop",
+      "position": {
+        "x": 103.98464787285775,
+        "y": 0,
+        "z": 487.7653022063896
+      },
+      "rotationY": 3.113504576728649,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_78",
+      "kind": "prop",
+      "position": {
+        "x": -91.25110297463834,
+        "y": 0,
+        "z": 236.03235064074397
+      },
+      "rotationY": 3.7864259295754663,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_79",
+      "kind": "prop",
+      "position": {
+        "x": -516.06979300268,
+        "y": 0,
+        "z": -58.37931903079152
+      },
+      "rotationY": 3.2279757235171034,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_80",
+      "kind": "prop",
+      "position": {
+        "x": -87.66217608936131,
+        "y": 0,
+        "z": -416.7221657233313
+      },
+      "rotationY": 0.4416687970953588,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_81",
+      "kind": "prop",
+      "position": {
+        "x": -418.7959857052192,
+        "y": 0,
+        "z": -619.6568224811926
+      },
+      "rotationY": 3.4136113453573054,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_82",
+      "kind": "prop",
+      "position": {
+        "x": -153.723514219746,
+        "y": 0,
+        "z": -424.9786036554724
+      },
+      "rotationY": 4.651423844370638,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_83",
+      "kind": "prop",
+      "position": {
+        "x": 113.78331282176077,
+        "y": 0,
+        "z": 519.1016927361488
+      },
+      "rotationY": 3.7264107862295655,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_84",
+      "kind": "prop",
+      "position": {
+        "x": 495.98890936467797,
+        "y": 0,
+        "z": -495.55379105731845
+      },
+      "rotationY": 5.534415253627078,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_85",
+      "kind": "prop",
+      "position": {
+        "x": 566.9717450626194,
+        "y": 0,
+        "z": 337.31760256923735
+      },
+      "rotationY": 0.09863980428663656,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "prop_86",
+      "kind": "prop",
+      "position": {
+        "x": 90.89950069319457,
+        "y": 0,
+        "z": 384.6381066599861
+      },
+      "rotationY": 1.657956045301309,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "prop_87",
+      "kind": "prop",
+      "position": {
+        "x": -179.66990449931473,
+        "y": 0,
+        "z": -12.517275009304285
+      },
+      "rotationY": 4.096444992233813,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_88",
+      "kind": "prop",
+      "position": {
+        "x": -303.4886541776359,
+        "y": 0,
+        "z": -484.1984113212675
+      },
+      "rotationY": 1.7234720166359185,
+      "meta": {
+        "catalogId": "dead_tree"
+      }
+    },
+    {
+      "id": "prop_89",
+      "kind": "prop",
+      "position": {
+        "x": -400.8655400015414,
+        "y": 0,
+        "z": -68.16518274135888
+      },
+      "rotationY": 0.46342690788800833,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "barrel_0_0",
+      "kind": "prop",
+      "position": {
+        "x": -554.0769667620771,
+        "y": 0,
+        "z": 557.084737484809
+      },
+      "rotationY": 1.3174674038855618,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_0_1",
+      "kind": "prop",
+      "position": {
+        "x": -553.0958414524794,
+        "y": 0,
+        "z": 586.044013553299
+      },
+      "rotationY": 6.047751674503777,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_0_2",
+      "kind": "prop",
+      "position": {
+        "x": -520.6182961999439,
+        "y": 0,
+        "z": 601.1279872674495
+      },
+      "rotationY": 2.4555093243795434,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_0_3",
+      "kind": "prop",
+      "position": {
+        "x": -511.31241097906604,
+        "y": 0,
+        "z": 560.4966423404403
+      },
+      "rotationY": 0.6540308511473113,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_1_0",
+      "kind": "prop",
+      "position": {
+        "x": -167.74947358295321,
+        "y": 0,
+        "z": 488.0084982179105
+      },
+      "rotationY": 2.098036467388759,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_1_1",
+      "kind": "prop",
+      "position": {
+        "x": -179.7608509287238,
+        "y": 0,
+        "z": 503.839560367167
+      },
+      "rotationY": 4.5041223274597755,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_1_2",
+      "kind": "prop",
+      "position": {
+        "x": -195.949952788651,
+        "y": 0,
+        "z": 465.71802535653114
+      },
+      "rotationY": 2.745208794313864,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_1_3",
+      "kind": "prop",
+      "position": {
+        "x": -142.18031996116042,
+        "y": 0,
+        "z": 464.4830620214343
+      },
+      "rotationY": 5.883602224540305,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_2_0",
+      "kind": "prop",
+      "position": {
+        "x": 19.32642387645319,
+        "y": 0,
+        "z": 61.075324314180754
+      },
+      "rotationY": 0.8545500654745961,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_2_1",
+      "kind": "prop",
+      "position": {
+        "x": 16.42725424747914,
+        "y": 0,
+        "z": 40.7447058535181
+      },
+      "rotationY": 4.72626157359388,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_2_2",
+      "kind": "prop",
+      "position": {
+        "x": -51.666794213466346,
+        "y": 0,
+        "z": -28.288028016686436
+      },
+      "rotationY": 4.136379169664024,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_2_3",
+      "kind": "prop",
+      "position": {
+        "x": 2.3905198322609067,
+        "y": 0,
+        "z": 6.589248160365969
+      },
+      "rotationY": 4.086742169055139,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_3_0",
+      "kind": "prop",
+      "position": {
+        "x": 377.231097296346,
+        "y": 0,
+        "z": 338.23737954953685
+      },
+      "rotationY": 2.6885921266995467,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_3_1",
+      "kind": "prop",
+      "position": {
+        "x": 404.266702410765,
+        "y": 0,
+        "z": 340.2604162325151
+      },
+      "rotationY": 1.998186509471509,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_3_2",
+      "kind": "prop",
+      "position": {
+        "x": 422.78793793777004,
+        "y": 0,
+        "z": 252.7927219462581
+      },
+      "rotationY": 0.7394305490046563,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_3_3",
+      "kind": "prop",
+      "position": {
+        "x": 450.5326402634382,
+        "y": 0,
+        "z": 281.25024503236637
+      },
+      "rotationY": 5.24383653042833,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_4_0",
+      "kind": "prop",
+      "position": {
+        "x": 542.2269732705317,
+        "y": 0,
+        "z": -283.6990703167394
+      },
+      "rotationY": 2.9772109010128425,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_4_1",
+      "kind": "prop",
+      "position": {
+        "x": 485.1848340034485,
+        "y": 0,
+        "z": -231.29004800645635
+      },
+      "rotationY": 4.973352660626598,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_4_2",
+      "kind": "prop",
+      "position": {
+        "x": 543.3363087237813,
+        "y": 0,
+        "z": -277.28630982432514
+      },
+      "rotationY": 0.9388483732717671,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_4_3",
+      "kind": "prop",
+      "position": {
+        "x": 530.4718682086095,
+        "y": 0,
+        "z": -276.44492169097066
+      },
+      "rotationY": 0.12779663643144246,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_5_0",
+      "kind": "prop",
+      "position": {
+        "x": -36.73074329458177,
+        "y": 0,
+        "z": -505.8957298998721
+      },
+      "rotationY": 1.4979694603950193,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_5_1",
+      "kind": "prop",
+      "position": {
+        "x": -65.8031779481098,
+        "y": 0,
+        "z": -617.8536142609082
+      },
+      "rotationY": 5.987418456194491,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_5_2",
+      "kind": "prop",
+      "position": {
+        "x": -81.98838895838708,
+        "y": 0,
+        "z": -589.8689358863048
+      },
+      "rotationY": 3.5467507736631894,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    },
+    {
+      "id": "barrel_5_3",
+      "kind": "prop",
+      "position": {
+        "x": -139.7346474681981,
+        "y": 0,
+        "z": -545.1777323028073
+      },
+      "rotationY": 6.1330683020209085,
+      "meta": {
+        "catalogId": "bandit_barrel"
+      }
+    }
+  ],
+  "volumes": [],
+  "paths": [
+    {
+      "id": "road_windshear_waste_southern_shelf",
+      "kind": "road",
+      "points": [
+        {
+          "x": -520,
+          "y": 1,
+          "z": 560
+        },
+        {
+          "x": -508.3304558350291,
+          "y": 1,
+          "z": 557.8097834942344
+        },
+        {
+          "x": -496.74343576400554,
+          "y": 1,
+          "z": 555.3389850690479
+        },
+        {
+          "x": -485.27873972368633,
+          "y": 1,
+          "z": 552.4522849394666
+        },
+        {
+          "x": -473.96348616224776,
+          "y": 1,
+          "z": 549.0574803816909
+        },
+        {
+          "x": -462.809301263815,
+          "y": 1,
+          "z": 545.1150423696957
+        },
+        {
+          "x": -451.81103412763423,
+          "y": 1,
+          "z": 540.6424839660435
+        },
+        {
+          "x": -440.94712527713415,
+          "y": 1,
+          "z": 535.7131073910773
+        },
+        {
+          "x": -430.18159391336513,
+          "y": 1,
+          "z": 530.4492473612252
+        },
+        {
+          "x": -419.4674507357352,
+          "y": 1,
+          "z": 525.0106674985002
+        },
+        {
+          "x": -408.75120345612106,
+          "y": 1,
+          "z": 519.5792415825217
+        },
+        {
+          "x": -397.97801500650735,
+          "y": 1,
+          "z": 514.3414156445418
+        },
+        {
+          "x": -387.0970103733278,
+          "y": 1,
+          "z": 509.4701647306855
+        },
+        {
+          "x": -376.06621325691617,
+          "y": 1,
+          "z": 505.1082082598181
+        },
+        {
+          "x": -364.8566297963011,
+          "y": 1,
+          "z": 501.35412535924314
+        },
+        {
+          "x": -353.455079892091,
+          "y": 1,
+          "z": 498.25272836689044
+        },
+        {
+          "x": -341.8654990523237,
+          "y": 1,
+          "z": 495.7906365554328
+        },
+        {
+          "x": -330.1085831995011,
+          "y": 1,
+          "z": 493.89748378836305
+        },
+        {
+          "x": -318.21981087842914,
+          "y": 1,
+          "z": 492.45264301334095
+        },
+        {
+          "x": -306.2460359382841,
+          "y": 1,
+          "z": 491.2968111431676
+        },
+        {
+          "x": -294.2409835025346,
+          "y": 1,
+          "z": 490.24732275804905
+        },
+        {
+          "x": -282.2600892103103,
+          "y": 1,
+          "z": 489.115696684945
+        },
+        {
+          "x": -270.3551858239899,
+          "y": 1,
+          "z": 487.72570153176764
+        },
+        {
+          "x": -258.5695560764542,
+          "y": 1,
+          "z": 485.9301760067222
+        },
+        {
+          "x": -246.9338346327356,
+          "y": 1,
+          "z": 483.624962248699
+        },
+        {
+          "x": -235.46315879013946,
+          "y": 1,
+          "z": 480.758593446859
+        },
+        {
+          "x": -224.1558451889265,
+          "y": 1,
+          "z": 477.33679302431653
+        },
+        {
+          "x": -212.99372033026816,
+          "y": 1,
+          "z": 473.42135087708823
+        },
+        {
+          "x": -201.9440707322062,
+          "y": 1,
+          "z": 469.12349284383237
+        },
+        {
+          "x": -190.96301995297884,
+          "y": 1,
+          "z": 464.59239882653856
+        },
+        {
+          "x": -180,
+          "y": 1,
+          "z": 460
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "windshear_waste",
+        "to": "southern_shelf"
+      }
+    },
+    {
+      "id": "road_southern_shelf_arid_badlands",
+      "kind": "road",
+      "points": [
+        {
+          "x": -180,
+          "y": 1,
+          "z": 460
+        },
+        {
+          "x": -174.5746133678493,
+          "y": 1,
+          "z": 449.1855436556348
+        },
+        {
+          "x": -169.2096027645305,
+          "y": 1,
+          "z": 438.3474619086832
+        },
+        {
+          "x": -163.98053012388024,
+          "y": 1,
+          "z": 427.4561870459048
+        },
+        {
+          "x": -158.9556285829446,
+          "y": 1,
+          "z": 416.4850191441076
+        },
+        {
+          "x": -154.19207134809554,
+          "y": 1,
+          "z": 405.4115860790591
+        },
+        {
+          "x": -149.73282428476034,
+          "y": 1,
+          "z": 394.2190751208096
+        },
+        {
+          "x": -145.60424863244006,
+          "y": 1,
+          "z": 382.8971710017281
+        },
+        {
+          "x": -141.81458076745588,
+          "y": 1,
+          "z": 371.4426507919499
+        },
+        {
+          "x": -138.35336977463047,
+          "y": 1,
+          "z": 359.85960398002265
+        },
+        {
+          "x": -135.19190317450582,
+          "y": 1,
+          "z": 348.1592658839951
+        },
+        {
+          "x": -132.28459913713942,
+          "y": 1,
+          "z": 336.3594728721055
+        },
+        {
+          "x": -129.57129263367128,
+          "y": 1,
+          "z": 324.4837677817342
+        },
+        {
+          "x": -126.98029590966286,
+          "y": 1,
+          "z": 312.5602023428785
+        },
+        {
+          "x": -124.43207288606092,
+          "y": 1,
+          "z": 300.6198993690811
+        },
+        {
+          "x": -121.84333475008307,
+          "y": 1,
+          "z": 288.6954501349092
+        },
+        {
+          "x": -119.13134179119155,
+          "y": 1,
+          "z": 276.81923104883384
+        },
+        {
+          "x": -116.21818563520142,
+          "y": 1,
+          "z": 265.0217279964058
+        },
+        {
+          "x": -113.03482700631348,
+          "y": 1,
+          "z": 253.32995634641605
+        },
+        {
+          "x": -109.52467695140422,
+          "y": 1,
+          "z": 241.7660596022607
+        },
+        {
+          "x": -105.64653341994487,
+          "y": 1,
+          "z": 230.34616030545106
+        },
+        {
+          "x": -101.376718946339,
+          "y": 1,
+          "z": 219.07952355122046
+        },
+        {
+          "x": -96.71030714862093,
+          "y": 1,
+          "z": 207.96807705425118
+        },
+        {
+          "x": -91.66137363085367,
+          "y": 1,
+          "z": 197.00631296947506
+        },
+        {
+          "x": -86.26225813799805,
+          "y": 1,
+          "z": 186.18157661408137
+        },
+        {
+          "x": -80.56187676504689,
+          "y": 1,
+          "z": 175.47472690742066
+        },
+        {
+          "x": -74.62317293400363,
+          "y": 1,
+          "z": 164.86113381479606
+        },
+        {
+          "x": -68.51984109739014,
+          "y": 1,
+          "z": 154.31196037652495
+        },
+        {
+          "x": -62.33249532546328,
+          "y": 1,
+          "z": 143.79566195641993
+        },
+        {
+          "x": -56.14448407697881,
+          "y": 1,
+          "z": 133.2796239401854
+        },
+        {
+          "x": -50.03757100735738,
+          "y": 1,
+          "z": 122.73185185396092
+        },
+        {
+          "x": -44.08770865772035,
+          "y": 1,
+          "z": 112.12262513817728
+        },
+        {
+          "x": -38.36112692609523,
+          "y": 1,
+          "z": 101.4260277457803
+        },
+        {
+          "x": -32.91094160847545,
+          "y": 1,
+          "z": 90.62127523485955
+        },
+        {
+          "x": -27.774460886692356,
+          "y": 1,
+          "z": 79.69376875165487
+        },
+        {
+          "x": -22.97133087457434,
+          "y": 1,
+          "z": 68.63582068640729
+        },
+        {
+          "x": -18.502617148101905,
+          "y": 1,
+          "z": 57.44701407460278
+        },
+        {
+          "x": -14.350869904051825,
+          "y": 1,
+          "z": 46.134177100111216
+        },
+        {
+          "x": -10.481168607835933,
+          "y": 1,
+          "z": 34.71097431994539
+        },
+        {
+          "x": -6.84309042939137,
+          "y": 1,
+          "z": 23.19713640673869
+        },
+        {
+          "x": -3.373498138879994,
+          "y": 1,
+          "z": 11.617369233036388
+        },
+        {
+          "x": 1.6607851892708803e-15,
+          "y": 1,
+          "z": 6.498724653668662e-16
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "southern_shelf",
+        "to": "arid_badlands"
+      }
+    },
+    {
+      "id": "road_arid_badlands_three_horns",
+      "kind": "road",
+      "points": [
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        {
+          "x": 9.372826662706668,
+          "y": 1,
+          "z": 7.5292054629083385
+        },
+        {
+          "x": 18.904961007556924,
+          "y": 1,
+          "z": 14.835380170815654
+        },
+        {
+          "x": 28.616448242889874,
+          "y": 1,
+          "z": 21.890460832047193
+        },
+        {
+          "x": 38.51795574440311,
+          "y": 1,
+          "z": 28.67951312062634
+        },
+        {
+          "x": 48.610220009600376,
+          "y": 1,
+          "z": 35.201505940047845
+        },
+        {
+          "x": 58.883973262382284,
+          "y": 1,
+          "z": 41.46941417685084
+        },
+        {
+          "x": 69.32035342319662,
+          "y": 1,
+          "z": 47.50964474240845
+        },
+        {
+          "x": 79.89177800700863,
+          "y": 1,
+          "z": 53.36081311576932
+        },
+        {
+          "x": 90.56324028730413,
+          "y": 1,
+          "z": 59.07192871405331
+        },
+        {
+          "x": 101.29396583291987,
+          "y": 1,
+          "z": 64.70007574088893
+        },
+        {
+          "x": 112.03935025388573,
+          "y": 1,
+          "z": 70.3077003422344
+        },
+        {
+          "x": 122.7530855091775,
+          "y": 1,
+          "z": 75.95963377552359
+        },
+        {
+          "x": 133.38937307861792,
+          "y": 1,
+          "z": 81.71999396900468
+        },
+        {
+          "x": 143.90511811633507,
+          "y": 1,
+          "z": 87.64911370689832
+        },
+        {
+          "x": 154.2619995845826,
+          "y": 1,
+          "z": 93.80064244204948
+        },
+        {
+          "x": 164.42831727232172,
+          "y": 1,
+          "z": 100.21896046991239
+        },
+        {
+          "x": 174.38052725034441,
+          "y": 1,
+          "z": 106.93702929137824
+        },
+        {
+          "x": 184.10439219456865,
+          "y": 1,
+          "z": 113.97478116016205
+        },
+        {
+          "x": 193.59569140963745,
+          "y": 1,
+          "z": 121.33812504976339
+        },
+        {
+          "x": 202.86045642581857,
+          "y": 1,
+          "z": 129.0186168178075
+        },
+        {
+          "x": 211.91472071680002,
+          "y": 1,
+          "z": 136.99380960113112
+        },
+        {
+          "x": 220.7837953095144,
+          "y": 1,
+          "z": 145.22826796202867
+        },
+        {
+          "x": 229.50110471852219,
+          "y": 1,
+          "z": 153.6751975801154
+        },
+        {
+          "x": 238.106638652565,
+          "y": 1,
+          "z": 162.27861286315314
+        },
+        {
+          "x": 246.6450933042473,
+          "y": 1,
+          "z": 170.9759391414957
+        },
+        {
+          "x": 255.16379086688056,
+          "y": 1,
+          "z": 179.70092534450671
+        },
+        {
+          "x": 263.7104765156962,
+          "y": 1,
+          "z": 188.38672822686257
+        },
+        {
+          "x": 272.3310979371322,
+          "y": 1,
+          "z": 196.96902102754981
+        },
+        {
+          "x": 281.0676733100763,
+          "y": 1,
+          "z": 205.3889782961257
+        },
+        {
+          "x": 289.9563493976268,
+          "y": 1,
+          "z": 213.59599456425272
+        },
+        {
+          "x": 299.02574230032764,
+          "y": 1,
+          "z": 221.55000729116918
+        },
+        {
+          "x": 308.29563988777517,
+          "y": 1,
+          "z": 229.22331345944033
+        },
+        {
+          "x": 317.77612761262066,
+          "y": 1,
+          "z": 236.6017934353544
+        },
+        {
+          "x": 327.4671791477275,
+          "y": 1,
+          "z": 243.68548407690233
+        },
+        {
+          "x": 337.35873104317966,
+          "y": 1,
+          "z": 250.48847421396704
+        },
+        {
+          "x": 347.4312374393258,
+          "y": 1,
+          "z": 257.03812805006027
+        },
+        {
+          "x": 357.65667790329064,
+          "y": 1,
+          "z": 263.373674191207
+        },
+        {
+          "x": 367.9999697783853,
+          "y": 1,
+          "z": 269.54422835677224
+        },
+        {
+          "x": 378.42071708584547,
+          "y": 1,
+          "z": 275.6063449170255
+        },
+        {
+          "x": 388.875211922164,
+          "y": 1,
+          "z": 281.6212149368774
+        },
+        {
+          "x": 399.3185922230782,
+          "y": 1,
+          "z": 287.6516453062951
+        },
+        {
+          "x": 409.70705229462845,
+          "y": 1,
+          "z": 293.7589639968225
+        },
+        {
+          "x": 420,
+          "y": 1,
+          "z": 300
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "arid_badlands",
+        "to": "three_horns"
+      }
+    },
+    {
+      "id": "road_three_horns_the_dust",
+      "kind": "road",
+      "points": [
+        {
+          "x": 420,
+          "y": 1,
+          "z": 300
+        },
+        {
+          "x": 422.32193980786064,
+          "y": 1,
+          "z": 288.1197992817988
+        },
+        {
+          "x": 424.90388591030467,
+          "y": 1,
+          "z": 276.286028259059
+        },
+        {
+          "x": 427.7247644683948,
+          "y": 1,
+          "z": 264.4949237462559
+        },
+        {
+          "x": 430.7527428266813,
+          "y": 1,
+          "z": 252.74080134063078
+        },
+        {
+          "x": 433.94652334934807,
+          "y": 1,
+          "z": 241.01628646435927
+        },
+        {
+          "x": 437.25702178423387,
+          "y": 1,
+          "z": 229.31261407241257
+        },
+        {
+          "x": 440.62936278757803,
+          "y": 1,
+          "z": 217.61998499626202
+        },
+        {
+          "x": 444.0051125088436,
+          "y": 1,
+          "z": 205.9279646197403
+        },
+        {
+          "x": 447.3246586122009,
+          "y": 1,
+          "z": 194.2259078828778
+        },
+        {
+          "x": 450.52964218095195,
+          "y": 1,
+          "z": 182.50339355054993
+        },
+        {
+          "x": 453.565343851102,
+          "y": 1,
+          "z": 170.75065030775755
+        },
+        {
+          "x": 456.3829283346952,
+          "y": 1,
+          "z": 158.95895756736581
+        },
+        {
+          "x": 458.941457149805,
+          "y": 1,
+          "z": 147.12100488617335
+        },
+        {
+          "x": 461.20958864559714,
+          "y": 1,
+          "z": 135.23119554081714
+        },
+        {
+          "x": 463.16689692618723,
+          "y": 1,
+          "z": 123.28588204988904
+        },
+        {
+          "x": 464.8047565345839,
+          "y": 1,
+          "z": 111.28352415321218
+        },
+        {
+          "x": 466.12675714645775,
+          "y": 1,
+          "z": 99.22476286429904
+        },
+        {
+          "x": 467.1486313459859,
+          "y": 1,
+          "z": 87.11240757318137
+        },
+        {
+          "x": 467.8976980583188,
+          "y": 1,
+          "z": 74.95133665935025
+        },
+        {
+          "x": 468.41184361375997,
+          "y": 1,
+          "z": 62.7483155389313
+        },
+        {
+          "x": 468.7380809400838,
+          "y": 1,
+          "z": 50.51173937759856
+        },
+        {
+          "x": 468.9307442793054,
+          "y": 1,
+          "z": 38.25131071856894
+        },
+        {
+          "x": 469.0493914264026,
+          "y": 1,
+          "z": 25.977664882374363
+        },
+        {
+          "x": 469.15649720483964,
+          "y": 1,
+          "z": 13.701958087490391
+        },
+        {
+          "x": 469.31503025766693,
+          "y": 1,
+          "z": 1.4354347344618263
+        },
+        {
+          "x": 469.58600990830945,
+          "y": 1,
+          "z": -10.811008868956929
+        },
+        {
+          "x": 470.02614064451285,
+          "y": 1,
+          "z": -23.02724692138262
+        },
+        {
+          "x": 470.68561867027665,
+          "y": 1,
+          "z": -35.20431581495818
+        },
+        {
+          "x": 471.606198078528,
+          "y": 1,
+          "z": -47.33475946166101
+        },
+        {
+          "x": 472.8195937979745,
+          "y": 1,
+          "z": -59.412914481364766
+        },
+        {
+          "x": 474.3462849777679,
+          "y": 1,
+          "z": -71.43512388314933
+        },
+        {
+          "x": 476.1947664339042,
+          "y": 1,
+          "z": -83.399870735587
+        },
+        {
+          "x": 478.36127783445863,
+          "y": 1,
+          "z": -95.30782652652142
+        },
+        {
+          "x": 480.83002116600943,
+          "y": 1,
+          "z": -107.16181232977799
+        },
+        {
+          "x": 483.5738574677488,
+          "y": 1,
+          "z": -118.96667438835792
+        },
+        {
+          "x": 486.5554546264847,
+          "y": 1,
+          "z": -130.72907915104565
+        },
+        {
+          "x": 489.72883996414384,
+          "y": 1,
+          "z": -142.45723602463997
+        },
+        {
+          "x": 493.04129514327093,
+          "y": 1,
+          "z": -154.16055899797212
+        },
+        {
+          "x": 496.43551721479844,
+          "y": 1,
+          "z": -165.8492807405185
+        },
+        {
+          "x": 499.8519589850451,
+          "y": 1,
+          "z": -177.5340346797222
+        },
+        {
+          "x": 503.23125471212614,
+          "y": 1,
+          "z": -189.22542184091972
+        },
+        {
+          "x": 506.51663374284226,
+          "y": 1,
+          "z": -200.93357984075385
+        },
+        {
+          "x": 509.65622520580445,
+          "y": 1,
+          "z": -212.66777133482975
+        },
+        {
+          "x": 512.6051612647134,
+          "y": 1,
+          "z": -224.43600843677237
+        },
+        {
+          "x": 515.3273945313955,
+          "y": 1,
+          "z": -236.24472818018393
+        },
+        {
+          "x": 517.7971567168438,
+          "y": 1,
+          "z": -248.09853204524438
+        },
+        {
+          "x": 520,
+          "y": 1,
+          "z": -260
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "three_horns",
+        "to": "the_dust"
+      }
+    },
+    {
+      "id": "road_arid_badlands_eridium_blight",
+      "kind": "road",
+      "points": [
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        {
+          "x": -1.2840097526966672,
+          "y": 1,
+          "z": -11.974624746575248
+        },
+        {
+          "x": -2.275269198179368,
+          "y": 1,
+          "z": -23.991070965609634
+        },
+        {
+          "x": -3.0090361205929095,
+          "y": 1,
+          "z": -36.044301830796755
+        },
+        {
+          "x": -3.5322398296883164,
+          "y": 1,
+          "z": -48.12761315502932
+        },
+        {
+          "x": -3.901564125042169,
+          "y": 1,
+          "z": -60.23290725265355
+        },
+        {
+          "x": -4.181133456751992,
+          "y": 1,
+          "z": -72.35102348794119
+        },
+        {
+          "x": -4.439895201630521,
+          "y": 1,
+          "z": -84.47211223563332
+        },
+        {
+          "x": -4.748803177982907,
+          "y": 1,
+          "z": -96.58603723597204
+        },
+        {
+          "x": -5.177915512183237,
+          "y": 1,
+          "z": -108.68279018518963
+        },
+        {
+          "x": -5.793523426143675,
+          "y": 1,
+          "z": -120.7529009087272
+        },
+        {
+          "x": -6.655426297786873,
+          "y": 1,
+          "z": -132.7878266383101
+        },
+        {
+          "x": -7.814462505463322,
+          "y": 1,
+          "z": -144.78030474845963
+        },
+        {
+          "x": -9.310395335900614,
+          "y": 1,
+          "z": -156.7246547696434
+        },
+        {
+          "x": -11.170239023681196,
+          "y": 1,
+          "z": -168.61701752549234
+        },
+        {
+          "x": -13.407092367890767,
+          "y": 1,
+          "z": -180.45552175899434
+        },
+        {
+          "x": -16.019527044629754,
+          "y": 1,
+          "z": -192.24037151642065
+        },
+        {
+          "x": -18.991555517104004,
+          "y": 1,
+          "z": -203.97385073159916
+        },
+        {
+          "x": -22.293180228328463,
+          "y": 1,
+          "z": -215.66024476981326
+        },
+        {
+          "x": -25.88150247548264,
+          "y": 1,
+          "z": -227.3056820171803
+        },
+        {
+          "x": -29.70234694282925,
+          "y": 1,
+          "z": -238.91790180451983
+        },
+        {
+          "x": -33.69233721041302,
+          "y": 1,
+          "z": -250.5059579061112
+        },
+        {
+          "x": -37.78133948643934,
+          "y": 1,
+          "z": -262.07986943506796
+        },
+        {
+          "x": -41.89517705642823,
+          "y": 1,
+          "z": -273.6502330648871
+        },
+        {
+          "x": -45.958507093261574,
+          "y": 1,
+          "z": -285.2278120565857
+        },
+        {
+          "x": -49.89774496387699,
+          "y": 1,
+          "z": -296.82311850060114
+        },
+        {
+          "x": -53.64391926145116,
+          "y": 1,
+          "z": -308.4460054550511
+        },
+        {
+          "x": -57.135343562896516,
+          "y": 1,
+          "z": -320.1052852660908
+        },
+        {
+          "x": -60.31999824933865,
+          "y": 1,
+          "z": -331.80838930784523
+        },
+        {
+          "x": -63.15752733790623,
+          "y": 1,
+          "z": -343.56108272072464
+        },
+        {
+          "x": -65.62077069137315,
+          "y": 1,
+          "z": -355.36724552433276
+        },
+        {
+          "x": -67.69677058008462,
+          "y": 1,
+          "z": -367.22872882290585
+        },
+        {
+          "x": -69.38721262248866,
+          "y": 1,
+          "z": -379.14529181380857
+        },
+        {
+          "x": -70.70828378286012,
+          "y": 1,
+          "z": -391.1146220735732
+        },
+        {
+          "x": -71.68995344968879,
+          "y": 1,
+          "z": -403.13243826098676
+        },
+        {
+          "x": -72.37470672020315,
+          "y": 1,
+          "z": -415.19267107644515
+        },
+        {
+          "x": -72.81578094985122,
+          "y": 1,
+          "z": -427.2877151834559
+        },
+        {
+          "x": -73.07497651133662,
+          "y": 1,
+          "z": -439.40874195734705
+        },
+        {
+          "x": -73.22012974915492,
+          "y": 1,
+          "z": -451.54606049176203
+        },
+        {
+          "x": -73.32234962963489,
+          "y": 1,
+          "z": -463.6895123629397
+        },
+        {
+          "x": -73.45312903177133,
+          "y": 1,
+          "z": -475.82888430245214
+        },
+        {
+          "x": -73.68144662221833,
+          "y": 1,
+          "z": -487.95432221506303
+        },
+        {
+          "x": -74.07097560850264,
+          "y": 1,
+          "z": -500.0567299282686
+        },
+        {
+          "x": -74.67751135388121,
+          "y": 1,
+          "z": -512.1281366758893
+        },
+        {
+          "x": -75.54672103818338,
+          "y": 1,
+          "z": -524.1620185750924
+        },
+        {
+          "x": -76.71230561420694,
+          "y": 1,
+          "z": -536.1535612040494
+        },
+        {
+          "x": -78.19464775728697,
+          "y": 1,
+          "z": -548.0998527519985
+        },
+        {
+          "x": -80,
+          "y": 1,
+          "z": -560
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "arid_badlands",
+        "to": "eridium_blight"
+      }
+    },
+    {
+      "id": "road_windshear_waste_poi_monglet_den",
+      "kind": "road",
+      "points": [
+        {
+          "x": -520,
+          "y": 1,
+          "z": 560
+        },
+        {
+          "x": -526.4258851543985,
+          "y": 1,
+          "z": 549.8803042450859
+        },
+        {
+          "x": -533.471309681875,
+          "y": 1,
+          "z": 540.3324909883974
+        },
+        {
+          "x": -541.773476133805,
+          "y": 1,
+          "z": 531.9447472004354
+        },
+        {
+          "x": -551.4768420267427,
+          "y": 1,
+          "z": 524.8504182810959
+        },
+        {
+          "x": -562.166584203898,
+          "y": 1,
+          "z": 518.6665905471878
+        },
+        {
+          "x": -573.016741383971,
+          "y": 1,
+          "z": 512.6308382005885
+        },
+        {
+          "x": -583.0968998916843,
+          "y": 1,
+          "z": 505.8843178487342
+        },
+        {
+          "x": -591.7206637958781,
+          "y": 1,
+          "z": 497.7934332474772
+        },
+        {
+          "x": -598.7031079803285,
+          "y": 1,
+          "z": 488.187484289534
+        },
+        {
+          "x": -604.4290824105623,
+          "y": 1,
+          "z": 477.4217170969293
+        },
+        {
+          "x": -609.7063795573064,
+          "y": 1,
+          "z": 466.24178625802637
+        },
+        {
+          "x": -615.4598427301626,
+          "y": 1,
+          "z": 455.50139328938087
+        },
+        {
+          "x": -622.383139391222,
+          "y": 1,
+          "z": 445.8408466175383
+        },
+        {
+          "x": -630.6809902834513,
+          "y": 1,
+          "z": 437.44911923600625
+        },
+        {
+          "x": -640,
+          "y": 1,
+          "z": 430
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "windshear_waste",
+        "to": "poi_monglet_den"
+      }
+    },
+    {
+      "id": "road_arid_badlands_poi_lost_cache",
+      "kind": "road",
+      "points": [
+        {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        {
+          "x": 7.817939971820341,
+          "y": 1,
+          "z": 9.13741791235275
+        },
+        {
+          "x": 16.090248183474635,
+          "y": 1,
+          "z": 17.885377333419257
+        },
+        {
+          "x": 24.747903821326844,
+          "y": 1,
+          "z": 26.30303896060183
+        },
+        {
+          "x": 33.64955176104447,
+          "y": 1,
+          "z": 34.51156432904263
+        },
+        {
+          "x": 42.60497607451224,
+          "y": 1,
+          "z": 42.67399566284044
+        },
+        {
+          "x": 51.40682139747771,
+          "y": 1,
+          "z": 50.968066131354504
+        },
+        {
+          "x": 59.865305608180286,
+          "y": 1,
+          "z": 59.55644612466535
+        },
+        {
+          "x": 67.84016911603271,
+          "y": 1,
+          "z": 68.55935814899058
+        },
+        {
+          "x": 75.2645608882676,
+          "y": 1,
+          "z": 78.03410308955947
+        },
+        {
+          "x": 82.15689389273649,
+          "y": 1,
+          "z": 87.96489840249914
+        },
+        {
+          "x": 88.61869231393408,
+          "y": 1,
+          "z": 98.26472335824285
+        },
+        {
+          "x": 94.81877030406565,
+          "y": 1,
+          "z": 108.78888011204309
+        },
+        {
+          "x": 100.96634348975944,
+          "y": 1,
+          "z": 119.35804098393288
+        },
+        {
+          "x": 107.27750555361136,
+          "y": 1,
+          "z": 129.78698281740145
+        },
+        {
+          "x": 113.94059978544142,
+          "y": 1,
+          "z": 139.91426850688873
+        },
+        {
+          "x": 121.08619783617078,
+          "y": 1,
+          "z": 149.6279794944623
+        },
+        {
+          "x": 128.76663482827786,
+          "y": 1,
+          "z": 158.8832571037121
+        },
+        {
+          "x": 136.94846783377784,
+          "y": 1,
+          "z": 167.70876670148238
+        },
+        {
+          "x": 145.51908548747903,
+          "y": 1,
+          "z": 176.20103231508008
+        },
+        {
+          "x": 154.3063543595233,
+          "y": 1,
+          "z": 184.50759688438373
+        },
+        {
+          "x": 163.10803045501248,
+          "y": 1,
+          "z": 192.8018124050203
+        },
+        {
+          "x": 171.72604900783585,
+          "y": 1,
+          "z": 201.2534486765134
+        },
+        {
+          "x": 180,
+          "y": 1,
+          "z": 210
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "arid_badlands",
+        "to": "poi_lost_cache"
+      }
+    },
+    {
+      "id": "road_the_dust_poi_wreck_field",
+      "kind": "road",
+      "points": [
+        {
+          "x": 520,
+          "y": 1,
+          "z": -260
+        },
+        {
+          "x": 524.4574017067301,
+          "y": 1,
+          "z": -248.89407179380316
+        },
+        {
+          "x": 529.3486793259086,
+          "y": 1,
+          "z": -237.96169395258565
+        },
+        {
+          "x": 534.6222039774964,
+          "y": 1,
+          "z": -227.1822149243319
+        },
+        {
+          "x": 540.1743229448861,
+          "y": 1,
+          "z": -216.51417362239886
+        },
+        {
+          "x": 545.8619111283473,
+          "y": 1,
+          "z": -205.9003200068945
+        },
+        {
+          "x": 551.5197628293632,
+          "y": 1,
+          "z": -195.274571798412
+        },
+        {
+          "x": 556.9807244183938,
+          "y": 1,
+          "z": -184.57006754513534
+        },
+        {
+          "x": 562.0961367976998,
+          "y": 1,
+          "z": -173.72734360796883
+        },
+        {
+          "x": 566.754118192843,
+          "y": 1,
+          "z": -162.7016472771372
+        },
+        {
+          "x": 570.8934773339882,
+          "y": 1,
+          "z": -151.46850204470644
+        },
+        {
+          "x": 574.5115732313217,
+          "y": 1,
+          "z": -140.0268515147509
+        },
+        {
+          "x": 577.6651670592412,
+          "y": 1,
+          "z": -128.39940015702982
+        },
+        {
+          "x": 580.4641561869813,
+          "y": 1,
+          "z": -116.63010691923698
+        },
+        {
+          "x": 583.0589382769537,
+          "y": 1,
+          "z": -104.77913086633704
+        },
+        {
+          "x": 585.6229211514764,
+          "y": 1,
+          "z": -92.91583512725721
+        },
+        {
+          "x": 588.3322792053566,
+          "y": 1,
+          "z": -81.11068945992044
+        },
+        {
+          "x": 591.3453889526915,
+          "y": 1,
+          "z": -69.42704446996548
+        },
+        {
+          "x": 594.7844148239817,
+          "y": 1,
+          "z": -57.913765929592685
+        },
+        {
+          "x": 598.7212569295458,
+          "y": 1,
+          "z": -46.599613882929425
+        },
+        {
+          "x": 603.1695464654057,
+          "y": 1,
+          "z": -35.49004080838452
+        },
+        {
+          "x": 608.0836452054104,
+          "y": 1,
+          "z": -24.566791415497494
+        },
+        {
+          "x": 613.3647610518174,
+          "y": 1,
+          "z": -13.790348865171367
+        },
+        {
+          "x": 618.8734337572057,
+          "y": 1,
+          "z": -3.1049290584378517
+        },
+        {
+          "x": 624.4468771479733,
+          "y": 1,
+          "z": 7.554582474143956
+        },
+        {
+          "x": 629.9190790721749,
+          "y": 1,
+          "z": 18.254590593352255
+        },
+        {
+          "x": 635.1412284258207,
+          "y": 1,
+          "z": 29.054619740782805
+        },
+        {
+          "x": 640,
+          "y": 1,
+          "z": 40
+        }
+      ],
+      "width": 8,
+      "color": "#cbd5e1",
+      "meta": {
+        "from": "the_dust",
+        "to": "poi_wreck_field"
+      }
+    }
+  ],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}

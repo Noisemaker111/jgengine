@@ -25,7 +25,7 @@ State the reading as a short numbered list that is easy to correct, then proceed
 4. **Interaction:** collect ground items by walking over them; interact with people and doors at close range
 5. **Combat:** ranged weapons, damage, death, loot
 6. **Progression:** inventory, currency, quest rewards, upgrades
-7. **Players:** single-player, or name the multiplayer topology and synchronized systems
+7. **Players:** single-player, or name the topology, synchronized systems, and authority — presence-only (`wsPresence()`/`convexPresence()`, each client ticks its own world) or host-authoritative shared sim (`authority: "server"` + a host, see `examples/HOSTED.md`)
 8. **UI:** visible controls, objective tracker, health, inventory feedback
 9. **Art direction:** one aesthetic, palette, asset family, and UI voice
 10. **Done looks like:** one observable end-to-end play scenario
@@ -77,7 +77,7 @@ All published on npm, source at [github.com/Noisemaker111/jgengine](https://gith
 | `@jgengine/sql` | `HostPersistence` on Postgres (structural pool, no hard `pg` dep) | core |
 | `@jgengine/convex` | The Convex **adapter** behind the `GameBackend` seam | react + convex + core |
 
-Import by deep path: `@jgengine/core/<domain>/<file>` (e.g. `@jgengine/core/runtime/gameContext`).
+**Prefer the curated domain barrel** — a stable entrypoint that re-exports the domain's public surface, so you don't guess deep file paths: `@jgengine/core/{world,combat,gameplay,multiplayer,ui,procedural}` (e.g. `import { defineGame } from "@jgengine/core/gameplay"`). Not in the barrel? Fall back to the deep path `@jgengine/core/<domain>/<file>` (e.g. `@jgengine/core/runtime/gameContext`). Sibling packages (`@jgengine/{ws,node,sql,convex,react,assets,editor}`) already export from their package root. Maintainer: barrels regenerate with `bun run gen:barrels`; after changing core exports, run `bun run gen:skill-api` on a clean checkout.
 
 ## Hit a snag? File an issue
 
@@ -85,7 +85,7 @@ Any hiccup with JGengine — a doc that's wrong, a missing primitive, a rough ed
 
 ## Upgrading? Read the changelog
 
-All eight packages version in lockstep. When you bump (e.g. `0.6` → `0.7`) to pick up new capabilities, read [`CHANGELOG.md`](https://github.com/Noisemaker111/jgengine/blob/main/CHANGELOG.md) — each release leads with a **Migrate** block listing the concrete steps to move a game onto the new APIs. It ships inside every package too (`node_modules/@jgengine/core/CHANGELOG.md`), and as typed values: `import { VERSION, CHANGELOG } from "@jgengine/core/meta/changelog"` to diff your installed version against the latest programmatically.
+Lockstep SDK packages (`@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`) share one version line; CLI `jgengine` and `@jgengine/github` may lag. When you bump (e.g. `0.6` → `0.7`) to pick up new capabilities, read [`CHANGELOG.md`](https://github.com/Noisemaker111/jgengine/blob/main/CHANGELOG.md) — each release leads with a **Migrate** block. Same data as typed values: `import { VERSION, CHANGELOG } from "@jgengine/core/meta/changelog"`.
 
 ## Concept → Type Reference
 
@@ -93,7 +93,8 @@ Exact import paths and export names — **do not invent paths**; every row below
 
 | Concept | Import path (`@jgengine/core/…`) | Export(s) |
 |---------|----------------------------------|-----------|
-| Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` |
+| Game boot | `game/defineGame` | `defineGame`, `GameDefinition`, `GameLoop`, `InventoryDeclaration`, `PhysicsConfig`, `GameServerConfig`, `TimeConfig` — use `ctx.scene.entity` (never deprecated `GameDefinition.scene`) |
+| Entity meta | `scene/entityStore` | `entityMetaOf(entity, isMeta)` — type-guard narrow of `meta` (prefer over `as T`) |
 | Simulation clock | `time/simClock` | `createSimClock`, `SimClock`, `TimeConfig`, `ClockSnapshot`, `CalendarTime` |
 | Runner contract | `game/playableGame` | `PlayableGame`, `GameCameraConfig`, `CameraRigKind`, `CameraProjection`, `SideScrollCameraConfig`, `TopDownCameraConfig`, `RtsCameraConfig`, `ShoulderCameraConfig`, `LockOnCameraConfig`, `ChaseCameraConfig`, `ObserverCameraConfig`, `CameraShakeConfig`, `CinematicCameraConfig`, `CameraKeyframe`, `EntitySpriteConfig` |
 | Runtime ctx | `runtime/gameContext` | `createGameContext`, `GameContext`, `GameContextContent`, `GameContextItemEntry`, `GameContextEntityEntry`, `GameContextObjectEntry`, `CatalogEntityRole` |
@@ -107,7 +108,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Runtime paint layer | `scene/paintLayer` | `createPaintLayer`, `PaintLayer`, `PaintStroke` — backs `ctx.scene.entity.paint` |
 | Possession | `scene/possession` | `createPossession`, `Possession`, `PossessionDeps`, `PossessionSwappedEvent` |
 | Form / shapeshift | `scene/form` | `createForms`, `Forms`, `FormDef`, `FormsDeps`, `FormChangedEvent` |
-| Multiplayer adapters | `runtime/adapter` | `offline`, `ws`, `convex`, `socketIo`, `p2p`, `lan`, `fly`, `servers`, `MultiplayerTopology`, `ServersPoolConfig` |
+| Multiplayer adapters | `runtime/adapter` | `offline`, `ws`, `convex`, `socketIo`, `p2p`, `lan`, `fly`, `servers`, `MultiplayerTopology`, `ServersPoolConfig`, `resolveAuthority`, `isPresenceOnly`, `isServerAuthoritative`, `isOffline` — unset/`"client"` authority is presence-only; `"server"` is host-authoritative |
 | Loot | `game/lootTable` | `lootTable`, `LootTableDef`, `LootEntry`, `Drop` |
 | Dropped-item entity | `game/worldItem` | `WORLD_ITEM_ENTITY_NAME`, `WorldItemRecord`, `WorldItemSpawnInput`, `createWorldItemStore`, `resolveDeathDrops`, `scatterOffset`, `scatterPosition`, `selectNearestWorldItem`, `resolveWorldItemPresentation`, `RarityStyle`, `WorldItemPresentation`, `DEFAULT_RARITY`, `DEFAULT_PICKUP_RADIUS`, `DEFAULT_SCATTER` |
 | Loot filter | `game/lootFilter` | `lootFilter`, `evaluateLootFilter`, `LootFilterRule`, `LootFilterCondition`, `LootFilterItem`, `LootFilterOverride` |
@@ -191,7 +192,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Shared / group wallet | `economy/sharedWallet` | `createWalletBook`, `WalletBook`, `WalletScope`, `userScope`, `groupScope`, `balanceIn`, `grantTo`, `chargeFrom`, `contributionOf`, `contributorsOf` |
 | Analog axis input | `input/axisInput` | `AxisInput`, `AxisChannel`, `AxisBindingMap`, `DRIVE_AXIS_BINDINGS`, `clampAxis`, `rampToward`, `NEUTRAL_AXIS` |
 | Raw control polling | `runtime/inputSnapshot` | `createInputSnapshot`, `InputSnapshot` (`isDown`, `justPressed`, `justReleased`, `held`, `axis`) — backs `ctx.input` |
-| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` (`{ shape: "box", halfExtents }` \| `{ shape: "sphere", radius }`), `JointOptions`, `JointKind`, `CollisionEvent` |
+| Physics world | `physics/physicsWorld` | `PhysicsWorld`, `PhysicsWorldConfig` (`precision: "low" \| "standard" \| "high"` sets simulation fidelity; the individual solver/broadphase knobs are a deprecated advanced escape hatch), `PhysicsPrecision`, `PhysicsBounds`, `PhysicsStats`, `AddBodyOptions` (`{ shape: "box", halfExtents }` \| `{ shape: "sphere", radius }`), `JointOptions`, `JointKind`, `CollisionEvent` |
 | Ballistic collision sweep | `physics/ballisticSweep` | `createBallisticSweep`, `BallisticSweep`, `BallisticSweepHit`, `BallisticSweepOptions` |
 | Tweening / easing | `anim/easing` | `Easing`, `lerp`, `clamp01`, `smoothstep`, `easeInQuad`, `easeOutQuad`, `easeInOutQuad`, `easeInCubic`, `easeOutCubic`, `easeInOutCubic`, `easeOutBack`, `easeOutElastic`, `tween`, `timedProgress` |
 | Async data source | `data/dataSource` | `createDataSource`, `DataSource`, `DataSourceState`, `DataSourceStatus`, `DataSourceOptions`, `DataSourceClock`, `RefreshOptions` |
@@ -217,7 +218,7 @@ Exact import paths and export names — **do not invent paths**; every row below
 | Multi-region health | `survival/regionHealth` | `createMultiRegionHealth`, `MultiRegionHealth`, `HealthRegionConfig`, `AilmentConfig`, `RegionHealthState`, `AilmentInstance` |
 | Audio contract | `audio/audioFalloff` | `computeFalloffGain`, `resolveEmitterGain`, `distance3`, `AudioFalloffConfig`, `FalloffCurve`, `SoundDef`, `AudioBusDef`, `AudioBusId` |
 | Beat clock | `time/beatClock` | `createBeatClock`, `createBeatInputBuffer`, `nextBeatTime`, `BeatClock`, `BeatClockConfig`, `BeatSnapshot`, `BeatInputBuffer`, `BufferedAction` |
-| Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext` |
+| Spawn director | `ai/spawnDirector` | `createSpawnDirectorState`, `advanceSpawnDirector`, `advanceWave`, `raiseAlert`, `pickSpawnPoint`, `SpawnDirectorConfig`, `WaveManifest`, `SpawnEntry`, `SpawnRequest`, `DirectorContext`, `SpawnPointSelectionOptions`, `SpawnPointDistanceBias`, `SpawnPointBiasStrength` |
 | Threat table | `ai/threat` | `createThreatTable`, `ThreatTable`, `ThreatTableConfig`, `ThreatEntry`, `HighestThreatOptions` |
 | Group-assist aggro | `ai/groupAssist` | `createAssistNetwork`, `AssistNetwork`, `AssistNetworkConfig`, `AssistMember` — propagates one member's threat gains to same-group members (optional radius + `distanceBetween` gating) so a single pull rallies the group |
 | Job board | `ai/jobBoard` | `createJobBoard`, `JobBoard`, `JobDef`, `Job`, `JobPhase`, `WorkerState`, `JobReport`, `JobTickContext` |
@@ -465,7 +466,7 @@ export const game = defineGame({
   input: keybinds,
   server: "persistent",            // or { mode: "ffa", scoreLimit: 30 } — rules live in game code
   save: { auto: "5m", scope: "player+chunks" },   // or "none"
-  multiplayer: offline(),          // or ws({ topology, url? }) / fly({ app }) / convex({ topology }) / socketIo({ topology, url? }) / p2p({ room? }) / lan({ port?, path? }) / servers({ …, adapter }) — defaults to offline()
+  multiplayer: offline(),          // or wsPresence({ topology, url? }) / ws({ topology, url?, authority: "server" }) / fly({ app }) / convexPresence({ topology }) / convex({ topology, authority: "server" }) / socketIo({ topology, url? }) / p2p({ room? }) / lan({ port?, path? }) / servers({ …, adapter }) — defaults to offline(); see jgengine-multiplayer → Authority for presence-only vs shared-world
   content,
   loop,                            // Partial<GameLoop<GameContext>> — missing hooks default to no-ops
   GameUI,
@@ -534,6 +535,20 @@ const game = defineEngineGame({
 ```
 
 Reach for this directly only outside a React host — a headless server, a non-shell runner; a browser game authors through `@jgengine/shell/defineGame` above, which calls this and returns the `PlayableGame` a runner needs.
+
+### `@jgengine/core/runtime/headlessRunner` — the renderer-free play loop
+
+`createHeadlessRunner({ definition, content?, loop, player? })` drives a real game loop with **no React, R3F, or three.js** — the non-React game path for a server tick, a test, or a CLI replay. It builds the `GameContext`, runs `onInit`/`onNewPlayer` at construction, then each `step(dtSeconds, input?)` publishes the input, advances the sim clock (clamped to `maxStepSeconds`, default `0.05`), and runs `loop.onTick` plus behaviour nav. The shell's `FrameDriver` is one such driver bolted to R3F's `useFrame`; this is that same step distilled out of the render tree.
+
+```ts
+import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
+
+const runner = createHeadlessRunner({ definition: game, content, loop: game.loop });
+runner.step(0.05, { held: ["moveRight"] });        // input in → world snapshot changes out
+const hero = runner.ctx.scene.entity.get(runner.userId);   // read the snapshot via runner.ctx
+```
+
+`runner.ctx` is the live `GameContext` — read the world through `ctx.scene`, `ctx.game.store`, `ctx.subscribe`/`ctx.version()`. `runner.input` is the same `InputSnapshot` `onTick` polls; `publishInput({ held, pointer })` pre-seeds it before the first step. Pass `playerMovement: true` (with optional `heading`) to also run the built-in keyboard walk controller as the shell does for pose-driven games — off by default since cartridge/tick-driven games move their own entities in `onTick`. `maxStepSeconds` matches whatever fixed step the caller ticks at (e.g. `0.1` for a coarse server tick) so a long clamp never fast-forwards the sim. Maintainer: new exports here are documented by hand; run `bun run gen:skill-api` on a clean checkout to refresh the generated `api.md`.
 
 ## `PlayableGame` — how a game plugs into a runner
 

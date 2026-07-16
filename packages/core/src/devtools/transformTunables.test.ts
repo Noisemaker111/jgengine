@@ -73,10 +73,10 @@ describe("transformTunableExports", () => {
 
 describe("tunableModuleTable", () => {
   test("derives table names from game source paths only", () => {
-    expect(tunableModuleTable("/repo/Games/voxel-mine/src/game/worldgen.ts")).toBe("game/worldgen");
-    expect(tunableModuleTable("/repo/Games/voxel-mine/src/loop.ts")).toBe("loop");
-    expect(tunableModuleTable("/repo/Games/voxel-mine/src/main.tsx")).toBeNull();
-    expect(tunableModuleTable("/repo/Games/voxel-mine/src/game/handlers.test.ts")).toBeNull();
+    expect(tunableModuleTable("/repo/Games/studio-showcase/src/game/worldgen.ts")).toBe("game/worldgen");
+    expect(tunableModuleTable("/repo/Games/studio-showcase/src/loop.ts")).toBe("loop");
+    expect(tunableModuleTable("/repo/Games/studio-showcase/src/main.tsx")).toBeNull();
+    expect(tunableModuleTable("/repo/Games/studio-showcase/src/game/handlers.test.ts")).toBeNull();
     expect(tunableModuleTable("/repo/packages/core/src/devtools/devtools.ts")).toBeNull();
   });
 });

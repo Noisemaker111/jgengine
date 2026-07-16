@@ -1,5 +1,5 @@
 import { useThree } from "@react-three/fiber";
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
 import type { Vector3 } from "three";
 
 import type { EditorHostApi } from "./session";
@@ -11,7 +11,7 @@ type OrbitLike = {
 };
 
 /** Smoothly pans the orbit camera to the editor host's focus target when it changes. */
-export function EditorCameraDriver({ api }: { api: EditorHostApi }) {
+export const EditorCameraDriver = memo(function EditorCameraDriver({ api }: { api: EditorHostApi }) {
   const controls = useThree((state) => state.controls) as OrbitLike | null;
   const camera = useThree((state) => state.camera);
 
@@ -26,4 +26,4 @@ export function EditorCameraDriver({ api }: { api: EditorHostApi }) {
   }, [api, camera, controls]);
 
   return null;
-}
+});

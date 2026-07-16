@@ -23,6 +23,7 @@ import {
   collectDescendants,
   wouldCreateCycle,
 } from "./index";
+import { decodeEditorDocument } from "./document";
 import {
   createTerrainSnapshot,
   editableTerrainFromSnapshot,
@@ -50,6 +51,47 @@ describe("editor document", () => {
     const merged = mergeEditorDocuments(a, b);
     expect(merged.markers).toHaveLength(1);
     expect(merged.volumes).toHaveLength(1);
+  });
+
+  test("merge re-ids a colliding object instead of shadowing it across collections", () => {
+    const a = normalizeEditorLayers({
+      markers: [{ id: "shared", kind: "boss", position: { x: 0, y: 0, z: 0 } }],
+    });
+    const b = normalizeEditorLayers({
+      volumes: [{ id: "shared", kind: "zone", shape: "sphere", center: { x: 5, y: 0, z: 5 }, radius: 10 }],
+    });
+    const merged = mergeEditorDocuments(a, b);
+    expect(merged.markers).toHaveLength(1);
+    expect(merged.volumes).toHaveLength(1);
+    expect(merged.markers[0]?.id).toBe("shared");
+    expect(merged.volumes[0]?.id).not.toBe("shared");
+    expect(merged.volumes[0]?.id).toBe("shared_copy");
+  });
+
+  test("decodeEditorDocument reports a precise diagnostic per malformed field", () => {
+    const decoded = decodeEditorDocument({
+      markers: [{ id: "ok", kind: "boss", position: { x: 0, y: 0, z: 0 } }, { kind: "boss" }],
+      volumes: [{ id: "v", kind: "zone", shape: "hexagon", center: { x: 0, y: 0, z: 0 } }],
+      paths: "not-an-array",
+    });
+    expect(decoded.ok).toBe(false);
+    if (decoded.ok) throw new Error("expected decode failure");
+    const paths = decoded.errors.map((e) => e.path);
+    expect(paths).toContain("$.markers[1].id");
+    expect(paths).toContain("$.markers[1].position");
+    expect(paths).toContain("$.volumes[0].shape");
+    expect(paths).toContain("$.paths");
+  });
+
+  test("decodeEditorDocument round-trips a v1 document", () => {
+    const original = normalizeEditorLayers({
+      markers: [{ id: "boss_warrior", kind: "boss", position: { x: -80, y: 0, z: -660 }, label: "Warrior" }],
+      collections: [{ id: "c1", name: "Pack", memberIds: ["boss_warrior"], locked: true }],
+    });
+    const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(original)));
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error("expected decode success");
+    expect(decoded.document).toEqual(original);
   });
 
   test("json round-trip", () => {
@@ -323,6 +365,34 @@ describe("editor clipboard fragments", () => {
       }),
     });
     expect(session.getState().document.markers[0]?.id).toBe("fresh");
+  });
+
+  test("addMarker re-ids instead of shadowing an existing object in a different collection", () => {
+    const session = createEditorSession(
+      normalizeEditorLayers({
+        volumes: [{ id: "shared", kind: "zone", shape: "sphere", center: { x: 0, y: 0, z: 0 }, radius: 5 }],
+      }),
+    );
+    session.dispatch({ type: "addMarker", marker: { id: "shared", kind: "poi", position: { x: 1, y: 0, z: 1 } } });
+    const doc = session.getState().document;
+    expect(doc.volumes).toHaveLength(1);
+    expect(doc.volumes[0]?.id).toBe("shared");
+    expect(doc.markers).toHaveLength(1);
+    expect(doc.markers[0]?.id).not.toBe("shared");
+    expect(doc.markers[0]?.id).toBe("shared_copy");
+  });
+
+  test("addMarker with an existing marker id still upserts in place", () => {
+    const session = createEditorSession(
+      normalizeEditorLayers({
+        markers: [{ id: "m", kind: "poi", position: { x: 0, y: 0, z: 0 } }],
+      }),
+    );
+    session.dispatch({ type: "addMarker", marker: { id: "m", kind: "poi", position: { x: 9, y: 0, z: 9 } } });
+    const doc = session.getState().document;
+    expect(doc.markers).toHaveLength(1);
+    expect(doc.markers[0]?.id).toBe("m");
+    expect(doc.markers[0]?.position).toEqual({ x: 9, y: 0, z: 9 });
   });
 });
 

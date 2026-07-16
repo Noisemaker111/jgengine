@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -6,7 +7,7 @@ interface PackageJson {
   name?: string;
   version?: string;
   type?: string;
-  workspaces?: string[];
+  workspaces?: string[] | { packages: string[]; catalog?: Record<string, string>; catalogs?: Record<string, Record<string, string>> };
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -15,6 +16,7 @@ interface PackageJson {
 
 export type { PackageJson };
 
+/** @internal */
 export function readPackageJson(path: string): PackageJson | null {
   if (!existsSync(path)) return null;
   try {
@@ -24,12 +26,29 @@ export function readPackageJson(path: string): PackageJson | null {
   }
 }
 
+/** @internal */
 export function cliVersion(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   const own = readPackageJson(join(here, "..", "package.json")) ?? readPackageJson(join(here, "..", "..", "package.json"));
   return own?.version ?? "0.0.0";
 }
 
+/** @internal */
+export function sdkVersion(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const own = readPackageJson(join(here, "..", "package.json")) ?? readPackageJson(join(here, "..", "..", "package.json"));
+  const pinned = own?.dependencies?.["@jgengine/assets"];
+  return pinned !== undefined ? pinned.replace(/^[\^~]/, "") : cliVersion();
+}
+
+/** @internal */
+export function pickPackageManager(preferred: string | undefined): string {
+  if (preferred !== undefined) return preferred;
+  const probe = spawnSync("bun", ["--version"], { stdio: "ignore", shell: process.platform === "win32" });
+  return probe.status === 0 ? "bun" : "npm";
+}
+
+/** @internal */
 export function findUp(startDir: string, predicate: (dir: string) => boolean): string | null {
   let dir = resolve(startDir);
   for (;;) {
@@ -40,22 +59,27 @@ export function findUp(startDir: string, predicate: (dir: string) => boolean): s
   }
 }
 
+/** @internal */
 export function findWorkspaceRoot(startDir: string): string | null {
   return findUp(startDir, (dir) => {
     const pkg = readPackageJson(join(dir, "package.json"));
-    return Array.isArray(pkg?.workspaces);
+    const workspaces = pkg?.workspaces;
+    return Array.isArray(workspaces) ? true : Array.isArray(workspaces?.packages);
   });
 }
 
+/** @internal */
 export function isEngineMonorepo(rootDir: string): boolean {
   return existsSync(join(rootDir, "packages", "core", "src")) && existsSync(join(rootDir, "Games"));
 }
 
+/** @internal */
 export function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(`--${name}`);
   return index >= 0 ? argv[index + 1] : undefined;
 }
 
+/** @internal */
 export function hasFlag(argv: string[], name: string): boolean {
   return argv.includes(`--${name}`);
 }

@@ -3,6 +3,7 @@ import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 
 export const REVISION_CONFLICT_REASON = "Revision conflict";
 
+/** @internal */
 export function commitIfRevisionMatch(
   loadedRevision: number,
   currentRevision: number,
@@ -13,6 +14,7 @@ export function commitIfRevisionMatch(
   return { ok: true };
 }
 
+/** @internal */
 export function applyCommandWithOcc(args: {
   loadedRevision: number;
   currentRevision: number;

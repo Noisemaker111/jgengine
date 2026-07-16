@@ -21,7 +21,7 @@ import {
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
-import { browseSessions, findByJoinCode } from "@jgengine/core/multiplayer/matchmaking";
+import { browseSessions, findByJoinCode, normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
   createFeedWriteGate,
   validateFeedWrite,
@@ -60,6 +60,7 @@ export type GameHost = {
     gameId: string;
     serverId?: string;
     attributes?: SessionAttributes;
+    code?: string;
   }) => Promise<JoinServerResult>;
   browseServers: (args: {
     gameId: string;
@@ -108,6 +109,26 @@ const builtinCommands = {
   },
 };
 
+/** Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first. */
+export const OP_LEDGER_LIMIT = 64;
+
+const WS_OP_ID_FIELD = "__jgWsOpId";
+
+type OpLedgerEntry = { opId: string; result: TransportRunCommandResult };
+
+function unwrapOpEnvelope(input: unknown): { opId: string; input: unknown } | null {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) return null;
+  const record = input as Record<string, unknown>;
+  const opId = record[WS_OP_ID_FIELD];
+  if (typeof opId !== "string") return null;
+  const { [WS_OP_ID_FIELD]: _opId, ...rest } = record;
+  return { opId, input: rest };
+}
+
+function opLedgerKey(serverId: string, userId: string): string {
+  return `${serverId}|${userId}`;
+}
+
 /** Creates a `GameHost` that runs game servers over the given persistence and runtimes. */
 export function createGameHost(options: GameHostOptions): GameHost {
   const now = options.now ?? Date.now;
@@ -135,10 +156,39 @@ export function createGameHost(options: GameHostOptions): GameHost {
     for (const listener of listeners) listener(event);
   };
 
-  let queue: Promise<unknown> = Promise.resolve();
-  const enqueue = <T>(operation: () => Promise<T>): Promise<T> => {
-    const run = queue.then(operation);
-    queue = run.catch(() => undefined);
+  const opLedgers = new Map<string, OpLedgerEntry[]>();
+
+  const findAppliedOp = (serverId: string, userId: string, opId: string): TransportRunCommandResult | undefined =>
+    opLedgers.get(opLedgerKey(serverId, userId))?.find((entry) => entry.opId === opId)?.result;
+
+  const rememberAppliedOp = (
+    serverId: string,
+    userId: string,
+    opId: string,
+    result: TransportRunCommandResult,
+  ) => {
+    const key = opLedgerKey(serverId, userId);
+    const entries = opLedgers.get(key) ?? [];
+    entries.push({ opId, result });
+    if (entries.length > OP_LEDGER_LIMIT) entries.shift();
+    opLedgers.set(key, entries);
+  };
+
+  const forgetOpLedger = (serverId: string, userId: string) => {
+    opLedgers.delete(opLedgerKey(serverId, userId));
+  };
+
+  const roomQueues = new Map<string, Promise<unknown>>();
+  const enqueueRoom = <T>(roomId: string, operation: () => Promise<T>): Promise<T> => {
+    const previous = roomQueues.get(roomId) ?? Promise.resolve();
+    const run = previous.then(operation);
+    const settled = run.catch(() => undefined);
+    roomQueues.set(roomId, settled);
+    void settled.finally(() => {
+      if (roomQueues.get(roomId) === settled) {
+        roomQueues.delete(roomId);
+      }
+    });
     return run;
   };
 
@@ -213,34 +263,42 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
   let interval: ReturnType<typeof setInterval> | null = null;
 
-  const tickOnce = () =>
-    enqueue(async () => {
-      const timestamp = now();
-      let ticked = 0;
-      let saved = 0;
-      for (const entry of live.values()) {
-        if (entry.record.status !== "running") continue;
-        if (entry.record.memberUserIds.length === 0) continue;
-        const elapsedMs = timestamp - entry.record.tickAnchorMs;
-        if (elapsedMs < tickMs) continue;
+  const tickOnce = async () => {
+    const timestamp = now();
+    const outcomes = await Promise.all(
+      [...live.values()].map((entry) =>
+        enqueueRoom(entry.record.serverId, async () => {
+          if (entry.record.status !== "running") return { ticked: 0, saved: 0 };
+          if (entry.record.memberUserIds.length === 0) return { ticked: 0, saved: 0 };
+          const elapsedMs = timestamp - entry.record.tickAnchorMs;
+          if (elapsedMs < tickMs) return { ticked: 0, saved: 0 };
 
-        const runtime = resolveRuntime(entry.record.gameId);
-        const before = entry.snapshot.revision;
-        entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
-        entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
-        ticked += 1;
-        if (entry.snapshot.revision !== before) {
-          markMutated(entry);
-          emit({ type: "server", serverId: entry.record.serverId });
-        }
+          const runtime = resolveRuntime(entry.record.gameId);
+          const before = entry.snapshot.revision;
+          entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
+          entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
+          if (entry.snapshot.revision !== before) {
+            markMutated(entry);
+            emit({ type: "server", serverId: entry.record.serverId });
+          }
 
-        if (shouldAutoSave(entry.record.save, entry.record.dirtyAt, entry.record.lastSavedAt, timestamp)) {
-          await flushServer(entry);
-          saved += 1;
-        }
-      }
-      return { ticked, saved };
-    });
+          let saved = 0;
+          if (shouldAutoSave(entry.record.save, entry.record.dirtyAt, entry.record.lastSavedAt, timestamp)) {
+            await flushServer(entry);
+            saved = 1;
+          }
+          return { ticked: 1, saved };
+        }),
+      ),
+    );
+    let ticked = 0;
+    let saved = 0;
+    for (const outcome of outcomes) {
+      ticked += outcome.ticked;
+      saved += outcome.saved;
+    }
+    return { ticked, saved };
+  };
 
   const collectListings = async (
     gameId: string,
@@ -272,8 +330,8 @@ export function createGameHost(options: GameHostOptions): GameHost {
   };
 
   const host: GameHost = {
-    joinServer: (args) =>
-      enqueue(async () => {
+    joinServer: (args) => {
+      const joinOperation = async (): Promise<JoinServerResult> => {
         const timestamp = now();
         const runtime = resolveRuntime(args.gameId);
 
@@ -283,6 +341,21 @@ export function createGameHost(options: GameHostOptions): GameHost {
         }
         if (entry !== null && entry.record.gameId !== args.gameId) {
           throw new Error("Server belongs to a different game");
+        }
+
+        if (
+          entry !== null &&
+          entry.record.visibility === "private" &&
+          !entry.record.memberUserIds.includes(args.userId)
+        ) {
+          const requiredCode = entry.record.joinCode;
+          const matches =
+            requiredCode !== undefined &&
+            args.code !== undefined &&
+            normalizeJoinCode(args.code) === normalizeJoinCode(requiredCode);
+          if (!matches) {
+            throw new Error("Server is private");
+          }
         }
 
         if (entry === null) {
@@ -335,7 +408,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
         emit({ type: "player", serverId: entry.record.serverId, userId: args.userId });
 
         return { serverId: entry.record.serverId, isNew };
-      }),
+      };
+      return args.serverId === undefined ? joinOperation() : enqueueRoom(args.serverId, joinOperation);
+    },
 
     browseServers: async (args) =>
       browseSessions(await collectListings(args.gameId), args.filter ?? {}, { limit: args.limit }),
@@ -346,11 +421,16 @@ export function createGameHost(options: GameHostOptions): GameHost {
         args.code,
       );
       if (match === null) return null;
-      return host.joinServer({ userId: args.userId, gameId: args.gameId, serverId: match.serverId });
+      return host.joinServer({
+        userId: args.userId,
+        gameId: args.gameId,
+        serverId: match.serverId,
+        code: args.code,
+      });
     },
 
     leaveServer: (args) =>
-      enqueue(async () => {
+      enqueueRoom(args.serverId, async () => {
         const entry = await getLive(args.serverId);
         if (entry === null) return;
         if (!entry.record.memberUserIds.includes(args.userId)) return;
@@ -373,6 +453,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         };
         entry.snapshot = { ...entry.snapshot, players };
         await persistence.saveServer(entry.record);
+        forgetOpLedger(args.serverId, args.userId);
         if (memberUserIds.length === 0) {
           live.delete(entry.record.serverId);
         }
@@ -380,7 +461,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
       }),
 
     runCommand: (args) =>
-      enqueue(async () => {
+      enqueueRoom(args.serverId, async () => {
         const entry = await getLive(args.serverId);
         if (entry === null) {
           return { ok: false as const, reason: "Server not found" };
@@ -389,17 +470,30 @@ export function createGameHost(options: GameHostOptions): GameHost {
           return { ok: false as const, reason: "Not a member of this server" };
         }
 
+        const envelope = unwrapOpEnvelope(args.input);
+        if (envelope !== null) {
+          const applied = findAppliedOp(args.serverId, args.userId, envelope.opId);
+          if (applied !== undefined) return applied;
+        }
+        const commandInput = envelope !== null ? envelope.input : args.input;
+
         const runtime = resolveRuntime(entry.record.gameId);
-        const result = runtime.runCommand(entry.snapshot, args.userId, args.command, args.input);
-        if (!result.ok) {
-          return { ok: false as const, reason: result.reason };
+        const result = runtime.runCommand(entry.snapshot, args.userId, args.command, commandInput);
+        const outcome: TransportRunCommandResult = result.ok
+          ? { ok: true }
+          : { ok: false, reason: result.reason };
+
+        if (result.ok) {
+          entry.snapshot = result.snapshot;
+          markMutated(entry);
+          emit({ type: "server", serverId: args.serverId });
+          emit({ type: "player", serverId: args.serverId, userId: args.userId });
         }
 
-        entry.snapshot = result.snapshot;
-        markMutated(entry);
-        emit({ type: "server", serverId: args.serverId });
-        emit({ type: "player", serverId: args.serverId, userId: args.userId });
-        return { ok: true as const };
+        if (envelope !== null) {
+          rememberAppliedOp(args.serverId, args.userId, envelope.opId, outcome);
+        }
+        return outcome;
       }),
 
     isMember: async (args) => {
@@ -453,7 +547,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     },
 
     pushFeedEntry: (args) =>
-      enqueue(async () => {
+      enqueueRoom(args.serverId, async () => {
         const allowed = validateFeedWrite(feedWriteGate, args.action);
         if (!allowed.ok) {
           throw new Error(allowed.reason);
@@ -469,10 +563,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
     listOpenServers: async (args) => {
       const byId = new Map<string, ServerListing>();
       for (const record of await persistence.listServers(args.gameId)) {
+        if ((record.visibility ?? "public") === "private") continue;
         byId.set(record.serverId, toServerListing(record));
       }
       for (const entry of live.values()) {
         if (entry.record.gameId !== args.gameId) continue;
+        if ((entry.record.visibility ?? "public") === "private") continue;
         byId.set(entry.record.serverId, toServerListing(entry.record));
       }
       return toOpenServerListings(byId.values(), args.limit);
@@ -480,16 +576,18 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
     tickOnce,
 
-    flushAll: () =>
-      enqueue(async () => {
-        let saved = 0;
-        for (const entry of live.values()) {
-          if (entry.record.dirtyAt === undefined) continue;
-          await flushServer(entry);
-          saved += 1;
-        }
-        return saved;
-      }),
+    flushAll: async () => {
+      const outcomes = await Promise.all(
+        [...live.values()].map((entry) =>
+          enqueueRoom(entry.record.serverId, async (): Promise<number> => {
+            if (entry.record.dirtyAt === undefined) return 0;
+            await flushServer(entry);
+            return 1;
+          }),
+        ),
+      );
+      return outcomes.reduce((total, saved) => total + saved, 0);
+    },
 
     start: () => {
       if (interval !== null) return;
@@ -503,12 +601,15 @@ export function createGameHost(options: GameHostOptions): GameHost {
         clearInterval(interval);
         interval = null;
       }
-      await enqueue(async () => {
-        for (const entry of live.values()) {
-          if (entry.record.dirtyAt === undefined) continue;
-          await flushServer(entry);
-        }
-      });
+      await Promise.all(roomQueues.values());
+      await Promise.all(
+        [...live.values()].map((entry) =>
+          enqueueRoom(entry.record.serverId, async () => {
+            if (entry.record.dirtyAt === undefined) return;
+            await flushServer(entry);
+          }),
+        ),
+      );
     },
 
     subscribe: (listener) => {

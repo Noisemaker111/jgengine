@@ -16,7 +16,9 @@ export interface ScatterOptions {
 
 export const DEFAULT_SCATTER: ScatterOptions = { radius: 1.5, minRadius: 0.4, height: 0 };
 
-/** Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse. */
+/** Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
+ * @internal
+ */
 export function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition {
   const angle = rng() * Math.PI * 2;
   const min = options.minRadius ?? 0;
@@ -25,6 +27,7 @@ export function scatterOffset(rng: () => number, options: ScatterOptions = DEFAU
   return [Math.cos(angle) * distance, options.height ?? 0, Math.sin(angle) * distance];
 }
 
+/** @internal */
 export function scatterPosition(
   origin: EntityPosition,
   rng: () => number,
@@ -77,7 +80,9 @@ export interface WorldItemStore {
   remove(instanceId: string): WorldItemRecord | null;
 }
 
-/** Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts). */
+/** Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts).
+ * @internal
+ */
 export function selectNearestWorldItem(
   candidates: readonly { instanceId: string; position: EntityPosition }[],
   from: EntityPosition,
@@ -99,7 +104,8 @@ export function selectNearestWorldItem(
  * Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
  *
  * @capability world-drops spawn pickup-able items in the world, including death drops
- */
+  * @internal
+  */
 export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
   const records = new Map<string, WorldItemRecord>();
   const now = deps.now ?? Date.now;
@@ -172,7 +178,8 @@ export interface ResolvedDeathDrops {
  * `mode: "grant"` is the legacy behavior (loot straight to inventory); `mode:
  * "world"` routes item drops through a scatter impulse and leaves currency
  * drops granting directly (coins fly to the killer, gear hits the ground).
- */
+  * @internal
+  */
 export function resolveDeathDrops(
   drops: readonly Drop[],
   options: ResolveDeathDropsOptions,
@@ -217,7 +224,8 @@ export interface WorldItemPresentation {
  * data the game supplies) with the loot-filter rule overrides (#33). A
  * matching rule wins field-by-field; unmatched fields fall back to the
  * rarity's baseline style.
- */
+  * @internal
+  */
 export function resolveWorldItemPresentation(
   item: LootFilterItem,
   rarityStyle: Record<string, RarityStyle> | undefined,

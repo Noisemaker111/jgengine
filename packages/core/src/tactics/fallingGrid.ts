@@ -57,7 +57,8 @@ export interface GravityIntervalConfig {
  * Gravity tick interval for a given level: linear speed-up with a floor, generalizing
  * a falling-block `gravityInterval` (`max(0.05, 0.8 - level * 0.07)` seconds) to milliseconds
  * with configurable base/step/floor.
- */
+  * @internal
+  */
 export function gravityIntervalMs(level: number, config: GravityIntervalConfig = {}): number {
   const baseMs = config.baseMs ?? 800;
   const perLevel = config.perLevel ?? 70;
@@ -70,7 +71,8 @@ export function gravityIntervalMs(level: number, config: GravityIntervalConfig =
  * footprint placement/collision, line-clear collapse, column-gravity settle (for match-3/sand
  * style cascades), and a pure lock-delay helper. Extracted from falling-block tetris
  * logic so any falling-block game can adopt it instead of reimplementing the grid.
- */
+  * @internal
+  */
 export function createFallingGrid<TCell>(config: FallingGridConfig): FallingGrid<TCell> {
   const cols = config.cols;
   const rows = config.rows;

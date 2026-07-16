@@ -1,0 +1,863 @@
+[
+  {
+    "id": "kaykit-city-builder/base",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "base.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/bench",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "bench.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.40000003576278687,
+        "d": 0.15000005066394806
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/box_A",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "box_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.20000004768371582,
+        "d": 0.2030770182609558
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0015384852886199951
+      },
+      "minY": -2.2351741790771484e-8
+    }
+  },
+  {
+    "id": "kaykit-city-builder/box_B",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "box_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.15205875039100647,
+        "d": 0.15439815819263458
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0011697039008140564
+      },
+      "minY": -1.6993885409988252e-8
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_A_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_A_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2067396640777588,
+        "d": 1.4500000476837158
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07500004768371582
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_A",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_B_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_B_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6067396402359009,
+        "d": 1.2999999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_B",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_C_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_C_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.2067396640777588,
+        "d": 1.2999999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_C",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_D_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_D_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 1.6067396402359009,
+        "d": 1.2999999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_D",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_D.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.020421028137207
+      },
+      "center": {
+        "x": 0,
+        "z": 0.010210514068603516
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_E_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_E_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 1.4500000476837158
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07500004768371582
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_E",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_E.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_F_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_F_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 1.2999999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_F",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_F.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_G_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_G_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 1.4500000476837158
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07500004768371582
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_G",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_G.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_H_withoutBase",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_H_withoutBase.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 1.2999999523162842
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.09993039071559906
+    }
+  },
+  {
+    "id": "kaykit-city-builder/building_H",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "building_H.glb",
+    "dims": {
+      "footprint": {
+        "w": 2.006739616394043,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/bush",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "bush.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.18936064839363098,
+        "d": 0.1990933120250702
+      },
+      "center": {
+        "x": 0.005215488374233246,
+        "z": -0.000006638467311859131
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/car_hatchback",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "car_hatchback.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.41896088421344757,
+        "d": 0.8060729503631592
+      },
+      "center": {
+        "x": 0.00000492483377456665,
+        "z": 0.007701516151428223
+      },
+      "minY": -0.0610429048538208
+    }
+  },
+  {
+    "id": "kaykit-city-builder/car_police",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "car_police.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.41896088421344757,
+        "d": 0.9380729794502258
+      },
+      "center": {
+        "x": 0.00000492483377456665,
+        "z": -0.003298461437225342
+      },
+      "minY": -0.0610429048538208
+    }
+  },
+  {
+    "id": "kaykit-city-builder/car_sedan",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "car_sedan.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.41896088421344757,
+        "d": 0.9380729794502258
+      },
+      "center": {
+        "x": 0.00000492483377456665,
+        "z": -0.003298461437225342
+      },
+      "minY": -0.0610429048538208
+    }
+  },
+  {
+    "id": "kaykit-city-builder/car_stationwagon",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "car_stationwagon.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.41896088421344757,
+        "d": 0.9380729794502258
+      },
+      "center": {
+        "x": 0.00000492483377456665,
+        "z": -0.003298461437225342
+      },
+      "minY": -0.0610429048538208
+    }
+  },
+  {
+    "id": "kaykit-city-builder/car_taxi",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "car_taxi.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.41896088421344757,
+        "d": 0.9380729794502258
+      },
+      "center": {
+        "x": 0.00000492483377456665,
+        "z": -0.003298461437225342
+      },
+      "minY": -0.0610429048538208
+    }
+  },
+  {
+    "id": "kaykit-city-builder/dumpster",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "dumpster.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.5659470558166504,
+        "d": 0.3527979254722595
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/firehydrant",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "firehydrant.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.13549518585205078,
+        "d": 0.13132071495056152
+      },
+      "center": {
+        "x": 0.0000020265579223632812,
+        "z": 0.0005620718002319336
+      },
+      "minY": 6.705522537231445e-8
+    }
+  },
+  {
+    "id": "kaykit-city-builder/road_corner_curved",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "road_corner_curved.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/road_corner",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "road_corner.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/road_junction",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "road_junction.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.000000238418579
+      },
+      "center": {
+        "x": 0,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/road_straight_crossing",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "road_straight_crossing.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/road_straight",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "road_straight.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/road_tsplit",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "road_tsplit.glb",
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/streetlight",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "streetlight.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2693069577217102,
+        "d": 0.06902249157428741
+      },
+      "center": {
+        "x": -0.10455688834190369,
+        "z": -2.2351741790771484e-7
+      },
+      "minY": 0.000009156763553619385
+    }
+  },
+  {
+    "id": "kaykit-city-builder/trafficlight_A",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "trafficlight_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.17443180084228516,
+        "d": 0.1505678854882717
+      },
+      "center": {
+        "x": -0.04735970497131348,
+        "z": 0.035426268354058266
+      },
+      "minY": 0.000009156763553619385
+    }
+  },
+  {
+    "id": "kaykit-city-builder/trafficlight_B",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "trafficlight_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.2790665626525879,
+        "d": 0.1505678854882717
+      },
+      "center": {
+        "x": -0.09967708587646484,
+        "z": 0.035426268354058266
+      },
+      "minY": 0.000009156763553619385
+    }
+  },
+  {
+    "id": "kaykit-city-builder/trafficlight_C",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "trafficlight_C.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.797736644744873,
+        "d": 0.271585613489151
+      },
+      "center": {
+        "x": -0.3651620149612427,
+        "z": -0.001216799020767212
+      },
+      "minY": 0.000009156763553619385
+    }
+  },
+  {
+    "id": "kaykit-city-builder/trash_A",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "trash_A.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.12677377462387085,
+        "d": 0.1332968920469284
+      },
+      "center": {
+        "x": 0.003298245370388031,
+        "z": 0
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/trash_B",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "trash_B.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.06806180998682976,
+        "d": 0.07084156945347786
+      },
+      "center": {
+        "x": 0.007522398605942726,
+        "z": 0.003049200400710106
+      },
+      "minY": 0
+    }
+  },
+  {
+    "id": "kaykit-city-builder/watertower",
+    "source": "kaykit-city-builder",
+    "categories": [
+      "building",
+      "city",
+      "environment"
+    ],
+    "file": "watertower.glb",
+    "dims": {
+      "footprint": {
+        "w": 0.4988861531019211,
+        "d": 0.4988861531019211
+      },
+      "center": {
+        "x": -7.450580596923828e-9,
+        "z": -7.450580596923828e-9
+      },
+      "minY": -9.387731552124023e-7
+    }
+  }
+]

@@ -28,10 +28,12 @@ export interface AnimationTickResult {
   completed: boolean;
 }
 
+/** @internal */
 export function clipDurationMs(clip: AnimationClip): number {
   return (clip.frames / clip.fps) * 1000;
 }
 
+/** @internal */
 export function frameAtMs(clip: AnimationClip, elapsedMs: number): number {
   const raw = (elapsedMs / 1000) * clip.fps;
   if (clip.loop === true) {
@@ -41,6 +43,7 @@ export function frameAtMs(clip: AnimationClip, elapsedMs: number): number {
   return Math.min(raw, clip.frames);
 }
 
+/** @internal */
 export function phasesAtFrame(clip: AnimationClip, frame: number): FramePhase[] {
   const phases: FramePhase[] = [];
   for (const range of clip.ranges) {
@@ -51,6 +54,7 @@ export function phasesAtFrame(clip: AnimationClip, frame: number): FramePhase[] 
   return phases;
 }
 
+/** @internal */
 export function activeRangeAtFrame(clip: AnimationClip, frame: number): FrameRange | null {
   for (const range of clip.ranges) {
     if (range.phase === "active" && frame >= range.from && frame < range.to) return range;
@@ -74,6 +78,7 @@ export interface AnimationStateConfig {
   clips: readonly AnimationClip[];
 }
 
+/** @internal */
 export function createAnimationState(config: AnimationStateConfig): AnimationState {
   const clips = new Map(config.clips.map((clip) => [clip.id, clip]));
 

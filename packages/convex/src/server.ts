@@ -24,6 +24,7 @@ import {
   validateFeedWrite,
   type FeedWriteGate,
 } from "@jgengine/core/multiplayer/feedWriteGate";
+import { normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
   decidePoseSync,
   spawnPresenceState,
@@ -33,7 +34,7 @@ import {
 import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
-import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
+import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord, SessionVisibility } from "@jgengine/core/runtime/hostPersistence";
 import { buildHydratePlayers, planServerPersist, shouldAutoSave, trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
@@ -48,6 +49,7 @@ const saveConfigValidator = v.union(
   }),
 );
 
+/** @internal */
 export function jgengineTables() {
   return {
     jgGameServers: defineTable({
@@ -68,7 +70,10 @@ export function jgengineTables() {
       dirtyAt: v.optional(v.number()),
       createdAt: v.number(),
       updatedAt: v.number(),
-    }).index("by_game_and_status", ["gameId", "status"]),
+    })
+      .index("by_game_and_status", ["gameId", "status"])
+      .index("by_status", ["status"])
+      .index("by_dirty", ["dirtyAt"]),
     jgPlayerProfiles: defineTable({
       userId: v.string(),
       gameId: v.string(),
@@ -130,7 +135,8 @@ export function jgengineTables() {
  * Convex table for the hosted GameContext-world path: one row per (gameId, serverId) holding the full
  * `WorldSnapshot` blob, its revision, the member roster, and each member's held input. A sibling of
  * {@link jgengineTables} — spread either (or both) into `defineSchema`.
- */
+  * @internal
+  */
 export function jgengineHostedTables() {
   return {
     jgHostedWorlds: defineTable({
@@ -143,7 +149,9 @@ export function jgengineHostedTables() {
       tickAnchorMs: v.number(),
       createdAt: v.number(),
       updatedAt: v.number(),
-    }).index("by_game_and_server", ["gameId", "serverId"]),
+    })
+      .index("by_game_and_server", ["gameId", "serverId"])
+      .index("by_tick_anchor", ["tickAnchorMs"]),
   };
 }
 
@@ -167,7 +175,9 @@ export const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules = {
   keepAliveRefreshMs: 10_000,
 };
 
-/** Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`. */
+/** Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`.
+ * @internal
+ */
 export async function resolveActor(
   ctx: { auth: Auth },
   claimedExternalId: string | undefined,
@@ -188,6 +198,26 @@ export async function resolveActor(
     return claimedExternalId;
   }
   return null;
+}
+
+/** True when a server's `visibility` should surface in public listings/browse results.
+ * @internal
+ */
+export function isListablePublicly(visibility: SessionVisibility | undefined): boolean {
+  return (visibility ?? "public") !== "private";
+}
+
+/** A non-member may enter a private server only by presenting its `joinCode`; members always pass.
+ * @internal
+ */
+export function canJoinPrivateServer(args: {
+  isMember: boolean;
+  joinCode: string | undefined;
+  suppliedCode: string | undefined;
+}): boolean {
+  if (args.isMember) return true;
+  if (args.joinCode === undefined || args.suppliedCode === undefined) return false;
+  return normalizeJoinCode(args.suppliedCode) === normalizeJoinCode(args.joinCode);
 }
 
 async function requireServerMember(
@@ -296,6 +326,7 @@ async function loadServerSnapshot(
   });
 }
 
+/** @internal */
 export async function applyLeaderboardIncrements(
   ctx: JGMutationCtx,
   gameId: string,
@@ -424,6 +455,7 @@ async function flushServerIfDue(
 
 export const JG_RUNTIME_TICK_MS = 1_000;
 
+/** @internal */
 export function createGameServerFunctions(options?: {
   runtimes?: GameRuntime[];
   auth?: JgAuthMode;
@@ -519,8 +551,11 @@ export function createGameServerFunctions(options?: {
 
       if (
         (server.visibility ?? "public") === "private" &&
-        !server.memberUserIds.includes(actorUserId) &&
-        args.serverId === undefined
+        !canJoinPrivateServer({
+          isMember: server.memberUserIds.includes(actorUserId),
+          joinCode: server.joinCode,
+          suppliedCode: args.joinCode,
+        })
       ) {
         throw new ConvexError("Server is private");
       }
@@ -846,19 +881,23 @@ export function createGameServerFunctions(options?: {
       }),
     ),
     handler: async (ctx, args) => {
+      const limit = args.limit ?? 20;
       const rows = await ctx.db
         .query("jgGameServers")
         .withIndex("by_game_and_status", (q) => q.eq("gameId", args.gameId).eq("status", "running"))
-        .take(args.limit ?? 20);
+        .take(Math.min(limit * 4, 200));
 
-      return rows.map((row) => ({
-        _id: row._id,
-        status: row.status,
-        memberCount: row.memberUserIds.length,
-        slotsPerServer: row.slotsPerServer,
-        mode: row.mode,
-        updatedAt: row.updatedAt,
-      }));
+      return rows
+        .filter((row) => isListablePublicly(row.visibility))
+        .slice(0, limit)
+        .map((row) => ({
+          _id: row._id,
+          status: row.status,
+          memberCount: row.memberUserIds.length,
+          slotsPerServer: row.slotsPerServer,
+          mode: row.mode,
+          updatedAt: row.updatedAt,
+        }));
     },
   });
 
@@ -866,12 +905,14 @@ export function createGameServerFunctions(options?: {
     args: {},
     handler: async (ctx) => {
       const now = Date.now();
-      const servers = await ctx.db.query("jgGameServers").collect();
+      const servers = await ctx.db
+        .query("jgGameServers")
+        .withIndex("by_status", (q) => q.eq("status", "running"))
+        .collect();
       let ticked = 0;
       let saved = 0;
 
       for (const server of servers) {
-        if (server.status !== "running") continue;
         if (server.memberUserIds.length === 0) continue;
 
         const elapsedMs = now - server.tickAnchorMs;
@@ -898,11 +939,13 @@ export function createGameServerFunctions(options?: {
     args: {},
     handler: async (ctx) => {
       const now = Date.now();
-      const servers = await ctx.db.query("jgGameServers").collect();
+      const servers = await ctx.db
+        .query("jgGameServers")
+        .withIndex("by_dirty", (q) => q.gt("dirtyAt", 0))
+        .collect();
       let saved = 0;
 
       for (const server of servers) {
-        if (server.dirtyAt === undefined) continue;
         const runtime = resolveRuntime(registry, server.gameId);
         const snapshot = await loadServerSnapshot(ctx, server, runtime);
         await persistServerSnapshot(ctx, server, clearDirtyFlags(snapshot), server.save as SaveConfig);
@@ -932,6 +975,7 @@ export function createGameServerFunctions(options?: {
 const leaderboardScopeValidator = v.union(v.literal("global"), v.literal("server"), v.literal("profile"));
 const MAX_LEADERBOARD_TOP_LIMIT = 100;
 
+/** @internal */
 export function createLeaderboardFunctions(options?: { auth?: JgAuthMode }) {
   void options;
 
@@ -1007,6 +1051,7 @@ export function createLeaderboardFunctions(options?: { auth?: JgAuthMode }) {
   return { getTop, getProfile, incrementMany };
 }
 
+/** @internal */
 export function createPresenceFunctions(options?: {
   auth?: JgAuthMode;
   freshWindowMs?: number;
@@ -1142,6 +1187,7 @@ export function createPresenceFunctions(options?: {
   return { list, sync, leave };
 }
 
+/** @internal */
 export function createChatFunctions(options?: {
   auth?: JgAuthMode;
   historyLimit?: number;
@@ -1259,6 +1305,7 @@ const JG_CRON_SPECS: readonly JgCronSpec[] = [
   { name: "jg flush", intervalSeconds: 60, functionKey: "flushDirtyServers" },
 ];
 
+/** @internal */
 export function jgengineCronSpecs(): readonly JgCronSpec[] {
   return JG_CRON_SPECS;
 }

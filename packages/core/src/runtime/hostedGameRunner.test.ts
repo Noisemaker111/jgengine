@@ -131,6 +131,37 @@ describe("hosted game runner", () => {
     expect(host.heldInput("bob")).toBeNull();
   });
 
+  test("a stale, out-of-order (lower-seq) input frame does not resurrect a released state", () => {
+    const host = runner();
+    host.input("alice", { held: ["moveForward"], pointer: null, seq: 1 } as never);
+    host.input("alice", { held: [], pointer: null, seq: 2 } as never);
+    expect(host.heldInput("alice")).toEqual({ held: [], pointer: null, seq: 2 } as never);
+
+    host.input("alice", { held: ["moveForward"], pointer: null, seq: 1 } as never);
+    expect(host.heldInput("alice")).toEqual({ held: [], pointer: null, seq: 2 } as never);
+  });
+
+  test("input frames without a seq always apply, unaffected by seq ordering", () => {
+    const host = runner();
+    host.input("alice", { held: ["a"], pointer: null });
+    host.input("alice", { held: ["b"], pointer: null });
+    expect(host.heldInput("alice")).toEqual({ held: ["b"], pointer: null });
+  });
+
+  test("re-joining an existing member is idempotent: onNewPlayer fires once, membership stays single-entry", () => {
+    const host = runner();
+    host.join("alice", true);
+    expect(host.context().game.store.get("lastJoin")).toBe("alice");
+
+    host.context().game.store.set("lastJoin", "nobody");
+    host.join("alice", true);
+    host.join("alice", false);
+
+    expect(host.members()).toEqual(["alice"]);
+    expect(host.context().game.store.get("lastJoin")).toBe("nobody");
+    expect(host.context().scene.entity.get("alice")).not.toBeNull();
+  });
+
   test("join/leave drive the connected-players registry the loop can read", () => {
     const host = runner();
     host.join("alice", true);

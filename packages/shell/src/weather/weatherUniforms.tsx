@@ -18,6 +18,7 @@ export interface WeatherUniformOptions {
 
 const WeatherUniformContext = createContext<WeatherUniformSet | null>(null);
 
+/** @internal */
 export function createWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet {
   const wind = options.wind ?? [0, 0, 0];
   return {
@@ -37,12 +38,14 @@ function useUniformTicker(uniforms: WeatherUniformSet, options: WeatherUniformOp
   });
 }
 
+/** @internal */
 export function WeatherUniformProvider({ children, ...options }: WeatherUniformOptions & { children: ReactNode }) {
   const uniforms = useMemo(() => createWeatherUniformSet(options), []);
   useUniformTicker(uniforms, options);
   return <WeatherUniformContext.Provider value={uniforms}>{children}</WeatherUniformContext.Provider>;
 }
 
+/** @internal */
 export function useWeatherUniformSet(options: WeatherUniformOptions = {}): WeatherUniformSet {
   const shared = useContext(WeatherUniformContext);
   const local = useMemo(() => createWeatherUniformSet(options), []);

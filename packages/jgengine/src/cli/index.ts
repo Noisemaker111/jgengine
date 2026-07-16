@@ -8,7 +8,7 @@ import { createRequire } from "node:module";
 import { runCreate } from "../create";
 import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
-import { cliVersion, findUp, readPackageJson } from "../pkg";
+import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
 import { runSkills } from "../skills";
 import { editorScaffold } from "../templates";
 
@@ -37,9 +37,10 @@ usage: jgengine <command> [...args]
                         [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
   desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
+                        [--allow-remote] (required for --url hosts outside jgengine.com)
   editor [dir]          open the standalone 3D scene editor on a folder (default cwd) —
                         loads its editor.scene.json + models, Ctrl+S writes back
-                        [--assets <dir>] [--port <n>] [--out <workspace-dir>]
+                        [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
@@ -82,11 +83,13 @@ function runEditor(argv: string[]): number {
   let assetsDir: string | undefined;
   let port: string | undefined;
   let outDir: string | undefined;
+  let pmFlag: string | undefined;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--assets") assetsDir = argv[(i += 1)];
     else if (arg === "--port") port = argv[(i += 1)];
     else if (arg === "--out") outDir = argv[(i += 1)];
+    else if (arg === "--pm") pmFlag = argv[(i += 1)];
     else if (!arg.startsWith("-")) positional.push(arg);
   }
 
@@ -96,8 +99,9 @@ function runEditor(argv: string[]): number {
     return 1;
   }
   const workspace = resolve(outDir ?? join(targetDir, ".jgengine-editor"));
+  const pm = pickPackageManager(pmFlag);
 
-  for (const file of editorScaffold(cliVersion())) {
+  for (const file of editorScaffold(sdkVersion())) {
     const dest = join(workspace, file.path);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.contents);
@@ -105,9 +109,9 @@ function runEditor(argv: string[]): number {
 
   if (!existsSync(join(workspace, "node_modules"))) {
     console.error("jgengine editor: installing the editor workspace (first run only)…");
-    const install = spawnSync("bun", ["install"], { cwd: workspace, stdio: "inherit" });
+    const install = spawnSync(pm, ["install"], { cwd: workspace, stdio: "inherit", shell: process.platform === "win32" });
     if ((install.status ?? 1) !== 0) {
-      console.error("error: workspace install failed — is `bun` on PATH?");
+      console.error(`error: workspace install failed — is \`${pm}\` on PATH? (retry with --pm npm or --pm pnpm)`);
       return install.status ?? 1;
     }
   }
@@ -119,7 +123,7 @@ function runEditor(argv: string[]): number {
     ...(assetsDir === undefined ? {} : { JG_EDITOR_ASSETS: resolve(assetsDir) }),
   };
   const devArgs = ["run", "dev", ...(port === undefined ? [] : ["--", "--port", port])];
-  const result = spawnSync("bun", devArgs, { cwd: workspace, stdio: "inherit", env });
+  const result = spawnSync(pm, devArgs, { cwd: workspace, stdio: "inherit", env, shell: process.platform === "win32" });
   return result.status ?? 1;
 }
 

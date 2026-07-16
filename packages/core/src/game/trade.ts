@@ -51,6 +51,7 @@ function negate(amounts: Record<string, number>): Record<string, number> {
   return out;
 }
 
+/** @internal */
 export function canAffordCosts(balances: Record<string, number>, costs: Record<string, number>): string | null {
   for (const [currency, amount] of Object.entries(costs)) {
     if ((balances[currency] ?? 0) < amount) return "insufficient-funds";
@@ -78,6 +79,7 @@ export type TradeResolution =
   | { status: "ok"; outcome: TradeOutcome }
   | { status: "rejected"; reason: string };
 
+/** @internal */
 export function resolveBuy(
   itemId: string,
   trade: TradeField | null | undefined,
@@ -93,6 +95,7 @@ export function resolveBuy(
   return { status: "ok", outcome: { itemId, count, currency: negate(costs) } };
 }
 
+/** @internal */
 export function resolveSell(
   itemId: string,
   trade: TradeField | null | undefined,
@@ -103,6 +106,7 @@ export function resolveSell(
   return { status: "ok", outcome: { itemId, count: -count, currency: scale(trade!.sell!, count) } };
 }
 
+/** @internal */
 export function applyTradeOutcome(
   outcome: TradeOutcome,
   appliers: {
@@ -120,7 +124,8 @@ export function applyTradeOutcome(
  * Buy and sell goods against player currency balances, resolving affordability and price.
  *
  * @capability shop-trade buy and sell goods against player currency balances
- */
+  * @internal
+  */
 export function createTradeSystem(deps: TradeSystemDeps): TradeSystem {
   const { resolveTrade, wallet, inventory } = deps;
 

@@ -4,7 +4,7 @@ import type { GameContext, GameContextContent } from "./gameContext";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
 import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
 import type { WorldDiff } from "./worldReplication";
-import type { WorldSnapshot } from "./worldSnapshot";
+import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
 /** One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves. */
 export interface HostedWorldRecord {
@@ -22,7 +22,9 @@ export interface HostedWorldStore {
   save(record: HostedWorldRecord): void;
 }
 
-/** In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host. */
+/** In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
+ * @internal
+ */
 export function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore {
   let record: HostedWorldRecord | null = seed ?? null;
   return {
@@ -46,7 +48,7 @@ export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMul
   now?: () => number;
   /** Where the authoritative snapshot persists; defaults to {@link memoryWorldStore}. */
   store?: HostedWorldStore;
-  /** Minimum elapsed `now()` ms between auto-saves on tick. Default `0` — persist on every revision-changing tick. */
+  /** Minimum elapsed ms between auto-saves on tick, measured against `now` (defaults to `Date.now` when omitted). Default `0` — persist on every revision-changing tick. */
   saveIntervalMs?: number;
 }
 
@@ -64,6 +66,10 @@ export interface HostedWorldSession {
   tick(dt: number): number;
   /** Replication pull: `null`/`0` cursor → full baseline; a prior revision → a diff since it. */
   sync(sinceRevision: number | null): HostedWorldSync;
+  /** The full world baseline projected for one viewer (private/AOI). Identity when no replication policy is set. */
+  snapshotFor(viewer: SnapshotViewer): WorldSnapshot;
+  /** True when {@link snapshotFor} is viewer-dependent — a host must serve each connection its own projected frame instead of a shared diff. */
+  projectsViewers(): boolean;
   revision(): number;
   members(): readonly string[];
   /** Force-persist the current world to the store. */
@@ -71,11 +77,14 @@ export interface HostedWorldSession {
   runner(): HostedGameRunner;
 }
 
-/** Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick. */
+/** Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
+ * @internal
+ */
 export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>,
 ): HostedWorldSession {
   const { definition, content, host, now, saveIntervalMs = 0 } = options;
+  const clock = now ?? Date.now;
   const store = options.store ?? memoryWorldStore();
   const loaded = store.load();
   const runner = createHostedGameRunner({
@@ -87,7 +96,7 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
   });
 
   let savedRevision = loaded?.revision ?? 0;
-  let lastSaveAt = now?.() ?? 0;
+  let lastSaveAt = clock();
 
   function persist(): void {
     savedRevision = runner.revision();
@@ -102,7 +111,7 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
     tick(dt) {
       const revision = runner.tick(dt);
       if (revision !== savedRevision) {
-        const at = now?.() ?? 0;
+        const at = clock();
         if (saveIntervalMs <= 0 || at - lastSaveAt >= saveIntervalMs) {
           lastSaveAt = at;
           persist();
@@ -116,6 +125,8 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
       }
       return { kind: "diff", diff: runner.diff(sinceRevision) };
     },
+    snapshotFor: (viewer) => runner.snapshot(viewer),
+    projectsViewers: () => runner.projectsViewers(),
     revision: () => runner.revision(),
     members: () => runner.members(),
     save: persist,

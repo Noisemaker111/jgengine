@@ -13,6 +13,7 @@ export type CurrencyAdjustment =
   | { success: true; newBalance: number; appliedDelta: number }
   | { success: false; reason: string };
 
+/** @internal */
 export function sanitizeCurrencyAmount(amount: number): number {
   return Math.max(0, Math.floor(amount));
 }
@@ -21,13 +22,15 @@ export function sanitizeCurrencyAmount(amount: number): number {
  * Format a currency amount with its symbol and grouping for HUD display.
  *
  * @capability currency-format format a currency amount with its symbol for display
- */
+  * @internal
+  */
 export function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string {
   const prefix = currency.symbol ?? "";
   const suffix = currency.unit ? ` ${currency.unit}` : "";
   return `${prefix}${amount}${suffix}`;
 }
 
+/** @internal */
 export function insufficientCurrencyReason(
   currency: CurrencyDefinition,
   needed: number,
@@ -36,6 +39,7 @@ export function insufficientCurrencyReason(
   return `Insufficient ${currency.id}: need ${formatCurrencyAmount(currency, needed)}, have ${formatCurrencyAmount(currency, current)}`;
 }
 
+/** @internal */
 export function applyCurrencyOperation(
   currency: CurrencyDefinition,
   current: number,
@@ -51,7 +55,9 @@ export function applyCurrencyOperation(
   return { success: true, newBalance: current + appliedDelta, appliedDelta };
 }
 
-/** Deducts clamp to the available balance (a delta can never overdraw); adds apply in full. */
+/** Deducts clamp to the available balance (a delta can never overdraw); adds apply in full.
+ * @internal
+ */
 export function resolveCurrencyDelta(
   current: number,
   delta: number,

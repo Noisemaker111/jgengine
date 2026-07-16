@@ -112,4 +112,137 @@ describe("world channel (multi-client host↔client over an in-process loopback)
     expect(session.runner().context().game.players?.input("alice")).toEqual(frame);
     expect(session.runner().heldInput("alice")).toEqual(frame);
   });
+
+  test("two connections for one user: closing one keeps the player joined while the other is still connected", () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldHost(session);
+
+    const tabA = host.connect("alice", () => {});
+    const tabB = host.connect("alice", () => {});
+    tabA.receive({ t: "join", isNew: true });
+    tabB.receive({ t: "join", isNew: true });
+    host.session().tick(1);
+
+    expect(host.session().members()).toEqual(["alice"]);
+
+    tabA.close();
+    expect(host.session().members()).toEqual(["alice"]);
+    expect(host.session().runner().context().game.players?.ids()).toEqual(["alice"]);
+
+    tabB.close();
+    expect(host.session().members()).toEqual([]);
+    expect(host.session().runner().context().game.players?.ids()).toEqual([]);
+  });
+
+  test("an explicit leave frame from one of two connections also only leaves once the last one is gone", () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldHost(session);
+
+    const tabA = host.connect("alice", () => {});
+    const tabB = host.connect("alice", () => {});
+    tabA.receive({ t: "join", isNew: true });
+    tabB.receive({ t: "join", isNew: true });
+
+    tabA.receive({ t: "leave" });
+    expect(host.session().members()).toEqual(["alice"]);
+
+    tabB.receive({ t: "leave" });
+    expect(host.session().members()).toEqual([]);
+  });
+
+  test("re-joining an already-connected user over a second connection does not re-fire onNewPlayer", () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldHost(session);
+
+    const tabA = host.connect("alice", () => {});
+    tabA.receive({ t: "join", isNew: true });
+    host.session().tick(1);
+    const revisionAfterFirstJoin = host.session().revision();
+
+    const tabB = host.connect("alice", () => {});
+    tabB.receive({ t: "join", isNew: false });
+    host.session().tick(1);
+
+    expect(host.session().members()).toEqual(["alice"]);
+    expect(host.session().revision()).toBeGreaterThan(revisionAfterFirstJoin);
+  });
+
+  test("closing a connection releases it: further pushes (broadcast or direct) are no-ops", () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldHost(session);
+    const frames: unknown[] = [];
+    const conn = host.connect("alice", (frame) => frames.push(frame));
+    conn.receive({ t: "join", isNew: true });
+    host.session().tick(1);
+    host.broadcast();
+    expect(frames.length).toBeGreaterThan(0);
+
+    conn.close();
+    const before = frames.length;
+    host.session().tick(1);
+    host.broadcast();
+    conn.push();
+    expect(frames.length).toBe(before);
+  });
+
+  test("closing the same connection twice only leaves once", () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldHost(session);
+    const conn = host.connect("alice", () => {});
+    conn.receive({ t: "join", isNew: true });
+    expect(host.session().members()).toEqual(["alice"]);
+
+    conn.close();
+    conn.close();
+    expect(host.session().members()).toEqual([]);
+  });
+});
+
+function privateDefinition() {
+  return defineGame({
+    name: "PrivateShared",
+    assets: createAssetCatalog(),
+    multiplayer: "off",
+    features: { players: true },
+    inventories: { backpack: { slots: 9 } },
+    replication: { privatePerUser: true },
+    loop: {
+      onNewPlayer(ctx: GameContext, player) {
+        ctx.scene.entity.spawn("hero", { id: player!.userId, position: [0, 0, 0] });
+        ctx.player.inventoryFor(player!.userId).put("backpack", `secret-${player!.userId}`, 1);
+      },
+    },
+  });
+}
+
+describe("per-viewer projection over the host↔client channel", () => {
+  test("a viewer's client never receives another player's private inventory, while shared entities still replicate", () => {
+    const host = createWorldHost(createHostedWorldSession({ definition: privateDefinition(), content: CONTENT }));
+
+    const ctxA = createGameContext({ definition: privateDefinition(), content: CONTENT, player: { userId: "alice", isNew: true } });
+    const ctxB = createGameContext({ definition: privateDefinition(), content: CONTENT, player: { userId: "bob", isNew: true } });
+    let linkA!: WorldClientLink;
+    let linkB!: WorldClientLink;
+    const connA = host.connect("alice", (frame) => linkA.receive(frame));
+    const connB = host.connect("bob", (frame) => linkB.receive(frame));
+    linkA = createWorldClientLink(ctxA, (frame) => connA.receive(frame));
+    linkB = createWorldClientLink(ctxB, (frame) => connB.receive(frame));
+
+    linkA.join(true);
+    linkB.join(true);
+    host.session().tick(1);
+    host.broadcast();
+
+    const hostCtx = host.session().runner().context();
+    expect(hostCtx.player.inventoryFor("alice").count("backpack", "secret-alice")).toBe(1);
+    expect(hostCtx.player.inventoryFor("bob").count("backpack", "secret-bob")).toBe(1);
+
+    expect(ctxA.scene.entity.get("alice")).not.toBeNull();
+    expect(ctxA.scene.entity.get("bob")).not.toBeNull();
+    expect(ctxA.player.inventoryFor("alice").count("backpack", "secret-alice")).toBe(1);
+    expect(ctxA.player.inventoryFor("bob").count("backpack", "secret-bob")).toBe(0);
+
+    expect(ctxB.player.inventoryFor("bob").count("backpack", "secret-bob")).toBe(1);
+    expect(ctxB.player.inventoryFor("alice").count("backpack", "secret-alice")).toBe(0);
+  });
 });

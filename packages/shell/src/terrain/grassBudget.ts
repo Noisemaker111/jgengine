@@ -11,7 +11,8 @@ export const DEFAULT_GRASS_DENSITY = 4;
  * `area`, capped at `budget` (defaulting to `count`, the buffer's allocated
  * capacity) so a big field never exceeds the perf ceiling — it just renders
  * sparser than requested and logs a devtools warning when that happens.
- */
+  * @internal
+  */
 export function resolveGrassInstanceBudget(count: number, density: number, area: TerrainArea, budget?: number): number {
   const size = resolveTerrainSize(area);
   const areaSqMeters = Math.max(0, size.width) * Math.max(0, size.depth);

@@ -39,6 +39,7 @@ function cellKey(cell: Cell): string {
   return `${cell[0]},${cell[1]}`;
 }
 
+/** @internal */
 export function normalizeFootprint(footprint: Footprint): Footprint {
   if (footprint.length === 0) return [];
   let minC = Infinity;
@@ -61,6 +62,7 @@ export function normalizeFootprint(footprint: Footprint): Footprint {
   return out;
 }
 
+/** @internal */
 export function rotateFootprint(footprint: Footprint, rotation: Rotation): Footprint {
   const turns = ((rotation % 4) + 4) % 4;
   let cells = footprint.map(([c, r]): Cell => [c, r]);
@@ -70,6 +72,7 @@ export function rotateFootprint(footprint: Footprint, rotation: Rotation): Footp
   return normalizeFootprint(cells);
 }
 
+/** @internal */
 export function occupiedCells(
   footprint: Footprint,
   origin: Cell,
@@ -83,7 +86,8 @@ export function occupiedCells(
  * A spatial grid inventory that holds shaped multi-cell items, Resident-Evil/Tarkov style.
  *
  * @capability tetris-inventory a spatial grid inventory holding shaped multi-cell items
- */
+  * @internal
+  */
 export function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> {
   if (width <= 0 || height <= 0) throw new Error("shaped grid needs positive dimensions");
   return { width, height, placements: [] };
@@ -104,6 +108,7 @@ function occupancyMap<T>(grid: ShapedGrid<T>, ignoreId?: string): Map<string, st
   return map;
 }
 
+/** @internal */
 export function canPlace<T>(
   grid: ShapedGrid<T>,
   footprint: Footprint,
@@ -120,6 +125,7 @@ export function canPlace<T>(
   return null;
 }
 
+/** @internal */
 export function placeShaped<T>(
   grid: ShapedGrid<T>,
   item: ShapedItem<T>,
@@ -141,6 +147,7 @@ export function placeShaped<T>(
   return { status: "ok", grid: { ...grid, placements: [...grid.placements, placement] } };
 }
 
+/** @internal */
 export function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> {
   if (!grid.placements.some((p) => p.id === id)) {
     return { status: "rejected", reason: "unknown-id", detail: id };
@@ -148,6 +155,7 @@ export function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T
   return { status: "ok", grid: { ...grid, placements: grid.placements.filter((p) => p.id !== id) } };
 }
 
+/** @internal */
 export function moveShaped<T>(
   grid: ShapedGrid<T>,
   id: string,
@@ -170,6 +178,7 @@ export function moveShaped<T>(
   };
 }
 
+/** @internal */
 export function cellOccupant<T>(grid: ShapedGrid<T>, cell: Cell): string | null {
   return occupancyMap(grid).get(cellKey(cell)) ?? null;
 }
@@ -194,6 +203,7 @@ export interface GridAdjacencyQuery {
   adjacentCells(cells: readonly Cell[]): readonly Cell[];
 }
 
+/** @internal */
 export function gridAdjacencyQuery<T>(
   grid: ShapedGrid<T>,
   options: { diagonal?: boolean } = {},
@@ -243,6 +253,7 @@ export function gridAdjacencyQuery<T>(
   };
 }
 
+/** @internal */
 export function cellFromPoint(
   point: { x: number; y: number },
   cellSize: number,

@@ -11,6 +11,7 @@ export interface GitHubClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+/** @internal */
 export class GitHubError extends Error {
   constructor(
     readonly status: number,
@@ -32,9 +33,22 @@ const REST_HEADERS = { Accept: "application/vnd.github+json", "User-Agent": "jge
  */
 export interface GitHubClient {
   rest<T>(path: string): Promise<T>;
+  /**
+   * Direct mode (no `endpoint`): `query` is raw GraphQL text sent with the token.
+   * Proxy mode: `query` is the allowlisted operation name — the server owns the
+   * actual query text, so the browser never transmits free-form GraphQL.
+   */
   graphql<T>(query: string, variables?: Record<string, unknown>): Promise<T>;
 }
 
+async function unwrapGraphQL<T>(response: Response): Promise<T> {
+  if (!response.ok) throw new GitHubError(response.status, `GitHub GraphQL failed (${response.status})`);
+  const payload = (await response.json()) as { data?: T; errors?: { message: string }[] };
+  if (payload.errors?.length) throw new GitHubError(502, payload.errors.map((e) => e.message).join("; "));
+  return payload.data as T;
+}
+
+/** @internal */
 export function createGitHub(options: GitHubClientOptions = {}): GitHubClient {
   const doFetch = options.fetchImpl ?? fetch;
   const { endpoint, token } = options;
@@ -48,17 +62,18 @@ export function createGitHub(options: GitHubClientOptions = {}): GitHubClient {
   }
 
   async function graphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
-    const url = endpoint === undefined ? `${API}/graphql` : `${endpoint}?path=/graphql`;
-    if (endpoint === undefined && token === undefined) {
-      throw new GitHubError(401, "GraphQL requires a token (or a proxy endpoint that holds one).");
+    if (endpoint === undefined) {
+      if (token === undefined) throw new GitHubError(401, "GraphQL requires a token (or a proxy endpoint that holds one).");
+      const headers = { ...REST_HEADERS, "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      const response = await doFetch(`${API}/graphql`, { method: "POST", headers, body: JSON.stringify({ query, variables }) });
+      return unwrapGraphQL<T>(response);
     }
-    const headers: Record<string, string> = { ...REST_HEADERS, "Content-Type": "application/json" };
-    if (endpoint === undefined && token !== undefined) headers.Authorization = `Bearer ${token}`;
-    const response = await doFetch(url, { method: "POST", headers, body: JSON.stringify({ query, variables }) });
-    if (!response.ok) throw new GitHubError(response.status, `GitHub GraphQL failed (${response.status})`);
-    const payload = (await response.json()) as { data?: T; errors?: { message: string }[] };
-    if (payload.errors?.length) throw new GitHubError(502, payload.errors.map((e) => e.message).join("; "));
-    return payload.data as T;
+    const response = await doFetch(`${endpoint}?op=${encodeURIComponent(query)}`, {
+      method: "POST",
+      headers: { ...REST_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify({ variables }),
+    });
+    return unwrapGraphQL<T>(response);
   }
 
   return { rest, graphql };

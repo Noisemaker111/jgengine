@@ -9,6 +9,13 @@ import {
   type ChatRateLimit,
 } from "@jgengine/core/game/chat";
 
+import {
+  createCommandMiddleware,
+  type CommandAuthorize,
+  type CommandCatalog,
+  type CommandLimits,
+  type HostCommandOp,
+} from "./commandMiddleware";
 import type { GameHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
 import {
@@ -41,6 +48,12 @@ export type HostRouterOptions = {
   chatRateLimit?: ChatRateLimit;
   chatHistoryLimit?: number;
   chatMaxBodyLength?: number;
+  /** Per-op rate limits for pose/runCommand/join/browse/voice. Omit (default) for no rate limiting; pass {@link DEFAULT_COMMAND_LIMITS} or a custom {@link CommandLimits} to opt in. */
+  limits?: CommandLimits;
+  /** Per-command authorization hook; defaults to allow-all. */
+  authorize?: CommandAuthorize;
+  /** Declared `runCommand` names and input validators. Omit (default) to pass every command through unchanged; set to reject unknown command names and validate declared ones. */
+  validate?: CommandCatalog;
   now?: () => number;
 };
 
@@ -76,12 +89,16 @@ export const DEFAULT_POSE_RULES: PoseSyncRules = {
   keepAliveRefreshMs: 10_000,
 };
 
+/** Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises. */
+export const MAX_QUEUED_MESSAGES = 64;
+
 type Connection = {
   transport: HostRouterTransport;
   userId: string | null;
   subscriptions: Set<string>;
   joinedServers: Set<string>;
   queue: Promise<void>;
+  queuedMessages: number;
 };
 
 type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
@@ -107,6 +124,28 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const connections = new Set<Connection>();
   const sessionsByUserId = new Map<string, Connection>();
+  const subscribers = new Map<string, Set<Connection>>();
+
+  const subscribersOf = (key: string): readonly Connection[] => {
+    const set = subscribers.get(key);
+    return set === undefined ? [] : [...set];
+  };
+  const addSubscription = (connection: Connection, key: string): void => {
+    connection.subscriptions.add(key);
+    let set = subscribers.get(key);
+    if (set === undefined) {
+      set = new Set();
+      subscribers.set(key, set);
+    }
+    set.add(connection);
+  };
+  const removeSubscription = (connection: Connection, key: string): void => {
+    connection.subscriptions.delete(key);
+    const set = subscribers.get(key);
+    if (set === undefined) return;
+    set.delete(connection);
+    if (set.size === 0) subscribers.delete(key);
+  };
   const presence = new Map<string, Map<string, PresenceEntry>>();
   const positionHistoryMs = options.positionHistoryMs ?? 1_000;
   const histories = new Map<string, PositionHistory>();
@@ -147,11 +186,39 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const broadcastPresence = (serverId: string) => {
     const key = subscriptionKey("presence", serverId);
+    const targets = subscribersOf(key);
+    if (targets.length === 0) return;
     const data = presenceRows(serverId);
-    for (const connection of connections) {
-      if (!connection.subscriptions.has(key)) continue;
+    for (const connection of targets) {
       send(connection, { v: 1, t: "update", channel: "presence", serverId, data });
     }
+  };
+
+  const commandMiddleware = createCommandMiddleware({
+    limits: options.limits,
+    authorize: options.authorize,
+    validate: options.validate,
+  });
+
+  const gate = async (
+    connection: Connection,
+    id: number,
+    op: HostCommandOp,
+    args: { serverId?: string; command?: string; input?: unknown } = {},
+  ): Promise<boolean> => {
+    if (connection.userId === null) return true;
+    const decision = await commandMiddleware.check({
+      connection,
+      userId: connection.userId,
+      op,
+      atMs: now(),
+      ...args,
+    });
+    if (!decision.allow) {
+      replyError(connection, id, decision.reason);
+      return false;
+    }
+    return true;
   };
 
   const chatRings = new Map<string, WsChatMessage[]>();
@@ -172,9 +239,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const broadcastChat = (serverId: string, channelId: string) => {
     const key = subscriptionKey("chat", serverId, channelId);
+    const targets = subscribersOf(key);
+    if (targets.length === 0) return;
     const data = chatRing(serverId, channelId).slice();
-    for (const connection of connections) {
-      if (!connection.subscriptions.has(key)) continue;
+    for (const connection of targets) {
       send(connection, { v: 1, t: "update", channel: "chat", serverId, action: channelId, data });
     }
   };
@@ -196,9 +264,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const broadcastVoice = (serverId: string, channelId: string) => {
     const key = subscriptionKey("voice", serverId, channelId);
+    const targets = subscribersOf(key);
+    if (targets.length === 0) return;
     const data = voiceParticipants(serverId, channelId);
-    for (const connection of connections) {
-      if (!connection.subscriptions.has(key)) continue;
+    for (const connection of targets) {
       send(connection, { v: 1, t: "update", channel: "voice", serverId, action: channelId, data });
     }
   };
@@ -317,23 +386,21 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
 
   const onHostEvent = (event: HostChangeEvent) => {
-    for (const connection of connections) {
-      if (connection.userId === null) continue;
-      if (event.type === "server") {
-        if (connection.subscriptions.has(subscriptionKey("server", event.serverId))) {
-          void pushSubscription(connection, "server", event.serverId);
-        }
-      } else if (event.type === "player") {
-        if (
-          connection.userId === event.userId &&
-          connection.subscriptions.has(subscriptionKey("player", event.serverId))
-        ) {
+    if (event.type === "server") {
+      for (const connection of subscribersOf(subscriptionKey("server", event.serverId))) {
+        if (connection.userId === null) continue;
+        void pushSubscription(connection, "server", event.serverId);
+      }
+    } else if (event.type === "player") {
+      for (const connection of subscribersOf(subscriptionKey("player", event.serverId))) {
+        if (connection.userId === event.userId) {
           void pushSubscription(connection, "player", event.serverId);
         }
-      } else {
-        if (connection.subscriptions.has(subscriptionKey("feed", event.serverId, event.action))) {
-          void pushSubscription(connection, "feed", event.serverId, event.action);
-        }
+      }
+    } else {
+      for (const connection of subscribersOf(subscriptionKey("feed", event.serverId, event.action))) {
+        if (connection.userId === null) continue;
+        void pushSubscription(connection, "feed", event.serverId, event.action);
       }
     }
   };
@@ -341,6 +408,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const handlePose = async (connection: Connection, serverId: string, pose: WsPose) => {
     if (connection.userId === null) return;
+    const gateDecision = await commandMiddleware.check({
+      connection,
+      userId: connection.userId,
+      op: "pose",
+      atMs: now(),
+      serverId,
+    });
+    if (!gateDecision.allow) return;
     if (!(await host.isMember({ userId: connection.userId, serverId }))) return;
     const rows = presence.get(serverId) ?? new Map<string, PresenceEntry>();
     presence.set(serverId, rows);
@@ -432,17 +507,20 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     try {
       switch (message.t) {
         case "join": {
+          if (!(await gate(connection, message.id, "join", { serverId: message.serverId }))) return;
           const result = await host.joinServer({
             userId,
             gameId: message.gameId,
             serverId: message.serverId,
             attributes: message.attributes,
+            code: message.code,
           });
           connection.joinedServers.add(result.serverId);
           reply(connection, message.id, result);
           return;
         }
         case "joinByCode": {
+          if (!(await gate(connection, message.id, "join", {}))) return;
           const result = await host.joinByCode({
             userId,
             gameId: message.gameId,
@@ -453,6 +531,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "browse": {
+          if (!(await gate(connection, message.id, "browse", {}))) return;
           const result = await host.browseServers({
             gameId: message.gameId,
             filter: message.filter,
@@ -470,6 +549,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "runCommand": {
+          if (
+            !(await gate(connection, message.id, "runCommand", {
+              serverId: message.serverId,
+              command: message.command,
+              input: message.input,
+            }))
+          )
+            return;
           const result = await host.runCommand({
             userId,
             serverId: message.serverId,
@@ -494,6 +581,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voiceJoin": {
+          if (!(await gate(connection, message.id, "voice", { serverId: message.serverId }))) return;
           if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const participant: WsVoiceParticipant = { userId };
           if (message.streamId !== undefined) participant.streamId = message.streamId;
@@ -503,6 +591,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voiceLeave": {
+          if (!(await gate(connection, message.id, "voice", { serverId: message.serverId }))) return;
           if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const roster = voiceRoster(message.serverId, message.channelId);
           const removed = roster.delete(userId);
@@ -511,6 +600,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voicePublish": {
+          if (!(await gate(connection, message.id, "voice", { serverId: message.serverId }))) return;
           if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const participant = voiceRoster(message.serverId, message.channelId).get(userId);
           if (participant === undefined) {
@@ -532,13 +622,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             replyError(connection, message.id, "Not a member of this server");
             return;
           }
-          connection.subscriptions.add(subscriptionKey(message.channel, message.serverId, message.action));
+          addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
           await pushSubscription(connection, message.channel, message.serverId, message.action);
           return;
         }
         case "unsubscribe": {
-          connection.subscriptions.delete(
+          removeSubscription(
+            connection,
             subscriptionKey(message.channel, message.serverId, message.action),
           );
           reply(connection, message.id, null);
@@ -568,30 +659,38 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         subscriptions: new Set(),
         joinedServers: new Set(),
         queue: Promise.resolve(),
+        queuedMessages: 0,
       };
       connections.add(connection);
       return {
         handleRaw: (raw) => {
+          const text = typeof raw === "string" ? raw : String(raw);
+          const message = decodeWsClientMessage(text);
+          if (message === null) {
+            const failure = inspectWsDecodeFailure(text);
+            if (failure.id !== undefined) {
+              replyError(connection, failure.id, failure.reason);
+            }
+            return;
+          }
+          if (connection.queuedMessages >= MAX_QUEUED_MESSAGES) {
+            if ("id" in message) replyError(connection, message.id, "Too many pending requests");
+            return;
+          }
+          connection.queuedMessages += 1;
           connection.queue = connection.queue
-            .then(async () => {
-              const text = typeof raw === "string" ? raw : String(raw);
-              const message = decodeWsClientMessage(text);
-              if (message === null) {
-                const failure = inspectWsDecodeFailure(text);
-                if (failure.id !== undefined) {
-                  replyError(connection, failure.id, failure.reason);
-                }
-                return;
-              }
-              await handleMessage(connection, message);
-            })
-            .catch(() => undefined);
+            .then(() => handleMessage(connection, message))
+            .catch(() => undefined)
+            .finally(() => {
+              connection.queuedMessages -= 1;
+            });
         },
         close: () => {
           if (connection.userId !== null && sessionsByUserId.get(connection.userId) === connection) {
             sessionsByUserId.delete(connection.userId);
           }
           connections.delete(connection);
+          for (const key of [...connection.subscriptions]) removeSubscription(connection, key);
           leaveJoinedServers(connection);
           dropPresence(connection);
           dropVoice(connection);
@@ -613,6 +712,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     close: () => {
       unsubscribeHost();
       connections.clear();
+      subscribers.clear();
     },
   };
 }

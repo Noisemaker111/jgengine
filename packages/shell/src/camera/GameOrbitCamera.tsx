@@ -61,6 +61,12 @@ export function GameOrbitCamera({
   const raycasterRef = useRef(new Raycaster());
   const collisionDirRef = useRef(new Vector3());
   const collisionOriginRef = useRef(new Vector3());
+  const followPayloadRef = useRef<CameraFollowState>({
+    entityId: "",
+    target: { x: 0, y: 0, z: 0 },
+    camera: { x: 0, y: 0, z: 0 },
+    distance: 0,
+  });
   const followId = followEntityId ?? userId;
 
   useEffect(() => {
@@ -163,12 +169,14 @@ export function GameOrbitCamera({
         perspective.updateProjectionMatrix();
       }
     }
-    onCameraFollow?.({
-      entityId: followId,
-      target: stepped.target,
-      camera: runtimeRef.current.camera,
-      distance: runtimeRef.current.lockedDistance ?? stepped.distance,
-    });
+    if (onCameraFollow !== undefined) {
+      const payload = followPayloadRef.current;
+      payload.entityId = followId;
+      payload.target = stepped.target;
+      payload.camera = runtimeRef.current.camera;
+      payload.distance = runtimeRef.current.lockedDistance ?? stepped.distance;
+      onCameraFollow(payload);
+    }
   }, ORBIT_CAMERA_FRAME_PRIORITY);
 
   return (

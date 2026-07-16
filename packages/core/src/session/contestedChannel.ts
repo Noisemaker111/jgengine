@@ -52,6 +52,7 @@ function anyContester(occupants: Record<string, number> | undefined, owner: stri
   return false;
 }
 
+/** @internal */
 export function createContestedChannel(config: ContestedChannelConfig): ContestedChannel {
   const duration = config.duration > 0 ? config.duration : Number.EPSILON;
   const interruptOnDamage = config.interruptOnDamage ?? true;

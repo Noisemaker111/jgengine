@@ -8,7 +8,7 @@ import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import type { BoundsSpec, Vec3 } from "@jgengine/core/visibility/bounds";
-import { CAMERA_POST_FRAME_PRIORITY } from "../camera";
+import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 
 type VisiblePredicate = (id: string) => boolean;
 

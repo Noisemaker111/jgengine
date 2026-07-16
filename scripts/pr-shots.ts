@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, rmSync, statSync } from "node:fs";
-import { basename } from "node:path";
+import { basename, join } from "node:path";
+import { tmpdir } from "node:os";
 
 /**
  * Publish PR screenshots to the `pr-shots` archive branch without touching the working tree.
@@ -37,6 +38,13 @@ function tryGit(args: string[]): string | null {
   }
 }
 
+/** Snapshot of HEAD so we can prove this process never moved the invoking checkout. */
+function headSnapshot(): { symbolic: string | null; rev: string } {
+  const symbolic = tryGit(["symbolic-ref", "-q", "HEAD"]);
+  const rev = git(["rev-parse", "HEAD"]);
+  return { symbolic, rev };
+}
+
 function parseArgs(argv: string[]): Args {
   const files: string[] = [];
   let dir: string | null = null;
@@ -71,6 +79,8 @@ function printHelp(): void {
       "  -m, --message <s> Commit message (default: derived)",
       "  --dry             Print the raw URLs and do nothing else",
       "",
+      "Never moves HEAD, the task branch checkout, or the working tree.",
+      "Safe inside a git worktree (uses absolute git-dir for the temp index).",
       "Prints the raw.githubusercontent.com URLs to embed in the PR body.",
       "",
     ].join("\n"),
@@ -99,13 +109,23 @@ for (const file of parsed.files) {
   if (!existsSync(file) || !statSync(file).isFile()) fail(`not a file: ${file}`);
 }
 
+const headBefore = headSnapshot();
+
 const { owner, repo } = resolveRepo();
-const branch = parsed.branch ?? git(["rev-parse", "--abbrev-ref", "HEAD"]);
+const branch =
+  parsed.branch ??
+  (headBefore.symbolic !== null
+    ? headBefore.symbolic.replace(/^refs\/heads\//, "")
+    : fail("detached HEAD — pass --branch <name> so shots land under the right PR dir"));
 const subdir = (parsed.dir ?? branch).replace(/^\/+|\/+$/g, "");
 const rawUrl = (name: string): string =>
   `https://raw.githubusercontent.com/${owner}/${repo}/${ARCHIVE_BRANCH}/${ARCHIVE_BRANCH}/${subdir}/${name}`;
 
-const uploads = parsed.files.map((file) => ({ file, name: basename(file), path: `${ARCHIVE_BRANCH}/${subdir}/${basename(file)}` }));
+const uploads = parsed.files.map((file) => ({
+  file,
+  name: basename(file),
+  path: `${ARCHIVE_BRANCH}/${subdir}/${basename(file)}`,
+}));
 
 if (parsed.dry) {
   for (const { name } of uploads) process.stdout.write(`${rawUrl(name)}\n`);
@@ -113,29 +133,53 @@ if (parsed.dry) {
 }
 
 // Base the new commit on the existing archive branch, or on main the first time.
+// fetch updates remote-tracking refs only — never checks out.
 const hasArchive = tryGit(["ls-remote", "--exit-code", "origin", ARCHIVE_BRANCH]) !== null;
 const baseRef = hasArchive ? ARCHIVE_BRANCH : "main";
 git(["fetch", "-q", "origin", baseRef]);
 const baseCommit = git(["rev-parse", `origin/${baseRef}`]);
 
-// `git rev-parse --git-dir` (not a hardcoded `.git/`) so this also works from a git
-// worktree, where `.git` is a file pointing at the real gitdir under the main
-// checkout's `.git/worktrees/<name>/`, not a directory we can write into directly.
-const indexFile = `${git(["rev-parse", "--git-dir"])}/pr-shots-index-${process.pid}`;
+// Absolute git-dir so worktrees (where `.git` is a pointer file) get a real path.
+const gitDir = git(["rev-parse", "--absolute-git-dir"]);
+// Prefer the git-dir; if that is somehow not writable (rare), fall back to tmp.
+const indexFile = join(gitDir, `pr-shots-index-${process.pid}`);
 const indexEnv: NodeJS.ProcessEnv = { ...process.env, GIT_INDEX_FILE: indexFile };
+// Drop any accidental GIT_DIR/WORK_TREE overrides that could redirect plumbing.
+delete indexEnv.GIT_DIR;
+delete indexEnv.GIT_WORK_TREE;
+delete indexEnv.GIT_COMMON_DIR;
+
 let commit: string;
 try {
   git(["read-tree", baseCommit], indexEnv);
   for (const { file, path } of uploads) {
-    const blob = git(["hash-object", "-w", file]);
+    // hash-object -w writes a blob; does not touch HEAD or the worktree index.
+    const blob = git(["hash-object", "-w", "--path", path, file]);
     git(["update-index", "--add", "--cacheinfo", `100644,${blob},${path}`], indexEnv);
   }
   const tree = git(["write-tree"], indexEnv);
   const message = parsed.message ?? `Add PR shots for ${subdir}`;
   commit = git(["commit-tree", tree, "-p", baseCommit, "-m", message]);
+  // Push by SHA → refspec; never `git push` a checked-out branch.
   git(["push", "-q", "origin", `${commit}:refs/heads/${ARCHIVE_BRANCH}`]);
 } finally {
-  rmSync(indexFile, { force: true });
+  try {
+    rmSync(indexFile, { force: true });
+  } catch {
+    // Worktree edge: if absolute-git-dir was wrong, try tmp cleanup no-op.
+    try {
+      rmSync(join(tmpdir(), `pr-shots-index-${process.pid}`), { force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+const headAfter = headSnapshot();
+if (headAfter.rev !== headBefore.rev || headAfter.symbolic !== headBefore.symbolic) {
+  fail(
+    `HEAD moved during pr-shots (was ${headBefore.symbolic ?? headBefore.rev}, now ${headAfter.symbolic ?? headAfter.rev}) — this is a bug; report it`,
+  );
 }
 
 process.stdout.write(`pushed ${uploads.length} shot(s) to ${ARCHIVE_BRANCH} (${commit.slice(0, 8)})\n\n`);

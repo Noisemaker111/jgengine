@@ -1,0 +1,19 @@
+{
+  "beautify-bench": 46,
+  "convert-to-fanout": 58,
+  "fan-out": 58,
+  "game": 17,
+  "harvest": 32,
+  "harvest-full-game": 32,
+  "harvest-game": 28,
+  "jgengine": 841,
+  "jgengine-assets": 68,
+  "jgengine-combat": 50,
+  "jgengine-editor": 388,
+  "jgengine-gameplay": 468,
+  "jgengine-multiplayer": 112,
+  "jgengine-procedural": 16,
+  "jgengine-ui": 138,
+  "jgengine-verify": 140,
+  "jgengine-world": 171
+}

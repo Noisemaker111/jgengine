@@ -4,6 +4,7 @@ import type { GamePhase } from "./gamePhase";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { GameContext } from "../runtime/gameContext";
+import type { ReplicationPolicy } from "../runtime/worldProjection";
 import type { RuntimeSaveMode } from "../runtime/runtimeSave";
 import type { SaveConfig } from "../runtime/save";
 import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
@@ -59,6 +60,45 @@ export interface GameLoop<TContext = unknown> {
   onTick?(ctx: TContext, dt: number): void;
   /** Once per leave in a hosted world (never fired single-player). Despawn the player's entities / release their slots here. */
   onPlayerLeave?(ctx: TContext, player: LoopPlayer): void;
+}
+
+/**
+ * A scope cleanups register onto, run in LIFO order exactly once — the shared shape behind every
+ * teardown path in this codebase (a looping audio handle's source/gain nodes, a GPU texture swap on
+ * entity/scene replacement). Registering after `dispose()` has already run invokes the cleanup
+ * immediately instead of dropping it, so a resource created by a still-in-flight async step (e.g. a
+ * decoded audio buffer) never leaks past a `stop()`/unmount that raced ahead of it.
+ * @internal
+ */
+export interface DisposerScope {
+  onDispose(cleanup: () => void): void;
+}
+
+/** @internal */
+export interface Disposer extends DisposerScope {
+  dispose(): void;
+}
+
+/** @internal */
+export function createDisposer(): Disposer {
+  const cleanups: Array<() => void> = [];
+  let disposed = false;
+  return {
+    onDispose(cleanup) {
+      if (disposed) {
+        cleanup();
+        return;
+      }
+      cleanups.push(cleanup);
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      while (cleanups.length > 0) {
+        cleanups.pop()!();
+      }
+    },
+  };
 }
 
 /**
@@ -148,9 +188,16 @@ export interface GameDefinition<
   /** Offline/single-player whole-world save. `true` autosaves the entire game to `localStorage`; a config object tunes the mode/cadence/target. Binds `ctx.game.save` — the game drives save points and restore. Ignored for multiplayer worlds (the host persists). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
-  loop?: GameLoop<any>;
+  loop?: GameLoop<GameContext>;
   /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */
   lifecycle?: LifecycleConfig;
+  /**
+   * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
+   * wire. Applied on every authoritative host (ws, Convex, loopback); clients need not set it. Unset
+   * replicates the whole world to every client (today's behavior). Changes only what each client sees,
+   * never the simulation, so the game plays identically with or without it.
+   */
+  replication?: ReplicationPolicy;
 }
 
 /** Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional. */

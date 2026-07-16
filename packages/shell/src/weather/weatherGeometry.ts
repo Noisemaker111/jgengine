@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 import { createWeatherSeedAttributes } from "./weatherMath";
 
+/** @internal */
 export function createWeatherQuadGeometry(maxCount: number, seed: number): THREE.InstancedBufferGeometry {
   const count = Math.max(0, Math.floor(maxCount));
   const geometry = new THREE.InstancedBufferGeometry();

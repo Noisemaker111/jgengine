@@ -13,6 +13,7 @@ export interface FogPaintSurface {
   clearRect(x: number, y: number, width: number, height: number): void;
 }
 
+/** @internal */
 export function forEachUnrevealedFogCell(
   fog: FogCells,
   visit: (col: number, row: number) => void,
@@ -28,6 +29,7 @@ export function forEachUnrevealedFogCell(
   return count;
 }
 
+/** @internal */
 export function paintFogOverlay(
   surface: FogPaintSurface,
   canvasSize: { width: number; height: number },
@@ -44,6 +46,7 @@ export function paintFogOverlay(
   });
 }
 
+/** @internal */
 export function createFogDataUrl(
   fog: FogCells,
   canvasSize: { width: number; height: number },

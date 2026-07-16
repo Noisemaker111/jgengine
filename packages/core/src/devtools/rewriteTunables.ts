@@ -5,7 +5,9 @@ export interface TunableDelta {
   value: unknown;
 }
 
-/** Renders a tunable value as TS source, or null when the value has no safe literal form. */
+/** Renders a tunable value as TS source, or null when the value has no safe literal form.
+ * @internal
+ */
 export function formatTunableLiteral(value: unknown): string | null {
   if (typeof value === "number") return Number.isFinite(value) ? String(value) : null;
   if (typeof value === "boolean") return String(value);
@@ -232,7 +234,8 @@ function exportInitializerStart(code: string, exportName: string): number {
  * Rewrites one tunable's literal inside TS source: `exportName` names the `export const/let`,
  * `path` descends object keys and array indices to the scalar, and `value` becomes the new
  * literal. Returns the updated source, or null when the target cannot be safely located.
- */
+  * @internal
+  */
 export function rewriteTunableExport(
   code: string,
   exportName: string,

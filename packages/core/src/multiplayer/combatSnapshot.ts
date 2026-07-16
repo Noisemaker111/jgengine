@@ -23,6 +23,7 @@ function cloneStats(stats: Readonly<Record<string, number>>): Record<string, num
   return { ...stats };
 }
 
+/** @internal */
 export function serializeBoard(args: SerializeBoardArgs): BoardSnapshot {
   return {
     ownerId: args.ownerId,
@@ -33,6 +34,7 @@ export function serializeBoard(args: SerializeBoardArgs): BoardSnapshot {
   };
 }
 
+/** @internal */
 export function cloneSnapshot(snapshot: BoardSnapshot): BoardSnapshot {
   return serializeBoard({
     ownerId: snapshot.ownerId,
@@ -96,6 +98,7 @@ function toLive(snapshot: BoardSnapshot, rules: CombatRules): LiveUnit[] {
   }));
 }
 
+/** @internal */
 export function replayCombat(a: BoardSnapshot, b: BoardSnapshot, rules: CombatRules): ReplayResult {
   const maxRounds = rules.maxRounds ?? 100;
   const critChance = rules.critChance ?? 0;

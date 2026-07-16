@@ -1,4 +1,4 @@
-﻿import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+﻿import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -58,6 +58,61 @@ for (const name of readdirSync(skillsRoot)) {
   }
 }
 
+// Skill-size ratchet: SKILL.md is the load-bearing doc every session pays intake for.
+// Skills may only shrink — a skill over its recorded baseline fails; a NEW skill over the
+// hard ceiling fails. Shrink a skill by moving encyclopedic prose into the domain's
+// reference.md / generated api.md / capabilities.md, then rebaseline with --write-skill-sizes.
+const SKILL_SIZE_BASELINE_PATH = join(root, "scripts", "skill-size-baseline.json");
+const NEW_SKILL_CEILING = 250;
+
+function skillLineCount(path: string): number {
+  return readFileSync(path, "utf8").split("\n").length;
+}
+
+const skillDirs = readdirSync(skillsRoot).filter((name) =>
+  existsSync(join(skillsRoot, name, "SKILL.md")),
+);
+const measuredSizes: Record<string, number> = {};
+for (const name of skillDirs.sort()) {
+  measuredSizes[name] = skillLineCount(join(skillsRoot, name, "SKILL.md"));
+}
+
+if (process.argv.includes("--write-skill-sizes")) {
+  writeFileSync(SKILL_SIZE_BASELINE_PATH, `${JSON.stringify(measuredSizes, null, 2)}\n`);
+  console.log(
+    `check-skill-sync: wrote skill-size-baseline.json (${Object.keys(measuredSizes).length} skills)`,
+  );
+  process.exit(0);
+}
+
+const sizeBaseline: Record<string, number> = existsSync(SKILL_SIZE_BASELINE_PATH)
+  ? (JSON.parse(readFileSync(SKILL_SIZE_BASELINE_PATH, "utf8")) as Record<string, number>)
+  : {};
+const sizeProblems: string[] = [];
+for (const [name, size] of Object.entries(measuredSizes)) {
+  const baseline = sizeBaseline[name];
+  if (baseline === undefined) {
+    if (size > NEW_SKILL_CEILING) {
+      sizeProblems.push(
+        `  ${name}/SKILL.md is ${size} lines — new skills cap at ${NEW_SKILL_CEILING}. ` +
+          `Keep the body a short router; push encyclopedic prose into the domain reference.md / generated api.md.`,
+      );
+    }
+  } else if (size > baseline) {
+    sizeProblems.push(
+      `  ${name}/SKILL.md grew to ${size} lines (baseline ${baseline}). ` +
+        `Skills only shrink — trim, or move prose into reference.md / api.md / capabilities.md.`,
+    );
+  }
+}
+if (sizeProblems.length > 0) {
+  console.error(
+    `\ncheck-skill-sync: skill-size ratchet — SKILL.md bodies may only shrink.\n${sizeProblems.join("\n")}\n\n` +
+      "  After legitimately shrinking a skill, rebaseline: bun run gen:skill-sizes\n",
+  );
+  process.exit(1);
+}
+
 const apiSkillDirs = readdirSync(skillsRoot)
   .filter((name) => name === "jgengine" || (name.startsWith("jgengine-") && name !== "jgengine-verify"))
   .sort();
@@ -84,7 +139,8 @@ const PKG_DIRS: Record<string, string> = {
 
 const ALLOW_DOC_REFS = new Set(["@jgengine/core/CHANGELOG", "@jgengine/react/dist", "@jgengine/shell/dist"]);
 
-const INTERNAL_DOMAINS = new Set(["store", "assets"]);
+// Pure helpers / non-game-facing packages under core/src (no skill domain table).
+const INTERNAL_DOMAINS = new Set(["store", "assets", "math"]);
 
 function resolves(pkg: string, sub: string): boolean {
   const base = join(root, PKG_DIRS[pkg], sub);
@@ -142,5 +198,5 @@ if (problems.length > 0) {
 console.log(
   `check-skill-sync: clean — ${seen.size} import paths resolve across ${apiSkillDirs.length} API skills, ` +
     `${coreDomains.length - INTERNAL_DOMAINS.size} public core domains covered ` +
-    `(${skillFiles.length} markdown files)`,
+    `(${skillFiles.length} markdown files); skill-size ratchet clean (${skillDirs.length} skills)`,
 );

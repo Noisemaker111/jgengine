@@ -10,6 +10,13 @@ import type { WorldSnapshot } from "./worldSnapshot";
  */
 export interface WorldDiff {
   revision: number;
+  /**
+   * The revision this diff was computed against — `sinceRevision` echoed back. A {@link WorldMirror} only applies
+   * a diff whose `baseRevision` matches its own current revision exactly; a mismatch means frames were skipped and
+   * the mirror must resync from a fresh baseline instead of silently drifting. Absent on a diff built by an older
+   * producer — treated as legacy and always applied, matching pre-revision-checking behavior.
+   */
+  baseRevision?: number;
   entities: readonly SceneEntity[];
   removedEntities: readonly string[];
   stats: Record<string, StatValueMap>;
@@ -18,6 +25,8 @@ export interface WorldDiff {
   removedStore: readonly string[];
   /** Changed whole-module snapshots keyed by module name — everything a client can't reconstruct from deltas. */
   modules: WorldSnapshot;
+  /** Module keys present in a prior baseline that no longer exist — a client drops them wholesale on apply. */
+  removedModules: readonly string[];
 }
 
 const CORE_KEYS = new Set(["entities", "stats", "store"]);
@@ -28,13 +37,29 @@ interface Tracked {
 }
 
 /**
+ * Optional acceleration for {@link createWorldReplicator}: a monotone world-dirty counter (aggregated from
+ * each {@link SnapshotModule.version}). When it hasn't advanced since the last commit nothing mutated, so the
+ * replicator skips re-reading and re-serializing the whole world — the change-detection short-circuit item #28
+ * asks for. Omit it (or pass a snapshot-only source) to keep the original full-re-serialize-per-commit behavior.
+ */
+export interface WorldReplicatorOptions {
+  worldVersion?: () => number;
+}
+
+/**
  * Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the
  * world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)`
  * then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same
  * shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per
- * commit; dirty-hint acceleration is a later optimization behind the same seam.
- */
-export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
+ * commit unless {@link WorldReplicatorOptions.worldVersion} lets an unchanged tick short-circuit before it.
+  * @internal
+  */
+export function createWorldReplicator(
+  takeSnapshot: () => WorldSnapshot,
+  options: WorldReplicatorOptions = {},
+) {
+  const worldVersion = options.worldVersion;
+  let committedVersion: number | undefined;
   let revision = 0;
   const entities = new Map<string, Tracked>();
   const removedEntities = new Map<string, number>();
@@ -43,6 +68,7 @@ export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
   const store = new Map<string, Tracked>();
   const removedStore = new Map<string, number>();
   const modules = new Map<string, Tracked>();
+  const removedModules = new Map<string, number>();
 
   function diffMap(
     live: Map<string, string>,
@@ -70,6 +96,11 @@ export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
   }
 
   function commit(): number {
+    if (worldVersion !== undefined) {
+      const current = worldVersion();
+      if (committedVersion !== undefined && current === committedVersion) return revision;
+      committedVersion = current;
+    }
     const snapshot = takeSnapshot();
     const nextRevision = revision + 1;
 
@@ -94,7 +125,7 @@ export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
     let changed = diffMap(liveEntities, entities, removedEntities, nextRevision);
     changed = diffMap(liveStats, stats, removedStats, nextRevision) || changed;
     changed = diffMap(liveStore, store, removedStore, nextRevision) || changed;
-    changed = diffMap(liveModules, modules, new Map(), nextRevision) || changed;
+    changed = diffMap(liveModules, modules, removedModules, nextRevision) || changed;
 
     if (changed) revision = nextRevision;
     return revision;
@@ -119,6 +150,7 @@ export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
     }
     return {
       revision,
+      baseRevision: sinceRevision,
       entities: changedEntities,
       removedEntities: keysAfter(removedEntities, sinceRevision),
       stats: changedStats,
@@ -126,6 +158,7 @@ export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
       store: changedStore,
       removedStore: keysAfter(removedStore, sinceRevision),
       modules: changedModules,
+      removedModules: keysAfter(removedModules, sinceRevision),
     };
   }
 
@@ -146,9 +179,17 @@ function keysAfter(map: Map<string, number>, sinceRevision: number): string[] {
 /**
  * Diff two full {@link WorldSnapshot}s directly, stamping the result at `revision` — the stateless counterpart of
  * {@link createWorldReplicator} for hosts that persist snapshots rather than keep a live tracker (Convex reconstructs
- * per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`.
- */
-export function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision: number): WorldDiff {
+ * per invocation). `applyWorldDiff(prev, diffSnapshots(prev, next, r))` reproduces `next`. `baseRevision`, when the
+ * caller knows the revision `prev` was stamped at, lets a {@link WorldMirror} verify continuity the same way a
+ * `createWorldReplicator` diff does; omitted, the diff is legacy/always-apply.
+  * @internal
+  */
+export function diffSnapshots(
+  prev: WorldSnapshot,
+  next: WorldSnapshot,
+  revision: number,
+  baseRevision?: number,
+): WorldDiff {
   const prevEntities = new Map<string, string>();
   for (const entity of (prev["entities"] ?? []) as readonly SceneEntity[]) {
     prevEntities.set(entity.id, JSON.stringify(entity));
@@ -181,20 +222,35 @@ export function diffSnapshots(prev: WorldSnapshot, next: WorldSnapshot, revision
   const removedStore = [...prevStore.keys()].filter((key) => !nextStore.has(key));
 
   const modules: WorldSnapshot = {};
+  const nextModuleKeys = new Set<string>();
   for (const [key, value] of Object.entries(next)) {
     if (CORE_KEYS.has(key)) continue;
+    nextModuleKeys.add(key);
     const json = JSON.stringify(value ?? null);
     if (JSON.stringify(prev[key] ?? null) !== json) modules[key] = JSON.parse(json) as unknown;
   }
+  const removedModules = Object.keys(prev).filter((key) => !CORE_KEYS.has(key) && !nextModuleKeys.has(key));
 
-  return { revision, entities, removedEntities, stats, removedStats, store, removedStore, modules };
+  return {
+    revision,
+    ...(baseRevision === undefined ? {} : { baseRevision }),
+    entities,
+    removedEntities,
+    stats,
+    removedStats,
+    store,
+    removedStore,
+    modules,
+    removedModules,
+  };
 }
 
 /**
  * Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the
  * client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities,
  * stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
- */
+  * @internal
+  */
 export function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot {
   const next: WorldSnapshot = { ...baseline };
 
@@ -215,6 +271,7 @@ export function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldS
   next["store"] = Array.from(storeByKey.entries());
 
   for (const [key, value] of Object.entries(diff.modules)) next[key] = value;
+  for (const key of diff.removedModules) delete next[key];
 
   return next;
 }

@@ -59,6 +59,7 @@ function emptyLane<C>(sides: readonly Side[]): LaneCells<C> {
   return cells;
 }
 
+/** @internal */
 export function createLaneBoardState<C>(config: LaneBoardConfig<C>): LaneBoardState<C> {
   if (config.laneCount <= 0) throw new Error("laneBoard needs at least one lane");
   if (config.sides.length === 0) throw new Error("laneBoard needs at least one side");
@@ -71,6 +72,7 @@ function validLane<C>(state: LaneBoardState<C>, lane: number): boolean {
   return Number.isInteger(lane) && lane >= 0 && lane < state.lanes.length;
 }
 
+/** @internal */
 export function placeCard<C>(
   state: LaneBoardState<C>,
   config: LaneBoardConfig<C>,
@@ -86,6 +88,7 @@ export function placeCard<C>(
   return { status: "ok", state: { lanes } };
 }
 
+/** @internal */
 export function removeCard<C>(
   state: LaneBoardState<C>,
   lane: number,
@@ -100,6 +103,7 @@ export function removeCard<C>(
   return { status: "ok", state: { lanes } };
 }
 
+/** @internal */
 export function laneAggregate<C>(
   state: LaneBoardState<C>,
   config: LaneBoardConfig<C>,
@@ -114,6 +118,7 @@ export function laneAggregate<C>(
   return { lane, side, subtotal, total, count: cards.length };
 }
 
+/** @internal */
 export function laneOutcome<C>(
   state: LaneBoardState<C>,
   config: LaneBoardConfig<C>,
@@ -137,6 +142,7 @@ export function laneOutcome<C>(
   return { lane, totals, winner: tie ? null : winner };
 }
 
+/** @internal */
 export function boardTotals<C>(
   state: LaneBoardState<C>,
   config: LaneBoardConfig<C>,
@@ -151,6 +157,7 @@ export function boardTotals<C>(
   return totals;
 }
 
+/** @internal */
 export function lanesWon<C>(
   state: LaneBoardState<C>,
   config: LaneBoardConfig<C>,
@@ -179,7 +186,8 @@ export interface LaneBoard<C> {
  * A lane-based board where cards resolve per lane — the lane card-battler layout.
  *
  * @capability lane-board a lane-based card-battler board with per-lane outcomes
- */
+  * @internal
+  */
 export function createLaneBoard<C>(config: LaneBoardConfig<C>): LaneBoard<C> {
   let state = createLaneBoardState(config);
   return {

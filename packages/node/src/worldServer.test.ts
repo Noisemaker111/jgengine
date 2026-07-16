@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
+import type { HostedWorldRecord, HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import type { GameRuntimeServerView } from "@jgengine/core/runtime/transport";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
+import type { WorldPersistence, WorldPersistenceKey } from "./persistence";
 import { createWorldGameServer } from "./worldServer";
 
 const CONTENT: GameContextContent = {
@@ -40,13 +42,28 @@ function heroX(view: GameRuntimeServerView | null): number | undefined {
   return entities.find((e) => e.id === "alice")?.position[0];
 }
 
-function server(now?: () => number) {
+function server(now?: () => number, persistence?: WorldPersistence) {
   return createWorldGameServer({
     resolveGame: (gameId) => (gameId === "shared" ? { game: definition(), content: CONTENT } : null),
     allowAnonymous: true,
     port: 0,
     ...(now === undefined ? {} : { now }),
+    ...(persistence === undefined ? {} : { persistence }),
   });
+}
+
+function spyPersistence() {
+  const saves: { key: WorldPersistenceKey; record: HostedWorldRecord }[] = [];
+  const persistence: WorldPersistence = {
+    store(key) {
+      const store: HostedWorldStore = {
+        load: () => null,
+        save: (record) => saves.push({ key, record }),
+      };
+      return store;
+    },
+  };
+  return { persistence, saves };
 }
 
 function channel<T>() {
@@ -123,5 +140,46 @@ describe("createWorldGameServer", () => {
     } finally {
       await s.close();
     }
+  });
+
+  test("an injected persistence adapter receives saves as a joined world ticks", async () => {
+    const { persistence, saves } = spyPersistence();
+    const s = server(undefined, persistence);
+    try {
+      await s.host.joinServer({ userId: "alice", gameId: "shared" });
+      expect(saves.length).toBe(0);
+      s.tick(1);
+      expect(saves.length).toBe(1);
+      expect(saves[0]?.key).toEqual({ gameId: "shared", serverId: "shared" });
+      expect(saves[0]?.record.revision).toBeGreaterThan(0);
+      s.tick(1);
+      expect(saves.length).toBe(2);
+    } finally {
+      await s.close();
+    }
+  });
+
+  test("flush() force-persists live worlds outside the tick cadence", async () => {
+    const { persistence, saves } = spyPersistence();
+    const s = server(undefined, persistence);
+    try {
+      await s.host.joinServer({ userId: "alice", gameId: "shared" });
+      expect(saves.length).toBe(0);
+      s.flush();
+      expect(saves.length).toBe(1);
+      s.flush();
+      expect(saves.length).toBe(2);
+    } finally {
+      await s.close();
+    }
+  });
+
+  test("close() flushes persistence before tearing down the ws server", async () => {
+    const { persistence, saves } = spyPersistence();
+    const s = server(undefined, persistence);
+    await s.host.joinServer({ userId: "alice", gameId: "shared" });
+    expect(saves.length).toBe(0);
+    await s.close();
+    expect(saves.length).toBe(1);
   });
 });

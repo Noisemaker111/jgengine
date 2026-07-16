@@ -16,14 +16,18 @@ export { createCameraShakeChannel } from "./shakeChannelMath";
  */
 export const defaultCameraShakeChannel: CameraShakeChannel = createCameraShakeChannel();
 
-/** Feed the default camera-shake channel from anywhere (see G7 hitstop cross-cut). */
+/** Feed the default camera-shake channel from anywhere (see G7 hitstop cross-cut).
+ * @internal
+ */
 export function cameraShake(amplitude: number, decayPerSecond?: number): void {
   defaultCameraShakeChannel.shake(amplitude, decayPerSecond);
 }
 
 export const CameraShakeContext = createContext<CameraShakeChannel>(defaultCameraShakeChannel);
 
-/** The active rig's shake channel — call `.shake(...)` to add trauma from React UI. */
+/** The active rig's shake channel — call `.shake(...)` to add trauma from React UI.
+ * @internal
+ */
 export function useCameraShake(): CameraShakeChannel {
   return useContext(CameraShakeContext);
 }

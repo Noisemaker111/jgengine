@@ -1,5 +1,6 @@
 import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "@jgengine/core/audio/audioFalloff";
 import type { MusicTheme } from "@jgengine/core/audio/music";
+import { createDisposer } from "@jgengine/core/game/defineGame";
 
 import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
 import { createNoiseBuffer, realizeSynthPatch } from "./synthEngine";
@@ -114,6 +115,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
 
   let listenerPosition: Vec3 = { x: 0, y: 0, z: 0 };
+  const activeSpatialUpdaters = new Set<() => void>();
 
   function playInternal(soundId: string, position: Vec3 | undefined, loop: boolean): AudioEmitterHandle | null {
     const sound = sounds[soundId];
@@ -130,30 +132,46 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }
     if (sound.url === undefined) return null;
 
-    let gainNode: GainNode | null = null;
-    let stopped = false;
+    const disposer = createDisposer();
+    let liveGain: GainNode | null = null;
+    function updateGain(): void {
+      if (liveGain !== null) {
+        liveGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+      }
+    }
 
     void loadBuffer(sound.url).then((buffer) => {
-      if (stopped || buffer === null) return;
+      if (buffer === null) return;
       const sourceNode = context.createBufferSource();
       sourceNode.buffer = buffer;
       sourceNode.loop = loop || (sound.loop ?? false);
-      gainNode = context.createGain();
+      const gainNode = context.createGain();
       gainNode.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       sourceNode.connect(gainNode);
       gainNode.connect(bus);
       sourceNode.start();
+      liveGain = gainNode;
+      disposer.onDispose(() => {
+        try {
+          sourceNode.stop();
+        } catch {
+        }
+        sourceNode.disconnect();
+        gainNode.disconnect();
+        liveGain = null;
+      });
     });
+
+    if (loop) activeSpatialUpdaters.add(updateGain);
 
     return {
       setPosition(next) {
         currentPosition = next;
-        if (gainNode !== null) {
-          gainNode.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
-        }
+        updateGain();
       },
       stop() {
-        stopped = true;
+        activeSpatialUpdaters.delete(updateGain);
+        disposer.dispose();
       },
     };
   }
@@ -161,6 +179,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   return {
     setListenerPose(position) {
       listenerPosition = position;
+      for (const updateGain of activeSpatialUpdaters) updateGain();
     },
     playOneShot(soundId, position) {
       void context.resume().catch(() => undefined);
@@ -183,6 +202,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       void context.resume().catch(() => undefined);
     },
     dispose() {
+      activeSpatialUpdaters.clear();
       director?.dispose();
       void context.close().catch(() => undefined);
     },

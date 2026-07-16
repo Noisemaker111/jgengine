@@ -16,7 +16,9 @@ export interface PolylineHit {
   readonly lateral: number;
 }
 
-/** Prepare a polyline from ordered points, computing cumulative arc-length once for O(log n) sampling. */
+/** Prepare a polyline from ordered points, computing cumulative arc-length once for O(log n) sampling.
+ * @internal
+ */
 export function polyline(points: readonly Vec2[]): Polyline {
   const cumulative: number[] = [0];
   for (let i = 1; i < points.length; i += 1) {
@@ -40,7 +42,9 @@ function segmentAt(line: Polyline, dist: number): { index: number; t: number } {
   return { index: lo, t: span <= 0 ? 0 : (clamped - start) / span };
 }
 
-/** Point at an absolute arc-length distance along the line, clamped to the endpoints. */
+/** Point at an absolute arc-length distance along the line, clamped to the endpoints.
+ * @internal
+ */
 export function pointAtDistance(line: Polyline, dist: number): Vec2 {
   if (line.points.length === 0) return [0, 0];
   if (line.points.length === 1) return line.points[0]!;
@@ -48,19 +52,25 @@ export function pointAtDistance(line: Polyline, dist: number): Vec2 {
   return lerp(line.points[index - 1]!, line.points[index]!, t);
 }
 
-/** Point at a `[0, 1]` fraction of the line's total length. */
+/** Point at a `[0, 1]` fraction of the line's total length.
+ * @internal
+ */
 export function pointAtFraction(line: Polyline, fraction: number): Vec2 {
   return pointAtDistance(line, fraction * line.length);
 }
 
-/** Unit tangent (direction of travel) at an absolute distance along the line. */
+/** Unit tangent (direction of travel) at an absolute distance along the line.
+ * @internal
+ */
 export function tangentAtDistance(line: Polyline, dist: number): Vec2 {
   if (line.points.length < 2) return [0, 1];
   const { index } = segmentAt(line, dist);
   return normalize(sub(line.points[index]!, line.points[index - 1]!));
 }
 
-/** Closest point on the line to `query`, reporting arc-length position, segment index, and signed lateral offset. */
+/** Closest point on the line to `query`, reporting arc-length position, segment index, and signed lateral offset.
+ * @internal
+ */
 export function closestPoint(line: Polyline, query: Vec2): PolylineHit {
   const { points, cumulative } = line;
   if (points.length === 0) return { point: [0, 0], distanceAlong: 0, segment: 0, lateral: 0 };

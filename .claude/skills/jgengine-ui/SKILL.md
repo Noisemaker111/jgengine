@@ -5,6 +5,8 @@ description: Game-first HUDs, menus, touch controls, motion, accessibility, art 
 
 # jgengine-ui
 
+**Import from the curated barrel** `@jgengine/core/ui` for core UI helpers (format, HUD, settings); React/render surfaces come from `@jgengine/{react,shell}` package roots. Deep paths `@jgengine/core/<domain>/<file>` still work for anything not re-exported.
+
 Use this skill for the **visual and interaction design of the game interface**: title screens, HUDs, menus, prompts, maps, inventories, dialogue, touch controls, transitions, pause/results states, accessibility, and screenshot critique.
 
 Do not use this skill as a React, routing, state-management, or hooks reference. The main `jgengine` skill owns routing and points to the engine APIs. When implementation needs `@jgengine/react` hooks or shell APIs, follow the links in the main skill and the compact API appendix in [reference.md](reference.md); keep this skill focused on what the player sees and feels.
@@ -126,3 +128,10 @@ Product shot = a **bare** game (no `content`/`stats`/`inventories`/`time` → no
 **Frame the front automatically, don't hand-tune `rotationY`.** A generator/scene-kind declares which way it faces (`GeneratedAsset.forward`, default +Z — see `jgengine-assets` rule 10). Set `StudioStage`'s `faceCamera` and pass that declared `forward` (default `[0, 0, 1]` if omitted) — it yaws the content every frame so the front points at wherever the camera currently is, including an orbiting `camera.turntable` rig. `faceCamera` and the stage's own `turntable` spin are mutually exclusive (`faceCamera` wins): one spins the object, the other holds it facing the viewer. This is what replaced `bookcaseStageDemo.tsx`'s old hand-tuned `rotationY={Math.PI}` (#816).
 
 The schema inspector (#809) supports **collapsible groups** (`schema.groups` + `field.group`) and per-group **randomize / reset action buttons** (`{ type: "action", action: "randomize", group }`) — a studio panel reads like a pro tool (Carcass / Books sections with 🎲 randomize), not a flat slider dump.
+
+## `@jgengine/react` surface (import inventory)
+
+Deep path preferred (`@jgengine/react/hooks`, `/provider`, `/components`, …); package root re-exports the same names. Orphan gate tokens — public hooks/components games may adopt:
+
+`useGameStore` `useGameStoreValue` `useGame` `usePlayer` `useGameContext` `useOptionalGameContext` `useGamePhase` `useOptionalGamePhase` `useGameClock` `useSceneObjects` `useSceneEntityIds` `useLocalPlayerDead` `useNearestWorldItem` `useLeaderboard` `useRoster` `useChat` `useChatBubbles` `useEntityChatBubble` `useFriends` `useFriendRequests` `useParty` `usePartyInvites` `usePresence` `useWorldInvites` `useWorldBrowser` `useFog` `useAxisChannel` `useHeldKeys` `useAuthedPlayer` `useSession` `useHudViewport` `useGameOrientation` `useLayoutCollisions` `useReservedControlZones` `useViewportMetrics` `useFrameBind` `createHeldKeyTracker` `abilityKitNeedsHeartbeat` `eventMeterNeedsHeartbeat` `hudVisibleInPhase` `CaptureOdds` `ChannelTabs` `ChatInput` `ChatLog` `DeathScreen` `DragGhost` `GameIdentityProvider` `KeybindRow` `PartyMemberRow` `PresenceDot` `QteTrack` `RequireSession` `SignOutButton` `SpeakingIndicator` `UserBadge` `LiveText` `betterAuthIdentity` `clerkIdentity` `guestIdentity` `chatTransportFromSync` `latestChatBubbles` `isRedSuit` `iconForItemId` `frameBindSubscriberCount` `subscribeFrameBind`
+

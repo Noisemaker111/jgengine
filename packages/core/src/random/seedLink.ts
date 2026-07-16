@@ -10,6 +10,7 @@ function splitUrl(url: string): { base: string; query: string; hash: string } {
   return { base, query, hash };
 }
 
+/** @internal */
 export function withSeedParam(url: string, seed: string | number, param = DEFAULT_SEED_PARAM): string {
   const { base, query, hash } = splitUrl(url);
   const params = new URLSearchParams(query);
@@ -18,6 +19,7 @@ export function withSeedParam(url: string, seed: string | number, param = DEFAUL
   return `${base}${queryString ? `?${queryString}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
+/** @internal */
 export function seedFromSearch(search: string, param = DEFAULT_SEED_PARAM): string | null {
   const normalized = search.startsWith("?") ? search.slice(1) : search;
   const params = new URLSearchParams(normalized);
@@ -25,11 +27,13 @@ export function seedFromSearch(search: string, param = DEFAULT_SEED_PARAM): stri
   return value === null || value === "" ? null : value;
 }
 
+/** @internal */
 export function seedFromUrl(url: string, param = DEFAULT_SEED_PARAM): string | null {
   const { query } = splitUrl(url);
   return seedFromSearch(query, param);
 }
 
+/** @internal */
 export function dailySeed(nowMs: number, salt?: string): string {
   const date = new Date(nowMs);
   const year = date.getUTCFullYear().toString().padStart(4, "0");

@@ -26,6 +26,7 @@ export interface BeatClock {
 
 const MAX_BEAT_FIRES = 10_000;
 
+/** @internal */
 export function createBeatClock(config: BeatClockConfig, onBeat?: (beatIndex: number) => void): BeatClock {
   const beatsPerBar = config.beatsPerBar !== undefined && config.beatsPerBar > 0 ? config.beatsPerBar : 4;
   const beatDurationSec = 60 / config.bpm;
@@ -66,7 +67,9 @@ export function createBeatClock(config: BeatClockConfig, onBeat?: (beatIndex: nu
   };
 }
 
-/** Signed offset (game-seconds) from `nowSec` to the nearest beat boundary — negative = early, positive = late (#286.12). */
+/** Signed offset (game-seconds) from `nowSec` to the nearest beat boundary — negative = early, positive = late (#286.12).
+ * @internal
+ */
 export function nearestBeatDelta(nowSec: number, beatDurationSec: number): number {
   const beatIndex = Math.round(nowSec / beatDurationSec);
   return nowSec - beatIndex * beatDurationSec;
@@ -90,7 +93,9 @@ export const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] = [
   { id: "good", windowSec: 0.14 },
 ];
 
-/** Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers must be ordered tightest-first. */
+/** Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers must be ordered tightest-first.
+ * @internal
+ */
 export function classifyBeatAccuracy(
   nowSec: number,
   beatDurationSec: number,
@@ -104,7 +109,9 @@ export function classifyBeatAccuracy(
   return { tier: "miss", deltaSec };
 }
 
-/** Whether a snapshot sits inside a bar-relative open window `[fromBeat, toBeat)` — e.g. "act on beats 2-4 of every bar" (#286.12). */
+/** Whether a snapshot sits inside a bar-relative open window `[fromBeat, toBeat)` — e.g. "act on beats 2-4 of every bar" (#286.12).
+ * @internal
+ */
 export function inBarWindow(snapshot: BeatSnapshot, fromBeat: number, toBeat: number): boolean {
   const barBeat = snapshot.beatInBar + snapshot.phase;
   return barBeat >= fromBeat && barBeat < toBeat;
@@ -112,7 +119,9 @@ export function inBarWindow(snapshot: BeatSnapshot, fromBeat: number, toBeat: nu
 
 const QUANTIZE_EPSILON = 1e-6;
 
-/** The absolute beat-time (game-seconds) that a press at `nowSec` quantizes to: the same instant if it lands on a beat boundary, else the next one. */
+/** The absolute beat-time (game-seconds) that a press at `nowSec` quantizes to: the same instant if it lands on a beat boundary, else the next one.
+ * @internal
+ */
 export function nextBeatTime(nowSec: number, beatDurationSec: number, epsilon = QUANTIZE_EPSILON): number {
   const beatIndex = nowSec / beatDurationSec;
   const rounded = Math.round(beatIndex);
@@ -135,6 +144,7 @@ export interface BeatInputBuffer<T> {
   clear(): void;
 }
 
+/** @internal */
 export function createBeatInputBuffer<T>(beatDurationSec: number): BeatInputBuffer<T> {
   const pending: BufferedAction<T>[] = [];
 

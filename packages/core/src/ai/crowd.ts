@@ -7,7 +7,8 @@ const SQRT2 = Math.SQRT2;
  * Deterministic 2D offset uniformly within a disc of `radius`, stable per `id` — so a crowd converging
  * on one target (a flank point, a rally banner, a boss) fans out to distinct spots instead of all
  * stacking on the same coordinate. Same `id` always yields the same offset, no per-entity state to store.
- */
+  * @internal
+  */
 export function spreadOffset(id: string, radius: number): readonly [number, number] {
   const rng = seededRng(id);
   const angle = rng() * Math.PI * 2;
@@ -78,6 +79,7 @@ function passableWithClearance(grid: NavGrid, clearance: number): (col: number, 
   };
 }
 
+/** @internal */
 export function computeFlowField(
   grid: NavGrid,
   goals: readonly NavPoint[],
@@ -190,6 +192,7 @@ export interface CrowdField {
   reset(): void;
 }
 
+/** @internal */
 export function createCrowdField(grid: NavGrid): CrowdField {
   const { cols, rows } = grid;
   const occupancy = new Int32Array(cols * rows);
@@ -239,6 +242,7 @@ function euclidean(from: NavPoint, poi: Poi): number {
   return Math.hypot(poi.point[0] - from[0], poi.point[1] - from[1]);
 }
 
+/** @internal */
 export function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectPoiOptions): Poi | null {
   const distanceBias = options.distanceBias ?? 1;
   const distanceOf = options.distance ?? euclidean;
@@ -327,7 +331,8 @@ function toStep(state: VisitorAgentState, poiOf: (id: string) => Poi | undefined
  * the per-agent phase machine around it so the caller only supplies positions and drives movement.
  *
  * @capability visitor-loop many-agent seek/travel/dwell/depart state machine over weighted POIs
- */
+  * @internal
+  */
 export function createVisitorLoop(options: VisitorLoopOptions): VisitorLoop {
   const { pois, dwellMs, exitPoint, occupancy, distanceBias, distance } = options;
   const arriveRadius = options.arriveRadius ?? 1;

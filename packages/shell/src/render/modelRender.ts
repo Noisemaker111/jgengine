@@ -5,6 +5,7 @@ import type { PaintStroke } from "@jgengine/core/scene/paintLayer";
 
 export const PAINT_TEXTURE_SIZE = 512;
 
+/** @internal */
 export function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean }): THREE.Object3D {
   const clone = cloneSkinned(source) as THREE.Object3D;
   if (options?.cloneMaterials === false) return clone;
@@ -18,6 +19,7 @@ export function cloneModelScene(source: THREE.Object3D, options?: { cloneMateria
   return clone;
 }
 
+/** @internal */
 export function disposeClonedMaterials(root: THREE.Object3D): void {
   const seen = new Set<THREE.Material>();
   root.traverse((node) => {
@@ -36,6 +38,7 @@ function isMeshStandardMaterial(material: THREE.Material): material is THREE.Mes
   return (material as THREE.MeshStandardMaterial).isMeshStandardMaterial === true;
 }
 
+/** @internal */
 export function standardMaterialsOf(root: THREE.Object3D): THREE.MeshStandardMaterial[] {
   const materials: THREE.MeshStandardMaterial[] = [];
   root.traverse((node) => {
@@ -52,6 +55,7 @@ export interface MaterialCache {
   seedColor: THREE.Color;
 }
 
+/** @internal */
 export function cacheStandardMaterials(root: THREE.Object3D, into?: MaterialCache | null): MaterialCache {
   if (into !== null && into !== undefined) return into;
   const materials = standardMaterialsOf(root);
@@ -59,6 +63,7 @@ export function cacheStandardMaterials(root: THREE.Object3D, into?: MaterialCach
   return { materials, seedColor };
 }
 
+/** @internal */
 export function applyPaintTextureToMaterials(
   materials: readonly THREE.MeshStandardMaterial[],
   paint: PaintCanvas,
@@ -75,6 +80,7 @@ export interface PaintCanvas {
   texture: THREE.CanvasTexture;
 }
 
+/** @internal */
 export function createPaintCanvas(seed: THREE.MeshStandardMaterial, size = PAINT_TEXTURE_SIZE): PaintCanvas {
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -92,6 +98,14 @@ export function createPaintCanvas(seed: THREE.MeshStandardMaterial, size = PAINT
   return { canvas, context, texture };
 }
 
+/** @internal */
+export function disposePaintCanvas(paint: PaintCanvas): void {
+  paint.texture.dispose();
+  paint.canvas.width = 0;
+  paint.canvas.height = 0;
+}
+
+/** @internal */
 export function drawPaintStrokes(paint: PaintCanvas, strokes: readonly PaintStroke[]): void {
   const { canvas, context, texture } = paint;
   for (const stroke of strokes) {
@@ -109,10 +123,12 @@ export function drawPaintStrokes(paint: PaintCanvas, strokes: readonly PaintStro
   texture.needsUpdate = true;
 }
 
+/** @internal */
 export function applyPaintTexture(root: THREE.Object3D, paint: PaintCanvas): void {
   applyPaintTextureToMaterials(standardMaterialsOf(root), paint);
 }
 
+/** @internal */
 export function syncPaintCanvas(
   paint: PaintCanvas,
   seedColor: THREE.Color,

@@ -72,6 +72,7 @@ export interface CollectDebugShapesInput {
   counters?: { scans: number; shapes: number };
 }
 
+/** @internal */
 export function classifyAimEndpoint(
   hit: Pick<SceneRaycastHit, "damageEligible"> | null | undefined,
 ): AimEndpointKind {
@@ -79,6 +80,7 @@ export function classifyAimEndpoint(
   return hit.damageEligible ? "damage" : "solid";
 }
 
+/** @internal */
 export function pointAlongRay(
   origin: EntityPosition,
   direction: EntityPosition,
@@ -91,6 +93,7 @@ export function pointAlongRay(
   ];
 }
 
+/** @internal */
 export function shapeWorldCenter(
   collider: ResolvedCollider,
   position: EntityPosition,
@@ -151,7 +154,8 @@ function pushResolved(
 /**
  * Collects world-space collider wireframe entries for enabled layers.
  * Returns [] and performs no entity/object iteration when both hitbox/body layers are off.
- */
+  * @internal
+  */
 export function collectDebugShapes(input: CollectDebugShapesInput): DebugShapeEntry[] {
   if (!colliderScanNeeded(input.layers)) return [];
   input.counters !== undefined && (input.counters.scans += 1);
@@ -198,7 +202,8 @@ export interface ComputeAimLaserInput {
 /**
  * Builds the authoritative aim-laser segment using resolveShot + scene raycast
  * (same seam as projectile prediction/settlement). Zero queries when aimLaser is off.
- */
+  * @internal
+  */
 export function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | null {
   if (!aimProbeNeeded(input.layers)) {
     return null;
@@ -247,6 +252,7 @@ export function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | nu
   };
 }
 
+/** @internal */
 export function muzzleMarkerFromOrigin(origin: EntityPosition): {
   center: EntityPosition;
   radius: number;

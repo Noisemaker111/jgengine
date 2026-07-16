@@ -69,6 +69,34 @@ describe("world replicator", () => {
     expect(rep.diff(2).removedEntities).toEqual([]);
   });
 
+  test("a module that disappears surfaces in removedModules gated by revision", () => {
+    let state: WorldSnapshot = {
+      entities: [],
+      stats: {},
+      store: [],
+      feed: { "entity.died": [] },
+      leaderboard: { top: [] },
+    };
+    const rep = createWorldReplicator(() => state);
+    rep.commit();
+
+    state = { entities: [], stats: {}, store: [], leaderboard: { top: [] } };
+    expect(rep.commit()).toBe(2);
+
+    const diff = rep.diff(1);
+    expect(diff.removedModules).toEqual(["feed"]);
+    expect(diff.modules).toEqual({});
+    expect(rep.diff(2).removedModules).toEqual([]);
+  });
+
+  test("diff() stamps baseRevision to the requested sinceRevision", () => {
+    const state: WorldSnapshot = { entities: [], stats: {}, store: [] };
+    const rep = createWorldReplicator(() => state);
+    rep.commit();
+    expect(rep.diff(0).baseRevision).toBe(0);
+    expect(rep.diff(1).baseRevision).toBe(1);
+  });
+
   test("applyWorldDiff folds a diff onto a baseline into the next full snapshot", () => {
     let state: WorldSnapshot = {
       entities: [ent("e1", 1), ent("e2", 2)],
@@ -98,6 +126,27 @@ describe("world replicator", () => {
     expect(rebuilt["feed"]).toEqual({ chat: ["hi", "gg"] });
   });
 
+  test("applyWorldDiff drops a module named in removedModules", () => {
+    const baseline: WorldSnapshot = {
+      entities: [],
+      stats: {},
+      store: [],
+      feed: { chat: ["hi"] },
+      leaderboard: { top: [] },
+    };
+    let state: WorldSnapshot = structuredClone(baseline);
+    const rep = createWorldReplicator(() => state);
+    const baselineRevision = rep.commit();
+
+    state = { entities: [], stats: {}, store: [], leaderboard: { top: [] } };
+    rep.commit();
+
+    const rebuilt = applyWorldDiff(baseline, rep.diff(baselineRevision));
+    expect(rebuilt["feed"]).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(rebuilt, "feed")).toBe(false);
+    expect(rebuilt["leaderboard"]).toEqual({ top: [] });
+  });
+
   test("diffSnapshots diffs two baselines and applyWorldDiff reproduces the next one", () => {
     const prev: WorldSnapshot = {
       entities: [ent("e1", 1), ent("e2", 2)],
@@ -114,10 +163,12 @@ describe("world replicator", () => {
 
     const diff = diffSnapshots(prev, next, 5);
     expect(diff.revision).toBe(5);
+    expect(diff.baseRevision).toBeUndefined();
     expect(diff.entities).toEqual([ent("e1", 7)]);
     expect(diff.removedEntities).toEqual(["e2"]);
     expect(diff.store).toEqual([["b", 2]]);
     expect(diff.modules).toEqual({ feed: { log: ["x"] } });
+    expect(diff.removedModules).toEqual([]);
 
     const rebuilt = applyWorldDiff(prev, diff);
     expect(new Map((rebuilt["entities"] as { id: string }[]).map((e) => [e.id, e]))).toEqual(
@@ -128,5 +179,62 @@ describe("world replicator", () => {
       new Map(next["store"] as [string, unknown][]),
     );
     expect(rebuilt["feed"]).toEqual(next["feed"]);
+  });
+
+  test("diffSnapshots surfaces a dropped module in removedModules and accepts an explicit baseRevision", () => {
+    const prev: WorldSnapshot = { entities: [], stats: {}, store: [], feed: { log: [] } };
+    const next: WorldSnapshot = { entities: [], stats: {}, store: [] };
+
+    const diff = diffSnapshots(prev, next, 6, 5);
+    expect(diff.baseRevision).toBe(5);
+    expect(diff.removedModules).toEqual(["feed"]);
+
+    const rebuilt = applyWorldDiff(prev, diff);
+    expect(rebuilt["feed"]).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(rebuilt, "feed")).toBe(false);
+  });
+
+  test("an unchanged worldVersion skips the commit — no re-read, no re-serialize", () => {
+    let reads = 0;
+    let version = 1;
+    const state: WorldSnapshot = { entities: [ent("e1", 1)], stats: {}, store: [] };
+    const rep = createWorldReplicator(
+      () => {
+        reads += 1;
+        return state;
+      },
+      { worldVersion: () => version },
+    );
+
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(1);
+
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(1);
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(1);
+
+    version = 2;
+    (state["entities"] as ReturnType<typeof ent>[])[0] = ent("e1", 9);
+    expect(rep.commit()).toBe(2);
+    expect(reads).toBe(2);
+    expect(rep.diff(1).entities).toEqual([ent("e1", 9)]);
+  });
+
+  test("a bumped worldVersion whose content is identical re-reads but does not advance the revision", () => {
+    let reads = 0;
+    let version = 1;
+    const state: WorldSnapshot = { entities: [ent("e1", 1)], stats: {}, store: [] };
+    const rep = createWorldReplicator(
+      () => {
+        reads += 1;
+        return state;
+      },
+      { worldVersion: () => version },
+    );
+    expect(rep.commit()).toBe(1);
+    version = 2;
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(2);
   });
 });

@@ -26,11 +26,6 @@
 - `AnimationTickResult` (interface): interface AnimationTickResult — ⚠ undocumented
 - `FramePhase` (type): type FramePhase = "windup" | "active" | "recovery" | "cancel" — ⚠ undocumented
 - `FrameRange` (interface): interface FrameRange — ⚠ undocumented
-- `activeRangeAtFrame` (function): function activeRangeAtFrame(clip: AnimationClip, frame: number): FrameRange | null — ⚠ undocumented
-- `clipDurationMs` (function): function clipDurationMs(clip: AnimationClip): number — ⚠ undocumented
-- `createAnimationState` (function): function createAnimationState(config: AnimationStateConfig): AnimationState — ⚠ undocumented
-- `frameAtMs` (function): function frameAtMs(clip: AnimationClip, elapsedMs: number): number — ⚠ undocumented
-- `phasesAtFrame` (function): function phasesAtFrame(clip: AnimationClip, frame: number): FramePhase[] — ⚠ undocumented
 
 ## @jgengine/core/combat/attackTags
 
@@ -97,6 +92,10 @@
 - `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
 - `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
+
+## @jgengine/core/combat/deathReason
+
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
 
 ## @jgengine/core/combat/defensiveWindow
 
@@ -238,14 +237,6 @@
 - `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
 - `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
-- `hazardCycleAt` (function): function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardCycleSample — Deterministic repeating hazard timing — windup → active → cooldown as a pure function of absolute time, for recurring flame vents, crushers, lightning rings. Sample `hazardCycleAt` each tick: draw the telegraph during `windup`, apply the effect during `active`, rest through `cooldown`.
-- `nextHazardActiveAt` (function): function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): number — Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam.
-- `pointInTelegraph` (function): function pointInTelegraph(config: TelegraphConfig, point: EntityPosition): boolean — ⚠ undocumented
-- `telegraphFired` (function): function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean — ⚠ undocumented
-- `telegraphFiredAtTurn` (function): function telegraphFiredAtTurn(config: TelegraphConfig, startedTurn: number, currentTurn: number): boolean — ⚠ undocumented
-- `telegraphProgress` (function): function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: number): number — ⚠ undocumented
-- `telegraphTurnProgress` (function): function telegraphTurnProgress(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
-- `telegraphTurnsRemaining` (function): function telegraphTurnsRemaining(config: TelegraphConfig, startedTurn: number, currentTurn: number): number — ⚠ undocumented
 
 ## @jgengine/core/stats/accumulatorMeter
 
@@ -287,8 +278,6 @@
 - `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> — ⚠ undocumented
 - `GravityIntervalConfig` (interface): interface GravityIntervalConfig — ⚠ undocumented
 - `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
-- `createFallingGrid` (function): function createFallingGrid<TCell>(config: FallingGridConfig): FallingGrid<TCell> — A game-agnostic cell grid for gravity-driven falling-block mechanics: bounded occupancy, footprint placement/collision, line-clear collapse, column-gravity settle (for match-3/sand style cascades), and a pure lock-delay helper. Extracted from falling-block tetris logic so any falling-block game can adopt it instead of reimplementing the grid.
-- `gravityIntervalMs` (function): function gravityIntervalMs(level: number, config: GravityIntervalConfig = {}): number — Gravity tick interval for a given level: linear speed-up with a floor, generalizing a falling-block `gravityInterval` (`max(0.05, 0.8 - level * 0.07)` seconds) to milliseconds with configurable base/step/floor.
 
 ## @jgengine/core/tactics/predictiveQuery
 
@@ -297,17 +286,12 @@
 - `PredictedTarget` (interface): interface PredictedTarget — ⚠ undocumented
 - `PredictiveDeps` (interface): interface PredictiveDeps — ⚠ undocumented
 - `TilePredictInput` (interface): interface TilePredictInput — ⚠ undocumented
-- `predictArcEffect` (function): function predictArcEffect(deps: PredictiveDeps, input: ArcPredictInput): PredictedTarget[] — ⚠ undocumented
-- `predictAreaEffect` (function): function predictAreaEffect(deps: PredictiveDeps, input: AreaPredictInput): PredictedTarget[] — ⚠ undocumented
-- `predictTiles` (function): function predictTiles(input: TilePredictInput): Tile[] — ⚠ undocumented
 
 ## @jgengine/core/tactics/snapshot
 
 - `Snapshot` (type): type Snapshot = Record<string, unknown> — ⚠ undocumented
 - `SnapshotSlice` (interface): interface SnapshotSlice<T = unknown> — ⚠ undocumented
 - `SnapshotStore` (interface): interface SnapshotStore — ⚠ undocumented
-- `createSnapshotStore` (function): function createSnapshotStore(): SnapshotStore — ⚠ undocumented
-- `deepClone` (function): function deepClone<T>(value: T): T — ⚠ undocumented
 
 ## @jgengine/core/tactics/surface
 
@@ -320,7 +304,6 @@
 - `SurfaceLayerSnapshot` (type): type SurfaceLayerSnapshot = Record<string, Record<string, number | null>> — ⚠ undocumented
 - `SurfacePatch` (interface): interface SurfacePatch — ⚠ undocumented
 - `SurfaceReaction` (interface): interface SurfaceReaction — ⚠ undocumented
-- `createSurfaceLayer` (function): function createSurfaceLayer(config: SurfaceLayerConfig): SurfaceLayer — ⚠ undocumented
 
 ## @jgengine/core/tactics/tacticalGrid
 
@@ -336,4 +319,3 @@
 - `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot — ⚠ undocumented
 - `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
 - `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
-- `createTacticalGrid` (function): function createTacticalGrid(config: TacticalGridConfig): TacticalGrid — ⚠ undocumented

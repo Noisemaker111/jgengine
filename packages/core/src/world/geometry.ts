@@ -98,11 +98,13 @@ export function masksInfluence(x: number, z: number, masks: AvoidMasks): number 
   return best;
 }
 
+/** @internal */
 export function snapToGrid(point: Vec2, size: number): Vec2 {
   if (!(size > 0)) return point;
   return [Math.round(point[0] / size) * size, Math.round(point[1] / size) * size];
 }
 
+/** @internal */
 export function footprintAabb(center: Vec2, footprint: Footprint, quarterTurns = 0): Aabb {
   const turned = ((quarterTurns % 2) + 2) % 2 === 1;
   const halfW = (turned ? footprint.d : footprint.w) / 2;
@@ -115,6 +117,7 @@ export function footprintAabb(center: Vec2, footprint: Footprint, quarterTurns =
   };
 }
 
+/** @internal */
 export function expandAabb(aabb: Aabb, margin: number): Aabb {
   return {
     minX: aabb.minX - margin,
@@ -124,10 +127,12 @@ export function expandAabb(aabb: Aabb, margin: number): Aabb {
   };
 }
 
+/** @internal */
 export function aabbOverlap(a: Aabb, b: Aabb): boolean {
   return a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ;
 }
 
+/** @internal */
 export function aabbContains(outer: Aabb, inner: Aabb): boolean {
   return (
     inner.minX >= outer.minX &&
@@ -137,10 +142,12 @@ export function aabbContains(outer: Aabb, inner: Aabb): boolean {
   );
 }
 
+/** @internal */
 export function pointInAabb(point: Vec2, aabb: Aabb): boolean {
   return point[0] >= aabb.minX && point[0] <= aabb.maxX && point[1] >= aabb.minZ && point[1] <= aabb.maxZ;
 }
 
+/** @internal */
 export function clampToAabb(point: Vec2, aabb: Aabb): Vec2 {
   return [
     Math.min(Math.max(point[0], aabb.minX), aabb.maxX),
@@ -166,6 +173,7 @@ function resolveAxis(main: number, cross: number, delta: number, blockers: reado
   return next;
 }
 
+/** @internal */
 export function resolveMove(from: Vec2, delta: Vec2, blockers: readonly Aabb[], options: MoveOptions = {}): Vec2 {
   const radius = options.radius ?? 0;
   const expanded = radius === 0 ? blockers : blockers.map((blocker) => expandAabb(blocker, radius));
@@ -189,12 +197,16 @@ function normalizedRadius2(point: Vec2, ellipse: Ellipse): number {
   return nx * nx + ny * ny;
 }
 
-/** True when `point` sits inside (or on) the ellipse — the oval-arena containment test. */
+/** True when `point` sits inside (or on) the ellipse — the oval-arena containment test.
+ * @internal
+ */
 export function pointInEllipse(point: Vec2, ellipse: Ellipse): boolean {
   return normalizedRadius2(point, ellipse) <= 1;
 }
 
-/** Clamp `point` to the ellipse boundary when it strays outside, else return it unchanged. */
+/** Clamp `point` to the ellipse boundary when it strays outside, else return it unchanged.
+ * @internal
+ */
 export function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 {
   const r2 = normalizedRadius2(point, ellipse);
   if (r2 <= 1) return point;
@@ -205,7 +217,9 @@ export function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 {
   ];
 }
 
-/** Outward unit normal of the ellipse at the point nearest `point` — the boundary bounce direction. */
+/** Outward unit normal of the ellipse at the point nearest `point` — the boundary bounce direction.
+ * @internal
+ */
 export function ellipseNormal(point: Vec2, ellipse: Ellipse): Vec2 {
   const nx = ellipse.radiusX > 0 ? (point[0] - ellipse.center[0]) / (ellipse.radiusX * ellipse.radiusX) : 0;
   const ny = ellipse.radiusY > 0 ? (point[1] - ellipse.center[1]) / (ellipse.radiusY * ellipse.radiusY) : 0;

@@ -27,12 +27,12 @@ function modelWith(id: string, overrides: Partial<ModelConfig> = {}): ModelConfi
   return { url: base.url, dims: base.dims, ...overrides };
 }
 
-const KART_MODEL: ModelConfig = modelWith("kenney-racing/raceCarOrange", {
+const KART_MODEL: ModelConfig = modelWith("kaykit-city-builder/car_hatchback", {
   targetHeight: 1.05,
   material: { color: RUST, metalness: 0.5, roughness: 0.55 },
   parts: [
     {
-      model: modelWith("kenney-survival/barrel", {
+      model: modelWith("kaykit-dungeon/barrel_small", {
         material: { color: RUST, metalness: 0.3, roughness: 0.85 },
       }),
       position: [-0.55, 0.68, -1.1],
@@ -40,7 +40,7 @@ const KART_MODEL: ModelConfig = modelWith("kenney-racing/raceCarOrange", {
       scale: 0.5,
     },
     {
-      model: modelWith("kenney-survival/metal-panel-screws", {
+      model: modelWith("kaykit-city-builder/box_B", {
         material: { color: SCRAP_STEEL, metalness: 0.6, roughness: 0.4 },
       }),
       position: [0, 0.72, 1.55],
@@ -57,7 +57,7 @@ const COMPACTOR_TILE_SPAN = COMPACTOR_TILE_SCALE * (COMPACTOR_TILE_COUNT - 1);
 function compactorWallTile(index: number): { model: ModelConfig; position: [number, number, number]; scale: number } {
   const x = -COMPACTOR_TILE_SPAN / 2 + index * COMPACTOR_TILE_SCALE;
   return {
-    model: modelWith("kenney-racing/barrierWall", {
+    model: modelWith("kaykit-dungeon/wall", {
       material: { color: OIL_BLACK, metalness: 0.5, roughness: 0.6 },
     }),
     position: [x, 0, 0],
@@ -68,7 +68,7 @@ function compactorWallTile(index: number): { model: ModelConfig; position: [numb
 function compactorTooth(index: number): { model: ModelConfig; position: [number, number, number]; rotation: [number, number, number]; scale: number } {
   const x = -COMPACTOR_TILE_SPAN / 2 + 2 + index * 5;
   return {
-    model: modelWith("kenney-city-roads/construction-barrier", {
+    model: modelWith("kaykit-dungeon/barrier", {
       material: { color: HAZARD_YELLOW, emissive: HAZARD_YELLOW, emissiveIntensity: 0.45, metalness: 0.3, roughness: 0.5 },
     }),
     position: [x, 0.4, 1.1],
@@ -80,7 +80,7 @@ function compactorTooth(index: number): { model: ModelConfig; position: [number,
 function compactorLight(index: number): { model: ModelConfig; position: [number, number, number]; scale: number } {
   const x = -COMPACTOR_TILE_SPAN / 2 + 4 + index * 9;
   return {
-    model: modelWith("kenney-city-roads/construction-light", {
+    model: modelWith("kaykit-dungeon/torch_lit", {
       material: { emissive: "#ff5a3c", emissiveIntensity: 1.4, color: OIL_BLACK },
     }),
     position: [x, 6.4, 0.6],
@@ -121,7 +121,7 @@ function wreckPile(main: string, tilt1: string, tilt2: string): ModelConfig {
 
 function barrelWall(): ModelConfig {
   const barrel = (x: number, y: number): { model: ModelConfig; position: [number, number, number]; scale: number } => ({
-    model: modelWith("kenney-survival/barrel", { material: { color: OIL_BLACK, metalness: 0.3, roughness: 0.8 } }),
+    model: modelWith("kaykit-dungeon/barrel_small", { material: { color: OIL_BLACK, metalness: 0.3, roughness: 0.8 } }),
     position: [x, y, 0],
     scale: 1.7,
   });
@@ -141,12 +141,12 @@ function barrelWall(): ModelConfig {
 }
 
 function applianceStack(): ModelConfig {
-  return modelWith("kenney-survival/chest", {
+  return modelWith("kaykit-dungeon/chest", {
     scale: 1.9,
     material: { color: SCRAP_STEEL, roughness: 0.5, metalness: 0.4 },
     parts: [
       {
-        model: modelWith("kenney-survival/box", { material: { color: WELD_WHITE, roughness: 0.6 } }),
+        model: modelWith("kaykit-dungeon/box_small", { material: { color: WELD_WHITE, roughness: 0.6 } }),
         position: [0.15, 1.45, 0.1],
         rotation: [0.2, 0.3, 0.1],
         scale: 1.5,
@@ -156,24 +156,24 @@ function applianceStack(): ModelConfig {
 }
 
 function scrapHeap(): ModelConfig {
-  return modelWith("kenney-survival/metal-panel-screws", {
+  return modelWith("kaykit-city-builder/box_B", {
     scale: 3.2,
     material: { color: HAZARD_YELLOW, roughness: 0.8, metalness: 0.3 },
     parts: [
       {
-        model: modelWith("kenney-survival/resource-stone-large", { material: { color: SCRAP_STEEL, roughness: 0.9 } }),
+        model: modelWith("kaykit-dungeon/rubble_large", { material: { color: SCRAP_STEEL, roughness: 0.9 } }),
         position: [0.4, 0.3, 0.2],
         rotation: [0.3, 0.5, 0.2],
         scale: 1.6,
       },
       {
-        model: modelWith("kenney-survival/box", { material: { color: RUST, roughness: 0.8 } }),
+        model: modelWith("kaykit-dungeon/box_small", { material: { color: RUST, roughness: 0.8 } }),
         position: [-0.3, 0.25, -0.15],
         rotation: [0.1, 1.2, 0],
         scale: 1.4,
       },
       {
-        model: modelWith("kenney-survival/tool-axe", { material: { color: SCRAP_STEEL, roughness: 0.6, metalness: 0.5 } }),
+        model: modelWith("kaykit-dungeon/sword_shield", { material: { color: SCRAP_STEEL, roughness: 0.6, metalness: 0.5 } }),
         position: [0, 0.55, 0],
         rotation: [0.5, 0.8, 0.9],
         scale: 3,
@@ -183,12 +183,12 @@ function scrapHeap(): ModelConfig {
 }
 
 function containerStack(): ModelConfig {
-  return modelWith("kenney-survival/box-large", {
+  return modelWith("kaykit-dungeon/crates_stacked", {
     scale: 2.6,
     material: { color: RUST, roughness: 0.6, metalness: 0.35 },
     parts: [
       {
-        model: modelWith("kenney-survival/box-large-open", { material: { color: SCRAP_STEEL, roughness: 0.6, metalness: 0.35 } }),
+        model: modelWith("kaykit-dungeon/box_large", { material: { color: SCRAP_STEEL, roughness: 0.6, metalness: 0.35 } }),
         position: [0.3, 2.6, 0],
         rotation: [0, 0.3, 0],
         scale: 2.4,
@@ -198,12 +198,12 @@ function containerStack(): ModelConfig {
 }
 
 function craneLeg(): ModelConfig {
-  return modelWith("kenney-city-roads/bridge-pillar-wide", {
+  return modelWith("kaykit-dungeon/pillar", {
     targetHeight: 9,
     material: { color: HAZARD_YELLOW, roughness: 0.5, metalness: 0.4 },
     parts: [
       {
-        model: modelWith("kenney-city-roads/construction-light", {
+        model: modelWith("kaykit-dungeon/torch_lit", {
           material: { emissive: HAZARD_YELLOW, emissiveIntensity: 1.2, color: OIL_BLACK },
         }),
         position: [0, 9.2, 0],
@@ -216,7 +216,7 @@ function craneLeg(): ModelConfig {
 function gateBarricade(requirement: "plow" | "jump"): ModelConfig {
   const color = requirement === "plow" ? RUST : HAZARD_YELLOW;
   const post = (x: number): { model: ModelConfig; position: [number, number, number]; scale: number } => ({
-    model: modelWith("kenney-city-roads/construction-barrier", {
+    model: modelWith("kaykit-dungeon/barrier", {
       material: { color, emissive: color, emissiveIntensity: 0.4, roughness: 0.5, metalness: 0.3 },
     }),
     position: [x, 1.1, 0],
@@ -230,7 +230,7 @@ function gateBarricade(requirement: "plow" | "jump"): ModelConfig {
       post(1.2),
       post(3.6),
       {
-        model: modelWith("kenney-racing/rail", {
+        model: modelWith("kaykit-dungeon/barrier_half", {
           material: { color, emissive: color, emissiveIntensity: 0.5, roughness: 0.4, metalness: 0.4 },
         }),
         position: [0, 1.7, 0],
@@ -241,12 +241,12 @@ function gateBarricade(requirement: "plow" | "jump"): ModelConfig {
 }
 
 function exitGateArch(): ModelConfig {
-  return modelWith("kenney-racing/overheadRoundColored", {
+  return modelWith("kaykit-dungeon/wall_arched", {
     scale: 9.5,
     material: { color: SCRAP_STEEL, roughness: 0.4, metalness: 0.5 },
     parts: [
       {
-        model: modelWith("kenney-racing/flagCheckers", {
+        model: modelWith("kaykit-dungeon/banner_patternA_white", {
           material: { emissive: WELD_WHITE, emissiveIntensity: 0.8 },
         }),
         position: [0, 8.4, 0],
@@ -257,7 +257,7 @@ function exitGateArch(): ModelConfig {
 }
 
 function pickupMarker(): ModelConfig {
-  return modelWith("kenney-survival/tool-hammer", {
+  return modelWith("kaykit-dungeon/coin", {
     scale: 6,
     material: { color: WELD_WHITE, emissive: HAZARD_YELLOW, emissiveIntensity: 1.3, metalness: 0.5, roughness: 0.25 },
   });
@@ -269,7 +269,7 @@ export const entityModels: Record<string, ModelConfig> = {
 };
 
 export const objectModels: Record<string, ModelConfig> = {
-  [PROP_WRECK_PILE]: wreckPile("kenney-racing/raceCarRed", "kenney-racing/raceCarWhite", "kenney-survival/box-large-open"),
+  [PROP_WRECK_PILE]: wreckPile("kaykit-city-builder/car_sedan", "kaykit-city-builder/car_taxi", "kaykit-dungeon/box_large"),
   [PROP_TIRE_WALL]: barrelWall(),
   [PROP_APPLIANCE_STACK]: applianceStack(),
   [PROP_SCRAP_HEAP]: scrapHeap(),

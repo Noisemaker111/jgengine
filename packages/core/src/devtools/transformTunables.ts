@@ -6,6 +6,7 @@ export interface TunableTransformResult {
   bound: string[];
 }
 
+/** @internal */
 export function transformTunableExports(code: string, table: string): TunableTransformResult {
   const bound: string[] = [];
   const rewritten = code.replace(
@@ -31,12 +32,14 @@ export function transformTunableExports(code: string, table: string): TunableTra
 const GAME_MODULE_PATTERN = /[/\\]Games[/\\][^/\\]+[/\\]src[/\\](.+)\.(ts|tsx)$/;
 const SKIP_MODULE_PATTERN = /(\.test\.|[/\\]main\.tsx$)/;
 
+/** @internal */
 export function tunableModuleTable(id: string): string | null {
   if (SKIP_MODULE_PATTERN.test(id)) return null;
   const match = GAME_MODULE_PATTERN.exec(id);
   return match === null ? null : match[1]!.replace(/\\/g, "/");
 }
 
+/** @internal */
 export function tunableDiscoveryPlugin(): {
   name: string;
   enforce: "pre";

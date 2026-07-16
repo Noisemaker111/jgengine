@@ -4,6 +4,7 @@ import { aliases } from "../aliases";
 import { generatedIndex } from "../generated";
 import type { IndexEntry } from "../manifest";
 import { singles } from "../singles";
+import { sources as declaredSources } from "../sources";
 
 export interface BuildCatalogOptions {
   /** URL prefix where pulled pack GLBs live (consumer's `public/models`). */
@@ -23,6 +24,15 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
   const includeAliases = options.includeAliases ?? true;
   const includeSingles = options.includeSingles ?? true;
   const sourceFilter = options.sources === undefined ? null : new Set(options.sources);
+
+  if (sourceFilter !== null) {
+    const knownSourceIds = new Set(declaredSources.map((source) => source.id));
+    for (const id of sourceFilter) {
+      if (!knownSourceIds.has(id)) {
+        throw new Error(`buildCatalog: unknown source id "${id}" — not declared in packages/assets/src/sources/*.ts`);
+      }
+    }
+  }
 
   const catalog = createAssetCatalog();
 

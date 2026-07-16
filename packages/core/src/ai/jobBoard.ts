@@ -60,6 +60,7 @@ function idleWorker(): WorkerState {
   return { jobId: null, phase: "idle", worked: 0, cycles: 0 };
 }
 
+/** @internal */
 export function createJobBoard(): JobBoard {
   const jobs = new Map<string, Job>();
   const workers = new Map<string, WorkerState>();

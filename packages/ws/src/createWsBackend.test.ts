@@ -164,6 +164,72 @@ test("reconnect uses exponential backoff and is not subscription-gated", async (
   backend.close();
 });
 
+test("runCommand keeps the same op ID across a reconnect resend after a lost reply", async () => {
+  let scheduled: Array<{ fn: () => void }> = [];
+  const pipe = createControllablePipe();
+  const backend = createWsBackend({
+    userId: "alice",
+    pipe: pipe.factory,
+    reconnectDelayMs: 10,
+    rpcTimeoutMs: 0,
+    setTimeoutFn: ((fn: () => void) => {
+      const handle = { fn };
+      scheduled.push(handle);
+      return handle as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout,
+    clearTimeoutFn: ((handle: unknown) => {
+      scheduled = scheduled.filter((entry) => entry !== handle);
+    }) as typeof clearTimeout,
+  });
+
+  const joinPromise = backend.transport.joinServer({ gameId: "test-game" });
+  pipe.openLatest();
+  const hello = pipe.lastClientMessage() as { id: number };
+  pipe.replyLatest({ v: 1, t: "reply", id: hello.id, ok: true, result: { userId: "alice" } });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const join = pipe.sockets[0]?.sent
+    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .find((message) => message.t === "join") as { id: number } | undefined;
+  expect(join).toBeDefined();
+  pipe.replyLatest({ v: 1, t: "reply", id: join!.id, ok: true, result: { serverId: "srv-1", isNew: false } });
+  await joinPromise;
+
+  const runPromise = backend.transport.runCommand({ serverId: "srv-1", command: "buy", input: { qty: 1 } });
+  await Promise.resolve();
+
+  type RunCommandWire = { t: "runCommand"; id: number; input: Record<string, unknown> };
+  const firstSend = pipe.sockets[0]?.sent
+    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .find((message) => message.t === "runCommand") as RunCommandWire | undefined;
+  expect(firstSend).toBeDefined();
+  const opId = firstSend!.input.__jgWsOpId;
+  expect(typeof opId).toBe("string");
+
+  pipe.closeLatest();
+  const reconnect = scheduled.shift();
+  reconnect?.fn();
+  expect(pipe.sockets).toHaveLength(2);
+  pipe.openLatest();
+  const hello2 = pipe.lastClientMessage() as { id: number };
+  pipe.replyLatest({ v: 1, t: "reply", id: hello2.id, ok: true, result: { userId: "alice" } });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const resend = pipe.sockets[1]?.sent
+    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .find((message) => message.t === "runCommand") as RunCommandWire | undefined;
+  expect(resend).toBeDefined();
+  expect(resend!.id).not.toBe(firstSend!.id);
+  expect(resend!.input.__jgWsOpId).toBe(opId);
+
+  pipe.replyLatest({ v: 1, t: "reply", id: resend!.id, ok: true, result: { ok: true } });
+  await expect(runPromise).resolves.toEqual({ ok: true });
+
+  backend.close();
+});
+
 test("client rejects pending request when a malformed reply carries its id", async () => {
   const pipe = createControllablePipe();
   const backend = createWsBackend({

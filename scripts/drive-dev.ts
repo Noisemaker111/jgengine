@@ -25,14 +25,13 @@ import { join, resolve } from "node:path";
 import type { ChildProcess } from "node:child_process";
 import {
   CdpSession,
-  DEV_BASE,
-  WARM_CHROME_PORT,
   applyDevice,
   ensureDevServer,
   killProcessTree,
   launchChrome,
   openPageSession,
   pickDebugPort,
+  resolveWarmChromePort,
   waitForDebugger,
   type SizeMode,
 } from "./browser-lib";
@@ -73,8 +72,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --shot <name>       screenshot to shots/<game>-<name>.png (default step if none given)
   --rpc <json>        call the page's agent/editor bridge with this JSON payload
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
-  --keep              leave the dev server + Chrome (fixed port ${WARM_CHROME_PORT})
-                      running after this drive — pair with --connect ${WARM_CHROME_PORT}
+  --keep              leave the dev server + Chrome (per-worktree warm debug port)
+                      running after this drive — pair with --connect <port>
                       on every following drive in the loop (warm-loop pattern)
   --timeout <s>       page-ready timeout in seconds (default 60)
   --playtest          bot-playtest rung: drive input, sample the game's
@@ -91,8 +90,9 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
 
 Warm loop:
   bun run drive <game> --click START --shot before --keep                       # first: cold boot, stays warm
-  bun run drive <game> --click START --shot after --connect ${WARM_CHROME_PORT} --size half   # <10s, cheap judge PNG
-  bun run drive <game> --click START --shot final --connect ${WARM_CHROME_PORT}               # final full-res shot for the PR
+  bun run drive <game> --click START --shot after --connect <port> --size half  # <10s, cheap judge PNG
+  bun run drive <game> --click START --shot final --connect <port>              # final full-res shot for the PR
+  # port is printed after --keep; each worktree gets its own default so parallel ships don't collide
 `;
 
 function parseArgs(argv: string[]): Args {
@@ -313,8 +313,10 @@ const watchdog = setTimeout(() => {
 watchdog.unref();
 
 try {
-  server = await ensureDevServer();
-  const debugPort = args.connect ?? (args.keep ? WARM_CHROME_PORT : pickDebugPort());
+  const dev = await ensureDevServer();
+  server = dev.child;
+  const warmPort = resolveWarmChromePort();
+  const debugPort = args.connect ?? (args.keep ? warmPort : pickDebugPort());
   if (args.connect === undefined) {
     chrome = launchChrome(debugPort, "jg-drive-");
     await waitForDebugger(debugPort, 30_000);
@@ -326,7 +328,7 @@ try {
     await session.send("Page.enable");
     await session.send("Runtime.enable");
     await applyDevice(session, "desktop", args.size);
-    const url = new URL(DEV_BASE);
+    const url = new URL(dev.base);
     url.searchParams.set("game", args.game);
     url.searchParams.set("mode", args.mode);
     url.searchParams.set("capture", "1");
@@ -380,7 +382,7 @@ try {
       }
     }
     if (args.keep) {
-      console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${DEV_BASE}`);
+      console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${dev.base}`);
       console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
     }
   } finally {

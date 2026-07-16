@@ -86,6 +86,7 @@ function parseKey(k: string): Tile {
   return [Number(c), Number(r)];
 }
 
+/** @internal */
 export function createTacticalGrid(config: TacticalGridConfig): TacticalGrid {
   const width = config.width;
   const height = config.height;

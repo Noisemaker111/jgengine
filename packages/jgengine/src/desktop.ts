@@ -34,6 +34,7 @@ export interface DesktopArgs {
   outDir: string | undefined;
   dryRun: boolean;
   skipFrontendBuild: boolean;
+  allowRemote: boolean;
 }
 
 export interface DesktopPlan {
@@ -63,6 +64,11 @@ const VALUE_FLAGS = new Set(["--url", "--name", "--id", "--version", "--icon", "
 
 const DEFAULT_VERSION = "0.1.0";
 
+const DESKTOP_CSP =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob: https:; connect-src 'self' ws: wss: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'";
+
+const ALLOWED_REMOTE_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "jgengine.com"]);
+
 const MINIMAL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64",
@@ -85,6 +91,9 @@ options:
   --out <dir>         staging directory (default: <project>/.jgengine/desktop)
   --dry-run           generate staging + config only; skip toolchain + Rust build
   --skip-frontend-build  reuse existing dist/ (local mode; for tests)
+  --allow-remote      allow --url to point at a host outside the trusted allowlist
+                       (localhost, jgengine.com and its subdomains) — only pass this
+                       for a hosted URL you trust; the shipped app loads it live
 
 defaults (deterministic):
   name     package.json name → title case, or URL hostname
@@ -93,6 +102,7 @@ defaults (deterministic):
   icon     <project>/public/icon.png, else <project>/icon.png, else embedded PNG
 `;
 
+/** @internal */
 export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string } {
   if (hasFlag(argv, "help") || argv.includes("-h")) {
     return { error: "help" };
@@ -106,11 +116,19 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
   const outDir = flag(argv, "out");
   const dryRun = hasFlag(argv, "dry-run");
   const skipFrontendBuild = hasFlag(argv, "skip-frontend-build");
+  const allowRemote = hasFlag(argv, "allow-remote");
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (!arg.startsWith("-")) continue;
-    if (arg === "--dry-run" || arg === "--skip-frontend-build" || arg === "--help" || arg === "-h") continue;
+    if (
+      arg === "--dry-run" ||
+      arg === "--skip-frontend-build" ||
+      arg === "--allow-remote" ||
+      arg === "--help" ||
+      arg === "-h"
+    )
+      continue;
     if (VALUE_FLAGS.has(arg)) {
       if (argv[index + 1] === undefined || argv[index + 1]!.startsWith("-")) {
         return { error: `${arg} requires a value` };
@@ -149,6 +167,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       outDir,
       dryRun,
       skipFrontendBuild,
+      allowRemote,
     };
   }
 
@@ -163,9 +182,11 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
     outDir,
     dryRun,
     skipFrontendBuild,
+    allowRemote,
   };
 }
 
+/** @internal */
 export function validateHttpsUrl(raw: string): { ok: true; url: URL } | { ok: false; error: string } {
   let parsed: URL;
   try {
@@ -182,6 +203,13 @@ export function validateHttpsUrl(raw: string): { ok: true; url: URL } | { ok: fa
   return { ok: true, url: parsed };
 }
 
+/** @internal */
+export function isAllowedDesktopOrigin(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return ALLOWED_REMOTE_HOSTS.has(host) || host.endsWith(".jgengine.com");
+}
+
+/** @internal */
 export function slugFromProductName(name: string): string {
   let slug = name
     .trim()
@@ -199,11 +227,13 @@ export function slugFromProductName(name: string): string {
   return slug.length > 0 ? slug : "game";
 }
 
+/** @internal */
 export function defaultIdentifier(productName: string): string {
   const segment = slugFromProductName(productName).replace(/-/g, "");
   return `com.jgengine.${segment.length > 0 ? segment : "game"}`;
 }
 
+/** @internal */
 export function validateIdentifier(id: string): string | null {
   if (!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/i.test(id)) {
     return `identifier must be reverse-DNS (e.g. com.jgengine.mygame), got "${id}"`;
@@ -211,6 +241,7 @@ export function validateIdentifier(id: string): string | null {
   return null;
 }
 
+/** @internal */
 export function validateVersion(version: string): string | null {
   if (!/^\d+\.\d+\.\d+([.-][0-9A-Za-z.-]+)?$/.test(version)) {
     return `version must look like semver (e.g. 1.0.0), got "${version}"`;
@@ -218,6 +249,7 @@ export function validateVersion(version: string): string | null {
   return null;
 }
 
+/** @internal */
 export function packageDisplayName(pkgName: string | undefined): string | null {
   if (pkgName === undefined || pkgName.length === 0) return null;
   const bare = pkgName.includes("/") ? pkgName.slice(pkgName.lastIndexOf("/") + 1) : pkgName;
@@ -225,6 +257,7 @@ export function packageDisplayName(pkgName: string | undefined): string | null {
   return bare;
 }
 
+/** @internal */
 export function readGameConfigName(projectDir: string): string | null {
   const configPath = join(projectDir, "src", "game.config.ts");
   if (!existsSync(configPath)) return null;
@@ -233,6 +266,7 @@ export function readGameConfigName(projectDir: string): string | null {
   return match?.[1] ?? null;
 }
 
+/** @internal */
 export function resolveMetadata(input: {
   mode: DesktopMode;
   projectDir: string | null;
@@ -282,6 +316,7 @@ export function resolveMetadata(input: {
   };
 }
 
+/** @internal */
 export function isGameProject(dir: string): { ok: true } | { ok: false; error: string } {
   const pkgPath = join(dir, "package.json");
   if (!existsSync(pkgPath)) {
@@ -310,6 +345,7 @@ export function isGameProject(dir: string): { ok: true } | { ok: false; error: s
   return { ok: true };
 }
 
+/** @internal */
 export function resolveIconSource(projectDir: string | null, explicit: string | undefined): string | null {
   if (explicit !== undefined) {
     const path = resolve(explicit);
@@ -323,16 +359,23 @@ export function resolveIconSource(projectDir: string | null, explicit: string | 
   return null;
 }
 
+/** @internal */
 export function defaultStagingDir(mode: DesktopMode, projectDir: string | null, cwd: string): string {
   if (mode === "project" && projectDir !== null) return join(projectDir, ".jgengine", "desktop");
   return join(cwd, ".jgengine", "desktop");
 }
 
+/** @internal */
 export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): DesktopPlan | { error: string } {
   if (args.mode === "url") {
     if (args.url === null) return { error: "--url requires an https URL" };
     const validated = validateHttpsUrl(args.url);
     if (!validated.ok) return { error: validated.error };
+    if (!args.allowRemote && !isAllowedDesktopOrigin(validated.url.hostname)) {
+      return {
+        error: `--url host "${validated.url.hostname}" is outside the trusted allowlist (localhost, jgengine.com and its subdomains) — the shipped app loads this URL live on every launch. Pass --allow-remote to build an installer for a URL you trust.`,
+      };
+    }
     const metadata = resolveMetadata({
       mode: "url",
       projectDir: null,
@@ -412,7 +455,7 @@ function tauriConf(plan: DesktopPlan): string {
           },
         ],
         security: {
-          csp: null,
+          csp: DESKTOP_CSP,
         },
       },
       bundle: {
@@ -512,6 +555,7 @@ function writeIconSet(iconsDir: string, source: string | null): void {
   }
 }
 
+/** @internal */
 export function writeStaging(plan: DesktopPlan): StageResult {
   const stagingDir = plan.stagingDir;
   if (existsSync(stagingDir)) {
@@ -560,6 +604,7 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
+/** @internal */
 export function commandAvailable(command: string, args: string[] = ["--version"]): boolean {
   const direct = spawnSync(command, args, {
     stdio: "ignore",
@@ -577,6 +622,7 @@ export function commandAvailable(command: string, args: string[] = ["--version"]
   return viaShell.status === 0;
 }
 
+/** @internal */
 export function checkToolchains(): ToolchainReport {
   const missing: string[] = [];
   if (!commandAvailable("rustc")) {
@@ -598,6 +644,7 @@ async function probeUrl(url: string, method: "HEAD" | "GET"): Promise<HttpProbe>
   return { ok: response.ok, status: response.status };
 }
 
+/** @internal */
 export async function assertUrlReachable(url: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const head = await probeUrl(url, "HEAD");
@@ -626,6 +673,7 @@ function pickPackageManager(projectDir: string): string {
   return "npm";
 }
 
+/** @internal */
 export function buildFrontend(projectDir: string): { ok: true; distDir: string } | { ok: false; error: string } {
   const pkg = readPackageJson(join(projectDir, "package.json"));
   const pm = pickPackageManager(projectDir);
@@ -655,6 +703,7 @@ export function buildFrontend(projectDir: string): { ok: true; distDir: string }
   return { ok: true, distDir };
 }
 
+/** @internal */
 export function copyFrontendDist(distDir: string, stagingDir: string): void {
   const target = join(stagingDir, "dist");
   if (existsSync(target)) rmSync(target, { recursive: true, force: true });
@@ -662,6 +711,7 @@ export function copyFrontendDist(distDir: string, stagingDir: string): void {
   cpSync(distDir, target, { recursive: true });
 }
 
+/** @internal */
 export function findNsisArtifact(stagingDir: string): string | null {
   const nsisDir = join(stagingDir, "src-tauri", "target", "release", "bundle", "nsis");
   if (!existsSync(nsisDir)) return null;
@@ -673,6 +723,7 @@ export function findNsisArtifact(stagingDir: string): string | null {
   return exes[exes.length - 1]!;
 }
 
+/** @internal */
 export function runTauriNsisBuild(stagingDir: string): { ok: true; artifact: string } | { ok: false; error: string } {
   const result = spawnSync("npx", ["--yes", "@tauri-apps/cli@2", "build", "--bundles", "nsis"], {
     cwd: stagingDir,
@@ -694,6 +745,7 @@ export function runTauriNsisBuild(stagingDir: string): { ok: true; artifact: str
   return { ok: true, artifact };
 }
 
+/** @internal */
 export async function runDesktopAsync(argv: string[], cwd: string = process.cwd()): Promise<number> {
   const parsed = parseDesktopArgs(argv);
   if ("error" in parsed) {
@@ -798,6 +850,7 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
   return 0;
 }
 
+/** @internal */
 export function runDesktop(argv: string[]): void {
   void runDesktopAsync(argv)
     .then((code) => {

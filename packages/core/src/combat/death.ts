@@ -1,6 +1,7 @@
-import type { DeathReason, EntityDiedEvent, GameEvents } from "../game/events";
+import type { EntityDiedEvent, GameEvents } from "../game/events";
 import type { Drop } from "../game/lootTable";
 import type { ScatterOptions } from "../game/worldItem";
+import type { DeathReason } from "./deathReason";
 import type { EffectVia } from "./effects";
 
 export type DeathReasonKind = DeathReason["kind"];

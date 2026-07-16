@@ -56,6 +56,8 @@ export interface SimClock {
   advance(realDt: number): number;
   now(): number;
   snapshot(): ClockSnapshot;
+  /** Restore clock position — game-time, pause state, and speed multipliers — from a {@link ClockSnapshot} for whole-world save/load. Live timers registered via `after`/`every`/`at` are unaffected. */
+  hydrate(snapshot: ClockSnapshot): void;
   calendar(): CalendarTime;
   isPaused(): boolean;
   speed(): number;
@@ -90,7 +92,14 @@ interface Timer {
   callback: () => void;
 }
 
-const MAX_TIMER_FIRES = 10_000;
+const MAX_TIMER_FIRES_PER_ADVANCE = 10_000;
+
+function requireFiniteTimerValue(label: string, value: number): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(`SimClock ${label} must be finite, got ${value}`);
+  }
+  return value;
+}
 
 export interface SimClockOptions {
   config?: TimeConfig;
@@ -161,7 +170,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
       }
       timer.callback();
       fires += 1;
-      if (fires >= MAX_TIMER_FIRES) return;
+      if (fires >= MAX_TIMER_FIRES_PER_ADVANCE) return;
     }
   }
 
@@ -222,10 +231,20 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
     };
   }
 
+  function hydrate(state: ClockSnapshot): void {
+    now = state.now;
+    paused = state.paused;
+    playSpeed = state.playSpeed;
+    timescale = state.timescale;
+    displayMinute = minuteIndex(now, dayLength);
+    onChange();
+  }
+
   return {
     advance,
     now: () => now,
     calendar,
+    hydrate,
     snapshot: () => ({
       now,
       paused,
@@ -245,12 +264,13 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
     cycleSpeed,
     timescale: () => timescale,
     setTimescale,
-    after: (seconds, callback) => register(now + Math.max(0, seconds), null, callback),
+    after: (seconds, callback) =>
+      register(now + Math.max(0, requireFiniteTimerValue("after(seconds)", seconds)), null, callback),
     every: (seconds, callback) => {
-      const interval = Math.max(Number.EPSILON, seconds);
+      const interval = Math.max(Number.EPSILON, requireFiniteTimerValue("every(seconds)", seconds));
       return register(now + interval, interval, callback);
     },
-    at: (time, callback) => register(time, null, callback),
+    at: (time, callback) => register(requireFiniteTimerValue("at(time)", time), null, callback),
   };
 }
 

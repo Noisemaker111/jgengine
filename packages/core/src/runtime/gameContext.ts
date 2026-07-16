@@ -1,4 +1,4 @@
-import { createCardPile, type CardPile, type CardPileConfig } from "../cards/cardPile";
+import { type CardPile, type CardPileConfig } from "../cards/cardPile";
 import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
@@ -12,14 +12,11 @@ import {
 } from "../combat/effects";
 import { createProjectileSystem, type ProjectileSystem } from "../combat/projectiles";
 import {
-  resolveHitReaction,
   type HitReaction,
   type HitReactionConfig,
   type ImpactPresetName,
 } from "../combat/hitReaction";
 import {
-  pointInTelegraph,
-  type TelegraphConfig,
   type TelegraphShape,
 } from "../combat/telegraph";
 import {
@@ -29,38 +26,34 @@ import {
 } from "../commands/commandRegistry";
 import {
   balance as walletBalance,
-  canAfford as walletCanAfford,
   charge as walletCharge,
-  chargeAll as walletChargeAll,
   createEmptyWallet,
   grant as walletGrant,
   isOverdrawn as walletIsOverdrawn,
   type ChargeOptions as WalletChargeOptions,
   type WalletState,
 } from "../economy/wallet";
-import { createCosmetics, type Cosmetics } from "../game/cosmetics";
-import type { GameDefinition, PersistConfig } from "../game/defineGame";
+import { type Cosmetics } from "../game/cosmetics";
+import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
-import { createGameFeed, type FeedEntry, type GameFeed } from "../game/feed";
+import { createGameFeed, type GameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
-import { createLeaderboard, type Leaderboard, type LeaderboardRow } from "../game/leaderboard";
+import { type Leaderboard } from "../game/leaderboard";
 import { createLoadouts, type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
-import { createGameDialogue, type GameDialogue } from "../game/dialogue";
-import { createQuestJournal, type QuestJournal, type QuestSnapshotEntry } from "../game/quest";
+import { type GameDialogue } from "../game/dialogue";
+import { type QuestJournal } from "../game/quest";
 import {
-  createWorldItemStore,
   resolveDeathDrops,
   DEFAULT_RARITY,
-  WORLD_ITEM_ENTITY_NAME,
   type WorldItemRecord,
   type WorldItemSpawnInput,
 } from "../game/worldItem";
-import { createChat, type Chat, type ChatSnapshot } from "../game/chat";
-import { createSocial, type Social, type SocialSnapshot } from "../game/social";
-import { createTradeSystem, type TradeField, type TradeSystem } from "../game/trade";
-import { createUnlocks, type Unlocks } from "../game/unlocks";
+import { type Chat } from "../game/chat";
+import { createSocial, type Social } from "../game/social";
+import { type TradeField, type TradeSystem } from "../game/trade";
+import { type Unlocks } from "../game/unlocks";
 import {
   createInventorySet,
   putItem,
@@ -85,10 +78,8 @@ import { createBodyBind, type BodyBind } from "../scene/bodyBind";
 import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
 import {
   createEntityStatsApi,
-  hydrateEntityStats,
   seedStatValues,
   setStatValue,
-  snapshotEntityStats,
   type EntityStatsApi,
   type StatCatalog,
   type StatValueMap,
@@ -107,9 +98,9 @@ import { createForms, type Forms } from "../scene/form";
 import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
-import { createRoster, type Roster, type RosterEntry } from "../scene/roster";
+import { type Roster } from "../scene/roster";
 import { createSelectionSet, type SelectionSet } from "../scene/selection";
-import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
+import { type ConnectedPlayers } from "../game/connectedPlayers";
 import { createPossession, type Possession } from "../scene/possession";
 import {
   createSceneRaycast,
@@ -126,17 +117,31 @@ import {
   applyWorldSnapshot,
   composeWorldSnapshot,
   type SnapshotModule,
+  type SnapshotViewer,
   type WorldSnapshot,
 } from "./worldSnapshot";
+import {
+  policyProjectsViewers,
+  projectByVisibleIds,
+  projectEntitiesForViewer,
+  projectPerUserForViewer,
+  visibleEntityIds,
+  type ReplicationPolicy,
+} from "./worldProjection";
 import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock, type SimClock } from "../time/simClock";
-import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
-import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
+import { type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
+import { RaceState, type RaceStateConfig } from "../game/race";
 import { createCameraDirector, type CameraDirector } from "./cameraDirector";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
 import { createMotionIntents, type MotionIntents } from "./motionIntents";
+import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
+import { featureDescriptors, type FeatureDeps } from "./descriptors/features";
+import { createCombatFx } from "./context/combatFx";
+import { createContextRegistries } from "./context/registries";
+import { createWorldItemContext } from "./context/worldItems";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -191,6 +196,12 @@ export interface GameContextOptions<
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
   /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
   save?: RuntimeSaveOptions;
+  /**
+   * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
+   * wire. Bound on the authoritative host only. Unset (the default) replicates the whole world to every
+   * client, exactly as before; the simulation is identical either way, so a game plays the same.
+   */
+  replication?: ReplicationPolicy;
 }
 
 export interface SceneObjectContext extends ObjectStore {
@@ -496,11 +507,17 @@ export interface GameContext {
   /**
    * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
    * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
-   * baseline a host sends a joining client; {@link hydrate} is its inverse.
+   * baseline a host sends a joining client; {@link hydrate} is its inverse. Pass a `viewer` and the host
+   * projects the snapshot to only what that viewer may see (private state, area of interest) when a
+   * {@link GameContextOptions.replication} policy is set; without one the viewer argument is a no-op.
    */
-  snapshot(): WorldSnapshot;
+  snapshot(viewer?: SnapshotViewer): WorldSnapshot;
   /** Apply a {@link WorldSnapshot} from an authoritative host, hydrating each subsystem key present in it. */
   hydrate(snapshot: WorldSnapshot): void;
+  /** Aggregate world-dirty version summed across replicated modules; the host replicator skips an unchanged commit. @internal */
+  replicationVersion(): number;
+  /** True when a {@link GameContextOptions.replication} policy makes {@link snapshot} viewer-dependent (private/AOI projection is active). @internal */
+  replicatesPerViewer(): boolean;
 }
 
 export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(
@@ -663,70 +680,23 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
   const features = definition.features ?? {};
-  const unlocks = features.unlocks
-    ? notifyAfter(createUnlocks(), ["grant", "hydrate"], signal.notify)
-    : undefined;
-  const rawSocial =
-    features.social || features.chat
-      ? createSocial({
-          events,
-          now,
-          emotes: {
-            entities: { get: (id) => entities.get(id) },
-            spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
-          },
-        })
-      : null;
-  let social: Social | undefined;
-  if (features.social && rawSocial !== null) {
-    social = {
-      friends: notifyAfter(
-        rawSocial.friends,
-        ["request", "accept", "decline", "remove", "block", "hydrate"],
-        signal.notify,
-      ),
-      party: notifyAfter(
-        rawSocial.party,
-        ["invite", "accept", "decline", "kick", "leave", "promote"],
-        signal.notify,
-      ),
-      presence: rawSocial.presence,
-      emotes: rawSocial.emotes,
-      worldInvites: notifyAfter(
-        rawSocial.worldInvites,
-        ["invite", "accept", "decline"],
-        signal.notify,
-      ),
-      snapshot: rawSocial.snapshot,
-      hydrate: (data) => {
-        rawSocial.hydrate(data);
-        signal.notify();
-      },
-    };
-  }
-  let chat: Chat | undefined;
-  if (features.chat && rawSocial !== null) {
-    chat = notifyAfter(
-      createChat({
+  const featureRegistry = new Map<keyof GameFeatures, unknown>();
+  const featureValue = <T>(key: keyof GameFeatures): T | undefined =>
+    featureRegistry.get(key) as T | undefined;
+  let rawSocial: Social | null = null;
+  const sharedSocial = (): Social => {
+    if (rawSocial === null) {
+      rawSocial = createSocial({
         events,
         now,
-        party: rawSocial.party,
-        proximity: {
+        emotes: {
           entities: { get: (id) => entities.get(id) },
           spatial: { inRadius: (center, radius, filter) => spatial.inRadius(center, radius, filter) },
         },
-        blockedBy: (userId) => rawSocial.friends.snapshot(userId).blocked,
-      }),
-      ["register", "send", "whisper", "hydrate"],
-      signal.notify,
-    );
-  }
-  const leaderboard = features.leaderboard
-    ? notifyAfter(createLeaderboard(), ["increment", "hydrate"], signal.notify)
-    : undefined;
-  const roster = features.roster
-    ? notifyAfter(createRoster({ now }), ["capture", "release", "setEquipped", "hydrate"], signal.notify)
-    : undefined;
+      });
+    }
+    return rawSocial;
+  };
   const playerStatsByUser = new Map<string, Stats<string>>();
   function playerStatsFor(userId: string): Stats<string> {
     let stats = playerStatsByUser.get(userId);
@@ -758,9 +728,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
   const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
   const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
-  const cosmetics = features.cosmetics
-    ? notifyAfter(createCosmetics({ events }), ["apply", "equip", "hydrate"], signal.notify)
-    : undefined;
   const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
   const inventoryDeclarations = definition.inventories ?? {};
@@ -822,40 +789,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  const trade = features.trade
-    ? createTradeSystem({
-    resolveTrade: (itemId) => content.itemById?.(itemId)?.trade,
-    wallet: {
-      canAfford: (costs) => (walletCanAfford(walletOf(activeUserId()), costs) ? null : "insufficient-funds"),
-      charge(costs) {
-        const result = walletChargeAll(walletOf(activeUserId()), costs);
-        if (result.status === "ok") {
-          wallets.set(activeUserId(), result.state);
-          signal.notify();
-        }
-      },
-      grant(gains) {
-        for (const [currencyId, amount] of Object.entries(gains)) {
-          economy.grant(activeUserId(), currencyId, amount);
-        }
-      },
-    },
-    inventory: {
-      put(inventoryId, itemId, count) {
-        if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventoryFor(activeUserId()).put(inventoryId, itemId, count);
-        return result.status === "ok" ? null : { reason: result.reason };
-      },
-      take(inventoryId, itemId, count) {
-        if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-        const result = inventoryFor(activeUserId()).take(inventoryId, itemId, count);
-        return result.status === "ok" ? null : { reason: result.reason };
-      },
-      count: (inventoryId, itemId) => inventoryFor(activeUserId()).count(inventoryId, itemId),
-    },
-      })
-    : undefined;
-
   function seedUserPool(
     userId: string,
     statId: string,
@@ -865,31 +798,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     const next = setStatValue(map, statId, pool);
     map[statId] = next[statId]!;
   }
-
-  const quest = features.quest
-    ? notifyAfter(
-        createQuestJournal({
-          events,
-          rewards: {
-            grantXp(userId, amount) {
-              const existing = ensureInstanceStats(userId)["xp"];
-              const current = (existing?.current ?? 0) + amount;
-              seedUserPool(userId, "xp", { current, max: Math.max(existing?.max ?? 0, current) });
-            },
-            grantEconomy: (userId, currencyId, amount) => economy.grant(userId, currencyId, amount),
-            grantItem(userId, inventoryId, itemId, count) {
-              if (layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-              const result = inventoryFor(userId).put(inventoryId, itemId, count);
-              return result.status === "ok" ? null : { reason: result.reason };
-            },
-            grantUnlock: (userId, unlockId) => unlocks?.grant(userId, unlockId),
-          },
-          hasUnlock: (userId, id) => unlocks?.has(userId, id) ?? false,
-        }),
-        ["accept", "abandon", "progress", "turnIn", "grant", "revoke", "hydrate"],
-        signal.notify,
-      )
-    : undefined;
 
   const loadouts = notifyAfter(
     createLoadouts({
@@ -915,7 +823,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
       stats: { seed: seedUserPool },
       economy: { grant: economy.grant },
-      unlocks: { grant: (userId, unlockId) => unlocks?.grant(userId, unlockId) },
+      unlocks: { grant: (userId, unlockId) => featureValue<Unlocks>("unlocks")?.grant(userId, unlockId) },
     }),
     ["applyLoadout"],
     signal.notify,
@@ -986,42 +894,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return created;
   }
 
-  const worldItems = notifyAfter(
-    createWorldItemStore({
-      spawnEntity: (position) => entities.spawn(WORLD_ITEM_ENTITY_NAME, { position, role: "prop" }),
-      despawnEntity,
-      resolvePosition: (instanceId) => entities.get(instanceId)?.position,
-    }),
-    ["spawn", "take", "remove"],
-    signal.notify,
-  );
-
-  function spawnWorldItem(input: WorldItemSpawnInput): WorldItemRecord {
-    const record = worldItems.spawn(input);
-    events.emit("worldItem.dropped", {
-      instanceId: record.instanceId,
-      itemId: record.itemId,
-      rarity: record.rarity,
-      count: record.count,
-      position: [input.position[0], input.position[1], input.position[2]],
-      ...(record.source !== undefined ? { source: record.source } : {}),
-    });
-    return record;
-  }
-
-  function pickupWorldItem(instanceId: string, userId: string): WorldItemPickupResult {
-    const record = worldItems.take(instanceId);
-    if (record === null) return { status: "rejected", reason: "not-found" };
-    loot.grantToPlayer(userId, [{ item: record.itemId, count: record.count }], "worldItem.pickup");
-    events.emit("worldItem.picked_up", {
-      instanceId,
-      userId,
-      itemId: record.itemId,
-      rarity: record.rarity,
-      count: record.count,
-    });
-    return { status: "ok", record };
-  }
+  const { worldItems, spawnWorldItem, pickupWorldItem } = createWorldItemContext({
+    entities,
+    events,
+    despawnEntity,
+    grantToPlayer: loot.grantToPlayer,
+    signalNotify: signal.notify,
+  });
 
   const death = createDeathSystem({
     resolveOnDeath: (instanceId) => catalogEntry(instanceId)?.onDeath,
@@ -1086,148 +965,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signal.notify,
   );
 
-  function emitFloatText(input: FloatTextInput): void {
-    const position =
-      input.position ??
-      (input.instanceId === undefined ? undefined : entities.get(input.instanceId)?.position);
-    if (position === undefined) return;
-    const text = input.text ?? (input.amount === undefined ? "" : String(Math.round(input.amount)));
-    const event: GameEventMap["entity.floatText"] = {
-      position: [position[0], position[1], position[2]],
-      text,
-      kind: input.kind ?? "info",
-    };
-    if (input.instanceId !== undefined) event.instanceId = input.instanceId;
-    if (input.amount !== undefined) event.amount = input.amount;
-    if (input.hitType !== undefined) event.hitType = input.hitType;
-    if (input.element !== undefined) event.element = input.element;
-    if (input.crit !== undefined) event.crit = input.crit;
-    if (input.scale !== undefined) event.scale = input.scale;
-    events.emit("entity.floatText", event);
-  }
-
-  const vfxDefaultDurationMs: Record<VfxKind, number> = {
-    projectile: 380,
-    beam: 260,
-    nova: 520,
-    glow: 700,
-    spark: 240,
-  };
-  let vfxSeq = 0;
-
-  function resolveVfxPoint(
-    ref: string | readonly [number, number, number] | undefined,
-  ): [number, number, number] | undefined {
-    if (ref === undefined) return undefined;
-    if (typeof ref === "string") {
-      const entity = entities.get(ref);
-      if (entity === null) return undefined;
-      return [entity.position[0], entity.position[1], entity.position[2]];
-    }
-    return [ref[0], ref[1], ref[2]];
-  }
-
-  function emitVfx(input: VfxInput): void {
-    const to = resolveVfxPoint(input.to);
-    const from = resolveVfxPoint(input.from) ?? to;
-    if (from === undefined) return;
-    const event: GameEventMap["combat.vfx"] = {
-      id: vfxSeq++,
-      kind: input.kind,
-      color: input.color,
-      from,
-      durationMs: input.durationMs ?? vfxDefaultDurationMs[input.kind],
-    };
-    if (to !== undefined) event.to = to;
-    if (input.radius !== undefined) event.radius = input.radius;
-    events.emit("combat.vfx", event);
-  }
-
-  let telegraphSeq = 0;
-
-  function fireTelegraph(input: TelegraphInput): () => void {
-    const id = telegraphSeq++;
-    const telegraphEvent: GameEventMap["combat.telegraph"] = {
-      id,
-      shape: input.shape,
-      position: [input.at[0], input.at[1], input.at[2]],
-      windupMs: input.windupMs,
-      kind: input.kind ?? "danger",
-    };
-    if (input.dir !== undefined) telegraphEvent.dir = input.dir;
-    events.emit("combat.telegraph", telegraphEvent);
-    const cancelVisual = () => events.emit("combat.telegraphCancelled", { id });
-    const bound = input.effect;
-    if (bound === undefined) return cancelVisual;
-    const config: TelegraphConfig = { shape: input.shape, at: input.at, windupMs: input.windupMs };
-    if (input.dir !== undefined) config.dir = input.dir;
-    const cancelEffect = time.after(input.windupMs / 1000, () => {
-      const targets = entities.list().filter((entity) => pointInTelegraph(config, entity.position));
-      for (const target of targets) {
-        applyEffectAndFloat({
-          from: input.from,
-          to: target.id,
-          effect: bound.effect,
-          ...(bound.via === undefined ? {} : { via: bound.via }),
-        });
-      }
-    });
-    return () => {
-      cancelEffect();
-      cancelVisual();
-    };
-  }
-
-  function applyHitReaction(input: HitReactionInput): HitReaction | null {
-    const attacker = entities.get(input.from);
-    const target = entities.get(input.to);
-    if (target === null) return null;
-    const attackerPos = attacker?.position ?? target.position;
-    const reaction = resolveHitReaction(input.config, {
-      attackerPos,
-      targetPos: target.position,
-      ...(input.power === undefined ? {} : { power: input.power }),
-    });
-    entities.setPose(input.to, {
-      position: [
-        target.position[0] + reaction.impulse[0],
-        target.position[1] + reaction.impulse[1],
-        target.position[2] + reaction.impulse[2],
-      ],
-      rotationY: target.rotationY,
-    });
-    const reactionEvent: GameEventMap["combat.hitReaction"] = {
-      instanceId: input.to,
-      position: [target.position[0], target.position[1], target.position[2]],
-      hitstopMs: reaction.hitstopMs,
-    };
-    if (reaction.shake !== null) reactionEvent.shake = reaction.shake;
-    if (reaction.trauma !== null) reactionEvent.trauma = reaction.trauma;
-    events.emit("combat.hitReaction", reactionEvent);
-    return reaction;
-  }
-
-  function applyEffectAndFloat(input: EffectInput): EffectResult[] {
-    const positionsBefore = new Map<string, EntityPosition>();
-    for (const entity of entities.list()) positionsBefore.set(entity.id, entity.position);
-    const results = effects.applyEffect(input);
-    for (const result of results) {
-      let total = 0;
-      for (const delta of result.applied) total += delta.delta;
-      if (total === 0) continue;
-      const position = entities.get(result.instanceId)?.position ?? positionsBefore.get(result.instanceId);
-      if (position === undefined) continue;
-      const magnitude = Math.abs(total);
-      emitFloatText({
-        instanceId: result.instanceId,
-        position: [position[0], position[1], position[2]],
-        text: String(Math.round(magnitude)),
-        kind: total < 0 ? "damage" : "heal",
-        amount: magnitude,
-      });
-    }
-    return results;
-  }
+  const { emitFloatText, emitVfx, fireTelegraph, applyHitReaction, applyEffectAndFloat } = createCombatFx({
+    entities,
+    events,
+    time,
+    applyEffect: (input) => effects.applyEffect(input),
+  });
 
   const floatingEffects: EffectSystem = {
     canReceive: effects.canReceive,
@@ -1324,115 +1067,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
 
-  const dialogue = features.dialogue ? createGameDialogue(store) : undefined;
-  if (dialogue !== undefined) {
-    commandRegistry.define("dialogue.open", {
-      apply(state, input) {
-        const id = (input as { id?: string }).id;
-        if (id !== undefined) state.game.dialogue?.open(id);
-      },
-    });
-    commandRegistry.define("dialogue.close", {
-      apply(state) {
-        state.game.dialogue?.close();
-      },
-    });
-  }
-
-  const players = features.players
-    ? notifyAfter(createConnectedPlayers(), ["join", "leave"], signal.notify)
-    : undefined;
-
-  const cardPiles = new Map<string, CardPile>();
-  function pile(id: string, config?: CardPileConfig): CardPile {
-    const existing = cardPiles.get(id);
-    if (existing !== undefined) return existing;
-    if (config === undefined) {
-      throw new Error(`cardPile "${id}" has not been created yet; pass a config on first access`);
-    }
-    const created = notifyAfter(
-      createCardPile(config),
-      ["shuffle", "draw", "discard", "exhaust", "move", "reset"],
-      signal.notify,
-    );
-    cardPiles.set(id, created);
-    return created;
-  }
-
-  const turnLoops = new Map<string, TurnLoop>();
-  function loop(id: string, config?: TurnLoopConfig): TurnLoop {
-    const existing = turnLoops.get(id);
-    if (existing !== undefined) return existing;
-    if (config === undefined) {
-      throw new Error(`turn loop "${id}" has not been created yet; pass a config on first access`);
-    }
-    const raw = createTurnLoop(config);
-    const wrappedCommit = notifyAfter(
-      raw.commit,
-      ["submit", "expected", "commit", "discard", "clear"],
-      signal.notify,
-    );
-    const wrapped: TurnLoop = {
-      ...notifyAfter(
-        raw,
-        [
-          "setOrder",
-          "addParticipant",
-          "removeParticipant",
-          "advancePhase",
-          "advanceTurn",
-          "advanceRound",
-          "spend",
-          "gain",
-          "refill",
-          "restore",
-        ],
-        signal.notify,
-      ),
-      commit: wrappedCommit,
-    };
-    turnLoops.set(id, wrapped);
-    return wrapped;
-  }
-
-  class NotifyingRaceState extends RaceState {
-    override addRacer(racerId: string, startTime?: number): void {
-      super.addRacer(racerId, startTime);
-      signal.notify();
-    }
-    override removeRacer(racerId: string): void {
-      super.removeRacer(racerId);
-      signal.notify();
-    }
-    override reset(): void {
-      super.reset();
-      signal.notify();
-    }
-    override eliminate(racerId: string): void {
-      super.eliminate(racerId);
-      signal.notify();
-    }
-    override update(
-      now: number,
-      positions: Record<string, readonly [number, number, number]> | Map<string, readonly [number, number, number]>,
-    ): readonly RaceEvent[] {
-      const raceEvents = super.update(now, positions);
-      if (raceEvents.length > 0) signal.notify();
-      return raceEvents;
-    }
-  }
-
-  const raceStates = new Map<string, RaceState>();
-  function raceState(id: string, config?: RaceStateConfig): RaceState {
-    const existing = raceStates.get(id);
-    if (existing !== undefined) return existing;
-    if (config === undefined) {
-      throw new Error(`race "${id}" has not been created yet; pass a config on first access`);
-    }
-    const created = new NotifyingRaceState(config);
-    raceStates.set(id, created);
-    return created;
-  }
+  const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
 
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const input = createInputSnapshot();
@@ -1446,106 +1081,110 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     return queue;
   }
 
-  const snapshotModules: SnapshotModule[] = [
-    { key: "entities", snapshot: () => entities.snapshot(), hydrate: (data) => entities.hydrate(data as SceneEntity[]) },
-    {
-      key: "stats",
-      snapshot: () => snapshotEntityStats(statsByInstance),
-      hydrate: (data) => hydrateEntityStats(statsByInstance, data as Record<string, StatValueMap>),
-    },
-    {
-      key: "store",
-      snapshot: () => store.snapshot(),
-      hydrate: (data) => store.hydrate(data as readonly (readonly [string, unknown])[]),
-    },
-    { key: "feed", snapshot: () => feed.snapshot(), hydrate: (data) => feed.hydrate(data as Record<string, FeedEntry[]>) },
-    {
-      key: "inventory",
-      snapshot: () => {
-        const byUser: Record<string, Record<string, InventoryState>> = {};
-        for (const [userId, set] of inventoryByUser) {
-          const states: Record<string, InventoryState> = {};
-          for (const inventoryId of inventoryIds) states[inventoryId] = set.state(inventoryId);
-          byUser[userId] = states;
-        }
-        return byUser;
-      },
-      hydrate: (data) => {
-        for (const [userId, states] of Object.entries(data as Record<string, Record<string, InventoryState>>)) {
-          const set = inventoryFor(userId);
-          for (const [inventoryId, state] of Object.entries(states)) set.replaceState(inventoryId, state);
-        }
-      },
-    },
-  ];
-  if (leaderboard) {
-    snapshotModules.push({
-      key: "leaderboard",
-      snapshot: () => leaderboard.snapshot(),
-      hydrate: (data) => leaderboard.hydrate(data as LeaderboardRow[]),
-    });
-  }
-  if (chat) {
-    snapshotModules.push({
-      key: "chat",
-      snapshot: () => chat.snapshot(),
-      hydrate: (data) => chat.hydrate(data as ChatSnapshot),
-    });
-  }
-  if (social) {
-    const socialModule = social;
-    snapshotModules.push({
-      key: "social",
-      snapshot: () => socialModule.snapshot(),
-      hydrate: (data) => socialModule.hydrate(data as SocialSnapshot),
-    });
+  const featureDeps: FeatureDeps = {
+    features,
+    signalNotify: signal.notify,
+    events,
+    now,
+    entities,
+    spatial,
+    store,
+    commandRegistry,
+    economy,
+    content,
+    activeUserId,
+    walletOf,
+    setWallet: (userId, state) => wallets.set(userId, state),
+    layouts,
+    inventoryFor,
+    ensureInstanceStats,
+    seedUserPool,
+    sharedSocial,
+    pile,
+    loop,
+    cardPiles,
+    turnLoops,
+    raceState,
+    feature: featureValue,
+  };
+  const featureReplicateModules: SnapshotModule[] = [];
+  const featureSaveModules: SnapshotModule[] = [];
+  for (const descriptor of featureDescriptors) {
+    if (!descriptor.enabled(features)) continue;
+    const build = descriptor.create(featureDeps);
+    featureRegistry.set(descriptor.key, build.value);
+    if (build.replicate !== undefined) featureReplicateModules.push(build.replicate);
+    if (build.save !== undefined) featureSaveModules.push(build.save);
   }
 
+  const baselineDeps: BaselineDeps = {
+    signalNotify: signal.notify,
+    entities,
+    statsByInstance,
+    store,
+    feed,
+    inventoryIds,
+    inventoryByUser,
+    inventoryFor,
+    wallets,
+    time,
+    pose,
+    possession,
+    motionByUser,
+    motionFor,
+  };
+  const baselineBuilds = baselineDescriptors.map((descriptor) => descriptor.create(baselineDeps));
+  const snapshotModules: SnapshotModule[] = [
+    ...baselineBuilds.flatMap((build) => (build.replicate === undefined ? [] : [build.replicate])),
+    ...featureReplicateModules,
+  ];
+
+  const replication = options.replication;
+  const projectsViewers = policyProjectsViewers(replication);
+  const aoiRadius = replication?.aoiRadius;
+  const projectorFor = (key: string): SnapshotModule["project"] | undefined => {
+    if (aoiRadius !== undefined && key === "entities") {
+      return (data, viewer) =>
+        projectEntitiesForViewer(data as readonly SceneEntity[], viewer, aoiRadius) as unknown;
+    }
+    if (aoiRadius !== undefined && key === "stats") {
+      return (data, viewer, world) =>
+        projectByVisibleIds(
+          data as Record<string, StatValueMap>,
+          visibleEntityIds((world["entities"] ?? []) as readonly SceneEntity[], viewer, aoiRadius),
+        );
+    }
+    if (replication?.privatePerUser === true && key === "inventory") {
+      return (data, viewer) => projectPerUserForViewer(data as Record<string, unknown>, viewer);
+    }
+    return undefined;
+  };
+  const replicationModules: SnapshotModule[] = snapshotModules.map((module) => {
+    const project = projectorFor(module.key);
+    return {
+      ...module,
+      version: () => signal.version(),
+      ...(project === undefined ? {} : { project }),
+    };
+  });
+  const replicationVersion = (): number =>
+    replicationModules.reduce((sum, module) => sum + (module.version?.() ?? 0), 0);
+
   /**
-   * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it also
-   * captures the persistent progression subsystems (economy, quest, unlocks, roster) that a
-   * single-player save must restore but a host does not replicate to clients. Keeping the two sets
+   * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it adds the
+   * always-on baseline subsystems (economy, time, pose, possession, motion) plus every opted-in
+   * feature's `save` module (unlocks, roster, quest, cosmetics, cards, turn) — the persistent state a
+   * single-player save must restore but a host does not replicate to clients. Coverage is owned per
+   * subsystem, not hand-listed against a drifting feature manifest: each feature descriptor emits its
+   * own `save`, so a new persistent feature can't silently fall out of the save. Keeping the two sets
    * distinct leaves `ctx.snapshot()`/`ctx.hydrate()` — the host→client payload — byte-identical for
    * every multiplayer game, while `ctx.game.save` still persists everything.
    */
   const saveModules: SnapshotModule[] = [
     ...snapshotModules,
-    {
-      key: "economy",
-      snapshot: () => Object.fromEntries(wallets),
-      hydrate: (data) => {
-        wallets.clear();
-        for (const [userId, state] of Object.entries(data as Record<string, WalletState>)) {
-          wallets.set(userId, state);
-        }
-        signal.notify();
-      },
-    },
+    ...baselineBuilds.flatMap((build) => (build.save === undefined ? [] : [build.save])),
+    ...featureSaveModules,
   ];
-  if (quest) {
-    const questModule = quest;
-    saveModules.push({
-      key: "quest",
-      snapshot: () => questModule.snapshotAll(),
-      hydrate: (data) => questModule.hydrateAll(data as Record<string, QuestSnapshotEntry[]>),
-    });
-  }
-  if (unlocks) {
-    const unlocksModule = unlocks;
-    saveModules.push({
-      key: "unlocks",
-      snapshot: () => unlocksModule.snapshotAll(),
-      hydrate: (data) => unlocksModule.hydrateAll(data as Record<string, string[]>),
-    });
-  }
-  if (roster) {
-    const rosterModule = roster;
-    saveModules.push({
-      key: "roster",
-      snapshot: () => rosterModule.snapshotAll(),
-      hydrate: (data) => rosterModule.hydrateAll(data as Record<string, readonly RosterEntry[]>),
-    });
-  }
 
   const ctx: GameContext = {
     scene: {
@@ -1657,20 +1296,20 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         },
       },
       loot,
-      trade,
-      quest,
-      social,
-      chat,
-      unlocks,
+      trade: featureValue<TradeSystem>("trade"),
+      quest: featureValue<QuestJournal>("quest"),
+      social: featureValue<Social>("social"),
+      chat: featureValue<Chat>("chat"),
+      unlocks: featureValue<Unlocks>("unlocks"),
       economy,
-      leaderboard,
-      roster,
+      leaderboard: featureValue<Leaderboard>("leaderboard"),
+      roster: featureValue<Roster>("roster"),
       store,
-      dialogue,
-      cards: features.cards ? { pile } : undefined,
-      turn: features.turn ? { loop } : undefined,
-      race: features.race ? { state: raceState } : undefined,
-      players,
+      dialogue: featureValue<GameDialogue>("dialogue"),
+      cards: featureValue<GameContextCards>("cards"),
+      turn: featureValue<GameContextTurn>("turn"),
+      race: featureValue<GameContextRace>("race"),
+      players: featureValue<ConnectedPlayers>("players"),
     },
     player: {
       get userId() {
@@ -1689,7 +1328,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       applyLoadout: loadouts.applyLoadout,
       movement: pose,
       possession,
-      cosmetics,
+      cosmetics: featureValue<Cosmetics>("cosmetics"),
       get motion() {
         return motionFor(activeUserId());
       },
@@ -1714,11 +1353,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     subscribe: signal.subscribe,
     version: signal.version,
     touch: signal.notify,
-    snapshot: () => composeWorldSnapshot(snapshotModules),
+    snapshot: (viewer) => composeWorldSnapshot(replicationModules, viewer),
     hydrate(snapshot) {
-      applyWorldSnapshot(snapshotModules, snapshot);
+      applyWorldSnapshot(replicationModules, snapshot);
       signal.notify();
     },
+    replicationVersion,
+    replicatesPerViewer: () => projectsViewers,
   };
 
   const saveOptions = resolveSaveOptions(definition, options);

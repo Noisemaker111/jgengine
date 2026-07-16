@@ -85,6 +85,7 @@ function distance(a: MobVec3, b: MobVec3): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
+/** @internal */
 export function createMobBrain(config: MobBrainConfig, deps: MobBrainDeps): MobBrain {
   const threat = createThreatTable(config.threat);
   const stickiness = config.stickiness ?? 1.15;

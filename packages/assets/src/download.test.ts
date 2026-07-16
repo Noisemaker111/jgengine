@@ -1,11 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { zipSync } from "fflate";
+import { zipSync, type UnzipFileInfo } from "fflate";
 
 import {
+  boundedExtractFilter,
   defaultReleaseUrl,
+  downloadArchive,
   downloadPackArchive,
   extractGlbs,
   extractSpriteFiles,
+  MAX_ARCHIVE_COMPRESSION_RATIO,
+  MAX_ARCHIVE_DOWNLOAD_BYTES,
+  MAX_ARCHIVE_ENTRY_COUNT,
+  MAX_ARCHIVE_UNCOMPRESSED_BYTES,
   mirrorOverrideUrl,
   packGltfToGlb,
   sha256Hex,
@@ -109,6 +115,67 @@ describe("extractSpriteFiles", () => {
     });
     const [entry] = extractSpriteFiles(archive);
     expect(new TextDecoder().decode(entry!.bytes)).toBe("first");
+  });
+});
+
+function fileInfo(overrides: Partial<UnzipFileInfo>): UnzipFileInfo {
+  return { name: "entry", size: 100, originalSize: 100, compression: 8, ...overrides };
+}
+
+describe("boundedExtractFilter", () => {
+  test("passes through entries within every cap", () => {
+    const filter = boundedExtractFilter(() => true);
+    expect(filter(fileInfo({ size: 10, originalSize: 20 }))).toBe(true);
+  });
+
+  test("rejects entries the inner matcher doesn't select, without counting them", () => {
+    const filter = boundedExtractFilter((file) => file.name.endsWith(".glb"));
+    expect(filter(fileInfo({ name: "readme.txt" }))).toBe(false);
+  });
+
+  test("throws on a zip-bomb-shaped compression ratio", () => {
+    const filter = boundedExtractFilter(() => true);
+    expect(() =>
+      filter(fileInfo({ size: 10, originalSize: 10 * MAX_ARCHIVE_COMPRESSION_RATIO + 1 })),
+    ).toThrow(/compression ratio/);
+  });
+
+  test("throws once accepted entries exceed the total uncompressed-size cap", () => {
+    const filter = boundedExtractFilter(() => true);
+    expect(
+      filter(fileInfo({ size: MAX_ARCHIVE_UNCOMPRESSED_BYTES, originalSize: MAX_ARCHIVE_UNCOMPRESSED_BYTES })),
+    ).toBe(true);
+    expect(() => filter(fileInfo({ name: "second", size: 10, originalSize: 10 }))).toThrow(
+      /uncompressed-size cap/,
+    );
+  });
+
+  test("throws once accepted entries exceed the entry-count cap", () => {
+    const filter = boundedExtractFilter(() => true);
+    for (let i = 0; i < MAX_ARCHIVE_ENTRY_COUNT; i++) {
+      expect(filter(fileInfo({ name: `f${i}`, size: 1, originalSize: 1 }))).toBe(true);
+    }
+    expect(() => filter(fileInfo({ name: "overflow", size: 1, originalSize: 1 }))).toThrow(/entry cap/);
+  });
+});
+
+describe("extractGlbs zip-bomb guard", () => {
+  test("refuses an entry whose compression ratio blows past the cap", () => {
+    const bomb = zipSync({ "model.glb": new Uint8Array(2_000_000) }, { level: 9 });
+    expect(() => extractGlbs(bomb)).toThrow(/compression ratio/);
+  });
+});
+
+describe("downloadArchive size cap", () => {
+  test("rejects a response whose declared content-length exceeds the cap", async () => {
+    const fetchImpl: FetchLike = (async () =>
+      new Response(new Uint8Array(4), {
+        status: 200,
+        headers: { "content-length": String(MAX_ARCHIVE_DOWNLOAD_BYTES + 1) },
+      })) as FetchLike;
+    await expect(downloadArchive("https://example.com/pack.zip", fetchImpl)).rejects.toThrow(
+      /exceeds the .* byte cap/,
+    );
   });
 });
 

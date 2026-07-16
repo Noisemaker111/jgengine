@@ -16,6 +16,7 @@ export const GAME_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 
 export const FOLDER_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9-]*$/;
 
+/** @internal */
 export function displayNameFromId(id: string): string {
   return id
     .split("-")
@@ -24,6 +25,7 @@ export function displayNameFromId(id: string): string {
     .join(" ");
 }
 
+/** @internal */
 export function displayNameFromInput(input: string): string {
   const trimmed = input.trim().replace(/\s+/g, " ");
   if (trimmed.length === 0) {
@@ -34,6 +36,7 @@ export function displayNameFromInput(input: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
+/** @internal */
 export function folderNameFromTitle(input: string): string {
   const cleaned = input
     .trim()
@@ -56,6 +59,7 @@ export function folderNameFromTitle(input: string): string {
   return folder;
 }
 
+/** @internal */
 export function packageIdFromFolder(folder: string): string {
   const id = folder
     .toLowerCase()
@@ -69,6 +73,7 @@ export function packageIdFromFolder(folder: string): string {
   return id;
 }
 
+/** @internal */
 export function parseCreateName(input: string): { displayName: string; folderName: string; id: string } {
   const displayName = displayNameFromInput(input);
   const folderName = folderNameFromTitle(input);
@@ -76,12 +81,21 @@ export function parseCreateName(input: string): { displayName: string; folderNam
   return { displayName, folderName, id };
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const indexHtml = (name: string) => `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>${name}</title>
+    <title>${escapeHtml(name)}</title>
   </head>
   <body>
     <div id="root"></div>
@@ -331,7 +345,7 @@ import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
-  name: "${name}",
+  name: ${JSON.stringify(name)},
   assets: createAssetCatalog(),
   world,
   physics,
@@ -360,12 +374,15 @@ const loopTs = `import type { GameContext } from "@jgengine/core/runtime/gameCon
 
 import { PLAYER, SPAWN } from "./game/tuning";
 
+/** @internal */
 export function onInit(_ctx: GameContext): void {}
 
+/** @internal */
 export function onNewPlayer(ctx: GameContext): void {
   ctx.scene.entity.spawn(PLAYER, { id: ctx.player.userId, position: SPAWN });
 }
 
+/** @internal */
 export function onTick(_ctx: GameContext, _dt: number): void {}
 `;
 
@@ -379,6 +396,7 @@ const contentTs = `import type { GameContextEntityEntry } from "@jgengine/core/r
 
 import { MAX_HEALTH, PLAYER, WALK_SPEED } from "./tuning";
 
+/** @internal */
 export function entityById(catalogId: string): GameContextEntityEntry | null {
   if (catalogId === PLAYER) {
     return {
@@ -416,6 +434,7 @@ const gameUiTsx = (name: string) => `// ${name} — your HUD starts BLANK. The e
 //     );
 //   }
 
+/** @internal */
 export function GameUI() {
   return null;
 }
@@ -632,6 +651,7 @@ export function editorScaffold(engineVersion: string): TemplateFile[] {
   ];
 }
 
+/** @internal */
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   const { id, name, variant, engineVersion } = options;
   if (!GAME_ID_PATTERN.test(id)) {

@@ -160,6 +160,7 @@ function resolveCandidates(
   return source.inBox(bounds.min, bounds.max);
 }
 
+/** @internal */
 export function raycastObjects(
   source: ObjectRaycastSource,
   input: ObjectRaycastInput,
@@ -179,6 +180,7 @@ export function raycastObjects(
   return nearest;
 }
 
+/** @internal */
 export function raycastObjectsAll(
   source: ObjectRaycastSource,
   input: ObjectRaycastInput,

@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 
+import type { CommandAuthorize, CommandCatalog, CommandLimits } from "./commandMiddleware";
 import { createGameHost, memoryPersistence, type GameHost } from "./host";
-import { createHostRouter, loopbackPipe, type HostRouter } from "./hostRouter";
+import { createHostRouter, loopbackPipe, MAX_QUEUED_MESSAGES, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
 import type { WsChatMessage, WsPresenceRow } from "./protocol";
 
@@ -32,6 +33,9 @@ function startStack(options: {
   authenticate?: (args: { userId: string; token?: string }) => string | null;
   allowedFeedActions?: readonly string[];
   singleSession?: boolean;
+  limits?: CommandLimits;
+  authorize?: CommandAuthorize;
+  validate?: CommandCatalog;
 } = {}): {
   host: GameHost;
   router: HostRouter;
@@ -48,6 +52,9 @@ function startStack(options: {
     allowAnonymous: options.allowAnonymous ?? true,
     authenticate: options.authenticate,
     singleSession: options.singleSession,
+    limits: options.limits,
+    authorize: options.authorize,
+    validate: options.validate,
   });
   const backends: WsBackend[] = [];
   return {
@@ -185,6 +192,39 @@ test("loopback: presence row has no appearance when the client never sent one", 
     const rows = await rosters.next();
     expect(rows).toHaveLength(1);
     expect(rows[0]?.appearance).toBeUndefined();
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("loopback: a presence broadcast for one room reaches only that room's subscribers", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const roomX = await alice.transport.joinServer({ gameId: "room-x" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "room-x", serverId: roomX.serverId });
+
+    const carol = stack.connect("carol");
+    const roomY = await carol.transport.joinServer({ gameId: "room-y" });
+    expect(roomY.serverId).not.toBe(roomX.serverId);
+
+    const bobRooms = channel<WsPresenceRow[]>();
+    bob.presenceSync.subscribe(roomX.serverId, (rows) => bobRooms.push(rows));
+    expect(await bobRooms.next()).toEqual([]);
+
+    const carolUpdates: WsPresenceRow[][] = [];
+    carol.presenceSync.subscribe(roomY.serverId, (rows) => carolUpdates.push(rows));
+    expect(await new Promise<WsPresenceRow[]>((r) => setTimeout(() => r(carolUpdates[0] ?? []), 20))).toEqual([]);
+
+    alice.presenceSync.syncPose(roomX.serverId, { x: 3, y: 0, z: 0, rotationY: 0, rotationPitch: 0 });
+
+    const bobRows = await bobRooms.next();
+    expect(bobRows.map((row) => row.userId)).toEqual(["alice"]);
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(carolUpdates).toHaveLength(1);
+    expect(carolUpdates[0]).toEqual([]);
   } finally {
     await stack.shutdown();
   }
@@ -359,6 +399,49 @@ test("loopback: concurrent frames on one socket are serialized", async () => {
   }
 });
 
+test("loopback: a flood of frames past the queue bound gets rejected instead of piling up", async () => {
+  let released: (() => void) | undefined;
+  const host = createGameHost({ persistence: memoryPersistence() });
+  const router = createHostRouter({
+    host,
+    authenticate: ({ userId }) =>
+      new Promise((resolve) => {
+        released = () => resolve(userId);
+      }),
+  });
+  try {
+    const replies = channel<{ id: number; ok: boolean; reason?: string }>();
+    const connection = router.connect({
+      send: (data) => replies.push(JSON.parse(data) as { id: number; ok: boolean; reason?: string }),
+      close: () => undefined,
+    });
+    const total = MAX_QUEUED_MESSAGES + 5;
+    for (let id = 1; id <= total; id += 1) {
+      connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id, userId: "alice" }));
+    }
+    const overflow: { id: number; ok: boolean; reason?: string }[] = [];
+    for (let i = 0; i < 5; i += 1) overflow.push(await replies.next());
+    for (const reply of overflow) {
+      expect(reply.ok).toBe(false);
+      expect(reply.reason).toBe("Too many pending requests");
+    }
+    expect(overflow.map((reply) => reply.id)).toEqual([
+      MAX_QUEUED_MESSAGES + 1,
+      MAX_QUEUED_MESSAGES + 2,
+      MAX_QUEUED_MESSAGES + 3,
+      MAX_QUEUED_MESSAGES + 4,
+      MAX_QUEUED_MESSAGES + 5,
+    ]);
+    released?.();
+    const first = await replies.next();
+    expect(first).toMatchObject({ id: 1, ok: true });
+    connection.close();
+  } finally {
+    router.close();
+    await host.stop();
+  }
+});
+
 test("security: anonymous hello rejected without allowAnonymous or authenticate", async () => {
   const host = createGameHost({ persistence: memoryPersistence() });
   const router = createHostRouter({ host });
@@ -420,6 +503,29 @@ test("security: single-session lock evicts the older connection for the same use
   }
 });
 
+test("security: a mid-session reconnect evicts the stale connection but keeps room membership live", async () => {
+  const stack = startStack({ singleSession: true });
+  try {
+    const alice1 = stack.connect("alice");
+    const { serverId } = await alice1.transport.joinServer({ gameId: "test-game" });
+    await alice1.transport.runCommand({ serverId, command: "engine.ping", input: null });
+
+    // A second connection for the same userId (e.g. a browser tab refresh) evicts the first
+    // without the server ever seeing the player leave.
+    const alice2 = stack.connect("alice");
+    const pingAfterReconnect = await alice2.transport.runCommand({
+      serverId,
+      command: "engine.ping",
+      input: null,
+    });
+    expect(pingAfterReconnect).toEqual({ ok: true });
+    expect(await stack.host.isMember({ userId: "alice", serverId })).toBe(true);
+    expect((await stack.host.getServerView({ userId: "alice", serverId }))?.memberUserIds).toEqual(["alice"]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("security: pose chat and voice reject cross-room non-members", async () => {
   const stack = startStack();
   try {
@@ -470,6 +576,96 @@ test("security: client feed writes disabled by default", async () => {
     await expect(
       alice.pushFeedEntry({ serverId, action: "kill", entry: { who: "hogger" } }),
     ).rejects.toThrow(/client feed writes are disabled/);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: an unconfigured router runs a burst of commands unthrottled", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    for (let i = 0; i < 25; i += 1) {
+      const result = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+      expect(result).toEqual({ ok: true });
+    }
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: limits reject a runCommand burst past its configured budget", async () => {
+  const stack = startStack({ limits: { runCommand: { count: 1, perMs: 60_000 } } });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const first = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(first).toEqual({ ok: true });
+    const second = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(second).toEqual({ ok: false, reason: "Rate limited: runCommand" });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: limits are per connection, so a fresh connection keeps its own budget", async () => {
+  const stack = startStack({ limits: { browse: { count: 1, perMs: 60_000 } } });
+  try {
+    const alice = stack.connect("alice");
+    await alice.transport.joinServer({ gameId: "test-game" });
+    await expect(alice.browse({ gameId: "test-game" })).resolves.toBeDefined();
+    await expect(alice.browse({ gameId: "test-game" })).rejects.toThrow(/Rate limited: browse/);
+
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game" });
+    await expect(bob.browse({ gameId: "test-game" })).resolves.toBeDefined();
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: validate rejects a runCommand name absent from the declared catalog", async () => {
+  const stack = startStack({ validate: { "engine.ping": {} } });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const known = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(known).toEqual({ ok: true });
+    const unknown = await alice.transport.runCommand({ serverId, command: "engine.nope", input: null });
+    expect(unknown).toEqual({ ok: false, reason: "Unknown command: engine.nope" });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: validate runs a declared command's input validator before it reaches the host", async () => {
+  const stack = startStack({
+    validate: {
+      "engine.ping": { validate: (input) => (input === null ? { reason: "input required" } : null) },
+    },
+  });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const rejected = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(rejected).toEqual({ ok: false, reason: "input required" });
+    const accepted = await alice.transport.runCommand({ serverId, command: "engine.ping", input: {} });
+    expect(accepted).toEqual({ ok: true });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: authorize hook can gate a sensitive op while leaving others untouched", async () => {
+  const stack = startStack({ authorize: ({ op }) => op !== "runCommand" });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    await expect(
+      alice.transport.runCommand({ serverId, command: "engine.ping", input: null }),
+    ).resolves.toEqual({ ok: false, reason: "Not authorized: runCommand" });
+    await expect(alice.browse({ gameId: "test-game" })).resolves.toBeDefined();
   } finally {
     await stack.shutdown();
   }

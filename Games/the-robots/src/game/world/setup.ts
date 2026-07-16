@@ -138,31 +138,6 @@ export function setupWorld(ctx: GameContext): void {
   RED_CHESTS.forEach((chest, index) => place("red_chest", chest.x, chest.z, `red_chest_${index}`));
   AMMO_CHESTS.forEach((chest, index) => place("ammo_chest", chest.x, chest.z, `ammo_chest_${index}`));
 
-  const propRng = seededRng("bl2-props");
-  const propRotationRng = seededRng("bl2-props-rot");
-  const PROP_KINDS = ["rock_spire", "rock_spire", "dead_tree", "wreck"] as const;
-  for (let index = 0; index < 90; index += 1) {
-    const x = (propRng() - 0.5) * 1300;
-    const z = (propRng() - 0.5) * 1300;
-    const rotation = propRotationRng() * Math.PI * 2;
-    const nearZone = ZONES.some(
-      (zone) => Math.hypot(x - zone.center.x, z - zone.center.z) < zone.flattenRadius * 0.8,
-    );
-    if (nearZone) continue;
-    const kind = PROP_KINDS[Math.floor(propRng() * PROP_KINDS.length)]!;
-    place(kind, x, z, `prop_${index}`, rotation);
-  }
-
-  const barrelRng = seededRng("bl2-barrels");
-  const barrelRotationRng = seededRng("bl2-barrels-rot");
-  ZONES.forEach((zone, zoneIndex) => {
-    for (let index = 0; index < 4; index += 1) {
-      const x = zone.center.x + (barrelRng() - 0.5) * zone.flattenRadius * 1.4;
-      const z = zone.center.z + (barrelRng() - 0.5) * zone.flattenRadius * 1.4;
-      place("bandit_barrel", x, z, `barrel_${zoneIndex}_${index}`, barrelRotationRng() * Math.PI * 2);
-    }
-  });
-
   ctx.scene.entity.spawn("bolt", { id: "bolt_1", position: grounded(ctx, BOLT_POS[0], BOLT_POS[2]) });
   placeLevel(ctx);
 

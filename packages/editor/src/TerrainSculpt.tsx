@@ -1,5 +1,5 @@
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
@@ -239,7 +239,7 @@ function SculptMesh({
  * `sculptTerrain` command committed on release, so undo replays the stroke as a single step.
  * @internal — mounted by `EditorApp`; not a game-author entry point.
  */
-export function TerrainSculpt({
+export const TerrainSculpt = memo(function TerrainSculpt({
   api,
   ui,
   world,
@@ -498,4 +498,4 @@ export function TerrainSculpt({
       ) : null}
     </>
   );
-}
+});

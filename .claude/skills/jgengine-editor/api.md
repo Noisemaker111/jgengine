@@ -24,32 +24,6 @@
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
-- `applyEditorDocumentOverlay` (function): function applyEditorDocumentOverlay(base: EditorDocument, overlay: EditorDocument): EditorDocument — Applies a saved editor document on top of a game's derived layers: overlay objects replace same-id base objects and new overlay objects are appended, so editor saves win over source data until they are folded back in.
-- `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
-- `collectDescendants` (function): function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> — Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
-- `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
-- `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
-- `createPrefabFragment` (function): function createPrefabFragment(doc: EditorDocument, ids: readonly string[]): EditorFragmentContent — Extracts the selected ids into a prefab fragment centered on their own bounds centroid, so the same prefab reinserts consistently regardless of where in the scene (or which game) it lands.
-- `editorChildren` (function): function editorChildren(doc: EditorDocument, parentId: string): string[] — The direct child ids of an object (empty when it has none).
-- `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
-- `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
-- `editorParentOf` (function): function editorParentOf(doc: EditorDocument, id: string): string | undefined — The id of an object's parent, or undefined when it is a root (or unknown).
-- `editorRoots` (function): function editorRoots(doc: EditorDocument): string[] — Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
-- `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
-- `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
-- `findEditorCollection` (function): function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined — Looks up a named collection / selection set by id in an editor document.
-- `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
-- `findEditorNote` (function): function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined — Looks up an annotation note by id in an editor document.
-- `findEditorPath` (function): function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined — Looks up a path by id in an editor document.
-- `findEditorPrefab` (function): function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab | undefined — Looks up a prefab by id in an editor document.
-- `findEditorVolume` (function): function findEditorVolume(doc: EditorDocument, id: string): EditorVolume | undefined — Looks up a volume by id in an editor document.
-- `importEditorDocumentJson` (function): function importEditorDocumentJson(raw: string): EditorDocument — Parses JSON text back into a normalized editor document.
-- `isEditorObjectLocked` (function): function isEditorObjectLocked(doc: EditorDocument, id: string): boolean — True when an object id is a member of any locked collection — blocks move/delete on it.
-- `listEditorKinds` (function): function listEditorKinds(doc: EditorDocument): { markers: string[]; volumes: string[]; paths: string[]; } — Lists the distinct marker, volume, and path kinds authored in a document.
-- `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections into one.
-- `normalizeEditorLayers` (function): function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument — Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
-- `summarizeEditorSession` (function): function summarizeEditorSession(state: EditorSessionState): { markers: number; volumes: number; paths: number; annotations: number; selection: string[]; selectedMarker?: EditorMarker; selectedVolume?: EditorVolume; } — Compact snapshot of a session state — counts, selection, and the selected object.
-- `wouldCreateCycle` (function): function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean — True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
 
 ## @jgengine/core/editor/commands
 
@@ -57,35 +31,6 @@
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
-- `createEditorSession` (function): function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession — Creates an editor session with undo/redo history seeded from an initial document.
-- `summarizeEditorSession` (function): function summarizeEditorSession(state: EditorSessionState): { markers: number; volumes: number; paths: number; annotations: number; selection: string[]; selectedMarker?: EditorMarker; selectedVolume?: EditorVolume; } — Compact snapshot of a session state — counts, selection, and the selected object.
-
-## @jgengine/core/editor/document
-
-- `applyEditorDocumentOverlay` (function): function applyEditorDocumentOverlay(base: EditorDocument, overlay: EditorDocument): EditorDocument — Applies a saved editor document on top of a game's derived layers: overlay objects replace same-id base objects and new overlay objects are appended, so editor saves win over source data until they are folded back in.
-- `cloneEditorDocument` (function): function cloneEditorDocument(doc: EditorDocument): EditorDocument — Deep-copies an editor document so edits never mutate the source. The terrain snapshot is shared by reference: sculpt commands replace it wholesale (copy-on-write), never mutate it in place, so history snapshots stay cheap even on large heightfields.
-- `collectDescendants` (function): function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> — Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
-- `createEmptyEditorDocument` (function): function createEmptyEditorDocument(): EditorDocument — Builds a fresh, empty editor document to start authoring a scene from scratch.
-- `createPrefabFragment` (function): function createPrefabFragment(doc: EditorDocument, ids: readonly string[]): EditorFragmentContent — Extracts the selected ids into a prefab fragment centered on their own bounds centroid, so the same prefab reinserts consistently regardless of where in the scene (or which game) it lands.
-- `editorChildren` (function): function editorChildren(doc: EditorDocument, parentId: string): string[] — The direct child ids of an object (empty when it has none).
-- `editorDocumentBounds` (function): function editorDocumentBounds(doc: EditorDocument): { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number }; } | null — Computes the world-space min/max bounds spanning every object in a document, or null if empty.
-- `editorDocumentSize` (function): function editorDocumentSize(doc: EditorDocument): number — Counts every object in a document across markers, volumes, paths, and notes.
-- `editorParentOf` (function): function editorParentOf(doc: EditorDocument, id: string): string | undefined — The id of an object's parent, or undefined when it is a root (or unknown).
-- `editorRoots` (function): function editorRoots(doc: EditorDocument): string[] — Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
-- `exportEditorDocumentJson` (function): function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string — Serializes an editor document to JSON text for saving or export.
-- `extractEditorFragment` (function): function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument — Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
-- `findEditorCollection` (function): function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined — Looks up a named collection / selection set by id in an editor document.
-- `findEditorMarker` (function): function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined — Looks up a marker by id in an editor document.
-- `findEditorNote` (function): function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined — Looks up an annotation note by id in an editor document.
-- `findEditorPath` (function): function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined — Looks up a path by id in an editor document.
-- `findEditorPrefab` (function): function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab | undefined — Looks up a prefab by id in an editor document.
-- `findEditorVolume` (function): function findEditorVolume(doc: EditorDocument, id: string): EditorVolume | undefined — Looks up a volume by id in an editor document.
-- `importEditorDocumentJson` (function): function importEditorDocumentJson(raw: string): EditorDocument — Parses JSON text back into a normalized editor document.
-- `isEditorObjectLocked` (function): function isEditorObjectLocked(doc: EditorDocument, id: string): boolean — True when an object id is a member of any locked collection — blocks move/delete on it.
-- `listEditorKinds` (function): function listEditorKinds(doc: EditorDocument): { markers: string[]; volumes: string[]; paths: string[]; } — Lists the distinct marker, volume, and path kinds authored in a document.
-- `mergeEditorDocuments` (function): function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument — Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections into one.
-- `normalizeEditorLayers` (function): function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument — Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
-- `wouldCreateCycle` (function): function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean — True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
 
 ## @jgengine/core/editor/types
 
@@ -113,7 +58,7 @@
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, save }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, save, modeChip }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -121,7 +66,7 @@
 - `EditorBridgeResponse` (type): type EditorBridgeResponse = { ok: boolean; result?: unknown; error?: string; } — Result envelope returned by every editor host RPC call.
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
-- `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
+- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineJson, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; baselineJson?: string; save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string … — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
@@ -135,10 +80,10 @@
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
-- `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
+- `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
-- `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
+- `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the standalone editor can place: a stable id and a resolvable URL.
 - `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
@@ -149,7 +94,7 @@
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
 - `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
-- `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
+- `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `blankWorld` (function): function blankWorld(seed = "standalone"): EnvironmentWorldFeature — The default flat-ground world the standalone editor opens on when the host supplies none.
@@ -179,13 +124,13 @@
 
 ## @jgengine/editor/EditorApp
 
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, save }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, save, modeChip }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorSaveFn` (type): type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }> — Persists an exported document JSON; resolves with where it landed or why it failed.
 
 ## @jgengine/editor/EditorCameraDriver
 
-- `EditorCameraDriver` (function): function EditorCameraDriver({ api }: { api: EditorHostApi }): null — Smoothly pans the orbit camera to the editor host's focus target when it changes.
+- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
 
 ## @jgengine/editor/EditorChrome
 
@@ -193,7 +138,7 @@
 
 ## @jgengine/editor/PerfProbe
 
-- `PerfProbe` (function): function PerfProbe({ api }: { api: EditorHostApi }): null — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
+- `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 
 ## @jgengine/editor/SchemaInspector
 
@@ -202,8 +147,8 @@
 ## @jgengine/editor/SelectionGizmo
 
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
-- `SelectionGizmo` (function): function SelectionGizmo({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: (x: number, z: number) => number; }): React.JSX.Element | null — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
-- `ViewportSelect` (function): function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }): null — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
+- `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Translating with a multi-selection moves every selected object by the drag delta; scaling a volume resizes its true shape (radius, height, or box half-extents); a selected path vertex moves just that point. Snapping follows the UI store: terrain height, grid quantization, or free movement.
+- `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 
 ## @jgengine/editor/StandaloneEditor
 
@@ -214,6 +159,21 @@
 - `blankWorld` (function): function blankWorld(seed = "standalone"): EnvironmentWorldFeature — The default flat-ground world the standalone editor opens on when the host supplies none.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
 - `downloadSaver` (function): function downloadSaver(filename = "editor.scene.json"): EditorSaveFn — A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening.
+
+## @jgengine/editor/TerrainPanel
+
+- `TerrainPanel` (function): function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
+
+## @jgengine/editor/chromeFields
+
+- `NumberField` (function): function NumberField({ label, value, onCommit, step = 1, }: { label: string; value: number; onCommit: (value: number) => void; step?: number; }): React.JSX.Element — ⚠ undocumented
+- `SliderRow` (function): function SliderRow({ label, value, min, max, step, onChange, format, }: { label: string; value: number; min: number; max: number; step: number; onChange: (value: number) => void; format?: (value: number) => string; }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/editor/chromeStyles
+
+- `BTN` (const): const BTN: "rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10 hover:text-neutral-100" — ⚠ undocumented
+- `INPUT` (const): const INPUT: "rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60" — ⚠ undocumented
+- `MICRO` (const): const MICRO: "text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-500" — ⚠ undocumented
 
 ## @jgengine/editor/mcp/bridgeServer
 
@@ -226,7 +186,15 @@
 
 ## @jgengine/editor/mcp/loadGameLayers
 
-- `loadGameLayers` (function): function loadGameLayers(gameId: string): Promise<unknown> — Node-only: resolve a game's `editorLayers` export straight from Games/<id>/src.
+- `LoadGameLayersResult` (type): type LoadGameLayersResult = | { ok: true; document: EditorDocument } | { ok: false; errors: EditorDocumentDiagnostic[] } — Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it.
+- `decodeGameLayers` (function): function decodeGameLayers(resolved: unknown): LoadGameLayersResult — Validates an already-resolved `editorLayers` export value (post module-load, post factory-call) against the editor document schema — the exact check {@link loadGameLayers} applies at the untrusted-input boundary between game-authored code and a live editor session.
+- `loadGameLayers` (function): function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> — Node-only: resolves a game's `editorLayers` export straight from Games/<id>/src and validates its shape before it reaches a live editor session — the untrusted-input boundary between game-authored code and the engine.
+
+## @jgengine/editor/mcp/rpcRequest
+
+- `DecodeRpcRequestResult` (type): type DecodeRpcRequestResult = | { ok: true; request: EditorBridgeRequest } | { ok: false; errors: RpcRequestDiagnostic[] } — Result of {@link decodeEditorBridgeRequest}: a request whose `method` is a real one, or the diagnostic that rejected it.
+- `RpcRequestDiagnostic` (interface): interface RpcRequestDiagnostic — One field-level failure surfaced while decoding an untrusted RPC request.
+- `decodeEditorBridgeRequest` (function): function decodeEditorBridgeRequest(raw: unknown): DecodeRpcRequestResult — Validates an untrusted JSON-decoded RPC payload (from `--rpc` or the HTTP bridge) before it reaches `EditorHostApi.handle`: confirms it is a plain object carrying a known `method` name. Per-method field shape is still enforced by `handle`'s own dispatch, but a garbled or unknown-method payload is rejected here with a path-specific diagnostic instead of flowing through on a blind cast.
 
 ## @jgengine/editor/mcp/stdioServer
 

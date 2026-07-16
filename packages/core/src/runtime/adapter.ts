@@ -1,9 +1,15 @@
 export type MultiplayerTopology = "shared" | "lobbies" | "private";
 
 /**
- * Where the world simulation is authoritative. `"client"` (default) keeps the historical model — each client runs
- * its own `onTick` and syncs only presence/feeds/chat. `"server"` opts into host-authoritative replication: the
- * host runs the loop, and the shell mirrors the server's world into the local `ctx` instead of simulating locally.
+ * Where the world simulation is authoritative.
+ *
+ * - `"client"` (default when omitted) — **presence-only multiplayer**: each client runs its own `onTick` and
+ *   syncs presence / feeds / chat. Not competitive-safe; do not treat it as a shared sim.
+ * - `"server"` — host-authoritative world replication: the host runs the loop; the shell mirrors the host's
+ *   world into the local `ctx` instead of simulating locally.
+ *
+ * Prefer naming the product intent in game code: pass `authority: "server"` for shared worlds, leave unset or
+ * `"client"` only for co-op presence / lobbies that intentionally tick independently.
  */
 export type MultiplayerAuthority = "server" | "client";
 
@@ -15,12 +21,32 @@ export type MultiplayerAdapterConfig =
   | { kind: "lan"; topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority }
   | { kind: "offline" };
 
+/**
+ * Convex transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer
+ * `convexPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared,
+ * host-authoritative world — see `examples/HOSTED.md`.
+ */
 export function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "convex", topology: config?.topology ?? "shared", authority: config?.authority };
 }
 
+/** Presence-only Convex transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `convex({ ...config, authority: "client" })`. */
+export function convexPresence(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig {
+  return { kind: "convex", topology: config?.topology ?? "shared", authority: "client" };
+}
+
+/**
+ * WebSocket transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer
+ * `wsPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared,
+ * host-authoritative world — see `examples/HOSTED.md`.
+ */
 export function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
+}
+
+/** Presence-only WebSocket transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `ws({ ...config, authority: "client" })`. */
+export function wsPresence(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig {
+  return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: "client" };
 }
 
 export function fly(config: { app: string; topology?: MultiplayerTopology; path?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
@@ -51,8 +77,28 @@ export function lan(config?: {
 
 /** True when the adapter opts into host-authoritative world replication (`authority: "server"`). */
 export function isServerAuthoritative(multiplayer: unknown): boolean {
+  return resolveAuthority(multiplayer) === "server";
+}
+
+/**
+ * Resolved authority for a multiplayer config.
+ * - `offline` / missing adapter → `null` (single-player; not multiplayer authority).
+ * - unset or `"client"` → `"client"` (presence-only; each client ticks).
+ * - `"server"` → host-authoritative shared sim.
+ */
+export function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null {
   const adapter = adapterOf(multiplayer);
-  return adapter !== null && "authority" in adapter && adapter.authority === "server";
+  if (adapter === null || adapter.kind === "offline") return null;
+  if ("authority" in adapter && adapter.authority === "server") return "server";
+  return "client";
+}
+
+/**
+ * True when multiplayer is on but the world sim is not host-authoritative — presence/feeds/chat only.
+ * Equivalent to `resolveAuthority(m) === "client"`.
+ */
+export function isPresenceOnly(multiplayer: unknown): boolean {
+  return resolveAuthority(multiplayer) === "client";
 }
 
 /** True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save. */

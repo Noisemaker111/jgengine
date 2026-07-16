@@ -2,18 +2,20 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
-import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo } from "./pkg";
+import { findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPackageManager, sdkVersion } from "./pkg";
 import { installSkills } from "./skills";
 import { gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
 
+/** @internal */
 export function writeGame(targetDir: string, id: string, name: string, variant: TemplateVariant): void {
-  for (const file of gameTemplate({ id, name, variant, engineVersion: cliVersion() })) {
+  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion() })) {
     const dest = join(targetDir, file.path);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.contents);
   }
 }
 
+/** @internal */
 export function registerRootGameScript(rootDir: string, id: string, folderName: string = id): boolean {
   const rootPackagePath = join(rootDir, "package.json");
   const root = JSON.parse(readFileSync(rootPackagePath, "utf8")) as { scripts?: Record<string, string> };
@@ -28,12 +30,6 @@ export function registerRootGameScript(rootDir: string, id: string, folderName: 
   root.scripts = Object.fromEntries([...rest, ...games]);
   writeFileSync(rootPackagePath, `${JSON.stringify(root, null, 2)}\n`);
   return true;
-}
-
-function pickPackageManager(preferred: string | undefined): string {
-  if (preferred !== undefined) return preferred;
-  const probe = spawnSync("bun", ["--version"], { stdio: "ignore", shell: process.platform === "win32" });
-  return probe.status === 0 ? "bun" : "npm";
 }
 
 const VALUE_FLAGS = new Set(["--pm"]);
@@ -67,6 +63,7 @@ function isInsideDir(child: string, parent: string): boolean {
   return resolvedChild === resolvedParent || resolvedChild.startsWith(resolvedParent + sep);
 }
 
+/** @internal */
 export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {
@@ -122,7 +119,7 @@ export function runCreate(argv: string[]): number {
     }
 
     writeGame(targetDir, id, displayName, variant);
-    console.log(`created ${displayName} (${variant}) ΓåÆ ${targetDir}`);
+    console.log(`created ${displayName} (${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
 
     if (variant === "in-repo" && workspaceRoot !== null) {
@@ -139,20 +136,20 @@ export function runCreate(argv: string[]): number {
     let installed = false;
     if (!hasFlag(argv, "no-install")) {
       const pm = pickPackageManager(flag(argv, "pm"));
-      console.log(`installing dependencies with ${pm}ΓÇª`);
+      console.log(`installing dependencies with ${pm}…`);
       const install = spawnSync(pm, ["install"], {
         cwd: targetDir,
         stdio: "inherit",
         shell: process.platform === "win32",
       });
       installed = install.status === 0;
-      if (!installed) console.error(`warning: ${pm} install failed ΓÇö run it manually in ${targetDir}`);
+      if (!installed) console.error(`warning: ${pm} install failed — run it manually in ${targetDir}`);
     }
 
     if (!hasFlag(argv, "no-skills")) {
       const skillsStatus = installSkills("project", targetDir);
       if (skillsStatus !== 0) {
-        console.error("warning: skill install failed ΓÇö agent can still use AGENTS.md; retry: npx jgengine skills -p");
+        console.error("warning: skill install failed — agent can still use AGENTS.md; retry: npx jgengine skills -p");
       }
     }
 

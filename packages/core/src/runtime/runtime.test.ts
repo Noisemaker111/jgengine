@@ -147,6 +147,77 @@ test("hydrate invokes onInit once per boot before any onNewPlayer", () => {
   expect(calls).toEqual(["init", "newPlayer"]);
 });
 
+test("joinPlayer marks server and player dirty, and a rejoin does not duplicate the dirty entry", () => {
+  const runtime = createGameRuntime({ gameId: "demo", save: "none", commands: {} });
+  const hydrated = runtime.hydrate({
+    gameId: "demo",
+    serverId: "srv_1",
+    serverRow: { entities: [], objects: [], session: {} },
+    playersByUserId: {},
+    chunksByKey: {},
+  });
+
+  const joined = runtime.joinPlayer(hydrated, "alice", true);
+  expect(joined.revision).toBe(1);
+  expect(joined.dirty.server).toBe(true);
+  expect(joined.dirty.players).toEqual(["alice"]);
+
+  const rejoined = runtime.joinPlayer(joined, "alice", false);
+  expect(rejoined.revision).toBe(2);
+  expect(rejoined.dirty.players).toEqual(["alice"]);
+});
+
+test("joinPlayer preserves an already-seeded player row on rejoin instead of resetting it", () => {
+  const runtime = createGameRuntime({ gameId: "demo", save: "none", commands: {} });
+  const hydrated = runtime.hydrate({
+    gameId: "demo",
+    serverId: "srv_1",
+    serverRow: { entities: [], objects: [], session: {} },
+    playersByUserId: {
+      alice: { userId: "alice", inventories: {}, economy: { gold: 42 }, unlocks: ["sword"], session: {} },
+    },
+    chunksByKey: {},
+  });
+
+  const rejoined = runtime.joinPlayer(hydrated, "alice", false);
+  expect(rejoined.players.alice?.economy.gold).toBe(42);
+  expect(rejoined.players.alice?.unlocks).toEqual(["sword"]);
+});
+
+test("toProfileRow returns null for an unknown player and a row for a known one", () => {
+  const runtime = createGameRuntime({ gameId: "demo", save: "none", commands: {} });
+  const hydrated = runtime.hydrate({
+    gameId: "demo",
+    serverId: "srv_1",
+    serverRow: { entities: [], objects: [], session: {} },
+    playersByUserId: {},
+    chunksByKey: {},
+  });
+
+  expect(runtime.toProfileRow(hydrated, "ghost")).toBeNull();
+
+  const joined = runtime.joinPlayer(hydrated, "alice", true);
+  const row = runtime.toProfileRow(joined, "alice");
+  expect(row?.userId).toBe("alice");
+  expect(row?.gameId).toBe("demo");
+  expect(row?.player.userId).toBe("alice");
+});
+
+test("tick with no onTick hook returns the same snapshot unchanged", () => {
+  const runtime = createGameRuntime({ gameId: "demo", save: "none", commands: {} });
+  const hydrated = runtime.hydrate({
+    gameId: "demo",
+    serverId: "srv_1",
+    serverRow: { entities: [], objects: [], session: {} },
+    playersByUserId: {},
+    chunksByKey: {},
+  });
+
+  const ticked = runtime.tick(hydrated, 0.1);
+  expect(ticked).toBe(hydrated);
+  expect(ticked.revision).toBe(0);
+});
+
 test("tick runs onTick once per world step with player id fan-in", () => {
   const ticks: Array<{ playerIds: string[]; dt: number }> = [];
   const runtime = createGameRuntime({

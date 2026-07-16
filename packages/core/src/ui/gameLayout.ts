@@ -29,34 +29,46 @@ export interface LayoutRect {
   bottom: number;
 }
 
-/** Width of a rect (clamped to ≥0). */
+/** Width of a rect (clamped to ≥0).
+ * @internal
+ */
 export function rectWidth(rect: LayoutRect): number {
   return Math.max(0, rect.right - rect.left);
 }
 
-/** Height of a rect (clamped to ≥0). */
+/** Height of a rect (clamped to ≥0).
+ * @internal
+ */
 export function rectHeight(rect: LayoutRect): number {
   return Math.max(0, rect.bottom - rect.top);
 }
 
-/** Area of a rect in px². */
+/** Area of a rect in px².
+ * @internal
+ */
 export function rectArea(rect: LayoutRect): number {
   return rectWidth(rect) * rectHeight(rect);
 }
 
-/** Do the two rectangles share any interior area? Touching edges do not count. */
+/** Do the two rectangles share any interior area? Touching edges do not count.
+ * @internal
+ */
 export function intersects(a: LayoutRect, b: LayoutRect): boolean {
   return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 }
 
-/** Overlapping area in px²; 0 when the rectangles don't intersect. */
+/** Overlapping area in px²; 0 when the rectangles don't intersect.
+ * @internal
+ */
 export function overlapArea(a: LayoutRect, b: LayoutRect): number {
   const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
   const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
   return w > 0 && h > 0 ? w * h : 0;
 }
 
-/** Portrait when taller than wide, else landscape. */
+/** Portrait when taller than wide, else landscape.
+ * @internal
+ */
 export function orientationOf(width: number, height: number): LayoutOrientation {
   return height > width ? "portrait" : "landscape";
 }
@@ -81,7 +93,8 @@ const DEFAULT_COMPACT_WIDTH = 900;
  * desktop layout: a coarse-pointer device on a game that supports mobile is
  * always a `mobile-*` mode, split by live orientation; everything else is a
  * desktop mode split by width.
- */
+  * @internal
+  */
 export function resolveLayoutMode(input: LayoutModeInput): GameLayoutMode {
   const orientation = orientationOf(input.width, input.height);
   const mobile = input.coarsePointer && (input.mobileSupported ?? true);
@@ -90,7 +103,9 @@ export function resolveLayoutMode(input: LayoutModeInput): GameLayoutMode {
   return input.width < compactWidth ? "desktop-compact" : "desktop-wide";
 }
 
-/** Whether a mode is one of the phone modes. */
+/** Whether a mode is one of the phone modes.
+ * @internal
+ */
 export function isMobileMode(mode: GameLayoutMode): boolean {
   return mode === "mobile-portrait" || mode === "mobile-landscape";
 }
@@ -156,7 +171,8 @@ const DEFAULT_MIN_AREA = 64;
  * regions. A pair is skipped when either side's policy is `allow`, when either
  * opts into the other via `allowOverlapWith`, when they share a
  * `collisionGroup`, or when the overlap is below `minArea`.
- */
+  * @internal
+  */
 export function detectLayoutCollisions(
   regions: readonly LayoutRegion[],
   options?: DetectCollisionsOptions,
@@ -184,7 +200,9 @@ function withThousands(n: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-/** Human-readable diagnostic block for a set of collisions (empty string when there are none). */
+/** Human-readable diagnostic block for a set of collisions (empty string when there are none).
+ * @internal
+ */
 export function formatLayoutCollisions(collisions: readonly LayoutCollision[]): string {
   if (collisions.length === 0) return "";
   const lines = collisions.map((c) => `${c.a} intersects ${c.b} by ${withThousands(c.area)} px²`);
@@ -195,7 +213,8 @@ export function formatLayoutCollisions(collisions: readonly LayoutCollision[]): 
  * The usable gameplay rectangle after reserving physical zones for touch
  * controls and system UI. Starts from the safe-area-inset viewport and carves
  * each reserved zone from whichever edge it hugs.
- */
+  * @internal
+  */
 export function computeGameplayRect(
   viewport: LayoutRect,
   safeArea: Insets,

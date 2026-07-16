@@ -11,6 +11,7 @@ export interface PlayerFovBounds {
   defaultFov: number;
 }
 
+/** @internal */
 export function resolvePlayerFovBounds(options?: {
   min?: number;
   max?: number;
@@ -24,6 +25,7 @@ export function resolvePlayerFovBounds(options?: {
   return { min: lo, max: hi, defaultFov };
 }
 
+/** @internal */
 export function clampPlayerFov(
   value: unknown,
   min: number = PLAYER_FOV_MIN,
@@ -35,6 +37,7 @@ export function clampPlayerFov(
   return value;
 }
 
+/** @internal */
 export function loadPlayerFov(
   bounds: PlayerFovBounds = resolvePlayerFovBounds(),
   storage: Pick<Storage, "getItem"> | null | undefined = defaultStorage(),
@@ -49,6 +52,7 @@ export function loadPlayerFov(
   }
 }
 
+/** @internal */
 export function savePlayerFov(
   value: number,
   bounds: PlayerFovBounds = resolvePlayerFovBounds(),
@@ -70,7 +74,8 @@ export function savePlayerFov(
  * - poseFov is the rig's authored FOV (includes chase-speed modulation, ADS zoom, transitions)
  * - relative mode shifts the authored FOV by (preference − default) so mods still stack
  * - absolute mode (cinematic keyframes) keeps the authored FOV as-is
- */
+  * @internal
+  */
 export function composePlayerFov(
   preference: number,
   poseFov: number,

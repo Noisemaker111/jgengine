@@ -21,37 +21,45 @@ export interface CropTileState {
 
 export type CropCatalog = (cropId: string) => CropDef | null;
 
+/** @internal */
 export function emptyTile(): CropTileState {
   return { soil: "untilled", watered: false, cropId: null, stage: 0, stageProgress: 0, harvestable: false };
 }
 
+/** @internal */
 export function canTill(state: CropTileState): boolean {
   return state.soil === "untilled" && state.cropId === null;
 }
 
+/** @internal */
 export function tillTile(state: CropTileState): CropTileState {
   if (!canTill(state)) return state;
   return { ...state, soil: "tilled" };
 }
 
+/** @internal */
 export function canPlant(state: CropTileState): boolean {
   return state.soil === "tilled" && state.cropId === null;
 }
 
+/** @internal */
 export function plantCrop(state: CropTileState, cropId: string): CropTileState {
   if (!canPlant(state)) return state;
   return { ...state, cropId, stage: 0, stageProgress: 0, harvestable: false };
 }
 
+/** @internal */
 export function waterTile(state: CropTileState): CropTileState {
   if (state.soil !== "tilled" || state.watered) return state;
   return { ...state, watered: true };
 }
 
+/** @internal */
 export function maturityDays(def: CropDef): number {
   return def.stages.reduce((sum, days) => sum + Math.max(0, days), 0);
 }
 
+/** @internal */
 export function advanceCropDay(def: CropDef, state: CropTileState): CropTileState {
   const rested: CropTileState = state.watered ? { ...state, watered: false } : state;
   if (state.cropId === null) return rested;
@@ -82,6 +90,7 @@ export interface HarvestResult {
   yield: RecipeItem | null;
 }
 
+/** @internal */
 export function harvestCrop(def: CropDef, state: CropTileState): HarvestResult {
   if (!state.harvestable || state.cropId === null) return { state, yield: null };
   const produce = def.harvest ?? { itemId: state.cropId, count: 1 };
@@ -100,14 +109,17 @@ export function harvestCrop(def: CropDef, state: CropTileState): HarvestResult {
 export type TileCoord = readonly [number, number];
 export type TilePattern = readonly TileCoord[];
 
+/** @internal */
 export function tileKey(coord: TileCoord): string {
   return `${coord[0]},${coord[1]}`;
 }
 
+/** @internal */
 export function singleTile(): TilePattern {
   return [[0, 0]];
 }
 
+/** @internal */
 export function squarePattern(radius: number): TilePattern {
   const r = Math.max(0, Math.floor(radius));
   const tiles: TileCoord[] = [];
@@ -115,6 +127,7 @@ export function squarePattern(radius: number): TilePattern {
   return tiles;
 }
 
+/** @internal */
 export function diamondPattern(radius: number): TilePattern {
   const r = Math.max(0, Math.floor(radius));
   const tiles: TileCoord[] = [];
@@ -123,6 +136,7 @@ export function diamondPattern(radius: number): TilePattern {
   return tiles;
 }
 
+/** @internal */
 export function rectPattern(width: number, depth: number): TilePattern {
   const w = Math.max(1, Math.floor(width));
   const d = Math.max(1, Math.floor(depth));
@@ -133,6 +147,7 @@ export function rectPattern(width: number, depth: number): TilePattern {
   return tiles;
 }
 
+/** @internal */
 export function patternAt(center: TileCoord, pattern: TilePattern): TileCoord[] {
   return pattern.map(([dx, dz]) => [center[0] + dx, center[1] + dz] as TileCoord);
 }
@@ -142,6 +157,7 @@ export interface ApplyToolResult {
   changed: TileCoord[];
 }
 
+/** @internal */
 export function applyToolToTiles(
   tiles: ReadonlyMap<string, CropTileState>,
   center: TileCoord,
@@ -168,6 +184,7 @@ export interface DayTicker {
   day(): number;
 }
 
+/** @internal */
 export function createDayTicker(startDay = 0): DayTicker {
   let last = Math.floor(startDay);
   return {
@@ -191,6 +208,7 @@ export interface CropField {
   tiles(): ReadonlyMap<string, CropTileState>;
 }
 
+/** @internal */
 export function createCropField(catalog: CropCatalog = () => null): CropField {
   let grid = new Map<string, CropTileState>();
 

@@ -17,11 +17,13 @@ function redmean(a: readonly [number, number, number], b: readonly [number, numb
 
 const REDMEAN_MAX = redmean([0, 0, 0], [255, 255, 255]);
 
+/** @internal */
 export function colorDistance(a: ColorHex, b: ColorHex): number {
   const distance = redmean(parseHex(a), parseHex(b));
   return REDMEAN_MAX === 0 ? 0 : Math.min(1, distance / REDMEAN_MAX);
 }
 
+/** @internal */
 export function concealmentScore(entityColors: readonly ColorHex[], backgroundColors: readonly ColorHex[]): number {
   if (entityColors.length === 0 || backgroundColors.length === 0) return 0;
   let total = 0;
@@ -54,6 +56,7 @@ export interface ConcealmentSensor {
   reset(id?: string): void;
 }
 
+/** @internal */
 export function createConcealmentSensor(config?: { threshold?: number }): ConcealmentSensor {
   const threshold = config?.threshold ?? 0.7;
   const dwell = new Map<string, number>();

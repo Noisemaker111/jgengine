@@ -14,17 +14,23 @@ export interface HistoryStep<T> {
   stacks: HistoryStacks<T>;
 }
 
-/** Empty history stacks for state `T`. */
+/** Empty history stacks for state `T`.
+ * @internal
+ */
 export function emptyHistory<T>(): HistoryStacks<T> {
   return { past: [], future: [] };
 }
 
-/** True when there is a prior state to undo to. */
+/** True when there is a prior state to undo to.
+ * @internal
+ */
 export function canUndo<T>(stacks: HistoryStacks<T>): boolean {
   return stacks.past.length > 0;
 }
 
-/** True when there is an undone state to redo. */
+/** True when there is an undone state to redo.
+ * @internal
+ */
 export function canRedo<T>(stacks: HistoryStacks<T>): boolean {
   return stacks.future.length > 0;
 }
@@ -32,7 +38,8 @@ export function canRedo<T>(stacks: HistoryStacks<T>): boolean {
 /**
  * Record `present` as the newest undo step and clear the redo future (a fresh action forks history).
  * The oldest past entries beyond `limit` are dropped so the stack stays bounded for save/transport.
- */
+  * @internal
+  */
 export function recordSnapshot<T>(stacks: HistoryStacks<T>, present: T, limit = 100): HistoryStacks<T> {
   const past = [...stacks.past, present];
   const trimmed = limit > 0 && past.length > limit ? past.slice(past.length - limit) : past;
@@ -42,7 +49,8 @@ export function recordSnapshot<T>(stacks: HistoryStacks<T>, present: T, limit = 
 /**
  * Step back: pop the newest past snapshot to apply as the new present, and push the given `present`
  * onto the future for a later redo. Returns `null` when there is nothing to undo.
- */
+  * @internal
+  */
 export function undoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistoryStep<T> | null {
   if (stacks.past.length === 0) return null;
   const snapshot = stacks.past[stacks.past.length - 1]!;
@@ -55,7 +63,8 @@ export function undoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistorySt
 /**
  * Step forward: pop the newest future snapshot to apply as the new present, and push the given
  * `present` back onto the past. Returns `null` when there is nothing to redo.
- */
+  * @internal
+  */
 export function redoSnapshot<T>(stacks: HistoryStacks<T>, present: T): HistoryStep<T> | null {
   if (stacks.future.length === 0) return null;
   const snapshot = stacks.future[stacks.future.length - 1]!;
@@ -86,7 +95,8 @@ export interface SnapshotHistory<T> {
 /**
  * Stateful undo/redo handle wrapping the pure snapshot functions. Call `record(state)` before each
  * mutation; `undo`/`redo` return the state to apply. `limit` bounds the past stack.
- */
+  * @internal
+  */
 export function createSnapshotHistory<T>(limit = 100): SnapshotHistory<T> {
   let stacks: HistoryStacks<T> = emptyHistory<T>();
   return {

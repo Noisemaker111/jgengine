@@ -15,6 +15,7 @@ export interface TelegraphConfig {
   kind?: string;
 }
 
+/** @internal */
 export function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: number): number {
   if (windupMs <= 0) return 1;
   return Math.max(0, Math.min(1, (nowMs - startedAtMs) / windupMs));
@@ -44,7 +45,8 @@ export interface HazardCycleSample {
  * Deterministic repeating hazard timing — windup → active → cooldown as a pure function of absolute
  * time, for recurring flame vents, crushers, lightning rings. Sample `hazardCycleAt` each tick: draw
  * the telegraph during `windup`, apply the effect during `active`, rest through `cooldown`.
- */
+  * @internal
+  */
 export function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardCycleSample {
   const cooldownMs = Math.max(0, config.cooldownMs ?? 0);
   const cycleMs = config.windupMs + config.activeMs + cooldownMs;
@@ -78,7 +80,9 @@ export function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardC
   };
 }
 
-/** Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam. */
+/** Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam.
+ * @internal
+ */
 export function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): number {
   const sample = hazardCycleAt(config, nowMs);
   if (sample.phase === "windup") return nowMs + sample.remainingMs;
@@ -87,21 +91,25 @@ export function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): nu
   return nowMs + restMs + config.windupMs;
 }
 
+/** @internal */
 export function telegraphFired(windupMs: number, startedAtMs: number, nowMs: number): boolean {
   return nowMs - startedAtMs >= windupMs;
 }
 
+/** @internal */
 export function telegraphTurnProgress(config: TelegraphConfig, startedTurn: number, currentTurn: number): number {
   const turns = config.turns ?? 0;
   if (turns <= 0) return 1;
   return Math.max(0, Math.min(1, (currentTurn - startedTurn) / turns));
 }
 
+/** @internal */
 export function telegraphFiredAtTurn(config: TelegraphConfig, startedTurn: number, currentTurn: number): boolean {
   const turns = config.turns ?? 0;
   return currentTurn - startedTurn >= turns;
 }
 
+/** @internal */
 export function telegraphTurnsRemaining(config: TelegraphConfig, startedTurn: number, currentTurn: number): number {
   const turns = config.turns ?? 0;
   return Math.max(0, turns - (currentTurn - startedTurn));
@@ -111,6 +119,7 @@ function planarDelta(config: TelegraphConfig, point: EntityPosition): { dx: numb
   return { dx: point[0] - config.at[0], dz: point[2] - config.at[2] };
 }
 
+/** @internal */
 export function pointInTelegraph(config: TelegraphConfig, point: EntityPosition): boolean {
   const { shape } = config;
   const { dx, dz } = planarDelta(config, point);

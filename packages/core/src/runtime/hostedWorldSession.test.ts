@@ -99,4 +99,23 @@ describe("hosted world session", () => {
     s.tick(1);
     expect(store.load()?.revision).toBe(s.revision());
   });
+
+  test("omitting now still gates saveIntervalMs against a real clock instead of freezing at 0", () => {
+    const originalNow = Date.now;
+    let wallClock = 1_000_000;
+    Date.now = () => wallClock;
+    try {
+      const store = memoryWorldStore();
+      const s = session({ store, saveIntervalMs: 1000 });
+      s.join("alice", true);
+      s.tick(1);
+      expect(store.load()).toBeNull();
+
+      wallClock += 1200;
+      s.tick(1);
+      expect(store.load()?.revision).toBe(s.revision());
+    } finally {
+      Date.now = originalNow;
+    }
+  });
 });

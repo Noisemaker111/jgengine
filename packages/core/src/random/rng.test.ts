@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { hashString, seededRng, seededStreams } from "./rng";
+import { hashString, randomSeedFrom, seededRng, seededStreams, stepRandomSeed } from "./rng";
 
 function draw(rng: () => number, count: number): number[] {
   return Array.from({ length: count }, () => rng());
@@ -20,6 +20,23 @@ describe("seededRng", () => {
     for (const value of draw(rng, 1000)) {
       expect(value).toBeGreaterThanOrEqual(0);
       expect(value).toBeLessThan(1);
+    }
+  });
+});
+
+describe("stepRandomSeed", () => {
+  test("same seed steps to the same value and next seed", () => {
+    const seed = randomSeedFrom(1234567);
+    expect(stepRandomSeed(seed)).toEqual(stepRandomSeed(seed));
+  });
+
+  test("chained steps stay in [0, 1) and reproduce a hand-rolled state machine", () => {
+    let cursor = randomSeedFrom(42);
+    for (let i = 0; i < 1000; i += 1) {
+      const [value, next] = stepRandomSeed(cursor);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThan(1);
+      cursor = next;
     }
   });
 });

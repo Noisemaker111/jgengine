@@ -47,7 +47,8 @@ function evict<T>(frames: RecordingFrame<T>[], options: RecordingBufferOptions):
  * then seek/scrub the recording independent of the live sim. Frames are
  * expected in non-decreasing `t` order (one push per tick); `seek`/`range`
  * binary-search on that assumption.
- */
+  * @internal
+  */
 export function createRecordingBuffer<T>(options: RecordingBufferOptions = {}): RecordingBuffer<T> {
   const frames: RecordingFrame<T>[] = [];
 

@@ -36,6 +36,7 @@ const singlesJson = join(packageTreeRoot, "singles.json");
 const localDir = join(pkgRoot, "local");
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/Noisemaker111/jgengine@main/packages/assets/local";
 
+/** @internal */
 export function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(`--${name}`);
   return index >= 0 ? argv[index + 1] : undefined;
@@ -68,6 +69,7 @@ export const cliFetch: typeof fetch = (async (input: string | URL | Request, ini
   }
 }) as typeof fetch;
 
+/** @internal */
 export function describeNetworkFailure(error: unknown): string {
   const chain: string[] = [];
   let current: unknown = error;
@@ -145,10 +147,12 @@ function cmdSearch(argv: string[]): void {
   console.log(`— ${Math.min(rows.length, limit)} of ${rows.length} matches for "${term}"`);
 }
 
+/** @internal */
 export function isPopulated(dir: string): boolean {
   return existsSync(dir) && readdirSync(dir).length > 0;
 }
 
+/** @internal */
 export async function cmdPull(argv: string[]): Promise<void> {
   const sourceId = argv[0];
   if (sourceId === undefined) {

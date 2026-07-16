@@ -108,7 +108,8 @@ function intersectsRadius(
  *
  * Render culling and asset streaming are intentionally separate. This class never
  * destroys entities or throttles simulation; adapters decide how to apply results.
- */
+  * @internal
+  */
 export class VisibilitySystem {
   readonly settings: VisibilityDefaults;
   readonly #states = new Map<VisibilityId, VisibilityState>();

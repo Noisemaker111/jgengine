@@ -16,13 +16,13 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.0.15",
+    "@tailwindcss/vite": "catalog:",
     "@tauri-apps/cli": "^2",
-    "@types/react": "^19",
-    "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "^4.3.4",
-    "tailwindcss": "^4.0.15",
-    "typescript": "^5",
-    "vite": "^6.2.2"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

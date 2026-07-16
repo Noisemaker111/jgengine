@@ -46,6 +46,7 @@ function normalizeWindDirection(direction: readonly [number, number]): THREE.Vec
   return vector.lengthSq() === 0 ? new THREE.Vector2(1, 0) : vector.normalize();
 }
 
+/** @internal */
 export function resolveGrassWind(wind: GrassWindOptions | false | undefined): Required<GrassWindOptions> {
   if (wind === false) return { ...DEFAULT_GRASS_WIND, strength: 0, flutter: 0 };
   return {
@@ -57,6 +58,7 @@ export function resolveGrassWind(wind: GrassWindOptions | false | undefined): Re
   };
 }
 
+/** @internal */
 export function createGrassMaterial(options: GrassMaterialOptions = {}): GrassMaterialHandle {
   const wind = resolveGrassWind(options.wind);
   const uniforms: GrassShaderUniforms = {

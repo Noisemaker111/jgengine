@@ -2,7 +2,7 @@ import type { GameContext } from "./gameContext";
 import type { InputFrame } from "./hostedGameRunner";
 import type { HostedWorldSession } from "./hostedWorldSession";
 import { createWorldMirror } from "./worldMirror";
-import type { WorldDiff } from "./worldReplication";
+import { diffSnapshots, type WorldDiff } from "./worldReplication";
 import type { WorldSnapshot } from "./worldSnapshot";
 
 /** Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream. */
@@ -36,12 +36,32 @@ export interface WorldHost {
   session(): HostedWorldSession;
 }
 
-/** Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections. */
+/** Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections.
+ * @internal
+ */
 export function createWorldHost(session: HostedWorldSession): WorldHost {
   const connections = new Set<WorldHostConnection>();
+  const connectionsByUser = new Map<string, Set<WorldHostConnection>>();
+
+  const perViewer = session.projectsViewers();
 
   function connect(userId: string, send: (frame: WorldServerFrame) => void): WorldHostConnection {
     let cursor = 0;
+    let released = false;
+    let viewerSnapshot: WorldSnapshot | null = null;
+    let viewerRevision = 0;
+    function release(): void {
+      if (released) return;
+      released = true;
+      connections.delete(connection);
+      const peers = connectionsByUser.get(userId);
+      if (peers === undefined) return;
+      peers.delete(connection);
+      if (peers.size === 0) {
+        connectionsByUser.delete(userId);
+        session.leave(userId);
+      }
+    }
     const connection: WorldHostConnection = {
       receive(frame) {
         switch (frame.t) {
@@ -49,7 +69,7 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
             session.join(userId, frame.isNew);
             break;
           case "leave":
-            session.leave(userId);
+            release();
             break;
           case "command":
             session.command(userId, frame.name, frame.input);
@@ -60,6 +80,20 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
         }
       },
       push() {
+        if (released) return;
+        if (perViewer) {
+          const revision = session.revision();
+          if (viewerSnapshot !== null && revision === viewerRevision) return;
+          const snapshot = session.snapshotFor({ userId });
+          if (viewerSnapshot === null) {
+            send({ t: "baseline", revision, snapshot });
+          } else {
+            send({ t: "diff", diff: diffSnapshots(viewerSnapshot, snapshot, revision, viewerRevision) });
+          }
+          viewerSnapshot = snapshot;
+          viewerRevision = revision;
+          return;
+        }
         if (cursor !== 0 && cursor === session.revision()) return;
         const sync = session.sync(cursor === 0 ? null : cursor);
         if (sync.kind === "baseline") {
@@ -70,11 +104,15 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
           send({ t: "diff", diff: sync.diff });
         }
       },
-      close() {
-        connections.delete(connection);
-      },
+      close: release,
     };
     connections.add(connection);
+    let peers = connectionsByUser.get(userId);
+    if (peers === undefined) {
+      peers = new Set();
+      connectionsByUser.set(userId, peers);
+    }
+    peers.add(connection);
     return connection;
   }
 
@@ -97,7 +135,9 @@ export interface WorldClientLink {
   revision(): number;
 }
 
-/** Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream. */
+/** Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream.
+ * @internal
+ */
 export function createWorldClientLink(
   ctx: Pick<GameContext, "hydrate">,
   send: (frame: WorldClientFrame) => void,
