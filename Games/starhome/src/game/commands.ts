@@ -1,9 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { charge, grant } from "@jgengine/core/economy/wallet";
 
 import { PLOT } from "../world";
 import { FURNITURE, FURNITURE_BY_ID } from "./objects/catalog";
 import { householdStore } from "./session/store";
-import { pushEvent } from "./session/types";
+import { CREDITS, pushEvent } from "./session/types";
 
 export interface PointerInput {
   point: { x: number; y: number; z: number };
@@ -72,7 +73,7 @@ export function registerCommands(ctx: GameContext): void {
       gameCtx.scene.object.remove(input.id);
       const state = householdStore.read(gameCtx);
       pushEvent(state, `Sold ${def.name} for ${Math.round(def.cost / 2)} credits.`, gameCtx.time.now(), "info");
-      householdStore.write(gameCtx, { ...state, credits: state.credits + Math.round(def.cost / 2) });
+      householdStore.write(gameCtx, { ...state, wallet: grant(state.wallet, CREDITS, Math.round(def.cost / 2)) });
     },
   });
 
@@ -101,7 +102,8 @@ function handlePointer(ctx: GameContext, input: PointerInput): void {
   if (state.buildTool !== null) {
     const def = FURNITURE_BY_ID[state.buildTool];
     if (def === undefined) return;
-    if (state.credits < def.cost) {
+    const charged = charge(state.wallet, CREDITS, def.cost);
+    if (charged.status !== "ok") {
       pushEvent(state, `Not enough credits for ${def.name}.`, ctx.time.now(), "info");
       householdStore.write(ctx, { ...state });
       return;
@@ -112,7 +114,7 @@ function handlePointer(ctx: GameContext, input: PointerInput): void {
     placeSeq += 1;
     ctx.scene.object.place(def.id, x, y, z, { instanceId: `placed:${def.id}:${placeSeq}` });
     pushEvent(state, `Placed ${def.name}.`, ctx.time.now(), "good");
-    householdStore.write(ctx, { ...state, credits: state.credits - def.cost });
+    householdStore.write(ctx, { ...state, wallet: charged.state });
     return;
   }
 

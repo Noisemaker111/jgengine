@@ -1,3 +1,5 @@
+import { seededRng } from "@jgengine/core/random/rng";
+
 export type BodyShape = "blob" | "tall" | "round" | "insectoid";
 
 export const BODY_SHAPES: readonly BodyShape[] = ["blob", "tall", "round", "insectoid"];
@@ -21,7 +23,7 @@ function range(rng: () => number, lo: number, hi: number): number {
 }
 
 export function generateBodyPlan(seed: string): AlienBodyPlan {
-  const rng = seededPlanRng(seed);
+  const rng = seededRng(seed);
   const shape = pick(rng, BODY_SHAPES);
   const size = Math.round(range(rng, 0.7, 1.55) * 100) / 100;
   const limbCount =
@@ -35,21 +37,6 @@ export function generateBodyPlan(seed: string): AlienBodyPlan {
   const hue = Math.floor(rng() * 360);
   const metabolism = Math.round(range(rng, 0.75, 1.35) * 100) / 100;
   return { shape, size, limbCount: Math.max(2, limbCount), limbLength, eyeCount, hue, metabolism };
-}
-
-function seededPlanRng(seed: string): () => number {
-  let a = 2166136261 >>> 0;
-  for (let i = 0; i < seed.length; i++) {
-    a ^= seed.charCodeAt(i);
-    a = Math.imul(a, 16777619);
-  }
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 export function walkSpeedOf(plan: AlienBodyPlan): number {

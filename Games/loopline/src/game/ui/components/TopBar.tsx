@@ -1,6 +1,7 @@
+import { balance } from "@jgengine/core/economy/wallet";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 
-import { MILESTONES, guestCap } from "../../catalog";
+import { CASH, MILESTONES, guestCap } from "../../catalog";
 import { session } from "../../session";
 
 function Chip({
@@ -31,7 +32,7 @@ function nextMilestone(rating: number): { rating: number; label: string } | null
 }
 
 export function TopBar() {
-  const cash = useGameStore(() => session.cash);
+  const cash = useGameStore(() => balance(session.wallet, CASH));
   const rating = useGameStore(() => session.rating);
   const guests = useGameStore(() => session.guests.size);
   const happiness = useGameStore(() => session.happinessAvg);

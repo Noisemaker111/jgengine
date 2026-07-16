@@ -1,11 +1,13 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
+import { hashString } from "@jgengine/core/random/rng";
+import { balance, grant } from "@jgengine/core/economy/wallet";
 
 import { DAY_LENGTH } from "../../world";
 import { FURNITURE_BY_ID, WORK_EARN_PER_SECOND, type FurnitureRole } from "../objects/catalog";
 import { clamp, decayNeeds, type NeedId } from "../needs/needs";
 import { householdStore } from "../session/store";
-import { pairKey, pruneEvents, pushEvent, type HouseholdState, type MemberState } from "../session/types";
+import { CREDITS, pairKey, pruneEvents, pushEvent, type HouseholdState, type MemberState } from "../session/types";
 import {
   chooseDesire,
   isIdleish,
@@ -66,27 +68,15 @@ function objectById(objects: readonly SceneObject[], id: string): SceneObject | 
 function moveMember(ctx: GameContext, id: string, target: [number, number, number], speed: number, dt: number): number {
   const from = positionOf(ctx, id);
   if (from === null) return Infinity;
-  const dx = target[0] - from[0];
-  const dz = target[2] - from[2];
-  const dist = Math.hypot(dx, dz);
-  const next = ctx.scene.entity.moveToward(id, target, { speed, dt, stopDistance: 0 });
-  if (next !== null) {
-    const rotationY = Math.atan2(dx, dz);
-    ctx.scene.entity.setPose(id, { position: next, rotationY, dt });
-  }
+  const dist = Math.hypot(target[0] - from[0], target[2] - from[2]);
+  ctx.scene.entity.moveTowardCommit(id, target, { speed, dt, stopDistance: 0, face: true });
   return dist;
 }
 
 function idleWanderTarget(member: MemberState): [number, number, number] {
-  const angle = (hashId(member.id) % 360) * (Math.PI / 180) + member.actionUntil;
-  const r = 6 + (hashId(member.id) % 9);
+  const angle = (hashString(member.id) % 360) * (Math.PI / 180) + member.actionUntil;
+  const r = 6 + (hashString(member.id) % 9);
   return [Math.cos(angle) * r, 0, Math.sin(angle) * r];
-}
-
-function hashId(id: string): number {
-  let a = 0;
-  for (let i = 0; i < id.length; i++) a = (a * 31 + id.charCodeAt(i)) >>> 0;
-  return a;
 }
 
 export function simulateHousehold(ctx: GameContext, dt: number): void {
@@ -97,7 +87,7 @@ export function simulateHousehold(ctx: GameContext, dt: number): void {
   const isWorkHours = hour >= 8 && hour < 18;
   const objects = ctx.scene.object.list();
   const availability = availabilityFrom(objects);
-  const lowCredits = state.credits < LOW_CREDITS;
+  const lowCredits = balance(state.wallet, CREDITS) < LOW_CREDITS;
 
   for (const id of state.order) {
     const member = state.members[id];
@@ -149,7 +139,7 @@ function stepMember(
       return;
     }
     if (action.goal === "work") {
-      state.credits += WORK_EARN_PER_SECOND * dt;
+      if (dt > 0) state.wallet = grant(state.wallet, CREDITS, WORK_EARN_PER_SECOND * dt);
       member.needs.energy = clamp(member.needs.energy - 2 * dt);
       if (!isWorkHours && !member.assignedByPlayer) member.action = { kind: "idle" };
       return;
@@ -214,7 +204,7 @@ function stepMember(
     if (action.kind !== "wander" || now >= member.actionUntil) {
       const target = idleWanderTarget(member);
       member.action = { kind: "wander", x: target[0], z: target[2] };
-      member.actionUntil = now + 4 + (hashId(member.id) % 4);
+      member.actionUntil = now + 4 + (hashString(member.id) % 4);
     }
     if (member.action.kind === "wander") {
       moveMember(ctx, member.id, [member.action.x, 0, member.action.z], speed * 0.6, dt);

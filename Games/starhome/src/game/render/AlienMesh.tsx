@@ -5,6 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { hashString } from "@jgengine/core/random/rng";
 import { cloneModelScene, disposeClonedMaterials, standardMaterialsOf } from "@jgengine/shell/render/modelRender";
 import { useStore } from "@jgengine/react/store";
 
@@ -19,12 +20,6 @@ const ALIEN_HEIGHT = 1.7;
 function planOf(entity: SceneEntity): AlienBodyPlan | null {
   const meta = entity.meta as { bodyPlan?: AlienBodyPlan } | null;
   return meta?.bodyPlan ?? null;
-}
-
-function hash(id: string): number {
-  let a = 0;
-  for (let i = 0; i < id.length; i++) a = (a * 31 + id.charCodeAt(i)) >>> 0;
-  return a;
 }
 
 function bodyScale(plan: AlienBodyPlan): [number, number, number] {
@@ -142,8 +137,8 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   const plan = planOf(entity);
   const household = useStore(householdStore);
   const groupRef = useRef<THREE.Group>(null);
-  const phase = useMemo(() => (hash(entity.id) % 628) / 100, [entity.id]);
-  const meshUrl = useMemo(() => resolveAlienMeshUrl(hash(entity.id)), [entity.id]);
+  const phase = useMemo(() => (hashString(entity.id) % 628) / 100, [entity.id]);
+  const meshUrl = useMemo(() => resolveAlienMeshUrl(hashString(entity.id)), [entity.id]);
 
   const member = household.members[entity.id];
   const moving = member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander");

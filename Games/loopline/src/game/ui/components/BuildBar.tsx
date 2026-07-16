@@ -8,7 +8,9 @@ import {
   CATEGORY_ORDER,
   type BuildCategory,
 } from "../../objects/catalog";
-import { MILESTONES } from "../../catalog";
+import { balance } from "@jgengine/core/economy/wallet";
+
+import { CASH, MILESTONES } from "../../catalog";
 import { session } from "../../session";
 
 function unlockLabel(requires: string): string {
@@ -19,7 +21,7 @@ function unlockLabel(requires: string): string {
 export function BuildBar() {
   const [category, setCategory] = useState<BuildCategory>("ride");
   const { commands } = useGame();
-  const cash = useGameStore(() => session.cash);
+  const cash = useGameStore(() => balance(session.wallet, CASH));
   const selected = useGameStore(() => session.selectedTool);
   const unlocked = useGameStore((ctx) =>
     (ctx.game.unlocks?.list(ctx.player.userId) ?? []).join(","),

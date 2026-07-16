@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 
+import { balance } from "@jgengine/core/economy/wallet";
 import { useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 
 import { NEED_DEFS } from "../../needs/needs";
 import { FURNITURE } from "../../objects/catalog";
 import { householdStore } from "../../session/store";
+import { CREDITS } from "../../session/types";
 
 function roleLabel(role: string): string {
   return role === "work" ? "💼 Career" : `${NEED_DEFS[role as keyof typeof NEED_DEFS].icon} ${NEED_DEFS[role as keyof typeof NEED_DEFS].label}`;
@@ -35,7 +37,7 @@ export function BuildPalette(): ReactNode {
       <div className="flex gap-1.5">
         {FURNITURE.map((def) => {
           const selected = active === def.id;
-          const canAfford = household.credits >= def.cost;
+          const canAfford = balance(household.wallet, CREDITS) >= def.cost;
           return (
             <button
               key={def.id}

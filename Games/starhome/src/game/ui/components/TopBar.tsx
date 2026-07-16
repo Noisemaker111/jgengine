@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 
+import { balance } from "@jgengine/core/economy/wallet";
 import { useGame, useGameClock } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 
 import { householdStore } from "../../session/store";
+import { CREDITS } from "../../session/types";
 
 export function TopBar(): ReactNode {
   const clock = useGameClock();
@@ -58,7 +60,7 @@ export function TopBar(): ReactNode {
 
       <div className="flex items-center gap-1.5">
         <span className="text-base">🪙</span>
-        <span className="text-sm font-bold tabular-nums text-amber-200">{Math.floor(household.credits)}</span>
+        <span className="text-sm font-bold tabular-nums text-amber-200">{Math.floor(balance(household.wallet, CREDITS))}</span>
       </div>
     </div>
   );

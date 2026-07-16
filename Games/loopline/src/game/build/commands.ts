@@ -1,5 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { balance, charge, grant } from "@jgengine/core/economy/wallet";
 
+import { CASH } from "../catalog";
 import { buildableDef } from "../objects/catalog";
 import { pushToast, session } from "../session";
 import { canPlace, placeObject, removeObject } from "./placement";
@@ -18,7 +20,7 @@ function bump(ctx: GameContext): void {
 }
 
 function affordable(catalogId: string): boolean {
-  return session.cash >= buildableDef(catalogId).cost;
+  return balance(session.wallet, CASH) >= buildableDef(catalogId).cost;
 }
 
 function tryBuild(ctx: GameContext, input: PointerInput): void {
@@ -36,7 +38,8 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
   }
   const placed = placeObject(ctx, toolId, input.point.x, input.point.z);
   if (placed === null) return;
-  session.cash -= def.cost;
+  const charged = charge(session.wallet, CASH, def.cost);
+  if (charged.status === "ok") session.wallet = charged.state;
 }
 
 function pointerAction(ctx: GameContext, input: PointerInput): void {
@@ -78,7 +81,7 @@ export function registerBuildCommands(ctx: GameContext): void {
       if (placed === undefined) return;
       const refund = Math.round(buildableDef(placed.catalogId).cost * 0.5);
       if (removeObject(state, input.id)) {
-        session.cash += refund;
+        session.wallet = grant(session.wallet, CASH, refund);
         if (session.selectedObject === input.id) session.selectedObject = null;
         pushToast(`Demolished — refunded ${refund}`, "info", state.time.now());
       }

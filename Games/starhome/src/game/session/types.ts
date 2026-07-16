@@ -1,5 +1,9 @@
+import { createEmptyWallet, grant, type WalletState } from "@jgengine/core/economy/wallet";
+
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 import type { NeedId } from "../needs/needs";
+
+export const CREDITS = "credits";
 
 export type MemberAction =
   | { kind: "idle" }
@@ -32,7 +36,7 @@ export interface HouseholdState {
   order: string[];
   relationships: Record<string, number>;
   milestones: Record<string, string>;
-  credits: number;
+  wallet: WalletState;
   selectedMemberId: string | null;
   buildTool: string | null;
   events: LifeEvent[];
@@ -50,7 +54,7 @@ export function createHousehold(seed: string): HouseholdState {
     order: [],
     relationships: {},
     milestones: {},
-    credits: 640,
+    wallet: grant(createEmptyWallet(), CREDITS, 640),
     selectedMemberId: null,
     buildTool: null,
     events: [],

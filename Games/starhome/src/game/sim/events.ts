@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { grant } from "@jgengine/core/economy/wallet";
 
 import { clamp, type NeedId } from "../needs/needs";
 import { householdStore } from "../session/store";
-import { pushEvent, type HouseholdState } from "../session/types";
+import { CREDITS, pushEvent, type HouseholdState } from "../session/types";
 
 interface LifeEventDef {
   text: (name: string) => string;
@@ -41,7 +42,7 @@ const EVENT_DEFS: LifeEventDef[] = [
   {
     text: () => `A traveling merchant beamed down a gift of credits.`,
     apply: (s) => {
-      s.credits += 90;
+      s.wallet = grant(s.wallet, CREDITS, 90);
     },
     tone: "good",
   },

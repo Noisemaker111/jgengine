@@ -1,3 +1,15 @@
+import { tierForStanding, type ReputationTier } from "@jgengine/core/faction/reputation";
+
+const REL_TIERS: readonly ReputationTier[] = [
+  { id: "Rivals", min: -100, relation: "hostile" },
+  { id: "Tense", min: -40, relation: "hostile" },
+  { id: "Neutral", min: -10, relation: "neutral" },
+  { id: "Warm", min: 10, relation: "neutral" },
+  { id: "Friends", min: 35, relation: "friendly" },
+  { id: "Close", min: 70, relation: "friendly" },
+  { id: "Bonded", min: 95, relation: "friendly" },
+];
+
 export interface RelMilestone {
   at: number;
   key: string;
@@ -15,13 +27,7 @@ export function clampRel(value: number): number {
 }
 
 export function relationLabel(value: number): string {
-  if (value >= 95) return "Bonded";
-  if (value >= 70) return "Close";
-  if (value >= 35) return "Friends";
-  if (value >= 10) return "Warm";
-  if (value > -10) return "Neutral";
-  if (value > -40) return "Tense";
-  return "Rivals";
+  return tierForStanding(REL_TIERS, value).id;
 }
 
 export function crossedMilestone(before: number, after: number): RelMilestone | null {

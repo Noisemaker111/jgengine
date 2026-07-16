@@ -1,4 +1,6 @@
-import { STARTING_CASH } from "./catalog";
+import { createEmptyWallet, grant, type WalletState } from "@jgengine/core/economy/wallet";
+
+import { CASH, STARTING_CASH } from "./catalog";
 
 export interface PlacedObject {
   id: string;
@@ -43,7 +45,7 @@ export interface Session {
   placed: Map<string, PlacedObject>;
   occupied: Map<string, string>;
   guests: Map<string, GuestState>;
-  cash: number;
+  wallet: WalletState;
   rating: number;
   happinessAvg: number;
   litter: number;
@@ -71,7 +73,7 @@ function freshSession(): Session {
     placed: new Map(),
     occupied: new Map(),
     guests: new Map(),
-    cash: STARTING_CASH,
+    wallet: grant(createEmptyWallet(), CASH, STARTING_CASH),
     rating: 0,
     happinessAvg: 55,
     litter: 0,

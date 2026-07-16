@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { balance, charge } from "@jgengine/core/economy/wallet";
 
-import { MILESTONES } from "../catalog";
+import { CASH, MILESTONES } from "../catalog";
 import { buildableDef } from "../objects/catalog";
 import { pushToast, session } from "../session";
 import { computeMetrics, ratingTarget, type ParkMetrics } from "./rating";
@@ -33,7 +34,10 @@ export function economyDayTick(ctx: GameContext): void {
   const metrics = currentMetrics();
   const restock = restockCost();
   const total = metrics.dailyUpkeep + restock;
-  session.cash -= total;
+  if (total > 0) {
+    const charged = charge(session.wallet, CASH, total, { overdraft: true });
+    if (charged.status === "ok") session.wallet = charged.state;
+  }
   restockStalls();
   session.upkeepYesterday = total;
   session.revenueYesterday = session.revenueToday;
@@ -45,7 +49,7 @@ export function economyDayTick(ctx: GameContext): void {
     now,
   );
 
-  if (session.cash < 0) {
+  if (balance(session.wallet, CASH) < 0) {
     session.bankruptDays += 1;
     if (session.bankruptDays >= BANKRUPT_LIMIT) {
       session.gameOver = true;

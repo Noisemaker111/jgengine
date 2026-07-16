@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { grant } from "@jgengine/core/economy/wallet";
 
-import { ENTRANCE, PARK_HALF, guestCap } from "../catalog";
+import { CASH, ENTRANCE, PARK_HALF, guestCap } from "../catalog";
 import { buildableDef } from "../objects/catalog";
 import { GUEST_WALK_SPEED, guestKindFor } from "../entities/guests/catalog";
 import { nextGuestId, session, type GuestState, type PlacedObject } from "../session";
@@ -85,7 +86,7 @@ function spawnGuest(ctx: GameContext): void {
   };
   session.guests.set(id, guest);
   ctx.scene.entity.spawn(kind, { id, position: start, role: "npc" });
-  session.cash += session.ticketPrice;
+  session.wallet = grant(session.wallet, CASH, session.ticketPrice);
   session.revenueToday += session.ticketPrice;
   session.guestsToday += 1;
 }
@@ -143,7 +144,7 @@ function finishInteraction(guest: GuestState): void {
       guest.money -= def.stall.price;
       obj.stock -= 1;
       obj.soldTotal += 1;
-      session.cash += def.stall.price;
+      session.wallet = grant(session.wallet, CASH, def.stall.price);
       session.revenueToday += def.stall.price;
       if (def.stall.need === "hunger") guest.hunger = Math.max(0, guest.hunger - 70);
       else if (def.stall.need === "thirst") guest.thirst = Math.max(0, guest.thirst - 75);
@@ -172,13 +173,13 @@ function shouldLeave(guest: GuestState): boolean {
 }
 
 function moveGuest(ctx: GameContext, guest: GuestState, target: readonly [number, number, number], dt: number): boolean {
-  const next = ctx.scene.entity.moveToward(guest.id, target, {
+  const next = ctx.scene.entity.moveTowardCommit(guest.id, target, {
     speed: GUEST_WALK_SPEED,
     dt,
     stopDistance: 0,
+    face: true,
   });
   if (next === null) return false;
-  ctx.scene.entity.setPose(guest.id, { position: next });
   return distance2(next[0], next[2], target[0], target[2]) <= ARRIVE_DISTANCE;
 }
 
