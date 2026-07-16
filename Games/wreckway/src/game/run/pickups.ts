@@ -1,7 +1,5 @@
-import { seededStreams } from "@jgengine/core/random/rng";
-
-import { PARTS, type PartIconId } from "../parts/catalog";
-import { RUN_SEED } from "./constants";
+import { markersInGroup } from "../../editorLayers";
+import type { PartIconId } from "../parts/catalog";
 
 export interface PickupDef {
   id: string;
@@ -9,19 +7,11 @@ export interface PickupDef {
   position: readonly [number, number, number];
 }
 
-const PICKUP_Z: readonly number[] = [30, 50, 80, 115, 165, 195, 225, 255, 315, 350, 385, 420];
-const MID_LANE_JITTER = 6;
-
-function buildPickups(): readonly PickupDef[] {
-  const stream = seededStreams(RUN_SEED)("pickup-layout");
-  return PARTS.map((part, index) => {
-    const z = PICKUP_Z[index]!;
-    const x = (stream() * 2 - 1) * MID_LANE_JITTER;
-    return { id: `pickup_${part.id}`, partId: part.id, position: [x, 0.9, z] };
-  });
-}
-
-export const PICKUPS: readonly PickupDef[] = buildPickups();
+export const PICKUPS: readonly PickupDef[] = markersInGroup("pickup").map((marker) => ({
+  id: marker.id,
+  partId: marker.meta!["partId"] as PartIconId,
+  position: [marker.position.x, marker.position.y, marker.position.z],
+}));
 
 export const PICKUP_RADIUS = 3.2;
 

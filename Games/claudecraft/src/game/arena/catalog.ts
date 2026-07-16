@@ -1,3 +1,4 @@
+import { sceneMarkerXZ } from "../../editorLayers";
 import type { MobDef } from "../model";
 
 export const FIESTA_COUNTDOWN = 5;
@@ -22,7 +23,7 @@ export const FIESTA_POWERUP_RADIUS = 2;
 export const FIESTA_POWERUP_MAX = 3;
 export const ARENA_RETURN_DELAY = 5;
 
-export const ARENA_CENTER: readonly [number, number] = [-80, -420];
+export const ARENA_CENTER: readonly [number, number] = sceneMarkerXZ("landmark:arena");
 export const ARENA_SPAWN_A: readonly [number, number] = [ARENA_CENTER[0], ARENA_CENTER[1] - 14];
 export const ARENA_SPAWN_B: readonly [number, number] = [ARENA_CENTER[0], ARENA_CENTER[1] + 18];
 export const ARENA_SPAWNS_A_2V2: readonly (readonly [number, number])[] = [

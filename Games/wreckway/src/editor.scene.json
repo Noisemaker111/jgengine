@@ -1,0 +1,428 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "gate_canyon_plow",
+      "kind": "prop",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": 60
+      },
+      "label": "CRUSHED-CAR WALL",
+      "meta": {
+        "group": "gate",
+        "zoneId": "canyons",
+        "requirement": "plow",
+        "laneMinX": -18,
+        "laneMaxX": -10,
+        "label": "CRUSHED-CAR WALL",
+        "radioLine": "PLOWED THE CAR WALL — SHE'S UGLY BUT SHE'S FAST"
+      }
+    },
+    {
+      "id": "gate_canyon_jump",
+      "kind": "prop",
+      "position": {
+        "x": 14,
+        "y": 0,
+        "z": 95
+      },
+      "label": "TIRE-STACK RAMP",
+      "meta": {
+        "group": "gate",
+        "zoneId": "canyons",
+        "requirement": "jump",
+        "laneMinX": 10,
+        "laneMaxX": 18,
+        "label": "TIRE-STACK RAMP",
+        "radioLine": "CLEARED THE TIRE STACK — NICE AIR"
+      }
+    },
+    {
+      "id": "gate_flats_plow_1",
+      "kind": "prop",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": 190
+      },
+      "label": "FRIDGE BLOCKADE",
+      "meta": {
+        "group": "gate",
+        "zoneId": "flats",
+        "requirement": "plow",
+        "laneMinX": -18,
+        "laneMaxX": -10,
+        "label": "FRIDGE BLOCKADE",
+        "radioLine": "FRIDGE BLOCKADE DOWN — KEEP ROLLING"
+      }
+    },
+    {
+      "id": "gate_flats_jump",
+      "kind": "prop",
+      "position": {
+        "x": 14,
+        "y": 0,
+        "z": 230
+      },
+      "label": "WASHER-PILE RAMP",
+      "meta": {
+        "group": "gate",
+        "zoneId": "flats",
+        "requirement": "jump",
+        "laneMinX": 10,
+        "laneMaxX": 18,
+        "label": "WASHER-PILE RAMP",
+        "radioLine": "OVER THE WASHER PILE — LOOKED GOOD FROM HERE"
+      }
+    },
+    {
+      "id": "gate_flats_plow_2",
+      "kind": "prop",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": 265
+      },
+      "label": "STOVE-STACK LINE",
+      "meta": {
+        "group": "gate",
+        "zoneId": "flats",
+        "requirement": "plow",
+        "laneMinX": -18,
+        "laneMaxX": -10,
+        "label": "STOVE-STACK LINE",
+        "radioLine": "STOVE STACK SCATTERED — DON'T LOOK BACK"
+      }
+    },
+    {
+      "id": "gate_gantry_jump_1",
+      "kind": "prop",
+      "position": {
+        "x": 14,
+        "y": 0,
+        "z": 340
+      },
+      "label": "CONTAINER GAP",
+      "meta": {
+        "group": "gate",
+        "zoneId": "gantry",
+        "requirement": "jump",
+        "laneMinX": 10,
+        "laneMaxX": 18,
+        "label": "CONTAINER GAP",
+        "radioLine": "CONTAINER GAP CLEARED — BIG AIR"
+      }
+    },
+    {
+      "id": "gate_gantry_plow",
+      "kind": "prop",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": 390
+      },
+      "label": "CRANE DEBRIS FIELD",
+      "meta": {
+        "group": "gate",
+        "zoneId": "gantry",
+        "requirement": "plow",
+        "laneMinX": -18,
+        "laneMaxX": -10,
+        "label": "CRANE DEBRIS FIELD",
+        "radioLine": "PLOWED THE CRANE DEBRIS — ALMOST HOME"
+      }
+    },
+    {
+      "id": "gate_gantry_jump_2",
+      "kind": "prop",
+      "position": {
+        "x": 14,
+        "y": 0,
+        "z": 430
+      },
+      "label": "FINAL GANTRY LEAP",
+      "meta": {
+        "group": "gate",
+        "zoneId": "gantry",
+        "requirement": "jump",
+        "laneMinX": 10,
+        "laneMaxX": 18,
+        "label": "FINAL GANTRY LEAP",
+        "radioLine": "FINAL GANTRY LEAP — SEE YOU AT THE GATE"
+      }
+    },
+    {
+      "id": "pickup_salvage_v6",
+      "kind": "prop",
+      "position": {
+        "x": 4.719764079898596,
+        "y": 0.9,
+        "z": 30
+      },
+      "label": "Salvage V6",
+      "meta": {
+        "group": "pickup",
+        "partId": "salvage_v6"
+      }
+    },
+    {
+      "id": "pickup_truck_engine",
+      "kind": "prop",
+      "position": {
+        "x": 2.061636812053621,
+        "y": 0.9,
+        "z": 50
+      },
+      "label": "Truck Engine",
+      "meta": {
+        "group": "pickup",
+        "partId": "truck_engine"
+      }
+    },
+    {
+      "id": "pickup_ev_conversion",
+      "kind": "prop",
+      "position": {
+        "x": -1.999219455756247,
+        "y": 0.9,
+        "z": 80
+      },
+      "label": "EV Conversion",
+      "meta": {
+        "group": "pickup",
+        "partId": "ev_conversion"
+      }
+    },
+    {
+      "id": "pickup_plow_blade",
+      "kind": "prop",
+      "position": {
+        "x": 3.9634812008589506,
+        "y": 0.9,
+        "z": 115
+      },
+      "label": "Plow Blade",
+      "meta": {
+        "group": "pickup",
+        "partId": "plow_blade"
+      }
+    },
+    {
+      "id": "pickup_hood_plate",
+      "kind": "prop",
+      "position": {
+        "x": -0.21337996423244476,
+        "y": 0.9,
+        "z": 165
+      },
+      "label": "Hood Plate",
+      "meta": {
+        "group": "pickup",
+        "partId": "hood_plate"
+      }
+    },
+    {
+      "id": "pickup_fan_blade_vanes",
+      "kind": "prop",
+      "position": {
+        "x": -4.65888081304729,
+        "y": 0.9,
+        "z": 195
+      },
+      "label": "Fan Blade Vanes",
+      "meta": {
+        "group": "pickup",
+        "partId": "fan_blade_vanes"
+      }
+    },
+    {
+      "id": "pickup_coil_springs",
+      "kind": "prop",
+      "position": {
+        "x": 0.5148540940135717,
+        "y": 0.9,
+        "z": 225
+      },
+      "label": "Coil Springs",
+      "meta": {
+        "group": "pickup",
+        "partId": "coil_springs"
+      }
+    },
+    {
+      "id": "pickup_steel_rims",
+      "kind": "prop",
+      "position": {
+        "x": 4.106076224707067,
+        "y": 0.9,
+        "z": 255
+      },
+      "label": "Steel Rims",
+      "meta": {
+        "group": "pickup",
+        "partId": "steel_rims"
+      }
+    },
+    {
+      "id": "pickup_monster_treads",
+      "kind": "prop",
+      "position": {
+        "x": 3.087617606855929,
+        "y": 0.9,
+        "z": 315
+      },
+      "label": "Monster Treads",
+      "meta": {
+        "group": "pickup",
+        "partId": "monster_treads"
+      }
+    },
+    {
+      "id": "pickup_scrap_frame",
+      "kind": "prop",
+      "position": {
+        "x": 1.2774414047598839,
+        "y": 0.9,
+        "z": 350
+      },
+      "label": "Scrap Frame",
+      "meta": {
+        "group": "pickup",
+        "partId": "scrap_frame"
+      }
+    },
+    {
+      "id": "pickup_roll_cage",
+      "kind": "prop",
+      "position": {
+        "x": 1.783925204537809,
+        "y": 0.9,
+        "z": 385
+      },
+      "label": "Roll Cage",
+      "meta": {
+        "group": "pickup",
+        "partId": "roll_cage"
+      }
+    },
+    {
+      "id": "pickup_armor_plating",
+      "kind": "prop",
+      "position": {
+        "x": -2.7306483825668693,
+        "y": 0.9,
+        "z": 420
+      },
+      "label": "Armor Plating",
+      "meta": {
+        "group": "pickup",
+        "partId": "armor_plating"
+      }
+    },
+    {
+      "id": "exit_gate",
+      "kind": "goal",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 470
+      },
+      "label": "EXIT GATE",
+      "meta": {
+        "group": "exit"
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "id": "zone_canyons",
+      "kind": "zone",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 75
+      },
+      "halfExtents": {
+        "x": 65,
+        "y": 20,
+        "z": 75
+      },
+      "color": "#b7410e",
+      "label": "CAR-STACK CANYONS",
+      "meta": {
+        "zoneId": "canyons",
+        "label": "CAR-STACK CANYONS",
+        "radioName": "ROW ONE",
+        "wallColor": "#b7410e",
+        "propIds": [
+          "prop_wreck_pile",
+          "prop_tire_wall"
+        ],
+        "buildingStyle": "ruin"
+      }
+    },
+    {
+      "id": "zone_flats",
+      "kind": "zone",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 225
+      },
+      "halfExtents": {
+        "x": 65,
+        "y": 20,
+        "z": 75
+      },
+      "color": "#8d99a6",
+      "label": "APPLIANCE FLATS",
+      "meta": {
+        "zoneId": "flats",
+        "label": "APPLIANCE FLATS",
+        "radioName": "ROW SIX",
+        "wallColor": "#8d99a6",
+        "propIds": [
+          "prop_appliance_stack",
+          "prop_scrap_heap"
+        ],
+        "buildingStyle": "industrial"
+      }
+    },
+    {
+      "id": "zone_gantry",
+      "kind": "zone",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 385
+      },
+      "halfExtents": {
+        "x": 65,
+        "y": 20,
+        "z": 85
+      },
+      "color": "#f0c419",
+      "label": "CRANE GANTRY RUN",
+      "meta": {
+        "zoneId": "gantry",
+        "label": "CRANE GANTRY RUN",
+        "radioName": "THE GANTRY",
+        "wallColor": "#f0c419",
+        "propIds": [
+          "prop_container_stack",
+          "prop_crane_leg"
+        ],
+        "buildingStyle": "industrial"
+      }
+    }
+  ],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}

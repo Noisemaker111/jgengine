@@ -246,18 +246,13 @@ function tickCompanion(ctx: GameContext, userId: string, session: ActiveDelve, d
   if (targetId !== null) {
     const dist = ctx.scene.entity.distance(companionId, targetId);
     if (dist !== null && dist > 2.4) {
-      const next = ctx.scene.entity.moveToward(companionId, targetId, {
+      ctx.scene.entity.moveTowardCommit(companionId, targetId, {
         speed: 6.5,
         dt,
         stopDistance: 2.2,
+        face: true,
+        groundSnap: true,
       });
-      if (next !== null) {
-        ctx.scene.entity.setPose(companionId, {
-          position: [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]],
-          rotationY: Math.atan2(next[0] - companion.position[0], next[2] - companion.position[2]),
-          dt,
-        });
-      }
     } else if (dist !== null && dist <= 2.8) {
       const level = ctx.scene.entity.stats.get(companionId, "level")?.current ?? 5;
       const amount = 4 + level * 1.2;
@@ -275,17 +270,12 @@ function tickCompanion(ctx: GameContext, userId: string, session: ActiveDelve, d
     companion.position[2] - owner.position[2],
   );
   if (followDist > 3.5) {
-    const next = ctx.scene.entity.moveToward(companionId, userId, {
+    ctx.scene.entity.moveTowardCommit(companionId, userId, {
       speed: 7,
       dt,
       stopDistance: 2.5,
+      groundSnap: true,
     });
-    if (next !== null) {
-      ctx.scene.entity.setPose(companionId, {
-        position: [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]],
-        dt,
-      });
-    }
   }
 }
 

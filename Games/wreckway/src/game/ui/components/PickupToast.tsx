@@ -1,5 +1,5 @@
 interface PickupToastProps {
-  toast: { id: number; message: string } | null;
+  toast: { id: string; message: string } | null;
 }
 
 export function PickupToast({ toast }: PickupToastProps) {

@@ -201,18 +201,13 @@ export function tickPets(ctx: GameContext, userId: string, dt: number): void {
   if (targetId !== null) {
     const dist = ctx.scene.entity.distance(runtime.instanceId, targetId);
     if (dist !== null && dist > 2.5) {
-      const next = ctx.scene.entity.moveToward(runtime.instanceId, targetId, {
+      ctx.scene.entity.moveTowardCommit(runtime.instanceId, targetId, {
         speed: def.moveSpeed,
         dt,
         stopDistance: 2.2,
+        face: true,
+        groundSnap: true,
       });
-      if (next !== null) {
-        ctx.scene.entity.setPose(runtime.instanceId, {
-          position: [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]],
-          rotationY: Math.atan2(next[0] - pet.position[0], next[2] - pet.position[2]),
-          dt,
-        });
-      }
     } else if (dist !== null && dist <= 2.8) {
       const now = ctx.time.now();
       if (now >= runtime.nextSwingAt) {
@@ -232,17 +227,12 @@ export function tickPets(ctx: GameContext, userId: string, dt: number): void {
   } else {
     const follow = Math.hypot(pet.position[0] - owner.position[0], pet.position[2] - owner.position[2]);
     if (follow > 4) {
-      const next = ctx.scene.entity.moveToward(runtime.instanceId, userId, {
+      ctx.scene.entity.moveTowardCommit(runtime.instanceId, userId, {
         speed: def.moveSpeed,
         dt,
         stopDistance: 2.8,
+        groundSnap: true,
       });
-      if (next !== null) {
-        ctx.scene.entity.setPose(runtime.instanceId, {
-          position: [next[0], ctx.world.groundHeightAt(next[0], next[2]), next[2]],
-          dt,
-        });
-      }
     }
   }
   syncPet(ctx, userId);

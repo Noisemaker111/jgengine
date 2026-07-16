@@ -1,5 +1,5 @@
+import { markersInGroup } from "../../editorLayers";
 import type { KartTuning } from "../parts/build";
-import { LEFT_LANE_X, RIGHT_LANE_X } from "../run/constants";
 import type { ZoneId } from "../zones/catalog";
 
 export type GateRequirement = "plow" | "jump";
@@ -14,80 +14,18 @@ export interface RouteGate {
   radioLine: string;
 }
 
-export const ROUTE_GATES: readonly RouteGate[] = [
-  {
-    id: "gate_canyon_plow",
-    zoneId: "canyons",
-    requirement: "plow",
-    laneX: LEFT_LANE_X,
-    atZ: 60,
-    label: "CRUSHED-CAR WALL",
-    radioLine: "PLOWED THE CAR WALL — SHE'S UGLY BUT SHE'S FAST",
-  },
-  {
-    id: "gate_canyon_jump",
-    zoneId: "canyons",
-    requirement: "jump",
-    laneX: RIGHT_LANE_X,
-    atZ: 95,
-    label: "TIRE-STACK RAMP",
-    radioLine: "CLEARED THE TIRE STACK — NICE AIR",
-  },
-  {
-    id: "gate_flats_plow_1",
-    zoneId: "flats",
-    requirement: "plow",
-    laneX: LEFT_LANE_X,
-    atZ: 190,
-    label: "FRIDGE BLOCKADE",
-    radioLine: "FRIDGE BLOCKADE DOWN — KEEP ROLLING",
-  },
-  {
-    id: "gate_flats_jump",
-    zoneId: "flats",
-    requirement: "jump",
-    laneX: RIGHT_LANE_X,
-    atZ: 230,
-    label: "WASHER-PILE RAMP",
-    radioLine: "OVER THE WASHER PILE — LOOKED GOOD FROM HERE",
-  },
-  {
-    id: "gate_flats_plow_2",
-    zoneId: "flats",
-    requirement: "plow",
-    laneX: LEFT_LANE_X,
-    atZ: 265,
-    label: "STOVE-STACK LINE",
-    radioLine: "STOVE STACK SCATTERED — DON'T LOOK BACK",
-  },
-  {
-    id: "gate_gantry_jump_1",
-    zoneId: "gantry",
-    requirement: "jump",
-    laneX: RIGHT_LANE_X,
-    atZ: 340,
-    label: "CONTAINER GAP",
-    radioLine: "CONTAINER GAP CLEARED — BIG AIR",
-  },
-  {
-    id: "gate_gantry_plow",
-    zoneId: "gantry",
-    requirement: "plow",
-    laneX: LEFT_LANE_X,
-    atZ: 390,
-    label: "CRANE DEBRIS FIELD",
-    radioLine: "PLOWED THE CRANE DEBRIS — ALMOST HOME",
-  },
-  {
-    id: "gate_gantry_jump_2",
-    zoneId: "gantry",
-    requirement: "jump",
-    laneX: RIGHT_LANE_X,
-    atZ: 430,
-    label: "FINAL GANTRY LEAP",
-    radioLine: "FINAL GANTRY LEAP — SEE YOU AT THE GATE",
-  },
-];
+export const ROUTE_GATES: readonly RouteGate[] = markersInGroup("gate").map((marker) => {
+  const meta = marker.meta ?? {};
+  return {
+    id: marker.id,
+    zoneId: meta["zoneId"] as ZoneId,
+    requirement: meta["requirement"] as GateRequirement,
+    laneX: [meta["laneMinX"] as number, meta["laneMaxX"] as number] as const,
+    atZ: marker.position.z,
+    label: meta["label"] as string,
+    radioLine: meta["radioLine"] as string,
+  };
+});
 
 export function gateSatisfied(gate: RouteGate, tuning: KartTuning): boolean {
   return gate.requirement === "plow" ? tuning.hasPlow : tuning.jumpPower > 0;

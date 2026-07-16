@@ -4,16 +4,18 @@ import {
   type SpawnDirectorConfig,
   type SpawnDirectorState,
 } from "@jgengine/core/ai/spawnDirector";
+import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
+import { sceneMarkerXZ } from "../../editorLayers";
 import { despawnMob, isMobInstance, spawnMobAt } from "../ai/mobs";
 import { mobById } from "../entities/enemies/catalog";
 import { teleportHero } from "../session/hero";
 import { yumiStore } from "../session/stores";
 
-export const YUMI_ENTRANCE: readonly [number, number] = [48, -310];
-export const YUMI_ARENA: readonly [number, number] = [80, -340];
+export const YUMI_ENTRANCE: readonly [number, number] = sceneMarkerXZ("landmark:yumi_entrance");
+export const YUMI_ARENA: readonly [number, number] = sceneMarkerXZ("landmark:yumi_arena");
 export const YUMI_SHRINE = "yumi_shrine";
 export const YUMI_CATALOG = "yumi_cat";
 export const YUMI_MAX_HP = 5000;
@@ -35,9 +37,11 @@ interface YumiSession {
   returnPos: readonly [number, number];
   status: "playing" | "won" | "lost";
   teleportAt: number;
+  roll: () => number;
 }
 
 const sessionsOf = perContext(() => new Map<string, YumiSession>());
+const matchCounterOf = perContext(() => ({ value: 0 }));
 
 const WAVE_CONFIG: SpawnDirectorConfig = {
   waves: [
@@ -95,6 +99,7 @@ export function startProtectYumi(ctx: GameContext, userId: string): boolean {
   });
   ctx.scene.entity.stats.set(yumiId, "health", { max: YUMI_MAX_HP, current: YUMI_MAX_HP });
   ctx.scene.entity.stats.set(yumiId, "level", { current: 1 });
+  matchCounterOf(ctx).value += 1;
   const session: YumiSession = {
     yumiId,
     director: createSpawnDirectorState(WAVE_CONFIG),
@@ -103,6 +108,7 @@ export function startProtectYumi(ctx: GameContext, userId: string): boolean {
     returnPos: [hero.position[0], hero.position[2]],
     status: "playing",
     teleportAt: ctx.time.now() + 12,
+    roll: seededRng(`yumi:${userId}:${matchCounterOf(ctx).value}`),
   };
   sessionsOf(ctx).set(userId, session);
   teleportHero(ctx, userId, ax - 4, az + 4);
@@ -151,9 +157,9 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
   }
 
   if (ctx.time.now() >= session.teleportAt) {
-    session.teleportAt = ctx.time.now() + 10 + Math.random() * 6;
-    const angle = Math.random() * Math.PI * 2;
-    const radius = 4 + Math.random() * 8;
+    session.teleportAt = ctx.time.now() + 10 + session.roll() * 6;
+    const angle = session.roll() * Math.PI * 2;
+    const radius = 4 + session.roll() * 8;
     const [ax, az] = YUMI_ARENA;
     const nx = ax + Math.cos(angle) * radius;
     const nz = az + Math.sin(angle) * radius;
@@ -173,8 +179,8 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
   for (const spawn of step.spawns) {
     const def = mobById(spawn.entryId);
     if (def === null) continue;
-    const px = spawn.point?.[0] ?? YUMI_ARENA[0] + (Math.random() - 0.5) * 16;
-    const pz = spawn.point?.[1] ?? YUMI_ARENA[1] + (Math.random() - 0.5) * 16;
+    const px = spawn.point?.[0] ?? YUMI_ARENA[0] + (session.roll() - 0.5) * 16;
+    const pz = spawn.point?.[1] ?? YUMI_ARENA[1] + (session.roll() - 0.5) * 16;
     const id = spawnMobAt(ctx, def, [px, pz], Math.max(def.minLevel, 3), { noRespawn: true });
     session.spawned.push(id);
   }

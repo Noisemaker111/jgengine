@@ -1,5 +1,7 @@
+import { createGameFeed } from "@jgengine/core/game/feed";
 import type { InstalledPart } from "@jgengine/core/item/modularItem";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { createToastQueue } from "@jgengine/core/game/toasts";
 
 import { activeSurge, compactorGap, compactorZAt, type CompactorSurge } from "../compactor/schedule";
 import { resolveCrusherContact } from "../compactor/contact";
@@ -39,7 +41,7 @@ export interface SessionSnapshot {
   compactorSurge: CompactorSurge | null;
   installed: Readonly<Record<PartSlotId, WreckwayPartDef | null>>;
   tuning: KartTuning;
-  toast: { id: number; message: string; expiresAt: number } | null;
+  toast: { id: string; message: string; expiresAt: number } | null;
   ticker: readonly RadioLine[];
   nearMissCount: number;
   closestGap: number;
@@ -75,10 +77,9 @@ export function createRunSession(groundHeightAt: (x: number, z: number) => numbe
   let nearMissCount = 0;
   let wasNear = false;
   let closestGap = Number.POSITIVE_INFINITY;
-  let toast: { id: number; message: string; expiresAt: number } | null = null;
-  let ticker: RadioLine[] = [];
+  const toasts = createToastQueue<string>({ cap: 1, ttlSeconds: TOAST_HOLD_SECONDS });
+  const radioFeed = createGameFeed({ limit: TICKER_LIMIT });
   let radioCounter = 0;
-  let toastCounter = 0;
   let outcome: RunOutcome | null = null;
 
   const vehicle: VehicleController = createVehicleController({ position: SPAWN_POSITION, heading: SPAWN_HEADING });
@@ -92,12 +93,15 @@ export function createRunSession(groundHeightAt: (x: number, z: number) => numbe
 
   function pushRadio(text: string): void {
     radioCounter += 1;
-    ticker = [{ id: radioCounter, text }, ...ticker].slice(0, TICKER_LIMIT);
+    radioFeed.push("radio", { id: radioCounter, text } satisfies RadioLine);
+  }
+
+  function tickerLines(): RadioLine[] {
+    return radioFeed.recent("radio").map((entry) => entry.data as RadioLine).reverse();
   }
 
   function pushToast(message: string): void {
-    toastCounter += 1;
-    toast = { id: toastCounter, message, expiresAt: runTime + TOAST_HOLD_SECONDS };
+    toasts.push(message, runTime);
   }
 
   function installedBySlot(): Record<PartSlotId, WreckwayPartDef | null> {
@@ -147,8 +151,8 @@ export function createRunSession(groundHeightAt: (x: number, z: number) => numbe
     nearMissCount = 0;
     wasNear = false;
     closestGap = Number.POSITIVE_INFINITY;
-    toast = null;
-    ticker = [];
+    toasts.clear();
+    radioFeed.hydrate({});
     outcome = null;
     vehicle.resetTo(SPAWN_POSITION, SPAWN_HEADING);
     pose = { position: SPAWN_POSITION, heading: SPAWN_HEADING, speedKmh: 0, airborne: false, blockedByGate: false };
@@ -158,6 +162,8 @@ export function createRunSession(groundHeightAt: (x: number, z: number) => numbe
 
   return {
     snapshot() {
+      const live = toasts.list();
+      const activeToast = live.length > 0 ? live[live.length - 1]! : null;
       return {
         phase,
         runTime,
@@ -169,8 +175,8 @@ export function createRunSession(groundHeightAt: (x: number, z: number) => numbe
         compactorSurge: activeSurge(runTime),
         installed: installedBySlot(),
         tuning: tuningFrom(installed),
-        toast,
-        ticker,
+        toast: activeToast === null ? null : { id: activeToast.id, message: activeToast.body, expiresAt: activeToast.expiresAt },
+        ticker: tickerLines(),
         nearMissCount,
         closestGap: Number.isFinite(closestGap) ? closestGap : 0,
         armorSaveArmed,
@@ -199,7 +205,7 @@ export function createRunSession(groundHeightAt: (x: number, z: number) => numbe
 
       applyPickup();
       announceGates();
-      if (toast !== null && runTime > toast.expiresAt) toast = null;
+      toasts.prune(runTime);
 
       const compactorZ = compactorZAt(runTime);
       const surge = activeSurge(runTime);

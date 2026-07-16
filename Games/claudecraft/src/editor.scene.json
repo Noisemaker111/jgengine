@@ -349,6 +349,66 @@
       "meta": {
         "zone": "peaks"
       }
+    },
+    {
+      "id": "landmark:stormcrag",
+      "kind": "poi",
+      "position": {
+        "x": 40,
+        "y": 0,
+        "z": 210
+      },
+      "label": "Stormcrag (world boss)"
+    },
+    {
+      "id": "landmark:yumi_entrance",
+      "kind": "poi",
+      "position": {
+        "x": 48,
+        "y": 0,
+        "z": -310
+      },
+      "label": "Protect Yumi entrance"
+    },
+    {
+      "id": "landmark:yumi_arena",
+      "kind": "poi",
+      "position": {
+        "x": 80,
+        "y": 0,
+        "z": -340
+      },
+      "label": "Protect Yumi arena"
+    },
+    {
+      "id": "landmark:valecup_entrance",
+      "kind": "poi",
+      "position": {
+        "x": -38,
+        "y": 0,
+        "z": -288
+      },
+      "label": "Vale Cup entrance"
+    },
+    {
+      "id": "landmark:valecup_pitch",
+      "kind": "poi",
+      "position": {
+        "x": -70,
+        "y": 0,
+        "z": -260
+      },
+      "label": "Vale Cup pitch"
+    },
+    {
+      "id": "landmark:arena",
+      "kind": "poi",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -420
+      },
+      "label": "Fiesta arena center"
     }
   ],
   "volumes": [

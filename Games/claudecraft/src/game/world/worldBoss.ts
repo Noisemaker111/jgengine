@@ -1,8 +1,10 @@
 import type { Drop } from "@jgengine/core/game/lootTable";
+import { pickWeighted } from "@jgengine/core/random/pick";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
+import { sceneMarkerXZ } from "../../editorLayers";
 import { mobById } from "../entities/enemies/catalog";
 import { itemDefById } from "../items/catalog";
 import type { DropDef } from "../model";
@@ -10,7 +12,7 @@ import { spawnMobAt } from "../ai/mobs";
 
 export const WORLD_BOSS_MOB_ID = "thunzharr_waking_peak";
 
-const STORMCRAG: readonly [number, number] = [40, 210];
+const STORMCRAG: readonly [number, number] = sceneMarkerXZ("landmark:stormcrag");
 const WORLD_BOSS_HP = 40000;
 const RESPAWN_SEC = 240;
 const LOCKOUT_SEC = 1800;
@@ -59,12 +61,8 @@ export function tickWorldBoss(ctx: GameContext): void {
 function pickGroup(entries: readonly DropDef[], rng: () => number): string | null {
   const total = entries.reduce((sum, entry) => sum + entry.chance, 0);
   if (total <= 0 || rng() >= total) return null;
-  let roll = rng() * total;
-  for (const entry of entries) {
-    roll -= entry.chance;
-    if (roll <= 0 && entry.itemId !== undefined) return entry.itemId;
-  }
-  return entries[entries.length - 1]?.itemId ?? null;
+  const picked = pickWeighted(rng, entries, (entry) => entry.chance);
+  return picked?.itemId ?? entries[entries.length - 1]?.itemId ?? null;
 }
 
 export function rollWorldBossLoot(rng: () => number): Drop[] {

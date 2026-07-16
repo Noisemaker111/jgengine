@@ -1,12 +1,14 @@
+import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
+import { sceneMarkerXZ } from "../../editorLayers";
 import { COPPER } from "../model";
 import { teleportHero } from "../session/hero";
 import { valeCupStore } from "../session/stores";
 
-export const VALE_CUP_ENTRANCE: readonly [number, number] = [-38, -288];
-export const VALE_CUP_PITCH: readonly [number, number] = [-70, -260];
+export const VALE_CUP_ENTRANCE: readonly [number, number] = sceneMarkerXZ("landmark:valecup_entrance");
+export const VALE_CUP_PITCH: readonly [number, number] = sceneMarkerXZ("landmark:valecup_pitch");
 export const VALE_CUP_STADIUM = "vale_cup_pitch";
 export const MATCH_DURATION_SEC = 60;
 export const GOAL_REWARD_COPPER = 25;
@@ -29,9 +31,11 @@ interface MatchState {
   wager: number;
   returnPos: readonly [number, number];
   result: ValeCupView["result"];
+  roll: () => number;
 }
 
 const matchesOf = perContext(() => new Map<string, MatchState>());
+const matchCounterOf = perContext(() => ({ value: 0 }));
 
 const PITCH_HALF_W = 14;
 const PITCH_HALF_D = 22;
@@ -53,6 +57,7 @@ export function startValeCup(ctx: GameContext, userId: string, wager = 0): boole
     return false;
   }
   const [px, pz] = VALE_CUP_PITCH;
+  matchCounterOf(ctx).value += 1;
   const state: MatchState = {
     scoreHome: 0,
     scoreAway: 0,
@@ -61,6 +66,7 @@ export function startValeCup(ctx: GameContext, userId: string, wager = 0): boole
     wager: spend,
     returnPos: [hero.position[0], hero.position[2]],
     result: "playing",
+    roll: seededRng(`valecup:${userId}:${matchCounterOf(ctx).value}`),
   };
   matchesOf(ctx).set(userId, state);
   teleportHero(ctx, userId, px, pz + 8);
@@ -146,11 +152,11 @@ export function tickValeCup(ctx: GameContext, userId: string, dt: number): void 
   }
 
   const hero = ctx.scene.entity.get(userId);
-  if (hero !== null && Math.random() < dt * 0.35) {
+  if (hero !== null && match.roll() < dt * 0.35) {
     const awayKick = Math.hypot(match.ball.x - cx, match.ball.z - (cz - 6));
     if (awayKick < 10) {
-      match.ball.vx += (Math.random() - 0.5) * 6;
-      match.ball.vz -= 8 + Math.random() * 4;
+      match.ball.vx += (match.roll() - 0.5) * 6;
+      match.ball.vz -= 8 + match.roll() * 4;
     }
   }
 

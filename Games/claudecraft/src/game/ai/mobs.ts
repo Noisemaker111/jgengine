@@ -1,4 +1,4 @@
-import { createThreatTable, type ThreatTable } from "@jgengine/core/ai/threat";
+import { createMobBrain, type MobBrain } from "@jgengine/core/ai/mobBrain";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -16,11 +16,8 @@ interface MobRuntime {
   defId: string;
   level: number;
   spawn: readonly [number, number, number];
-  threat: ThreatTable;
-  evading: boolean;
+  brain: MobBrain;
   nextSwingAt: number;
-  nextWanderAt: number;
-  wanderTo: readonly [number, number] | null;
   frenzyUntil: number;
   abilityAt: Map<string, number>;
   telegraphedAt: number;
@@ -68,8 +65,8 @@ export function armorOfMob(ctx: GameContext, instanceId: string): number {
 
 export function addThreat(ctx: GameContext, instanceId: string, sourceId: string, amount: number): void {
   const runtime = runtimesOf(ctx).get(instanceId);
-  if (runtime === undefined || runtime.evading) return;
-  runtime.threat.add(sourceId, amount);
+  if (runtime === undefined) return;
+  runtime.brain.addThreat(sourceId, amount);
 }
 
 function placementFor(def: MobDef, roll: () => number, index: number): readonly [number, number] {
