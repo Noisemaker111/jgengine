@@ -73,6 +73,69 @@
 - `saveSettingValue` (function): function saveSettingValue(id: string, value: SettingValue, storage: Pick<WebStorageLike, "setItem"> | null | undefined = defaultStorage()): void — ⚠ undocumented
 - `settingStorageKey` (function): function settingStorageKey(id: string): string — ⚠ undocumented
 
+## @jgengine/core/ui
+
+- `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
+- `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
+- `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
+- `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
+- `DEFAULT_UI_SCALE` (const): const DEFAULT_UI_SCALE: 1 — Player-controlled multiplier on the HUD's computed fit scale — one lever on desktop and mobile alike.
+- `GRAPHICS_QUALITY_DPR` (const): const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> — Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
+- `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
+- `GameLayoutMode` (type): type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait" — The explicit composition mode a game renders for — not a scaled desktop layout.
+- `GameSettingDef` (interface): interface GameSettingDef — Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`.
+- `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
+- `GameViewportLayout` (interface): interface GameViewportLayout — The shared live geometry the engine allocates once and every UI subsystem reads.
+- `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
+- `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
+- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented
+- `HudLayoutStore` (interface): interface HudLayoutStore — ⚠ undocumented
+- `HudPlacement` (interface): interface HudPlacement — ⚠ undocumented
+- `HudPlatform` (type): type HudPlatform = "web" | "mobile" — Where a game is meant to be played. `"web"` alone keeps today's desktop-first HUD; adding `"mobile"` turns on design-resolution fit scaling on compact displays.
+- `HudPriority` (type): type HudPriority = "critical" | "secondary" | "tertiary" — Gameplay-importance tier of a HUD element.
+- `HudSize` (interface): interface HudSize — ⚠ undocumented
+- `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
+- `Insets` (interface): interface Insets — Edge insets in CSS pixels (safe areas, reservations).
+- `LayoutCollision` (interface): interface LayoutCollision — One detected forbidden/warned overlap between two regions.
+- `LayoutCollisionPolicy` (type): type LayoutCollisionPolicy = "forbid" | "allow" | "warn" — How a region participates in collision reporting.
+- `LayoutOrientation` (type): type LayoutOrientation = "portrait" | "landscape" — A concrete device orientation.
+- `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
+- `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
+- `LookPreset` (type): type LookPreset = "cinematic" | "flat" — Named default-look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
+- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
+- `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
+- `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption — ⚠ undocumented
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented
+- `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
+- `SettingsStore` (interface): interface SettingsStore — ⚠ undocumented
+- `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
+- `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
+- `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
+- `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
+- `UI_SCALE_MIN` (const): const UI_SCALE_MIN: 0.5 — ⚠ undocumented
+- `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
+- `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
+- `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
+- `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
+- `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
+- `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
+- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
+- `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
+- `orientationGateActive` (function): function orientationGateActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — The rotate gate blocks gameplay: a hard requirement (or `unsupported`) the live orientation doesn't satisfy.
+- `orientationHintActive` (function): function orientationHintActive(requirement: OrientationRequirement, liveOrientation: LayoutOrientation): boolean — An advisory rotate hint applies: a preference (not a hard gate) the live orientation doesn't satisfy.
+- `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate.
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"cinematic"`, so a scene reads lit-like-a-game out of the box; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
+- `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
+- `resolveOrientationRequirement` (function): function resolveOrientationRequirement(orientation: GameOrientation | undefined, platform: "mobile" | "desktop"): OrientationRequirement — Resolve the game's orientation declaration into a concrete requirement for a platform. Desktop is always unconstrained.
+- `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
+
 ## @jgengine/core/ui/gameLayout
 
 - `DetectCollisionsOptions` (interface): interface DetectCollisionsOptions — Options for `detectLayoutCollisions`.
@@ -655,7 +718,6 @@
 ## @jgengine/shell/GamePlayerShell
 
 - `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
-- `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 
 ## @jgengine/shell/GameUiPreview
 
@@ -773,7 +835,7 @@
 
 ## @jgengine/shell/camera/fovPreference
 
-- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented
+- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: any — ⚠ undocumented
 - `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
@@ -781,8 +843,6 @@
 
 ## @jgengine/shell/camera/inspectionCameraMath
 
-- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
-- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
 
 ## @jgengine/shell/camera/orbitCameraMath
@@ -1178,12 +1238,7 @@
 
 ## @jgengine/shell/settings/settingsController
 
-- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
-- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
 - `SettingsControllerInput` (interface): interface SettingsControllerInput — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
-- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
 - `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
 
 ## @jgengine/shell/shellConstants
@@ -1244,7 +1299,6 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1253,7 +1307,6 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
@@ -1263,9 +1316,7 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 
@@ -1277,7 +1328,6 @@
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1286,7 +1336,6 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
-- `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
@@ -1296,9 +1345,7 @@
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
-- `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 
@@ -1400,7 +1447,7 @@
 
 - `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
 - `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps — ⚠ undocumented
-- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
+- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): any — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 
 ## @jgengine/shell/vision/RevealVision
 

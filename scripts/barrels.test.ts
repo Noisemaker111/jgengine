@@ -36,7 +36,6 @@ const KEY_SYMBOL: Record<string, string> = {
   gameplay: "defineGame",
   multiplayer: "ChatTransport",
   ui: "formatDuration",
-  procedural: "createDecayMeterSet",
 };
 
 const pkg = JSON.parse(readFileSync(join(root, "packages/core/package.json"), "utf8")) as {
@@ -88,5 +87,15 @@ describe("core domain barrels", () => {
     const index = readFileSync(join(root, "packages/core/src/index.ts"), "utf8");
     expect(index).toMatch(/VERSION/);
     expect(index).not.toMatch(/from\s+["']\.\/(world|combat|gameplay|multiplayer|ui|procedural)["']/);
+  });
+
+  test("procedural barrel remains a static survival compatibility entrypoint", () => {
+    const src = readFileSync(join(root, "packages/core/src/procedural.ts"), "utf8");
+    expect(src).toMatch(/createDecayMeterSet/);
+    expect(src).toMatch(/from\s+["']\.\/survival\//);
+    expect(pkg.exports["./procedural"]).toEqual({
+      types: "./dist/procedural.d.ts",
+      default: "./dist/procedural.js",
+    });
   });
 });

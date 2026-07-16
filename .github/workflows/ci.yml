@@ -12,9 +12,11 @@ concurrency:
 jobs:
   quick:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.8
@@ -27,6 +29,9 @@ jobs:
       - run: bun run check-artifacts
       - run: bun run check-stage-skills
       - run: bun run check-skills
+      - run: git fetch --no-tags origin main
+      - run: bun run check-skill-api
+      - run: bun run check-orphan-ratchet
 
   checks:
     if: github.event_name == 'push'
