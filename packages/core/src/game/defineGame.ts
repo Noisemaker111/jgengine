@@ -148,7 +148,7 @@ export interface GameDefinition<
   /** Offline/single-player whole-world save. `true` autosaves the entire game to `localStorage`; a config object tunes the mode/cadence/target. Binds `ctx.game.save` — the game drives save points and restore. Ignored for multiplayer worlds (the host persists). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
-  loop?: GameLoop<any>;
+  loop?: GameLoop<GameContext>;
   /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */
   lifecycle?: LifecycleConfig;
 }
