@@ -5,6 +5,8 @@ description: Gameplay systems: items, quests, economy, crafting, turns, objectiv
 
 # jgengine-gameplay
 
+**Import from the curated barrel** `@jgengine/core/gameplay` (stable, re-exports this domain's public API) — deep paths `@jgengine/core/<domain>/<file>` still work for anything not re-exported.
+
 ## Content catalogs
 
 ### Object catalog fields

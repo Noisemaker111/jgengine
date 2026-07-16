@@ -25,6 +25,7 @@
     "check-skills": "bun scripts/check-skill-sync.ts",
     "gen:skill-api": "bun scripts/gen-skill-api-safe.ts",
     "check-skill-api": "bun scripts/gen-skill-api.ts --check",
+    "gen:barrels": "bun scripts/gen-barrels.ts",
     "check-orphan-ratchet": "bun scripts/check-orphan-ratchet.ts",
     "gen:capabilities": "bun scripts/gen-capability-index.ts",
     "check-capabilities": "bun scripts/gen-capability-index.ts --check",

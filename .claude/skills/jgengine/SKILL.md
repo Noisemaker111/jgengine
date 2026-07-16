@@ -77,7 +77,7 @@ All published on npm, source at [github.com/Noisemaker111/jgengine](https://gith
 | `@jgengine/sql` | `HostPersistence` on Postgres (structural pool, no hard `pg` dep) | core |
 | `@jgengine/convex` | The Convex **adapter** behind the `GameBackend` seam | react + convex + core |
 
-Import by deep path: `@jgengine/core/<domain>/<file>` (e.g. `@jgengine/core/runtime/gameContext`).
+**Prefer the curated domain barrel** — a stable entrypoint that re-exports the domain's public surface, so you don't guess deep file paths: `@jgengine/core/{world,combat,gameplay,multiplayer,ui,procedural}` (e.g. `import { defineGame } from "@jgengine/core/gameplay"`). Not in the barrel? Fall back to the deep path `@jgengine/core/<domain>/<file>` (e.g. `@jgengine/core/runtime/gameContext`). Sibling packages (`@jgengine/{ws,node,sql,convex,react,assets,editor}`) already export from their package root. Maintainer: barrels regenerate with `bun run gen:barrels`; after changing core exports, run `bun run gen:skill-api` on a clean checkout.
 
 ## Hit a snag? File an issue
 

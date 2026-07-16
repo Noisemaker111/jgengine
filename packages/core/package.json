@@ -30,6 +30,30 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./world": {
+      "types": "./dist/world.d.ts",
+      "default": "./dist/world.js"
+    },
+    "./combat": {
+      "types": "./dist/combat.d.ts",
+      "default": "./dist/combat.js"
+    },
+    "./gameplay": {
+      "types": "./dist/gameplay.d.ts",
+      "default": "./dist/gameplay.js"
+    },
+    "./multiplayer": {
+      "types": "./dist/multiplayer.d.ts",
+      "default": "./dist/multiplayer.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./procedural": {
+      "types": "./dist/procedural.d.ts",
+      "default": "./dist/procedural.js"
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
