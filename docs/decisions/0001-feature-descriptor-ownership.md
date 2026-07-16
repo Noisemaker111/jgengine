@@ -1,10 +1,10 @@
-# 0001 — FeatureDescriptor owns subsystem lifecycle; GameLoop.onTick owns simulation
+# Decision 0001 — FeatureDescriptor owns subsystem lifecycle; GameLoop.onTick owns simulation
 
 - Status: Accepted
 - Date: 2026-07-16
 - Deciders: engine
 - Supersedes: none
-- Informs: #11 (FeatureDescriptor seam, done), #14 (per-descriptor save/restore, next), #37 (this ADR)
+- Informs: #11 (FeatureDescriptor seam, done), #14 (per-descriptor save/restore, next), #37 (this decision)
 
 ## Context
 

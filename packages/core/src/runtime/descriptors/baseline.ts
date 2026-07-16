@@ -43,7 +43,7 @@ export interface BaselineBuild {
 /**
  * Always-on counterpart to {@link featureDescriptors}: each baseline subsystem (entities, stats,
  * store, feed, inventory, economy, time, pose, possession, motion) owns its own serialization here
- * instead of `createGameContext` hand-maintaining two distant module arrays (ADR 0001 §2-3). Order is
+ * instead of `createGameContext` hand-maintaining two distant module arrays (docs/decisions/0001 §2-3). Order is
  * load-bearing — it fixes the snapshot key order, so it must stay stable.
  * @internal
  */
