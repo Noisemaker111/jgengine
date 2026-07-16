@@ -5,6 +5,8 @@ import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
 import { createHostedWorldSession } from "./hostedWorldSession";
 import { createWorldMirror, pullWorld } from "./worldMirror";
+import type { WorldDiff } from "./worldReplication";
+import type { WorldSnapshot } from "./worldSnapshot";
 
 const CONTENT: GameContextContent = {
   entityById: (catalogId) => {
@@ -93,5 +95,93 @@ describe("world mirror (end-to-end host → client replication, no backend)", ()
     pullWorld(host, mirror);
     expect(mirror.revision()).toBe(host.revision());
     expect(mirror.revision()).toBeGreaterThan(0);
+  });
+});
+
+function stubDiff(overrides: Partial<WorldDiff>): WorldDiff {
+  return {
+    revision: 1,
+    entities: [],
+    removedEntities: [],
+    stats: {},
+    removedStats: [],
+    store: [],
+    removedStore: [],
+    modules: {},
+    removedModules: [],
+    ...overrides,
+  };
+}
+
+describe("world mirror (revision continuity)", () => {
+  test("diffs apply in order and advance the mirror's revision", () => {
+    const hydrated: WorldSnapshot[] = [];
+    const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });
+    mirror.applyBaseline(1, { store: [["phase", "lobby"]] });
+
+    mirror.applyDiff(stubDiff({ revision: 2, baseRevision: 1, store: [["phase", "combat"]] }));
+    expect(mirror.revision()).toBe(2);
+    expect(mirror.needsResync()).toBe(false);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "combat"]]);
+
+    mirror.applyDiff(stubDiff({ revision: 3, baseRevision: 2, store: [["phase", "combat"], ["turn", 1]] }));
+    expect(mirror.revision()).toBe(3);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "combat"], ["turn", 1]]);
+  });
+
+  test("a stale or duplicate diff is ignored, never regressing the mirror", () => {
+    const hydrated: WorldSnapshot[] = [];
+    const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });
+    mirror.applyBaseline(1, { store: [["phase", "lobby"]] });
+    mirror.applyDiff(stubDiff({ revision: 2, baseRevision: 1, store: [["phase", "combat"]] }));
+
+    const hydrateCallsBefore = hydrated.length;
+    mirror.applyDiff(stubDiff({ revision: 2, baseRevision: 1, store: [["phase", "combat"]] }));
+    mirror.applyDiff(stubDiff({ revision: 1, baseRevision: 0, store: [["phase", "lobby"]] }));
+
+    expect(mirror.revision()).toBe(2);
+    expect(hydrated.length).toBe(hydrateCallsBefore);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "combat"]]);
+  });
+
+  test("a gap (skipped revision) is not applied and flips needsResync until a fresh baseline", () => {
+    const hydrated: WorldSnapshot[] = [];
+    const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });
+    mirror.applyBaseline(1, { store: [["phase", "lobby"]] });
+    expect(mirror.needsResync()).toBe(false);
+
+    // revision 2 never arrives; revision 3 assumes a baseRevision the mirror never reached.
+    mirror.applyDiff(stubDiff({ revision: 3, baseRevision: 2, store: [["phase", "endgame"]] }));
+
+    expect(mirror.needsResync()).toBe(true);
+    expect(mirror.revision()).toBe(1);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "lobby"]]);
+
+    mirror.applyBaseline(3, { store: [["phase", "endgame"]] });
+    expect(mirror.needsResync()).toBe(false);
+    expect(mirror.revision()).toBe(3);
+  });
+
+  test("a diff without baseRevision (legacy producer) always applies", () => {
+    const hydrated: WorldSnapshot[] = [];
+    const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });
+    mirror.applyBaseline(1, { store: [] });
+
+    mirror.applyDiff(stubDiff({ revision: 5, store: [["phase", "combat"]] }));
+
+    expect(mirror.needsResync()).toBe(false);
+    expect(mirror.revision()).toBe(5);
+    expect(hydrated.at(-1)?.["store"]).toEqual([["phase", "combat"]]);
+  });
+
+  test("a removed module is dropped client-side on apply", () => {
+    const hydrated: WorldSnapshot[] = [];
+    const mirror = createWorldMirror({ hydrate: (s) => hydrated.push(s) });
+    mirror.applyBaseline(1, { feed: { chat: ["hi"] } });
+
+    mirror.applyDiff(stubDiff({ revision: 2, baseRevision: 1, removedModules: ["feed"] }));
+
+    expect(hydrated.at(-1)?.["feed"]).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(hydrated.at(-1), "feed")).toBe(false);
   });
 });
