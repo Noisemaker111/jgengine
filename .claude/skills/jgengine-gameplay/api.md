@@ -230,7 +230,7 @@
 
 ## @jgengine/core/game/connectedPlayers
 
-- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`.
+- `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`. Frozen by the registry (see {@link ConnectedPlayers.get}); fields are `readonly` so a caller can't edit its own copy and assume the change stuck.
 - `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
 - `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
 
@@ -281,7 +281,7 @@
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
-- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — ⚠ undocumented
+- `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
 - `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
@@ -928,9 +928,12 @@
 
 ## @jgengine/core/random/rng
 
+- `RandomSeed` (type): type RandomSeed = number & { readonly __randomSeed: unique symbol } — Opaque, serializable PRNG cursor for state machines that must persist their own random stream (a spawn director, a heat/pursuit meter) instead of holding a closure — the state round-trips through save/load and multiplayer sync, so it can't carry a function. Never read or do arithmetic on the raw value directly; thread it through {@link stepRandomSeed} only.
 - `hashString` (function): function hashString(text: string): number — Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
+- `randomSeedFrom` (function): function randomSeedFrom(seed: number): RandomSeed — Wraps an already-integer seed (e.g. a `config.seed`) as a {@link RandomSeed} — no hashing.
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
+- `stepRandomSeed` (function): function stepRandomSeed(seed: RandomSeed): readonly [value: number, next: RandomSeed] — One step of the {@link seededRng} recurrence in pure (seed in, seed out) form — the same mulberry32-style generator, shared by every state machine that persists its own PRNG cursor instead of closing over a generator.
 
 ## @jgengine/core/random/seedLink
 

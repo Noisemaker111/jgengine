@@ -643,6 +643,10 @@
 - `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer }: GameHostProps): React.JSX.Element — ⚠ undocumented
 - `GameHostProps` (interface): interface GameHostProps — ⚠ undocumented
 
+## @jgengine/shell/GamePhaseStamp
+
+- `GamePhaseStamp` (function): function GamePhaseStamp(): null — ⚠ undocumented
+
 ## @jgengine/shell/GamePlayer
 
 - `GamePlayer` (function): function GamePlayer({ gameId, registry, fallbackGameId, loading = null, multiplayer = null }: GamePlayerProps): React.JSX.Element — ⚠ undocumented
@@ -651,9 +655,6 @@
 ## @jgengine/shell/GamePlayerShell
 
 - `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
-- `applyMotionImpulses` (function): function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number — Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
-- `hasEnvironmentTerrain` (function): function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean — Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
-- `nearbyObstacles` (function): function nearbyObstacles(objects: readonly { position: readonly [number, number, number]; }[], center: readonly [number, number, number], radius?: number): CollisionObstacle[] — Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
 - `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 
 ## @jgengine/shell/GameUiPreview
@@ -835,9 +836,33 @@
 - `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(config: GameConfig<TAssetRef>): PlayableGame — ⚠ undocumented
 
+## @jgengine/shell/devtools/ColPanel
+
+- `ColPanel` (function): function ColPanel(): React.JSX.Element — ⚠ undocumented
+
 ## @jgengine/shell/devtools/CollisionDebugWorld
 
 - `CollisionDebugWorld` (function): function CollisionDebugWorld(): React.JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
+
+## @jgengine/shell/devtools/KeysPanel
+
+- `KeysPanel` (function): function KeysPanel({ input }: { input: ActionCodesMap | undefined }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/shell/devtools/LogsPanel
+
+- `LogsPanel` (function): function LogsPanel(): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/shell/devtools/NetPanel
+
+- `NetPanel` (function): function NetPanel({ multiplayer }: { multiplayer: ShellMultiplayer | null }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/shell/devtools/PerfPanel
+
+- `PerfPanel` (function): function PerfPanel({ ctx }: { ctx: GameContext }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/shell/devtools/TunePanel
+
+- `TunePanel` (function): function TunePanel({ gameName }: { gameName: string }): React.JSX.Element — ⚠ undocumented
 
 ## @jgengine/shell/devtools/agentBridge
 
@@ -870,6 +895,36 @@
 - `DebugShapeEntry` (interface): interface DebugShapeEntry — ⚠ undocumented
 - `HITBOX_WIRE_COLOR` (const): const HITBOX_WIRE_COLOR: "#f472b6" — ⚠ undocumented
 - `PROJECTILE_PATH_COLOR` (const): const PROJECTILE_PATH_COLOR: "#fde68a" — ⚠ undocumented
+
+## @jgengine/shell/devtools/devtoolsOverrides
+
+- `readStoredOverrides` (function): function readStoredOverrides(gameName: string): DevtoolsOverrides | null — ⚠ undocumented
+
+## @jgengine/shell/devtools/panelAtoms
+
+- `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented
+- `StatRow` (function): function StatRow({ name, value, alert }: { name: string; value: string; alert?: boolean }): React.JSX.Element — ⚠ undocumented
+- `ms` (function): function ms(value: number): string — ⚠ undocumented
+
+## @jgengine/shell/devtools/perfDiagnose
+
+- `diagnose` (function): function diagnose(frame: NonNullable<ReturnType<typeof devtools.frame.stats>>, longs: readonly LongFrameEvent[]): string | null — ⚠ undocumented
+
+## @jgengine/shell/diagnostics/RuntimeDiagnostics
+
+- `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
+- `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
+- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic — ⚠ undocumented
+- `logRuntimeError` (function): function logRuntimeError(error: unknown, phase: string, componentStack?: string): Omit<RuntimeDiagnostic, "id"> — ⚠ undocumented
+
+## @jgengine/shell/drivers/FrameDriver
+
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker<string>; y… — ⚠ undocumented
+- `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
+
+## @jgengine/shell/drivers/HudOnlyDriver
+
+- `HudOnlyDriver` (function): function HudOnlyDriver({ ctx, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker<string>; pointerAxisRef: { current: PointerAxisState | null }; gateRef: { current: boolean }; onRuntimeError: (error: unknown, phase: s… — ⚠ undocumented
 
 ## @jgengine/shell/environment
 
@@ -1022,6 +1077,17 @@
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
 
+## @jgengine/shell/render/SceneLighting
+
+- `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
+- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting }: { lighting: LightingConfig }): React.JSX.Element — ⚠ undocumented
+
+## @jgengine/shell/render/SceneModels
+
+- `EntityModel` (function): function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }): React.JSX.Element — ⚠ undocumented
+- `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — ⚠ undocumented
+- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, fallback, }: { model: ModelConfig; instanceId?: string; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+
 ## @jgengine/shell/render/modelRender
 
 - `MaterialCache` (interface): interface MaterialCache — ⚠ undocumented
@@ -1118,8 +1184,12 @@
 - `SettingsControllerInput` (interface): interface SettingsControllerInput — ⚠ undocumented
 - `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
 - `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
-- `bindingLabel` (function): function bindingLabel(code: string): string — Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
 - `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
+
+## @jgengine/shell/shellConstants
+
+- `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
+- `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
 
 ## @jgengine/shell/structures
 
@@ -1198,14 +1268,6 @@
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
-- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
-- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain
 
@@ -1239,14 +1301,6 @@
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
-- `arenaField` (function): function arenaField(config?: ArenaFieldConfig): TerrainField — Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
-- `flatField` (function): function flatField(): TerrainField — A flat, zero-height `TerrainField` for arenas with no elevation.
-- `fractalNoise` (function): function fractalNoise(x: number, z: number, config: FractalNoiseConfig): number — Layers `valueNoise` octaves per `config` into a single normalized noise sample.
-- `noiseField` (function): function noiseField(config?: NoiseFieldConfig): TerrainField — Builds a `TerrainField` whose height is fractal noise shaped by `config`.
-- `resolveGroundStep` (function): function resolveGroundStep(field: TerrainField, x: number, z: number, stepX: number, stepZ: number, maxSlope?: number): { stepX: number; stepZ: number; } — Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
-- `resolveTerrainField` (function): function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField — Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
-- `valueNoise` (function): function valueNoise(x: number, z: number, seed: number): number — Smoothly interpolated 2D value noise in `[-1, 1]` for the given seed.
-- `withNormal` (function): function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] — Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
@@ -1325,6 +1379,10 @@
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
 - `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) that *bottom-docked* clusters occupy above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls. Side rails and top clusters reserve their own rectangles through the layout registry instead of this scalar.
+
+## @jgengine/shell/useShellMultiplayerSync
+
+- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>): void — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 
 ## @jgengine/shell/visibility/CullingProvider
 
@@ -1541,6 +1599,11 @@
 ## @jgengine/shell/world/WorldItems
 
 - `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
+
+## @jgengine/shell/world/WorldScene
+
+- `RemotePlayers` (function): function RemotePlayers({ rows }: { rows: PresencePoseRow[] }): React.JSX.Element — ⚠ undocumented
+- `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined; objectModels… — ⚠ undocumented
 
 ## @jgengine/shell/world/entityPose
 
