@@ -22,7 +22,7 @@ describe("pickSpawnPoint semantic API", () => {
         avoid: playerPositions,
         random: () => roll,
         distanceBias: "far",
-        biasStrength: 4,
+        biasStrength: "strong",
       });
       if (point?.[0] === 50) far += 1;
     }
@@ -37,7 +37,7 @@ describe("pickSpawnPoint semantic API", () => {
         avoid: playerPositions,
         random: () => roll,
         distanceBias: "near",
-        biasStrength: 4,
+        biasStrength: "strong",
       });
       if (point?.[0] === 0) near += 1;
     }
@@ -52,5 +52,38 @@ describe("pickSpawnPoint semantic API", () => {
 
   test("returns null when no candidates exist", () => {
     expect(pickSpawnPoint({ candidates: [], random: () => 0.5 })).toBeNull();
+  });
+
+  test("bias strength is monotonic: strong skews farther than subtle for the same rolls", () => {
+    const farCount = (biasStrength: "subtle" | "moderate" | "strong") => {
+      let far = 0;
+      for (const roll of rolls()) {
+        const point = pickSpawnPoint({ candidates, avoid: playerPositions, random: () => roll, distanceBias: "far", biasStrength });
+        if (point?.[0] === 50) far += 1;
+      }
+      return far;
+    };
+    expect(farCount("subtle")).toBeLessThanOrEqual(farCount("moderate"));
+    expect(farCount("moderate")).toBeLessThanOrEqual(farCount("strong"));
+  });
+
+  test("omitting biasStrength defaults to moderate", () => {
+    let far = 0;
+    for (const roll of rolls()) {
+      const point = pickSpawnPoint({ candidates, avoid: playerPositions, random: () => roll, distanceBias: "far" });
+      if (point?.[0] === 50) far += 1;
+    }
+    let farModerate = 0;
+    for (const roll of rolls()) {
+      const point = pickSpawnPoint({
+        candidates,
+        avoid: playerPositions,
+        random: () => roll,
+        distanceBias: "far",
+        biasStrength: "moderate",
+      });
+      if (point?.[0] === 50) farModerate += 1;
+    }
+    expect(far).toBe(farModerate);
   });
 });
