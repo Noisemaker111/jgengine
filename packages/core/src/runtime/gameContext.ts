@@ -266,10 +266,16 @@ export interface HitReactionInput {
   power?: number;
 }
 
-/** Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn. */
+/** Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn and ground clamp. */
 export interface MoveTowardCommitOptions extends MoveTowardOptions {
   /** Rotate the entity to face its direction of travel instead of preserving its current `rotationY`. Default false. */
   face?: boolean;
+  /**
+   * Drop the committed position onto the world ground under it (`ctx.world.groundHeightAt`) instead of
+   * keeping `moveToward`'s interpolated height. Default false. Turn on for ground-clamped walkers so a
+   * per-tick mover stops pairing the step with its own `groundHeightAt` lookup.
+   */
+  groundSnap?: boolean;
 }
 
 export interface SceneEntityContext {
@@ -307,10 +313,11 @@ export interface SceneEntityContext {
   moveToward: SpatialApi["moveToward"];
   /**
    * `moveToward` plus commit: steps `instanceId` toward `target` and immediately `setPose`s the
-   * result, so a per-tick mover no longer pairs `moveToward` with a hand-written `setPose`.
-   * `options.face` turns the entity to its direction of travel; omitted preserves the current
-   * `rotationY`. Returns the committed position (`null`, committing nothing, when `moveToward` would
-   * — unknown instance/target).
+   * result (carrying `options.dt` so ground speed derives for animation), so a per-tick mover no
+   * longer pairs `moveToward` with a hand-written `setPose`. `options.face` turns the entity to its
+   * direction of travel (omitted preserves the current `rotationY`); `options.groundSnap` clamps the
+   * committed height to the terrain under it. Returns the committed position (`null`, committing
+   * nothing, when `moveToward` would — unknown instance/target).
    */
   moveTowardCommit(
     instanceId: string,
@@ -866,8 +873,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       const dz = next[2] - current.position[2];
       if (Math.hypot(dx, dz) > 1e-9) rotationY = Math.atan2(dx, dz);
     }
-    entities.setPose(instanceId, { position: next, rotationY });
-    return next;
+    const position: EntityPosition =
+      options.groundSnap === true ? [next[0], ground.sampleHeight(next[0], next[2]), next[2]] : next;
+    entities.setPose(instanceId, { position, rotationY, dt: options.dt });
+    return position;
   }
 
   function resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number {

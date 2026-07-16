@@ -109,6 +109,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/world"`
 
+## footprint-adjacency — 4-neighbor connectivity check for connective-piece placement
+
+- `connectedTo` (function) · `import { connectedTo } from "@jgengine/core/world"`
+
 ## footprint-grid — multi-cell footprint occupancy/reservation on a shared build grid
 
 - `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world"`
@@ -128,6 +132,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
+
+## grid-cell — integer grid-cell coordinates, cardinal steps, and yaw quantization
+
+- `addCell` (function) · `import { addCell } from "@jgengine/core/world"`
+- `cellKey` (function) · `import { cellKey } from "@jgengine/core/world"`
+- `sameCell` (function) · `import { sameCell } from "@jgengine/core/world"`
+- `yawToDir` (function) · `import { yawToDir } from "@jgengine/core/world"`
 
 ## headless-runner — play a real game loop with no renderer — tick, feed input, read the world snapshot
 

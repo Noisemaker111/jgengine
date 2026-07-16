@@ -1,8 +1,10 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 
+import type { AbilityKit } from "@jgengine/core/combat/abilityKit";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
-import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
+import { useAbilitySlot, useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
+import { Keycap } from "./keyHint";
 
 /**
  * Drop-in HUD components — good-looking with zero styling, and fully opt-in: a game imports only the
@@ -44,12 +46,19 @@ function useLocalPlayerId(entityId: string | undefined): string | null {
 
 /**
  * A polished stat bar (health/mana/stamina/shield/xp) — a rounded, glassy meter with a tone-colored
- * fill and an optional value readout. Reads `statId` off `entityId` (defaults to the local player).
- * Renders nothing until the stat exists.
+ * fill and an optional value readout. Two ways to feed it: bind to an entity stat (`statId` off
+ * `entityId`, defaulting to the local player), or pass raw `value`/`max` numbers directly for a pool
+ * the engine doesn't own (a boss's hp, a sub-entity's shield). `value` wins when both are given;
+ * `max` defaults to 100. The entity-bound form renders nothing until its stat exists.
+ *
+ * @capability stat-bar tone-colored health/mana/pool meter, entity-bound or raw value/max
  */
 export function StatBar({
   statId = "health",
   entityId,
+  value,
+  max,
+  min = 0,
   tone = "health",
   label,
   showValue = true,
@@ -60,6 +69,12 @@ export function StatBar({
 }: {
   statId?: string;
   entityId?: string;
+  /** Raw current value — drives the bar directly instead of an entity stat (with `max`/`min`). */
+  value?: number;
+  /** Raw pool maximum, paired with `value`; defaults to 100. */
+  max?: number;
+  /** Raw pool minimum, paired with `value`; defaults to 0. */
+  min?: number;
   tone?: StatTone;
   label?: string;
   showValue?: boolean;
@@ -70,9 +85,15 @@ export function StatBar({
 }) {
   const id = useLocalPlayerId(entityId);
   const stat = useEntityStat(id ?? "", statId);
-  if (id === null || stat === null) return null;
-  const range = stat.max - stat.min;
-  const fraction = range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
+  const pool =
+    value !== undefined
+      ? { current: value, min, max: max ?? 100 }
+      : id === null || stat === null
+        ? null
+        : stat;
+  if (pool === null) return null;
+  const range = pool.max - pool.min;
+  const fraction = range <= 0 ? 0 : Math.max(0, Math.min(1, (pool.current - pool.min) / range));
   const [from, to] = (TONES[tone] ?? TONES.neutral!)(fraction);
   return (
     <div className={className} style={{ ...PANEL, padding: "6px 8px", width, ...style }} data-stat={statId}>
@@ -82,8 +103,8 @@ export function StatBar({
           <span style={{ textTransform: "uppercase", opacity: 0.75 }}>{label ?? statId}</span>
           {showValue ? (
             <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums", opacity: 0.9 }}>
-              {Math.round(stat.current)}
-              <span style={{ opacity: 0.5 }}> / {Math.round(stat.max)}</span>
+              {Math.round(pool.current)}
+              <span style={{ opacity: 0.5 }}> / {Math.round(pool.max)}</span>
             </span>
           ) : null}
         </div>
@@ -146,6 +167,131 @@ export function Hotbar({
         );
       })}
     </div>
+  );
+}
+
+/** How an {@link AbilityButton} draws its remaining cooldown — a clockwise radial wedge or a bottom-up bar. */
+export type AbilitySweep = "radial" | "vertical";
+
+function cooldownLabel(remainingMs: number): string {
+  const seconds = remainingMs / 1000;
+  return seconds >= 10 ? `${Math.ceil(seconds)}` : `${Math.max(0, seconds).toFixed(1)}`;
+}
+
+/**
+ * A cooldown-aware ability button bound to an `AbilityKit` slot — the drop-in skin over
+ * {@link useAbilitySlot}. It reads the slot each heartbeat and renders every readiness cue for free:
+ * a radial or vertical cooldown sweep, remaining-seconds text, a global-cooldown dim, an
+ * insufficient-resource tint, a just-cast flash, and a level-lock state. Pass `keyHint` for a keycap,
+ * `children` (or `icon`/`label`) to skin the face, and `onActivate` to fire the cast — the button
+ * calls it only when the slot is castable and unlocked. The engine imposes no ability bar; place these
+ * yourself.
+ *
+ * @capability ability-button cooldown/GCD/resource-aware ability button over an AbilityKit slot
+ */
+export function AbilityButton({
+  kit,
+  slotId,
+  resourceAvailable,
+  onActivate,
+  keyHint,
+  locked = false,
+  lockLabel,
+  sweep = "radial",
+  size = 52,
+  icon,
+  label,
+  children,
+  showCooldownText = true,
+  intervalMs,
+  style,
+  className,
+}: {
+  kit: AbilityKit;
+  slotId: string;
+  /** Spendable resource for affordability (overrides the kit's bound pool for this readout). */
+  resourceAvailable?: number;
+  /** Fired on click when the slot is ready and unlocked — wire the cast here (the button never casts itself). */
+  onActivate?: (slotId: string) => void;
+  /** Keycap/binding hint rendered in the corner (e.g. a `<Keycap>` or a plain string). */
+  keyHint?: ReactNode;
+  /** Level/unlock gate: greys the button out, blocks activation, and shows `lockLabel`. */
+  locked?: boolean;
+  lockLabel?: ReactNode;
+  /** Cooldown sweep shape; defaults to `"radial"`. */
+  sweep?: AbilitySweep;
+  size?: number;
+  /** Face content — `children` wins, else `icon` over `label`. */
+  icon?: ReactNode;
+  label?: ReactNode;
+  children?: ReactNode;
+  showCooldownText?: boolean;
+  intervalMs?: number;
+  style?: CSSProperties;
+  className?: string;
+}) {
+  const slot = useAbilitySlot(kit, slotId, resourceAvailable, intervalMs === undefined ? undefined : { intervalMs });
+  const fraction = slot === null ? 0 : Math.max(0, Math.min(1, slot.cooldownFraction));
+  const remainingMs = slot?.cooldownRemainingMs ?? 0;
+  const noResource = slot?.state === "no-resource";
+  const flashing = slot?.justCast === true;
+  const gcdOnly = slot !== null && slot.groupRemainingMs > 0 && slot.cooldownRemainingMs === slot.groupRemainingMs;
+  const castable = !locked && slot !== null && slot.ready;
+  const overlay: CSSProperties = { position: "absolute", inset: 0, pointerEvents: "none" };
+  return (
+    <button
+      type="button"
+      disabled={!castable}
+      onClick={castable ? () => onActivate?.(slotId) : undefined}
+      className={className}
+      data-ability={slotId}
+      data-locked={locked || undefined}
+      style={{
+        ...PANEL,
+        position: "relative",
+        width: size,
+        height: size,
+        padding: 0,
+        overflow: "hidden",
+        cursor: castable ? "pointer" : "default",
+        opacity: locked ? 0.5 : gcdOnly ? 0.82 : 1,
+        borderColor: flashing ? "rgba(250,250,255,0.95)" : PANEL.borderColor as string,
+        ...style,
+      }}
+    >
+      <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 2, fontSize: 11, fontWeight: 600, filter: locked ? "grayscale(1)" : undefined }}>
+        {children ?? (
+          <>
+            {icon}
+            {label !== undefined ? <span style={{ opacity: 0.85 }}>{label}</span> : null}
+          </>
+        )}
+      </span>
+      {fraction > 0 ? (
+        sweep === "radial" ? (
+          <span style={{ ...overlay, background: `conic-gradient(rgba(6,8,12,0.62) ${fraction * 360}deg, transparent 0)` }} />
+        ) : (
+          <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: `${fraction * 100}%`, background: "rgba(6,8,12,0.62)", pointerEvents: "none" }} />
+        )
+      ) : null}
+      {noResource ? <span style={{ ...overlay, background: "rgba(37,99,235,0.28)" }} /> : null}
+      {flashing ? <span style={{ ...overlay, background: "rgba(255,255,255,0.35)" }} /> : null}
+      {showCooldownText && remainingMs > 0 && !locked ? (
+        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: "#f8fafc", textShadow: "0 1px 3px rgba(0,0,0,0.7)", fontVariantNumeric: "tabular-nums", pointerEvents: "none" }}>
+          {cooldownLabel(remainingMs)}
+        </span>
+      ) : null}
+      {locked ? (
+        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#e2e8f0", pointerEvents: "none" }}>
+          {lockLabel ?? "🔒"}
+        </span>
+      ) : null}
+      {keyHint !== undefined ? (
+        <span style={{ position: "absolute", top: 2, right: 3, fontSize: 9, fontWeight: 700, opacity: 0.7, pointerEvents: "none" }}>
+          <Keycap>{keyHint}</Keycap>
+        </span>
+      ) : null}
+    </button>
   );
 }
 

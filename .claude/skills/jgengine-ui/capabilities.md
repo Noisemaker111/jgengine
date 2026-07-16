@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## ability-button — cooldown/GCD/resource-aware ability button over an AbilityKit slot
+
+- `AbilityButton` (function) · `import { AbilityButton } from "@jgengine/react"`
+
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
@@ -68,6 +72,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## start-screen — headless title/attract overlay the game fills and skins
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
+
+## stat-bar — tone-colored health/mana/pool meter, entity-bound or raw value/max
+
+- `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 

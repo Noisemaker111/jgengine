@@ -352,6 +352,21 @@ describe("createGameContext", () => {
     expect(ctx.scene.entity.moveTowardCommit("missing", [1, 0, 0], { speed: 1, dt: 1 })).toBeNull();
   });
 
+  test("scene.entity.moveTowardCommit groundSnap clamps the committed height to the terrain", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("villager", { position: [0, 5, 0], rotationY: 0 });
+    const next = ctx.scene.entity.moveTowardCommit(id, [10, 5, 0], { speed: 2, dt: 1, groundSnap: true });
+    expect(next).toEqual([2, 0, 0]);
+    expect(ctx.scene.entity.get(id)?.position).toEqual([2, 0, 0]);
+  });
+
+  test("scene.entity.moveTowardCommit without groundSnap keeps the interpolated height", () => {
+    const ctx = makeContext();
+    const id = ctx.scene.entity.spawn("villager", { position: [0, 5, 0], rotationY: 0 });
+    const next = ctx.scene.entity.moveTowardCommit(id, [10, 5, 0], { speed: 2, dt: 1 });
+    expect(next).toEqual([2, 5, 0]);
+  });
+
   test("scene.object.selection is reactive and clears a removed instance", () => {
     const ctx = makeContext();
     const crate = ctx.scene.object.place("crate", 0, 0, 0);

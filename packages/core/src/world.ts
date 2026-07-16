@@ -224,8 +224,18 @@ export {
   type WorldGridConfig,
 } from "./world/features";
 export { createFogField, type FogCells, type FogField } from "./world/fog";
-export { boundaryNeighbors, createFootprintGrid, footprintObstacles, hasValidAdjacency } from "./world/footprintGrid";
+export { boundaryNeighbors, connectedTo, createFootprintGrid, footprintObstacles, hasValidAdjacency } from "./world/footprintGrid";
 export { type Aabb, type AvoidZone } from "./world/geometry";
+export {
+  DIR_ORDER,
+  DIR_VECTORS,
+  addCell,
+  cellKey,
+  sameCell,
+  yawToDir,
+  type GridCoord,
+  type GridDir,
+} from "./world/gridCell";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { createLodScheduler } from "./world/lod";

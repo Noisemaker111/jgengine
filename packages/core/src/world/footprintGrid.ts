@@ -155,6 +155,22 @@ export function hasValidAdjacency(
   return !requireConnection || neighbors.some((neighbor) => accepts(neighbor.kind));
 }
 
+/**
+ * True when at least one cell orthogonally touching `cells` (but outside them) is occupied by a kind
+ * `accepts` admits — the "must touch existing track/road/pipe" placement gate. Looser than
+ * {@link hasValidAdjacency}: it only asks whether *some* neighbor connects, and never rejects an
+ * incompatible neighbor. `accepts` omitted matches any occupied neighbor.
+ *
+ * @capability footprint-adjacency 4-neighbor connectivity check for connective-piece placement
+ */
+export function connectedTo(
+  grid: FootprintGrid,
+  cells: readonly GridCell[],
+  accepts?: (neighborKind: string) => boolean,
+): boolean {
+  return boundaryNeighbors(grid, cells).some((neighbor) => accepts === undefined || accepts(neighbor.kind));
+}
+
 /** Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the grid's committed footprints unchanged. */
 export function footprintObstacles(grid: FootprintGrid): PlacementObstacle[] {
   return grid.list().map((reservation) => {

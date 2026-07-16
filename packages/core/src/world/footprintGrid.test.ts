@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   boundaryNeighbors,
+  connectedTo,
   createFootprintGrid,
   footprintObstacles,
   hasValidAdjacency,
@@ -99,5 +100,16 @@ describe("connective-piece adjacency", () => {
     const cells = [{ col: 0, row: 0 }];
     expect(hasValidAdjacency(grid, cells, (kind) => kind === "road", true)).toBe(true);
     expect(hasValidAdjacency(grid, cells, (kind) => kind === "pipe", true)).toBe(false);
+  });
+
+  test("connectedTo is true when any neighbor connects, ignoring incompatible ones", () => {
+    const grid = createFootprintGrid();
+    const cells = [{ col: 0, row: 0 }];
+    expect(connectedTo(grid, cells, (kind) => kind === "track")).toBe(false);
+    grid.reserve("wall-1", "wall", [{ col: 1, row: 0 }]);
+    expect(connectedTo(grid, cells, (kind) => kind === "track")).toBe(false);
+    expect(connectedTo(grid, cells)).toBe(true);
+    grid.reserve("track-1", "track", [{ col: -1, row: 0 }]);
+    expect(connectedTo(grid, cells, (kind) => kind === "track")).toBe(true);
   });
 });
