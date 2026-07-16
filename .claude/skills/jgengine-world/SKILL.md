@@ -1,4 +1,4 @@
-﻿---
+---
 name: jgengine-world
 description: World API: movement, cameras, physics, maps, sensors, spawn placement.
 ---

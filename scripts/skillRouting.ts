@@ -37,7 +37,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   session: "jgengine-gameplay",
   settings: "jgengine-ui",
   stats: "jgengine-combat",
-  survival: "jgengine-procedural",
+  survival: "jgengine-gameplay",
   tactics: "jgengine-combat",
   time: "jgengine-world",
   turn: "jgengine-gameplay",
@@ -68,7 +68,6 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
 export const SKILL_DIRS = [
   MAIN,
   "jgengine-world",
-  "jgengine-procedural",
   "jgengine-combat",
   "jgengine-gameplay",
   "jgengine-multiplayer",

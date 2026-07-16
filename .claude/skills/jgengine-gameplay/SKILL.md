@@ -1,4 +1,4 @@
-﻿---
+---
 name: jgengine-gameplay
 description: Gameplay systems: items, quests, economy, crafting, turns, objectives.
 ---
@@ -153,10 +153,6 @@ Offline↔cloud is the same one-line swap as `createSaveStore`: the shell can in
 
 <!-- maintainer: this change added exports `PoseSnapshot` (@jgengine/core/movement/poseState) and `PossessionSnapshot` (@jgengine/core/scene/possession) plus `snapshotAll`/`hydrateAll`/`hydrate`/`snapshot` methods on the pose, possession, cosmetics, motion and clock subsystems; run `bun run gen:skill-api` on a clean checkout to refresh api.md/api-orphan-baseline.json (intentionally not committed here — the type gate is pre-existing red on main). -->
 
-
-## Race sessions
-
-`@jgengine/core/game/race` layers a start-line lifecycle and results math over the existing `createRaceState`/`createLapTimer` position tracker. `idleRaceSession()` is the pre-race grid state; `startRaceCountdown({ seconds? })` drops the lights into a `countdown` phase (or straight to `racing` for a standing start); `tickRaceSession(session, dt)` bleeds the countdown and accumulates `elapsed` while racing; `finishRaceSession(session)` freezes it at the flag. Once a finish order exists, `racePlacements(finishOrder, options?)` turns it into every racer's 1-based `place` + win/lose `outcome`, `placementOf(finishOrder, racerId, options?)` reads one racer's placement, and `raceOutcomeOf(finishOrder, racerId, options?)` is the plain win/lose shortcut — all three share a `winningPlaces` cutoff (default 1, pass 3 for a podium finish) instead of a hand-rolled `ranking[0] === player` check.
 
 ## Combat — effects, projectiles, death, feel, abilities
 ## Card, board & shaped-inventory primitives

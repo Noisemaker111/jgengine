@@ -1,4 +1,4 @@
-﻿---
+---
 name: jgengine-combat
 description: Combat API: effects, projectiles, damage, abilities, loot, weapons.
 ---

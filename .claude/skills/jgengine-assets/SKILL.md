@@ -22,7 +22,7 @@ Squares as enemies, colored boxes as buildings, and a flat grid floor read as *b
 
 `--kind model|pack|material|component|icon|sprite|spritePack` disambiguates a broad query, `--json` emits the ranked matches, and `findAssets(query)` from `@jgengine/assets` is the same search in code. The HUD component + curated icon catalogs are the shadcn registry at `jgengine.com/r` — 70+ presentational and engine-bound widgets (`vital-bar`, `boss-bar`, `resource-orb`, `ability-action-bar`, `inventory-slot-grid`, `dialogue-panel`, …). Search before you build: the "mana pool component" almost certainly already exists.
 
-> **Never Kenney.** Kenney.nl assets (3D kits, 2D icon/UI packs, audio) are barred from JGengine — the author declined use. Do not add, pull, re-index, alias, or reference any `kenney-*` source; reach for the CC0 sources below instead. Quaternius is the go-to broad low-poly library.
+> **Never Kenney** (repo-wide rule, see CLAUDE.md). Kenney.nl assets are barred; reach for the CC0 sources below instead — Quaternius is the go-to broad low-poly library.
 
 **Sources** (CC0 — public domain, commercial use, no attribution — unless noted):
 

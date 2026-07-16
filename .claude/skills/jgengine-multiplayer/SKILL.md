@@ -1,4 +1,4 @@
-﻿---
+---
 name: jgengine-multiplayer
 description: Multiplayer API: adapters, topology, authority, rooms, persistence.
 ---
@@ -88,7 +88,7 @@ For single-player (or per-user) game saves that live on the server instead of `l
 
 ## Offline whole-world save — `defineGame({ persist })` / `ctx.game.save`
 
-The single-player counterpart to hosted persistence. A multiplayer host serializes the whole world into a `WorldSnapshot` (`ctx.snapshot()`/`ctx.hydrate()`) to replicate it; the **same seam** persists an offline game to `localStorage`. Turn on `defineGame({ persist: true })` (wired only when `isOffline(multiplayer)` — never for a server-authoritative world, where the host persists) and the engine binds `ctx.game.save` (a `RuntimeSave`) to a local backend, autosaving the entire world — every `defineStore` slot, all entities + stats + inventories — with no per-field code. `createRuntimeSave({ target, backend, mode, ... })` (`@jgengine/core/runtime/runtimeSave`) is the bridge under it: `target` is any `{ snapshot, hydrate, subscribe }` (a `GameContext` satisfies it), `backend` is the same `SaveBackend` seam as `createSaveStore` — so swapping `localSaveBackend()` for `createConvexSaveBackend(...)` via the `createGameContext({ save })` seam moves an offline game's whole-world save to the cloud, unchanged. Modes: `"autosave"` (debounced, default) or `"manual"` + `checkpoint()` for save points / quest / area triggers. The game calls `ctx.game.save.load()` on boot to restore. Full authoring guide: `jgengine-gameplay` → "Save the *whole* game automatically".
+The single-player counterpart to hosted persistence, over the **same seam**: a multiplayer host serializes the world into a `WorldSnapshot` (`ctx.snapshot()`/`ctx.hydrate()`) to replicate it; `defineGame({ persist: true })` persists that snapshot to a local backend instead (wired only when `isOffline(multiplayer)` — never for a server-authoritative world, where the host persists). Swapping `localSaveBackend()` for `createConvexSaveBackend(...)` via `createGameContext({ save })` moves the save to the cloud unchanged. Full authoring guide (modes, save points, slots): `jgengine-gameplay` → "Save the *whole* game automatically".
 
 ## Hosted-world persistence and clean shutdown — `@jgengine/node/worldServer`, `@jgengine/node/shutdown`
 

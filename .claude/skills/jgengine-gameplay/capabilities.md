@@ -16,6 +16,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/game/cosmetics"`
 
+## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+
+- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/survival/decayMeter"`
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
 - `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/game/dialogue"`
@@ -58,6 +61,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## lifecycle — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
 
 - `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/game/defineGame"`
+
+## limb-health — per-body-part/region health tracked separately
+
+- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/survival/regionHealth"`
 
 ## listing-book — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
 

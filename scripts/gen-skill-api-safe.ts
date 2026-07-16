@@ -3,20 +3,12 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { SKILL_DIRS } from "./skillRouting";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
 const baselinePath = join(root, "scripts/api-doc-baseline.json");
 const orphanBaselinePath = join(root, "scripts/api-orphan-baseline.json");
-const skills = [
-  "jgengine",
-  "jgengine-world",
-  "jgengine-procedural",
-  "jgengine-combat",
-  "jgengine-gameplay",
-  "jgengine-multiplayer",
-  "jgengine-ui",
-  "jgengine-assets",
-  "jgengine-editor",
-];
+const skills = SKILL_DIRS;
 const trackedPaths = [
   baselinePath,
   orphanBaselinePath,
