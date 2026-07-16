@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef } from "react";
+import { memo, useRef } from "react";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
@@ -7,7 +7,7 @@ import type { EditorHostApi } from "./session";
 const SAMPLE_WINDOW_MS = 500;
 
 /** In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms. */
-export function PerfProbe({ api }: { api: EditorHostApi }) {
+export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }) {
   const gl = useThree((state) => state.gl);
   const framesRef = useRef(0);
   const windowStartRef = useRef(0);
@@ -35,4 +35,4 @@ export function PerfProbe({ api }: { api: EditorHostApi }) {
   });
 
   return null;
-}
+});
