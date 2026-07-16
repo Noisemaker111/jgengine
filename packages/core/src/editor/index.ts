@@ -35,6 +35,7 @@ export {
   collectDescendants,
   createEmptyEditorDocument,
   createPrefabFragment,
+  decodeEditorDocument,
   editorChildren,
   editorDocumentBounds,
   editorDocumentSize,
@@ -55,6 +56,10 @@ export {
   normalizeEditorLayers,
   wouldCreateCycle,
 } from "./document";
+/** One field-level failure surfaced while decoding an untrusted editor document. */
+export type { EditorDocumentDiagnostic } from "./document";
+/** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
+export type { DecodeEditorDocumentResult } from "./document";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export { createEditorSession } from "./commands";
 /** Compact snapshot of a session state — counts, selection, and the selected object. */

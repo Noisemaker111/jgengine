@@ -11,6 +11,7 @@
 import { createEditorHost } from "../session";
 import { startEditorBridgeServerNode } from "./bridgeServer.node.ts";
 import { loadGameLayers } from "./loadGameLayers.ts";
+import { decodeEditorBridgeRequest } from "./rpcRequest.ts";
 import { runEditorMcpStdio } from "./stdioServer.ts";
 import { EDITOR_MCP_TOOLS } from "./tools";
 
@@ -63,13 +64,29 @@ async function main(argv: string[]): Promise<number> {
   }
 
   const layers = await loadGameLayers(gameId);
+  if (!layers.ok) {
+    console.error(`invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
+    return 1;
+  }
   const { api, dispose } = createEditorHost({
     gameId,
-    layers: layers as never,
+    layers: layers.document,
   });
 
   if (rpcRaw !== null) {
-    const response = api.handle(JSON.parse(rpcRaw) as Parameters<typeof api.handle>[0]);
+    const decoded = decodeEditorBridgeRequest(JSON.parse(rpcRaw));
+    if (!decoded.ok) {
+      console.log(
+        JSON.stringify(
+          { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
+          null,
+          2,
+        ),
+      );
+      dispose();
+      return 1;
+    }
+    const response = api.handle(decoded.request);
     console.log(JSON.stringify(response, null, 2));
     dispose();
     return response.ok ? 0 : 1;
