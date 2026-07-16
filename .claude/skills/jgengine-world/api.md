@@ -2123,6 +2123,10 @@
 - `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
 - `TerrainSlopeSample` (interface): interface TerrainSlopeSample — ⚠ undocumented
 
+## @jgengine/core/world/vec3
+
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D vector/point as an `[x, y, z]` tuple — the 3D companion to `Vec2` from `./vec2`.
+
 ## @jgengine/core/world/vegetation
 
 - `VEGETATION_DEFAULTS` (const): const VEGETATION_DEFAULTS: VegetationSettings — Defaults a bare `kind: "vegetation"` volume grows with: grass at 4 blades/m².
