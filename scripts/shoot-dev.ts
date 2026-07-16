@@ -16,8 +16,6 @@ import { join, resolve } from "node:path";
 import {
   type CdpSession,
   DEVICES,
-  DEV_BASE,
-  WARM_CHROME_PORT,
   applyDevice,
   ensureDevServer,
   isUp,
@@ -25,6 +23,7 @@ import {
   launchChrome,
   openPageSession,
   pickDebugPort,
+  resolveWarmChromePort,
   waitForDebugger,
   type Device,
   type SizeMode,
@@ -54,9 +53,6 @@ type Args = {
   timeoutMs: number;
 };
 
-const PORT = 4517;
-const BASE = DEV_BASE;
-
 const HELP = `bun run shoot [game] [options]
 
   --game <id>         game id (default world-of-warcraft; positional arg also works)
@@ -71,8 +67,8 @@ const HELP = `bun run shoot [game] [options]
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
-  --keep              leave the dev server + Chrome (fixed port ${WARM_CHROME_PORT})
-                      running after this shot — pair with --connect ${WARM_CHROME_PORT}
+  --keep              leave the dev server + Chrome (per-worktree warm debug port)
+                      running after this shot — pair with --connect <port>
                       on every following shot in the loop (warm-loop pattern)
   --inspect           run the pixel-metrics pass on the PNG we already have
                       in memory (no second browser launch) and write
@@ -82,8 +78,9 @@ const HELP = `bun run shoot [game] [options]
 
 Warm loop:
   bun run shoot <game> --mode play --keep                       # first shot: cold boot, stays warm
-  bun run shoot <game> --mode play --connect ${WARM_CHROME_PORT} --size half   # re-shots: <10s, cheap judge PNG
-  bun run shoot <game> --mode play --connect ${WARM_CHROME_PORT}              # final full-res shot for the PR
+  bun run shoot <game> --mode play --connect <port> --size half # re-shots: <10s, cheap judge PNG
+  bun run shoot <game> --mode play --connect <port>             # final full-res shot for the PR
+  # port is printed after --keep; each worktree gets its own default
 `;
 
 function parseArgs(argv: string[]): Args {
@@ -194,14 +191,14 @@ async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise
   throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
 }
 
-function targetUrl(args: Args, device: Device): string {
+function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.url !== undefined) {
     const url = new URL(args.url);
     url.searchParams.set("capture", "1");
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     return url.toString();
   }
-  const url = new URL(BASE);
+  const url = new URL(devBase);
   url.searchParams.set("game", args.game);
   url.searchParams.set("mode", args.mode);
   url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
@@ -241,13 +238,19 @@ function formatCollisionReport(raw: string): string {
   }
 }
 
-async function shootOne(debugPort: number, args: Args, device: Device, outPath: string): Promise<boolean> {
+async function shootOne(
+  debugPort: number,
+  args: Args,
+  device: Device,
+  outPath: string,
+  devBase: string,
+): Promise<boolean> {
   const session = await openPageSession(debugPort);
   try {
     await session.send("Page.enable");
     await session.send("Runtime.enable");
     await applyDevice(session, device, args.size);
-    const url = targetUrl(args, device);
+    const url = targetUrl(args, device, devBase);
     await session.send("Page.navigate", { url });
     await waitCaptureReady(session, args.timeoutMs);
     await new Promise((r) => setTimeout(r, 600));
@@ -320,17 +323,27 @@ try {
 const targets = devicesFor(args.device);
 
 let server: ChildProcess | null = null;
+let devBase = "";
 if (args.url === undefined) {
-  server = await ensureDevServer();
+  const dev = await ensureDevServer();
+  server = dev.child;
+  devBase = dev.base;
 } else if (!(await isUp(args.url))) {
-  if (args.url.startsWith(BASE)) {
-    server = await ensureDevServer();
+  const dev = await ensureDevServer();
+  if (args.url.startsWith(dev.base) || args.url.startsWith("http://127.0.0.1:")) {
+    server = dev.child;
+    devBase = dev.base;
   } else {
-    throw new Error(`shoot: nothing is listening at ${args.url} — start that server first (only ${BASE} is auto-started)`);
+    throw new Error(
+      `shoot: nothing is listening at ${args.url} — start that server first (auto-start only covers this worktree's dev port)`,
+    );
   }
+} else {
+  devBase = args.url;
 }
 let chrome: ChildProcess | null = null;
-const debugPort = args.connect ?? (args.keep ? WARM_CHROME_PORT : pickDebugPort());
+const warmPort = resolveWarmChromePort();
+const debugPort = args.connect ?? (args.keep ? warmPort : pickDebugPort());
 let exitCode = 0;
 
 const hardDeadlineMs = args.timeoutMs * Math.max(targets.length, 1) + 120_000;
@@ -351,11 +364,11 @@ try {
   }
 
   for (const device of targets) {
-    const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir));
+    const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir), devBase);
     if (!fits) exitCode = 1;
   }
   if (args.keep) {
-    console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${BASE}`);
+    console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
     console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);
   }
 } catch (error) {
