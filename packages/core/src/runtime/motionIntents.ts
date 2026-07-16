@@ -21,6 +21,10 @@ export interface MotionIntents {
   setVerticalVelocity(velocityY: number): void;
   setY(y: number): void;
   takePending(): MotionIntentBatch | null;
+  /** Non-draining copy of the pending intents for a whole-world save; unlike `takePending` it leaves the queue intact. */
+  snapshot(): MotionIntentBatch;
+  /** Replace the pending intents from a {@link snapshot} payload on save load. */
+  hydrate(batch: MotionIntentBatch): void;
 }
 
 export interface MotionIntentBatch {
@@ -60,6 +64,15 @@ export function createMotionIntents(): MotionIntents {
       verticalVelocity = null;
       y = null;
       return batch;
+    },
+    snapshot() {
+      return { impulses: [...impulses], horizontalImpulses: [...horizontalImpulses], verticalVelocity, y };
+    },
+    hydrate(batch) {
+      impulses = [...batch.impulses];
+      horizontalImpulses = batch.horizontalImpulses.map(([x, z]) => [x, z] as const);
+      verticalVelocity = batch.verticalVelocity;
+      y = batch.y;
     },
   };
 }
