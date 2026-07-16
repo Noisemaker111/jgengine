@@ -22,8 +22,15 @@ if (!existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo"))) {
   run("node_modules incomplete (tsgo missing) — running bun install", ["bun", "install"], 300_000);
 }
 
+function workspacePatterns(): string[] {
+  const workspaces = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")).workspaces as
+    | string[]
+    | { packages: string[] };
+  return Array.isArray(workspaces) ? workspaces : workspaces.packages;
+}
+
 function workspacePackages(): Map<string, string> {
-  const patterns = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")).workspaces as string[];
+  const patterns = workspacePatterns();
   const dirs: string[] = [];
   for (const pattern of patterns) {
     if (pattern.endsWith("/*")) {
