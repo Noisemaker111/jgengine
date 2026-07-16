@@ -24,7 +24,7 @@ function BuildPlots() {
   const ctx = useGameContext();
   useGameStore((c) => c.game.economy.balance(c.player.userId, GOLD_CURRENCY));
   const selectedId = session.selectedTowerId;
-  const cost = selectedId === null ? 0 : towerDef(selectedId).cost;
+  const cost = selectedId === null ? 0 : towerDef(selectedId, editorLayers).cost;
   const gold = ctx.game.economy.balance(ctx.player.userId, GOLD_CURRENCY);
   return (
     <>

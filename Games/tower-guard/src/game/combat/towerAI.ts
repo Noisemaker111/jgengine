@@ -2,6 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { selectAutoTarget, type AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
 
+import { editorLayers } from "../../editorLayers";
 import { towerDef, type TowerDef } from "../entities/towers/catalog";
 import { session } from "../session";
 import { pushProjectile } from "./pendingProjectiles";
@@ -68,7 +69,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
   }
 
   for (const tower of session.towers.values()) {
-    const def = towerDef(tower.catalogId);
+    const def = towerDef(tower.catalogId, editorLayers);
     tower.cooldownSeconds = Math.max(0, tower.cooldownSeconds - dt);
     if (tower.cooldownSeconds > 0) continue;
 

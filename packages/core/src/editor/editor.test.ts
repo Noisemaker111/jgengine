@@ -9,6 +9,7 @@ import {
   editorDocumentSize,
   exportEditorDocumentJson,
   extractEditorFragment,
+  findEditorCatalogEntry,
   findEditorCollection,
   findEditorPrefab,
   importEditorDocumentJson,
@@ -16,6 +17,7 @@ import {
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
+  seedEditorCatalogs,
   summarizeEditorSession,
   editorParentOf,
   editorChildren,
@@ -87,11 +89,31 @@ describe("editor document", () => {
     const original = normalizeEditorLayers({
       markers: [{ id: "boss_warrior", kind: "boss", position: { x: -80, y: 0, z: -660 }, label: "Warrior" }],
       collections: [{ id: "c1", name: "Pack", memberIds: ["boss_warrior"], locked: true }],
+      catalogs: [{ id: "weapons", entries: [{ id: "bow", meta: { damage: 8 } }] }],
     });
     const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(original)));
     expect(decoded.ok).toBe(true);
     if (!decoded.ok) throw new Error("expected decode success");
     expect(decoded.document).toEqual(original);
+  });
+
+  test("seedEditorCatalogs fills missing entries and preserves document overrides", () => {
+    const doc = normalizeEditorLayers({
+      catalogs: [{ id: "weapons", entries: [{ id: "bow", meta: { damage: 99 } }] }],
+    });
+    const seeded = seedEditorCatalogs(doc, [
+      {
+        id: "weapons",
+        label: "Weapons",
+        schema: { fields: [{ key: "damage", type: "number", default: 1 }] },
+        entries: [
+          { id: "bow", meta: { damage: 8 } },
+          { id: "cannon", meta: { damage: 26 } },
+        ],
+      },
+    ]);
+    expect(findEditorCatalogEntry(seeded, "weapons", "bow")?.meta).toEqual({ damage: 99 });
+    expect(findEditorCatalogEntry(seeded, "weapons", "cannon")?.meta).toEqual({ damage: 26 });
   });
 
   test("json round-trip", () => {

@@ -25,6 +25,7 @@ import {
   wouldCreateCycle,
 } from "./document";
 import type {
+  EditorCatalogEntry,
   EditorCollection,
   EditorDocument,
   EditorFragmentContent,
@@ -52,6 +53,12 @@ export type EditorCommand =
   | { type: "setVolume"; id: string; patch: Partial<Omit<EditorVolume, "id">> }
   | { type: "setPath"; id: string; patch: Partial<Omit<EditorPath, "id">> }
   | { type: "setNote"; id: string; patch: Partial<Omit<EditorNote, "id">> }
+  | {
+      type: "setCatalogEntry";
+      catalogId: string;
+      entryId: string;
+      patch: { label?: string; meta?: Record<string, unknown> };
+    }
   | { type: "remove"; id: string }
   | { type: "removeMany"; ids: readonly string[] }
   | { type: "duplicate"; ids: readonly string[]; offset?: EditorVec3 }
@@ -131,6 +138,7 @@ function removeByIds(doc: EditorDocument, ids: ReadonlySet<string>): EditorDocum
       ...collection,
       memberIds: collection.memberIds.filter((id) => !ids.has(id)),
     })),
+    catalogs: doc.catalogs,
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
@@ -160,6 +168,7 @@ function translateByIds(
     ),
     prefabs: doc.prefabs,
     collections: doc.collections,
+    catalogs: doc.catalogs,
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
@@ -238,6 +247,7 @@ function insertFragment(
       annotations: [...doc.annotations, ...annotations],
       prefabs: doc.prefabs,
       collections: doc.collections,
+      catalogs: doc.catalogs,
       ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     },
     selection: newIds,
@@ -253,6 +263,7 @@ function fragmentAsDocument(fragment: EditorFragmentContent): EditorDocument {
     annotations: [...fragment.annotations],
     prefabs: [],
     collections: [],
+    catalogs: [],
   };
 }
 
@@ -449,6 +460,27 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
       });
       return { ...state, document: { ...state.document, annotations } };
     }
+    case "setCatalogEntry": {
+      const catalog = state.document.catalogs.find((entry) => entry.id === command.catalogId);
+      if (catalog === undefined) return null;
+      if (!catalog.entries.some((entry) => entry.id === command.entryId)) return null;
+      const catalogs = state.document.catalogs.map((row) => {
+        if (row.id !== command.catalogId) return row;
+        return {
+          ...row,
+          entries: row.entries.map((entry) => {
+            if (entry.id !== command.entryId) return entry;
+            const next: EditorCatalogEntry = { id: entry.id };
+            const label = command.patch.label ?? entry.label;
+            if (label !== undefined) next.label = label;
+            if (command.patch.meta !== undefined) next.meta = { ...entry.meta, ...command.patch.meta };
+            else if (entry.meta !== undefined) next.meta = { ...entry.meta };
+            return next;
+          }),
+        };
+      });
+      return { ...state, document: { ...state.document, catalogs } };
+    }
     case "remove":
       if (isEditorObjectLocked(state.document, command.id)) return null;
       return {
@@ -494,6 +526,7 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         annotations: state.document.annotations,
         prefabs: state.document.prefabs,
         collections: state.document.collections,
+        catalogs: state.document.catalogs,
       };
       return { ...state, document: nextDoc };
     }

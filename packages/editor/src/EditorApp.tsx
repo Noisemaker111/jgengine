@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 
-import type { EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
+import type { EditorCatalogDefinition, EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
@@ -28,6 +28,8 @@ export interface EditorAppProps {
   gameId: string;
   playable: PlayableGame;
   layers?: EditorLayersInput;
+  /** Game-exported gameplay catalog definitions (schemas + defaults) for the Data panel / catalog RPC. */
+  catalogs?: readonly EditorCatalogDefinition[];
   save?: EditorSaveFn;
   /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
   modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
@@ -224,7 +226,7 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers, save, modeChip }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }: EditorAppProps) {
   const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
   const uiStoreRef = useRef<EditorUiStore | null>(null);
@@ -245,10 +247,11 @@ export function EditorApp({ gameId, playable, layers, save, modeChip }: EditorAp
     const created = createEditorHost({
       gameId,
       layers,
+      catalogs,
       assets: catalogAssets,
     });
     return { ...created, baselineJson: created.session.exportJson(true) };
-  }, [gameId, layers, catalogAssets]);
+  }, [gameId, layers, catalogs, catalogAssets]);
 
   useEffect(() => host.dispose, [host]);
 

@@ -4,6 +4,7 @@
  */
 
 import { createEditorHost, type EditorBridgeRequest, type EditorHostApi, type EditorRunMode } from "../session";
+import { loadGameCatalogs } from "./loadGameCatalogs.ts";
 import { loadGameLayers } from "./loadGameLayers.ts";
 import { EDITOR_MCP_TOOLS } from "./tools";
 
@@ -32,6 +33,22 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
       return { method: "editor_status" };
     case "list_layers":
       return { method: "list_layers" };
+    case "list_catalogs":
+      return { method: "list_catalogs" };
+    case "get_catalog_entry":
+      return {
+        method: "get_catalog_entry",
+        catalogId: String(args.catalogId ?? ""),
+        entryId: String(args.entryId ?? ""),
+      };
+    case "set_catalog_entry":
+      return {
+        method: "set_catalog_entry",
+        catalogId: String(args.catalogId ?? ""),
+        entryId: String(args.entryId ?? ""),
+        patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
+        ...(typeof args.label === "string" ? { label: args.label } : {}),
+      };
     case "list_selection":
       return { method: "list_selection" };
     case "get_marker":
@@ -136,11 +153,14 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
 }
 
 async function resolveEditorHost(gameId: string): Promise<EditorHostApi> {
-  const layers = await loadGameLayers(gameId);
+  const [layers, catalogs] = await Promise.all([loadGameLayers(gameId), loadGameCatalogs(gameId)]);
   if (!layers.ok) {
     throw new Error(`invalid editorLayers for ${gameId}: ${layers.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
   }
-  return createEditorHost({ gameId, layers: layers.document }).api;
+  if (!catalogs.ok) {
+    throw new Error(`invalid editorCatalogs for ${gameId}: ${catalogs.errors.map((e) => `${e.path} ${e.message}`).join("; ")}`);
+  }
+  return createEditorHost({ gameId, layers: layers.document, catalogs: catalogs.catalogs }).api;
 }
 
 /** Runs the editor as a stdio MCP server so an agent can drive it via tools/call. */

@@ -13,6 +13,7 @@ import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/s
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
 import { AssetBrowser, type EditorAssetEntry } from "./AssetBrowser";
+import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
 import { OutlinerPanel } from "./OutlinerPanel";
@@ -31,7 +32,7 @@ import { InspectorPanel } from "./InspectorPanel";
 
 const PERF_POLL_MS = 500;
 
-type WorkspacePanel = "outliner" | "assets" | "collections" | "prefabs";
+type WorkspacePanel = "outliner" | "assets" | "collections" | "prefabs" | "catalogs";
 
 const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] = [
   { label: "Zone (sphere)", tool: { tool: "volume", kind: "zone", shape: "sphere" } },
@@ -699,6 +700,7 @@ export function EditorChrome({
               <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "outliner" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("outliner")}>Hierarchy</button>
               <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "collections" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("collections")}>Sets {state.document.collections.length}</button>
               <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "prefabs" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("prefabs")}>Prefabs {state.document.prefabs.length}</button>
+              <button type="button" className={`rounded-md px-2 py-1 font-medium transition-colors ${activePanel === "catalogs" ? "bg-white/10 text-neutral-100" : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => showPanel("catalogs")}>Data {api.getCatalogDefinitions().length}</button>
               <button type="button" className="rounded-md px-2 py-1 text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-neutral-200" onClick={() => showPanel("assets")}>Assets {assets.length}</button>
               <button type="button" className="ml-auto rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => setLeftOpen(false)} aria-label="Close hierarchy panel">×</button>
             </div>
@@ -706,6 +708,8 @@ export function EditorChrome({
               <CollectionsPanel session={session} />
             ) : activePanel === "prefabs" ? (
               <PrefabsPanel session={session} api={api} />
+            ) : activePanel === "catalogs" ? (
+              <CatalogsPanel session={session} definitions={api.getCatalogDefinitions()} />
             ) : (
               <>
                 <div className="border-b border-white/[0.08] p-2">

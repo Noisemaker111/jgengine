@@ -1,5 +1,8 @@
 import { migrateTerrainSnapshot } from "../world/terraform";
 import type {
+  EditorCatalogData,
+  EditorCatalogDefinition,
+  EditorCatalogEntry,
   EditorCollection,
   EditorDocument,
   EditorFragmentContent,
@@ -26,7 +29,23 @@ export function createEmptyEditorDocument(): EditorDocument {
     annotations: [],
     prefabs: [],
     collections: [],
+    catalogs: [],
   };
+}
+
+function cloneCatalogEntry(entry: EditorCatalogEntry): EditorCatalogEntry {
+  return {
+    id: entry.id,
+    ...(entry.label === undefined ? {} : { label: entry.label }),
+    ...(entry.meta === undefined ? {} : { meta: { ...entry.meta } }),
+  };
+}
+
+function cloneCatalogs(catalogs: readonly EditorCatalogData[] | undefined): EditorCatalogData[] {
+  return (catalogs ?? []).map((catalog) => ({
+    id: catalog.id,
+    entries: catalog.entries.map(cloneCatalogEntry),
+  }));
 }
 
 /**
@@ -69,12 +88,35 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
       },
     })),
     collections: doc.collections.map((collection) => ({ ...collection, memberIds: [...collection.memberIds] })),
+    catalogs: cloneCatalogs(doc.catalogs),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
   };
 }
 
 function asArray<T>(value: readonly T[] | undefined): T[] {
   return value === undefined ? [] : [...value];
+}
+
+function upsertCatalogEntries(
+  base: readonly EditorCatalogEntry[],
+  overlay: readonly EditorCatalogEntry[],
+): EditorCatalogEntry[] {
+  return upsertById(base.map(cloneCatalogEntry), overlay.map(cloneCatalogEntry));
+}
+
+function upsertCatalogs(
+  base: readonly EditorCatalogData[] | undefined,
+  overlay: readonly EditorCatalogData[] | undefined,
+): EditorCatalogData[] {
+  const byId = new Map((base ?? []).map((catalog) => [catalog.id, { id: catalog.id, entries: catalog.entries.map(cloneCatalogEntry) }]));
+  for (const catalog of overlay ?? []) {
+    const existing = byId.get(catalog.id);
+    byId.set(catalog.id, {
+      id: catalog.id,
+      entries: existing === undefined ? catalog.entries.map(cloneCatalogEntry) : upsertCatalogEntries(existing.entries, catalog.entries),
+    });
+  }
+  return [...byId.values()];
 }
 
 /** Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
@@ -91,6 +133,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     annotations: asArray(resolved.annotations),
     prefabs: asArray(resolved.prefabs),
     collections: asArray(resolved.collections),
+    catalogs: cloneCatalogs(resolved.catalogs),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
   };
 }
@@ -137,6 +180,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     out.annotations.push(...doc.annotations.map(remap));
     out.prefabs.push(...doc.prefabs);
     out.collections.push(...doc.collections);
+    out.catalogs = upsertCatalogs(out.catalogs, doc.catalogs);
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
   }
   return out;
@@ -155,6 +199,7 @@ export function extractEditorFragment(doc: EditorDocument, ids: readonly string[
     annotations: doc.annotations.filter((note) => wanted.has(note.id)),
     prefabs: [],
     collections: [],
+    catalogs: [],
   });
 }
 
@@ -177,6 +222,54 @@ export function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab 
  */
 export function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined {
   return doc.collections.find((collection) => collection.id === id);
+}
+
+/**
+ * Looks up a gameplay data catalog by id on the scene document.
+ * @capability editor-catalogs Find a persisted catalog bag by id.
+ */
+export function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined {
+  return doc.catalogs.find((catalog) => catalog.id === id);
+}
+
+/**
+ * Looks up one entry inside a gameplay data catalog.
+ * @capability editor-catalogs Find a catalog entry's meta bag by catalog + entry id.
+ */
+export function findEditorCatalogEntry(
+  doc: EditorDocument,
+  catalogId: string,
+  entryId: string,
+): EditorCatalogEntry | undefined {
+  return findEditorCatalog(doc, catalogId)?.entries.find((entry) => entry.id === entryId);
+}
+
+/**
+ * Seeds default catalog rows from game-exported definitions into a document: missing catalogs and
+ * missing entries are filled from the definition; existing document values win (overlay already applied).
+ * @capability editor-catalogs Seed scene-document catalogs from game-exported schemas.
+ */
+export function seedEditorCatalogs(
+  doc: EditorDocument,
+  definitions: readonly EditorCatalogDefinition[],
+): EditorDocument {
+  if (definitions.length === 0) return doc;
+  const next = cloneCatalogs(doc.catalogs);
+  for (const definition of definitions) {
+    const existingIndex = next.findIndex((catalog) => catalog.id === definition.id);
+    const existing = existingIndex >= 0 ? next[existingIndex]! : undefined;
+    const byId = new Map((existing?.entries ?? []).map((entry) => [entry.id, cloneCatalogEntry(entry)]));
+    for (const entry of definition.entries) {
+      if (!byId.has(entry.id)) byId.set(entry.id, cloneCatalogEntry(entry));
+    }
+    const catalog: EditorCatalogData = {
+      id: definition.id,
+      entries: [...byId.values()],
+    };
+    if (existingIndex >= 0) next[existingIndex] = catalog;
+    else next.push(catalog);
+  }
+  return { ...doc, catalogs: next };
 }
 
 /** True when an object id is a member of any locked collection — blocks move/delete on it.
@@ -543,6 +636,35 @@ function decodeCollection(item: unknown, path: string, errors: EditorDocumentDia
   return collection;
 }
 
+function decodeCatalogEntry(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorCatalogEntry | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") {
+    errors.push({ path: `${path}.id`, message: "expected a string" });
+    return null;
+  }
+  const entry: EditorCatalogEntry = { id: item.id };
+  if (typeof item.label === "string") entry.label = item.label;
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) entry.meta = meta;
+  return entry;
+}
+
+function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorCatalogData | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") {
+    errors.push({ path: `${path}.id`, message: "expected a string" });
+    return null;
+  }
+  const entries = decodeArray(item.entries, `${path}.entries`, decodeCatalogEntry, errors);
+  return { id: item.id, entries };
+}
+
 /**
  * The authoritative decoder/migrator for an editor document arriving from outside this process
  * (disk, network, an agent's `import_document` RPC): validates every field with a path-specific
@@ -562,6 +684,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   const annotations = decodeArray(raw.annotations, "$.annotations", decodeNote, errors);
   const prefabs = decodeArray(raw.prefabs, "$.prefabs", decodePrefab, errors);
   const collections = decodeArray(raw.collections, "$.collections", decodeCollection, errors);
+  const catalogs = decodeArray(raw.catalogs, "$.catalogs", decodeCatalog, errors);
   if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
@@ -577,6 +700,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       annotations,
       prefabs,
       collections,
+      catalogs,
       ...(terrain === undefined ? {} : { terrain }),
     },
   };
@@ -618,6 +742,7 @@ export function applyEditorDocumentOverlay(
     annotations: upsertById(base.annotations, overlay.annotations),
     prefabs: upsertById(base.prefabs, overlay.prefabs),
     collections: upsertById(base.collections, overlay.collections),
+    catalogs: upsertCatalogs(base.catalogs, overlay.catalogs),
     ...(overlay.terrain ?? base.terrain) === undefined
       ? {}
       : { terrain: overlay.terrain ?? base.terrain },

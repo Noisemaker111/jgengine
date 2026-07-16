@@ -79,12 +79,12 @@ Toolbar buttons, `F2+E` (edit ↔ play, same chord family as F2+D devtools), chi
 ## Game opt-in (optional, thin)
 
 ```ts
-// Games/<id>/src/index.tsx
+// Games/<id>/src/index.tsx — also export editorCatalogs for Data-panel tuning
 export { game } from "./game.config";
 export { editorLayers } from "./editorLayers";
 ```
 
-`editorLayers` returns an `EditorDocument` (markers, volumes, paths). Live entities from `onInit` still render without it.
+`editorLayers` → doc. Optional `editorCatalogs` seeds `document.catalogs` (`list|get|set_catalog_entry`; `findEditorCatalogEntry`).
 
 ## Author the scene, don't hardcode it — render it at runtime
 
@@ -364,11 +364,11 @@ Full copyable walkthrough (pole-line + bookcase, zero engine edits): **`examples
 
 ### Drive studio sliders headlessly (agents)
 
-Parametric params live in `meta`; patch them via the RPC/CLI — `set_meta` (any object), `set_path` / `set_marker` / `set_note` (fuller patches). Patches **merge** into `meta` and are **validated against the kind schema** (out-of-range/unknown values are rejected):
+Parametric params live in `meta`; patch via `set_meta` / `set_path` / `set_marker` / `set_note` (merge + schema validate). Catalogs: same SchemaInspector + coalesce via `list|get|set_catalog_entry`:
 
 ```
 bun run drive <id> --mode editor --rpc '{"method":"set_meta","id":"grove","patch":{"density":0.6,"seed":"r2"}}'
-bun run drive <id> --mode editor --rpc '{"method":"set_path","id":"wires","meta":{"spacing":6,"wireCount":4}}'
+bun packages/editor/src/mcp/cli.ts --game tower-guard --rpc '{"method":"set_catalog_entry","catalogId":"towers","entryId":"tower_archer","patch":{"damage":12}}'
 ```
 
 ## Core APIs (`editor/`)
