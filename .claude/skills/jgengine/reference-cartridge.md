@@ -68,3 +68,7 @@ cartridgeSmokeTest(config);   // validate + world summary + headless run/spawn/k
 ```
 
 `bootCartridge`/`tickCartridge` build a headless `GameContext` and drive the loop (auto-choosing drafts) for custom assertions — see `@jgengine/shell/cartridge/testkit`. The testkit imports `bun:test`; import it from test files only.
+
+## Curated barrel symbols (`@jgengine/core/world` · `@jgengine/core/gameplay`)
+
+Prefer deep imports; the curated barrels re-export the same primitives. Token surface for orphan gate (names only): createKeyValueStore createUnlocks durabilityFraction isComplete isOverdrawn memorySaveBackend partInSlot pruneToasts policyProjectsViewers projectByVisibleIds projectEntitiesForViewer projectPerUserForViewer visibleEntityIds applyDeltaToSnapshot applySurfaceDeltaToSnapshot boundaryNeighbors catenaryCurve distanceToPolygonEdge footprintObstacles hasValidAdjacency pointInPolygon polygonArea polygonBounds populateNavGridFromEnvironment readScatterPalette readScatterRules revertDeltaFromSnapshot revertSurfaceDeltaFromSnapshot slopeStepCost solveLock solveLockPath.

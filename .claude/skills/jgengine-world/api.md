@@ -536,6 +536,22 @@
 - `SceneAssetFetcher` (type): type SceneAssetFetcher = (url: string) => void — ⚠ undocumented
 - `createSceneAssetPreloader` (function): function createSceneAssetPreloader(fetcher: SceneAssetFetcher): { preloadUrl(url: string): void; preloadUrls(urls: readonly string[]): void; hasPreloaded(url: string): boolean; reset(): void; } — ⚠ undocumented
 
+## @jgengine/core/scene/authoredTriggers
+
+- `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
+- `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
+- `TriggerActionDefinition` (interface): interface TriggerActionDefinition — A game-declared action the editor can assign to a volume/marker trigger. Schema drives the inspector params; `targets`/`events` optionally narrow where it appears.
+- `TriggerDispatchEvent` (interface): interface TriggerDispatchEvent — Fired when a watched actor trips an authored trigger edge.
+- `TriggerEvent` (type): type TriggerEvent = "enter" | "exit" | "interact" — Event edge that can fire an authored trigger.
+- `TriggerHandlers` (type): type TriggerHandlers = Readonly<Record<string, (event: TriggerDispatchEvent) => void>> — Handler map keyed by action id — unknown actions are skipped unless `onDispatch` is set.
+- `TriggerSourceKind` (type): type TriggerSourceKind = "marker" | "volume" — Document collection a trigger source lives on.
+- `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
+- `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
+- `getTriggerAction` (function): function getTriggerAction(id: string): TriggerActionDefinition | undefined — Registered definition for an action id, or undefined when the game never declared it.
+- `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
+- `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
+- `registerTriggerAction` (function): function registerTriggerAction(definition: TriggerActionDefinition): void — Declare a game action the editor can assign to volume/marker triggers. Idempotent per `id` (last registration wins). Call at module load next to catalogs.
+
 ## @jgengine/core/scene/autoTarget
 
 - `AutoTargetDeps` (interface): interface AutoTargetDeps — ⚠ undocumented
@@ -1841,7 +1857,7 @@
 - `SceneMarkerLike` (interface): interface SceneMarkerLike — The minimal point-object shape clearance reads from a document's markers; any `EditorMarker` satisfies it.
 - `ScenePathLike` (interface): interface ScenePathLike — The minimal polyline shape {@link resolveScatterRegion} et al. read; any `EditorPath` satisfies it.
 - `ScenePoint3` (interface): interface ScenePoint3 — A world-space point — structurally compatible with the editor's `EditorVec3`.
-- `SceneVolumeLike` (interface): interface SceneVolumeLike — The minimal volume shape vegetation/clearance read; any `EditorVolume` satisfies it.
+- `SceneVolumeLike` (interface): interface SceneVolumeLike — The minimal volume shape vegetation/clearance/triggers read; any `EditorVolume` satisfies it.
 
 ## @jgengine/core/world/segment
 

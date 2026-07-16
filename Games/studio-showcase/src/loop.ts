@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { entityMetaOf } from "@jgengine/core/scene/entityStore";
 import { player } from "./game/entities/players/catalog";
+import { tickAuthoredTriggers } from "./game/triggers";
 
 type PlayerMeta = { kind: "player" };
 
@@ -26,6 +27,7 @@ function onTick(ctx: GameContext, dt: number): void {
   const entity = ctx.scene.entity.get(ctx.player.userId);
   if (entity === null) return;
   void entityMetaOf(entity, isPlayerMeta);
+  tickAuthoredTriggers(ctx);
 }
 
 export const loop = { onInit, onNewPlayer, onTick };

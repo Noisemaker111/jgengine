@@ -4,8 +4,11 @@ import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { resolveVolumetricClouds } from "@jgengine/core/world/volumetricClouds";
 import { resolveSoilObject } from "@jgengine/core/world/soilKind";
 
+import { collectAuthoredTriggers } from "@jgengine/core/scene/authoredTriggers";
+
 import { editorLayers } from "../editorLayers";
 import { world } from "../world";
+import "../game/triggers";
 
 describe("studio-showcase world", () => {
   const summary = summarizeEnvironment(world);
@@ -39,5 +42,14 @@ describe("studio-showcase authored studios", () => {
     expect(resolved).not.toBeNull();
     expect(resolved!.rules.crackIntensity).toBeGreaterThan(0);
     expect(resolved!.rules.mossCoverage).toBeGreaterThan(0);
+  });
+
+  test("announce zone carries an authored enter trigger for the announce action", () => {
+    const triggers = collectAuthoredTriggers(editorLayers);
+    const announce = triggers.find((trigger) => trigger.sourceId === "announce_zone");
+    expect(announce).toBeDefined();
+    expect(announce?.on).toBe("enter");
+    expect(announce?.action).toBe("announce");
+    expect(announce?.params.message).toBe("Welcome — authored trigger fired");
   });
 });
