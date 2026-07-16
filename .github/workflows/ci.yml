@@ -27,6 +27,8 @@ jobs:
       - run: bun run check-artifacts
       - run: bun run check-stage-skills
       - run: bun run check-skills
+      - run: bun run build
+      - run: bun run check-skill-api
 
   checks:
     if: github.event_name == 'push'
@@ -89,7 +91,19 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      issues: write
     steps:
       - run: |
           ok() { test "$1" = "success" || test "$1" = "skipped"; }
           test "${{ needs.quick.result }}" = "success" && ok "${{ needs.checks.result }}" && ok "${{ needs.web-build.result }}" && ok "${{ needs.smoke.result }}"
+      - name: Report red main as an issue
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="CI red on main"
+          body="[Run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) failed on \`${{ github.sha }}\`. Fix forward from origin/main on a fresh branch, then close this."
+          n=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' || true)
+          if [ -n "$n" ]; then gh issue comment "$n" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
