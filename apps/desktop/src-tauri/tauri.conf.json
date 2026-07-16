@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "JGengine Player",
+  "productName": "JGengine",
   "version": "0.1.0",
   "identifier": "dev.jgengine.player",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "JGengine Player",
+        "title": "JGengine",
         "width": 1280,
         "height": 800,
         "resizable": true

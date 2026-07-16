@@ -39,6 +39,8 @@ describe("CUTLIST surface diet", () => {
   test("desktop default game id is a tracked real game, not a missing id", () => {
     const desktop = readFileSync(join(root, "apps/desktop/src/main.tsx"), "utf8");
     expect(desktop).toMatch(/DEFAULT_GAME_ID\s*=\s*"studio-showcase"/);
+    expect(desktop).toMatch(/SHOW_LAUNCHER/);
+    expect(desktop).toMatch(/Launcher/);
     expect(desktop).not.toMatch(/"voxel-mine"/);
     const gamesDir = join(root, "Games");
     const tracked = readdirSync(gamesDir).filter((name) => {
