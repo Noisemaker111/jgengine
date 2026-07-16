@@ -210,7 +210,7 @@ test("createHttpReads round-trips against the handler", async () => {
   expect((await reads.getPlayerProfile("alice"))?.userId).toBe("alice");
 });
 
-test("public server listings omit join codes", async () => {
+test("private servers are absent from public listings", async () => {
   const handler = createReadsHandler({
     persistence: fakePersistence({
       listServers: async () => [
@@ -219,12 +219,11 @@ test("public server listings omit join codes", async () => {
           visibility: "private",
           joinCode: "SECRET1",
         }),
+        makeServer({ serverId: "public-room", visibility: "public" }),
       ],
     }),
   });
   const response = await get(handler, "/api/servers?gameId=demo");
   const listings = (await response.json()) as { serverId: string; joinCode?: string }[];
-  expect(listings).toHaveLength(1);
-  expect(listings[0]?.serverId).toBe("private-room");
-  expect(listings[0]?.joinCode).toBeUndefined();
+  expect(listings.map((listing) => listing.serverId)).toEqual(["public-room"]);
 });
