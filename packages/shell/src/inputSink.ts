@@ -1,5 +1,5 @@
 import { INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
-import type { LiveGameBackend } from "@jgengine/core/runtime/transport";
+import type { LiveGameBackend, TransportRunCommandResult } from "@jgengine/core/runtime/transport";
 
 /** Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`. */
 export interface InputSink {
@@ -13,15 +13,69 @@ export function noopInputSink(): InputSink {
   return { send() {} };
 }
 
-/** Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via {@link INPUT_COMMAND}.
+interface RemoteInputSource {
+  pending: InputFrame | null;
+  inFlight: boolean;
+}
+
+const remoteInputSources = new Map<string, RemoteInputSource>();
+
+function remoteInputSourceFor(serverId: string): RemoteInputSource {
+  let source = remoteInputSources.get(serverId);
+  if (source === undefined) {
+    source = { pending: null, inFlight: false };
+    remoteInputSources.set(serverId, source);
+  }
+  return source;
+}
+
+function monotonicInputSeq(): number {
+  return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+}
+
+function pumpRemoteInput(
+  backend: Pick<LiveGameBackend, "transport">,
+  serverId: string,
+  source: RemoteInputSource,
+): void {
+  if (source.inFlight) return;
+  const frame = source.pending;
+  if (frame === null) {
+    remoteInputSources.delete(serverId);
+    return;
+  }
+  source.pending = null;
+  source.inFlight = true;
+  const seq = monotonicInputSeq();
+  void backend.transport
+    .runCommand({ serverId, command: INPUT_COMMAND, input: { ...frame, seq } })
+    .then((result: TransportRunCommandResult) => {
+      if (!result.ok) {
+        console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" rejected: ${result.reason}`);
+      }
+    })
+    .catch((error: unknown) => {
+      console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" failed to send`, error);
+    })
+    .finally(() => {
+      source.inFlight = false;
+      pumpRemoteInput(backend, serverId, source);
+    });
+}
+
+/**
+ * Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via
+ * {@link INPUT_COMMAND}. Sends are sequenced one-in-flight-at-a-time per `serverId` and stamped with a monotonic
+ * seq: a frame sent while one is already in flight replaces the pending frame rather than racing it, so the
+ * latest intent always wins and a stale frame can never resolve after (and overwrite) a newer one.
  * @internal
  */
 export function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink {
   return {
     send(frame) {
-      void backend.transport
-        .runCommand({ serverId, command: INPUT_COMMAND, input: frame })
-        .catch(() => undefined);
+      const source = remoteInputSourceFor(serverId);
+      source.pending = frame;
+      pumpRemoteInput(backend, serverId, source);
     },
   };
 }

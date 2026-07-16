@@ -41,9 +41,23 @@ export interface WorldHost {
  */
 export function createWorldHost(session: HostedWorldSession): WorldHost {
   const connections = new Set<WorldHostConnection>();
+  const connectionsByUser = new Map<string, Set<WorldHostConnection>>();
 
   function connect(userId: string, send: (frame: WorldServerFrame) => void): WorldHostConnection {
     let cursor = 0;
+    let released = false;
+    function release(): void {
+      if (released) return;
+      released = true;
+      connections.delete(connection);
+      const peers = connectionsByUser.get(userId);
+      if (peers === undefined) return;
+      peers.delete(connection);
+      if (peers.size === 0) {
+        connectionsByUser.delete(userId);
+        session.leave(userId);
+      }
+    }
     const connection: WorldHostConnection = {
       receive(frame) {
         switch (frame.t) {
@@ -51,7 +65,7 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
             session.join(userId, frame.isNew);
             break;
           case "leave":
-            session.leave(userId);
+            release();
             break;
           case "command":
             session.command(userId, frame.name, frame.input);
@@ -62,6 +76,7 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
         }
       },
       push() {
+        if (released) return;
         if (cursor !== 0 && cursor === session.revision()) return;
         const sync = session.sync(cursor === 0 ? null : cursor);
         if (sync.kind === "baseline") {
@@ -72,11 +87,15 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
           send({ t: "diff", diff: sync.diff });
         }
       },
-      close() {
-        connections.delete(connection);
-      },
+      close: release,
     };
     connections.add(connection);
+    let peers = connectionsByUser.get(userId);
+    if (peers === undefined) {
+      peers = new Set();
+      connectionsByUser.set(userId, peers);
+    }
+    peers.add(connection);
     return connection;
   }
 
