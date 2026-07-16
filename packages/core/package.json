@@ -1,18 +1,18 @@
 {
   "name": "@jgengine/core",
   "version": "0.10.0",
-  "description": "jgengine core — TypeScript game framework SDK for AI agents (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. https://jgengine.com",
+  "description": "jgengine core — agent-first game framework SDK (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. https://jgengine.com",
   "keywords": [
     "jgengine",
-    "game-engine",
+    "agent-first",
     "game-framework",
-    "typescript-game-engine",
-    "javascript-game-engine",
+    "typescript-game-framework",
     "typescript",
-    "multiplayer"
+    "multiplayer",
+    "game-engine"
   ],
   "homepage": "https://jgengine.com",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

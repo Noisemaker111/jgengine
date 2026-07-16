@@ -2,7 +2,7 @@
   "name": "@jgengine/shell",
   "version": "0.10.0",
   "description": "Game player shell for JGengine: React Three Fiber canvas, orbit camera, input tracking, HUD mounting, GameUiPreview, and a demo game. Consumers supply a GameRegistry.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

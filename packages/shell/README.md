@@ -13,7 +13,7 @@ const games: GameRegistry = {
 <GamePlayerShell playable={await games["my-game"]()} />;
 ```
 
-Peer deps: `react`, `three`, `@react-three/fiber`, `@react-three/drei`, `three-stdlib`. The shell's HUD classes are Tailwind — add an `@source` entry for `node_modules/@jgengine/shell` in your CSS. AGPL-3.0-only.
+Peer deps: `react`, `three`, `@react-three/fiber`, `@react-three/drei`, `three-stdlib`. The shell's HUD classes are Tailwind — add an `@source` entry for `node_modules/@jgengine/shell` in your CSS. Apache-2.0.
 
 Weather primitives are available from `@jgengine/shell/weather` for game scene overlays:
 

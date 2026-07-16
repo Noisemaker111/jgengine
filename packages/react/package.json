@@ -2,7 +2,7 @@
   "name": "@jgengine/react",
   "version": "0.10.0",
   "description": "React UI layer for JGengine: GameProvider, hooks, and headless primitives over @jgengine/core.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

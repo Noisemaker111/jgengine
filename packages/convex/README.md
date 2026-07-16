@@ -46,4 +46,4 @@ Every factory defaults to `auth: "anonymous"` — the client's `externalId` is t
 
 See `examples/convex-host` for the reference thin consumer (`bunx convex dev` codegens `convex/_generated/` and prints the dev URL). Point any game that declares `multiplayer: convex({ topology: "shared" })` at the same deployment. No Convex Cloud account is needed — `examples/convex-host/docker-compose.yml` runs the open-source backend anywhere Docker runs, with `CONVEX_SELF_HOSTED_URL`/`CONVEX_SELF_HOSTED_ADMIN_KEY` pointing the same CLI at it.
 
-Part of [JGengine](https://github.com/Noisemaker111/jgengine). AGPL-3.0-only.
+Part of [JGengine](https://github.com/Noisemaker111/jgengine). Apache-2.0.

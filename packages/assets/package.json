@@ -2,7 +2,7 @@
   "name": "@jgengine/assets",
   "version": "0.10.0",
   "description": "Self-generating, license-verified index of thousands of CC0 3D models for JGengine. Sources fetch from providers' own CDNs at pull time; the npm tarball ships only the typed index and CLI (no GLB bytes).",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {
