@@ -147,8 +147,8 @@ bun run drive the-robots --mode editor --rpc '{"method":"set_mode","mode":"play"
 Headless document tools (no WebGL — document verbs only, no camera/perf):
 
 ```
-bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'
-bun packages/editor/src/mcp/cli.ts --game the-robots --rpc-file payload.json  # large import_document / --rpc -
+bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"list_layers"}'   # chain more --rpc to run them in order on one session (create_terrain → sculpt_terrain → …)
+bun packages/editor/src/mcp/cli.ts --game the-robots --serve   # POST localhost:17373/rpc
 bun packages/editor/src/mcp/cli.ts --game the-robots --stdio   # MCP JSON-RPC on stdin/stdout
 ```
 

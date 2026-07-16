@@ -24,9 +24,7 @@ function printHelp(): void {
 
   --game <id>          game id under Games/ (default the-robots)
   --port <n>           HTTP bridge port (default 17373)
-  --rpc '<json>'       run one RPC and exit (inline JSON)
-  --rpc -              run one RPC from stdin JSON
-  --rpc-file <path>    run one RPC from a JSON file (large import_document etc.)
+  --rpc '<json>'       run an RPC and exit; repeat to run several in order on one session
   --stdio              MCP JSON-RPC over stdin/stdout
   --tools              list MCP tool names
   --serve              keep the localhost HTTP bridge up (default when no --rpc/--rpc-file/--stdio)
@@ -92,10 +90,28 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const options = parseEditorCliArgs(argv);
+  let gameId = "the-robots";
+  let port = 17373;
+  const rpcRaws: string[] = [];
+  let serve = true;
+  let stdio = false;
 
-  if (options.stdio) {
-    await runEditorMcpStdio({ gameId: options.gameId });
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!;
+    if (arg === "--game") gameId = argv[++i] ?? gameId;
+    else if (arg === "--port") port = Number(argv[++i] ?? port);
+    else if (arg === "--rpc") {
+      const raw = argv[++i];
+      if (raw !== undefined) rpcRaws.push(raw);
+      serve = false;
+    } else if (arg === "--stdio") {
+      stdio = true;
+      serve = false;
+    } else if (arg === "--serve") serve = true;
+  }
+
+  if (stdio) {
+    await runEditorMcpStdio({ gameId });
     return 0;
   }
 
@@ -116,45 +132,30 @@ async function main(argv: string[]): Promise<number> {
     catalogs: catalogs.catalogs,
   });
 
-  if (options.rpcSource !== null) {
-    if (options.rpcSource.kind === "file" && options.rpcSource.path === "") {
-      console.error(
-        JSON.stringify(
-          {
-            ok: false,
-            error: "missing path for --rpc-file. Usage: --rpc-file <path> (or --rpc - for stdin)",
-          },
-          null,
-          2,
-        ),
-      );
-      dispose();
-      return 1;
+  if (rpcRaws.length > 0) {
+    let allOk = true;
+    for (const rpcRaw of rpcRaws) {
+      const decoded = decodeEditorBridgeRequest(JSON.parse(rpcRaw));
+      if (!decoded.ok) {
+        console.log(
+          JSON.stringify(
+            { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
+            null,
+            2,
+          ),
+        );
+        allOk = false;
+        break;
+      }
+      const response = api.handle(decoded.request);
+      console.log(JSON.stringify(response, null, 2));
+      if (!response.ok) {
+        allOk = false;
+        break;
+      }
     }
-
-    const loaded = await loadRpcPayload(options.rpcSource);
-    if (!loaded.ok) {
-      console.error(JSON.stringify({ ok: false, error: loaded.error }, null, 2));
-      dispose();
-      return 1;
-    }
-
-    const decoded = decodeEditorBridgeRequest(loaded.value);
-    if (!decoded.ok) {
-      console.log(
-        JSON.stringify(
-          { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
-          null,
-          2,
-        ),
-      );
-      dispose();
-      return 1;
-    }
-    const response = api.handle(decoded.request);
-    console.log(JSON.stringify(response, null, 2));
     dispose();
-    return response.ok ? 0 : 1;
+    return allOk ? 0 : 1;
   }
 
   if (options.serve) {
