@@ -367,4 +367,68 @@ describe("editor host RPC", () => {
     unsub();
     dispose();
   });
+
+  test("runtime_summary/get/set write back to the document and pause/step control works", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 }, meta: { team: "red" } }],
+      },
+    });
+
+    api.handle({
+      method: "push_runtime_delta",
+      entities: [{ id: "spawn", position: { x: 0, y: 0, z: 0 }, values: { team: "red" } }],
+      tunables: { wind: 1 },
+    });
+
+    const summary = api.handle({ method: "runtime_summary" });
+    expect(summary.ok).toBe(true);
+    expect((summary.result as { entityCount: number }).entityCount).toBe(1);
+    expect((summary.result as { tunableKeys: string[] }).tunableKeys).toContain("wind");
+    expect((summary.result as { play: { paused: boolean } }).play.paused).toBe(false);
+
+    const got = api.handle({ method: "runtime_get", id: "spawn", path: "values.team" });
+    expect(got.ok).toBe(true);
+    expect((got.result as { value: string }).value).toBe("red");
+
+    const setPos = api.handle({
+      method: "runtime_set",
+      id: "spawn",
+      position: { x: 40, y: 0, z: -10 },
+    });
+    expect(setPos.ok).toBe(true);
+    expect((setPos.result as { writeBack: boolean }).writeBack).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.position.x).toBe(40);
+
+    const setMeta = api.handle({
+      method: "runtime_set",
+      id: "spawn",
+      path: "values.team",
+      value: "blue",
+    });
+    expect(setMeta.ok).toBe(true);
+    expect(api.getSession().getState().document.markers[0]?.meta?.team).toBe("blue");
+
+    const undone = api.handle({ method: "undo" });
+    expect(undone.ok).toBe(true);
+
+    const pause = api.handle({ method: "runtime_pause" });
+    expect(pause.ok).toBe(true);
+    expect(api.getPlayControl().paused).toBe(true);
+
+    const step = api.handle({ method: "runtime_step", frames: 3 });
+    expect(step.ok).toBe(true);
+    expect(api.getPlayControl().pendingSteps).toBe(3);
+
+    const resume = api.handle({ method: "runtime_resume" });
+    expect(resume.ok).toBe(true);
+    expect(api.getPlayControl().paused).toBe(false);
+
+    const tunable = api.handle({ method: "runtime_set", id: "tunable:wind", value: 4 });
+    expect(tunable.ok).toBe(true);
+    expect(api.getLiveSync().getRuntimeState().tunables.wind).toBe(4);
+
+    dispose();
+  });
 });

@@ -273,6 +273,62 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
+    name: "runtime_summary",
+    description: "Compact play-mode inspector summary: entities, tunables, overrides, pause/step state.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "runtime_get",
+    description: "Read one live runtime entity (or path) or a tunable:id from the reverse channel.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        path: { type: "string" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "runtime_set",
+    description:
+      "Play-mode poke: set entity position/rotation/values or a tunable. writeBack (default true) promotes document-linked edits into an undoable scene patch.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        path: { type: "string" },
+        value: {},
+        position: { type: "object" },
+        rotationY: { type: "number" },
+        values: { type: "object" },
+        writeBack: { type: "boolean" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "runtime_pause",
+    description: "Pause simulation while in play mode (pause-and-poke).",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "runtime_resume",
+    description: "Resume simulation after a play-mode pause.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
+    name: "runtime_step",
+    description: "While paused, run N simulation frames (default 1) then re-pause.",
+    inputSchema: {
+      type: "object",
+      properties: { frames: { type: "number" } },
+      additionalProperties: false,
+    },
+  },
+  {
     name: "set_runtime_override",
     description: "Set an ephemeral runtime override (play-mode poke). Document stays authoritative until write_back_override.",
     inputSchema: {

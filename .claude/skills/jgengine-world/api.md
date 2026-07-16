@@ -1146,9 +1146,6 @@
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
-- `PlaceAssetFromCommitOptions` (interface): interface PlaceAssetFromCommitOptions — Optional catalog/label overrides for {@link placeAssetFromCommit}.
-- `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
-- `PlaceAssetVec3` (type): type PlaceAssetVec3 = { x: number; y: number; z: number } — World-space point shared by structure stores and editor markers.
 - `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
 - `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
 - `PlacementController` (interface): interface PlacementController — ⚠ undocumented
@@ -1163,7 +1160,6 @@
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
 - `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField — ⚠ undocumented
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
-- `ResolvePlaceAssetInput` (interface): interface ResolvePlaceAssetInput — Inputs to {@link resolvePlaceAsset}: asset id, pose, and optional catalog/known fields.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
@@ -1309,7 +1305,7 @@
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
-- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — ⚠ undocumented
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
@@ -1372,7 +1368,6 @@
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
-- `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
 - `player` (function): function player(): PlayerBehavior — ⚠ undocumented
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
@@ -1381,7 +1376,7 @@
 - `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
 - `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
 - `proximityPrompt` (function): function proximityPrompt({ radius, display, invoke = null }: ProximityPromptConfig): ProximityPrompt — ⚠ undocumented
-- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
+- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — ⚠ undocumented
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
 - `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
@@ -1393,7 +1388,6 @@
 - `resolveActivePrompt` (function): function resolveActivePrompt<T extends PositionedPrompt>(playerPosition: PromptPoint, prompts: readonly T[]): T | null — Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal priority and distance keep the earliest prompt in the list.
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
-- `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
@@ -1435,10 +1429,8 @@
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
-- `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
-- `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
-- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — ⚠ undocumented
 - `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented

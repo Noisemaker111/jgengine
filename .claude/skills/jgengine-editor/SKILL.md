@@ -373,9 +373,9 @@ bun packages/editor/src/mcp/cli.ts --game tower-guard --rpc '{"method":"set_cata
 
 ## Core APIs (`editor/`)
 
-- `@jgengine/core/editor/index` — document, session, commands, undo, **liveSync** (`createDocumentLiveSync`, `applyDocumentPatch`, `push_document_patch`/`push_runtime_delta`; document authoritative, overrides ephemeral until `write_back_override`)
-- `@jgengine/editor` — `EditorApp`, `createEditorHost`/`getEditorHost`, bridge; `@jgengine/shell/scene` `<AuthoredScene live>` hot-applies patches
-- Headless: `push_document_patch` · `pull_document_patches` · `document_revision` · `push_runtime_delta` · `pull_runtime_deltas` · `write_back_override`
+- `@jgengine/core/editor/index` — document, session, undo, liveSync (`createDocumentLiveSync`, `applyDocumentPatch`, `summarizeRuntimeInspector`, `planRuntimeInspectorSet`, `createRuntimePlayControl`, `consumeRuntimePlayStep`)
+- `@jgengine/editor` — `EditorApp`, `createEditorHost`/`getEditorHost`, play-mode Runtime panel; `<AuthoredScene live>` hot-applies patches
+- Headless: `runtime_summary` · `runtime_get` · `runtime_set` (write-back default) · `runtime_pause`/`runtime_step` · `write_back_override`
 
 ## Do not
 

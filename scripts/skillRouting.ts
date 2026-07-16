@@ -93,8 +93,11 @@ export function skillForModule(pkg: string, modulePath: string): string | null {
   if (moduleOverride !== undefined) return moduleOverride;
   const domain = modulePath.split("/")[0];
   if (domain === undefined || CORE_INTERNAL_DOMAINS.has(domain)) return null;
-  // Domain barrels (`world.ts`, `gameplay.ts`, …) use the domain skill; root files stay on MAIN.
-  if (!modulePath.includes("/")) return CORE_DOMAIN_SKILLS[domain] ?? MAIN;
+  if (!modulePath.includes("/")) {
+    if (modulePath === "gameplay") return "jgengine-gameplay";
+    if (modulePath === "procedural") return "jgengine-world";
+    return CORE_DOMAIN_SKILLS[modulePath] ?? MAIN;
+  }
   const skill = CORE_DOMAIN_SKILLS[domain];
   if (skill === undefined) {
     throw new Error(

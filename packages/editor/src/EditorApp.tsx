@@ -18,6 +18,7 @@ import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
 import { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
 import { TerrainSculpt } from "./TerrainSculpt";
+import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
 import { createEditorUiStore, type EditorUiStore, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
@@ -354,13 +355,20 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     if (mode === "play") {
       const BaseUI = playable.GameUI;
       const BaseOverlay = playable.WorldOverlay;
+      const useBuiltinPlayChrome = resolvedModeChip === EditorModeChip;
       return {
         ...playable,
         GameUI: function EditorPlayUi() {
+          const onExit = useCallback(() => host.api.setMode("edit"), []);
+          useF2Chord("KeyE", onExit);
           return (
             <>
               {BaseUI !== undefined ? <BaseUI /> : null}
-              <EditorModeChipHost api={host.api} mode="play" chip={resolvedModeChip} />
+              {useBuiltinPlayChrome ? (
+                <RuntimePlayInspectorChrome api={host.api} onExit={onExit} />
+              ) : (
+                <EditorModeChipHost api={host.api} mode="play" chip={resolvedModeChip} />
+              )}
             </>
           );
         },
@@ -369,6 +377,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
             <>
               {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
               <PerfProbe api={host.api} />
+              <RuntimePlayPublisher api={host.api} />
             </>
           );
         },
