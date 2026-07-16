@@ -3,12 +3,11 @@ import { describe, expect, test } from "bun:test";
 import {
   applyMotionImpulses,
   hasEnvironmentTerrain,
-  heldActionsFor,
   nearbyObstacles,
   resolvePhysicsTuning,
   resolveWorldSky,
-  shouldFireBoundAction,
 } from "./GamePlayerShell";
+import { heldActionsFor, shouldFireBoundAction } from "./boundActionDispatch";
 import { advanceVoxelPlayer, createVoxelPlayerBody } from "@jgengine/core/movement/voxelController";
 import { resolveMovementIntent, createEmptyMovementKeys } from "@jgengine/core/movement/movementModel";
 

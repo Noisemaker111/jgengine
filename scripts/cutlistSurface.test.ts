@@ -75,4 +75,20 @@ describe("CUTLIST surface diet", () => {
     expect(block).toMatch(/shell\s*:/);
     expect(block).toMatch(/react\s*:/);
   });
+
+  test("CRITIQUE-ACTIONS.md is the living backlog", () => {
+    const path = join(root, "CRITIQUE-ACTIONS.md");
+    expect(existsSync(path)).toBe(true);
+    const text = readFileSync(path, "utf8");
+    expect(text).toMatch(/## P0/);
+    expect(text).toMatch(/H1/);
+    expect(text).toMatch(/resolveAuthority|isPresenceOnly|boundActionDispatch/);
+  });
+
+  test("core package.json does not market ECS as a keyword", () => {
+    const pkg = JSON.parse(readFileSync(join(root, "packages/core/package.json"), "utf8")) as {
+      keywords?: string[];
+    };
+    expect(pkg.keywords ?? []).not.toContain("ecs");
+  });
 });

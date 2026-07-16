@@ -1,15 +1,15 @@
 {
   "name": "@jgengine/core",
   "version": "0.10.0",
-  "description": "jgengine core — genre-agnostic TypeScript game engine SDK (npm @jgengine/core). Runtime, scene, combat, inventory, multiplayer primitives. Zero dependencies. https://jgengine.com",
+  "description": "jgengine core — TypeScript game framework SDK for AI agents (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. https://jgengine.com",
   "keywords": [
     "jgengine",
     "game-engine",
+    "game-framework",
     "typescript-game-engine",
     "javascript-game-engine",
     "typescript",
-    "multiplayer",
-    "ecs"
+    "multiplayer"
   ],
   "homepage": "https://jgengine.com",
   "license": "AGPL-3.0-only",

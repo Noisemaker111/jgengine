@@ -1,7 +1,8 @@
 # Changelog
 
-All eight `@jgengine/*` packages are versioned in lockstep, so this one file
-covers every release. Format follows [Keep a Changelog](https://keepachangelog.com);
+The lockstep game SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`
+(this file’s 0.x.y releases). The CLI package `jgengine` and `@jgengine/github` use
+**separate** version lines and may lag. Format follows [Keep a Changelog](https://keepachangelog.com);
 each release **leads with a Migrate block** — the concrete steps to move a game
 from the previous version onto the new APIs — because the point of a bump is to
 let consumers pick up the better stuff, not just to list what moved.

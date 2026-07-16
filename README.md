@@ -4,17 +4,21 @@
 
 # jgengine
 
-**TypeScript game engine SDK** for AI agents — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
+**TypeScript game framework SDK for AI agents** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
 
-> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is a software game engine.
+> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is software — a pure-TypeScript **framework** (entity stores, commands, catalogs, multiplayer seams, R3F shell), not an ECS and not a general-purpose 3D engine.
 
-A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Agents build games on the SDK using JGengine Skills, which provide intake, focused API guidance, and verification. The core has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres, with socket.io, WebRTC peer-to-peer, and LAN as drop-in transports over the same protocol.
+Built so coding agents can ship games from a short prompt. Skills provide intake, focused API guidance, and verification. `@jgengine/core` has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo still ships a wide primitive set — skills route selectively so agents do not load every domain by default.
+
+**Backlog from the 2026-07 critique:** [CRITIQUE-ACTIONS.md](CRITIQUE-ACTIONS.md).
 
 ## Packages
 
+**Versions:** the lockstep game SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}` (currently **0.10.x** — bump together). Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
+
 | Package | What it is |
 | --- | --- |
-| [`@jgengine/core`](packages/core) | The engine SDK: game runtime, transport/save, state store, entity scene + object store, pool stats/targeting/spatial, combat effects/projectiles/death, loot/trade/quest/social/loadout/unlocks/events/feed/leaderboard, item use, movement/camera/pose, input, interaction, inventory/stats/economy, world features, clocks. Zero dependencies. |
+| [`@jgengine/core`](packages/core) | Framework core: `GameContext`, entity/object stores, commands, combat, inventory, multiplayer contracts, world features. Zero dependencies. Import by deep path. |
 | [`@jgengine/react`](packages/react) | React UI layer: `GameProvider`, hooks, headless primitives. |
 | [`@jgengine/ws`](packages/ws) | Browser-safe game backend over a pluggable transport pipe (WebSocket/socket.io/WebRTC/loopback): protocol codec, `createWsBackend`, `createHttpReads`, a browser-safe authoritative host + router, and WebRTC P2P sessions. |
 | [`@jgengine/node`](packages/node) | Node bindings over `@jgengine/ws`'s host: WebSocket server, socket.io server attach, memory/file persistence, save-cadence flush. |
@@ -23,8 +27,8 @@ A genre-agnostic, pure-TypeScript game engine SDK built for AI coding agents. Ag
 | [`@jgengine/shell`](packages/shell) | Game player shell: R3F canvas, orbit camera, input tracking, HUD mounting, `GameUiPreview`, demo game. You supply a `GameRegistry`. |
 | [`@jgengine/assets`](packages/assets) | Self-generating, license-verified index of CC0 3D models: ships the typed index + pull CLI, not the GLB bytes. |
 | [`@jgengine/editor`](packages/editor) | Scene/world/asset editor, loaded lazily by the runner; runs standalone on any folder via `npx jgengine editor` or the desktop app (`StandaloneEditor`); agent bridge via `jgengine editor-mcp`. |
-| [`@jgengine/github`](packages/github) | GitHub data source: contribution calendar fetch for games that render real profile data. Zero dependencies. |
-| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, desktop. **People** do not start here; they tell an agent *Make a game that … with jgengine*. |
+| [`@jgengine/github`](packages/github) | GitHub data source: contribution calendar fetch for games that render real profile data. Zero dependencies. Own version line. |
+| [`jgengine`](packages/jgengine) | Agent-side CLI (`npx jgengine`) — create, skills, doctor, desktop. Own version line. **People** tell an agent *Make a game that … with jgengine*. |
 
 ## Install
 
@@ -93,4 +97,6 @@ and go star his work.
 
 ## License
 
-[AGPL-3.0-only](LICENSE)
+[AGPL-3.0-only](LICENSE).
+
+**Who this fits.** AGPL is intentional for network-hosted engine derivatives: if you modify the engine and run it as a service, share the source. It is a good fit for OSS, research, and agent-built prototypes. **Shipping a closed commercial product on the engine needs a legal read** (and often a dual-license conversation with the maintainer) — do not assume AGPL is “permissive free.” See [CRITIQUE-ACTIONS.md](CRITIQUE-ACTIONS.md) H3.

@@ -31,14 +31,17 @@ const sharedGltfLoader = new GLTFLoader(modelLoadingManager);
 sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
 import {
-  actionRepeatMs,
   createActionStateTracker,
   hotbarSlotActionIndex,
-  resolveActionCommand,
-  shouldDispatchAction,
   toActionStateBindingMap,
   type ActionStateTracker,
 } from "@jgengine/core/input/actionBindings";
+import {
+  RESERVED_INPUT_ACTIONS,
+  dispatchBoundAction,
+  heldActionsFor,
+  shouldFireBoundAction,
+} from "./boundActionDispatch";
 import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
 import {
   buildContextMenu,
@@ -63,7 +66,7 @@ import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { attachWorldSync } from "./worldSync";
-import { localCommandSink, resolveCommandSink, type CommandSink } from "./commandSink";
+import { resolveCommandSink, type CommandSink } from "./commandSink";
 import { inputFramesEqual, resolveInputSink, type InputSink } from "./inputSink";
 import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
@@ -210,21 +213,6 @@ function logRuntimeError(error: unknown, phase: string, componentStack?: string)
   return diagnostic;
 }
 
-const RESERVED_INPUT_ACTIONS: ReadonlySet<string> = new Set([
-  "moveForward",
-  "moveBack",
-  "moveLeft",
-  "moveRight",
-  "turnLeft",
-  "turnRight",
-  "sprint",
-  "jump",
-  "tabTarget",
-  "clearTarget",
-  "useAbility",
-  "interact",
-]);
-
 /** No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own. */
 const EMPTY_RESERVED: ReadonlySet<string> = new Set();
 
@@ -237,6 +225,13 @@ function shellDrivesPlayerPose(input: PlayableGame["game"]["input"]): boolean {
   const bound = input ?? {};
   return SHELL_MOVEMENT_ACTIONS.some((action) => action in bound);
 }
+
+export {
+  heldActionsFor,
+  shouldFireBoundAction,
+  dispatchBoundAction,
+  RESERVED_INPUT_ACTIONS,
+} from "./boundActionDispatch";
 
 function findHotbarSlotActions(input: PlayableGame["game"]["input"]): { action: string; slot: number }[] {
   return Object.keys(input ?? {}).flatMap((action) => {
@@ -304,42 +299,6 @@ function GamePhaseStamp() {
     document.documentElement.dataset.jgPhase = phase;
   }, [phase]);
   return null;
-}
-
-/** Actions from `input` currently held down, for `ctx.input.publish` (#164.1); includes reserved movement/jump actions. */
-export function heldActionsFor(tracker: Pick<ActionStateTracker<string>, "isDown">, actions: readonly string[]): string[] {
-  return actions.filter((action) => tracker.isDown(action));
-}
-
-/** Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`). */
-export function shouldFireBoundAction(
-  tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">,
-  action: string,
-  input: PlayableGame["game"]["input"],
-  repeatFiredAt: ReadonlyMap<string, number>,
-  now: number,
-): boolean {
-  return shouldDispatchAction({
-    pressed: tracker.wasPressed(action),
-    down: tracker.isDown(action),
-    repeatMs: actionRepeatMs(input?.[action]),
-    lastFiredAt: repeatFiredAt.get(action) ?? null,
-    now,
-  });
-}
-
-/** Resolves and runs the command bound to `action` via the shell's action→command convention (shared by `FrameDriver` and `HudOnlyDriver`). */
-export function dispatchBoundAction(
-  ctx: GameContext,
-  action: string,
-  yaw: number,
-  pitch: number,
-  aim: Aim,
-  reserved: ReadonlySet<string> = RESERVED_INPUT_ACTIONS,
-  sink: CommandSink = localCommandSink(ctx),
-): void {
-  const command = resolveActionCommand(action, (name) => ctx.game.commands.has(name), reserved);
-  if (command !== null) sink.run(command, { yaw, pitch, aim });
 }
 
 export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
