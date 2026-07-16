@@ -32,6 +32,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world/footprintGrid"`
 
+## forward-axis — declared front convention for parametric assets — auto-orient product shots
+
+- `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing"`
+
 ## glide — gliding/wingsuit descent control from a launch
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/movement/glideModel"`

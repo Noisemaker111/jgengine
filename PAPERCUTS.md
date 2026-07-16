@@ -217,3 +217,12 @@ shoot --keep leaves a fixed-port (4517) dev server running; a different worktree
 2026-07-15T15:15:01.553Z - sonnet-4.5 - Claude
 
 pr-shots fails from a git worktree - .git is a pointer file there, not a dir, so its index-lock path (.git/pr-shots-index-N.lock) throws ENOTDIR; worked around by running it from the main checkout with --branch override
+
+2026-07-16T00:39:44.289Z — Claude Opus 4.8 — Claude
+
+drive/shoot hardcode DEV_PORT=4517 with no override — a concurrent worktree session already squatting that port made bun run drive silently screenshot the OTHER session's app for ~10 rounds, no error, just wrong content; had to hand-roll a private-port dev server + CDP harness to get a trustworthy shot
+
+2026-07-16T00:44:20.180Z — Claude Opus 4.8 — Claude
+
+bun run pr-shots fails in a git worktree checkout — it hardcodes GIT_INDEX_FILE=.git/pr-shots-index-PID, but .git is a file (not a dir) under a worktree, so git errors 'Not a directory'; had to hand-run the same plumbing with an absolute tmp index path
+

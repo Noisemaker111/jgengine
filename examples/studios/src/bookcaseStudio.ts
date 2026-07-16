@@ -11,6 +11,7 @@ import {
   type GeneratedAsset,
   type GeneratedPart,
 } from "@jgengine/core/scene/assetGenerator";
+import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing";
 import type { ParamSchema, ParsedParams } from "@jgengine/core/scene/sceneKinds";
 
 /** The generator id a catalog entry / placed marker references. */
@@ -94,7 +95,7 @@ export function generateBookcase(params: ParsedParams, seed: string): GeneratedA
       index += 1;
     }
   }
-  return { parts, bounds: partsBounds(parts) };
+  return { parts, bounds: partsBounds(parts), forward: DEFAULT_FORWARD };
 }
 
 /** Register the bookcase generator asset. One call — no engine edits. */

@@ -28,6 +28,13 @@ export interface GeneratedPart {
 export interface GeneratedAsset {
   parts: GeneratedPart[];
   bounds: { min: readonly [number, number, number]; max: readonly [number, number, number] };
+  /**
+   * The declared local-space direction the asset's "front" faces (a bookcase's open/book face, a
+   * building's entrance) — so a camera rig or placement tool can orient it without hand-tuned
+   * `rotationY`. Omit to use the convention default, +Z (`DEFAULT_FORWARD` in `./facing`); every
+   * generator should build its front toward +Z unless it declares otherwise.
+   */
+  forward?: readonly [number, number, number];
 }
 
 /** A registered asset generator — schema drives the inspector; `generate` is a pure seeded function. */

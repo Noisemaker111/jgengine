@@ -53,11 +53,12 @@ runtime, never baked.
 
 ```ts
 import { registerAssetGenerator, partsBounds } from "@jgengine/core/scene/assetGenerator";
+import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing";
 registerAssetGenerator({
   id: "bookcase",
   label: "Bookcase",
   schema: { fields: [/* same field types */] },
-  generate: (params, seed) => ({ parts: [/* boxes */], bounds: partsBounds(parts) }),
+  generate: (params, seed) => ({ parts: [/* boxes */], bounds: partsBounds(parts), forward: DEFAULT_FORWARD }),
 });
 ```
 
@@ -65,6 +66,10 @@ registerAssetGenerator({
 shows its slider inspector automatically. The engine registers the **building** generator the same
 way (`packages/core/src/world/buildingGenerator.ts`) — proof the seam serves engine and third parties
 identically.
+
+`forward` (optional, default `[0, 0, 1]`) declares which way the generated parts face — build the
+front toward +Z, or set a different axis when they don't. `StudioStage`'s `faceCamera` prop reads it
+to auto-orient a product shot with zero hand-tuned `rotationY` — see `bookcaseStageDemo.tsx`.
 
 ## Wire it into a game
 
