@@ -1,4 +1,5 @@
 import {
+  createDocumentLiveSync,
   createEditorSession,
   editorChildren,
   editorDocumentBounds,
@@ -6,15 +7,20 @@ import {
   editorRoots,
   findEditorCollection,
   findEditorPrefab,
+  installDocumentLiveSync,
   listEditorKinds,
   normalizeEditorLayers,
+  runtimeEntityWriteBackCommand,
   summarizeEditorSession,
+  type DocumentLiveSync,
+  type DocumentPatch,
   type EditorCommand,
   type EditorDocument,
   type EditorKindVisibility,
   type EditorLayersInput,
   type EditorSession,
   type EditorSessionState,
+  type RuntimeEntityState,
 } from "@jgengine/core/editor/index";
 import {
   createTerrainSnapshot,
@@ -163,7 +169,22 @@ export type EditorBridgeRequest =
   | { method: "set_collection_flags"; id: string; color?: string; locked?: boolean; visible?: boolean }
   | { method: "select_collection"; id: string }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
-  | { method: "assign_material"; ids: string[]; materialId: string };
+  | { method: "assign_material"; ids: string[]; materialId: string }
+  | { method: "push_document_patch"; patch: DocumentPatch; force?: boolean }
+  | { method: "pull_document_patches"; sinceRevision?: number }
+  | { method: "document_revision"; includeDocument?: boolean }
+  | {
+      method: "push_runtime_delta";
+      at?: number;
+      entities?: RuntimeEntityState[];
+      removeIds?: string[];
+      tunables?: Record<string, unknown>;
+    }
+  | { method: "pull_runtime_deltas"; sinceSeq?: number; includeSnapshot?: boolean }
+  | { method: "runtime_snapshot" }
+  | { method: "set_runtime_override"; entity: RuntimeEntityState }
+  | { method: "clear_runtime_override"; id: string }
+  | { method: "write_back_override"; id: string };
 
 /** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
@@ -199,6 +220,8 @@ export interface EditorPerfSample {
 export interface EditorHostApi {
   gameId: string;
   getSession(): EditorSession;
+  /** Two-way document/runtime live-sync bus shared with AuthoredScene and the bridge. */
+  getLiveSync(): DocumentLiveSync;
   getVisibility(): EditorKindVisibility;
   setVisibility(next: EditorKindVisibility): void;
   subscribeVisibility(listener: () => void): () => void;
@@ -245,6 +268,14 @@ export function createEditorHost(options: {
 } {
   const document = normalizeEditorLayers(options.layers);
   const session = createEditorSession(document);
+  const liveSync = createDocumentLiveSync(document);
+  const uninstallLiveSync = installDocumentLiveSync(liveSync);
+  let lastMirroredDocument = session.getState().document;
+  const unsubscribeSessionMirror = session.subscribe((state) => {
+    if (state.document === lastMirroredDocument) return;
+    lastMirroredDocument = state.document;
+    liveSync.replaceDocument(state.document);
+  });
   let visibility: EditorKindVisibility = {};
   let focusTarget: { x: number; y: number; z: number } | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
@@ -281,6 +312,7 @@ export function createEditorHost(options: {
   const api: EditorHostApi = {
     gameId: options.gameId,
     getSession: () => session,
+    getLiveSync: () => liveSync,
     getVisibility: () => visibility,
     setVisibility(next) {
       visibility = { ...next };
@@ -548,6 +580,107 @@ export function createEditorHost(options: {
           case "import_document":
             session.dispatch({ type: "importJson", json: request.json });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
+          case "push_document_patch": {
+            const force = request.force === true;
+            const patch = request.patch;
+            if (!force && patch.baseRevision !== liveSync.getRevision()) {
+              return {
+                ok: false,
+                error: `baseRevision mismatch: patch=${patch.baseRevision} current=${liveSync.getRevision()}`,
+              };
+            }
+            if (patch.type === "snapshot") {
+              session.dispatch({ type: "replaceDocument", document: patch.document });
+              return {
+                ok: true,
+                result: {
+                  revision: liveSync.getRevision(),
+                  ...summarizeEditorSession(session.getState()),
+                },
+              };
+            }
+            if (patch.commands.length === 0) return { ok: false, error: "commands patch is empty" };
+            for (const command of patch.commands) {
+              const { applied } = dispatchGuarded(command);
+              if (!applied && command.type !== "select" && command.type !== "clearSelection") {
+                return { ok: false, error: `${command.type} rejected while applying patch` };
+              }
+            }
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                ...summarizeEditorSession(session.getState()),
+              },
+            };
+          }
+          case "pull_document_patches":
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                patches: liveSync.pullPatches(request.sinceRevision ?? 0),
+              },
+            };
+          case "document_revision":
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                ...(request.includeDocument === true ? { document: liveSync.getDocument() } : {}),
+              },
+            };
+          case "push_runtime_delta": {
+            const delta = liveSync.pushRuntimeDelta({
+              at: request.at ?? Date.now(),
+              ...(request.entities === undefined ? {} : { entities: request.entities }),
+              ...(request.removeIds === undefined ? {} : { removeIds: request.removeIds }),
+              ...(request.tunables === undefined ? {} : { tunables: request.tunables }),
+            });
+            return { ok: true, result: delta };
+          }
+          case "pull_runtime_deltas":
+            return {
+              ok: true,
+              result: {
+                seq: liveSync.getRuntimeState().seq,
+                deltas: liveSync.pullRuntimeDeltas(request.sinceSeq ?? 0),
+                ...(request.includeSnapshot === true ? { snapshot: liveSync.getRuntimeState() } : {}),
+              },
+            };
+          case "runtime_snapshot":
+            return { ok: true, result: liveSync.getRuntimeState() };
+          case "set_runtime_override": {
+            liveSync.setRuntimeOverride(request.entity);
+            return { ok: true, result: { overrides: liveSync.getRuntimeOverrides() } };
+          }
+          case "clear_runtime_override": {
+            liveSync.clearRuntimeOverride(request.id);
+            return { ok: true, result: { overrides: liveSync.getRuntimeOverrides() } };
+          }
+          case "write_back_override": {
+            const entity = liveSync.getRuntimeOverrides()[request.id];
+            if (entity === undefined) {
+              return { ok: false, error: `no runtime override for "${request.id}"` };
+            }
+            const command = runtimeEntityWriteBackCommand(session.getState().document, entity);
+            if (command === null) {
+              return {
+                ok: false,
+                error: `override "${request.id}" has nothing to write back into the document`,
+              };
+            }
+            const { applied, state } = dispatchGuarded(command);
+            if (!applied) return { ok: false, error: `write_back_override rejected for "${request.id}"` };
+            liveSync.clearRuntimeOverride(request.id);
+            return {
+              ok: true,
+              result: {
+                revision: liveSync.getRevision(),
+                ...summarizeEditorSession(state),
+              },
+            };
+          }
           case "dispatch": {
             const { applied, state } = dispatchGuarded(request.command);
             if (!applied) return { ok: false, error: `${request.command.type} rejected: no effect` };
@@ -889,7 +1022,12 @@ export function createEditorHost(options: {
     },
   };
 
-  const dispose = installEditorHost(api);
+  const uninstallHost = installEditorHost(api);
+  const dispose = () => {
+    unsubscribeSessionMirror();
+    uninstallLiveSync();
+    uninstallHost();
+  };
   return { session, api, dispose };
 }
 

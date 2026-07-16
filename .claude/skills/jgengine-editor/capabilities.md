@@ -2,4 +2,11 @@
 
 # jgengine-editor — capability index
 
-No capabilities tagged in this domain yet.
+Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+
+## editor-live-sync — apply a versioned document patch onto a live scene document
+
+- `applyDocumentPatch` (function) · `import { applyDocumentPatch } from "@jgengine/core/editor"`
+- `applyRuntimeStateDelta` (function) · `import { applyRuntimeStateDelta } from "@jgengine/core/editor"`
+- `createDocumentLiveSync` (function) · `import { createDocumentLiveSync } from "@jgengine/core/editor"`
+- `runtimeEntityWriteBackCommand` (function) · `import { runtimeEntityWriteBackCommand } from "@jgengine/core/editor"`

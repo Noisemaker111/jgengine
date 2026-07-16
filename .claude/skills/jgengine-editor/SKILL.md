@@ -375,11 +375,9 @@ bun run drive <id> --mode editor --rpc '{"method":"set_path","id":"wires","meta"
 
 ## Core APIs (`editor/`)
 
-- `@jgengine/core/editor/index` — document, session, commands, undo
-- `@jgengine/core/editor/types` — markers, volumes, paths
-- `@jgengine/core/editor/document` — normalize/merge/export
-- `@jgengine/core/editor/commands` — `createEditorSession`
-- `@jgengine/editor` — `EditorApp`, host RPC, bridge server (dev-only package)
+- `@jgengine/core/editor/index` — document, session, commands, undo, **liveSync** (`createDocumentLiveSync`, `applyDocumentPatch`, `push_document_patch`/`push_runtime_delta`; document authoritative, overrides ephemeral until `write_back_override`)
+- `@jgengine/editor` — `EditorApp`, `createEditorHost`/`getEditorHost`, bridge; `@jgengine/shell/scene` `<AuthoredScene live>` hot-applies patches
+- Headless: `push_document_patch` · `pull_document_patches` · `document_revision` · `push_runtime_delta` · `pull_runtime_deltas` · `write_back_override`
 
 ## Do not
 
