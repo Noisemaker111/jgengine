@@ -152,9 +152,27 @@ export function githubContributionsHandler(options: { token?: string } = {}): (r
 export interface GitHubProxyOptions {
   /** Server-side token; forwarded as `Authorization: Bearer` so private/authed reads work. */
   token?: string;
-  /** Optional allowlist over the requested REST path; return false to reject (403). GET-only is always enforced. */
+  /**
+   * REST path allowlist — return true to forward a `?path=` GET. Every path is
+   * rejected (403) unless this says otherwise; omitting it denies everything.
+   * There is no "allow all" default, so a bare mount can never become an open proxy.
+   */
   allowPath?: (path: string) => boolean;
+  /**
+   * GraphQL allowlist, keyed by operation name, holding the exact query text the
+   * server sends upstream for that name. Callers pick an `?op=` name and supply
+   * only `variables`; they never send query text, so an unlisted or forged query
+   * can't reach GitHub. Omitting this disables GraphQL entirely.
+   */
+  graphqlOperations?: Record<string, string>;
+  /** Injectable fetch (tests, non-browser runtimes). Defaults to global fetch. */
+  fetchImpl?: typeof fetch;
 }
+
+const PROXY_RESPONSE_HEADERS = {
+  "Content-Type": "application/json",
+  "Cache-Control": "private, no-store",
+};
 
 function proxyHeaders(token: string | undefined): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "jgengine" };
@@ -163,41 +181,62 @@ function proxyHeaders(token: string | undefined): Record<string, string> {
 }
 
 async function passthrough(upstream: Response): Promise<Response> {
-  const headers: Record<string, string> = { ...RESPONSE_HEADERS };
+  const headers: Record<string, string> = { ...PROXY_RESPONSE_HEADERS };
   const link = upstream.headers.get("link");
   if (link !== null) headers.Link = link;
   return new Response(await upstream.text(), { status: upstream.status, headers });
 }
 
+function proxyJson(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: PROXY_RESPONSE_HEADERS });
+}
+
+async function handleGraphQLOp(request: Request, op: string, options: GitHubProxyOptions): Promise<Response> {
+  if (request.method !== "POST") return proxyJson({ error: "GraphQL requires POST." }, 405);
+  const query = options.graphqlOperations?.[op];
+  if (query === undefined) return proxyJson({ error: `GraphQL operation '${op}' is not allowed.` }, 403);
+  const doFetch = options.fetchImpl ?? fetch;
+  try {
+    const { variables } = (await request.json().catch(() => ({}))) as { variables?: Record<string, unknown> };
+    const upstream = await doFetch(`${API}/graphql`, {
+      method: "POST",
+      headers: { ...proxyHeaders(options.token), "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
+    return passthrough(upstream);
+  } catch (error) {
+    return proxyJson({ error: error instanceof Error ? error.message : "Upstream failure" }, 502);
+  }
+}
+
 /**
- * General read-only GitHub proxy: forwards `?path=/...` GETs (and GraphQL POSTs
- * to `/graphql`) to api.github.com with the server-side token. Host-locked and
- * GET-only, so it can only ever READ GitHub — never an open proxy, never a write.
- * Mount once and every client resource routes through it.
+ * Named-operation GitHub proxy: forwards only the REST paths and GraphQL
+ * operations the caller explicitly allowlists, using the server-side token.
+ * Clients never supply raw GraphQL text or an unconstrained path — a bare
+ * mount with no `allowPath`/`graphqlOperations` forwards nothing at all.
  */
 export function githubProxyHandler(options: GitHubProxyOptions = {}): (request: Request) => Promise<Response> {
   return async (request) => {
-    const path = new URL(request.url).searchParams.get("path");
+    const url = new URL(request.url);
+    const op = url.searchParams.get("op");
+    if (op !== null) return handleGraphQLOp(request, op, options);
+
+    const path = url.searchParams.get("path");
     if (path === null || !path.startsWith("/")) {
-      return json({ error: "Query param 'path' must be an absolute GitHub API path." }, 400);
+      return proxyJson({ error: "Query param 'path' must be an absolute GitHub API path." }, 400);
     }
-    if (options.allowPath !== undefined && !options.allowPath(path)) {
-      return json({ error: `Path '${path}' is not allowed.` }, 403);
+    if (path === "/graphql" || path.startsWith("/graphql?")) {
+      return proxyJson({ error: "Use '?op=<name>' for GraphQL, not '?path=/graphql'." }, 403);
     }
+    if (!(options.allowPath?.(path) ?? false)) {
+      return proxyJson({ error: `Path '${path}' is not allowed.` }, 403);
+    }
+    if (request.method !== "GET") return proxyJson({ error: "Only GET reads are proxied." }, 405);
+    const doFetch = options.fetchImpl ?? fetch;
     try {
-      if (path === "/graphql" || path.startsWith("/graphql?")) {
-        if (request.method !== "POST") return json({ error: "GraphQL requires POST." }, 405);
-        const upstream = await fetch(`${API}/graphql`, {
-          method: "POST",
-          headers: { ...proxyHeaders(options.token), "Content-Type": "application/json" },
-          body: await request.text(),
-        });
-        return passthrough(upstream);
-      }
-      if (request.method !== "GET") return json({ error: "Only GET reads are proxied." }, 405);
-      return passthrough(await fetch(`${API}${path}`, { headers: proxyHeaders(options.token) }));
+      return await passthrough(await doFetch(`${API}${path}`, { headers: proxyHeaders(options.token) }));
     } catch (error) {
-      return json({ error: error instanceof Error ? error.message : "Upstream failure" }, 502);
+      return proxyJson({ error: error instanceof Error ? error.message : "Upstream failure" }, 502);
     }
   };
 }
