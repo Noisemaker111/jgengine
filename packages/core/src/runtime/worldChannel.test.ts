@@ -197,3 +197,52 @@ describe("world channel (multi-client host↔client over an in-process loopback)
     expect(host.session().members()).toEqual([]);
   });
 });
+
+function privateDefinition() {
+  return defineGame({
+    name: "PrivateShared",
+    assets: createAssetCatalog(),
+    multiplayer: "off",
+    features: { players: true },
+    inventories: { backpack: { slots: 9 } },
+    replication: { privatePerUser: true },
+    loop: {
+      onNewPlayer(ctx: GameContext, player) {
+        ctx.scene.entity.spawn("hero", { id: player!.userId, position: [0, 0, 0] });
+        ctx.player.inventoryFor(player!.userId).put("backpack", `secret-${player!.userId}`, 1);
+      },
+    },
+  });
+}
+
+describe("per-viewer projection over the host↔client channel", () => {
+  test("a viewer's client never receives another player's private inventory, while shared entities still replicate", () => {
+    const host = createWorldHost(createHostedWorldSession({ definition: privateDefinition(), content: CONTENT }));
+
+    const ctxA = createGameContext({ definition: privateDefinition(), content: CONTENT, player: { userId: "alice", isNew: true } });
+    const ctxB = createGameContext({ definition: privateDefinition(), content: CONTENT, player: { userId: "bob", isNew: true } });
+    let linkA!: WorldClientLink;
+    let linkB!: WorldClientLink;
+    const connA = host.connect("alice", (frame) => linkA.receive(frame));
+    const connB = host.connect("bob", (frame) => linkB.receive(frame));
+    linkA = createWorldClientLink(ctxA, (frame) => connA.receive(frame));
+    linkB = createWorldClientLink(ctxB, (frame) => connB.receive(frame));
+
+    linkA.join(true);
+    linkB.join(true);
+    host.session().tick(1);
+    host.broadcast();
+
+    const hostCtx = host.session().runner().context();
+    expect(hostCtx.player.inventoryFor("alice").count("backpack", "secret-alice")).toBe(1);
+    expect(hostCtx.player.inventoryFor("bob").count("backpack", "secret-bob")).toBe(1);
+
+    expect(ctxA.scene.entity.get("alice")).not.toBeNull();
+    expect(ctxA.scene.entity.get("bob")).not.toBeNull();
+    expect(ctxA.player.inventoryFor("alice").count("backpack", "secret-alice")).toBe(1);
+    expect(ctxA.player.inventoryFor("bob").count("backpack", "secret-bob")).toBe(0);
+
+    expect(ctxB.player.inventoryFor("bob").count("backpack", "secret-bob")).toBe(1);
+    expect(ctxB.player.inventoryFor("alice").count("backpack", "secret-alice")).toBe(0);
+  });
+});

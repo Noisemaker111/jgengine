@@ -127,8 +127,17 @@ import {
   applyWorldSnapshot,
   composeWorldSnapshot,
   type SnapshotModule,
+  type SnapshotViewer,
   type WorldSnapshot,
 } from "./worldSnapshot";
+import {
+  policyProjectsViewers,
+  projectByVisibleIds,
+  projectEntitiesForViewer,
+  projectPerUserForViewer,
+  visibleEntityIds,
+  type ReplicationPolicy,
+} from "./worldProjection";
 import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
@@ -192,6 +201,12 @@ export interface GameContextOptions<
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
   /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
   save?: RuntimeSaveOptions;
+  /**
+   * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
+   * wire. Bound on the authoritative host only. Unset (the default) replicates the whole world to every
+   * client, exactly as before; the simulation is identical either way, so a game plays the same.
+   */
+  replication?: ReplicationPolicy;
 }
 
 export interface SceneObjectContext extends ObjectStore {
@@ -497,11 +512,17 @@ export interface GameContext {
   /**
    * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
    * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
-   * baseline a host sends a joining client; {@link hydrate} is its inverse.
+   * baseline a host sends a joining client; {@link hydrate} is its inverse. Pass a `viewer` and the host
+   * projects the snapshot to only what that viewer may see (private state, area of interest) when a
+   * {@link GameContextOptions.replication} policy is set; without one the viewer argument is a no-op.
    */
-  snapshot(): WorldSnapshot;
+  snapshot(viewer?: SnapshotViewer): WorldSnapshot;
   /** Apply a {@link WorldSnapshot} from an authoritative host, hydrating each subsystem key present in it. */
   hydrate(snapshot: WorldSnapshot): void;
+  /** Aggregate world-dirty version summed across replicated modules; the host replicator skips an unchanged commit. @internal */
+  replicationVersion(): number;
+  /** True when a {@link GameContextOptions.replication} policy makes {@link snapshot} viewer-dependent (private/AOI projection is active). @internal */
+  replicatesPerViewer(): boolean;
 }
 
 /**
@@ -1687,6 +1708,37 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ...featureReplicateModules,
   ];
 
+  const replication = options.replication;
+  const projectsViewers = policyProjectsViewers(replication);
+  const aoiRadius = replication?.aoiRadius;
+  const projectorFor = (key: string): SnapshotModule["project"] | undefined => {
+    if (aoiRadius !== undefined && key === "entities") {
+      return (data, viewer) =>
+        projectEntitiesForViewer(data as readonly SceneEntity[], viewer, aoiRadius) as unknown;
+    }
+    if (aoiRadius !== undefined && key === "stats") {
+      return (data, viewer, world) =>
+        projectByVisibleIds(
+          data as Record<string, StatValueMap>,
+          visibleEntityIds((world["entities"] ?? []) as readonly SceneEntity[], viewer, aoiRadius),
+        );
+    }
+    if (replication?.privatePerUser === true && key === "inventory") {
+      return (data, viewer) => projectPerUserForViewer(data as Record<string, unknown>, viewer);
+    }
+    return undefined;
+  };
+  const replicationModules: SnapshotModule[] = snapshotModules.map((module) => {
+    const project = projectorFor(module.key);
+    return {
+      ...module,
+      version: () => signal.version(),
+      ...(project === undefined ? {} : { project }),
+    };
+  });
+  const replicationVersion = (): number =>
+    replicationModules.reduce((sum, module) => sum + (module.version?.() ?? 0), 0);
+
   /**
    * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it also
    * captures the persistent progression subsystems (economy, quest, unlocks, roster) that a
@@ -1877,11 +1929,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     subscribe: signal.subscribe,
     version: signal.version,
     touch: signal.notify,
-    snapshot: () => composeWorldSnapshot(snapshotModules),
+    snapshot: (viewer) => composeWorldSnapshot(replicationModules, viewer),
     hydrate(snapshot) {
-      applyWorldSnapshot(snapshotModules, snapshot);
+      applyWorldSnapshot(replicationModules, snapshot);
       signal.notify();
     },
+    replicationVersion,
+    replicatesPerViewer: () => projectsViewers,
   };
 
   const saveOptions = resolveSaveOptions(definition, options);

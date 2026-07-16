@@ -37,14 +37,29 @@ interface Tracked {
 }
 
 /**
+ * Optional acceleration for {@link createWorldReplicator}: a monotone world-dirty counter (aggregated from
+ * each {@link SnapshotModule.version}). When it hasn't advanced since the last commit nothing mutated, so the
+ * replicator skips re-reading and re-serializing the whole world — the change-detection short-circuit item #28
+ * asks for. Omit it (or pass a snapshot-only source) to keep the original full-re-serialize-per-commit behavior.
+ */
+export interface WorldReplicatorOptions {
+  worldVersion?: () => number;
+}
+
+/**
  * Turns successive full {@link WorldSnapshot}s into per-client {@link WorldDiff}s. Each `commit()` re-reads the
  * world, stamps every item that changed with the new revision, and remembers removals; `diff(sinceRevision)`
  * then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same
  * shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per
- * commit; dirty-hint acceleration is a later optimization behind the same seam.
+ * commit unless {@link WorldReplicatorOptions.worldVersion} lets an unchanged tick short-circuit before it.
   * @internal
   */
-export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
+export function createWorldReplicator(
+  takeSnapshot: () => WorldSnapshot,
+  options: WorldReplicatorOptions = {},
+) {
+  const worldVersion = options.worldVersion;
+  let committedVersion: number | undefined;
   let revision = 0;
   const entities = new Map<string, Tracked>();
   const removedEntities = new Map<string, number>();
@@ -81,6 +96,11 @@ export function createWorldReplicator(takeSnapshot: () => WorldSnapshot) {
   }
 
   function commit(): number {
+    if (worldVersion !== undefined) {
+      const current = worldVersion();
+      if (committedVersion !== undefined && current === committedVersion) return revision;
+      committedVersion = current;
+    }
     const snapshot = takeSnapshot();
     const nextRevision = revision + 1;
 

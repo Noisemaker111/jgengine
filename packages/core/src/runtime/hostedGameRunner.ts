@@ -6,7 +6,7 @@ import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
 import { type InputFrame } from "./inputSnapshot";
 import { createWorldReplicator, type WorldDiff } from "./worldReplication";
-import type { WorldSnapshot } from "./worldSnapshot";
+import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
 export type { InputFrame };
 
@@ -47,7 +47,10 @@ export interface HostedGameRunner {
   tick(dt: number): number;
   diff(sinceRevision: number): WorldDiff;
   revision(): number;
-  snapshot(): WorldSnapshot;
+  /** The full world baseline — projected to only what `viewer` may see when the context carries a replication policy, else the whole world. */
+  snapshot(viewer?: SnapshotViewer): WorldSnapshot;
+  /** True when {@link snapshot} is viewer-dependent (a replication policy projects private/AOI state); a host must then serve each viewer its own frame. */
+  projectsViewers(): boolean;
   members(): readonly string[];
   context(): GameContext;
 }
@@ -64,9 +67,12 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     content,
     player: host ?? { userId: "host", isNew: true },
     ...(now === undefined ? {} : { now }),
+    ...(definition.replication === undefined ? {} : { replication: definition.replication }),
   });
   const loop = definition.loop ?? {};
-  const replicator = createWorldReplicator(() => ctx.snapshot());
+  const replicator = createWorldReplicator(() => ctx.snapshot(), {
+    worldVersion: () => ctx.replicationVersion(),
+  });
   const members = new Map<string, LoopPlayer>();
   const inputs = new Map<string, InputFrame>();
   const inputSeq = new Map<string, number>();
@@ -121,7 +127,8 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     },
     diff: (sinceRevision) => replicator.diff(sinceRevision),
     revision: () => replicator.revision(),
-    snapshot: () => ctx.snapshot(),
+    snapshot: (viewer) => ctx.snapshot(viewer),
+    projectsViewers: () => ctx.replicatesPerViewer(),
     members: () => Array.from(members.keys()),
     context: () => ctx,
   };
