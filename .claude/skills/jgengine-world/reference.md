@@ -131,6 +131,32 @@ ctx.scene.entity.bind("racers").sync(
 );
 ```
 
+### Authored behavior triggers (volumes / markers)
+
+Schema'd `on`/`action` meta on editor volumes and markers — "when player enters this volume, spawn wave 2" is scene data, not game code. `@jgengine/core/scene/authoredTriggers`:
+
+```ts
+registerTriggerAction({
+  id: "spawn_wave",
+  label: "Spawn wave",
+  schema: { fields: [{ type: "number", key: "wave", default: 1, min: 1 }] },
+});
+// volume.meta: { on: "enter"|"exit"|"interact", action: "spawn_wave", wave: 2 }
+const runtime = createAuthoredTriggerRuntime({
+  document: editorLayers,
+  handlers: { spawn_wave: (e: TriggerDispatchEvent) => startWave(e.params.wave as number) },
+});
+// each tick:
+runtime.step({
+  actors: [{ id: playerId, position: entity.position }],
+  interact: ctx.input.justPressed("interact") ? [playerId] : [],
+});
+// discovery: listTriggerActions() / getTriggerAction(id) / collectAuthoredTriggers(doc) / pointInVolume(volume, point)
+// types: TriggerEvent · TriggerActionDefinition · AuthoredTrigger · TriggerHandlers · TriggerSourceKind · AuthoredTriggerRuntime
+```
+
+Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector renders action params from the declared schema when the game has registered actions.
+
 ### Spawn placement
 
 `spawn(catalogId, { id?, position | anchor, offset?, parentSpace?, group? })` — anchor `{ kind: "entity" | "zone", id }` with offset `{ radius, pattern }` or `{ xyz }`. Catalog supplies movement/model; no behaviors on spawn.

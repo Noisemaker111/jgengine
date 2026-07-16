@@ -18,6 +18,7 @@ import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
+import { TriggerInspector } from "./TriggerInspector";
 import type { EditorUiStore } from "./uiStore";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 import { INPUT, MICRO } from "./chromeStyles";
@@ -271,6 +272,11 @@ export function InspectorPanel({ session, ui, onClose }: { session: EditorSessio
             ))}
             <NumberField label="rot°" step={5} value={Math.round(((selectedMarker.rotationY ?? 0) * 180) / Math.PI)} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, rotationY: (value * Math.PI) / 180 }, { coalesce: `rot:${selectedMarker.id}` })} />
             <ClearanceField meta={selectedMarker.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })} />
+            <TriggerInspector
+              target="marker"
+              meta={selectedMarker.meta}
+              onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })}
+            />
             <ParentField session={session} id={selectedMarker.id} />
             {isSceneKind(selectedMarker.kind) ? (
               <KindInspector
@@ -311,6 +317,11 @@ export function InspectorPanel({ session, ui, onClose }: { session: EditorSessio
               ))
             ) : null}
             <ClearanceField meta={selectedVolume.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })} />
+            <TriggerInspector
+              target="volume"
+              meta={selectedVolume.meta}
+              onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
+            />
             <ParentField session={session} id={selectedVolume.id} />
             <VegetationFields
               volume={selectedVolume}

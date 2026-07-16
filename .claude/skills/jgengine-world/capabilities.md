@@ -4,6 +4,12 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
+
+- `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/scene/authoredTriggers"`
+- `createAuthoredTriggerRuntime` (function) · `import { createAuthoredTriggerRuntime } from "@jgengine/core/scene/authoredTriggers"`
+- `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/scene/authoredTriggers"`
+
 ## behavior-tick — auto-advance patrol/wander behaviors on spawned entities, no per-game route loop
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime"`
