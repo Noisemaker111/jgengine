@@ -1,11 +1,11 @@
 import { offline } from "@jgengine/core/runtime/adapter";
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { assets } from "./game/assets";
 import { DAY_LENGTH } from "./game/catalog";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
-import { renderParkEntity } from "./game/render/guests";
-import { renderParkObject } from "./game/render/objects";
+import { entityModels, objectModels } from "./game/models";
 import { LooplineWorldOverlay } from "./game/render/WorldOverlay";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
@@ -15,6 +15,7 @@ export const game = defineGame({
   name: "Loopline",
   world,
   physics,
+  assets,
   input: keybinds,
   server: { mode: "solo" },
   save: "none",
@@ -24,8 +25,8 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  renderObject: renderParkObject,
-  renderEntity: renderParkEntity,
+  entityModels,
+  objectModels,
   WorldOverlay: LooplineWorldOverlay,
   worldHealthBars: false,
   pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
