@@ -5,6 +5,8 @@ description: Multiplayer API: adapters, topology, authority, rooms, persistence.
 
 # jgengine-multiplayer
 
+**Import from package roots** — `@jgengine/{ws,node,sql,convex}` already export from their root; core seams live in the curated barrel `@jgengine/core/multiplayer`. Deep paths `@jgengine/core/multiplayer/<file>` still work for anything not re-exported.
+
 ## Flagship hosted path
 
 Real game + host, not a missing gallery id: **[examples/HOSTED.md](../../../examples/HOSTED.md)** — `claudecraft` with `ws({ authority: "server" })` + `examples/express-host` (or Convex).

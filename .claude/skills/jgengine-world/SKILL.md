@@ -5,6 +5,8 @@ description: World API: movement, cameras, physics, maps, sensors, spawn placeme
 
 # jgengine-world
 
+**Import from the curated barrel** `@jgengine/core/world` (stable, re-exports this domain's public API) — deep paths `@jgengine/core/<domain>/<file>` still work for anything not re-exported.
+
 ## Movement, pose, input
 
 ```ts

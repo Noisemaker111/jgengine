@@ -5,6 +5,8 @@ description: Game-first HUDs, menus, touch controls, motion, accessibility, art 
 
 # jgengine-ui
 
+**Import from the curated barrel** `@jgengine/core/ui` for core UI helpers (format, HUD, settings); React/render surfaces come from `@jgengine/{react,shell}` package roots. Deep paths `@jgengine/core/<domain>/<file>` still work for anything not re-exported.
+
 Use this skill for the **visual and interaction design of the game interface**: title screens, HUDs, menus, prompts, maps, inventories, dialogue, touch controls, transitions, pause/results states, accessibility, and screenshot critique.
 
 Do not use this skill as a React, routing, state-management, or hooks reference. The main `jgengine` skill owns routing and points to the engine APIs. When implementation needs `@jgengine/react` hooks or shell APIs, follow the links in the main skill and the compact API appendix in [reference.md](reference.md); keep this skill focused on what the player sees and feels.
