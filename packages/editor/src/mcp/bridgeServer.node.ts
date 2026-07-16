@@ -1,7 +1,8 @@
 import { createServer } from "node:http";
 
-import type { EditorBridgeRequest, EditorBridgeResponse, EditorHostApi } from "../session";
+import type { EditorBridgeResponse, EditorHostApi } from "../session";
 import type { EditorBridgeServer, EditorBridgeServerOptions } from "./bridgeServer";
+import { decodeEditorBridgeRequest } from "./rpcRequest.ts";
 
 function readBody(request: import("node:http").IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -40,8 +41,17 @@ export function startEditorBridgeServerNode(options: EditorBridgeServerOptions):
       if (request.method === "POST" && url.pathname === "/rpc") {
         try {
           const raw = await readBody(request);
-          const body = JSON.parse(raw) as EditorBridgeRequest;
-          const result: EditorBridgeResponse = host.handle(body);
+          const decoded = decodeEditorBridgeRequest(JSON.parse(raw));
+          if (!decoded.ok) {
+            const result: EditorBridgeResponse = {
+              ok: false,
+              error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; "),
+            };
+            response.writeHead(400, { "content-type": "application/json" });
+            response.end(JSON.stringify(result));
+            return;
+          }
+          const result: EditorBridgeResponse = host.handle(decoded.request);
           response.writeHead(result.ok ? 200 : 400, { "content-type": "application/json" });
           response.end(JSON.stringify(result));
         } catch (error) {
