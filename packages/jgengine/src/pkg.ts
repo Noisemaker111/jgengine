@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,6 +31,21 @@ export function cliVersion(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   const own = readPackageJson(join(here, "..", "package.json")) ?? readPackageJson(join(here, "..", "..", "package.json"));
   return own?.version ?? "0.0.0";
+}
+
+/** @internal */
+export function sdkVersion(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const own = readPackageJson(join(here, "..", "package.json")) ?? readPackageJson(join(here, "..", "..", "package.json"));
+  const pinned = own?.dependencies?.["@jgengine/assets"];
+  return pinned !== undefined ? pinned.replace(/^[\^~]/, "") : cliVersion();
+}
+
+/** @internal */
+export function pickPackageManager(preferred: string | undefined): string {
+  if (preferred !== undefined) return preferred;
+  const probe = spawnSync("bun", ["--version"], { stdio: "ignore", shell: process.platform === "win32" });
+  return probe.status === 0 ? "bun" : "npm";
 }
 
 /** @internal */

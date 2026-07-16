@@ -81,12 +81,21 @@ export function parseCreateName(input: string): { displayName: string; folderNam
   return { displayName, folderName, id };
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const indexHtml = (name: string) => `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>${name}</title>
+    <title>${escapeHtml(name)}</title>
   </head>
   <body>
     <div id="root"></div>
@@ -336,7 +345,7 @@ import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
-  name: "${name}",
+  name: ${JSON.stringify(name)},
   assets: createAssetCatalog(),
   world,
   physics,
