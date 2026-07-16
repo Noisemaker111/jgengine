@@ -14,6 +14,7 @@ import {
   cloneEditorDocument,
   collectDescendants,
   createPrefabFragment,
+  ensureUniqueEditorId,
   extractEditorFragment,
   findEditorCollection,
   findEditorMarker,
@@ -170,6 +171,22 @@ function collectIds(doc: EditorDocument): Set<string> {
   for (const path of doc.paths) all.add(path.id);
   for (const note of doc.annotations) all.add(note.id);
   return all;
+}
+
+/**
+ * Adding to a collection replaces a same-id member in that same collection (the existing
+ * upsert behavior); anything else collides with the document-global id space shared by markers,
+ * volumes, paths, and annotations, so it gets re-idded instead of shadowing whatever already
+ * holds that id in a different collection.
+ */
+function ownIdOrGloballyUnique<T extends { id: string }>(
+  doc: EditorDocument,
+  item: T,
+  ownCollection: readonly { id: string }[],
+): T {
+  if (ownCollection.some((entry) => entry.id === item.id)) return item;
+  const id = ensureUniqueEditorId(item.id, collectIds(doc));
+  return id === item.id ? item : { ...item, id };
 }
 
 function copyId(base: string, taken: Set<string>): string {
@@ -333,45 +350,50 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         },
       };
     }
-    case "addMarker":
+    case "addMarker": {
+      const marker = ownIdOrGloballyUnique(state.document, command.marker, state.document.markers);
       return {
         ...state,
         document: {
           ...state.document,
-          markers: [...state.document.markers.filter((m) => m.id !== command.marker.id), command.marker],
+          markers: [...state.document.markers.filter((m) => m.id !== marker.id), marker],
         },
-        selection: [command.marker.id],
+        selection: [marker.id],
       };
-    case "addVolume":
+    }
+    case "addVolume": {
+      const volume = ownIdOrGloballyUnique(state.document, command.volume, state.document.volumes);
       return {
         ...state,
         document: {
           ...state.document,
-          volumes: [...state.document.volumes.filter((v) => v.id !== command.volume.id), command.volume],
+          volumes: [...state.document.volumes.filter((v) => v.id !== volume.id), volume],
         },
-        selection: [command.volume.id],
+        selection: [volume.id],
       };
-    case "addPath":
+    }
+    case "addPath": {
+      const path = ownIdOrGloballyUnique(state.document, command.path, state.document.paths);
       return {
         ...state,
         document: {
           ...state.document,
-          paths: [...state.document.paths.filter((p) => p.id !== command.path.id), command.path],
+          paths: [...state.document.paths.filter((p) => p.id !== path.id), path],
         },
-        selection: [command.path.id],
+        selection: [path.id],
       };
-    case "addNote":
+    }
+    case "addNote": {
+      const note = ownIdOrGloballyUnique(state.document, command.note, state.document.annotations);
       return {
         ...state,
         document: {
           ...state.document,
-          annotations: [
-            ...state.document.annotations.filter((n) => n.id !== command.note.id),
-            command.note,
-          ],
+          annotations: [...state.document.annotations.filter((n) => n.id !== note.id), note],
         },
-        selection: [command.note.id],
+        selection: [note.id],
       };
+    }
     case "setMarker": {
       const markers = state.document.markers.map((marker) => {
         if (marker.id !== command.id) return marker;
