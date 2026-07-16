@@ -57,7 +57,7 @@ export interface TreatResult {
   treated: readonly string[];
 }
 
-/** Per-region/limb health with ailments, treatment, and moodle projection. */
+/** Per-limb / per-region health track with treat/damage/heal APIs. */
 export interface MultiRegionHealth {
   damage(regionId: string, amount: number): DamageResult;
   heal(regionId: string, amount: number): RegionHealthState;

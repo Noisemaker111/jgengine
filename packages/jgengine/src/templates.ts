@@ -148,6 +148,7 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
       test: "bun test src",
     },
     dependencies: {
+      "@jgengine/assets": `^${engineVersion}`,
       "@jgengine/core": `^${engineVersion}`,
       "@jgengine/editor": `^${engineVersion}`,
       "@jgengine/react": `^${engineVersion}`,
@@ -189,6 +190,7 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       test: "bun test src",
     },
     dependencies: {
+      "@jgengine/assets": "workspace:*",
       "@jgengine/core": "workspace:*",
       "@jgengine/editor": "workspace:*",
       "@jgengine/react": "workspace:*",
@@ -335,18 +337,41 @@ createRoot(root).render(<App />);
 const indexTsx = `export { game } from "./game.config";
 `;
 
-const gameConfigTs = (name: string) => `import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { defineGame } from "@jgengine/shell/defineGame";
+const gameAssetsTs = `import { createStarterCatalog } from "@jgengine/assets";
 
+/** Curated people/props/nature/urban starter packs — resolve asset:person_casual etc. */
+export const assets = createStarterCatalog({ basePath: "/models" });
+`;
+
+const gameModelsTs = `import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { resolveModelPlan } from "@jgengine/shell/render/resolveModel";
+
+import { assets } from "./assets";
+
+/** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
+export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
+});
+
+export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  crate: { model: "asset:prop_crate", style: { targetHeight: 1.2 } },
+  tree: { model: "asset:nature_tree", style: { targetHeight: 4.5 } },
+});
+`;
+
+const gameConfigTs = (name: string) => `import { defineGame } from "@jgengine/shell/defineGame";
+
+import { assets } from "./game/assets";
 import { entityById } from "./game/content";
 import { keybinds } from "./game/keybinds";
+import { entityModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
 export const game = defineGame({
   name: ${JSON.stringify(name)},
-  assets: createAssetCatalog(),
+  assets,
   world,
   physics,
   input: keybinds,
@@ -355,6 +380,8 @@ export const game = defineGame({
   content: { entityById },
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  entityModels,
+  objectModels,
 });
 `;
 
@@ -672,6 +699,8 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/game.config.ts", contents: gameConfigTs(name) },
     { path: "src/loop.ts", contents: loopTs },
     { path: "src/world.ts", contents: worldTs(id) },
+    { path: "src/game/assets.ts", contents: gameAssetsTs },
+    { path: "src/game/models.ts", contents: gameModelsTs },
     { path: "src/game/tuning.ts", contents: tuningTs },
     { path: "src/game/content.ts", contents: contentTs },
     { path: "src/game/keybinds.ts", contents: keybindsTs },

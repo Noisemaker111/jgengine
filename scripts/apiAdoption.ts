@@ -65,13 +65,11 @@ const IDENTIFIER = /[A-Za-z_$][\w$]*/g;
 export function collectSkillTokens(root: string, skill: string): Set<string> {
   const dir = join(root, ".claude", "skills", skill);
   const tokens = new Set<string>();
-  try {
-    for (const file of new Glob("*.md").scanSync({ cwd: dir, absolute: true })) {
-      if (file.endsWith("api.md")) continue;
-      for (const token of readFileSync(file, "utf8").match(IDENTIFIER) ?? []) tokens.add(token);
-    }
-  } catch {
-    // Missing skill dir (e.g. barrel-only domains) — no tokens.
+  // Retired skills (e.g. jgengine-procedural) leave barrel mappings without a dir — empty tokens, not throw.
+  if (!existsSync(dir)) return tokens;
+  for (const file of new Glob("*.md").scanSync({ cwd: dir, absolute: true })) {
+    if (file.endsWith("api.md")) continue;
+    for (const token of readFileSync(file, "utf8").match(IDENTIFIER) ?? []) tokens.add(token);
   }
   return tokens;
 }

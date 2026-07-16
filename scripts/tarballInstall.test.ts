@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -61,10 +61,10 @@ function installTarball(pkg: (typeof publishedPackages)[number]): { consumer: st
   });
   const tgz = (JSON.parse(packed) as Array<{ filename: string }>)[0].filename;
   const extractDir = join(work, "extract");
-  execFileSync("mkdir", ["-p", extractDir]);
+  mkdirSync(extractDir, { recursive: true });
   execFileSync("tar", ["-xzf", join(work, tgz), "-C", extractDir]);
   const scope = join(work, "consumer", "node_modules", "@jgengine");
-  execFileSync("mkdir", ["-p", scope]);
+  mkdirSync(scope, { recursive: true });
   renameSync(join(extractDir, "package"), join(scope, pkg));
   return { consumer: join(work, "consumer"), scope };
 }

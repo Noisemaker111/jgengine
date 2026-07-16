@@ -26,10 +26,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
-## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
-
-- `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
-
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
@@ -54,10 +50,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
-## limb-health — per-body-part/region health tracked separately
-
-- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
-
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
@@ -65,20 +57,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
-
-## place-asset — resolve a placement commit into a shared asset placement payload
-
-- `PlaceAssetResult` (interface) · `import { PlaceAssetResult } from "@jgengine/core/world"`
-- `placeAssetFromCommit` (function) · `import { placeAssetFromCommit } from "@jgengine/core/world"`
-- `resolvePlaceAsset` (function) · `import { resolvePlaceAsset } from "@jgengine/core/world"`
-
-## placement-controller — interactive build-mode ghost preview and commit
-
-- `createPlacementController` (function) · `import { createPlacementController } from "@jgengine/core/world"`
-
-## placement-math — grid/surface footprint validity for build mode
-
-- `validatePlacement` (function) · `import { validatePlacement } from "@jgengine/core/world"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 

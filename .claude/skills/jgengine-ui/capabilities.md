@@ -57,10 +57,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
 
-## placement-ghost — render valid/invalid placement preview mesh
-
-- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
-
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`

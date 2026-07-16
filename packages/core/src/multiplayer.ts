@@ -35,11 +35,4 @@ export {
   type VoiceRoute,
   type VoiceTransport,
 } from "./multiplayer/voiceContract";
-export {
-  policyProjectsViewers,
-  projectByVisibleIds,
-  projectEntitiesForViewer,
-  projectPerUserForViewer,
-  visibleEntityIds,
-  type ReplicationPolicy,
-} from "./runtime/worldProjection";
+export { type ReplicationPolicy } from "./runtime/worldProjection";

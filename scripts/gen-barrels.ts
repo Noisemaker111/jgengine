@@ -10,7 +10,7 @@
  *
  * Regenerate: `bun run gen:barrels`. Verified by scripts/barrels.test.ts.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -86,8 +86,13 @@ function safeRead(path: string): string | null {
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
   for (const { skill, barrel } of CORE_BARRELS) {
-    const reexports = collectBarrelReexports(root, skill);
     const out = join(root, "packages", "core", "src", `${barrel}.ts`);
+    // Retired skills keep a frozen barrel (hand-curated after the skill left) — do not wipe.
+    if (!existsSync(join(root, ".claude", "skills", skill))) {
+      console.log(`skipped packages/core/src/${barrel}.ts (skill ${skill} retired — barrel frozen)`);
+      continue;
+    }
+    const reexports = collectBarrelReexports(root, skill);
     const next = renderBarrel(reexports);
     const prev = safeRead(out);
     writeFileSync(out, next);

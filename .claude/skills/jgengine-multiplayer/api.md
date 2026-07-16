@@ -120,6 +120,7 @@
 - `PresenceTransport` (interface): interface PresenceTransport<TRow, TLocation, TGameId extends string = string> — Backend seam for multiplayer presence. Feeds are reactive data and change identity whenever any player's pose updates; actions MUST be identity-stable for the lifetime of a mounted session so join/leave lifecycle effects can depend on them without re-running per pose tick. The use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends.
 - `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
 - `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
+- `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
 - `SessionListing` (interface): interface SessionListing — ⚠ undocumented
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
@@ -244,24 +245,23 @@
 ## @jgengine/core/runtime/worldProjection
 
 - `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
-- `policyProjectsViewers` (function): function policyProjectsViewers(policy: ReplicationPolicy | undefined): boolean — True when at least one field of the policy would change the wire payload. A no-op policy needs no projection.
-- `projectByVisibleIds` (function): function projectByVisibleIds<T>(byId: Record<string, T>, visible: Set<string>): Record<string, T> — Keep only the entries of an entity-id-keyed record whose id is in `visible` — the projection for entity stats under area-of-interest.
-- `projectEntitiesForViewer` (function): function projectEntitiesForViewer(entities: readonly SceneEntity[], viewer: SnapshotViewer, radius: number): readonly SceneEntity[] — Cull an entity list to a viewer's area of interest: keep the viewer's own entity plus every entity within `radius` of it. When the viewer has no locatable entity the full list is returned (fail-open — a spectator or not-yet-spawned player still sees the world rather than an empty one).
-- `projectPerUserForViewer` (function): function projectPerUserForViewer<T>(byUser: Record<string, T>, viewer: SnapshotViewer): Record<string, T> — Narrow a `userId → state` record to only the viewer's own entry — the projection for private per-user state (inventory, wallets) so one client never receives another player's private data.
-- `visibleEntityIds` (function): function visibleEntityIds(entities: readonly SceneEntity[], viewer: SnapshotViewer, radius: number): Set<string> — The set of entity ids a viewer can see under an area-of-interest radius — the visibility set entity-keyed modules cull against.
 
 ## @jgengine/node
 
 - `DEFAULT_HEARTBEAT_INTERVAL_MS` (const): const DEFAULT_HEARTBEAT_INTERVAL_MS: 30000 — Default ping/pong interval; a socket that misses one round-trip is terminated.
 - `DEFAULT_MAX_CONNECTIONS` (const): const DEFAULT_MAX_CONNECTIONS: 10000 — Default max concurrent sockets this server accepts before rejecting new ones.
 - `DEFAULT_MAX_PAYLOAD_BYTES` (const): const DEFAULT_MAX_PAYLOAD_BYTES: 1048576 — Default per-message payload cap (bytes) — `ws` closes the socket with 1009 past this.
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; /** Per-message payload cap in bytes. Defaults to {@link DEFAULT_MAX_PAYLOAD_BYTES}. */ maxPayloadBytes?: number; /** Max concurrent sockets accepted; connections beyond this are closed immediately. D… — ⚠ undocumented
+- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `HostedGameDefinition` (interface): interface HostedGameDefinition — A game the world server can host — its authoritative {@link GameDefinition} and the content lookup a `GameContext` reads.
 - `InstallShutdownHookOptions` (interface): interface InstallShutdownHookOptions — Config for {@link installShutdownHook}.
 - `NodeHandler` (type): type NodeHandler = (req: IncomingMessage, res: ServerResponse) => void — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `ShutdownHook` (interface): interface ShutdownHook — A live signal listener installed by {@link installShutdownHook}; call `remove()` to uninstall it (tests, embedders opting out).
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
@@ -272,10 +272,12 @@
 - `WorldPersistenceKey` (interface): interface WorldPersistenceKey — Per-world key a {@link WorldPersistence} resolves a {@link HostedWorldStore} for.
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 - `createWorldGameServer` (function): function createWorldGameServer(options: WorldGameServerOptions): WorldGameServer — Build a {@link WorldGameServer} — one process hosting authoritative GameContext worlds over ws, ready for two-client play once {@link WorldGameServer.start} runs.
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 - `installShutdownHook` (function): function installShutdownHook(shutdown: () => Promise<void> | void, options: InstallShutdownHookOptions = {}): ShutdownHook — Wires `SIGINT`/`SIGTERM` (or a custom signal list) to a clean-shutdown callback — e.g. `() => worldServer.close()` or `() => Promise.all([wsServer.close(), host.stop()])`. Bounded by `timeoutMs` so a stuck flush can't hang the process forever; idempotent — a second signal delivered mid-shutdown reuses the same in-flight run instead of flushing twice. Returns a {@link ShutdownHook} whose `remove()` uninstalls the listeners, for tests and embedders that want their own handling.
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `memoryWorldPersistence` (function): function memoryWorldPersistence(): WorldPersistence — Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit.
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
@@ -294,12 +296,21 @@
 - `EditorManifest` (interface): interface EditorManifest — What the standalone editor loads on boot: the on-disk scene document (if any) and every model in the asset folder.
 - `EditorManifestAsset` (interface): interface EditorManifestAsset — One placeable model the standalone editor lists — a stable id and a URL the dev server serves it from.
 
+## @jgengine/node/host
+
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
+- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
+- `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
+
 ## @jgengine/node/persistence
 
 - `WorldPersistence` (interface): interface WorldPersistence — The persistence plug-point for {@link createWorldGameServer}: resolves one {@link HostedWorldStore} per hosted world, called once when the world host session is created. Structural — a SQL, file, or Convex-backed store all conform without `node` importing a concrete driver; only a `store()` factory is required. Mirrors `HostPersistence` (the reducer host's persistence seam).
 - `WorldPersistenceKey` (interface): interface WorldPersistenceKey — Per-world key a {@link WorldPersistence} resolves a {@link HostedWorldStore} for.
 - `clearFilePersistence` (function): function clearFilePersistence(dir: string): Promise<void> — ⚠ undocumented
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `memoryWorldPersistence` (function): function memoryWorldPersistence(): WorldPersistence — Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit.
 
 ## @jgengine/node/shutdown
@@ -312,6 +323,7 @@
 
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
 - `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
@@ -342,6 +354,7 @@
 - `DEFAULT_MAX_PAYLOAD_BYTES` (const): const DEFAULT_MAX_PAYLOAD_BYTES: 1048576 — Default per-message payload cap (bytes) — `ws` closes the socket with 1009 past this.
 - `GameWsServer` (type): type GameWsServer = { wss: WebSocketServer; port: () => number; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => Promise<void>; } — ⚠ undocumented
 - `GameWsServerOptions` (type): type GameWsServerOptions = HostRouterOptions & { server?: HttpServer; port?: number; path?: string; /** Per-message payload cap in bytes. Defaults to {@link DEFAULT_MAX_PAYLOAD_BYTES}. */ maxPayloadBytes?: number; /** Max concurrent sockets accepted; connections beyond this are closed immediately. D… — ⚠ undocumented
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 
 ## @jgengine/sql

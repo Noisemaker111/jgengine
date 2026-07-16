@@ -22,7 +22,9 @@ export interface ReplicationPolicy {
   aoiRadius?: number;
 }
 
-/** True when at least one field of the policy would change the wire payload. A no-op policy needs no projection. */
+/** True when at least one field of the policy would change the wire payload. A no-op policy needs no projection.
+ * @internal host projection plumbing — games set ReplicationPolicy; the runtime applies it.
+ */
 export function policyProjectsViewers(policy: ReplicationPolicy | undefined): boolean {
   if (policy === undefined) return false;
   return policy.privatePerUser === true || policy.aoiRadius !== undefined;
@@ -39,6 +41,7 @@ function distanceSquared(a: EntityPosition, b: EntityPosition): number {
  * Cull an entity list to a viewer's area of interest: keep the viewer's own entity plus every entity
  * within `radius` of it. When the viewer has no locatable entity the full list is returned (fail-open —
  * a spectator or not-yet-spawned player still sees the world rather than an empty one).
+ * @internal host projection plumbing
  */
 export function projectEntitiesForViewer(
   entities: readonly SceneEntity[],
@@ -54,7 +57,9 @@ export function projectEntitiesForViewer(
   );
 }
 
-/** The set of entity ids a viewer can see under an area-of-interest radius — the visibility set entity-keyed modules cull against. */
+/** The set of entity ids a viewer can see under an area-of-interest radius — the visibility set entity-keyed modules cull against.
+ * @internal host projection plumbing
+ */
 export function visibleEntityIds(
   entities: readonly SceneEntity[],
   viewer: SnapshotViewer,
@@ -63,7 +68,9 @@ export function visibleEntityIds(
   return new Set(projectEntitiesForViewer(entities, viewer, radius).map((entity) => entity.id));
 }
 
-/** Keep only the entries of an entity-id-keyed record whose id is in `visible` — the projection for entity stats under area-of-interest. */
+/** Keep only the entries of an entity-id-keyed record whose id is in `visible` — the projection for entity stats under area-of-interest.
+ * @internal host projection plumbing
+ */
 export function projectByVisibleIds<T>(byId: Record<string, T>, visible: Set<string>): Record<string, T> {
   const out: Record<string, T> = {};
   for (const [id, value] of Object.entries(byId)) if (visible.has(id)) out[id] = value;
@@ -73,6 +80,7 @@ export function projectByVisibleIds<T>(byId: Record<string, T>, visible: Set<str
 /**
  * Narrow a `userId → state` record to only the viewer's own entry — the projection for private
  * per-user state (inventory, wallets) so one client never receives another player's private data.
+ * @internal host projection plumbing
  */
 export function projectPerUserForViewer<T>(
   byUser: Record<string, T>,

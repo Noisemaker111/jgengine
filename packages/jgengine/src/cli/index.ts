@@ -42,7 +42,7 @@ usage: jgengine <command> [...args]
                         loads its editor.scene.json + models, Ctrl+S writes back
                         [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]
   skills -p | -g        re-install skills (recovery only — create already installs them)
-  doctor [dir]          diagnose version skew, missing peers, unstyled HUD, shape drift
+  doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
   versions              CLI + installed @jgengine/* versions
