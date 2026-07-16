@@ -27,11 +27,13 @@ export interface ResolvedGrassBladeGeometryOptions {
   heightAt: TerrainHeightSampler;
 }
 
+/** @internal */
 export function resolveGrassRange(value: GrassRange | undefined, fallback: readonly [number, number]): readonly [number, number] {
   if (value === undefined) return fallback;
   return typeof value === "number" ? [value, value] : value;
 }
 
+/** @internal */
 export function resolveGrassBladeGeometryOptions(
   options: GrassBladeGeometryOptions = {},
 ): ResolvedGrassBladeGeometryOptions {
@@ -51,6 +53,7 @@ function randomRange(random: () => number, range: readonly [number, number]): nu
   return THREE.MathUtils.lerp(range[0], range[1], random());
 }
 
+/** @internal */
 export function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}): THREE.InstancedBufferGeometry {
   const resolved = resolveGrassBladeGeometryOptions(options);
   const size = resolveTerrainSize(resolved.area);

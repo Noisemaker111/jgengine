@@ -23,6 +23,7 @@ function resolveRelative(path: string, pageUrl: string): string {
   }
 }
 
+/** @internal */
 export function findArchiveUrl(html: string, pageUrl: string): string | null {
   const matches = html.match(/[^\s"'()<>]+\.zip/gi);
   if (matches === null) return null;
@@ -39,6 +40,7 @@ function score(candidate: string): number {
   return value;
 }
 
+/** @internal */
 export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> {
   const download = source.download;
   if (!isScrapeDownload(download)) return download.url;
@@ -54,6 +56,7 @@ export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLik
   return url;
 }
 
+/** @internal */
 export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array> {
   const response = await fetchImpl(url, { redirect: "follow" });
   if (!response.ok) throw new Error(`download ${url} -> HTTP ${response.status}`);
@@ -64,7 +67,8 @@ export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch)
  * Layout for the `--mirror` / `JGENGINE_ASSETS_MIRROR` base URL override: the
  * archive for a pack is expected at `<baseUrl>/<provider>/<packId>.zip`, e.g.
  * `https://my-mirror.example.com/kenney/kenney-nature.zip`.
- */
+  * @internal
+  */
 export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string {
   const base = baseUrl.replace(/\/+$/, "");
   return `${base}/${source.provider}/${source.id}.zip`;
@@ -83,7 +87,9 @@ export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string 
 export const DEFAULT_RELEASE_BASE =
   "https://github.com/Noisemaker111/jgengine/releases/download/packs";
 
-/** URL of `source`'s archive on the default GitHub-release mirror. */
+/** URL of `source`'s archive on the default GitHub-release mirror.
+ * @internal
+ */
 export function defaultReleaseUrl(source: AssetSource): string {
   return `${DEFAULT_RELEASE_BASE}/${source.provider}-${source.id}.zip`;
 }
@@ -120,7 +126,8 @@ export interface DownloadPackResult {
  * source supplied the bytes; a mismatch is treated as a failed attempt so the
  * next source in the chain is tried. Throws with every attempted URL and its
  * failure reason when all sources fail.
- */
+  * @internal
+  */
 export async function downloadPackArchive(
   source: AssetSource,
   options: DownloadPackOptions = {},
@@ -238,7 +245,8 @@ export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uin
  * Pull every GLB out of an archive. Also converts co-located `.gltf` + `.bin`
  * pairs (Quaternius Standard packs on OpenGameArt) into `.glb` so the catalog
  * stays one-file-per-model. GLB wins when both formats share a basename.
- */
+  * @internal
+  */
 export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
   const entries = unzipSync(archive, {
     filter: (file) => /\.(glb|gltf|bin)$/i.test(file.name),
@@ -286,13 +294,16 @@ export interface ExtractedSpriteFile {
   bytes: Uint8Array;
 }
 
-/** Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth. */
+/** Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
+ * @internal
+ */
 export function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] {
   return dedupeByBasename(archive, /\.(svg|png)$/i);
 }
 
 const TEXTURE_ENTRY = /(?:^|\/)(Textures\/[^/]+)$/i;
 
+/** @internal */
 export function extractTextures(archive: Uint8Array): ExtractedTexture[] {
   const entries = unzipSync(archive, {
     filter: (file) => TEXTURE_ENTRY.test(file.name),
@@ -309,6 +320,7 @@ export function extractTextures(archive: Uint8Array): ExtractedTexture[] {
   );
 }
 
+/** @internal */
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const buffer = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(buffer).set(bytes);

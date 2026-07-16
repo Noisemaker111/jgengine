@@ -7,7 +7,9 @@ import {
 
 export type { SpawnPointDistanceBias, SpawnPointSelectionOptions };
 
-/** Selects a spawn point by game intent while keeping weighting mechanics internal. */
+/** Selects a spawn point by game intent while keeping weighting mechanics internal.
+ * @internal
+ */
 export function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null {
   return pickSpawnPoint(options);
 }

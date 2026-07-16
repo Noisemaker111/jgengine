@@ -26,7 +26,9 @@ const GLOBAL_KEY = "__jgengineSaveEndpoint";
 
 type SaveEndpointGlobal = typeof globalThis & { [GLOBAL_KEY]?: SaveEndpointInfo };
 
-/** Publishes the dev-server save endpoint so editor and devtools UIs show Save buttons. */
+/** Publishes the dev-server save endpoint so editor and devtools UIs show Save buttons.
+ * @internal
+ */
 export function installSaveEndpoint(url: string, gameId: string): () => void {
   const root = globalThis as SaveEndpointGlobal;
   const info: SaveEndpointInfo = { url, gameId };
@@ -36,7 +38,9 @@ export function installSaveEndpoint(url: string, gameId: string): () => void {
   };
 }
 
-/** Returns the installed dev save endpoint, or null when saves cannot reach disk. */
+/** Returns the installed dev save endpoint, or null when saves cannot reach disk.
+ * @internal
+ */
 export function getSaveEndpoint(): SaveEndpointInfo | null {
   return (globalThis as SaveEndpointGlobal)[GLOBAL_KEY] ?? null;
 }

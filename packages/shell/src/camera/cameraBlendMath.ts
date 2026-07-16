@@ -12,6 +12,7 @@ export interface CameraBlendScratch {
   duration: number;
 }
 
+/** @internal */
 export function createCameraBlendScratch(
   Vector3Ctor: new () => Vector3,
   QuaternionCtor: new () => Quaternion,
@@ -27,6 +28,7 @@ export function createCameraBlendScratch(
   };
 }
 
+/** @internal */
 export function captureCameraBlendFrom(
   scratch: CameraBlendScratch,
   position: Vector3,
@@ -45,6 +47,7 @@ function isPerspective(camera: Camera): camera is PerspectiveCamera {
   return (camera as PerspectiveCamera).isPerspectiveCamera === true;
 }
 
+/** @internal */
 export function applyCameraBlendStep(
   scratch: CameraBlendScratch,
   camera: Camera,

@@ -17,7 +17,8 @@ export interface PickLaneOptions<TId extends string = string> {
  * Live cost-based selection over parallel corridors (#286.7) — the racing-line / lane-merge pick
  * every AI driver hand-rolled. Evaluate each lane's cost this tick (crowding, hazards, distance)
  * and let stickiness hysteresis stop the agent flip-flopping between near-equal lanes.
- */
+  * @internal
+  */
 export function pickLane<TId extends string>(
   candidates: readonly LaneCandidate<TId>[],
   options: PickLaneOptions<TId> = {},
@@ -47,7 +48,9 @@ export function pickLane<TId extends string>(
   return best.id;
 }
 
-/** Sum a live cost function over a corridor's sample points — the standard way to build `LaneCandidate.cost`. */
+/** Sum a live cost function over a corridor's sample points — the standard way to build `LaneCandidate.cost`.
+ * @internal
+ */
 export function corridorCost(
   points: readonly (readonly [number, number])[],
   costAt: (x: number, z: number) => number,

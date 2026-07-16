@@ -17,6 +17,7 @@ export interface ReplayLoop<T> {
   sample(t: number): T | null;
 }
 
+/** @internal */
 export function createReplayLoop<T>(buffer: RecordingBuffer<T>, options: ReplayLoopOptions<T> = {}): ReplayLoop<T> {
   const grace = Math.max(0, options.spawnGraceSeconds ?? 0);
   const interpolate = options.interpolate;
@@ -54,7 +55,9 @@ export interface RecordedPoseLike {
   rotationY?: number;
 }
 
-/** Linear pose blend for `ReplayLoopOptions.interpolate` — position lerp plus shortest-arc yaw. */
+/** Linear pose blend for `ReplayLoopOptions.interpolate` — position lerp plus shortest-arc yaw.
+ * @internal
+ */
 export function interpolateRecordedPose<T extends RecordedPoseLike>(before: T, after: T, alpha: number): T {
   let yawDelta = (after.rotationY ?? 0) - (before.rotationY ?? 0);
   while (yawDelta > Math.PI) yawDelta -= Math.PI * 2;
@@ -74,7 +77,8 @@ export function interpolateRecordedPose<T extends RecordedPoseLike>(before: T, a
  * Reconcile a replayed pose against an entity store: spawns the ghost on the first non-null sample,
  * poses it while samples flow, despawns it through grace gaps or after the recording empties.
  * `deps` matches `ctx.scene.entity` structurally — pass `{ has: (id) => ctx.scene.entity.get(id) !== null, spawn, setPose, despawn }`.
- */
+  * @internal
+  */
 export function syncReplayEntity(
   deps: ReplayEntityDeps,
   id: string,

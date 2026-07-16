@@ -19,7 +19,9 @@ function monthKey(index: number): string {
   return `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-/** Roll a contribution calendar into headline stats (totals, streaks, peaks, cadence). */
+/** Roll a contribution calendar into headline stats (totals, streaks, peaks, cadence).
+ * @internal
+ */
 export function summarize(cells: readonly DayCell[]): ContributionStats {
   const weekdayTotals = new Array<number>(DAYS).fill(0);
   const monthTotals = new Map<string, number>();

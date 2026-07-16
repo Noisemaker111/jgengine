@@ -314,6 +314,7 @@ export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, BuildingPalette> = {
   },
 };
 
+/** @internal */
 export function resolveBuildingPalette(
   style: BuildingStyle = DEFAULT_BUILDING_STYLE,
   overrides?: BuildingPaletteOverrides,
@@ -378,6 +379,7 @@ function rangeInt(seed: BuildingSeed, key: string, min: number, max: number): nu
   return lo + Math.floor(hash01(seed, key) * (hi - lo + 1));
 }
 
+/** @internal */
 export function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig {
   return {
     id: input.id ?? DEFAULT_BUILDING_CONFIG.id,
@@ -640,6 +642,7 @@ function pushCorners(parts: BuildingPartPlacement[], config: BuildingConfig, wid
   });
 }
 
+/** @internal */
 export function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding {
   const config = createBuildingConfig(input);
   const width = config.baysWide * config.bayWidth;
@@ -664,6 +667,7 @@ export function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuil
   };
 }
 
+/** @internal */
 export function createBuildingGrid(config: BuildingGridConfig): BuildingLot[] {
   const rows = positiveInt(config.rows, 1);
   const columns = positiveInt(config.columns, 1);
@@ -703,6 +707,7 @@ export function createBuildingGrid(config: BuildingGridConfig): BuildingLot[] {
   return lots;
 }
 
+/** @internal */
 export function generateBuildingDistrict(config: BuildingGridConfig): GeneratedBuilding[] {
   return createBuildingGrid(config).map((lot) => generateBuilding(lot.config));
 }

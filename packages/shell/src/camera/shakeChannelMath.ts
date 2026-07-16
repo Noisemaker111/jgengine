@@ -7,6 +7,7 @@ export interface CameraShakeChannel {
   trauma(): number;
 }
 
+/** @internal */
 export function createCameraShakeChannel(defaultDecayPerSecond = 1.6): CameraShakeChannel {
   const state: TraumaState = createTrauma();
   let decay = defaultDecayPerSecond;

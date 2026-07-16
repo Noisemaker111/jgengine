@@ -17,15 +17,18 @@ export type TechRejection =
 
 export type TechCheck = { ok: true } | ({ ok: false } & TechRejection);
 
+/** @internal */
 export function techPrerequisitesMet(state: TechState, node: TechNodeDef): boolean {
   const requires = node.requires ?? [];
   return requires.every((id) => hasUnlock(state, id));
 }
 
+/** @internal */
 export function missingPrerequisites(state: TechState, node: TechNodeDef): string[] {
   return (node.requires ?? []).filter((id) => !hasUnlock(state, id));
 }
 
+/** @internal */
 export function canUnlockTech(defs: readonly TechNodeDef[], state: TechState, id: string): TechCheck {
   const node = defs.find((n) => n.id === id);
   if (node === undefined) return { ok: false, reason: "unknown-node" };
@@ -35,6 +38,7 @@ export function canUnlockTech(defs: readonly TechNodeDef[], state: TechState, id
   return { ok: true };
 }
 
+/** @internal */
 export function grantTech(state: TechState, node: TechNodeDef): string[] {
   let next = grantUnlock(state, node.id);
   for (const extra of node.grants ?? []) next = grantUnlock(next, extra);
@@ -45,11 +49,13 @@ export function grantTech(state: TechState, node: TechNodeDef): string[] {
  * Research/tech nodes gated by prerequisites that unlock recipes and capabilities as they are granted.
  *
  * @capability tech-tree research nodes with prerequisites that unlock recipes
- */
+  * @internal
+  */
 export function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] {
   return defs.filter((node) => !hasUnlock(state, node.id) && techPrerequisitesMet(state, node));
 }
 
+/** @internal */
 export function unlockedRecipes(defs: readonly TechNodeDef[], state: TechState): string[] {
   const recipes: string[] = [];
   for (const node of defs) {
@@ -71,6 +77,7 @@ export interface TechTree {
   hydrate(userId: string, ids: string[]): void;
 }
 
+/** @internal */
 export function createTechTree(defs: readonly TechNodeDef[] = []): TechTree {
   const nodes = new Map<string, TechNodeDef>();
   for (const def of defs) nodes.set(def.id, def);

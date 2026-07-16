@@ -29,6 +29,7 @@ const ELEMENT_COLORS: Record<string, string> = {
   void: "#c084fc",
 };
 
+/** @internal */
 export function resolveFloatTextStyle(info: FloatTextInfo): FloatTextStyle {
   const crit = info.crit === true || info.hitType === "crit";
   let color: string;

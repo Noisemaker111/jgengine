@@ -22,7 +22,9 @@ export interface HostedWorldStore {
   save(record: HostedWorldRecord): void;
 }
 
-/** In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host. */
+/** In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
+ * @internal
+ */
 export function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore {
   let record: HostedWorldRecord | null = seed ?? null;
   return {
@@ -71,7 +73,9 @@ export interface HostedWorldSession {
   runner(): HostedGameRunner;
 }
 
-/** Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick. */
+/** Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
+ * @internal
+ */
 export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>,
 ): HostedWorldSession {

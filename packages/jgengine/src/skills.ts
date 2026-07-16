@@ -20,6 +20,7 @@ export const GAME_SKILLS = [
 
 export type SkillsScope = "global" | "project";
 
+/** @internal */
 export function parseSkillsArgs(argv: string[]): { scope: SkillsScope } | { error: string } {
   let scope: SkillsScope | null = null;
   for (const arg of argv) {
@@ -40,6 +41,7 @@ export function parseSkillsArgs(argv: string[]): { scope: SkillsScope } | { erro
   return { scope: scope ?? "project" };
 }
 
+/** @internal */
 export function skillsInstallArgs(scope: SkillsScope): string[] {
   const args = ["--yes", "skills", "add", SKILLS_SOURCE, "-y"];
   for (const skill of GAME_SKILLS) {
@@ -70,6 +72,7 @@ export function installPackagedSkills(packaged: string, scope: SkillsScope, cwd?
   return 0;
 }
 
+/** @internal */
 export function installSkills(scope: SkillsScope, cwd?: string): number {
   const packaged = packagedSkillsDir();
   if (packaged !== null) return installPackagedSkills(packaged, scope, cwd);
@@ -83,6 +86,7 @@ export function installSkills(scope: SkillsScope, cwd?: string): number {
   return result.status ?? 1;
 }
 
+/** @internal */
 export function runSkills(argv: string[]): number {
   const parsed = parseSkillsArgs(argv);
   if ("error" in parsed) {

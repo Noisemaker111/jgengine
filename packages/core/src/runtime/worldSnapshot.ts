@@ -13,14 +13,18 @@ export interface SnapshotModule<T = unknown> {
 /** Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem. */
 export type WorldSnapshot = Record<string, unknown>;
 
-/** Serialize every registered module into one keyed baseline — the host→client full-world send. */
+/** Serialize every registered module into one keyed baseline — the host→client full-world send.
+ * @internal
+ */
 export function composeWorldSnapshot(modules: readonly SnapshotModule[]): WorldSnapshot {
   const snapshot: WorldSnapshot = {};
   for (const module of modules) snapshot[module.key] = module.snapshot();
   return snapshot;
 }
 
-/** Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched. */
+/** Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
+ * @internal
+ */
 export function applyWorldSnapshot(
   modules: readonly SnapshotModule[],
   snapshot: WorldSnapshot,

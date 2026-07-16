@@ -28,6 +28,7 @@ export interface TimelineTickResult {
   fires: readonly TimelineFire[];
 }
 
+/** @internal */
 export function createTimelineBoardState(
   slots: readonly TimelineSlotConfig[],
 ): TimelineBoardState {
@@ -47,6 +48,7 @@ export function createTimelineBoardState(
   return { slots: built, elapsedMs: 0 };
 }
 
+/** @internal */
 export function tickTimeline(
   state: TimelineBoardState,
   dtMs: number,
@@ -71,6 +73,7 @@ export function tickTimeline(
   };
 }
 
+/** @internal */
 export function setSlotEnabled(
   state: TimelineBoardState,
   slotId: string,
@@ -82,6 +85,7 @@ export function setSlotEnabled(
   };
 }
 
+/** @internal */
 export function resetSlot(
   state: TimelineBoardState,
   slotId: string,
@@ -106,7 +110,8 @@ export interface TimelineBoard {
  * A step-sequencer timeline board of timed, toggleable slots.
  *
  * @capability timeline-board a step-sequencer timeline board of timed slots
- */
+  * @internal
+  */
 export function createTimelineBoard(slots: readonly TimelineSlotConfig[]): TimelineBoard {
   const initial = slots;
   let state = createTimelineBoardState(slots);

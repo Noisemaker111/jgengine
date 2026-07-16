@@ -204,6 +204,7 @@ function resolveWave(
   };
 }
 
+/** @internal */
 export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig {
   const quality = patch.quality ?? DEFAULT_OCEAN_CONFIG.quality;
   const preset = OCEAN_QUALITY_PRESETS[quality];
@@ -250,6 +251,7 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
   return { ...withoutWaves, waves };
 }
 
+/** @internal */
 export function buildOceanWaveUniforms(config: ResolvedOceanConfig): {
   directions: THREE.Vector2[];
   params: THREE.Vector4[];

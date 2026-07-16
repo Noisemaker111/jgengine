@@ -52,7 +52,9 @@ export interface HostedGameRunner {
   context(): GameContext;
 }
 
-/** Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop. */
+/** Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
+ * @internal
+ */
 export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>,
 ): HostedGameRunner {

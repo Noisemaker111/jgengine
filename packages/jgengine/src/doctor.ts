@@ -19,6 +19,7 @@ function allEngineDeps(pkg: PackageJson): Record<string, string> {
   );
 }
 
+/** @internal */
 export function diagnose(dir: string): Finding[] {
   const findings: Finding[] = [];
   const pkg = readPackageJson(join(dir, "package.json"));
@@ -169,6 +170,7 @@ export function diagnose(dir: string): Finding[] {
   return findings;
 }
 
+/** @internal */
 export function runDoctor(argv: string[]): number {
   const dir = resolve(argv.find((arg) => !arg.startsWith("--")) ?? ".");
   const findings = diagnose(dir);

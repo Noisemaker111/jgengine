@@ -23,7 +23,8 @@ export interface RevealQuery {
  * the same unfiltered radius query, scoped to catalog-declared tags and shaped
  * for a vision readout (Dark Sight / detective-vision reveal) instead of damage
  * resolution — it never consults an occluder, by design.
- */
+  * @internal
+  */
 export function createRevealQuery(options: RevealQueryOptions): RevealQuery {
   const { resolvePosition, resolveTags, candidates } = options;
 

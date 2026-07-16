@@ -142,9 +142,6 @@
 - `ReplayResult` (interface): interface ReplayResult — ⚠ undocumented
 - `SerializeBoardArgs` (interface): interface SerializeBoardArgs — ⚠ undocumented
 - `SnapshotUnit` (interface): interface SnapshotUnit — ⚠ undocumented
-- `cloneSnapshot` (function): function cloneSnapshot(snapshot: BoardSnapshot): BoardSnapshot — ⚠ undocumented
-- `replayCombat` (function): function replayCombat(a: BoardSnapshot, b: BoardSnapshot, rules: CombatRules): ReplayResult — ⚠ undocumented
-- `serializeBoard` (function): function serializeBoard(args: SerializeBoardArgs): BoardSnapshot — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/feedWriteGate
 
@@ -164,14 +161,9 @@
 - `HitscanHit` (interface): interface HitscanHit — ⚠ undocumented
 - `HitscanRay` (interface): interface HitscanRay — ⚠ undocumented
 - `HitscanTarget` (interface): interface HitscanTarget — ⚠ undocumented
-- `PositionHistory` (class): class PositionHistory — ⚠ undocumented
 - `PositionHistoryConfig` (interface): interface PositionHistoryConfig — ⚠ undocumented
 - `PositionSample` (interface): interface PositionSample extends Vec3 — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
-- `createPositionHistory` (function): function createPositionHistory(config: PositionHistoryConfig): PositionHistory — ⚠ undocumented
-- `raySphereDistance` (function): function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number): number | null — ⚠ undocumented
-- `resolveHitscan` (function): function resolveHitscan(history: PositionHistory, targets: readonly HitscanTarget[], ray: HitscanRay, atMs: number): HitscanHit | null — ⚠ undocumented
-- `rewindTimestamp` (function): function rewindTimestamp(nowMs: number, rttMs: number, interpDelayMs: number): number — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/matchmaking
 
@@ -216,23 +208,13 @@
 - `PoseSyncDecision` (interface): interface PoseSyncDecision — ⚠ undocumented
 - `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
 - `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
-- `decidePoseSync` (function): function decidePoseSync(current: PresencePoseState, incoming: IncomingPose, rules: PoseSyncRules, nowMs: number, floorY?: number): PoseSyncDecision — ⚠ undocumented
-- `isPresenceExpired` (function): function isPresenceExpired(lastSeenAtMs: number, nowMs: number, idleCutoffMs: number): boolean — ⚠ undocumented
-- `pickReusablePresence` (function): function pickReusablePresence<T extends { lastSeenAt?: number }>(rows: readonly T[]): T | undefined — Most-recently-seen row across an actor's rows, to reuse instead of inserting a new one.
-- `resolveActivePresence` (function): function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt?: number }>(rows: readonly T[]): ActivePresenceResolution<T> — ⚠ undocumented
-- `shouldPersistWorldSnapshot` (function): function shouldPersistWorldSnapshot(lastSavedAtMs: number | undefined, nowMs: number, intervalMs: number): boolean — ⚠ undocumented
-- `shouldRefreshKeepAlive` (function): function shouldRefreshKeepAlive(lastSeenAtMs: number | undefined, nowMs: number, rules: Pick<PoseSyncRules, "keepAliveRefreshMs">): boolean — ⚠ undocumented
-- `spawnPresenceState` (function): function spawnPresenceState(origin: { x: number; y: number; z: number } = DEFAULT_SPAWN_ORIGIN, nowMs: number, rules: Pick<PoseSyncRules, "maxElapsedSec">): PresencePoseState — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/simultaneousCommit
 
 - `CommitPhase` (type): type CommitPhase = "collecting" | "revealed" — ⚠ undocumented
-- `CommitRound` (class): class CommitRound<TAction> — ⚠ undocumented
 - `CommitRoundConfig` (interface): interface CommitRoundConfig — ⚠ undocumented
 - `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
 - `SealedCommit` (interface): interface SealedCommit<TAction> — ⚠ undocumented
-- `createCommitRound` (function): function createCommitRound<TAction>(config: CommitRoundConfig): CommitRound<TAction> — ⚠ undocumented
-- `resolveCommits` (function): function resolveCommits<TAction, TResult>(reveals: readonly SealedCommit<TAction>[], resolver: (ordered: readonly SealedCommit<TAction>[]) => TResult): TResult — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/voiceContract
 
@@ -425,16 +407,11 @@
 - `createWorldGameHost` (function): function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost — The GameContext-loop counterpart of the reducer `createGameHost`: a structural {@link GameHost} that serves each world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
 - `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
 - `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
-- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
-- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
 - `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
-- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
-- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
 - `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
 - `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
 - `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
-- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 - `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/createWsBackend
@@ -513,11 +490,6 @@
 - `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
 - `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
 - `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string; } — ⚠ undocumented
-- `decodeWsClientMessage` (function): function decodeWsClientMessage(raw: unknown): WsClientMessage | null — ⚠ undocumented
-- `decodeWsServerMessage` (function): function decodeWsServerMessage(raw: unknown): WsServerMessage | null — ⚠ undocumented
-- `encodeWsMessage` (function): function encodeWsMessage(message: WsClientMessage | WsServerMessage): string — ⚠ undocumented
-- `inspectWsDecodeFailure` (function): function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure — ⚠ undocumented
-- `subscriptionKey` (function): function subscriptionKey(channel: WsChannel, serverId: string, action?: string): string — ⚠ undocumented
 
 ## @jgengine/ws/readsHandler
 

@@ -62,6 +62,7 @@ function pairKey(a: string, b: string): string {
   return `${a}|${b}`;
 }
 
+/** @internal */
 export function createSurfaceLayer(config: SurfaceLayerConfig): SurfaceLayer {
   const durations = new Map<string, number | undefined>();
   for (const k of config.kinds) durations.set(k.id, k.duration);

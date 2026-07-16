@@ -28,7 +28,9 @@ function onSegment(ax: number, az: number, bx: number, bz: number, cx: number, c
   );
 }
 
-/** 2D segment intersection on the XZ plane (collinear overlaps count) — the LoS building block `revealQuery`/`frustumSensor` never shipped (#286.5). */
+/** 2D segment intersection on the XZ plane (collinear overlaps count) — the LoS building block `revealQuery`/`frustumSensor` never shipped (#286.5).
+ * @internal
+ */
 export function segmentsIntersect(a1: VisionPoint, a2: VisionPoint, b1: VisionPoint, b2: VisionPoint): boolean {
   const o1 = orientation(a1[0], a1[1], a2[0], a2[1], b1[0], b1[1]);
   const o2 = orientation(a1[0], a1[1], a2[0], a2[1], b2[0], b2[1]);
@@ -42,7 +44,9 @@ export function segmentsIntersect(a1: VisionPoint, a2: VisionPoint, b1: VisionPo
   return false;
 }
 
-/** True when no wall segment crosses the sight line. */
+/** True when no wall segment crosses the sight line.
+ * @internal
+ */
 export function hasWallLineOfSight(from: VisionPoint, to: VisionPoint, walls: readonly VisionWall[]): boolean {
   for (const wall of walls) {
     if (segmentsIntersect(from, to, wall.from, wall.to)) return false;
@@ -50,7 +54,9 @@ export function hasWallLineOfSight(from: VisionPoint, to: VisionPoint, walls: re
   return true;
 }
 
-/** Angle + range test only — no occlusion. `heading` is engine yaw (radians, `atan2(dx, dz)`). */
+/** Angle + range test only — no occlusion. `heading` is engine yaw (radians, `atan2(dx, dz)`).
+ * @internal
+ */
 export function pointInCone(origin: VisionPoint, heading: number, config: VisionConeConfig, point: VisionPoint): boolean {
   const dx = point[0] - origin[0];
   const dz = point[1] - origin[1];
@@ -82,6 +88,7 @@ export interface VisionCone {
   ): TId[];
 }
 
+/** @internal */
 export function createVisionCone(config: VisionConeConfig, walls: readonly VisionWall[] = []): VisionCone {
   function canSee(origin: VisionPoint, heading: number, target: VisionPoint): boolean {
     return pointInCone(origin, heading, config, target) && hasWallLineOfSight(origin, target, walls);

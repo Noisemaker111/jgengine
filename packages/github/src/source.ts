@@ -11,7 +11,9 @@ export interface ContributionData {
 
 export const DEFAULT_ENDPOINT = "/api/github-contributions";
 
-/** Flatten the proxy's week/day wire into positioned, leveled, labeled cells. */
+/** Flatten the proxy's week/day wire into positioned, leveled, labeled cells.
+ * @internal
+ */
 export function wireToCells(wire: ContributionsWire): DayCell[] {
   const cells: DayCell[] = [];
   wire.weeks.forEach((week, week_index) => {
@@ -29,7 +31,9 @@ export function wireToCells(wire: ContributionsWire): DayCell[] {
   return cells;
 }
 
-/** Browser client: fetch a user's contributions through the proxy endpoint. */
+/** Browser client: fetch a user's contributions through the proxy endpoint.
+ * @internal
+ */
 export async function contributions(user: string, endpoint: string = DEFAULT_ENDPOINT): Promise<ContributionData> {
   const response = await fetch(`${endpoint}?user=${encodeURIComponent(user)}`);
   if (!response.ok) {

@@ -15,6 +15,7 @@ export type SealResult =
   | { ok: true; allSealed: boolean }
   | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" };
 
+/** @internal */
 export class CommitRound<TAction> {
   private readonly order: readonly string[];
   private readonly participants: ReadonlySet<string>;
@@ -68,10 +69,12 @@ export class CommitRound<TAction> {
   }
 }
 
+/** @internal */
 export function createCommitRound<TAction>(config: CommitRoundConfig): CommitRound<TAction> {
   return new CommitRound<TAction>(config);
 }
 
+/** @internal */
 export function resolveCommits<TAction, TResult>(
   reveals: readonly SealedCommit<TAction>[],
   resolver: (ordered: readonly SealedCommit<TAction>[]) => TResult,

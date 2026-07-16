@@ -18,6 +18,7 @@ export interface GameTime {
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH_NAMES_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+/** @internal */
 export function computeGameTime(gameTimestamp: number): GameTime {
   const d = new Date(gameTimestamp);
   const year = d.getFullYear();
@@ -52,10 +53,12 @@ export function computeGameTime(gameTimestamp: number): GameTime {
   };
 }
 
+/** @internal */
 export function computeClientServerOffset(serverNow: number, clientNow: number): number {
   return serverNow - clientNow;
 }
 
+/** @internal */
 export function getGameClockTimestamp(
   createdAt: number,
   serverNow: number,

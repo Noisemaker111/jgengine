@@ -17,6 +17,7 @@ export interface SnapshotStore {
   clear(): void;
 }
 
+/** @internal */
 export function deepClone<T>(value: T): T {
   if (value === null || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map((item) => deepClone(item)) as unknown as T;
@@ -35,6 +36,7 @@ export function deepClone<T>(value: T): T {
   return clone as T;
 }
 
+/** @internal */
 export function createSnapshotStore(): SnapshotStore {
   const slices = new Map<string, SnapshotSlice>();
   const stack: Snapshot[] = [];

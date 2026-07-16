@@ -4,14 +4,17 @@ export type WalletScope =
   | { kind: "user"; userId: string }
   | { kind: "group"; groupId: string };
 
+/** @internal */
 export function scopeKey(scope: WalletScope): string {
   return scope.kind === "user" ? `user:${scope.userId}` : `group:${scope.groupId}`;
 }
 
+/** @internal */
 export function userScope(userId: string): WalletScope {
   return { kind: "user", userId };
 }
 
+/** @internal */
 export function groupScope(groupId: string): WalletScope {
   return { kind: "group", groupId };
 }
@@ -29,7 +32,8 @@ export type BookChargeResult =
  * Shared or group currency pools that track each member's contribution to a common balance.
  *
  * @capability shared-wallet shared/group currency pools tracking per-member contributions
- */
+  * @internal
+  */
 export function createWalletBook(): WalletBook {
   return { scopes: {}, contributions: {} };
 }
@@ -38,6 +42,7 @@ function scopeState(book: WalletBook, key: string): WalletState {
   return book.scopes[key] ?? createEmptyWallet();
 }
 
+/** @internal */
 export function balanceIn(book: WalletBook, scope: WalletScope, currency: string): number {
   return balance(scopeState(book, scopeKey(scope)), currency);
 }
@@ -68,6 +73,7 @@ function recordContribution(
   };
 }
 
+/** @internal */
 export function grantTo(
   book: WalletBook,
   scope: WalletScope,
@@ -83,6 +89,7 @@ export function grantTo(
   return next;
 }
 
+/** @internal */
 export function chargeFrom(
   book: WalletBook,
   scope: WalletScope,
@@ -100,6 +107,7 @@ export function chargeFrom(
   return { status: "ok", book: next };
 }
 
+/** @internal */
 export function contributionOf(
   book: WalletBook,
   groupId: string,
@@ -108,6 +116,7 @@ export function contributionOf(
   return book.contributions[scopeKey(groupScope(groupId))]?.[userId] ?? {};
 }
 
+/** @internal */
 export function contributorsOf(book: WalletBook, groupId: string): string[] {
   return Object.keys(book.contributions[scopeKey(groupScope(groupId))] ?? {});
 }

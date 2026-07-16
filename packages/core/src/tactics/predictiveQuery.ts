@@ -42,11 +42,13 @@ function receiveGate(
   return (instanceId) => gate(instanceId, effect) === null;
 }
 
+/** @internal */
 export function predictAreaEffect(deps: PredictiveDeps, input: AreaPredictInput): PredictedTarget[] {
   const requireReceive = input.requireReceive ?? true;
   return resolveAreaTargets(deps.spatial, input, receiveGate(deps, input.effect, requireReceive));
 }
 
+/** @internal */
 export function predictArcEffect(deps: PredictiveDeps, input: ArcPredictInput): PredictedTarget[] {
   const requireReceive = input.requireReceive ?? true;
   const gate = receiveGate(deps, input.effect, requireReceive);
@@ -71,6 +73,7 @@ export interface TilePredictInput {
   tileSize: number;
 }
 
+/** @internal */
 export function predictTiles(input: TilePredictInput): Tile[] {
   const reach = Math.ceil(input.radius / input.tileSize);
   const tiles: Tile[] = [];

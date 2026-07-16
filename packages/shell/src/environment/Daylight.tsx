@@ -86,6 +86,7 @@ function ShadowCastingSun({
   );
 }
 
+/** @internal */
 export function SkyDome({
   topColor = SKY_TOP,
   horizonColor = SKY_HORIZON,
@@ -191,6 +192,7 @@ export interface DaylightProps {
   clouds?: VolumetricCloudsConfig;
 }
 
+/** @internal */
 export function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}) {
   const sunPosition = sun?.position ?? [120, 160, 70];
   return (
@@ -237,7 +239,9 @@ function bandsDriveSkyOrFog(bands: readonly BiomeBand[] | undefined): bands is r
   return bands !== undefined && bands.some((band) => band.fog !== undefined || band.sky !== undefined);
 }
 
-/** Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates. */
+/** Renders a fixed sky/sun/fog look sampled from `sky`'s preset (or, when `timeOfDay` is on but no clock drives it, its noon look). No per-frame updates.
+ * @internal
+ */
 export function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps) {
   if (bandsDriveSkyOrFog(bands)) return <BiomeDaylight sky={sky} bands={bands} lights={lights} />;
   return <StaticSkyDaylight sky={sky} lights={lights} />;
@@ -281,7 +285,8 @@ export interface TimeOfDayDaylightProps {
  * Drives sky/fog (and optional default lights) from the world clock when `sky.timeOfDay` and `clock`
  * are both present. Authored `PlayableGame.lighting` is never rewritten — pass `lights={false}` so
  * only dome colors and fog track the day fraction.
- */
+  * @internal
+  */
 export function TimeOfDayDaylight({ sky, clock, lights = true, bands }: TimeOfDayDaylightProps) {
   if (bandsDriveSkyOrFog(bands)) return <BiomeDaylight sky={sky} bands={bands} clock={clock} lights={lights} />;
   if (!sky.timeOfDay || clock === undefined) return <SkyDaylight sky={sky} lights={lights} />;

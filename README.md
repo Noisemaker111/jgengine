@@ -39,7 +39,7 @@ bun add @jgengine/convex               # Convex backend
 Modules are imported by path, e.g.:
 
 ```ts
-import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
+import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 ```
 

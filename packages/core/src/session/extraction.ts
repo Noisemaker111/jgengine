@@ -106,6 +106,7 @@ function mergeAll(containers: readonly ContainerSnapshot[]): ItemStack[] {
   return out;
 }
 
+/** @internal */
 export function createRaidSession(config: RaidSessionConfig): RaidSession {
   const points = new Map<string, ExtractPoint>();
   for (const point of config.extracts) points.set(point.id, point);

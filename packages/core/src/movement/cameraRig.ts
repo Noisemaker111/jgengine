@@ -9,19 +9,23 @@ import { MOVEMENT_TUNING } from "./movementModel";
 
 export const CAMERA_PITCH_LIMIT = 1.45;
 
+/** @internal */
 export function clampCameraPitch(pitch: number): number {
   return Math.max(-CAMERA_PITCH_LIMIT, Math.min(CAMERA_PITCH_LIMIT, pitch));
 }
 
+/** @internal */
 export function resolveTargetEyeHeight(crouching: boolean, grounded: boolean): number {
   return crouching && grounded ? MOVEMENT_TUNING.crouchEyeHeight : MOVEMENT_TUNING.standEyeHeight;
 }
 
+/** @internal */
 export function advanceEyeHeight(currentEyeHeight: number, targetEyeHeight: number, deltaSeconds: number): number {
   const blend = 1 - Math.exp(-MOVEMENT_TUNING.crouchTransitionSpeed * deltaSeconds);
   return currentEyeHeight + (targetEyeHeight - currentEyeHeight) * blend;
 }
 
+/** @internal */
 export function resolveHeadBobRate(crouching: boolean, running: boolean): number {
   return crouching
     ? MOVEMENT_TUNING.crouchBobRate
@@ -30,6 +34,7 @@ export function resolveHeadBobRate(crouching: boolean, running: boolean): number
       : MOVEMENT_TUNING.walkBobRate;
 }
 
+/** @internal */
 export function resolveHeadBobAmplitude(crouching: boolean, running: boolean, grounded: boolean): number {
   if (!grounded) return 0;
   return crouching
@@ -39,6 +44,7 @@ export function resolveHeadBobAmplitude(crouching: boolean, running: boolean, gr
       : MOVEMENT_TUNING.walkBobAmplitude;
 }
 
+/** @internal */
 export function advanceHeadBobTime(
   currentHeadBobTime: number,
   moving: boolean,
@@ -49,10 +55,12 @@ export function advanceHeadBobTime(
   return moving && grounded ? currentHeadBobTime + deltaSeconds * bobRate : 0;
 }
 
+/** @internal */
 export function resolveHeadBobOffset(headBobTime: number, bobAmplitude: number): number {
   return Math.sin(headBobTime * Math.PI * 2) * bobAmplitude;
 }
 
+/** @internal */
 export function resolveCameraTrackingBlend(deltaSeconds: number): number {
   return 1 - Math.exp(-MOVEMENT_TUNING.cameraTrackingSpeed * deltaSeconds);
 }

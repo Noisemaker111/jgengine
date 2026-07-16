@@ -11,7 +11,8 @@ import type {
  * of a rig's own config block selects that rig, checked in the fixed order below
  * (#207.8) so a config carrying more than one block resolves deterministically
  * instead of depending on object key order. Set `rig` explicitly to break a tie.
- */
+  * @internal
+  */
 export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind {
   if (config?.rig !== undefined) return config.rig;
   if (config?.perspective === "first") return "first";
@@ -30,7 +31,8 @@ export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigK
 /**
  * The turntable rig is a flat facade over the observer's point-orbit mode: map
  * its `target`/`distance`/… onto an observer block so ObserverRig runs unchanged.
- */
+  * @internal
+  */
 export function turntableAsObserver(config: GameCameraConfig | undefined): GameCameraConfig {
   const t = config?.turntable;
   if (t === undefined) return config ?? {};

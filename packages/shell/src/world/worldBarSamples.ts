@@ -17,6 +17,7 @@ export interface Projectable {
   z: number;
 }
 
+/** @internal */
 export function collectWorldBarSamples(
   ctx: GameContext,
   statId: string,
@@ -112,6 +113,7 @@ export function collectNameplateSamples(
   return into.length;
 }
 
+/** @internal */
 export function paintWorldBarSamples(
   canvas: { width: number; height: number; getContext(kind: "2d"): CanvasRenderingContext2D | null },
   samples: readonly WorldBarSample[],

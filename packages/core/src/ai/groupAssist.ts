@@ -20,6 +20,7 @@ export interface AssistNetwork {
   addThreat(memberId: string, sourceId: string, amount: number): string[];
 }
 
+/** @internal */
 export function createAssistNetwork(config: AssistNetworkConfig = {}): AssistNetwork {
   const radius = config.radius;
   const shareFraction = Math.max(0, config.shareFraction ?? 1);

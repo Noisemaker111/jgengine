@@ -34,22 +34,26 @@ export interface TerrainVertexColorOptions {
   waterlineHeight?: number;
 }
 
+/** @internal */
 export function normalizeHeightBlend(height: number, minHeight: number, maxHeight: number): number {
   const range = maxHeight - minHeight;
   if (range <= 1e-6) return 0.5;
   return THREE.MathUtils.clamp((height - minHeight) / range, 0, 1);
 }
 
+/** @internal */
 export function resolveTerrainSize(size: TerrainArea = 40): ResolvedTerrainSize {
   return typeof size === "number" ? { width: size, depth: size } : { width: size[0], depth: size[1] };
 }
 
+/** @internal */
 export function resolveTerrainSegments(segments: ProceduralTerrainConfig["segments"] = 96): ResolvedTerrainSegments {
   if (typeof segments !== "number") return { x: Math.max(1, Math.floor(segments[0])), z: Math.max(1, Math.floor(segments[1])) };
   const resolved = Math.max(1, Math.floor(segments));
   return { x: resolved, z: resolved };
 }
 
+/** @internal */
 export function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseFieldConfig {
   return {
     seed: config.seed,
@@ -61,6 +65,7 @@ export function toNoiseFieldConfig(config: ProceduralTerrainConfig = {}): NoiseF
   };
 }
 
+/** @internal */
 export function createProceduralTerrainSampler(config: ProceduralTerrainConfig = {}): TerrainHeightSampler {
   return noiseField(toNoiseFieldConfig(config)).sampleHeight;
 }
@@ -82,7 +87,8 @@ export interface FieldGroundOptions {
  * Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a
  * vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as
  * real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
- */
+  * @internal
+  */
 export function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry {
   const size = resolveTerrainSize(options.size);
   const segments = resolveTerrainSegments(options.segments);
@@ -177,6 +183,7 @@ function buildGroundGeometry(
   return geometry;
 }
 
+/** @internal */
 export function createProceduralGroundGeometry(
   config: ProceduralTerrainConfig = {},
   colors: TerrainVertexColorOptions = {},

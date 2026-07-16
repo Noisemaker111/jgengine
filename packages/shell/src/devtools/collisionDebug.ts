@@ -54,6 +54,7 @@ const DEFAULT_LAYERS: CollisionDebugLayers = {
   aimLaser: false,
 };
 
+/** @internal */
 export function createDefaultCollisionDebugState(): CollisionDebugState {
   return {
     layers: { ...DEFAULT_LAYERS },
@@ -64,6 +65,7 @@ export function createDefaultCollisionDebugState(): CollisionDebugState {
   };
 }
 
+/** @internal */
 export function anyCollisionLayerOn(layers: CollisionDebugLayers): boolean {
   return (
     layers.hitboxes ||
@@ -74,14 +76,17 @@ export function anyCollisionLayerOn(layers: CollisionDebugLayers): boolean {
   );
 }
 
+/** @internal */
 export function colliderScanNeeded(layers: CollisionDebugLayers): boolean {
   return layers.hitboxes || layers.bodies;
 }
 
+/** @internal */
 export function projectileListenNeeded(layers: CollisionDebugLayers): boolean {
   return layers.projectiles || layers.muzzles;
 }
 
+/** @internal */
 export function aimProbeNeeded(layers: CollisionDebugLayers): boolean {
   return layers.aimLaser;
 }
@@ -108,6 +113,7 @@ export interface CollisionDebugController {
   isActive(): boolean;
 }
 
+/** @internal */
 export function createCollisionDebugController(
   initial: CollisionDebugState = createDefaultCollisionDebugState(),
 ): CollisionDebugController {

@@ -17,6 +17,7 @@ export interface CameraDirector {
   subscribe(listener: () => void): () => void;
 }
 
+/** @internal */
 export function createCameraDirector(): CameraDirector {
   const listeners = new Set<() => void>();
   let followEntity: string | null | undefined = undefined;
