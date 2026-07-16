@@ -4,7 +4,7 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: ["kenney-racing", "kenney-survival", "kenney-city-roads"],
+  sources: ["kaykit-city-builder", "kaykit-dungeon"],
 });
 
 const materials = buildMaterialCatalog({ basePath: "/materials" });
