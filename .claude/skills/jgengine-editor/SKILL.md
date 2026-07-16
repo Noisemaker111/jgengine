@@ -90,14 +90,12 @@ export { editorLayers } from "./editorLayers";
 
 Scene content (paths, foliage, terrain, gameplay spots) belongs in the **editor document**, not in
 bespoke render code with hardcoded coordinates. Author it in the 3D editor, save `editor.scene.json`,
-and render it generically at runtime with **`<AuthoredScene document={doc} field={ctx.world.ground} />`**
-from `@jgengine/shell/scene` — it draws every non-scatter path as a **ground-draped ribbon**
-(`buildRoadRibbon`, so a path hugs the terrain instead of clipping through it) and instances the foliage
-(`resolveScatter` → `InstancedScatter`), all from the document. `<AuthoredPaths>` renders just the paths.
-Terrain/collision come from `environment({ sculpt, clearings })`. **Gameplay reads the same document** —
-derive enemy waypoints from a `route` path and tower plots from markers, so there is one source of truth
-(`Games/tower-guard`: `editor.scene.json` drives rendering *and* pathing; no hand-rolled path meshes, no
-duplicated coordinates). Never draw a path or scatter field with hand-written per-segment meshes.
+and render it generically at runtime with **`<AuthoredScene document={doc} field={ctx.world.ground} placeObjects />`**
+from `@jgengine/shell/scene` — draped paths, foliage (`resolveScatter`), studios/generators, and catalog props
+(`resolveAuthoredObjects` → object store / `objectModels`). Or onInit: `placeAuthoredObjects(ctx.scene.object,
+resolveAuthoredObjects(doc), heightAt)` / `placeAuthoredObjectsFromDocument` / `markerCatalogId`.
+`<AuthoredPaths>` / `<AuthoredObjects document field />` for one slice. Terrain: `environment({ sculpt })`.
+Never hand-roll path meshes or `markers.filter(meta.catalogId)` place loops.
 
 This rule is **gated**: `bun run check-content-gate` (wired into `check-types`) fails a game that hard-codes
 world geometry instead of rendering an editor document, and flags source files dense with hand-placed

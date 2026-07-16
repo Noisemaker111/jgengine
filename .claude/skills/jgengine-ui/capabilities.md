@@ -6,8 +6,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
-- `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/format/duration"`
-- `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/format/duration"`
+- `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
+- `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
 ## controls-list — keybind-derived control legend that hides on touch
 
@@ -15,11 +15,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
-- `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/render/lookPreset"`
+- `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
 
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
-- `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/format/distance"`
+- `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/ui"`
 
 ## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
 
@@ -55,15 +55,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
-- `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/format/duration"`
+- `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
 
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
-- `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/render/lookPreset"`
+- `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
-- `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/format/speed"`
+- `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
 
 ## start-screen — headless title/attract overlay the game fills and skins
 

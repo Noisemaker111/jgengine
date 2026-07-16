@@ -88,19 +88,14 @@ A "premium"/"shipped" verdict on this bar reports as the done-ledger (`jgengine-
 ## Render authored scenes, don't hand-roll them
 
 Scene content authored in the editor renders at runtime through `@jgengine/shell/scene`: mount
-`<AuthoredScene document={doc} field={ctx.world.ground} />` to draw the document's paths (as
-ground-draped ribbons via `AuthoredPaths`) and instance its foliage (`<InstancedScatter>`), all from
-the editor document — no bespoke per-segment path meshes or hardcoded coordinates. Gameplay reads the
-same document (waypoints from a `route` path, plots from markers). See CLAUDE.md → "Author scenes in the
-editor, render them generically".
+`<AuthoredScene document={doc} field={ctx.world.ground} placeObjects />` for paths (`AuthoredPaths`),
+foliage, studios, and catalog props (`AuthoredObjects` — markers with `catalogId`/`meta.catalogId` →
+object store; WorldScene draws via `objectModels`). Or `<AuthoredObjects document field />` alone.
+Headless: `resolveAuthoredObjects` / `placeAuthoredObjects`. See CLAUDE.md → "Author scenes in the editor".
 
-Scatter regions default to `InstancedScatter`'s 7 stylized proxy species (tree/pine/oak/bush/shrub/rock/
-stone/grass) — pass `scatterModels={{ pine: "quaternius-stylized-nature/tree_pineDefaultA" }} assets={assets}` to
-`<AuthoredScene>` to GPU-instance a real catalog GLB for a palette item instead; unmapped items keep the
-proxy. Same `resolveModel` machinery as `entityModels`/`objectModels` (missing/misspelled catalog ids
-throw), factored into `createModelMapResolver(map, assets, seam)` — `InstancedScatter`'s own
-`resolveItem?: (item) => ModelConfig | null` prop is the lower-level seam if you're not going through
-`<AuthoredScene>`.
+Scatter: `InstancedScatter` proxies by default — pass `scatterModels={{ pine: "…" }} assets={assets}` on
+`<AuthoredScene>` for real GLBs. Same `resolveModel` / `createModelMapResolver` as `entityModels`/
+`objectModels`.
 
 ## HUD components — blank baseline, opt-in widgets
 

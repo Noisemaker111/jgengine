@@ -1428,6 +1428,18 @@
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
+## @jgengine/core/world/authoredObjects
+
+- `AuthoredObject` (interface): interface AuthoredObject — One authored catalog prop resolved from an editor marker — grounded at `x`/`z` with yaw, ready for `ctx.scene.object.place` or {@link placeAuthoredObjects}.
+- `AuthoredObjectMarkerLike` (interface): interface AuthoredObjectMarkerLike extends SceneMarkerLike — Minimal marker shape {@link resolveAuthoredObjects} reads; any `EditorMarker` satisfies it.
+- `AuthoredObjectPlaceTarget` (interface): interface AuthoredObjectPlaceTarget — Structural place target — any `ObjectStore` satisfies it.
+- `AuthoredObjectsDocumentLike` (interface): interface AuthoredObjectsDocumentLike — Minimal document shape {@link resolveAuthoredObjects} walks; any `EditorDocument` satisfies it.
+- `PlaceAuthoredObjectsOptions` (interface): interface PlaceAuthoredObjectsOptions — Options for {@link placeAuthoredObjects}.
+- `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
+- `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
+- `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
+- `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
+
 ## @jgengine/core/world/buildPermissions
 
 - `BuildActor` (interface): interface BuildActor — ⚠ undocumented

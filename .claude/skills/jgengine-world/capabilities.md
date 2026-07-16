@@ -4,19 +4,19 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
+## authored-objects — place catalog mesh props from an editor document
 
-- `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/scene/authoredTriggers"`
-- `createAuthoredTriggerRuntime` (function) · `import { createAuthoredTriggerRuntime } from "@jgengine/core/scene/authoredTriggers"`
-- `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/scene/authoredTriggers"`
+- `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world/authoredObjects"`
+- `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world/authoredObjects"`
+- `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects"`
 
 ## behavior-tick — auto-advance patrol/wander behaviors on spawned entities, no per-game route loop
 
-- `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime"`
+- `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
-- `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/scene/bodyBind"`
+- `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
 
 ## catenary — sagging cable curve between two anchors
 
@@ -24,60 +24,60 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## crouch-prone — stance/pose transitions that change the hitbox
 
-- `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/movement/poseState"`
+- `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
-- `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/scene/entityStore"`
+- `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
 
 ## follow-trail — trailing follower/snake formation that chases a leader
 
-- `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/movement/leaderTrail"`
+- `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/world"`
 
 ## footprint-grid — multi-cell footprint occupancy/reservation on a shared build grid
 
-- `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world/footprintGrid"`
+- `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world"`
 
 ## forward-axis — declared front convention for parametric assets — auto-orient product shots
 
-- `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing"`
+- `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/world"`
 
 ## glide — gliding/wingsuit descent control from a launch
 
-- `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/movement/glideModel"`
+- `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
 
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
-- `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/movement/grappleSwing"`
+- `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
-- `generateLock` (function) · `import { generateLock } from "@jgengine/core/interaction/lockpick"`
+- `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
 ## model-sockets — named attachment points read from a model
 
-- `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/scene/modelSockets"`
+- `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
-- `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"`
+- `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
 
 ## qte — a quick-time-event timed input sequence with hit windows
 
-- `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/interaction/qte"`
+- `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/world"`
 
 ## reputation — faction standing that crosses named reputation tiers
 
-- `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/faction/reputation"`
+- `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 
-- `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/interaction/skillCheck"`
+- `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`
 
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
-- `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world/soilKind"`
+- `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
 ## volumetric-clouds — raymarched cloud layer sky option
 
-- `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world/volumetricClouds"`
+- `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
