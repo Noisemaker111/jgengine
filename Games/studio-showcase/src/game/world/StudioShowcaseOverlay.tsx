@@ -16,9 +16,9 @@ registerExampleStudios();
 
 /**
  * Renders the showcase's authored studios — poles + cables, the bookcase generator, the water pond,
- * and the grass meadow — all from one document, grounded on the live terrain. When the editor is
- * mounted it renders the *live* session document, so headless `set_meta` slider edits update the
- * geometry in real time; otherwise it renders the saved `editorLayers`.
+ * the grass meadow, and the cracked/mossy soil patch — all from one document, grounded on the live
+ * terrain. When the editor is mounted it renders the *live* session document, so headless `set_meta`
+ * slider edits update the geometry in real time; otherwise it renders the saved `editorLayers`.
  */
 export function StudioShowcaseOverlay() {
   const ctx = useGameContext();

@@ -22,5 +22,5 @@ export const game = defineGame({
   GameUI,
   WorldOverlay: StudioShowcaseOverlay,
   postProcessing: STUDIO_STAGE_POST,
-  camera: { perspective: "third" },
+  camera: { perspective: "third", initialHeight: 2.4, initialDistance: 12 },
 });

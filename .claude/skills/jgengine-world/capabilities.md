@@ -64,6 +64,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/interaction/skillCheck"`
 
+## soil-patch — editor-authorable terrain crack/moss material variation
+
+- `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world/soilKind"`
+
 ## visitor-loop — many-agent seek/travel/dwell/depart state machine over weighted POIs
 
 - `createVisitorLoop` (function) · `import { createVisitorLoop } from "@jgengine/core/ai/crowd"`
+
+## volumetric-clouds — raymarched cloud layer sky option
+
+- `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world/volumetricClouds"`

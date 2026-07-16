@@ -4,8 +4,10 @@ import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/world/terrain";
+import { resolveVolumetricClouds, type VolumetricCloudsConfig } from "@jgengine/core/world/volumetricClouds";
 
 import { daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
+import { VolumetricClouds } from "./VolumetricClouds";
 
 export interface SkyDomeProps {
   topColor?: string;
@@ -185,9 +187,11 @@ export interface DaylightProps {
   ambient?: { skyColor?: string; groundColor?: string; intensity?: number };
   /** When false, only the sky dome and fog mount — use with authored `PlayableGame.lighting`. Default true. */
   lights?: boolean;
+  /** Raymarched volumetric cloud layer over the sky dome. Omit for no clouds — off by default. */
+  clouds?: VolumetricCloudsConfig;
 }
 
-export function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProps = {}) {
+export function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: DaylightProps = {}) {
   const sunPosition = sun?.position ?? [120, 160, 70];
   return (
     <>
@@ -198,6 +202,9 @@ export function Daylight({ sky, fog, sun, ambient, lights = true }: DaylightProp
           sunColor={sun?.color ?? SUN_COLOR}
           sunIntensity={sun?.intensity ?? 1}
         />
+      )}
+      {clouds === undefined ? null : (
+        <VolumetricClouds rules={resolveVolumetricClouds(clouds)} sunDirection={sunPosition} />
       )}
       {fog === false ? null : (
         <fog attach="fog" args={[fog?.color ?? FOG_COLOR, fog?.near ?? 70, fog?.far ?? 260]} />
@@ -256,6 +263,7 @@ function StaticSkyDaylight({ sky, lights }: { sky: SkyEnvironmentDescriptor; lig
       sun={{ position: state.sunPosition, intensity: state.sunIntensity }}
       ambient={{ intensity: state.ambientIntensity }}
       lights={lights}
+      clouds={sky.volumetricClouds}
     />
   );
 }
@@ -353,6 +361,9 @@ function BiomeDaylight({
   return (
     <>
       <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} {...skyDomeShape(sky)} />
+      {sky.volumetricClouds === undefined ? null : (
+        <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
+      )}
       <fog attach="fog" ref={fogRef} args={[fogFallback.color, fogFallback.near, fogFallback.far]} />
       {lights ? (
         <>
@@ -406,6 +417,9 @@ function DrivenDaylight({
   return (
     <>
       <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} {...skyDomeShape(sky)} />
+      {sky.volumetricClouds === undefined ? null : (
+        <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
+      )}
       <fog attach="fog" ref={fogRef} args={[sky.fog?.color ?? initial.background, sky.fog?.near ?? 70, sky.fog?.far ?? 260]} />
       {lights ? (
         <>

@@ -1578,6 +1578,14 @@
 - `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
 - `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
 
+## @jgengine/core/world/soilKind
+
+- `ResolvedSoil` (interface): interface ResolvedSoil — A resolved soil patch: world-space area center at ground height, footprint size (XZ), and rules.
+- `SOIL_DEFAULTS` (const): const SOIL_DEFAULTS: SoilRules — Soil defaults: sun-cracked dirt with light moss creep.
+- `SOIL_KIND` (const): const SOIL_KIND: "soil" — The editor volume kind marking a box as a soil crack/moss patch.
+- `SOIL_SCHEMA` (const): const SOIL_SCHEMA: ParamSchema — The soil parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
+
 ## @jgengine/core/world/streets
 
 - `FurnitureSpot` (interface): interface FurnitureSpot — A placement anchor on the curb line: position, outward-facing heading, and which side it sits on.
@@ -1722,6 +1730,12 @@
 - `resolveVegetation` (function): function resolveVegetation(doc: EditorDocument): VegetationPlacement[] — All model-item placements in a document (every vegetation volume except `item: "grass"`, which the shell renders as blades — see `grassPatchesFromVegetation`). A game maps each placement's `item` to a mesh/entity via its render catalog and places it grounded.
 - `resolveVegetationVolume` (function): function resolveVegetationVolume(volume: EditorVolume): VegetationPlacement[] — Deterministic placements for one vegetation volume: scatter its footprint at `density` items/m² (respecting `minDistance`), clip round shapes to their radius, and derive per-instance scale/rotation from the volume id + seed, so the same saved scene always grows the same field.
 - `vegetationFootprint` (function): function vegetationFootprint(volume: EditorVolume): Aabb — The ground-plane footprint of a volume: box half-extents or sphere/cylinder radius.
+
+## @jgengine/core/world/volumetricClouds
+
+- `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: VolumetricCloudsRules — Volumetric cloud defaults: a moderate, drifting cumulus layer.
+- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
+- `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 
 ## @jgengine/core/world/voxelField
 
