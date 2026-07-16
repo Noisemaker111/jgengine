@@ -1,10 +1,11 @@
 import { offline } from "@jgengine/core/runtime/adapter";
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
+import { objectModels } from "./game/models";
 import { renderEntity } from "./game/render/renderEntity";
-import { renderObject } from "./game/render/renderObject";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { DAY_LENGTH, physics, world } from "./world";
@@ -21,8 +22,9 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
+  assets,
+  objectModels,
   renderEntity,
-  renderObject,
   pointer: { moveCommand: "world.pointer", select: true },
   touch: { buttons: [] },
   lighting: {

@@ -2,6 +2,7 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
 import { environment, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 
+import { HABITAT_FLOOR_MATERIAL } from "./game/assets";
 import { HABITAT } from "./game/palette";
 
 export const WORLD_SEED = "starhome-habitat-2026";
@@ -17,6 +18,21 @@ const terrainDescriptor = terrain({
   octaves: 4,
   colors: { low: HABITAT.groundLow, high: HABITAT.groundHigh, waterline: HABITAT.flora },
   flatten: [{ center: [0, 0], radius: 46 }],
+  materialRegions: [
+    {
+      shape: "circle",
+      center: [0, 0],
+      radius: 22,
+      falloff: 9,
+      material: "rock",
+      colors: { low: "#8a80a8", high: "#9d93bd" },
+    },
+  ],
+  segments: 120,
+  detail: {
+    rockColor: HABITAT.rock,
+    material: { maps: HABITAT_FLOOR_MATERIAL, repeat: 6, strength: 0.85 },
+  },
 });
 
 export const world: WorldFeature = environment({
