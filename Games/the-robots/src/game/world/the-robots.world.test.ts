@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { terrainField, world } from "../../world";
 import { MAIN_QUEST_IDS, quests } from "../quests/catalog";
-import { ROUTES, SPUR_ROUTES } from "./level";
+import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
 import { PLAYER_SPAWN } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
 
@@ -18,6 +18,14 @@ describe("the-robots world", () => {
     const totalLength = summary.roads.reduce((sum, entry) => sum + entry.length, 0);
     expect(totalLength).toBeGreaterThan(1000);
     for (const entry of summary.roads) expect(entry.points).toBeGreaterThanOrEqual(2);
+  });
+
+  test("rendered roads and level props both read from the one authored document", () => {
+    const authoredRoads = authoredScene.paths.filter((path) => path.kind === "road");
+    expect(summary.counts.roads).toBe(authoredRoads.length);
+    expect(ROUTES.length + SPUR_ROUTES.length).toBe(authoredRoads.length);
+    expect(AUTHORED_PIECES.length).toBeGreaterThan(300);
+    expect(authoredScene.markers.every((marker) => marker.position !== undefined)).toBe(true);
   });
 
   test("every settlement zone contributes a structure group", () => {
