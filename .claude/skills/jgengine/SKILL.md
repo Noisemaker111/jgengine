@@ -536,6 +536,20 @@ const game = defineEngineGame({
 
 Reach for this directly only outside a React host — a headless server, a non-shell runner; a browser game authors through `@jgengine/shell/defineGame` above, which calls this and returns the `PlayableGame` a runner needs.
 
+### `@jgengine/core/runtime/headlessRunner` — the renderer-free play loop
+
+`createHeadlessRunner({ definition, content?, loop, player? })` drives a real game loop with **no React, R3F, or three.js** — the non-React game path for a server tick, a test, or a CLI replay. It builds the `GameContext`, runs `onInit`/`onNewPlayer` at construction, then each `step(dtSeconds, input?)` publishes the input, advances the sim clock (clamped to `maxStepSeconds`, default `0.05`), and runs `loop.onTick` plus behaviour nav. The shell's `FrameDriver` is one such driver bolted to R3F's `useFrame`; this is that same step distilled out of the render tree.
+
+```ts
+import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
+
+const runner = createHeadlessRunner({ definition: game, content, loop: game.loop });
+runner.step(0.05, { held: ["moveRight"] });        // input in → world snapshot changes out
+const hero = runner.ctx.scene.entity.get(runner.userId);   // read the snapshot via runner.ctx
+```
+
+`runner.ctx` is the live `GameContext` — read the world through `ctx.scene`, `ctx.game.store`, `ctx.subscribe`/`ctx.version()`. `runner.input` is the same `InputSnapshot` `onTick` polls; `publishInput({ held, pointer })` pre-seeds it before the first step. Pass `playerMovement: true` (with optional `heading`) to also run the built-in keyboard walk controller as the shell does for pose-driven games — off by default since cartridge/tick-driven games move their own entities in `onTick`. `maxStepSeconds` matches whatever fixed step the caller ticks at (e.g. `0.1` for a coarse server tick) so a long clamp never fast-forwards the sim. Maintainer: new exports here are documented by hand; run `bun run gen:skill-api` on a clean checkout to refresh the generated `api.md`.
+
 ## `PlayableGame` — how a game plugs into a runner
 
 The type `@jgengine/shell/defineGame` returns and every runner (`GameHost`, `GamePlayerShell`) consumes. A game never builds this object by hand — `defineGame({...})` assembles it from the merged config. Source type at `@jgengine/core/game/playableGame`:
