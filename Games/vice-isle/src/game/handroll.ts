@@ -6,6 +6,7 @@ import { createKinematicVehicle, type KinematicVehicle, type KinematicVehicleTun
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleSeats, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { advanceHeat, createHeatState, type HeatConfig, type HeatGain, type HeatState } from "@jgengine/core/ai/heatSystem";
+import { createMobBrain, type MobBrain, type MobBrainConfig } from "@jgengine/core/ai/mobBrain";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { seededRng } from "@jgengine/core/random/rng";
 import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
@@ -44,6 +45,13 @@ const HEAT_CONFIG: HeatConfig = {
   standDownSeconds: 6,
   spawnRingRadius: [46, 66],
   seed: 20260712,
+};
+
+const COP_BRAIN_CONFIG: MobBrainConfig = {
+  aggroRadius: Infinity,
+  attackRange: 2.5,
+  leashDistance: Infinity,
+  wander: false,
 };
 
 export interface RaceSnapshot {
@@ -92,6 +100,7 @@ export function createHandroll(): Handroll {
   let pendingGains: HeatGain[] = [];
   let copTimer = 0;
   let copCounter = 0;
+  const copBrains = new Map<string, MobBrain>();
   const traffic: TrafficCar[] = [];
   const rng = seededRng("vice-isle-cops");
   let cruiserCounter = 0;
@@ -171,20 +180,39 @@ export function createHandroll(): Handroll {
     }
   }
 
+  function copBrainFor(ctx: GameContext, cop: { id: string; position: readonly [number, number, number] }): MobBrain {
+    const existing = copBrains.get(cop.id);
+    if (existing !== undefined) return existing;
+    const brain = createMobBrain(COP_BRAIN_CONFIG, {
+      home: cop.position,
+      position: () => ctx.scene.entity.get(cop.id)?.position ?? null,
+      targetPosition: (id) => (id === ctx.player.userId ? playerWorldPos(ctx) : null),
+      candidates: () => [ctx.player.userId],
+    });
+    copBrains.set(cop.id, brain);
+    return brain;
+  }
+
   function tickCops(ctx: GameContext, dt: number): void {
     const playerPos = playerWorldPos(ctx);
     if (playerPos === null) return;
     const cops = ctx.scene.entity.list().filter((e) => e.name === "cop_patrol" || e.name === "cop_swat");
+    const live = new Set(cops.map((cop) => cop.id));
+    for (const id of copBrains.keys()) if (!live.has(id)) copBrains.delete(id);
     const now = ctx.time.now();
 
     for (const cop of cops) {
       const dist = Math.hypot(cop.position[0] - playerPos[0], cop.position[2] - playerPos[2]);
       if (heatState.level === 0) {
-        if (dist > 70) ctx.scene.entity.despawn(cop.id);
+        if (dist > 70) {
+          ctx.scene.entity.despawn(cop.id);
+          copBrains.delete(cop.id);
+        }
         continue;
       }
-      if (dist > 2.5) {
-        ctx.scene.entity.moveToward(cop.id, [playerPos[0], playerPos[1], playerPos[2]], {
+      const step = copBrainFor(ctx, cop).tick(dt);
+      if (step.moveTo !== null) {
+        ctx.scene.entity.moveToward(cop.id, step.moveTo, {
           speed: cop.name === "cop_swat" ? 5.6 : 5.2,
           stopDistance: 2,
           dt,
