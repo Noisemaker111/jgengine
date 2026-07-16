@@ -1,6 +1,6 @@
 # JGengine Agent Guide
 
-Genre-agnostic pure-TypeScript game engine SDK plus its agent skills. Published packages: `packages/*` (npm, AGPL-3.0-only); everything else private. Repo map, package table, website story: `README.md`.
+Genre-agnostic pure-TypeScript game engine SDK plus its agent skills. Published packages: `packages/*` (npm, Apache-2.0); everything else private. Repo map, package table, website story: `README.md`.
 
 ## Rules that always apply
 

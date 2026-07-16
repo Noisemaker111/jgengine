@@ -2,7 +2,7 @@
   "name": "@jgengine/editor",
   "version": "0.10.0",
   "description": "Scene/world/asset editor for JGengine — loaded lazily by the runner; never import from game entrypoints.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {

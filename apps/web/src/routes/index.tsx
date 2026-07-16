@@ -103,7 +103,7 @@ function Home() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
               </span>
-              Pure TypeScript · Multiplayer-ready · AGPL-3.0
+              Pure TypeScript · Multiplayer-ready · Apache-2.0
             </p>
             <h1
               className="animate-fade-up mt-7 text-balance text-[2.6rem] font-bold leading-[1.05] tracking-tighter text-slate-50 sm:text-7xl"

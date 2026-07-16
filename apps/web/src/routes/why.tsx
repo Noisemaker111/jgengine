@@ -157,8 +157,8 @@ const PROS = [
 
 const CONS = [
   {
-    title: "AGPL-3.0 — copyleft",
-    body: "The published packages are AGPL-3.0-only. Great for open source; if you need a closed-source commercial build, factor that in up front rather than late.",
+    title: "Apache-2.0 — keep the NOTICE",
+    body: "The published packages are Apache-2.0: commercial and closed-source use is fine. The one string attached — keep the NOTICE crediting jgengine.com in what you ship.",
   },
   {
     title: "Opinionated render shell",

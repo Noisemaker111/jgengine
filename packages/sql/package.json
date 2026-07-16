@@ -2,7 +2,7 @@
   "name": "@jgengine/sql",
   "version": "0.10.0",
   "description": "Postgres persistence for the JGengine host: implements HostPersistence over a structural pool interface (no hard pg dependency).",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "repository": {
