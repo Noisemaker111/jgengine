@@ -1,4 +1,4 @@
-﻿import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ObjectVisual } from "@jgengine/core/scene/objectStore";
 
 import { HEROES } from "../entities/players/catalog";
@@ -67,7 +67,7 @@ const PLATE_PRESSED_Y = -0.05;
 const SPIKE_UP_Y = 0;
 const SPIKE_RETRACTED_Y = -0.55;
 
-/** Repaint stateful objects to match the derived room signals ΓÇö a gate sinks into the floor when
+/** Repaint stateful objects to match the derived room signals — a gate sinks into the floor when
  * open, a plate settles under a held weight, spikes rise/retract; color communicates the same
  * state for the top-down read. */
 export function applyRoomVisuals(ctx: GameContext, room: RoomDef, state: RoomState): void {

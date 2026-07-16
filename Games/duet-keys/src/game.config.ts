@@ -5,7 +5,7 @@ import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
 import { objectStyles } from "./game/objects/catalog";
-import { DuetEnvironment, DuetVfx, objectModels, renderDuetObject, renderHero } from "./game/render";
+import { DuetEnvironment, DuetVfx, renderDuetObject, renderHero } from "./game/render";
 import { ROOMS } from "./game/rooms/catalog";
 import { isWalkable } from "./game/rooms/engine";
 import { currentRoomState } from "./game/rooms/setup";
@@ -37,7 +37,6 @@ export const game = defineGame({
   WorldOverlay: DuetVfx,
   renderEntity: renderHero,
   renderObject: renderDuetObject,
-  objectModels,
   objectStyles,
   shadows: true,
   camera: {

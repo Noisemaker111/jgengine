@@ -11,7 +11,8 @@ export const OBJECT_IDS = [
 
 export type ObjectId = (typeof OBJECT_IDS)[number];
 
-/** Fallback tint per catalog id if a GLB fails; real look comes from KayKit models. */
+/** Fallback tint per catalog id — read by `objectStyles` as a safety net if a GLB ever fails to load; the
+ * real look comes from the dungeon-kit models wired in `render.tsx` via `objectModels`/`renderObject`. */
 export const objectStyles: Record<ObjectId, { color: string; opacity?: number }> = {
   wall: { color: "#2b3350" },
   plate: { color: "#5a6685" },

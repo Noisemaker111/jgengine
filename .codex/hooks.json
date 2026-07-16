@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\repetitive-edit-watch.mjs'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\session-start.mjs'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\warn-unpushed.mjs'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\papercut-reminder.mjs'"
+          }
+        ]
+      }
+    ]
+  }
+}
