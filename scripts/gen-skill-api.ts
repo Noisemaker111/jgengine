@@ -75,9 +75,10 @@ const ORPHAN_GATED_KINDS = new Set(["function", "class"]);
 
 function collectOrphans(root: string, skills: SkillModules): string[] {
   const adoption = collectAdoption(root);
+  const tokens = new Set<string>();
+  for (const skill of SKILL_DIRS) for (const t of collectSkillTokens(root, skill)) tokens.add(t);
   const orphans: string[] = [];
-  for (const [skill, refs] of skills) {
-    const tokens = collectSkillTokens(root, skill);
+  for (const refs of skills.values()) {
     for (const ref of refs) {
       if (adoption.namespaceModules.has(ref.importPath)) continue;
       for (const e of ref.exports) {
@@ -95,6 +96,15 @@ function main(): void {
   const seed = process.argv.includes("--seed-baseline");
   const root = fileURLToPath(new URL("..", import.meta.url));
   const failures: string[] = [];
+
+  const extractedPackages = ["core", ...Object.keys(PACKAGE_SKILLS)];
+  const missingDist = extractedPackages.filter((pkg) => !existsSync(join(root, "packages", pkg, "dist")));
+  if (missingDist.length > 0) {
+    console.error(
+      `skill-api refused: missing dist for ${missingDist.join(", ")} — run \`bun run build\` first (extraction silently drops modules that resolve through unbuilt packages)`,
+    );
+    process.exit(1);
+  }
 
   const { skills, undocumented } = collectSkillModules(root);
   const undocumentedSet = new Set(undocumented);
@@ -176,7 +186,7 @@ function main(): void {
 
   if (failures.length > 0) {
     console.error(`\ncheck-skill-api failed:\n${failures.map((f) => `  ${f}`).join("\n")}\n`);
-    process.exit(1);
+    process.exit(check ? 1 : 2);
   }
   const total = [...skills.values()].reduce((n, m) => n + m.length, 0);
   console.log(

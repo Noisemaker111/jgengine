@@ -297,7 +297,7 @@ function BuilderUI() {
 export const builderDemoGame: PlayableGame = {
   game,
   content: {},
-  loop: { onInit, onNewPlayer, onTick },
+  loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: BuilderUI,
   environment: BuilderScene,
   camera: {

@@ -11,14 +11,14 @@ export type RpcPayloadResult =
   | { ok: true; value: unknown; raw: string; sourceLabel: string }
   | { ok: false; error: string };
 
-/** Human-readable label for error messages (and tests). */
+/** Human-readable label for error messages (and tests). @internal */
 export function rpcSourceLabel(source: RpcPayloadSource): string {
   if (source.kind === "inline") return "inline --rpc";
   if (source.kind === "file") return `--rpc-file ${source.path}`;
   return "stdin (--rpc -)";
 }
 
-/** True when braces/brackets/quotes look cut off — common when a shell truncates a long --rpc arg. */
+/** True when braces/brackets/quotes look cut off — common when a shell truncates a long --rpc arg. @internal */
 export function looksTruncatedJson(raw: string): boolean {
   let depth = 0;
   let inString = false;
@@ -49,6 +49,7 @@ export function looksTruncatedJson(raw: string): boolean {
 /**
  * Builds a clear diagnostic when JSON.parse fails on an RPC body — names the source, size, and
  * (for inline args) points agents at `--rpc-file` / `--rpc -` instead of a bare SyntaxError.
+ * @internal
  */
 export function formatRpcParseError(raw: string, error: unknown, source: RpcPayloadSource): string {
   const detail = error instanceof Error ? error.message : String(error);
@@ -67,7 +68,7 @@ export function formatRpcParseError(raw: string, error: unknown, source: RpcPayl
   return parts.join(". ");
 }
 
-/** JSON.parse with a source-aware diagnostic (never throws). */
+/** JSON.parse with a source-aware diagnostic (never throws). @internal */
 export function parseRpcJson(raw: string, source: RpcPayloadSource): RpcPayloadResult {
   if (raw.length === 0) {
     return {
@@ -82,7 +83,7 @@ export function parseRpcJson(raw: string, source: RpcPayloadSource): RpcPayloadR
   }
 }
 
-/** Reads the raw RPC text from an inline arg, file path, or stdin. */
+/** Reads the raw RPC text from an inline arg, file path, or stdin. @internal */
 export async function readRpcText(
   source: RpcPayloadSource,
   readStdin: () => Promise<string> = defaultReadStdin,
@@ -106,7 +107,7 @@ export async function readRpcText(
   }
 }
 
-/** Load + parse an RPC payload from the resolved CLI source. */
+/** Load + parse an RPC payload from the resolved CLI source. @internal */
 export async function loadRpcPayload(
   source: RpcPayloadSource,
   readStdin?: () => Promise<string>,

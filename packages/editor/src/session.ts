@@ -17,10 +17,12 @@ import {
   planRuntimeInspectorSet,
   runtimeEntityMetaWriteBackCommand,
   runtimeEntityWriteBackCommand,
+  seedEditorCatalogs,
   summarizeEditorSession,
   summarizeRuntimeInspector,
   type DocumentLiveSync,
   type DocumentPatch,
+  type EditorCatalogDefinition,
   type EditorCommand,
   type EditorDocument,
   type EditorKindVisibility,
@@ -281,13 +283,13 @@ export function installEditorHost(api: EditorHostApi): () => void {
   };
 }
 
-/** Retrieves the globally installed editor host, or null if none is mounted. */
+/** Retrieves the globally installed editor host, or null if none is mounted. @internal */
 export function getEditorHost(): EditorHostApi | null {
   const root = globalThis as typeof globalThis & { [GLOBAL_KEY]?: EditorHostApi };
   return root[GLOBAL_KEY] ?? null;
 }
 
-/** Builds and installs an editor host for a game: session, visibility, assets, and RPC handling. */
+/** Builds and installs an editor host for a game: session, visibility, assets, and RPC handling. @internal */
 export function createEditorHost(options: {
   gameId: string;
   layers: EditorLayersInput | undefined;
@@ -301,6 +303,7 @@ export function createEditorHost(options: {
   dispose: () => void;
 } {
   const catalogDefinitions = options.catalogs ?? [];
+  const catalogById = new Map(catalogDefinitions.map((definition) => [definition.id, definition]));
   const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);
   const liveSync = createDocumentLiveSync(document);

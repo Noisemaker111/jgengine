@@ -516,10 +516,10 @@
 
 ## @jgengine/core/procedural
 
-- `DecayMeterSet` (interface): interface DecayMeterSet — ⚠ undocumented
-- `Moodle` (interface): interface Moodle — ⚠ undocumented
-- `MoodleStack` (interface): interface MoodleStack — ⚠ undocumented
-- `MultiRegionHealth` (interface): interface MultiRegionHealth — ⚠ undocumented
+- `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
+- `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
+- `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
+- `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
@@ -1041,6 +1041,8 @@
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
 - `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
+- `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
+- `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
@@ -1146,6 +1148,7 @@
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
+- `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
 - `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
 - `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
 - `PlacementController` (interface): interface PlacementController — ⚠ undocumented
@@ -1231,6 +1234,11 @@
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
 - `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
+- `TriggerActionDefinition` (interface): interface TriggerActionDefinition — A game-declared action the editor can assign to a volume/marker trigger. Schema drives the inspector params; `targets`/`events` optionally narrow where it appears.
+- `TriggerDispatchEvent` (interface): interface TriggerDispatchEvent — Fired when a watched actor trips an authored trigger edge.
+- `TriggerEvent` (type): type TriggerEvent = "enter" | "exit" | "interact" — Event edge that can fire an authored trigger.
+- `TriggerHandlers` (type): type TriggerHandlers = Readonly<Record<string, (event: TriggerDispatchEvent) => void>> — Handler map keyed by action id — unknown actions are skipped unless `onDispatch` is set.
+- `TriggerSourceKind` (type): type TriggerSourceKind = "marker" | "volume" — Document collection a trigger source lives on.
 - `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
 - `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
@@ -1275,6 +1283,7 @@
 - `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
 - `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
+- `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
 - `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented
 - `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
 - `composeRealm` (function): function composeRealm(base: RealmBase, cards: readonly RealmCard[]): ComposedRealm — Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model. A major card is the biome base; minor cards layer weather, day length, and spawn edits. The result recomposes both the environment (into a sampleable field via `environmentField()`) and the spawn table, and it depends on the weather hooks in this group (#92) to turn its `weather` into gameplay modifiers. Cards apply in array order; sort your deck (majors first) before composing.
@@ -1283,6 +1292,7 @@
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
+- `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
@@ -1305,7 +1315,7 @@
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
-- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — ⚠ undocumented
+- `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
@@ -1339,6 +1349,7 @@
 - `gauge` (function): function gauge(gaugeId: string): GaugePromptDisplay — ⚠ undocumented
 - `generateLock` (function): function generateLock(seed: string | number, tier: LockTierSpec): LockSpec — Generate a solvable depth-puzzle lock: a "Tumbler's Path" board with a guaranteed solution path carved first, an open-row forgiveness band wrapped around it, tumbler gate columns that pinch to a single exact row, and optional ward-traps that look open but jam on contact. Deterministic: the same (seed, tier) always yields the same board.
 - `getCurrentGameTimestamp` (function): function getCurrentGameTimestamp(createdAt: number, now: number, timeScale?: number | null): number — ⚠ undocumented
+- `getTriggerAction` (function): function getTriggerAction(id: string): TriggerActionDefinition | undefined — Registered definition for an action id, or undefined when the game never declared it.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `groundSpeed` (function): function groundSpeed(entity: SceneEntity<unknown>): number — Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code.
 - `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
@@ -1350,7 +1361,9 @@
 - `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
 - `label` (function): function label(text: string): LabelPromptDisplay — ⚠ undocumented
 - `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
+- `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
+- `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
 - `markerKindStyle` (function): function markerKindStyle(kind: string, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
 - `migrateTerrainSnapshot` (function): function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSnapshot — Upgrades a pre-2.0 snapshot in place-safe (copy-on-write) form: derives a {@link TerrainMaterialLayer} stack from the distinct painted surfaces (first-seen order, default params) when none exists. Leaves the lazy `weights` buffer absent — a single-layer terrain stays compact until blended. Idempotent: a snapshot that already carries `layers` is returned unchanged.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
@@ -1368,15 +1381,19 @@
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
+- `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
+- `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
+- `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
 - `player` (function): function player(): PlayerBehavior — ⚠ undocumented
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
+- `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
 - `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
 - `proximityPrompt` (function): function proximityPrompt({ radius, display, invoke = null }: ProximityPromptConfig): ProximityPrompt — ⚠ undocumented
-- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — ⚠ undocumented
+- `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
 - `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
@@ -1384,10 +1401,13 @@
 - `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
 - `registerAssetGenerator` (function): function registerAssetGenerator(definition: AssetGeneratorDefinition): void — Register a parametric asset generator. Idempotent per id (last wins); call at module load.
 - `registerSceneKind` (function): function registerSceneKind<TResolved>(definition: SceneKindDefinition<TResolved>): void — Register a scene kind — the plug-in point for a new parametric studio. Idempotent per `kind` (last registration wins), so a game's registration overrides a default. Call at module load; the editor inspector, `+ Add` menu, and `AuthoredScene` renderer lookup all read this registry.
+- `registerTriggerAction` (function): function registerTriggerAction(definition: TriggerActionDefinition): void — Declare a game action the editor can assign to volume/marker triggers. Idempotent per `id` (last registration wins). Call at module load next to catalogs.
 - `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
 - `resolveActivePrompt` (function): function resolveActivePrompt<T extends PositionedPrompt>(playerPosition: PromptPoint, prompts: readonly T[]): T | null — Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal priority and distance keep the earliest prompt in the list.
+- `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
+- `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
@@ -1429,8 +1449,10 @@
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
+- `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
+- `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
-- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — ⚠ undocumented
+- `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
@@ -1438,6 +1460,18 @@
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
+
+## @jgengine/core/world/authoredObjects
+
+- `AuthoredObject` (interface): interface AuthoredObject — One authored catalog prop resolved from an editor marker — grounded at `x`/`z` with yaw, ready for `ctx.scene.object.place` or {@link placeAuthoredObjects}.
+- `AuthoredObjectMarkerLike` (interface): interface AuthoredObjectMarkerLike extends SceneMarkerLike — Minimal marker shape {@link resolveAuthoredObjects} reads; any `EditorMarker` satisfies it.
+- `AuthoredObjectPlaceTarget` (interface): interface AuthoredObjectPlaceTarget — Structural place target — any `ObjectStore` satisfies it.
+- `AuthoredObjectsDocumentLike` (interface): interface AuthoredObjectsDocumentLike — Minimal document shape {@link resolveAuthoredObjects} walks; any `EditorDocument` satisfies it.
+- `PlaceAuthoredObjectsOptions` (interface): interface PlaceAuthoredObjectsOptions — Options for {@link placeAuthoredObjects}.
+- `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
+- `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
+- `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
+- `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
 
 ## @jgengine/core/world/buildPermissions
 

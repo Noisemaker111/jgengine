@@ -1,3 +1,4 @@
+import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../ui/hudDocument";
 import type { TerraformSnapshot } from "../world/terraform";
 
@@ -159,6 +160,8 @@ export interface EditorDocument {
   prefabs: EditorPrefab[];
   /** Named selection sets / production groups — restore, add-to, lock, color, visibility. */
   collections: EditorCollection[];
+  /** Persisted gameplay catalog values; schemas come from the game's `editorCatalogs` export. */
+  catalogs: EditorCatalogData[];
   /**
    * HUD layout owned by the scene document — panel id → anchor/offset/size/visibility.
    * Canvas mode (F2+C) and `canvas_move_panel` / `canvas_resize_panel` write here; HudPanel reads it.

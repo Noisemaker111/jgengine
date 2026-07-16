@@ -8,6 +8,10 @@
 - `DocumentLiveEvent` (interface): interface DocumentLiveEvent — Event emitted when the authoritative document changes on a {@link DocumentLiveSync}.
 - `DocumentLiveSync` (interface): interface DocumentLiveSync — Two-way live-sync bus: document patches out, runtime state deltas back.
 - `DocumentPatch` (type): type DocumentPatch = | { type: "snapshot"; revision?: number; baseRevision: number; document: EditorDocument; } | { type: "commands"; revision?: number; baseRevision: number; commands: readonly EditorCommand[]; } — One versioned document mutation on the live-sync stream. `snapshot` replaces the whole document; `commands` replays structural editor commands onto the current document. `baseRevision` must match the receiver's current revision unless `force` is set (document authority from the editor).
+- `EditorCatalogData` (interface): interface EditorCatalogData — Persisted values for one gameplay data catalog (weapons, waves, economy, …). Schemas are not stored here — they come from the game's `editorCatalogs` export and drive SchemaInspector.
+- `EditorCatalogDefinition` (interface): interface EditorCatalogDefinition — Game-exported catalog definition: a `ParamSchema` plus default entries. Schemas stay in code; entry values merge into `document.catalogs` and are what the editor/RPC edits and saves.
+- `EditorCatalogEntry` (interface): interface EditorCatalogEntry — One row in a gameplay data catalog — id + optional label + a meta bag matching the catalog's `ParamSchema`. Values persist on the scene document; the schema lives in the game export.
+- `EditorCatalogsInput` (type): type EditorCatalogsInput = | readonly EditorCatalogDefinition[] | (() => readonly EditorCatalogDefinition[]) — Accepted shape for a game's `editorCatalogs` export: definitions, or a factory.
 - `EditorCollection` (interface): interface EditorCollection — A named, persisted list of object ids — a selection bookmark (restore, add-to) that can also double as a production group: `locked` blocks `translate`/`setTransform`/`remove`/`removeMany` on its members, `color`/`visible` are UI-only hints for the collections panel.
 - `EditorCommand` (type): type EditorCommand = | { type: "select"; ids: readonly string[] } | { type: "clearSelection" } | { type: "setTransform"; id: string; position?: EditorVec3; rotationY?: number } | { type: "translate"; ids: readonly string[]; delta: EditorVec3 } | { type: "setParent"; ids: readonly string[]; parentId:… — A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session.
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
@@ -29,6 +33,13 @@
 - `EditorVolumeShape` (type): type EditorVolumeShape = "sphere" | "cylinder" | "box" — Collision shape a volume is rendered and tested as.
 - `HudPanelTypeDef` (interface): interface HudPanelTypeDef — Declared panel type: growable axes, size limits, optional ParamSchema for the editor.
 - `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
+- `RuntimeEntityState` (interface): interface RuntimeEntityState — One live entity row the runtime may stream to the editor (play-mode inspector feed).
+- `RuntimeInspectorGetResult` (interface): interface RuntimeInspectorGetResult — One resolved runtime field returned by `runtime_get`.
+- `RuntimeInspectorSetPlan` (interface): interface RuntimeInspectorSetPlan — Desired mutation from `runtime_set` before the host applies it.
+- `RuntimeInspectorSummary` (interface): interface RuntimeInspectorSummary — Compact reverse-channel view for the play-mode inspector and `runtime_summary` RPC.
+- `RuntimePlayControl` (interface): interface RuntimePlayControl — Play-mode sim gate held by the editor host — pause freezes ticks; step runs N frames then re-pauses.
+- `RuntimeStateDelta` (interface): interface RuntimeStateDelta — Incremental runtime state for the reverse channel. Entity rows upsert by id; `removeIds` drop rows; `tunables` shallow-merge. Ephemeral unless written back as a document patch.
+- `RuntimeStateSnapshot` (interface): interface RuntimeStateSnapshot — Full ephemeral runtime view held on the reverse channel — never mutates the document.
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
@@ -37,12 +48,15 @@
 - `consumeRuntimePlayStep` (function): function consumeRuntimePlayStep(play: RuntimePlayControl): { runFrame: boolean; next: RuntimePlayControl; } — Advances the play-control step counter: when paused with pending steps, consumes one and reports whether the sim should run this frame. When not paused, always runs.
 - `createDocumentLiveSync` (function): function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSync — Creates an in-memory two-way live-sync bus seeded from an initial document. Document is authoritative; runtime overrides are ephemeral until {@link DocumentLiveSync.writeBackOverride}.
 - `createRuntimePlayControl` (function): function createRuntimePlayControl(paused = false): RuntimePlayControl — Default play-control state when entering play mode (running).
+- `findEditorCatalog` (function): function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined — Looks up a gameplay data catalog by id on the scene document.
+- `findEditorCatalogEntry` (function): function findEditorCatalogEntry(doc: EditorDocument, catalogId: string, entryId: string): EditorCatalogEntry | undefined — Looks up one entry inside a gameplay data catalog.
 - `getDocumentLiveSync` (function): function getDocumentLiveSync(): DocumentLiveSync | null — Returns the globally installed live-sync bus, or null when none is mounted.
 - `getRuntimeInspectorValue` (function): function getRuntimeInspectorValue(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, id: string, path?: string): RuntimeInspectorGetResult — Resolves one entity, entity field, or tunable from the reverse-channel snapshot (with overrides layered on top for entity rows).
 - `installDocumentLiveSync` (function): function installDocumentLiveSync(sync: DocumentLiveSync): () => void — Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling.
 - `planRuntimeInspectorSet` (function): function planRuntimeInspectorSet(document: EditorDocument, input: { id: string; path?: string; value?: unknown; position?: { x: number; y: number; z: number }; rotationY?: number; values?: Record<string, unknown>; writeBack?: boolean; }): RuntimeInspectorSetPlan — Plans a play-mode poke: builds the ephemeral entity/tunable override and, when `writeBack` is true, the undoable document commands that promote it into the scene document.
 - `runtimeEntityMetaWriteBackCommand` (function): function runtimeEntityMetaWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Promotes ephemeral runtime `values` into an undoable meta patch on a document-linked object. Returns null when the id is not in the document or there are no values.
 - `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
+- `seedEditorCatalogs` (function): function seedEditorCatalogs(doc: EditorDocument, definitions: readonly EditorCatalogDefinition[]): EditorDocument — Seeds default catalog rows from game-exported definitions into a document: missing catalogs and missing entries are filled from the definition; existing document values win (overlay already applied).
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 - `summarizeRuntimeInspector` (function): function summarizeRuntimeInspector(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, play: RuntimePlayControl): RuntimeInspectorSummary — Builds the compact reverse-channel summary used by the play-mode inspector panel and the `runtime_summary` bridge RPC.
 
@@ -52,6 +66,12 @@
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
+
+## @jgengine/core/editor/document
+
+- `findEditorCatalog` (function): function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined — Looks up a gameplay data catalog by id on the scene document.
+- `findEditorCatalogEntry` (function): function findEditorCatalogEntry(doc: EditorDocument, catalogId: string, entryId: string): EditorCatalogEntry | undefined — Looks up one entry inside a gameplay data catalog.
+- `seedEditorCatalogs` (function): function seedEditorCatalogs(doc: EditorDocument, definitions: readonly EditorCatalogDefinition[]): EditorDocument — Seeds default catalog rows from game-exported definitions into a document: missing catalogs and missing entries are filled from the definition; existing document values win (overlay already applied).
 
 ## @jgengine/core/editor/liveSync
 
@@ -174,15 +194,13 @@
 - `blankWorld` (function): function blankWorld(seed = "standalone"): EnvironmentWorldFeature — The default flat-ground world the standalone editor opens on when the host supplies none.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
-- `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
 - `downloadSaver` (function): function downloadSaver(filename = "editor.scene.json"): EditorSaveFn — A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening.
-- `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 - `packAgentContext` (function): function packAgentContext(api: EditorHostApi): AgentEditorContext — Packs the live host's selection, mode, focus, and document counts for agent prompts. Injected into every embedded-panel turn so the agent shares the human's current view.
-- `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {}): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
+- `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = readProcessEnv()): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
 - `routeToolCall` (function): function routeToolCall(api: EditorHostApi, call: AgentToolCall): AgentToolResult — Routes one agent tool call through the same editor RPC surface humans use. Mutating calls share the session undo stack — no parallel history. Tool name maps 1:1 onto `EditorBridgeRequest.method` (same verbs as MCP/CLI).
 - `runAgentTurn` (function): function runAgentTurn(options: { api: EditorHostApi; endpoint: AgentEndpoint; history: readonly AgentChatMessage[]; userMessage: string; maxRounds?: number; now?: () => number; }): Promise<AgentTurnResult> — Runs one user message against an agent endpoint: injects live editor context via `packAgentContext`, executes tool calls through `routeToolCall` (shared undo), and returns transcript + patch entries the human can reverse with `undoAgentPatch`.
 - `shallowArrayEqual` (function): function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean — Shallow array equality — for selectors that return id lists (`selection`) or small tuples.
@@ -267,7 +285,7 @@
 - `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
 - `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
-- `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {}): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
+- `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = readProcessEnv()): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
 
 ## @jgengine/editor/agent/toolBridge
 
@@ -303,6 +321,10 @@
 
 - `startEditorBridgeServerNode` (function): function startEditorBridgeServerNode(options: EditorBridgeServerOptions): EditorBridgeServer — Starts a Node HTTP server exposing the editor host over POST /rpc and GET /health.
 
+## @jgengine/editor/mcp/cli
+
+- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSource: RpcPayloadSource | null; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+
 ## @jgengine/editor/mcp/loadGameCatalogs
 
 - `LoadGameCatalogsResult` (type): type LoadGameCatalogsResult = | { ok: true; catalogs: readonly EditorCatalogDefinition[] } | { ok: false; errors: { path: string; message: string }[] } — Result of {@link loadGameCatalogs}: validated definitions, or diagnostics when the export is malformed.
@@ -312,6 +334,11 @@
 - `LoadGameLayersResult` (type): type LoadGameLayersResult = | { ok: true; document: EditorDocument } | { ok: false; errors: EditorDocumentDiagnostic[] } — Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it.
 - `decodeGameLayers` (function): function decodeGameLayers(resolved: unknown): LoadGameLayersResult — Validates an already-resolved `editorLayers` export value (post module-load, post factory-call) against the editor document schema — the exact check {@link loadGameLayers} applies at the untrusted-input boundary between game-authored code and a live editor session.
 - `loadGameLayers` (function): function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> — Node-only: resolves a game's `editorLayers` export straight from Games/<id>/src and validates its shape before it reaches a live editor session — the untrusted-input boundary between game-authored code and the engine.
+
+## @jgengine/editor/mcp/rpcPayload
+
+- `RpcPayloadResult` (type): type RpcPayloadResult = | { ok: true; value: unknown; raw: string; sourceLabel: string } | { ok: false; error: string } — Result of reading or JSON-decoding an RPC payload for the CLI.
+- `RpcPayloadSource` (type): type RpcPayloadSource = | { kind: "inline"; raw: string } | { kind: "file"; path: string } | { kind: "stdin" } — Where an RPC JSON body is read from for the headless editor CLI.
 
 ## @jgengine/editor/mcp/rpcRequest
 
@@ -354,8 +381,6 @@
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" — How the editor hosts the game: frozen placement view, roamable world, or the real game.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
-- `createEditorHost` (function): function createEditorHost(options: { gameId: string; layers: EditorLayersInput | undefined; assets?: readonly EditorAssetInfo[]; onFocus?: (target: { x: number; y: number; z: number } | null) => void; }): { session: EditorSession; api: EditorHostApi; dispose: () => void; } — Builds and installs an editor host for a game: session, visibility, assets, and RPC handling.
-- `getEditorHost` (function): function getEditorHost(): EditorHostApi | null — Retrieves the globally installed editor host, or null if none is mounted.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 
 ## @jgengine/editor/uiStore

@@ -1,4 +1,4 @@
-import type { EditorCatalogDefinition, EditorCatalogsInput } from "@jgengine/core/editor/index";
+import type { EditorCatalogDefinition, EditorCatalogEntry, EditorCatalogsInput } from "@jgengine/core/editor/index";
 import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
 
 /** Result of {@link loadGameCatalogs}: validated definitions, or diagnostics when the export is malformed. */
@@ -55,7 +55,7 @@ export function decodeGameCatalogs(resolved: unknown): LoadGameCatalogsResult {
       return;
     }
     if (typeof item.id !== "string" || typeof item.label !== "string" || schema === null) return;
-    const entries: EditorCatalogDefinition["entries"] = [];
+    const entries: EditorCatalogEntry[] = [];
     item.entries.forEach((entry, entryIndex) => {
       const entryPath = `${path}.entries[${entryIndex}]`;
       if (!isPlainObject(entry) || typeof entry.id !== "string") {

@@ -46,19 +46,21 @@ export {
   type MobileHudBehavior,
 } from "./ui/gameLayout";
 export {
+  listHudPanelTypes,
+  registerHudPanelType,
+  resizePanelSize,
+  resolveHudPanelLayout,
+  type EditorUiDocument,
+  type EditorUiPanelLayout,
+  type HudResizeAxes,
+} from "./ui/hudDocument";
+export {
   HUD_ANCHOR_FRACTIONS,
   type HudAnchor,
   type HudLayoutStore,
   type HudPlacement,
   type HudSize,
 } from "./ui/hudLayout";
-export type {
-  EditorUiDocument,
-  EditorUiPanelLayout,
-  HudPanelTypeDef,
-  HudResizeAxes,
-  ResolvedHudPanelLayout,
-} from "./ui/hudDocument";
 export {
   hudScaleForViewport,
   overflowingPanels,

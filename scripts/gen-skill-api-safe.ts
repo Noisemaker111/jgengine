@@ -35,7 +35,8 @@ function restore(): void {
   for (const [path, content] of before) writeFileSync(path, content);
 }
 
-if (result.status !== 0) {
+const generationCompleted = result.status === 0 || result.status === 2;
+if (!generationCompleted) {
   restore();
   process.exit(result.status ?? 1);
 }
@@ -64,4 +65,9 @@ try {
   restore();
   console.error(`skill-api generation validation failed: ${String(error)}`);
   process.exit(1);
+}
+
+if (result.status === 2) {
+  console.error("skill-api: generated files kept; gate failures above still need fixing");
+  process.exit(2);
 }

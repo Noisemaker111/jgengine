@@ -350,6 +350,8 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
         // Placement/walk views freeze combat/AI so the frame isn't burned on sim.
       },
       onPlayerLeave: playable.loop.onPlayerLeave,
+      onReset: playable.loop.onReset,
+      onDispose: playable.loop.onDispose,
     };
 
     if (mode === "play") {

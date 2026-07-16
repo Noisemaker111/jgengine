@@ -22,12 +22,14 @@ import type {
 export function editorDocumentExtras(doc: EditorDocument): {
   prefabs: EditorPrefab[];
   collections: EditorCollection[];
+  catalogs: EditorCatalogData[];
   terrain?: EditorTerrain;
   ui?: EditorDocument["ui"];
 } {
   return {
     prefabs: doc.prefabs,
     collections: doc.collections,
+    catalogs: doc.catalogs,
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(doc.ui === undefined ? {} : { ui: doc.ui }),
   };
@@ -782,6 +784,7 @@ export function applyEditorDocumentOverlay(
     annotations: upsertById(base.annotations, overlay.annotations),
     prefabs: upsertById(base.prefabs, overlay.prefabs),
     collections: upsertById(base.collections, overlay.collections),
+    catalogs: upsertCatalogs(base.catalogs, overlay.catalogs),
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),
   };

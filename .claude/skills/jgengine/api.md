@@ -138,17 +138,6 @@
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
 - `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
-## @jgengine/core/procedural
-
-- `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
-- `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
-- `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
-- `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
-- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
-- `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
-- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
-- `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
-
 ## @jgengine/core/runtime/adapter
 
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented

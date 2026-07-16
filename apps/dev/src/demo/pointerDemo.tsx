@@ -191,7 +191,7 @@ export const pointerDemoGame: PlayableGame = {
     entityById: (catalogId) => entityCatalog[catalogId] ?? null,
     objectById: (catalogId) => objectCatalog[catalogId] ?? null,
   },
-  loop: { onInit, onNewPlayer, onTick },
+  loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: CommanderUI,
   pointer: {
     select: true,

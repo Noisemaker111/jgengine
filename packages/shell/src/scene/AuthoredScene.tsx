@@ -262,6 +262,12 @@ export interface AuthoredSceneProps {
    * the `document` prop (tests, one-shot previews).
    */
   live?: boolean;
+  /**
+   * Place the document's catalog-id markers into the object
+   * store — WorldScene renders them via the game's `objectModels` seam. Omit when the game places
+   * props itself in onInit with `placeAuthoredObjects`.
+   */
+  placeObjects?: boolean | { verticalOffset?: number };
 }
 
 /**
@@ -281,6 +287,7 @@ export function AuthoredScene({
   scatterModels,
   assets,
   live = true,
+  placeObjects,
 }: AuthoredSceneProps) {
   const liveDocument = useLiveEditorDocument(document, live);
   const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
@@ -299,6 +306,9 @@ export function AuthoredScene({
         context={{ document: liveDocument, field, ...(assets === undefined ? {} : { assets }) }}
       />
       <AuthoredGenerators document={liveDocument} field={field} />
+      {shouldPlaceObjects ? (
+        <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} />
+      ) : null}
     </>
   );
 }
