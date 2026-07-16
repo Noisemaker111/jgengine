@@ -23,6 +23,10 @@ export interface Cosmetics {
   get(userId: string): Readonly<Record<string, string>>;
   snapshot(userId: string): Record<string, string>;
   hydrate(userId: string, state: Record<string, string>): void;
+  /** Snapshot every user's equipped slots for a whole-world save. */
+  snapshotAll(): Record<string, Record<string, string>>;
+  /** Restore every user's equipped slots from a {@link snapshotAll} payload. */
+  hydrateAll(state: Record<string, Record<string, string>>): void;
 }
 
 const EMPTY_SLOTS: Readonly<Record<string, string>> = Object.freeze({});
@@ -78,6 +82,15 @@ export function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics {
     },
     hydrate(userId, state) {
       equipped.set(userId, { ...state });
+    },
+    snapshotAll() {
+      const out: Record<string, Record<string, string>> = {};
+      for (const [userId, slots] of equipped) out[userId] = { ...slots };
+      return out;
+    },
+    hydrateAll(state) {
+      equipped.clear();
+      for (const [userId, slots] of Object.entries(state)) equipped.set(userId, { ...slots });
     },
   };
 }

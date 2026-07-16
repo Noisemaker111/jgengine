@@ -90,7 +90,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     async isMember({ userId, serverId }): Promise<boolean> {
       return live.get(serverId)?.session.members().includes(userId) ?? false;
     },
-    async getServerView({ serverId }): Promise<GameRuntimeServerView | null> {
+    async getServerView({ userId, serverId }): Promise<GameRuntimeServerView | null> {
       const entry = live.get(serverId);
       if (entry === undefined) return null;
       return {
@@ -98,7 +98,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         gameId: entry.gameId,
         revision: entry.session.revision(),
         memberUserIds: [...entry.session.members()],
-        serverState: entry.session.runner().snapshot(),
+        serverState: entry.session.snapshotFor({ userId }),
         updatedAt: now(),
       };
     },

@@ -20,6 +20,11 @@ export interface PossessionDeps {
   events?: PossessionEvents;
 }
 
+export interface PossessionSnapshot {
+  owned: Record<string, readonly string[]>;
+  active: Record<string, string>;
+}
+
 export interface Possession {
   own(userId: string, entityId: string): void;
   disown(userId: string, entityId: string): void;
@@ -27,6 +32,10 @@ export interface Possession {
   listOwned(userId: string): readonly string[];
   active(userId: string): string;
   possess(userId: string, entityId: string): { reason: string } | null;
+  /** Snapshot every user's owned entities and active pawn for a whole-world save. */
+  snapshotAll(): PossessionSnapshot;
+  /** Restore every user's owned entities and active pawn from a {@link snapshotAll} payload. Entity roles are restored by the entity snapshot, not re-applied here. */
+  hydrateAll(state: PossessionSnapshot): void;
 }
 
 export function createPossession(deps: PossessionDeps): Possession {
@@ -77,6 +86,17 @@ export function createPossession(deps: PossessionDeps): Possession {
       deps.entities.update(entityId, { role: "player" });
       deps.events?.emit("possession.swapped", { userId, entityId, previousEntityId });
       return null;
+    },
+    snapshotAll() {
+      const ownedOut: Record<string, readonly string[]> = {};
+      for (const [userId, set] of owned) ownedOut[userId] = Array.from(set);
+      return { owned: ownedOut, active: Object.fromEntries(activeByUser) };
+    },
+    hydrateAll(state) {
+      owned.clear();
+      for (const [userId, ids] of Object.entries(state.owned)) owned.set(userId, new Set(ids));
+      activeByUser.clear();
+      for (const [userId, entityId] of Object.entries(state.active)) activeByUser.set(userId, entityId);
     },
   };
 }

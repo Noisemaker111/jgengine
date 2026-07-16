@@ -59,6 +59,22 @@ createHostRouter({
 
 `createCommandMiddleware`/`createCommandRateLimiter`/`validateCommandInput` (`@jgengine/ws/commandMiddleware`) are the underlying composable pieces if a host wants the pipeline without the router.
 
+## Per-viewer replication projection + area-of-interest — `defineGame({ replication })`
+
+By default a host replicates the **whole world to every client**, so one client's private state (another player's inventory) rides the wire to everyone and every entity is sent regardless of distance. Declare a `ReplicationPolicy` (`@jgengine/core/runtime/worldProjection`) on the game and the authoritative host projects each client its own frame — changing only what a client *sees*, never the simulation, so the game plays identically:
+
+```ts
+defineGame({
+  // …
+  replication: {
+    privatePerUser: true, // each player's private per-user state (inventory) goes only to that player
+    aoiRadius: 60,        // an entity replicates to a viewer only within 60 units of the viewer's own entity (its stats too)
+  },
+});
+```
+
+Mechanics (the seam, for engine work): projection and change-detection ride the existing `SnapshotModule` replication contract (`@jgengine/core/runtime/worldSnapshot`) — no per-feature branch. A module opts into `project(data, viewer, world)` (narrow the payload for one `SnapshotViewer`; `world` is the raw baseline for cross-module culling) and `version()` (a monotone dirty counter). The core `entities`/`stats`/`inventory` modules attach projectors from the policy; the host replicator skips re-serializing an unchanged commit via `WorldReplicatorOptions.worldVersion` aggregated from those versions (`ctx.replicationVersion()`), and `ctx.snapshot(viewer)` / `HostedWorldSession.snapshotFor(viewer)` / `HostedGameRunner.projectsViewers()` carry the projected frame. WS fan-out (`createHostRouter`) is room-scoped: a presence/chat/voice/server broadcast touches only that room's subscribers, not every connection. Helpers `projectEntitiesForViewer` / `projectPerUserForViewer` / `projectByVisibleIds` / `visibleEntityIds` / `policyProjectsViewers` build projectors. Maintainer note: run `bun run gen:skill-api` on a clean checkout to regenerate `api.md` for these exports.
+
 ## Per-world state — never a module-global `Map`
 
 One host process serves many worlds, so authoritative runtime state (heroes, mobs, auras, active sessions) must be **per-`GameContext`, never a module-scoped `Map`** — a module global is process-global and bleeds between `serverId`s on the same host. `createGameContext` already mints a fresh `EntityStore` per world; for game-side state use `perContext` (`@jgengine/core/runtime/perContext`): `const heroRuntimes = perContext(() => new Map())` at module scope, then `heroRuntimes(ctx).get(userId)` per world. It keys on context identity through a `WeakMap`, so state is isolated per world and reclaimed when the context is.

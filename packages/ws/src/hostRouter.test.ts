@@ -197,6 +197,39 @@ test("loopback: presence row has no appearance when the client never sent one", 
   }
 });
 
+test("loopback: a presence broadcast for one room reaches only that room's subscribers", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const roomX = await alice.transport.joinServer({ gameId: "room-x" });
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "room-x", serverId: roomX.serverId });
+
+    const carol = stack.connect("carol");
+    const roomY = await carol.transport.joinServer({ gameId: "room-y" });
+    expect(roomY.serverId).not.toBe(roomX.serverId);
+
+    const bobRooms = channel<WsPresenceRow[]>();
+    bob.presenceSync.subscribe(roomX.serverId, (rows) => bobRooms.push(rows));
+    expect(await bobRooms.next()).toEqual([]);
+
+    const carolUpdates: WsPresenceRow[][] = [];
+    carol.presenceSync.subscribe(roomY.serverId, (rows) => carolUpdates.push(rows));
+    expect(await new Promise<WsPresenceRow[]>((r) => setTimeout(() => r(carolUpdates[0] ?? []), 20))).toEqual([]);
+
+    alice.presenceSync.syncPose(roomX.serverId, { x: 3, y: 0, z: 0, rotationY: 0, rotationPitch: 0 });
+
+    const bobRows = await bobRooms.next();
+    expect(bobRows.map((row) => row.userId)).toEqual(["alice"]);
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(carolUpdates).toHaveLength(1);
+    expect(carolUpdates[0]).toEqual([]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("loopback: leaving drops the leaver's presence row for other clients", async () => {
   const stack = startStack();
   try {

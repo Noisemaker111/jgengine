@@ -56,6 +56,8 @@ export interface SimClock {
   advance(realDt: number): number;
   now(): number;
   snapshot(): ClockSnapshot;
+  /** Restore clock position — game-time, pause state, and speed multipliers — from a {@link ClockSnapshot} for whole-world save/load. Live timers registered via `after`/`every`/`at` are unaffected. */
+  hydrate(snapshot: ClockSnapshot): void;
   calendar(): CalendarTime;
   isPaused(): boolean;
   speed(): number;
@@ -229,10 +231,20 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
     };
   }
 
+  function hydrate(state: ClockSnapshot): void {
+    now = state.now;
+    paused = state.paused;
+    playSpeed = state.playSpeed;
+    timescale = state.timescale;
+    displayMinute = minuteIndex(now, dayLength);
+    onChange();
+  }
+
   return {
     advance,
     now: () => now,
     calendar,
+    hydrate,
     snapshot: () => ({
       now,
       paused,

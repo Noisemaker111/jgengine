@@ -1,3 +1,5 @@
+import { editorLayers } from "../../editorLayers";
+
 export const WORLD_W = 640;
 export const WORLD_D = 640;
 export const SHORE_X = -210;
@@ -9,29 +11,45 @@ export interface District {
   radius: number;
 }
 
-export const DISTRICTS: readonly District[] = [
-  { id: "ocean_drive", label: "Ocean Drive", center: [-170, 0], radius: 110 },
-  { id: "downtown", label: "Downtown Vice", center: [40, -60], radius: 120 },
-  { id: "port_carmine", label: "Port Carmine", center: [130, 190], radius: 100 },
-  { id: "palm_heights", label: "Palm Heights", center: [70, -240], radius: 90 },
-];
-
 export interface RoadSegment {
   from: readonly [number, number];
   to: readonly [number, number];
 }
 
-export const ROADS: readonly RoadSegment[] = [
-  { from: [-180, -280], to: [-180, 280] },
-  { from: [-60, -280], to: [-60, 280] },
-  { from: [60, -280], to: [60, 280] },
-  { from: [180, -280], to: [180, 280] },
-  { from: [-180, -240], to: [180, -240] },
-  { from: [-180, -120], to: [180, -120] },
-  { from: [-180, 0], to: [180, 0] },
-  { from: [-180, 120], to: [180, 120] },
-  { from: [-180, 240], to: [180, 240] },
-];
+function markerXYZ(id: string): readonly [number, number, number] {
+  const marker = editorLayers.markers.find((m) => m.id === id);
+  if (marker === undefined) throw new Error(`vice-isle scene is missing marker "${id}"`);
+  return [marker.position.x, marker.position.y, marker.position.z];
+}
+
+export const DISTRICTS: readonly District[] = editorLayers.volumes
+  .filter((volume) => volume.kind === "district")
+  .map((volume) => ({
+    id: volume.id,
+    label: volume.label ?? volume.id,
+    center: [volume.center.x, volume.center.z] as const,
+    radius: volume.radius ?? 0,
+  }));
+
+export const ROADS: readonly RoadSegment[] = editorLayers.paths
+  .filter((path) => path.kind === "road")
+  .map((path) => {
+    const from = path.points[0]!;
+    const to = path.points[1]!;
+    return { from: [from.x, from.z] as const, to: [to.x, to.z] as const };
+  });
+
+export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] = (
+  editorLayers.paths.find((path) => path.id === "race-loop")?.points ?? []
+).map((point) => [point.x, point.z] as const);
+
+export const KINGPIN_POS: readonly [number, number, number] = markerXYZ("kingpin");
+export const PLAYER_SPAWN: readonly [number, number, number] = markerXYZ("player_spawn");
+export const MARCO_POS: readonly [number, number, number] = markerXYZ("marco");
+export const GUNSHOP_POS: readonly [number, number, number] = markerXYZ("gunshop");
+export const GARAGE_POS: readonly [number, number, number] = markerXYZ("garage");
+export const DOCK_FIGHT_CENTER: readonly [number, number, number] = markerXYZ("dock_fight");
+export const BRIEFCASE_POS: readonly [number, number, number] = markerXYZ("briefcase");
 
 export function districtAt(x: number, z: number): District | null {
   let best: District | null = null;
@@ -60,25 +78,3 @@ export function roadPoints(spacing: number): readonly (readonly [number, number]
   }
   return points;
 }
-
-export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] = [
-  [-60, 120],
-  [60, 120],
-  [60, 0],
-  [180, 0],
-  [180, -240],
-  [60, -240],
-  [-60, -120],
-  [-180, -120],
-  [-180, 120],
-  [-68, 122],
-];
-
-export const KINGPIN_POS: readonly [number, number, number] = [92, 0, -252];
-
-export const PLAYER_SPAWN: readonly [number, number, number] = [-176, 0, 24];
-export const MARCO_POS: readonly [number, number, number] = [52, 0, -52];
-export const GUNSHOP_POS: readonly [number, number, number] = [-52, 0, 8];
-export const GARAGE_POS: readonly [number, number, number] = [-68, 0, 116];
-export const DOCK_FIGHT_CENTER: readonly [number, number, number] = [130, 0, 196];
-export const BRIEFCASE_POS: readonly [number, number, number] = [142, 0, 208];
