@@ -1,6 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseContributionsHtml } from "./server";
+import { githubProxyHandler, parseContributionsHtml } from "./server";
+
+function fakeFetch(body: unknown, ok = true, status = 200): typeof fetch {
+  return (async () =>
+    ({
+      ok,
+      status,
+      headers: new Headers(),
+      text: async () => JSON.stringify(body),
+    }) as unknown as Response) as unknown as typeof fetch;
+}
 
 const HTML = `
   <table>
@@ -25,5 +35,78 @@ describe("parseContributionsHtml", () => {
 
   test("returns nothing for markup without day cells", () => {
     expect(parseContributionsHtml("<div>no calendar here</div>")).toEqual([]);
+  });
+});
+
+describe("githubProxyHandler", () => {
+  test("forwards an allowlisted REST path", async () => {
+    const handle = githubProxyHandler({
+      allowPath: (path) => path === "/repos/Noisemaker111/jgengine",
+      fetchImpl: fakeFetch({ full_name: "Noisemaker111/jgengine" }),
+    });
+    const res = await handle(new Request("https://site.example/api/github-proxy?path=/repos/Noisemaker111/jgengine"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ full_name: "Noisemaker111/jgengine" });
+  });
+
+  test("rejects a REST path that isn't on the allowlist", async () => {
+    const handle = githubProxyHandler({
+      allowPath: (path) => path === "/repos/Noisemaker111/jgengine",
+      fetchImpl: fakeFetch({}),
+    });
+    const res = await handle(new Request("https://site.example/api/github-proxy?path=/user/emails"));
+    expect(res.status).toBe(403);
+  });
+
+  test("denies every REST path when allowPath is omitted", async () => {
+    const handle = githubProxyHandler({ fetchImpl: fakeFetch({}) });
+    const res = await handle(new Request("https://site.example/api/github-proxy?path=/repos/Noisemaker111/jgengine"));
+    expect(res.status).toBe(403);
+  });
+
+  test("forwards an allowlisted GraphQL operation, sending only the server-trusted query", async () => {
+    let sentBody: string | undefined;
+    const fetchImpl = (async (_url: string, init?: RequestInit) => {
+      sentBody = init?.body as string;
+      return { ok: true, status: 200, headers: new Headers(), text: async () => JSON.stringify({ data: {} }) } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const handle = githubProxyHandler({ graphqlOperations: { contributions: "query { viewer { login } }" }, fetchImpl });
+    const res = await handle(
+      new Request("https://site.example/api/github-proxy?op=contributions", {
+        method: "POST",
+        body: JSON.stringify({ variables: { login: "octocat" } }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(JSON.parse(sentBody!)).toEqual({ query: "query { viewer { login } }", variables: { login: "octocat" } });
+  });
+
+  test("rejects a GraphQL operation name that isn't on the allowlist", async () => {
+    const handle = githubProxyHandler({ graphqlOperations: { contributions: "query {}" }, fetchImpl: fakeFetch({}) });
+    const res = await handle(
+      new Request("https://site.example/api/github-proxy?op=deleteEverything", { method: "POST", body: "{}" }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  test("denies every GraphQL operation when graphqlOperations is omitted", async () => {
+    const handle = githubProxyHandler({ fetchImpl: fakeFetch({}) });
+    const res = await handle(new Request("https://site.example/api/github-proxy?op=contributions", { method: "POST", body: "{}" }));
+    expect(res.status).toBe(403);
+  });
+
+  test("rejects a write method against an allowlisted REST path", async () => {
+    const handle = githubProxyHandler({
+      allowPath: (path) => path === "/repos/Noisemaker111/jgengine",
+      fetchImpl: fakeFetch({}),
+    });
+    const res = await handle(new Request("https://site.example/api/github-proxy?path=/repos/Noisemaker111/jgengine", { method: "POST" }));
+    expect(res.status).toBe(405);
+  });
+
+  test("rejects '?path=/graphql' — GraphQL must go through '?op='", async () => {
+    const handle = githubProxyHandler({ fetchImpl: fakeFetch({}) });
+    const res = await handle(new Request("https://site.example/api/github-proxy?path=/graphql", { method: "POST" }));
+    expect(res.status).toBe(403);
   });
 });

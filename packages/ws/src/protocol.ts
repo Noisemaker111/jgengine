@@ -46,7 +46,15 @@ export type WsVoiceParticipant = {
 
 export type WsClientMessage =
   | { v: 1; t: "hello"; id: number; userId: string; token?: string }
-  | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes }
+  | {
+      v: 1;
+      t: "join";
+      id: number;
+      gameId: string;
+      serverId?: string;
+      attributes?: SessionAttributes;
+      code?: string;
+    }
   | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string }
   | { v: 1; t: "browse"; id: number; gameId: string; filter?: MatchFilter; limit?: number }
   | { v: 1; t: "leave"; id: number; serverId: string }
@@ -202,7 +210,8 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
     case "join":
       return typeof message.id === "number" &&
         typeof message.gameId === "string" &&
-        (message.serverId === undefined || typeof message.serverId === "string")
+        (message.serverId === undefined || typeof message.serverId === "string") &&
+        (message.code === undefined || typeof message.code === "string")
         ? (message as WsClientMessage)
         : null;
     case "joinByCode":

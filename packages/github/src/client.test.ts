@@ -38,4 +38,18 @@ describe("createGitHub", () => {
     const gh = createGitHub({ fetchImpl: fakeFetch([], {}) });
     await expect(gh.graphql("query {}")).rejects.toBeInstanceOf(GitHubError);
   });
+
+  test("graphql in proxy mode sends the operation name via '?op=', never raw query text", async () => {
+    const calls: string[] = [];
+    let sentBody = "";
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      calls.push(String(url));
+      sentBody = String(init?.body ?? "");
+      return { ok: true, status: 200, json: async () => ({ data: { viewer: { login: "octocat" } } }) } as Response;
+    }) as unknown as typeof fetch;
+    const gh = createGitHub({ endpoint: "/api/github-proxy", fetchImpl });
+    await gh.graphql("contributions", { login: "octocat" });
+    expect(calls[0]).toBe("/api/github-proxy?op=contributions");
+    expect(JSON.parse(sentBody)).toEqual({ variables: { login: "octocat" } });
+  });
 });

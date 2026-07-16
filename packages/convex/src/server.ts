@@ -24,6 +24,7 @@ import {
   validateFeedWrite,
   type FeedWriteGate,
 } from "@jgengine/core/multiplayer/feedWriteGate";
+import { normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
   decidePoseSync,
   spawnPresenceState,
@@ -33,7 +34,7 @@ import {
 import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
-import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
+import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord, SessionVisibility } from "@jgengine/core/runtime/hostPersistence";
 import { buildHydratePlayers, planServerPersist, shouldAutoSave, trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
@@ -192,6 +193,26 @@ export async function resolveActor(
     return claimedExternalId;
   }
   return null;
+}
+
+/** True when a server's `visibility` should surface in public listings/browse results.
+ * @internal
+ */
+export function isListablePublicly(visibility: SessionVisibility | undefined): boolean {
+  return (visibility ?? "public") !== "private";
+}
+
+/** A non-member may enter a private server only by presenting its `joinCode`; members always pass.
+ * @internal
+ */
+export function canJoinPrivateServer(args: {
+  isMember: boolean;
+  joinCode: string | undefined;
+  suppliedCode: string | undefined;
+}): boolean {
+  if (args.isMember) return true;
+  if (args.joinCode === undefined || args.suppliedCode === undefined) return false;
+  return normalizeJoinCode(args.suppliedCode) === normalizeJoinCode(args.joinCode);
 }
 
 async function requireServerMember(
@@ -525,8 +546,11 @@ export function createGameServerFunctions(options?: {
 
       if (
         (server.visibility ?? "public") === "private" &&
-        !server.memberUserIds.includes(actorUserId) &&
-        args.serverId === undefined
+        !canJoinPrivateServer({
+          isMember: server.memberUserIds.includes(actorUserId),
+          joinCode: server.joinCode,
+          suppliedCode: args.joinCode,
+        })
       ) {
         throw new ConvexError("Server is private");
       }
@@ -852,19 +876,23 @@ export function createGameServerFunctions(options?: {
       }),
     ),
     handler: async (ctx, args) => {
+      const limit = args.limit ?? 20;
       const rows = await ctx.db
         .query("jgGameServers")
         .withIndex("by_game_and_status", (q) => q.eq("gameId", args.gameId).eq("status", "running"))
-        .take(args.limit ?? 20);
+        .take(Math.min(limit * 4, 200));
 
-      return rows.map((row) => ({
-        _id: row._id,
-        status: row.status,
-        memberCount: row.memberUserIds.length,
-        slotsPerServer: row.slotsPerServer,
-        mode: row.mode,
-        updatedAt: row.updatedAt,
-      }));
+      return rows
+        .filter((row) => isListablePublicly(row.visibility))
+        .slice(0, limit)
+        .map((row) => ({
+          _id: row._id,
+          status: row.status,
+          memberCount: row.memberUserIds.length,
+          slotsPerServer: row.slotsPerServer,
+          mode: row.mode,
+          updatedAt: row.updatedAt,
+        }));
     },
   });
 

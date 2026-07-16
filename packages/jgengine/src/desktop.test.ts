@@ -8,6 +8,7 @@ import {
   buildPlan,
   checkToolchains,
   defaultIdentifier,
+  isAllowedDesktopOrigin,
   parseDesktopArgs,
   resolveMetadata,
   runDesktopAsync,
@@ -102,6 +103,50 @@ describe("validateHttpsUrl", () => {
   test("rejects garbage", () => {
     const result = validateHttpsUrl("not a url");
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("isAllowedDesktopOrigin", () => {
+  test("allows localhost and jgengine.com hosts", () => {
+    expect(isAllowedDesktopOrigin("localhost")).toBe(true);
+    expect(isAllowedDesktopOrigin("127.0.0.1")).toBe(true);
+    expect(isAllowedDesktopOrigin("jgengine.com")).toBe(true);
+    expect(isAllowedDesktopOrigin("play.jgengine.com")).toBe(true);
+    expect(isAllowedDesktopOrigin("JGENGINE.COM")).toBe(true);
+  });
+
+  test("rejects an arbitrary host", () => {
+    expect(isAllowedDesktopOrigin("evil.example.com")).toBe(false);
+    expect(isAllowedDesktopOrigin("notjgengine.com")).toBe(false);
+  });
+});
+
+describe("buildPlan remote origin allowlist", () => {
+  test("rejects --url outside the allowlist without --allow-remote", () => {
+    const parsed = parseDesktopArgs(["--url", "https://evil.example.com/game"]);
+    expect("error" in parsed).toBe(false);
+    if ("error" in parsed) return;
+    const plan = buildPlan(parsed, scratch());
+    expect("error" in plan).toBe(true);
+    if (!("error" in plan)) return;
+    expect(plan.error).toContain("evil.example.com");
+    expect(plan.error).toContain("--allow-remote");
+  });
+
+  test("accepts --url outside the allowlist with --allow-remote", () => {
+    const parsed = parseDesktopArgs(["--url", "https://evil.example.com/game", "--allow-remote"]);
+    expect("error" in parsed).toBe(false);
+    if ("error" in parsed) return;
+    const plan = buildPlan(parsed, scratch());
+    expect("error" in plan).toBe(false);
+  });
+
+  test("accepts --url on the default allowlist without --allow-remote", () => {
+    const parsed = parseDesktopArgs(["--url", "https://jgengine.com/games/snake"]);
+    expect("error" in parsed).toBe(false);
+    if ("error" in parsed) return;
+    const plan = buildPlan(parsed, scratch());
+    expect("error" in plan).toBe(false);
   });
 });
 
@@ -267,7 +312,16 @@ describe("CI smoke-build (dry-run)", () => {
       const cwd = scratch();
       const out = join(cwd, "hosted-stage");
       const code = await runDesktopAsync(
-        ["--url", "https://example.com/game", "--name", "Hosted Game", "--dry-run", "--out", out],
+        [
+          "--url",
+          "https://example.com/game",
+          "--name",
+          "Hosted Game",
+          "--dry-run",
+          "--allow-remote",
+          "--out",
+          out,
+        ],
         cwd,
       );
       expect(code).toBe(0);
