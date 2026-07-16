@@ -9,6 +9,13 @@ import {
   type ChatRateLimit,
 } from "@jgengine/core/game/chat";
 
+import {
+  createCommandMiddleware,
+  type CommandAuthorize,
+  type CommandCatalog,
+  type CommandLimits,
+  type HostCommandOp,
+} from "./commandMiddleware";
 import type { GameHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
 import {
@@ -41,6 +48,12 @@ export type HostRouterOptions = {
   chatRateLimit?: ChatRateLimit;
   chatHistoryLimit?: number;
   chatMaxBodyLength?: number;
+  /** Per-op rate limits for pose/runCommand/join/browse/voice. Omit (default) for no rate limiting; pass {@link DEFAULT_COMMAND_LIMITS} or a custom {@link CommandLimits} to opt in. */
+  limits?: CommandLimits;
+  /** Per-command authorization hook; defaults to allow-all. */
+  authorize?: CommandAuthorize;
+  /** Declared `runCommand` names and input validators. Omit (default) to pass every command through unchanged; set to reject unknown command names and validate declared ones. */
+  validate?: CommandCatalog;
   now?: () => number;
 };
 
@@ -152,6 +165,33 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       if (!connection.subscriptions.has(key)) continue;
       send(connection, { v: 1, t: "update", channel: "presence", serverId, data });
     }
+  };
+
+  const commandMiddleware = createCommandMiddleware({
+    limits: options.limits,
+    authorize: options.authorize,
+    validate: options.validate,
+  });
+
+  const gate = async (
+    connection: Connection,
+    id: number,
+    op: HostCommandOp,
+    args: { serverId?: string; command?: string; input?: unknown } = {},
+  ): Promise<boolean> => {
+    if (connection.userId === null) return true;
+    const decision = await commandMiddleware.check({
+      connection,
+      userId: connection.userId,
+      op,
+      atMs: now(),
+      ...args,
+    });
+    if (!decision.allow) {
+      replyError(connection, id, decision.reason);
+      return false;
+    }
+    return true;
   };
 
   const chatRings = new Map<string, WsChatMessage[]>();
@@ -341,6 +381,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const handlePose = async (connection: Connection, serverId: string, pose: WsPose) => {
     if (connection.userId === null) return;
+    const gateDecision = await commandMiddleware.check({
+      connection,
+      userId: connection.userId,
+      op: "pose",
+      atMs: now(),
+      serverId,
+    });
+    if (!gateDecision.allow) return;
     if (!(await host.isMember({ userId: connection.userId, serverId }))) return;
     const rows = presence.get(serverId) ?? new Map<string, PresenceEntry>();
     presence.set(serverId, rows);
@@ -432,6 +480,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     try {
       switch (message.t) {
         case "join": {
+          if (!(await gate(connection, message.id, "join", { serverId: message.serverId }))) return;
           const result = await host.joinServer({
             userId,
             gameId: message.gameId,
@@ -444,6 +493,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "joinByCode": {
+          if (!(await gate(connection, message.id, "join", {}))) return;
           const result = await host.joinByCode({
             userId,
             gameId: message.gameId,
@@ -454,6 +504,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "browse": {
+          if (!(await gate(connection, message.id, "browse", {}))) return;
           const result = await host.browseServers({
             gameId: message.gameId,
             filter: message.filter,
@@ -471,6 +522,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "runCommand": {
+          if (
+            !(await gate(connection, message.id, "runCommand", {
+              serverId: message.serverId,
+              command: message.command,
+              input: message.input,
+            }))
+          )
+            return;
           const result = await host.runCommand({
             userId,
             serverId: message.serverId,
@@ -495,6 +554,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voiceJoin": {
+          if (!(await gate(connection, message.id, "voice", { serverId: message.serverId }))) return;
           if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const participant: WsVoiceParticipant = { userId };
           if (message.streamId !== undefined) participant.streamId = message.streamId;
@@ -504,6 +564,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voiceLeave": {
+          if (!(await gate(connection, message.id, "voice", { serverId: message.serverId }))) return;
           if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const roster = voiceRoster(message.serverId, message.channelId);
           const removed = roster.delete(userId);
@@ -512,6 +573,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "voicePublish": {
+          if (!(await gate(connection, message.id, "voice", { serverId: message.serverId }))) return;
           if ((await requireMembership(connection, message.id, message.serverId)) === null) return;
           const participant = voiceRoster(message.serverId, message.channelId).get(userId);
           if (participant === undefined) {
