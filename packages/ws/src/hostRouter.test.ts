@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import type { CommandAuthorize, CommandCatalog, CommandLimits } from "./commandMiddleware";
 import { createGameHost, memoryPersistence, type GameHost } from "./host";
 import { createHostRouter, loopbackPipe, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
@@ -32,6 +33,9 @@ function startStack(options: {
   authenticate?: (args: { userId: string; token?: string }) => string | null;
   allowedFeedActions?: readonly string[];
   singleSession?: boolean;
+  limits?: CommandLimits;
+  authorize?: CommandAuthorize;
+  validate?: CommandCatalog;
 } = {}): {
   host: GameHost;
   router: HostRouter;
@@ -48,6 +52,9 @@ function startStack(options: {
     allowAnonymous: options.allowAnonymous ?? true,
     authenticate: options.authenticate,
     singleSession: options.singleSession,
+    limits: options.limits,
+    authorize: options.authorize,
+    validate: options.validate,
   });
   const backends: WsBackend[] = [];
   return {
@@ -470,6 +477,96 @@ test("security: client feed writes disabled by default", async () => {
     await expect(
       alice.pushFeedEntry({ serverId, action: "kill", entry: { who: "hogger" } }),
     ).rejects.toThrow(/client feed writes are disabled/);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: an unconfigured router runs a burst of commands unthrottled", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    for (let i = 0; i < 25; i += 1) {
+      const result = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+      expect(result).toEqual({ ok: true });
+    }
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: limits reject a runCommand burst past its configured budget", async () => {
+  const stack = startStack({ limits: { runCommand: { count: 1, perMs: 60_000 } } });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const first = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(first).toEqual({ ok: true });
+    const second = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(second).toEqual({ ok: false, reason: "Rate limited: runCommand" });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: limits are per connection, so a fresh connection keeps its own budget", async () => {
+  const stack = startStack({ limits: { browse: { count: 1, perMs: 60_000 } } });
+  try {
+    const alice = stack.connect("alice");
+    await alice.transport.joinServer({ gameId: "test-game" });
+    await expect(alice.browse({ gameId: "test-game" })).resolves.toBeDefined();
+    await expect(alice.browse({ gameId: "test-game" })).rejects.toThrow(/Rate limited: browse/);
+
+    const bob = stack.connect("bob");
+    await bob.transport.joinServer({ gameId: "test-game" });
+    await expect(bob.browse({ gameId: "test-game" })).resolves.toBeDefined();
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: validate rejects a runCommand name absent from the declared catalog", async () => {
+  const stack = startStack({ validate: { "engine.ping": {} } });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const known = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(known).toEqual({ ok: true });
+    const unknown = await alice.transport.runCommand({ serverId, command: "engine.nope", input: null });
+    expect(unknown).toEqual({ ok: false, reason: "Unknown command: engine.nope" });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: validate runs a declared command's input validator before it reaches the host", async () => {
+  const stack = startStack({
+    validate: {
+      "engine.ping": { validate: (input) => (input === null ? { reason: "input required" } : null) },
+    },
+  });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    const rejected = await alice.transport.runCommand({ serverId, command: "engine.ping", input: null });
+    expect(rejected).toEqual({ ok: false, reason: "input required" });
+    const accepted = await alice.transport.runCommand({ serverId, command: "engine.ping", input: {} });
+    expect(accepted).toEqual({ ok: true });
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("middleware: authorize hook can gate a sensitive op while leaving others untouched", async () => {
+  const stack = startStack({ authorize: ({ op }) => op !== "runCommand" });
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });
+    await expect(
+      alice.transport.runCommand({ serverId, command: "engine.ping", input: null }),
+    ).resolves.toEqual({ ok: false, reason: "Not authorized: runCommand" });
+    await expect(alice.browse({ gameId: "test-game" })).resolves.toBeDefined();
   } finally {
     await stack.shutdown();
   }

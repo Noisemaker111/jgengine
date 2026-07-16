@@ -1,3 +1,4 @@
+export * from "./commandMiddleware";
 export * from "./createWsBackend";
 export * from "./host";
 export * from "./hostRouter";

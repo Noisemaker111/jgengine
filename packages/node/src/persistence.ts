@@ -16,8 +16,40 @@ import {
   topLeaderboardRows,
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
+import { memoryWorldStore, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 
 export { memoryPersistence } from "@jgengine/ws/host";
+
+/** Per-world key a {@link WorldPersistence} resolves a {@link HostedWorldStore} for. */
+export interface WorldPersistenceKey {
+  gameId: string;
+  serverId: string;
+}
+
+/**
+ * The persistence plug-point for {@link createWorldGameServer}: resolves one {@link HostedWorldStore}
+ * per hosted world, called once when the world host session is created. Structural — a SQL, file, or
+ * Convex-backed store all conform without `node` importing a concrete driver; only a `store()` factory
+ * is required. Mirrors `HostPersistence` (the reducer host's persistence seam).
+ */
+export interface WorldPersistence {
+  store(key: WorldPersistenceKey): HostedWorldStore;
+}
+
+/** Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit. */
+export function memoryWorldPersistence(): WorldPersistence {
+  const stores = new Map<string, HostedWorldStore>();
+  return {
+    store({ gameId, serverId }) {
+      const key = `${gameId} ${serverId}`;
+      const existing = stores.get(key);
+      if (existing !== undefined) return existing;
+      const created = memoryWorldStore();
+      stores.set(key, created);
+      return created;
+    },
+  };
+}
 
 function isMissing(error: unknown): boolean {
   return (error as NodeJS.ErrnoException | null)?.code === "ENOENT";

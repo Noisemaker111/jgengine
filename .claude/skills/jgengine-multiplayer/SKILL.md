@@ -35,6 +35,26 @@ ws({ topology: "shared", authority: "server" }); // shared world
 
 The transport/host/persistence seam — `createWsBackend`, protocol codec, browser-safe authoritative host + router, WebRTC P2P, the Node/Convex/SQL adapters, presence, and save cadence. Full surface: **[reference.md](https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills/jgengine-multiplayer/reference.md)**.
 
+## Host command middleware — rate limits, validation, authorization
+
+`createHostRouter` (`@jgengine/ws`) ships a composable rate-limit → validate → authorize pipeline over `pose`/`runCommand`/`join`/`browse`/`voice`, wired via three opt-in `HostRouterOptions` fields — an unconfigured router behaves exactly as before:
+
+```ts
+import { createHostRouter, DEFAULT_COMMAND_LIMITS } from "@jgengine/ws";
+
+createHostRouter({
+  host,
+  limits: DEFAULT_COMMAND_LIMITS, // per-op sliding-window budgets; omit for no rate limiting
+  validate: {
+    "move.to": { validate: (input) => (isVector3(input) ? null : { reason: "expected a Vector3" }) },
+  }, // declared commands only — any other runCommand name is rejected as unknown
+  authorize: ({ userId, op, command }) =>
+    op !== "runCommand" || command !== "admin.kick" || isModerator(userId), // default allow
+});
+```
+
+`createCommandMiddleware`/`createCommandRateLimiter`/`validateCommandInput` (`@jgengine/ws/commandMiddleware`) are the underlying composable pieces if a host wants the pipeline without the router.
+
 ## Per-world state — never a module-global `Map`
 
 One host process serves many worlds, so authoritative runtime state (heroes, mobs, auras, active sessions) must be **per-`GameContext`, never a module-scoped `Map`** — a module global is process-global and bleeds between `serverId`s on the same host. `createGameContext` already mints a fresh `EntityStore` per world; for game-side state use `perContext` (`@jgengine/core/runtime/perContext`): `const heroRuntimes = perContext(() => new Map())` at module scope, then `heroRuntimes(ctx).get(userId)` per world. It keys on context identity through a `WeakMap`, so state is isolated per world and reclaimed when the context is.
@@ -49,6 +69,12 @@ For single-player (or per-user) game saves that live on the server instead of `l
 ## Offline whole-world save — `defineGame({ persist })` / `ctx.game.save`
 
 The single-player counterpart to hosted persistence. A multiplayer host serializes the whole world into a `WorldSnapshot` (`ctx.snapshot()`/`ctx.hydrate()`) to replicate it; the **same seam** persists an offline game to `localStorage`. Turn on `defineGame({ persist: true })` (wired only when `isOffline(multiplayer)` — never for a server-authoritative world, where the host persists) and the engine binds `ctx.game.save` (a `RuntimeSave`) to a local backend, autosaving the entire world — every `defineStore` slot, all entities + stats + inventories — with no per-field code. `createRuntimeSave({ target, backend, mode, ... })` (`@jgengine/core/runtime/runtimeSave`) is the bridge under it: `target` is any `{ snapshot, hydrate, subscribe }` (a `GameContext` satisfies it), `backend` is the same `SaveBackend` seam as `createSaveStore` — so swapping `localSaveBackend()` for `createConvexSaveBackend(...)` via the `createGameContext({ save })` seam moves an offline game's whole-world save to the cloud, unchanged. Modes: `"autosave"` (debounced, default) or `"manual"` + `checkpoint()` for save points / quest / area triggers. The game calls `ctx.game.save.load()` on boot to restore. Full authoring guide: `jgengine-gameplay` → "Save the *whole* game automatically".
+
+## Hosted-world persistence and clean shutdown — `@jgengine/node/worldServer`, `@jgengine/node/shutdown`
+
+`createWorldGameServer` (the GameContext-loop host, distinct from `createGameHost`'s reducer path above) takes a `persistence?: WorldPersistence` — `store({ gameId, serverId }) => HostedWorldStore` (the same `load()`/`save()` seam `createHostedWorldSession` already defines). Default `memoryWorldPersistence()` keeps today's in-memory-per-world behavior; inject a file/SQL/Convex-backed one to survive a redeploy or crash. `server.flush()` force-persists every live world outside the tick cadence; `server.close()` calls it before tearing down the ws server.
+
+`installShutdownHook(shutdown, options?)` (`@jgengine/node/shutdown`) wires `SIGINT`/`SIGTERM` to a clean-shutdown callback (`() => server.close()`), bounded by `timeoutMs` (default 5s) so a stuck flush can't hang the process, idempotent against a second signal mid-shutdown, and removable (`hook.remove()`) for tests or an embedder with its own handling. Not wired automatically — call it once from the process entrypoint.
 
 ## Dev save middleware — `@jgengine/node/devSavePlugin`
 

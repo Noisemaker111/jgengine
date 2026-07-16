@@ -109,6 +109,26 @@ const builtinCommands = {
   },
 };
 
+/** Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first. */
+export const OP_LEDGER_LIMIT = 64;
+
+const WS_OP_ID_FIELD = "__jgWsOpId";
+
+type OpLedgerEntry = { opId: string; result: TransportRunCommandResult };
+
+function unwrapOpEnvelope(input: unknown): { opId: string; input: unknown } | null {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) return null;
+  const record = input as Record<string, unknown>;
+  const opId = record[WS_OP_ID_FIELD];
+  if (typeof opId !== "string") return null;
+  const { [WS_OP_ID_FIELD]: _opId, ...rest } = record;
+  return { opId, input: rest };
+}
+
+function opLedgerKey(serverId: string, userId: string): string {
+  return `${serverId}|${userId}`;
+}
+
 /** Creates a `GameHost` that runs game servers over the given persistence and runtimes. */
 export function createGameHost(options: GameHostOptions): GameHost {
   const now = options.now ?? Date.now;
@@ -134,6 +154,28 @@ export function createGameHost(options: GameHostOptions): GameHost {
   const listeners = new Set<(event: HostChangeEvent) => void>();
   const emit = (event: HostChangeEvent) => {
     for (const listener of listeners) listener(event);
+  };
+
+  const opLedgers = new Map<string, OpLedgerEntry[]>();
+
+  const findAppliedOp = (serverId: string, userId: string, opId: string): TransportRunCommandResult | undefined =>
+    opLedgers.get(opLedgerKey(serverId, userId))?.find((entry) => entry.opId === opId)?.result;
+
+  const rememberAppliedOp = (
+    serverId: string,
+    userId: string,
+    opId: string,
+    result: TransportRunCommandResult,
+  ) => {
+    const key = opLedgerKey(serverId, userId);
+    const entries = opLedgers.get(key) ?? [];
+    entries.push({ opId, result });
+    if (entries.length > OP_LEDGER_LIMIT) entries.shift();
+    opLedgers.set(key, entries);
+  };
+
+  const forgetOpLedger = (serverId: string, userId: string) => {
+    opLedgers.delete(opLedgerKey(serverId, userId));
   };
 
   let queue: Promise<unknown> = Promise.resolve();
@@ -394,6 +436,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         };
         entry.snapshot = { ...entry.snapshot, players };
         await persistence.saveServer(entry.record);
+        forgetOpLedger(args.serverId, args.userId);
         if (memberUserIds.length === 0) {
           live.delete(entry.record.serverId);
         }
@@ -410,17 +453,30 @@ export function createGameHost(options: GameHostOptions): GameHost {
           return { ok: false as const, reason: "Not a member of this server" };
         }
 
+        const envelope = unwrapOpEnvelope(args.input);
+        if (envelope !== null) {
+          const applied = findAppliedOp(args.serverId, args.userId, envelope.opId);
+          if (applied !== undefined) return applied;
+        }
+        const commandInput = envelope !== null ? envelope.input : args.input;
+
         const runtime = resolveRuntime(entry.record.gameId);
-        const result = runtime.runCommand(entry.snapshot, args.userId, args.command, args.input);
-        if (!result.ok) {
-          return { ok: false as const, reason: result.reason };
+        const result = runtime.runCommand(entry.snapshot, args.userId, args.command, commandInput);
+        const outcome: TransportRunCommandResult = result.ok
+          ? { ok: true }
+          : { ok: false, reason: result.reason };
+
+        if (result.ok) {
+          entry.snapshot = result.snapshot;
+          markMutated(entry);
+          emit({ type: "server", serverId: args.serverId });
+          emit({ type: "player", serverId: args.serverId, userId: args.userId });
         }
 
-        entry.snapshot = result.snapshot;
-        markMutated(entry);
-        emit({ type: "server", serverId: args.serverId });
-        emit({ type: "player", serverId: args.serverId, userId: args.userId });
-        return { ok: true as const };
+        if (envelope !== null) {
+          rememberAppliedOp(args.serverId, args.userId, envelope.opId, outcome);
+        }
+        return outcome;
       }),
 
     isMember: async (args) => {
