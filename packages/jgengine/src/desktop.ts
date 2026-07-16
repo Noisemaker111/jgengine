@@ -34,6 +34,7 @@ export interface DesktopArgs {
   outDir: string | undefined;
   dryRun: boolean;
   skipFrontendBuild: boolean;
+  allowRemote: boolean;
 }
 
 export interface DesktopPlan {
@@ -63,6 +64,11 @@ const VALUE_FLAGS = new Set(["--url", "--name", "--id", "--version", "--icon", "
 
 const DEFAULT_VERSION = "0.1.0";
 
+const DESKTOP_CSP =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob: https:; connect-src 'self' ws: wss: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'";
+
+const ALLOWED_REMOTE_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "jgengine.com"]);
+
 const MINIMAL_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64",
@@ -85,6 +91,9 @@ options:
   --out <dir>         staging directory (default: <project>/.jgengine/desktop)
   --dry-run           generate staging + config only; skip toolchain + Rust build
   --skip-frontend-build  reuse existing dist/ (local mode; for tests)
+  --allow-remote      allow --url to point at a host outside the trusted allowlist
+                       (localhost, jgengine.com and its subdomains) — only pass this
+                       for a hosted URL you trust; the shipped app loads it live
 
 defaults (deterministic):
   name     package.json name → title case, or URL hostname
@@ -107,11 +116,19 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
   const outDir = flag(argv, "out");
   const dryRun = hasFlag(argv, "dry-run");
   const skipFrontendBuild = hasFlag(argv, "skip-frontend-build");
+  const allowRemote = hasFlag(argv, "allow-remote");
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (!arg.startsWith("-")) continue;
-    if (arg === "--dry-run" || arg === "--skip-frontend-build" || arg === "--help" || arg === "-h") continue;
+    if (
+      arg === "--dry-run" ||
+      arg === "--skip-frontend-build" ||
+      arg === "--allow-remote" ||
+      arg === "--help" ||
+      arg === "-h"
+    )
+      continue;
     if (VALUE_FLAGS.has(arg)) {
       if (argv[index + 1] === undefined || argv[index + 1]!.startsWith("-")) {
         return { error: `${arg} requires a value` };
@@ -150,6 +167,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       outDir,
       dryRun,
       skipFrontendBuild,
+      allowRemote,
     };
   }
 
@@ -164,6 +182,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
     outDir,
     dryRun,
     skipFrontendBuild,
+    allowRemote,
   };
 }
 
@@ -182,6 +201,12 @@ export function validateHttpsUrl(raw: string): { ok: true; url: URL } | { ok: fa
     return { ok: false, error: `--url is missing a host` };
   }
   return { ok: true, url: parsed };
+}
+
+/** @internal */
+export function isAllowedDesktopOrigin(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return ALLOWED_REMOTE_HOSTS.has(host) || host.endsWith(".jgengine.com");
 }
 
 /** @internal */
@@ -346,6 +371,11 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
     if (args.url === null) return { error: "--url requires an https URL" };
     const validated = validateHttpsUrl(args.url);
     if (!validated.ok) return { error: validated.error };
+    if (!args.allowRemote && !isAllowedDesktopOrigin(validated.url.hostname)) {
+      return {
+        error: `--url host "${validated.url.hostname}" is outside the trusted allowlist (localhost, jgengine.com and its subdomains) — the shipped app loads this URL live on every launch. Pass --allow-remote to build an installer for a URL you trust.`,
+      };
+    }
     const metadata = resolveMetadata({
       mode: "url",
       projectDir: null,
@@ -425,7 +455,7 @@ function tauriConf(plan: DesktopPlan): string {
           },
         ],
         security: {
-          csp: null,
+          csp: DESKTOP_CSP,
         },
       },
       bundle: {

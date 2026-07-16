@@ -37,6 +37,7 @@ usage: jgengine <command> [...args]
                         [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
   desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
+                        [--allow-remote] (required for --url hosts outside jgengine.com)
   editor [dir]          open the standalone 3D scene editor on a folder (default cwd) —
                         loads its editor.scene.json + models, Ctrl+S writes back
                         [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]
