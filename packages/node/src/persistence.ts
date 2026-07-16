@@ -44,7 +44,12 @@ async function writeJson(path: string, value: unknown): Promise<void> {
   await rename(await stageJson(path, value), path);
 }
 
-const enc = encodeURIComponent;
+function encodeSegment(key: string): string {
+  const encoded = encodeURIComponent(key);
+  return encoded === "." || encoded === ".." ? encoded.replaceAll(".", "%2E") : encoded;
+}
+
+const enc = encodeSegment;
 
 export function filePersistence(dir: string, now: () => number = Date.now): HostPersistence {
   const serversDir = join(dir, "servers");
@@ -152,8 +157,13 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
         await writeJson(path, entries);
         return entries;
       });
-      feedLocks.set(path, run.catch(() => undefined));
-      return run;
+      const tracked = run.catch(() => undefined);
+      feedLocks.set(path, tracked);
+      try {
+        return await run;
+      } finally {
+        if (feedLocks.get(path) === tracked) feedLocks.delete(path);
+      }
     },
     async applyLeaderboardIncrements(gameId, entries) {
       const run = leaderboardLock.then(async () => {

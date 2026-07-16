@@ -11,6 +11,8 @@ export type TransportPipeHandlers = {
 
 export type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe;
 
+const OPEN = 1;
+
 export function webSocketPipe(
   url: string,
   webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target),
@@ -23,7 +25,7 @@ export function webSocketPipe(
     socket.onclose = () => handlers.onClose();
     return {
       send: (data) => {
-        if (socket.readyState !== 1) return;
+        if (socket.readyState !== OPEN) return;
         socket.send(data);
       },
       close: () => socket.close(),
