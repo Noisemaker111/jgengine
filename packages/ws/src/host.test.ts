@@ -1,6 +1,32 @@
 import { expect, test } from "bun:test";
 
-import { createGameHost, memoryPersistence } from "./host";
+import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
+import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
+
+import { createGameHost, memoryPersistence, OP_LEDGER_LIMIT } from "./host";
+
+function coinsRuntime() {
+  return createGameRuntime({
+    gameId: "shop",
+    save: "none",
+    commands: {
+      buy: {
+        validate: () => null,
+        apply: (snapshot: GameRuntimeSnapshot) => {
+          const coins = (snapshot.server.session.coins as number | undefined) ?? 0;
+          return {
+            ...snapshot,
+            server: { ...snapshot.server, session: { ...snapshot.server.session, coins: coins + 1 } },
+          };
+        },
+      },
+    },
+  });
+}
+
+function coinsOf(view: { serverState: unknown } | null): number {
+  return ((view?.serverState as { session: { coins?: number } } | undefined)?.session.coins) ?? 0;
+}
 
 test("private server is absent from listOpenServers", async () => {
   const host = createGameHost({ persistence: memoryPersistence() });
@@ -89,4 +115,63 @@ test("direct-serverId join to a public server needs no code", async () => {
 
   const rejoined = await host.joinServer({ userId: "bob", gameId: "demo", serverId });
   expect(rejoined.serverId).toBe(serverId);
+});
+
+test("a replayed op ID after a lost reply mutates once and both calls resolve", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+
+  const envelope = { qty: 1, __jgWsOpId: "op-1" };
+  const first = await host.runCommand({ userId: "alice", serverId, command: "buy", input: envelope });
+  const second = await host.runCommand({ userId: "alice", serverId, command: "buy", input: envelope });
+
+  expect(first).toEqual({ ok: true });
+  expect(second).toEqual({ ok: true });
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(1);
+});
+
+test("two distinct op IDs each apply their own mutation", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+
+  await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-1" } });
+  await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-2" } });
+
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(2);
+});
+
+test("the op ledger evicts the oldest ID once past its bound", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+
+  for (let i = 0; i < OP_LEDGER_LIMIT; i++) {
+    await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: `op-${i}` } });
+  }
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(OP_LEDGER_LIMIT);
+
+  await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-0" } });
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(OP_LEDGER_LIMIT);
+
+  await host.runCommand({
+    userId: "alice",
+    serverId,
+    command: "buy",
+    input: { __jgWsOpId: `op-${OP_LEDGER_LIMIT}` },
+  });
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(OP_LEDGER_LIMIT + 1);
+
+  await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-0" } });
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(OP_LEDGER_LIMIT + 2);
+});
+
+test("leaving a server forgets its op ledger", async () => {
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
+
+  await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-1" } });
+  await host.leaveServer({ userId: "alice", serverId });
+  await host.joinServer({ userId: "alice", gameId: "shop", serverId });
+
+  await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-1" } });
+  expect(coinsOf(await host.getServerView({ userId: "alice", serverId }))).toBe(2);
 });

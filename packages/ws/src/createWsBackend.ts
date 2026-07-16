@@ -90,6 +90,18 @@ const DEFAULT_RPC_TIMEOUT_MS = 15_000;
 const DEFAULT_RECONNECT_DELAY_MS = 1_000;
 const DEFAULT_MAX_RECONNECT_DELAY_MS = 30_000;
 
+const WS_OP_ID_FIELD = "__jgWsOpId";
+const RESERVED_INPUT_COMMAND = "engine.input";
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stampOpId(command: string, opId: string, input: unknown): unknown {
+  if (command === RESERVED_INPUT_COMMAND || !isPlainRecord(input)) return input;
+  return { ...input, [WS_OP_ID_FIELD]: opId };
+}
+
 type PendingRequest = {
   id: number;
   resolve: (result: unknown) => void;
@@ -130,6 +142,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   let closed = false;
   let wantConnection = false;
   let nextId = 1;
+  let nextOpId = 1;
   let reconnectAttempt = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const pending = new Map<number, PendingRequest>();
@@ -378,6 +391,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId }));
     },
     async runCommand(args) {
+      const opId = String(nextOpId++);
       try {
         const result = await request((id) => ({
           v: 1,
@@ -385,7 +399,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
           id,
           serverId: args.serverId,
           command: args.command,
-          input: args.input,
+          input: stampOpId(args.command, opId, args.input),
         }));
         return result as TransportRunCommandResult;
       } catch (error) {
