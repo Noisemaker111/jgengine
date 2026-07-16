@@ -7,7 +7,7 @@ interface PackageJson {
   name?: string;
   version?: string;
   type?: string;
-  workspaces?: string[];
+  workspaces?: string[] | { packages: string[]; catalog?: Record<string, string>; catalogs?: Record<string, Record<string, string>> };
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -63,7 +63,8 @@ export function findUp(startDir: string, predicate: (dir: string) => boolean): s
 export function findWorkspaceRoot(startDir: string): string | null {
   return findUp(startDir, (dir) => {
     const pkg = readPackageJson(join(dir, "package.json"));
-    return Array.isArray(pkg?.workspaces);
+    const workspaces = pkg?.workspaces;
+    return Array.isArray(workspaces) ? true : Array.isArray(workspaces?.packages);
   });
 }
 

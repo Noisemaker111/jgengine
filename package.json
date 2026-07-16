@@ -2,13 +2,20 @@
   "name": "jgengine-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "packages/*",
-    "Games/*",
-    "apps/*",
-    "examples/*",
-    "registry"
-  ],
+  "workspaces": {
+    "packages": ["packages/*", "Games/*", "apps/*", "examples/*", "registry"],
+    "catalog": {
+      "@react-three/drei": "^10.7.7",
+      "@tailwindcss/vite": "^4.0.15",
+      "@types/react": "^19",
+      "@types/react-dom": "^19",
+      "@types/three": "^0.182.0",
+      "@vitejs/plugin-react": "^4.3.4",
+      "tailwindcss": "^4.0.15",
+      "typescript": "^5",
+      "vite": "^6.2.2"
+    }
+  },
   "scripts": {
     "agent:preflight": "bun scripts/agent-preflight.ts",
     "ship:preflight": "bun scripts/agent-preflight.ts --ship",

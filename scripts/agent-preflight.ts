@@ -36,9 +36,16 @@ requirePath("node_modules", "run bun install before generators or gates");
 requirePath("node_modules/ts-morph", "dependencies are incomplete; finish bun install before continuing");
 requirePath("node_modules/@typescript/native-preview", "dependencies are incomplete; finish bun install before continuing");
 
+function workspacePatterns(): string[] {
+  const workspaces = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).workspaces as
+    | string[]
+    | { packages: string[] };
+  return Array.isArray(workspaces) ? workspaces : workspaces.packages;
+}
+
 function workspaceManifests(): string[] {
   const manifests = ["package.json"];
-  const patterns = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).workspaces as string[];
+  const patterns = workspacePatterns();
   for (const pattern of patterns) {
     if (pattern.endsWith("/*")) {
       const base = pattern.slice(0, -2);
