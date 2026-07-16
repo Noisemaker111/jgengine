@@ -1,5 +1,5 @@
 import { useThree } from "@react-three/fiber";
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
 import * as THREE from "three";
 
 import { MATERIAL_DRAG_MIME } from "./AssetBrowser";
@@ -14,7 +14,7 @@ const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
  * material at the drop point. No-op when the drag payload isn't a material id.
  * @internal — mounted by `EditorApp`'s world overlay.
  */
-export function MaterialDropZone({ api }: { api: EditorHostApi }) {
+export const MaterialDropZone = memo(function MaterialDropZone({ api }: { api: EditorHostApi }) {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
@@ -82,4 +82,4 @@ export function MaterialDropZone({ api }: { api: EditorHostApi }) {
   }, [gl, camera, scene, api]);
 
   return null;
-}
+});

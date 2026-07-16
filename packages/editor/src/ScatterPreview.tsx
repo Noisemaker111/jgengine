@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
@@ -17,7 +17,7 @@ const MAX_INSTANCES = 20000;
  * game uses to consume `resolveScatter` at runtime.
  * @internal — mounted by `EditorApp`; not a game-author entry point.
  */
-export function ScatterPreview({ api }: { api: EditorHostApi }) {
+export const ScatterPreview = memo(function ScatterPreview({ api }: { api: EditorHostApi }) {
   const ctx = useGameContext();
   const session: EditorSession = api.getSession();
   const [, setTick] = useState(0);
@@ -38,4 +38,4 @@ export function ScatterPreview({ api }: { api: EditorHostApi }) {
   );
 
   return <InstancedScatter instances={instances} maxInstances={MAX_INSTANCES} />;
-}
+});

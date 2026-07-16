@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 
 import type { EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
@@ -21,6 +21,7 @@ import { TerrainSculpt } from "./TerrainSculpt";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
 import { createEditorUiStore, type EditorUiStore, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
+import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
 /** Props for mounting the scene editor over a playable game. */
 export interface EditorAppProps {
@@ -28,6 +29,8 @@ export interface EditorAppProps {
   playable: PlayableGame;
   layers?: EditorLayersInput;
   save?: EditorSaveFn;
+  /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
+  modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
 }
 
 /** Persists an exported document JSON; resolves with where it landed or why it failed. */
@@ -114,12 +117,18 @@ function EditorWorldOverlay({
 }) {
   const session = api.getSession();
   const ctx = useGameContext();
-  const [, setTick] = useState(0);
-  useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
-  useEffect(() => api.subscribeVisibility(() => setTick((value) => value + 1)), [api]);
-  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
-  const state = session.getState();
-  const uiState = ui.getState();
+  const visibilityStore = useMemo(
+    () => ({ getState: api.getVisibility, subscribe: api.subscribeVisibility }),
+    [api],
+  );
+
+  const document = useStoreSelector(session, (s) => s.document);
+  const selection = useStoreSelector(session, (s) => s.selection, shallowArrayEqual);
+  const visibility = useStoreSelector(visibilityStore, (v) => v);
+  const showGrid = useStoreSelector(ui, (s) => s.showGrid);
+  const pathPoint = useStoreSelector(ui, (s) => s.pathPoint);
+  const pathDraft = useStoreSelector(ui, (s) => s.pathDraft);
+  const groundHeightAt = useCallback((x: number, z: number) => ctx.world.groundHeightAt(x, z), [ctx.world]);
 
   return (
     <>
@@ -129,40 +138,52 @@ function EditorWorldOverlay({
       <MaterialDropZone api={api} />
       <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
-      {uiState.showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
+      {showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
       <EditorLayerOverlays
-        document={state.document}
-        visibility={api.getVisibility()}
-        selection={state.selection}
+        document={document}
+        visibility={visibility}
+        selection={selection}
         onSelect={(id) => session.dispatch({ type: "select", ids: [id] })}
-        activePathPoint={uiState.pathPoint}
-        groundHeightAt={(x, z) => ctx.world.groundHeightAt(x, z)}
+        activePathPoint={pathPoint}
+        groundHeightAt={groundHeightAt}
       />
-      {uiState.pathDraft.length > 0 ? <PathDraftPreview points={uiState.pathDraft} /> : null}
-      <SelectionGizmo
-        session={session}
-        ui={ui}
-        groundSnap={(x, z) => ctx.world.groundHeightAt(x, z)}
-      />
+      {pathDraft.length > 0 ? <PathDraftPreview points={pathDraft} /> : null}
+      <SelectionGizmo session={session} ui={ui} groundSnap={groundHeightAt} />
     </>
   );
 }
 
-/** Escape hatch shown while playing/walking: F2+E (or click) returns to the edit view. */
-function EditorModeChip({ api, mode }: { api: EditorHostApi; mode: EditorRunMode }) {
-  useF2Chord("KeyE", () => api.setMode("edit"));
-
+/** Default skin for the play/walk escape chip; swap via `EditorAppProps.modeChip`, or pass `null` to hide it (F2+E still exits). */
+function EditorModeChip({ mode, onExit }: { mode: EditorRunMode; onExit: () => void }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-2 z-50 flex justify-center">
       <button
         type="button"
         className="pointer-events-auto rounded-full border border-white/10 bg-black/70 px-4 py-1.5 text-[11px] text-neutral-100 shadow-lg shadow-black/40 backdrop-blur-md transition-colors hover:bg-black/90"
-        onClick={() => api.setMode("edit")}
+        onClick={onExit}
       >
         {mode === "play" ? "▶ Playing" : "🚶 Walking"} — back to editor (F2+E)
       </button>
     </div>
   );
+}
+
+/** Headless placement: wires the F2+E exit chord and renders `chip` (the default skin, a
+ * game-supplied override, or nothing when `chip` is `null`) — the chord always works either way. */
+function EditorModeChipHost({
+  api,
+  mode,
+  chip,
+}: {
+  api: EditorHostApi;
+  mode: EditorRunMode;
+  chip: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
+}) {
+  const onExit = useCallback(() => api.setMode("edit"), [api]);
+  useF2Chord("KeyE", onExit);
+  if (chip === null) return null;
+  const Chip = chip;
+  return <Chip mode={mode} onExit={onExit} />;
 }
 
 /** Prefer a grounded spawn for the first shot — full-world framing clips past default far=300. */
@@ -203,7 +224,8 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, save, modeChip }: EditorAppProps) {
+  const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
   const uiStoreRef = useRef<EditorUiStore | null>(null);
   if (uiStoreRef.current === null) uiStoreRef.current = createEditorUiStore();
@@ -335,7 +357,7 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
           return (
             <>
               {BaseUI !== undefined ? <BaseUI /> : null}
-              <EditorModeChip api={host.api} mode="play" />
+              <EditorModeChipHost api={host.api} mode="play" chip={resolvedModeChip} />
             </>
           );
         },
@@ -354,7 +376,7 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
       return {
         ...playable,
         GameUI: function EditorWalkUi() {
-          return <EditorModeChip api={host.api} mode="walk" />;
+          return <EditorModeChipHost api={host.api} mode="walk" chip={resolvedModeChip} />;
         },
         WorldOverlay: function EditorWalkOverlay() {
           const ctx = useGameContext();
@@ -415,7 +437,7 @@ export function EditorApp({ gameId, playable, layers, save }: EditorAppProps) {
         },
       },
     };
-  }, [playable, host, gameId, initialCamera, catalogAssets, ui, mode, saveFn]);
+  }, [playable, host, gameId, initialCamera, catalogAssets, ui, mode, saveFn, resolvedModeChip]);
 
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
