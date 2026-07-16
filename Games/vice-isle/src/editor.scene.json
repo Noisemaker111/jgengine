@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "markers": [
+    { "id": "player_spawn", "kind": "player_spawn", "position": { "x": -176, "y": 0, "z": 24 }, "label": "Player spawn" },
+    { "id": "kingpin", "kind": "boss", "position": { "x": 92, "y": 0, "z": -252 }, "label": "Kingpin" },
+    { "id": "marco", "kind": "npc", "position": { "x": 52, "y": 0, "z": -52 }, "label": "Contact Marco" },
+    { "id": "gunshop", "kind": "poi", "position": { "x": -52, "y": 0, "z": 8 }, "label": "Gun shop" },
+    { "id": "garage", "kind": "poi", "position": { "x": -68, "y": 0, "z": 116 }, "label": "Garage" },
+    { "id": "dock_fight", "kind": "poi", "position": { "x": 130, "y": 0, "z": 196 }, "label": "Dock fight" },
+    { "id": "briefcase", "kind": "chest", "position": { "x": 142, "y": 0, "z": 208 }, "label": "Ledger briefcase" }
+  ],
+  "volumes": [
+    { "id": "ocean_drive", "kind": "district", "shape": "cylinder", "center": { "x": -170, "y": 0, "z": 0 }, "radius": 110, "label": "Ocean Drive" },
+    { "id": "downtown", "kind": "district", "shape": "cylinder", "center": { "x": 40, "y": 0, "z": -60 }, "radius": 120, "label": "Downtown Vice" },
+    { "id": "port_carmine", "kind": "district", "shape": "cylinder", "center": { "x": 130, "y": 0, "z": 190 }, "radius": 100, "label": "Port Carmine" },
+    { "id": "palm_heights", "kind": "district", "shape": "cylinder", "center": { "x": 70, "y": 0, "z": -240 }, "radius": 90, "label": "Palm Heights" }
+  ],
+  "paths": [
+    { "id": "road-0", "kind": "road", "points": [{ "x": -180, "y": 0, "z": -280 }, { "x": -180, "y": 0, "z": 280 }], "label": "Avenue W" },
+    { "id": "road-1", "kind": "road", "points": [{ "x": -60, "y": 0, "z": -280 }, { "x": -60, "y": 0, "z": 280 }], "label": "Avenue C-W" },
+    { "id": "road-2", "kind": "road", "points": [{ "x": 60, "y": 0, "z": -280 }, { "x": 60, "y": 0, "z": 280 }], "label": "Avenue C-E" },
+    { "id": "road-3", "kind": "road", "points": [{ "x": 180, "y": 0, "z": -280 }, { "x": 180, "y": 0, "z": 280 }], "label": "Avenue E" },
+    { "id": "road-4", "kind": "road", "points": [{ "x": -180, "y": 0, "z": -240 }, { "x": 180, "y": 0, "z": -240 }], "label": "Street N" },
+    { "id": "road-5", "kind": "road", "points": [{ "x": -180, "y": 0, "z": -120 }, { "x": 180, "y": 0, "z": -120 }], "label": "Street NC" },
+    { "id": "road-6", "kind": "road", "points": [{ "x": -180, "y": 0, "z": 0 }, { "x": 180, "y": 0, "z": 0 }], "label": "Street Mid" },
+    { "id": "road-7", "kind": "road", "points": [{ "x": -180, "y": 0, "z": 120 }, { "x": 180, "y": 0, "z": 120 }], "label": "Street SC" },
+    { "id": "road-8", "kind": "road", "points": [{ "x": -180, "y": 0, "z": 240 }, { "x": 180, "y": 0, "z": 240 }], "label": "Street S" },
+    {
+      "id": "race-loop",
+      "kind": "route",
+      "label": "Street race checkpoints",
+      "points": [
+        { "x": -60, "y": 0, "z": 120 },
+        { "x": 60, "y": 0, "z": 120 },
+        { "x": 60, "y": 0, "z": 0 },
+        { "x": 180, "y": 0, "z": 0 },
+        { "x": 180, "y": 0, "z": -240 },
+        { "x": 60, "y": 0, "z": -240 },
+        { "x": -60, "y": 0, "z": -120 },
+        { "x": -180, "y": 0, "z": -120 },
+        { "x": -180, "y": 0, "z": 120 },
+        { "x": -68, "y": 0, "z": 122 }
+      ]
+    }
+  ],
+  "annotations": [],
+  "prefabs": [],
+  "collections": []
+}

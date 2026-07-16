@@ -5,10 +5,10 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 
 import { BUILDABLES } from "./objects/catalog";
-import { GUEST_ID, GUEST_SCALE, GUEST_WALK_SPEED } from "./entities/guests/catalog";
+import { GUEST_KINDS, GUEST_SCALE, GUEST_WALK_SPEED } from "./entities/guests/catalog";
 
 function entityById(catalogId: string): GameContextEntityEntry | null {
-  if (catalogId === GUEST_ID) {
+  if (GUEST_KINDS.includes(catalogId)) {
     return {
       role: "npc",
       scale: GUEST_SCALE,

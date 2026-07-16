@@ -193,4 +193,48 @@ describe("world replicator", () => {
     expect(rebuilt["feed"]).toBeUndefined();
     expect(Object.prototype.hasOwnProperty.call(rebuilt, "feed")).toBe(false);
   });
+
+  test("an unchanged worldVersion skips the commit — no re-read, no re-serialize", () => {
+    let reads = 0;
+    let version = 1;
+    const state: WorldSnapshot = { entities: [ent("e1", 1)], stats: {}, store: [] };
+    const rep = createWorldReplicator(
+      () => {
+        reads += 1;
+        return state;
+      },
+      { worldVersion: () => version },
+    );
+
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(1);
+
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(1);
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(1);
+
+    version = 2;
+    (state["entities"] as ReturnType<typeof ent>[])[0] = ent("e1", 9);
+    expect(rep.commit()).toBe(2);
+    expect(reads).toBe(2);
+    expect(rep.diff(1).entities).toEqual([ent("e1", 9)]);
+  });
+
+  test("a bumped worldVersion whose content is identical re-reads but does not advance the revision", () => {
+    let reads = 0;
+    let version = 1;
+    const state: WorldSnapshot = { entities: [ent("e1", 1)], stats: {}, store: [] };
+    const rep = createWorldReplicator(
+      () => {
+        reads += 1;
+        return state;
+      },
+      { worldVersion: () => version },
+    );
+    expect(rep.commit()).toBe(1);
+    version = 2;
+    expect(rep.commit()).toBe(1);
+    expect(reads).toBe(2);
+  });
 });

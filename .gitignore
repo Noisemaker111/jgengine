@@ -6,6 +6,9 @@ shots/
 .turbo/
 **/public/models/*
 !apps/dev/public/models/claudecraft/
+!apps/dev/public/models/kaykit-city-builder/
+!apps/dev/public/models/quaternius-stylized-nature/
+!apps/dev/public/models/kaykit-adventurers/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 

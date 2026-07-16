@@ -1,3 +1,4 @@
+import { sceneMarkerRadius, sceneMarkerXZ, sceneZoneBand } from "../../editorLayers";
 import type { ZoneId } from "../model";
 
 export const WORLD_WIDTH = 360;
@@ -15,51 +16,46 @@ export interface ZoneDef {
   tint: string;
 }
 
-export const ZONES: readonly ZoneDef[] = [
-  {
-    id: "vale",
-    name: "Eastbrook Vale",
-    hubName: "Eastbrook",
-    levelRange: [1, 7],
-    zMin: -450,
-    zMax: -150,
-    hub: { x: 0, z: -300, radius: 26 },
-    graveyard: { x: -34, z: -270 },
-    tint: "#79a35c",
-  },
-  {
-    id: "marsh",
-    name: "Mirefen Marsh",
-    hubName: "Fenbridge",
-    levelRange: [6, 13],
-    zMin: -150,
-    zMax: 150,
-    hub: { x: 0, z: 0, radius: 20 },
-    graveyard: { x: 30, z: 32 },
-    tint: "#5c7a52",
-  },
-  {
-    id: "peaks",
-    name: "Thornpeak Heights",
-    hubName: "Highwatch",
-    levelRange: [13, 20],
-    zMin: 150,
-    zMax: 450,
-    hub: { x: 0, z: 300, radius: 20 },
-    graveyard: { x: -28, z: 330 },
-    tint: "#8a93a6",
-  },
+interface ZoneMeta {
+  id: ZoneId;
+  name: string;
+  hubName: string;
+  levelRange: readonly [number, number];
+  tint: string;
+}
+
+const ZONE_META: readonly ZoneMeta[] = [
+  { id: "vale", name: "Eastbrook Vale", hubName: "Eastbrook", levelRange: [1, 7], tint: "#79a35c" },
+  { id: "marsh", name: "Mirefen Marsh", hubName: "Fenbridge", levelRange: [6, 13], tint: "#5c7a52" },
+  { id: "peaks", name: "Thornpeak Heights", hubName: "Highwatch", levelRange: [13, 20], tint: "#8a93a6" },
 ];
+
+/** Zones — metadata in code, spatial placement (hub/graveyard/band) read from `editor.scene.json`. */
+export const ZONES: readonly ZoneDef[] = ZONE_META.map((meta) => {
+  const [hubX, hubZ] = sceneMarkerXZ(`hub:${meta.id}`);
+  const [graveX, graveZ] = sceneMarkerXZ(`graveyard:${meta.id}`);
+  const { zMin, zMax } = sceneZoneBand(meta.id);
+  return {
+    ...meta,
+    zMin,
+    zMax,
+    hub: { x: hubX, z: hubZ, radius: sceneMarkerRadius(`hub:${meta.id}`) },
+    graveyard: { x: graveX, z: graveZ },
+  };
+});
+
+const [cryptX, cryptZ] = sceneMarkerXZ("hub:crypt");
+const [cryptGraveX, cryptGraveZ] = sceneMarkerXZ("graveyard:crypt");
 
 export const CRYPT = {
   name: "The Hollow Crypt",
-  x: 110,
-  z: 392,
-  radius: 24,
-  graveyard: { x: 86, z: 360 },
+  x: cryptX,
+  z: cryptZ,
+  radius: sceneMarkerRadius("hub:crypt"),
+  graveyard: { x: cryptGraveX, z: cryptGraveZ },
 };
 
-export const PLAYER_SPAWN: readonly [number, number] = [6, -288];
+export const PLAYER_SPAWN: readonly [number, number] = sceneMarkerXZ("spawn:player");
 
 export function zoneAt(z: number): ZoneDef {
   const found = ZONES.find((zone) => z >= zone.zMin && z < zone.zMax);

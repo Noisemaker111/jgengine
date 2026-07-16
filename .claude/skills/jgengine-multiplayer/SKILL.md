@@ -5,6 +5,8 @@ description: Multiplayer API: adapters, topology, authority, rooms, persistence.
 
 # jgengine-multiplayer
 
+**Import from package roots** — `@jgengine/{ws,node,sql,convex}` already export from their root; core seams live in the curated barrel `@jgengine/core/multiplayer`. Deep paths `@jgengine/core/multiplayer/<file>` still work for anything not re-exported.
+
 ## Flagship hosted path
 
 Real game + host, not a missing gallery id: **[examples/HOSTED.md](../../../examples/HOSTED.md)** — `claudecraft` with `ws({ authority: "server" })` + `examples/express-host` (or Convex).
@@ -56,6 +58,22 @@ createHostRouter({
 ```
 
 `createCommandMiddleware`/`createCommandRateLimiter`/`validateCommandInput` (`@jgengine/ws/commandMiddleware`) are the underlying composable pieces if a host wants the pipeline without the router.
+
+## Per-viewer replication projection + area-of-interest — `defineGame({ replication })`
+
+By default a host replicates the **whole world to every client**, so one client's private state (another player's inventory) rides the wire to everyone and every entity is sent regardless of distance. Declare a `ReplicationPolicy` (`@jgengine/core/runtime/worldProjection`) on the game and the authoritative host projects each client its own frame — changing only what a client *sees*, never the simulation, so the game plays identically:
+
+```ts
+defineGame({
+  // …
+  replication: {
+    privatePerUser: true, // each player's private per-user state (inventory) goes only to that player
+    aoiRadius: 60,        // an entity replicates to a viewer only within 60 units of the viewer's own entity (its stats too)
+  },
+});
+```
+
+Mechanics (the seam, for engine work): projection and change-detection ride the existing `SnapshotModule` replication contract (`@jgengine/core/runtime/worldSnapshot`) — no per-feature branch. A module opts into `project(data, viewer, world)` (narrow the payload for one `SnapshotViewer`; `world` is the raw baseline for cross-module culling) and `version()` (a monotone dirty counter). The core `entities`/`stats`/`inventory` modules attach projectors from the policy; the host replicator skips re-serializing an unchanged commit via `WorldReplicatorOptions.worldVersion` aggregated from those versions (`ctx.replicationVersion()`), and `ctx.snapshot(viewer)` / `HostedWorldSession.snapshotFor(viewer)` / `HostedGameRunner.projectsViewers()` carry the projected frame. WS fan-out (`createHostRouter`) is room-scoped: a presence/chat/voice/server broadcast touches only that room's subscribers, not every connection. Helpers `projectEntitiesForViewer` / `projectPerUserForViewer` / `projectByVisibleIds` / `visibleEntityIds` / `policyProjectsViewers` build projectors. Maintainer note: run `bun run gen:skill-api` on a clean checkout to regenerate `api.md` for these exports.
 
 ## Per-world state — never a module-global `Map`
 

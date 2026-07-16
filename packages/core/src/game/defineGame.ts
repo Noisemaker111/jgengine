@@ -4,6 +4,7 @@ import type { GamePhase } from "./gamePhase";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { GameContext } from "../runtime/gameContext";
+import type { ReplicationPolicy } from "../runtime/worldProjection";
 import type { RuntimeSaveMode } from "../runtime/runtimeSave";
 import type { SaveConfig } from "../runtime/save";
 import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
@@ -190,6 +191,13 @@ export interface GameDefinition<
   loop?: GameLoop<GameContext>;
   /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */
   lifecycle?: LifecycleConfig;
+  /**
+   * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
+   * wire. Applied on every authoritative host (ws, Convex, loopback); clients need not set it. Unset
+   * replicates the whole world to every client (today's behavior). Changes only what each client sees,
+   * never the simulation, so the game plays identically with or without it.
+   */
+  replication?: ReplicationPolicy;
 }
 
 /** Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional. */

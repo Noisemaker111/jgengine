@@ -290,6 +290,7 @@
 - `PoseAllowedStates` (interface): interface PoseAllowedStates — ⚠ undocumented
 - `PoseHitbox` (interface): interface PoseHitbox — ⚠ undocumented
 - `PoseRejection` (interface): interface PoseRejection — ⚠ undocumented
+- `PoseSnapshot` (interface): interface PoseSnapshot — ⚠ undocumented
 - `PoseState` (interface): interface PoseState — ⚠ undocumented
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 
@@ -693,6 +694,7 @@
 - `PossessionDeps` (interface): interface PossessionDeps — ⚠ undocumented
 - `PossessionEntities` (interface): interface PossessionEntities — ⚠ undocumented
 - `PossessionEvents` (interface): interface PossessionEvents — ⚠ undocumented
+- `PossessionSnapshot` (interface): interface PossessionSnapshot — ⚠ undocumented
 - `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
 - `createPossession` (function): function createPossession(deps: PossessionDeps): Possession — ⚠ undocumented
 

@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { ENTRANCE, PARK_HALF, guestCap } from "../catalog";
 import { buildableDef } from "../objects/catalog";
-import { GUEST_ID, GUEST_WALK_SPEED } from "../entities/guests/catalog";
+import { GUEST_WALK_SPEED, guestKindFor } from "../entities/guests/catalog";
 import { nextGuestId, session, type GuestState, type PlacedObject } from "../session";
 import { coasterThrill, demand } from "./rating";
 
@@ -65,11 +65,12 @@ function chooseTarget(guest: GuestState, pos: readonly [number, number, number],
 
 function spawnGuest(ctx: GameContext): void {
   const id = nextGuestId();
+  const kind = guestKindFor(id);
   const jitter = (Math.random() - 0.5) * 10;
   const start: [number, number, number] = [jitter, 0, ENTRANCE[2]];
   const guest: GuestState = {
     id,
-    kind: GUEST_ID,
+    kind,
     happy: 62 - Math.max(0, session.ticketPrice - 16) * 1.1,
     money: 34 + Math.random() * 46,
     hunger: 12 + Math.random() * 22,
@@ -83,7 +84,7 @@ function spawnGuest(ctx: GameContext): void {
     litterTimer: 4 + Math.random() * 6,
   };
   session.guests.set(id, guest);
-  ctx.scene.entity.spawn(GUEST_ID, { id, position: start, role: "npc" });
+  ctx.scene.entity.spawn(kind, { id, position: start, role: "npc" });
   session.cash += session.ticketPrice;
   session.revenueToday += session.ticketPrice;
   session.guestsToday += 1;
@@ -92,11 +93,12 @@ function spawnGuest(ctx: GameContext): void {
 export function seedGuests(ctx: GameContext, count: number): void {
   for (let i = 0; i < count; i += 1) {
     const id = nextGuestId();
+    const kind = guestKindFor(id);
     const x = (Math.random() - 0.5) * 80;
     const z = (Math.random() - 0.5) * 80;
     const guest: GuestState = {
       id,
-      kind: GUEST_ID,
+      kind,
       happy: 60 + Math.random() * 15,
       money: 30 + Math.random() * 50,
       hunger: 20 + Math.random() * 40,
@@ -110,7 +112,7 @@ export function seedGuests(ctx: GameContext, count: number): void {
       litterTimer: 3 + Math.random() * 6,
     };
     session.guests.set(id, guest);
-    ctx.scene.entity.spawn(GUEST_ID, { id, position: [x, 0, z], role: "npc" });
+    ctx.scene.entity.spawn(kind, { id, position: [x, 0, z], role: "npc" });
   }
 }
 
