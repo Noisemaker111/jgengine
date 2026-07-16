@@ -119,6 +119,144 @@ describe("ctx.game.save", () => {
     ]);
   });
 
+  const heroContent = {
+    entityById: (name: string) =>
+      name === "hero"
+        ? { movement: { poses: ["standing", "crouch"] as const, aim: ["hip", "ads"] as const }, stats: { hp: { max: 100 } } }
+        : undefined,
+  };
+
+  function baselineGame() {
+    return defineGame({
+      name: "BaselineSave",
+      assets: createAssetCatalog(),
+      multiplayer: "off",
+      persist: true,
+      features: { cosmetics: true, cards: true, turn: true },
+    });
+  }
+
+  const PILE_CONFIG = {
+    zones: ["draw", "hand", "discard"],
+    drawFrom: "draw",
+    handZone: "hand",
+    discardTo: "discard",
+  };
+  const LOOP_CONFIG = {
+    order: ["p1", "pawn1"],
+    phases: ["move", "act"],
+    pools: [{ id: "ap", max: 3, start: 3 }],
+  };
+
+  test("time, stats, cosmetics, cards, turn, pose, possession and motion all round-trip through the whole-world save", async () => {
+    const backend = memorySaveBackend();
+
+    const host = createGameContext({
+      definition: baselineGame(),
+      content: heroContent,
+      player: { userId: "p1", isNew: true },
+      save: { backend, mode: "manual" },
+    });
+    host.scene.entity.spawn("hero", { id: "p1", position: [0, 0, 0] });
+    host.scene.entity.spawn("hero", { id: "pawn1", position: [3, 0, 0] });
+
+    host.time.advance(12.5);
+    host.scene.entity.stats.set("p1", "hp", { current: 55 });
+    host.player.cosmetics!.equip("p1", "hat", "gold_hat");
+
+    const hostPile = host.game.cards!.pile("deck", PILE_CONFIG);
+    hostPile.reset({ zones: { draw: ["c1", "c2", "c3"], hand: [], discard: [] } });
+    hostPile.draw(2);
+
+    const hostLoop = host.game.turn!.loop("battle", LOOP_CONFIG);
+    hostLoop.advanceTurn();
+    hostLoop.spend("p1", "ap", 1);
+
+    host.player.movement.setPose("p1", "crouch");
+    host.player.movement.setAim("p1", "ads");
+
+    host.player.possession.own("p1", "pawn1");
+    expect(host.player.possession.possess("p1", "pawn1")).toBeNull();
+
+    host.player.motion.impulse(7);
+    host.player.motion.pushHorizontal(1, 2);
+    host.player.motion.setVerticalVelocity(3);
+
+    const savedTime = host.time.now();
+    const savedPile = hostPile.state();
+    const savedLoop = hostLoop.capture();
+    await host.game.save!.save();
+
+    const reboot = createGameContext({
+      definition: baselineGame(),
+      content: heroContent,
+      player: { userId: "p1", isNew: true },
+      save: { backend, mode: "manual" },
+    });
+    const rebootPile = reboot.game.cards!.pile("deck", PILE_CONFIG);
+    const rebootLoop = reboot.game.turn!.loop("battle", LOOP_CONFIG);
+    expect(await reboot.game.save!.load()).toBe(true);
+
+    expect(reboot.time.now()).toBe(savedTime);
+    expect(reboot.scene.entity.stats.get("p1", "hp")?.current).toBe(55);
+    expect(reboot.player.cosmetics!.get("p1")).toEqual({ hat: "gold_hat" });
+    expect(rebootPile.state()).toEqual(savedPile);
+    expect(rebootLoop.capture()).toEqual(savedLoop);
+    expect(reboot.player.movement.getPose("p1")).toBe("crouch");
+    expect(reboot.player.movement.getAim("p1")).toBe("ads");
+    expect(reboot.player.possession.active("p1")).toBe("pawn1");
+    expect(reboot.player.possession.owns("p1", "pawn1")).toBe(true);
+    expect(reboot.player.motion.takePending()).toEqual({
+      impulses: [7],
+      horizontalImpulses: [[1, 2]],
+      verticalVelocity: 3,
+      y: null,
+    });
+  });
+
+  test("a game with none of the newly-covered features saves and loads unaffected", async () => {
+    const backend = memorySaveBackend();
+    const host = createGameContext({
+      definition: offlineGame(false),
+      content: {},
+      player: { userId: "p1", isNew: true },
+      save: { backend, mode: "manual" },
+    });
+    host.scene.entity.spawn("hero", { id: "p1", position: [4, 0, 5] });
+    await host.game.save!.save();
+
+    const reboot = createGameContext({
+      definition: offlineGame(false),
+      content: {},
+      player: { userId: "p1", isNew: true },
+      save: { backend, mode: "manual" },
+    });
+    expect(await reboot.game.save!.load()).toBe(true);
+    expect(reboot.scene.entity.get("p1")?.position).toEqual([4, 0, 5]);
+    expect(reboot.game.cards).toBeUndefined();
+    expect(reboot.game.turn).toBeUndefined();
+    expect(reboot.player.cosmetics).toBeUndefined();
+  });
+
+  test("the newly-covered baseline subsystems stay out of the replication payload", () => {
+    const ctx = createGameContext({
+      definition: baselineGame(),
+      content: heroContent,
+      player: { userId: "p1", isNew: true },
+      save: { backend: memorySaveBackend(), mode: "manual" },
+    });
+    ctx.scene.entity.spawn("hero", { id: "p1", position: [0, 0, 0] });
+    ctx.time.advance(5);
+    ctx.player.cosmetics!.equip("p1", "hat", "gold_hat");
+    ctx.player.movement.setPose("p1", "crouch");
+    ctx.player.motion.impulse(2);
+
+    const replication = ctx.snapshot();
+    for (const key of ["time", "pose", "possession", "motion", "cosmetics", "cards", "turn"]) {
+      expect(replication).not.toHaveProperty(key);
+    }
+  });
+
   test("the replication payload (ctx.snapshot) stays free of the save-only progression modules", () => {
     const ctx = createGameContext({
       definition: progressionGame(),

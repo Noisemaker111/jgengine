@@ -1,4 +1,4 @@
-import { createCardPile, type CardPile, type CardPileConfig } from "../cards/cardPile";
+import { createCardPile, type CardPile, type CardPileConfig, type CardPileState } from "../cards/cardPile";
 import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
   createEffectSystem,
@@ -80,7 +80,7 @@ import {
   type ItemUseResult,
 } from "../item/use";
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
-import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
+import { createPoseState, type PoseAllowedStates, type PoseSnapshot, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createBodyBind, type BodyBind } from "../scene/bodyBind";
 import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
@@ -111,7 +111,7 @@ import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene
 import { createRoster, type Roster, type RosterEntry } from "../scene/roster";
 import { createSelectionSet, type SelectionSet } from "../scene/selection";
 import { createConnectedPlayers, type ConnectedPlayers } from "../game/connectedPlayers";
-import { createPossession, type Possession } from "../scene/possession";
+import { createPossession, type Possession, type PossessionSnapshot } from "../scene/possession";
 import {
   createSceneRaycast,
   type SceneRaycastApi,
@@ -132,12 +132,12 @@ import {
 import { createRuntimeSave, type RuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
-import { createSimClock, type SimClock } from "../time/simClock";
-import { createTurnLoop, type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
+import { createSimClock, type ClockSnapshot, type SimClock } from "../time/simClock";
+import { createTurnLoop, type TurnLoop, type TurnLoopConfig, type TurnLoopSnapshot } from "../turn/turnLoop";
 import { RaceState, type RaceEvent, type RaceStateConfig } from "../game/race";
 import { createCameraDirector, type CameraDirector } from "./cameraDirector";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
-import { createMotionIntents, type MotionIntents } from "./motionIntents";
+import { createMotionIntents, type MotionIntentBatch, type MotionIntents } from "./motionIntents";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -531,6 +531,8 @@ interface FeatureDeps {
   sharedSocial: () => Social;
   pile: (id: string, config?: CardPileConfig) => CardPile;
   loop: (id: string, config?: TurnLoopConfig) => TurnLoop;
+  cardPiles: ReadonlyMap<string, CardPile>;
+  turnLoops: ReadonlyMap<string, TurnLoop>;
   raceState: (id: string, config?: RaceStateConfig) => RaceState;
   feature: <T>(key: keyof GameFeatures) => T | undefined;
 }
@@ -674,8 +676,14 @@ const featureDescriptors: readonly FeatureDescriptor[] = [
     key: "cosmetics",
     enabled: (f) => f.cosmetics === true,
     create(d) {
+      const cosmetics = notifyAfter(createCosmetics({ events: d.events }), ["apply", "equip", "hydrate"], d.signalNotify);
       return {
-        value: notifyAfter(createCosmetics({ events: d.events }), ["apply", "equip", "hydrate"], d.signalNotify),
+        value: cosmetics,
+        save: {
+          key: "cosmetics",
+          snapshot: () => cosmetics.snapshotAll(),
+          hydrate: (data) => cosmetics.hydrateAll(data as Record<string, Record<string, string>>),
+        },
       };
     },
   },
@@ -785,14 +793,44 @@ const featureDescriptors: readonly FeatureDescriptor[] = [
     key: "cards",
     enabled: (f) => f.cards === true,
     create(d) {
-      return { value: { pile: d.pile } satisfies GameContextCards };
+      return {
+        value: { pile: d.pile } satisfies GameContextCards,
+        save: {
+          key: "cards",
+          snapshot: () => {
+            const out: Record<string, CardPileState> = {};
+            for (const [id, cardPile] of d.cardPiles) out[id] = cardPile.state();
+            return out;
+          },
+          hydrate: (data) => {
+            for (const [id, state] of Object.entries(data as Record<string, CardPileState>)) {
+              d.cardPiles.get(id)?.reset(state);
+            }
+          },
+        },
+      };
     },
   },
   {
     key: "turn",
     enabled: (f) => f.turn === true,
     create(d) {
-      return { value: { loop: d.loop } satisfies GameContextTurn };
+      return {
+        value: { loop: d.loop } satisfies GameContextTurn,
+        save: {
+          key: "turn",
+          snapshot: () => {
+            const out: Record<string, TurnLoopSnapshot> = {};
+            for (const [id, turnLoop] of d.turnLoops) out[id] = turnLoop.capture();
+            return out;
+          },
+          hydrate: (data) => {
+            for (const [id, state] of Object.entries(data as Record<string, TurnLoopSnapshot>)) {
+              d.turnLoops.get(id)?.restore(state);
+            }
+          },
+        },
+      };
     },
   },
   {
@@ -1640,6 +1678,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     sharedSocial,
     pile,
     loop,
+    cardPiles,
+    turnLoops,
     raceState,
     feature: featureValue,
   };
@@ -1688,9 +1728,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   ];
 
   /**
-   * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it also
-   * captures the persistent progression subsystems (economy, quest, unlocks, roster) that a
-   * single-player save must restore but a host does not replicate to clients. Keeping the two sets
+   * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it adds the
+   * always-on baseline subsystems (economy, time, pose, possession, motion) plus every opted-in
+   * feature's `save` module (unlocks, roster, quest, cosmetics, cards, turn) — the persistent state a
+   * single-player save must restore but a host does not replicate to clients. Coverage is owned per
+   * subsystem, not hand-listed against a drifting feature manifest: each feature descriptor emits its
+   * own `save`, so a new persistent feature can't silently fall out of the save. Keeping the two sets
    * distinct leaves `ctx.snapshot()`/`ctx.hydrate()` — the host→client payload — byte-identical for
    * every multiplayer game, while `ctx.game.save` still persists everything.
    */
@@ -1705,6 +1748,26 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           wallets.set(userId, state);
         }
         signal.notify();
+      },
+    },
+    { key: "time", snapshot: () => time.snapshot(), hydrate: (data) => time.hydrate(data as ClockSnapshot) },
+    { key: "pose", snapshot: () => pose.snapshotAll(), hydrate: (data) => pose.hydrateAll(data as PoseSnapshot) },
+    {
+      key: "possession",
+      snapshot: () => possession.snapshotAll(),
+      hydrate: (data) => possession.hydrateAll(data as PossessionSnapshot),
+    },
+    {
+      key: "motion",
+      snapshot: () => {
+        const out: Record<string, MotionIntentBatch> = {};
+        for (const [userId, queue] of motionByUser) out[userId] = queue.snapshot();
+        return out;
+      },
+      hydrate: (data) => {
+        for (const [userId, batch] of Object.entries(data as Record<string, MotionIntentBatch>)) {
+          motionFor(userId).hydrate(batch);
+        }
       },
     },
     ...featureSaveModules,
