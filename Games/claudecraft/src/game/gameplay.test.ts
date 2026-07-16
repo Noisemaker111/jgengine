@@ -3,7 +3,8 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { evaluateSkillCheck } from "@jgengine/core/interaction/skillCheck";
 
 import { game } from "../game.config";
-import { loop } from "../loop";
+
+const loop = game.loop;
 import type { AuctionView } from "./auction/systems";
 import { classById } from "./classes/catalog";
 import { applyMobCc, isMobInstance, mobCount, mobRuntimeOf } from "./ai/mobs";
