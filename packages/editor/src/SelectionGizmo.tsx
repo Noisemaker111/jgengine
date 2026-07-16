@@ -12,6 +12,7 @@ import {
   findEditorVolume,
 } from "@jgengine/core/editor/index";
 
+import { isPointerClick } from "./viewportContextMenu";
 import type { EditorHostApi } from "./session";
 import { newPlacementId, type EditorUiState, type EditorUiStore, type GizmoMode, type SnapMode } from "./uiStore";
 import { useStoreSelector } from "./useStoreSelector";
@@ -95,7 +96,7 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
     const ndc = new THREE.Vector2();
     const projected = new THREE.Vector3();
     const planeHit = new THREE.Vector3();
-    let down: { x: number; y: number } | null = null;
+    let down: { x: number; y: number; button: number } | null = null;
 
     const session = () => api.getSession();
     const screenDistance = (
@@ -169,50 +170,9 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
       if (!keepTool) ui.cancelPlacement();
     };
 
-    const onDown = (event: PointerEvent) => {
-      if (ui.getState().tool === "terrain") return;
-      if (event.button === 0) down = { x: event.clientX, y: event.clientY };
-    };
-    const onUp = (event: PointerEvent) => {
-      if (ui.getState().tool === "terrain") return;
-      if (event.button !== 0 || down === null) return;
-      const start = down;
-      down = null;
-      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > CLICK_SLOP_PX) return;
-      const rect = canvas.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
-      const clickY = event.clientY - rect.top;
-      const additive = event.shiftKey || event.ctrlKey || event.metaKey;
-
-      if (ui.getState().placement !== null) {
-        const point = groundPoint(clickX, clickY, rect);
-        if (point !== null) place(point, event.shiftKey || ui.getState().placement?.tool === "path");
-        return;
-      }
-
+    const pickDocumentId = (clickX: number, clickY: number, rect: DOMRect, cycleFrom?: string): string | null => {
       const state = session().getState();
       const visibility = api.getVisibility();
-      const selection = state.selection;
-
-      const selectedPathId = selection.length === 1 ? selection[0] : undefined;
-      const selectedPath =
-        selectedPathId === undefined ? undefined : findEditorPath(state.document, selectedPathId);
-      if (selectedPath !== undefined) {
-        let bestIndex = -1;
-        let bestHandle = PATH_HANDLE_RADIUS_PX;
-        selectedPath.points.forEach((point, index) => {
-          const distance = screenDistance(point, 0.8, clickX, clickY, rect);
-          if (distance !== null && distance < bestHandle) {
-            bestHandle = distance;
-            bestIndex = index;
-          }
-        });
-        if (bestIndex >= 0) {
-          ui.patch({ pathPoint: { pathId: selectedPath.id, index: bestIndex } });
-          return;
-        }
-      }
-
       const candidates: { id: string; distance: number }[] = [];
       const consider = (id: string, kind: string, point: EditorVec3, lift: number) => {
         if (visibility[kind] === false) return;
@@ -234,26 +194,15 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
         if (best !== null) candidates.push({ id: path.id, distance: best });
       }
       candidates.sort((a, b) => a.distance - b.distance);
-
-      if (candidates.length > 0) {
-        let pickedId = candidates[0]!.id;
-        const primary = selection[0];
-        if (!additive && primary !== undefined) {
-          const at = candidates.findIndex((candidate) => candidate.id === primary);
-          if (at >= 0) pickedId = candidates[(at + 1) % candidates.length]!.id;
-        }
-        if (additive) {
-          const next = selection.includes(pickedId)
-            ? selection.filter((id) => id !== pickedId)
-            : [...selection, pickedId];
-          session().dispatch({ type: "select", ids: next });
-        } else {
-          session().dispatch({ type: "select", ids: [pickedId] });
-        }
-        ui.patch({ pathPoint: null });
-        return;
+      if (candidates.length === 0) return null;
+      if (cycleFrom !== undefined) {
+        const at = candidates.findIndex((candidate) => candidate.id === cycleFrom);
+        if (at >= 0) return candidates[(at + 1) % candidates.length]!.id;
       }
+      return candidates[0]!.id;
+    };
 
+    const pickTaggedId = (clickX: number, clickY: number, rect: DOMRect): string | null => {
       ndc.set((clickX / rect.width) * 2 - 1, -(clickY / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
       for (const hit of raycaster.intersectObjects(scene.children, true)) {
@@ -273,31 +222,123 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
           node = node.parent;
         }
         if (gizmoHit) continue;
-        if (taggedId !== null) {
-          if (additive) {
-            const next = selection.includes(taggedId)
-              ? selection.filter((id) => id !== taggedId)
-              : [...selection, taggedId];
-            session().dispatch({ type: "select", ids: next });
-          } else {
-            session().dispatch({ type: "select", ids: [taggedId] });
-          }
-          ui.patch({ pathPoint: null });
-          return;
-        }
+        if (taggedId !== null) return taggedId;
         break;
       }
+      return null;
+    };
+
+    const onDown = (event: PointerEvent) => {
+      if (ui.getState().tool === "terrain") return;
+      if (event.button === 0 || event.button === 2) down = { x: event.clientX, y: event.clientY, button: event.button };
+    };
+    const onUp = (event: PointerEvent) => {
+      if (ui.getState().tool === "terrain") return;
+      if (down === null || event.button !== down.button) return;
+      const start = down;
+      down = null;
+      const slop = event.button === 2 ? undefined : CLICK_SLOP_PX;
+      if (!isPointerClick(start.x, start.y, event.clientX, event.clientY, slop)) return;
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      if (event.button === 2) {
+        const docId = pickDocumentId(clickX, clickY, rect);
+        const taggedId = docId === null ? pickTaggedId(clickX, clickY, rect) : null;
+        const hitId = docId ?? taggedId;
+        if (hitId !== null) {
+          const selection = session().getState().selection;
+          if (!selection.includes(hitId)) {
+            session().dispatch({ type: "select", ids: [hitId] });
+          }
+        }
+        ui.patch({
+          pathPoint: null,
+          contextMenu: {
+            clientX: event.clientX,
+            clientY: event.clientY,
+            hitId,
+            ground: groundPoint(clickX, clickY, rect),
+          },
+        });
+        return;
+      }
+
+      const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+
+      if (ui.getState().placement !== null) {
+        const point = groundPoint(clickX, clickY, rect);
+        if (point !== null) place(point, event.shiftKey || ui.getState().placement?.tool === "path");
+        return;
+      }
+
+      const state = session().getState();
+      const selection = state.selection;
+
+      const selectedPathId = selection.length === 1 ? selection[0] : undefined;
+      const selectedPath =
+        selectedPathId === undefined ? undefined : findEditorPath(state.document, selectedPathId);
+      if (selectedPath !== undefined) {
+        let bestIndex = -1;
+        let bestHandle = PATH_HANDLE_RADIUS_PX;
+        selectedPath.points.forEach((point, index) => {
+          const distance = screenDistance(point, 0.8, clickX, clickY, rect);
+          if (distance !== null && distance < bestHandle) {
+            bestHandle = distance;
+            bestIndex = index;
+          }
+        });
+        if (bestIndex >= 0) {
+          ui.patch({ pathPoint: { pathId: selectedPath.id, index: bestIndex } });
+          return;
+        }
+      }
+
+      const primary = selection[0];
+      const docId = pickDocumentId(clickX, clickY, rect, !additive && primary !== undefined ? primary : undefined);
+      if (docId !== null) {
+        if (additive) {
+          const next = selection.includes(docId)
+            ? selection.filter((id) => id !== docId)
+            : [...selection, docId];
+          session().dispatch({ type: "select", ids: next });
+        } else {
+          session().dispatch({ type: "select", ids: [docId] });
+        }
+        ui.patch({ pathPoint: null, contextMenu: null });
+        return;
+      }
+
+      const taggedId = pickTaggedId(clickX, clickY, rect);
+      if (taggedId !== null) {
+        if (additive) {
+          const next = selection.includes(taggedId)
+            ? selection.filter((id) => id !== taggedId)
+            : [...selection, taggedId];
+          session().dispatch({ type: "select", ids: next });
+        } else {
+          session().dispatch({ type: "select", ids: [taggedId] });
+        }
+        ui.patch({ pathPoint: null, contextMenu: null });
+        return;
+      }
       if (!additive) {
-        ui.patch({ pathPoint: null });
+        ui.patch({ pathPoint: null, contextMenu: null });
         if (selection.length > 0) session().dispatch({ type: "clearSelection" });
       }
+    };
+    const onContextMenu = (event: Event) => {
+      event.preventDefault();
     };
 
     canvas.addEventListener("pointerdown", onDown);
     canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("contextmenu", onContextMenu);
     return () => {
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("contextmenu", onContextMenu);
     };
   }, [gl, camera, scene, api, ui]);
 
