@@ -1,6 +1,10 @@
 import { normalizeEditorLayers } from "@jgengine/core/editor/document";
 import type { EditorDocument, EditorLayersInput, EditorPath } from "@jgengine/core/editor/index";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import {
+  placeAuthoredObjectsFromDocument,
+  resolveAuthoredObjects,
+} from "@jgengine/core/world/authoredObjects";
 import sceneJson from "../../editor.scene.json";
 import { zoneById } from "./zones";
 
@@ -185,16 +189,14 @@ export interface PlacedPiece {
   rotation?: number;
 }
 
-/** Every placed level prop, read straight off the authored document (`meta.catalogId`). */
-export const AUTHORED_PIECES: readonly PlacedPiece[] = authoredScene.markers
-  .filter((marker) => typeof marker.meta?.catalogId === "string")
-  .map((marker) => ({
-    catalogId: marker.meta!.catalogId as string,
-    x: marker.position.x,
-    z: marker.position.z,
-    instanceId: marker.id,
-    rotation: marker.rotationY ?? 0,
-  }));
+/** Every placed level prop, resolved from the authored document (`catalogId` / `meta.catalogId`). */
+export const AUTHORED_PIECES: readonly PlacedPiece[] = resolveAuthoredObjects(authoredScene).map((object) => ({
+  catalogId: object.catalogId,
+  x: object.x,
+  z: object.z,
+  instanceId: object.instanceId,
+  rotation: object.rotationY,
+}));
 
 export const NPC_PLACEMENTS: readonly { id: string; name: string; x: number; z: number }[] = (() => {
   const hub = zoneById("arid_badlands")!;
@@ -206,13 +208,12 @@ export const NPC_PLACEMENTS: readonly { id: string; name: string; x: number; z: 
 })();
 
 export function placeLevel(ctx: GameContext): void {
-  for (const piece of AUTHORED_PIECES) {
-    const y = ctx.world.groundHeightAt(piece.x, piece.z);
-    ctx.scene.object.place(piece.catalogId, piece.x, y + 0.5, piece.z, {
-      instanceId: piece.instanceId,
-      rotation: piece.rotation ?? 0,
-    });
-  }
+  placeAuthoredObjectsFromDocument(
+    ctx.scene.object,
+    authoredScene,
+    (x, z) => ctx.world.groundHeightAt(x, z),
+    { verticalOffset: 0.5 },
+  );
   for (const npc of NPC_PLACEMENTS) {
     ctx.scene.entity.spawn(npc.name, {
       id: npc.id,

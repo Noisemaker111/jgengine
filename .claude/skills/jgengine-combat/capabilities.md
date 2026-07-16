@@ -6,78 +6,78 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## ability-bar — a bar of cooldown-gated abilities the player triggers by slot
 
-- `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat/abilityKit"`
+- `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
 
 ## cast-bar — run a channeled cast timer that movement or damage can interrupt
 
-- `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat/castRunner"`
+- `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat"`
 
 ## charge-meter — fill a gauge toward named tier thresholds as a value accumulates
 
-- `createAccumulatorMeter` (function) · `import { createAccumulatorMeter } from "@jgengine/core/stats/accumulatorMeter"`
+- `createAccumulatorMeter` (function) · `import { createAccumulatorMeter } from "@jgengine/core/combat"`
 
 ## combo-chain — advance a chained melee string from timed button inputs
 
-- `createComboRunner` (function) · `import { createComboRunner } from "@jgengine/core/combat/comboString"`
+- `createComboRunner` (function) · `import { createComboRunner } from "@jgengine/core/combat"`
 
 ## combo-points — build up and spend finisher/combo points
 
-- `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat/comboPoints"`
+- `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat"`
 
 ## death-system — resolve entity death and its on-death consequences
 
-- `createDeathSystem` (function) · `import { createDeathSystem } from "@jgengine/core/combat/death"`
+- `createDeathSystem` (function) · `import { createDeathSystem } from "@jgengine/core/combat"`
 
 ## dice-check — resolve a pass/fail roll against a target number with modifiers and crits
 
-- `rollCheck` (function) · `import { rollCheck } from "@jgengine/core/stats/rollCheck"`
+- `rollCheck` (function) · `import { rollCheck } from "@jgengine/core/combat"`
 
 ## dot-field — track stacking damage-over-time effects and drain damage each frame
 
-- `createDotField` (function) · `import { createDotField } from "@jgengine/core/combat/dotField"`
+- `createDotField` (function) · `import { createDotField } from "@jgengine/core/combat"`
 
 ## downed-revive — a downed/bleed-out state teammates can revive before death
 
-- `createDownedState` (function) · `import { createDownedState } from "@jgengine/core/combat/downed"`
+- `createDownedState` (function) · `import { createDownedState } from "@jgengine/core/combat"`
 
 ## event-meter — a heat/streak gauge that builds from repeated hits and cools down over time
 
-- `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/stats/eventMeter"`
+- `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
 
 ## impact-feel — calibrated hitstop + trauma preset for a named impact event
 
-- `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat/hitReaction"`
-- `resolveHitReaction` (function) · `import { resolveHitReaction } from "@jgengine/core/combat/hitReaction"`
+- `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat"`
+- `resolveHitReaction` (function) · `import { resolveHitReaction } from "@jgengine/core/combat"`
 
 ## magazine — a weapon magazine with capacity, timed reload, and reserve-pool interaction
 
-- `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat/magazine"`
+- `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat"`
 
 ## parry-window — time a block/parry/i-frame defensive window against incoming hits
 
-- `createDefensiveWindow` (function) · `import { createDefensiveWindow } from "@jgengine/core/combat/defensiveWindow"`
+- `createDefensiveWindow` (function) · `import { createDefensiveWindow } from "@jgengine/core/combat"`
 
 ## projectiles — spawn and advance projectiles with travel and hit resolution
 
-- `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat/projectiles"`
+- `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`
 
 ## regen-shield — a rechargeable overshield that absorbs damage and refills after a lull
 
-- `createRegenShield` (function) · `import { createRegenShield } from "@jgengine/core/combat/regenShield"`
+- `createRegenShield` (function) · `import { createRegenShield } from "@jgengine/core/combat"`
 
 ## resource-pool — a regenerating pool like mana or stamina that actions spend from
 
-- `createResourcePool` (function) · `import { createResourcePool } from "@jgengine/core/combat/resourcePool"`
+- `createResourcePool` (function) · `import { createResourcePool } from "@jgengine/core/combat"`
 
 ## stagger-meter — accumulate an ailment buildup (bleed, freeze) until it procs
 
-- `createBuildupMeter` (function) · `import { createBuildupMeter } from "@jgengine/core/combat/breakMeters"`
-- `createStaggerMeter` (function) · `import { createStaggerMeter } from "@jgengine/core/combat/breakMeters"`
+- `createBuildupMeter` (function) · `import { createBuildupMeter } from "@jgengine/core/combat"`
+- `createStaggerMeter` (function) · `import { createStaggerMeter } from "@jgengine/core/combat"`
 
 ## stat-block — base stats with stacking, expiring buffs and debuffs applied on read
 
-- `createStats` (function) · `import { createStats } from "@jgengine/core/stats/statModifiers"`
+- `createStats` (function) · `import { createStats } from "@jgengine/core/combat"`
 
 ## status-effects — apply and tick timed status effects and buffs on entities
 
-- `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat/effects"`
+- `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`

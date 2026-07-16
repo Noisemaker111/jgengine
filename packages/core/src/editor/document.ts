@@ -415,6 +415,7 @@ function decodeMarker(item: unknown, path: string, errors: EditorDocumentDiagnos
   if (typeof item.rotationY === "number") marker.rotationY = item.rotationY;
   if (typeof item.color === "string") marker.color = item.color;
   if (typeof item.label === "string") marker.label = item.label;
+  if (typeof item.catalogId === "string") marker.catalogId = item.catalogId;
   if (typeof item.parentId === "string") marker.parentId = item.parentId;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) marker.meta = meta;

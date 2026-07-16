@@ -14,6 +14,11 @@ export interface EditorMarker {
   rotationY?: number;
   color?: string;
   label?: string;
+  /**
+   * Catalog object id for a placed prop mesh. Prefer this over `meta.catalogId` for new content;
+   * `resolveAuthoredObjects` still reads `meta.catalogId` as the migration alias.
+   */
+  catalogId?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
   meta?: Record<string, unknown>;

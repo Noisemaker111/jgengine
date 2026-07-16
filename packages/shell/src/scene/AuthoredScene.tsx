@@ -9,11 +9,16 @@ import {
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import {
+  placeAuthoredObjects,
+  resolveAuthoredObjects,
+} from "@jgengine/core/world/authoredObjects";
 import { buildRoadRibbon, roundPathCorners } from "@jgengine/core/world/roads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { createModelMapResolver } from "../render/resolveModel";
 import { InstancedScatter } from "../scatter/InstancedScatter";
@@ -201,6 +206,42 @@ export function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps) {
   );
 }
 
+/** Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting. */
+export interface AuthoredObjectsProps {
+  document: EditorDocument;
+  field: TerrainField;
+  /** Extra lift in meters on top of each marker's own verticalOffset (default 0). */
+  verticalOffset?: number;
+  /**
+   * How to treat instance ids already in the object store. Default `"keep"` so an onInit
+   * `placeAuthoredObjects` call wins and remounts stay remount-safe.
+   */
+  onExisting?: "throw" | "replace" | "keep";
+}
+
+/**
+ * Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`.
+ * WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure
+ * headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
+ */
+export function AuthoredObjects({
+  document,
+  field,
+  verticalOffset = 0,
+  onExisting = "keep",
+}: AuthoredObjectsProps) {
+  const ctx = useGameContext();
+  const objects = useMemo(() => resolveAuthoredObjects(document), [document]);
+  useEffect(() => {
+    if (objects.length === 0) return;
+    placeAuthoredObjects(ctx.scene.object, objects, (x, z) => field.sampleHeight(x, z), {
+      verticalOffset,
+      onExisting,
+    });
+  }, [ctx.scene.object, field, objects, onExisting, verticalOffset]);
+  return null;
+}
+
 /** Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on. */
 export interface AuthoredSceneProps {
   document: EditorDocument;
@@ -216,22 +257,21 @@ export interface AuthoredSceneProps {
   /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
   assets?: AssetCatalog;
   /**
-   * When true (default), subscribe to the global document live-sync bus if the editor host is
-   * mounted so headless/RPC document patches hot-apply without a full reload. Pass false to pin
-   * the `document` prop (tests, one-shot previews).
+   * When true (or `{ verticalOffset }`), place every marker with a catalog id into the object
+   * store — WorldScene renders them via the game's `objectModels` seam. Omit when the game places
+   * props itself in onInit with `placeAuthoredObjects`.
    */
-  live?: boolean;
+  placeObjects?: boolean | { verticalOffset?: number };
 }
 
 /**
- * Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one
- * mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor:
- * drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke
- * render code. When a live-sync bus is installed (editor host), document patches stream in and
- * re-render automatically — document is authoritative; runtime overrides stay ephemeral unless
- * written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`);
- * place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to
- * real catalog GLBs; unmapped items keep the stylized proxy.
+ * Renders an editor document's scene content — draped paths, GPU-instanced foliage, studios,
+ * generator assets, and optionally catalog prop objects — from one mount, grounded on the live
+ * `field`. The runtime counterpart to authoring a scene in the editor: drag paths, foliage, and
+ * prop markers, save `editor.scene.json`, and the game plays them with no bespoke render code.
+ * Terrain/collision come from the world's ground field (`environment({ sculpt })`). Pass
+ * `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the
+ * stylized proxy. Pass `placeObjects` to place catalog-id markers into the object store.
  */
 export function AuthoredScene({
   document,
@@ -239,23 +279,24 @@ export function AuthoredScene({
   pathKinds,
   scatterModels,
   assets,
-  live = true,
+  placeObjects,
 }: AuthoredSceneProps) {
-  const liveDocument = useLiveEditorDocument(document, live);
-  const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
+  const instances = useMemo(() => resolveScatter(document, field), [document, field]);
   const resolveItem = useMemo(
     () => createModelMapResolver(scatterModels, assets, "scatterModels"),
     [scatterModels, assets],
   );
+  const shouldPlaceObjects = placeObjects === true || (typeof placeObjects === "object" && placeObjects !== null);
+  const objectVerticalOffset = typeof placeObjects === "object" && placeObjects !== null ? (placeObjects.verticalOffset ?? 0) : 0;
   return (
     <>
       <AuthoredPaths document={liveDocument} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
-      <AuthoredStudios
-        document={liveDocument}
-        context={{ document: liveDocument, field, ...(assets === undefined ? {} : { assets }) }}
-      />
-      <AuthoredGenerators document={liveDocument} field={field} />
+      <AuthoredStudios document={document} context={{ document, field, ...(assets === undefined ? {} : { assets }) }} />
+      <AuthoredGenerators document={document} field={field} />
+      {shouldPlaceObjects ? (
+        <AuthoredObjects document={document} field={field} verticalOffset={objectVerticalOffset} />
+      ) : null}
     </>
   );
 }
