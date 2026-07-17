@@ -4,6 +4,30 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
+
+- `createAreaEffectField` (function) · `import { createAreaEffectField } from "@jgengine/core/world"`
+
+## area-stack-additive — sum a magnitude across overlapping area memberships
+
+- `sumMagnitude` (function) · `import { sumMagnitude } from "@jgengine/core/world"`
+
+## area-stack-capped — cap area memberships per stack key at a maximum count
+
+- `cappedStacks` (function) · `import { cappedStacks } from "@jgengine/core/world"`
+
+## area-stack-extremum — keep only the strongest or weakest overlapping area membership
+
+- `extremumStack` (function) · `import { extremumStack } from "@jgengine/core/world"`
+
+## area-stack-independent — apply every overlapping area membership independently
+
+- `independentStacks` (function) · `import { independentStacks } from "@jgengine/core/world"`
+
+## area-stack-unique — keep one area membership per stack key, strongest wins
+
+- `uniqueByStackKey` (function) · `import { uniqueByStackKey } from "@jgengine/core/world"`
+
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`

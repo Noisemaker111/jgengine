@@ -13,6 +13,8 @@
     "./ai/threat",
     "./anim/easing",
     "./anim/oscillator",
+    "./area/areaEffectField",
+    "./area/stackPolicy",
     "./assets/spriteSheet",
     "./audio/audioFalloff",
     "./audio/music",

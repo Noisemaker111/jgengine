@@ -5,6 +5,9 @@ import { cameraShake } from "@jgengine/shell/camera";
 import { ffylPhase } from "../../handroll";
 import { zoneLevelAt } from "../../world/zones";
 import { enemyById, levelDamageMult, type EnemyDef } from "./catalog";
+import { createBossAuraField, reconcileBossAuras, type BossSample } from "./hazardAura";
+
+const bossAuraField = createBossAuraField();
 
 const nextAttackAt = new Map<string, number>();
 const nextNovaAt = new Map<string, number>();
@@ -19,6 +22,7 @@ export function resetAiState(): void {
   nextNovaAt.clear();
   homes.clear();
   wanderTargets.clear();
+  bossAuraField.clear();
 }
 
 export function rememberHome(id: string, position: EntityPosition): void {
@@ -172,12 +176,16 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     }
   }
 
+  const bossSamples: BossSample[] = [];
   for (const entity of ctx.scene.entity.list()) {
     const def = enemyById(entity.name);
     if (def === undefined) continue;
     const home = homes.get(entity.id);
     if (home === undefined) rememberHome(entity.id, entity.position);
     const anchor = homes.get(entity.id) ?? entity.position;
+    if (def.family === "boss") {
+      bossSamples.push({ id: entity.id, position: entity.position, level: zoneLevelAt(entity.position[0], entity.position[2]) });
+    }
     const playerDistance = distance2d(entity.position, playerPos);
     const leashed = distance2d(entity.position, anchor) > LEASH_RADIUS;
     const engaged = !playerDowned && !leashed && playerDistance <= def.aggroRadius;
@@ -205,5 +213,12 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
         ctx.scene.entity.update(entity.id, { position: [moved.position[0], ground, moved.position[2]] });
       }
     }
+  }
+
+  // Continuous boss "overload" auras: source-following damage fields that follow each boss and shock
+  // the player standing inside on a fixed cadence, cleaned up automatically when a boss dies.
+  const auraTarget = playerDowned ? null : { id: playerId, position: playerPos };
+  for (const hit of reconcileBossAuras(bossAuraField, bossSamples, auraTarget, dt * 1000, levelDamageMult)) {
+    ctx.scene.entity.effect({ from: hit.bossId, to: playerId, effect: "damage", via: { amount: hit.amount } });
   }
 }
