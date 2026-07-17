@@ -15,6 +15,7 @@ const SKELETON_FILES = new Set([
   "editorCatalogs.test.ts",
   "editorLayers.test.ts",
   "editor.scene.json",
+  "scene-ownership.json",
 ]);
 const SKELETON_DIRS = new Set(["game"]);
 

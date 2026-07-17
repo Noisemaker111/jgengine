@@ -4,7 +4,7 @@ import {
   proximityPrompt,
   type ProximityPrompt,
 } from "../interaction/proximityPrompt";
-import type { Waypoint } from "../nav/pathFollow";
+import type { PathProgress, Waypoint } from "../nav/pathFollow";
 
 export interface WanderBehavior {
   kind: "wander";
@@ -16,6 +16,16 @@ export interface PatrolBehavior {
   waypoints: readonly Waypoint[];
   speed: number;
   loop: boolean;
+  /**
+   * Optional initial progress the follower is seeded at instead of waypoint zero — lets a fleet of
+   * route followers start at distributed phases. Round-trips through the behavior lifecycle seek/serialize.
+   */
+  startProgress?: PathProgress;
+  /**
+   * Sample world ground height for the pose Y each tick, so a route authored in the XZ plane rides
+   * uneven terrain. Default false (waypoint Y is used verbatim).
+   */
+  groundClamp?: boolean;
 }
 
 export interface PromptableBehavior {
@@ -41,12 +51,19 @@ export function patrol({
   waypoints,
   speed,
   loop = true,
+  startProgress,
+  groundClamp,
 }: {
   waypoints: readonly Waypoint[];
   speed: number;
   loop?: boolean;
+  startProgress?: PathProgress;
+  groundClamp?: boolean;
 }): PatrolBehavior {
-  return { kind: "patrol", waypoints, speed, loop };
+  const behavior: PatrolBehavior = { kind: "patrol", waypoints, speed, loop };
+  if (startProgress !== undefined) behavior.startProgress = startProgress;
+  if (groundClamp !== undefined) behavior.groundClamp = groundClamp;
+  return behavior;
 }
 
 export function promptable(prompt: ProximityPrompt): PromptableBehavior {

@@ -1,6 +1,7 @@
 import type { DeathReason } from "../combat/deathReason";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CameraShake } from "../combat/hitReaction";
+import type { CombatVfxInstanceEvent } from "./vfxInstance";
 
 export type { DeathReason };
 
@@ -122,6 +123,19 @@ export interface CombatVfxEvent {
   durationMs: number;
 }
 
+/**
+ * An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live
+ * pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
+ */
+export type VfxRef = string | readonly [number, number, number];
+
+/**
+ * The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a
+ * renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch.
+ * `"beam"` is the first shipped retained renderer.
+ */
+export type RetainedVfxKind = string;
+
 export interface CombatTelegraphEvent {
   id: number;
   shape: TelegraphShape;
@@ -212,6 +226,7 @@ export interface GameEventMap {
   "entity.floatText": EntityFloatTextEvent;
   "combat.telegraph": CombatTelegraphEvent;
   "combat.vfx": CombatVfxEvent;
+  "combat.vfxInstance": CombatVfxInstanceEvent;
   "combat.telegraphCancelled": CombatTelegraphCancelledEvent;
   "combat.hitReaction": CombatHitReactionEvent;
   "loot.granted": LootGrantedEvent;

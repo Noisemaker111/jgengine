@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { selectAutoTarget, type AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
+import { distance } from "@jgengine/core/world/vec3";
 
 import { editorLayers } from "../../editorLayers";
 import { towerDef, type TowerDef } from "../entities/towers/catalog";
@@ -13,10 +14,6 @@ export interface TargetCandidate {
   id: string;
   position: EntityPosition;
   progress: number;
-}
-
-function distance(a: EntityPosition, b: EntityPosition): number {
-  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
 export function chooseTarget(

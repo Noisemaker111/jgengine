@@ -14,6 +14,7 @@ import type {
   WorldFeature,
 } from "./features";
 import type { AvoidZone } from "./geometry";
+import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
 import { nearestOnPath } from "./roads";
 import type { TerraformSnapshot } from "./terraform";
 
@@ -440,6 +441,121 @@ export function slopeForce(field: TerrainField, x: number, z: number, scale = 9.
   const [nx, , nz] = field.sampleNormal(x, z);
   if (Math.hypot(nx, nz) < 1e-9) return [0, 0];
   return [nx * scale, nz * scale];
+}
+
+/** XZ region a {@link raycastHeightField} march is clipped to. */
+export interface HeightFieldRayBounds {
+  minX: number;
+  minZ: number;
+  maxX: number;
+  maxZ: number;
+}
+
+/** Tuning for {@link raycastHeightField}: march resolution and refinement depth. */
+export interface HeightFieldRaycastOptions {
+  /** XZ region to march within; the ray is clipped to it before any sampling. */
+  bounds: HeightFieldRayBounds;
+  /**
+   * March step in world units. Use about half the field's cell size — features narrower than one
+   * step can be skipped. Defaults to 1/256 of the larger bounds span, clamped to `[0.25, 4]`.
+   */
+  step?: number;
+  /** Bisection iterations refining the crossing once found (default 8 ≈ step/256 precision). */
+  refine?: number;
+  /** Stop marching past this ray distance (default: the full bounds crossing). */
+  maxDistance?: number;
+  /**
+   * Hard cap on march samples (default 4096). Bounds the work for rays the XZ slab cannot clip —
+   * a near-vertical ray inside bounds has an enormous slab crossing, and an upward ray never
+   * meets the surface at all; the cap turns both into a prompt miss instead of a stall.
+   */
+  maxSteps?: number;
+}
+
+/** Where a {@link raycastHeightField} march crossed the surface. */
+export interface HeightFieldRayHit {
+  x: number;
+  y: number;
+  z: number;
+  /** Ray-parameter distance from the origin to the hit (direction is normalized internally). */
+  distance: number;
+}
+
+/**
+ * Intersects a ray with a `sampleHeight` field by fixed-step raymarching plus bisection — the
+ * O(steps) editor/gameplay picking seam that replaces brute-force triangle raycasts against a
+ * tessellated ground mesh (tens of thousands of triangle tests per pick on a sculpt-sized grid).
+ * The ray is clipped to `bounds` on XZ first, marched at `step`, and the first above→below
+ * crossing is bisected. An origin already under the surface hits immediately at entry. Returns
+ * null when the clipped ray never crosses the surface.
+ * @capability terrain-raycast pick a point on a heightfield along a camera/pointer ray
+ */
+export function raycastHeightField(
+  sampleHeight: (x: number, z: number) => number,
+  origin: readonly [number, number, number],
+  direction: readonly [number, number, number],
+  options: HeightFieldRaycastOptions,
+): HeightFieldRayHit | null {
+  const length = Math.hypot(direction[0], direction[1], direction[2]);
+  if (length < 1e-12) return null;
+  const dx = direction[0] / length;
+  const dy = direction[1] / length;
+  const dz = direction[2] / length;
+  const { bounds } = options;
+
+  // Clip [t0, t1] to the XZ slab of bounds.
+  let t0 = 0;
+  let t1 = options.maxDistance ?? Infinity;
+  for (const [o, d, min, max] of [
+    [origin[0], dx, bounds.minX, bounds.maxX],
+    [origin[2], dz, bounds.minZ, bounds.maxZ],
+  ] as const) {
+    if (Math.abs(d) < 1e-12) {
+      if (o < min || o > max) return null;
+      continue;
+    }
+    const ta = (min - o) / d;
+    const tb = (max - o) / d;
+    const near = Math.min(ta, tb);
+    const far = Math.max(ta, tb);
+    if (near > t0) t0 = near;
+    if (far < t1) t1 = far;
+  }
+  if (t1 <= t0) return null;
+
+  const spanX = bounds.maxX - bounds.minX;
+  const spanZ = bounds.maxZ - bounds.minZ;
+  const step = options.step ?? Math.min(4, Math.max(0.25, Math.max(spanX, spanZ) / 256));
+  const refine = options.refine ?? 8;
+  const maxSteps = options.maxSteps ?? 4096;
+
+  const above = (t: number): number =>
+    origin[1] + dy * t - sampleHeight(origin[0] + dx * t, origin[2] + dz * t);
+
+  let prevT = t0;
+  if (above(t0) <= 0) {
+    return { x: origin[0] + dx * t0, y: origin[1] + dy * t0, z: origin[2] + dz * t0, distance: t0 };
+  }
+  let steps = 0;
+  while (prevT < t1 && steps < maxSteps) {
+    steps += 1;
+    const t = Math.min(prevT + step, t1);
+    if (above(t) <= 0) {
+      let lo = prevT;
+      let hi = t;
+      for (let i = 0; i < refine; i += 1) {
+        const mid = (lo + hi) / 2;
+        if (above(mid) <= 0) hi = mid;
+        else lo = mid;
+      }
+      const x = origin[0] + dx * hi;
+      const z = origin[2] + dz * hi;
+      return { x, y: sampleHeight(x, z), z, distance: hi };
+    }
+    if (t >= t1) break;
+    prevT = t;
+  }
+  return null;
 }
 
 export interface TerrainPalette {
@@ -872,11 +988,33 @@ export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): 
           waterLevel: descriptor.waterLevel,
           bounds: descriptor.bounds,
         });
-  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return base;
-  return fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
-    bounds: base.bounds,
-    waterLevel: base.waterLevel,
-  });
+  const flattened =
+    descriptor.flatten === undefined || descriptor.flatten.length === 0
+      ? base
+      : fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
+          bounds: base.bounds,
+          waterLevel: base.waterLevel,
+        });
+  if (descriptor.pathProfiles === undefined || descriptor.pathProfiles.length === 0) return flattened;
+  return applyPathProfiles(flattened, descriptor.pathProfiles);
+}
+
+/**
+ * Composes authored path profiles onto a field — the shared seam that turns a scene road/river/ramp path
+ * into flattened, graded, carved, or retained ground. Applies after `flatten` masks in `resolveTerrainField`
+ * so a corridor grades over already-leveled pads; call it directly to layer profiles onto any field a game
+ * builds by hand. Returns the field unchanged when no profile is given.
+ * @capability path-terrain apply flatten/grade/carve/retaining path profiles to a terrain field
+ */
+export function applyPathProfiles(field: TerrainField, profiles: readonly TerrainPathProfile[]): TerrainField {
+  if (profiles.length === 0) return field;
+  const sampleHeight = withPathProfiles((x, z) => field.sampleHeight(x, z), profiles);
+  return {
+    sampleHeight,
+    sampleNormal: withNormal(sampleHeight),
+    ...(field.bounds === undefined ? {} : { bounds: field.bounds }),
+    ...(field.waterLevel === undefined ? {} : { waterLevel: field.waterLevel }),
+  };
 }
 
 /** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.

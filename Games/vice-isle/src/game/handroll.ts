@@ -14,6 +14,7 @@ import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleSeats, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { advanceHeat, createHeatState, type HeatConfig, type HeatGain, type HeatState } from "@jgengine/core/ai/heatSystem";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
+import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
 import { seededRng } from "@jgengine/core/random/rng";
 import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
 import { RACE_CHECKPOINTS } from "./world/districts";
@@ -72,12 +73,6 @@ export const wantedStore = defineStore<WantedSnapshot | undefined>("vice.wanted"
 export const drivingStore = defineStore<string | null | undefined>("vice.driving", undefined);
 export const raceStore = defineStore<RaceSnapshot | undefined>("vice.race", undefined);
 
-interface TrafficCar {
-  entityId: string;
-  config: PathFollowConfig;
-  state: PathFollowState;
-}
-
 export interface Handroll {
   enterVehicle(ctx: GameContext, vehicleId: string): void;
   exitVehicle(ctx: GameContext): void;
@@ -88,7 +83,6 @@ export interface Handroll {
   addHeat(ctx: GameContext, amount: number): void;
   clearWanted(ctx: GameContext): void;
   wanted(): WantedSnapshot;
-  registerRoute(entityId: string, waypoints: readonly (readonly [number, number])[], speed: number, startT: number): void;
   startRace(ctx: GameContext): boolean;
   raceActive(): boolean;
   explodeVehicle(ctx: GameContext, vehicleId: string, at: readonly [number, number, number]): void;
@@ -109,7 +103,7 @@ export function createHandroll(): Handroll {
   let pendingGains: HeatGain[] = [];
   let copTimer = 0;
   let copCounter = 0;
-  const traffic: TrafficCar[] = [];
+  let lastPanicking = false;
   const rng = seededRng("vice-isle-cops");
   let cruiserCounter = 0;
   let cruiserTimer = 0;
@@ -391,19 +385,21 @@ export function createHandroll(): Handroll {
     });
   }
 
-  function tickTraffic(ctx: GameContext, dt: number): void {
+  /**
+   * Freeze pedestrian route behaviors while the player is wanted and thaw them once the heat is
+   * gone — pose ownership handed to the behavior lifecycle instead of a hand-rolled traffic loop.
+   * Runs only on the panic-state transition, so it never scans every frame.
+   */
+  function tickPedPanic(ctx: GameContext): void {
     const panicking = heatState.level > 0;
-    for (const car of traffic) {
-      if (car.entityId === driving) continue;
-      if (panicking && car.entityId.startsWith("ped_")) continue;
-      car.state = advancePathFollow(car.config, car.state, dt);
-      const [x, , z] = car.state.position;
-      ctx.scene.entity.setPose(car.entityId, {
-        position: [x, ctx.world.groundHeightAt(x, z), z],
-        rotationY: car.state.heading,
-        dt,
-      });
+    if (panicking === lastPanicking) return;
+    const control = behaviorControl(ctx);
+    for (const info of control.list()) {
+      if (!info.id.startsWith("ped_")) continue;
+      if (panicking) control.disable(info.id, "panic");
+      else control.enable(info.id);
     }
+    lastPanicking = panicking;
   }
 
   return {
@@ -417,14 +413,21 @@ export function createHandroll(): Handroll {
       const result = vehicleSeats.enter(ctx.player.userId, vehicleId);
       if (!result.ok) return;
       driving = vehicleId;
-      if (definition.dynamics.type === "aircraft") aircraftFor(ctx, vehicleId);
-      else carVehicleFor(ctx, vehicleId);
+      if (definition.dynamics.type === "aircraft") {
+        aircraftFor(ctx, vehicleId);
+      } else {
+        // A route car the player commandeers stops its patrol; player input owns its pose now.
+        behaviorControl(ctx).pause(vehicleId, "driven");
+        carVehicleFor(ctx, vehicleId);
+      }
       ctx.camera.follow(result.cameraTarget);
       setRiderFrozen(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
       drivingStore.write(ctx, vehicleId);
     },
     exitVehicle(ctx) {
       if (driving === null) return;
+      // Hand the car back to its route follower (if it had one) where it left off.
+      behaviorControl(ctx).resume(driving);
       const vehicle = ctx.scene.entity.get(driving);
       const definition = vehicleById(vehicle?.name ?? "");
       if (definition?.dynamics.type === "aircraft" && vehicle !== null) {
@@ -521,17 +524,6 @@ export function createHandroll(): Handroll {
       flightThrottles.delete(vehicleId);
       vtolModes.delete(vehicleId);
     },
-    registerRoute(entityId, waypoints, speed, startT) {
-      if (waypoints.length < 2) return;
-      const config: PathFollowConfig = {
-        waypoints: waypoints.map(([x, z]) => [x, 0, z] as const),
-        speed,
-        loop: true,
-      };
-      let state = createPathFollow(config);
-      state = advancePathFollow(config, state, startT);
-      traffic.push({ entityId, config, state });
-    },
     tick(ctx, dt) {
       if (driving !== null) {
         const vehicle = ctx.scene.entity.get(driving);
@@ -568,8 +560,8 @@ export function createHandroll(): Handroll {
           });
         }
       }
-      tickTraffic(ctx, dt);
       tickWanted(ctx, dt);
+      tickPedPanic(ctx);
       tickCops(ctx, dt);
       tickCruisers(ctx, dt);
       tickRace(ctx, dt);

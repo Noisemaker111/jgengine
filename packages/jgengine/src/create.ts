@@ -157,7 +157,8 @@ export function runCreate(argv: string[]): number {
     console.log("\nnext steps:");
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
-    console.log("  bun dev       # playable base (flat world, player, HUD)");
+    console.log("  bun dev       # walkable base: grass world, authored scene, WASD + jump, HUD canvas");
+    console.log("  # F2+E in the browser opens the scene editor on src/editor.scene.json (Ctrl+S saves)");
     console.log(`  # agent: make ${displayName} with jgengine  (skills already in the project)`);
     return 0;
   } catch (error) {

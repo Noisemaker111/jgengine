@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/shell",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Game player shell for JGengine: React Three Fiber canvas, orbit camera, input tracking, HUD mounting, GameUiPreview, and a demo game. Consumers supply a GameRegistry.",
   "license": "Apache-2.0",
   "type": "module",
@@ -35,9 +35,9 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.10.0",
-    "@jgengine/react": "^0.10.0",
-    "@jgengine/ws": "^0.10.0"
+    "@jgengine/core": "^0.11.0",
+    "@jgengine/react": "^0.11.0",
+    "@jgengine/ws": "^0.11.0"
   },
   "peerDependencies": {
     "@react-three/drei": "^10.0.0",

@@ -14,6 +14,8 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CapabilitiesRouteImport } from './routes/capabilities'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GamesIndexRouteImport } from './routes/games.index'
+import { Route as GamesIdRouteImport } from './routes/games.$id'
 import { Route as ApiGithubProxyRouteImport } from './routes/api/github-proxy'
 import { Route as ApiGithubContributionsRouteImport } from './routes/api/github-contributions'
 
@@ -42,6 +44,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesIndexRoute = GamesIndexRouteImport.update({
+  id: '/games/',
+  path: '/games/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesIdRoute = GamesIdRouteImport.update({
+  id: '/games/$id',
+  path: '/games/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGithubProxyRoute = ApiGithubProxyRouteImport.update({
   id: '/api/github-proxy',
   path: '/api/github-proxy',
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
+  '/games/$id': typeof GamesIdRoute
+  '/games/': typeof GamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
+  '/games/$id': typeof GamesIdRoute
+  '/games': typeof GamesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
   '/api/github-proxy': typeof ApiGithubProxyRoute
+  '/games/$id': typeof GamesIdRoute
+  '/games/': typeof GamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/why'
     | '/api/github-contributions'
     | '/api/github-proxy'
+    | '/games/$id'
+    | '/games/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/why'
     | '/api/github-contributions'
     | '/api/github-proxy'
+    | '/games/$id'
+    | '/games'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/why'
     | '/api/github-contributions'
     | '/api/github-proxy'
+    | '/games/$id'
+    | '/games/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,8 @@ export interface RootRouteChildren {
   WhyRoute: typeof WhyRoute
   ApiGithubContributionsRoute: typeof ApiGithubContributionsRoute
   ApiGithubProxyRoute: typeof ApiGithubProxyRoute
+  GamesIdRoute: typeof GamesIdRoute
+  GamesIndexRoute: typeof GamesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -158,6 +184,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/': {
+      id: '/games/'
+      path: '/games'
+      fullPath: '/games/'
+      preLoaderRoute: typeof GamesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games/$id': {
+      id: '/games/$id'
+      path: '/games/$id'
+      fullPath: '/games/$id'
+      preLoaderRoute: typeof GamesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/github-proxy': {
       id: '/api/github-proxy'
       path: '/api/github-proxy'
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   WhyRoute: WhyRoute,
   ApiGithubContributionsRoute: ApiGithubContributionsRoute,
   ApiGithubProxyRoute: ApiGithubProxyRoute,
+  GamesIdRoute: GamesIdRoute,
+  GamesIndexRoute: GamesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

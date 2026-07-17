@@ -1,3 +1,4 @@
+import { enqueue } from "@jgengine/core/gameplay";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
@@ -6,6 +7,7 @@ import { editorLayers } from "../../editorLayers";
 import { TOWER_IDS, towerDef } from "../entities/towers/catalog";
 import { nearestPlot } from "../world/path";
 import { session, nextTowerInstanceId } from "../session";
+import { towerBuildConfig } from "./construction";
 
 const PLOT_CLICK_RADIUS = 4.5;
 
@@ -30,14 +32,21 @@ function placeTower(ctx: GameContext, input: BuildPlaceInput): GameContext {
   const towerId = session.selectedTowerId!;
   const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS)!;
   const def = towerDef(towerId, editorLayers);
-  ctx.game.economy.charge(ctx.player.userId, GOLD_CURRENCY, def.cost);
   const instanceId = nextTowerInstanceId();
-  ctx.scene.entity.spawn(towerId, {
-    id: instanceId,
+  // Queue the construction; the completion adapter (tickConstruction) spawns the
+  // tower entity. Charge gold and reserve the plot now so the cost and occupancy
+  // are immediate — the construction system raises the tower (instant when
+  // buildSeconds is 0, otherwise over its build time).
+  const queued = enqueue(session.buildQueue, towerBuildConfig, {
+    towerId,
+    plotId: plot.id,
+    instanceId,
     position: plot.position,
-    role: "prop",
+    userId: ctx.player.userId,
   });
-  session.towers.set(instanceId, { instanceId, catalogId: towerId, plotId: plot.id, cooldownSeconds: 0 });
+  if (!queued.ok) return ctx;
+  session.buildQueue = queued.state;
+  ctx.game.economy.charge(ctx.player.userId, GOLD_CURRENCY, def.cost);
   session.plotOccupant.set(plot.id, instanceId);
   return ctx;
 }

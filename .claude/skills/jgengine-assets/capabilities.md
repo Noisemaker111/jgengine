@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## asset-reference-integrity — validate asset references against the provisioning contract (dangling / committed / provisioned)
+
+- `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
+
 ## starter-packs — themed CC0 model ids (people/props/nature/urban) ready for entityModels
 
 - `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`

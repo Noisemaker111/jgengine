@@ -32,6 +32,37 @@ export {
   type RecipeItem,
 } from "./crafting/recipe";
 export { createListingBook, type Listing } from "./economy/listingBook";
+export {
+  addScheduledRule,
+  advanceLedger,
+  annotate,
+  balanceOf,
+  cancelRule,
+  capAmount,
+  createResourceLedger,
+  curveScale,
+  pauseRule,
+  redirect,
+  rejectWhen,
+  resumeRule,
+  taxFraction,
+  thresholdScale,
+  type AdvanceOptions,
+  type AdvanceResult,
+  type AppliedTransaction,
+  type CatchUpPolicy,
+  type LedgerEvent,
+  type LedgerEventKind,
+  type PolicyContext,
+  type PolicyRead,
+  type Precision,
+  type ResourceLedger,
+  type ResourcePolicy,
+  type ResourceTransaction,
+  type RuleCursor,
+  type ScheduledRule,
+  type ThresholdBand,
+} from "./economy/resourceLedger";
 export { type TechNodeDef } from "./economy/techTree";
 export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
 export {
@@ -65,19 +96,62 @@ export {
   type EntityFloatTextEvent,
   type GameEventMap,
   type GameEvents,
+  type RetainedVfxKind,
   type StatLevelUpEvent,
   type VfxKind,
+  type VfxRef,
 } from "./game/events";
-export { createGameFeed, type FeedEntry } from "./game/feed";
+export {
+  appendFeed,
+  createGameFeed,
+  pruneFeed,
+  type FeedEntry,
+  type FeedWindow,
+  type TimedFeedEntry,
+} from "./game/feed";
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
 export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
 export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./game/lootFilter";
+export {
+  createLootPipeline,
+  defineLootPipeline,
+  type LootDropProvenance,
+  type LootModifier,
+  type LootPipeline,
+  type LootPipelineDef,
+  type LootPipelineDeps,
+  type LootPlanEntry,
+  type LootResolution,
+  type LootResolveContext,
+  type LootRollPlan,
+  type LootStage,
+  type LootStageKind,
+  type LootStageStatus,
+  type LootStageTrace,
+} from "./game/lootPipeline";
 export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./game/lootTable";
 export { resolveOneShotClip } from "./game/modelAnimation";
 export { evaluateObjective } from "./game/objectives";
+export {
+  createLayerRegistry,
+  diffParams,
+  orderLayers,
+  resolveParams,
+  resolveSelection,
+  validateLayers,
+  type LayerConflict,
+  type LayerOps,
+  type LayerRegistry,
+  type LayerSelection,
+  type ParamContribution,
+  type ParamDelta,
+  type ParamLayer,
+  type ParamOp,
+  type ParamSnapshot,
+} from "./game/paramLayers";
 export {
   DEFAULT_PING_CATEGORIES,
   PING_FEED_ACTION,
@@ -143,6 +217,15 @@ export {
   tickRaceSession,
 } from "./game/race";
 export { createRecordBook } from "./game/recordBook";
+export {
+  createRuleRegistry,
+  rerollRules,
+  selectRules,
+  type RuleDef,
+  type RuleRegistry,
+  type RuleSelection,
+  type RuleSelectionConfig,
+} from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
 export {
   createSaveStore,
@@ -178,6 +261,16 @@ export {
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
+export {
+  createVfxInstanceStore,
+  type CombatVfxInstanceEvent,
+  type VfxInstancePatch,
+  type VfxInstanceSpec,
+  type VfxInstanceState,
+  type VfxInstanceStopOptions,
+  type VfxInstanceStore,
+  type VfxInstanceStoreOptions,
+} from "./game/vfxInstance";
 export {
   DEFAULT_PICKUP_RADIUS,
   WORLD_ITEM_ENTITY_NAME,
@@ -236,7 +329,45 @@ export {
   type DurabilitySpec,
   type DurabilityState,
 } from "./item/durability";
+export {
+  activeSetBonuses,
+  applySetBonuses,
+  candidateViolatesForbid,
+  captureProvenance,
+  countSetMembers,
+  identityOf,
+  isIdentityValid,
+  matchesQuery,
+  validateIdentity,
+  type CandidatePlacement,
+  type CompatibilityRule,
+  type ConstraintViolation,
+  type ForbidRule,
+  type IdentityQuery,
+  type ItemIdentity,
+  type ItemProvenance,
+  type RequireRule,
+  type SetBonus,
+} from "./item/itemIdentity";
 export { createItemInstanceRegistry, proceduralLootEntry } from "./item/itemInstanceRegistry";
+export {
+  generate,
+  type GenChoiceRecord,
+  type GenChoices,
+  type GenDraft,
+  type GenFieldRecord,
+  type GenOption,
+  type GenOutcome,
+  type GenPool,
+  type GenProvenance,
+  type GenResult,
+  type GenSchema,
+  type GenStep,
+  type GenTransform,
+  type GenValidator,
+  type GenerateOptions,
+  type TransformApi,
+} from "./item/itemgen";
 export {
   computeEffectiveStats,
   createModularItem,
@@ -252,18 +383,139 @@ export {
   type PartDef,
 } from "./item/modularItem";
 export { createItemUse, type ItemUseHandler, type ItemUseInput } from "./item/use";
+export {
+  createUseBehaviorRegistry,
+  type BehaviorConfig,
+  type BehaviorState,
+  type ComposedUse,
+  type CompositionResult,
+  type SerializedBehaviorState,
+  type UseBehaviorContext,
+  type UseBehaviorDef,
+  type UseBehaviorOutcome,
+  type UseBehaviorRef,
+  type UseBehaviorRegistry,
+  type UseBehaviorRejection,
+} from "./item/useBehavior";
 export { createWeaponStats } from "./item/weapon";
+export {
+  createStatGraph,
+  statModifierContributions,
+  type StatContribution,
+  type StatContributionStep,
+  type StatDeriveContext,
+  type StatDerivedDef,
+  type StatExplanation,
+  type StatGraph,
+  type StatGraphDef,
+  type StatInputDef,
+  type StatModEntry,
+  type StatOp,
+  type StatSheet,
+  type StatSheetState,
+} from "./progression/statGraph";
 export { type CellGrid } from "./puzzle/cellGrid";
 export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";
 export { pickUniform, pickWeighted } from "./random/pick";
 export { seededStreams } from "./random/rng";
+export {
+  addValue,
+  clampValue,
+  createPairKeyCodec,
+  driftValue,
+  getValue,
+  setValue,
+  towardValue,
+  type NumericBounds,
+  type PairKeyCodec,
+  type PairKeyOptions,
+} from "./relation/keyedValues";
+export {
+  crossThresholds,
+  tierAt,
+  type CrossThresholdsOptions,
+  type ThresholdBoundary,
+  type ThresholdCrossing,
+  type ThresholdDirection,
+} from "./relation/thresholds";
+export {
+  evaluatePredicate,
+  readPath,
+  type Predicate,
+  type PredicateFacts,
+  type PredicatePath,
+  type PredicateValue,
+} from "./rules/predicate";
+export { getRuleEffect, listRuleEffects, registerRuleEffect, type RuleEffectDefinition } from "./rules/ruleEffects";
+export {
+  createTriggeredRuleEngine,
+  type ActiveEffect,
+  type EffectRef,
+  type FiringBlock,
+  type RateLimit,
+  type RuleEvent,
+  type RuleFiring,
+  type StackPolicy,
+  type TargetRole,
+  type TargetSelector,
+  type TriggeredRule,
+  type TriggeredRuleEngine,
+  type TriggeredRuleState,
+} from "./rules/triggeredRules";
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";
-export { createDecayMeterSet, type DecayMeterSet } from "./survival/decayMeter";
+export {
+  createDecayMeterSet,
+  decayMeterMoodles,
+  decayMeterSnapshot,
+  decayMeterState,
+  decayMeters,
+  initDecayMeters,
+  refillMeter,
+  type DecayMeterSet,
+  type DecayMeterValues,
+  type DecayModifier,
+} from "./survival/decayMeter";
 export { createMoodleStack, stackMoodles, type Moodle, type MoodleStack } from "./survival/moodle";
 export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regionHealth";
 export { createCommitController } from "./turn/commit";
 export { createIntentBoard } from "./turn/intent";
 export { createTurnLoop, type TurnLoop } from "./turn/turnLoop";
+export {
+  activeJobs,
+  cancelJob,
+  createWorkQueue,
+  enqueue,
+  fifoOrdering,
+  jobById,
+  jobProgress,
+  pauseJob,
+  priorityOrdering,
+  queueSize,
+  queuedJobs,
+  resumeJob,
+  tick,
+  type CancelResult,
+  type EnqueueOptions,
+  type EnqueueResult,
+  type Job,
+  type JobId,
+  type JobOrdering,
+  type JobStatus,
+  type JobValidation,
+  type TickResult,
+  type WorkQueueConfig,
+  type WorkQueueEvent,
+  type WorkQueueState,
+} from "./work/jobQueue";
+export {
+  unitTrainingConfig,
+  type ResourceCost,
+  type TrainableUnitDef,
+  type UnitReservation,
+  type UnitSpawnOrder,
+  type UnitTrainingOptions,
+  type UnitTrainingSpec,
+} from "./work/unitTraining";

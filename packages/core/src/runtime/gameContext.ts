@@ -37,6 +37,7 @@ import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
+import { createVfxInstanceStore, type VfxInstanceStore } from "../game/vfxInstance";
 import { createGameFeed, type GameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
 import { type Leaderboard } from "../game/leaderboard";
@@ -289,6 +290,13 @@ export interface SceneEntityContext {
   stats: EntityStatsApi;
   floatText(input: FloatTextInput): void;
   vfx(input: VfxInput): void;
+  /**
+   * Retained VFX registry for long-lived, updatable effects (held beams, tethers, zones, target lines) whose
+   * endpoints and params change over time — the persistent complement to the one-shot {@link SceneEntityContext.vfx}
+   * burst. `upsert` creates/replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional
+   * fade; endpoints given as an entity instance id are followed live by the renderer without per-frame commands.
+   */
+  vfxInstance: VfxInstanceStore;
   telegraph(input: TelegraphInput): () => void;
   hitReaction(input: HitReactionInput): HitReaction | null;
   setTarget(fromId: string, toId: string | null): void;
@@ -982,6 +990,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     applyEffect: (input) => effects.applyEffect(input),
   });
 
+  const vfxInstances = createVfxInstanceStore({
+    onOp: (op) => events.emit("combat.vfxInstance", op),
+    now: () => time.now() * 1000,
+  });
+
   const floatingEffects: EffectSystem = {
     canReceive: effects.canReceive,
     preview: effects.preview,
@@ -1231,6 +1244,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         stats: entityStats,
         floatText: emitFloatText,
         vfx: emitVfx,
+        vfxInstance: vfxInstances,
         telegraph: fireTelegraph,
         hitReaction: applyHitReaction,
         setTarget: targeting.setTarget,

@@ -1,5 +1,6 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
+import type { EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
 import type { LookPreset } from "../render/lookPreset";
 import type { TouchControlsConfig } from "../input/touchScheme";
@@ -669,6 +670,8 @@ export interface PlayableGame<
   WorldOverlay?: TOverlay;
   /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
   environment?: TWorldOverlay;
+  /** The game's authored scene document (`editor.scene.json`, normalized). When set and no `WorldOverlay` is supplied, the shell auto-mounts `AuthoredScene` over it (draped paths, scatter, studios, placed catalog props), and the embedded editor opens it as its default layers — the zero-wiring path from document to play and edit modes. */
+  editorLayers?: EditorDocument;
   /** Custom first-person viewmodel (#542), read when the active rig is first-person. Rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun; receives a live `cuesRef` (velocity/bob/firing/reloading/recoil) driven from the followed entity — see `@jgengine/shell/camera`'s `ViewmodelProps`. Set `camera.firstPerson.viewmodel: false` to render no viewmodel at all regardless of this field. */
   viewmodel?: TViewmodel;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */

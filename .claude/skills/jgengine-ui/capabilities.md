@@ -4,6 +4,30 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## action-bar — drop-in cooldown/cost/hotkey action bar over the headless action model
+
+- `ActionBar` (function) · `import { ActionBar } from "@jgengine/react"`
+
+## action-bar-chrome — accessible grid/list toolbar renderer over an action-bar model with swappable item chrome
+
+- `ActionBarChrome` (function) · `import { ActionBarChrome } from "@jgengine/react"`
+
+## action-bar-model — headless action-collection model with focus, hover, keyboard, and hotkey routing
+
+- `useActionBar` (function) · `import { useActionBar } from "@jgengine/react"`
+
+## action-button — cooldown/cost/hotkey action button with complete interaction states
+
+- `ActionButton` (function) · `import { ActionButton } from "@jgengine/react"`
+
+## action-from-ability-slot — adapt a combat ability-kit snapshot into an action-bar action def
+
+- `actionFromAbilitySlot` (function) · `import { actionFromAbilitySlot } from "@jgengine/react"`
+
+## action-tooltip — structured action tooltip body (title, cost, cooldown, blocking notes)
+
+- `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
+
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
@@ -21,13 +45,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/ui"`
 
+## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
+
+- `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`
+
 ## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
 
 - `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
 
+## entity-summary — primary selected-entity detail panel (name, tags, vitals)
+
+- `EntitySummary` (function) · `import { EntitySummary } from "@jgengine/react"`
+
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
+
+## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
+
+- `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`
+
+## hud-frame — shared framed HUD chrome — glass/plate/retro skins, optional title/aside header, reused across every widget instead of a bespoke panel per widget
+
+- `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
 
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
@@ -36,6 +76,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## keycap — styled keyboard/mouse key cap for control hints
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/react"`
+
+## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
+
+- `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
@@ -49,6 +93,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/react"`
 
+## minimap-track-hud — horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
+
+- `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/react"`
+
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
@@ -61,9 +109,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
 
+## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
+
+- `Popover` (function) · `import { Popover } from "@jgengine/react"`
+
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
+
+## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
+
+- `SelectionCollectionChrome` (function) · `import { SelectionCollectionChrome } from "@jgengine/react"`
+
+## selection-group-chip — same-kind selection chip (icon + count) for a grouped selection
+
+- `SelectionGroupChip` (function) · `import { SelectionGroupChip } from "@jgengine/react"`
+
+## selection-model — headless multi-entity selection model with primary focus, grouping, and virtualization
+
+- `useSelectionView` (function) · `import { useSelectionView } from "@jgengine/react"`
+
+## selection-panel — drop-in selection panel: primary summary beside a portrait strip / group chips
+
+- `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/react"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
@@ -80,6 +148,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+
+## vital-bar — compact current/max vital meter for an entity summary
+
+- `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 

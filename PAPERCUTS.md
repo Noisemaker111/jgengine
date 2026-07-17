@@ -250,3 +250,11 @@ using the required agent-browser verification skill -> agent-browser is not inst
 2026-07-17T00:08:24.662Z — gpt-5 — NoisemakerJon
 
 subscribing to PR notification activity with gh api booleans via -f -> GitHub rejected strings; -F was required
+
+2026-07-17T06:56:02.774Z — unknown — Claude
+
+profiling the-robots in a cloud session → vite dev server silently stopped invalidating changed modules mid-session (served stale game.config.ts transforms twice), so perf A/B measurements compared identical code; likely inotify watcher death after pulling 250+ model files into apps/dev/public. Workaround: curl the /@fs transform and diff against disk before trusting a measurement, restart vite when stale — drive could grow a freshness self-check.
+
+2026-07-17T06:56:02.828Z — unknown — Claude
+
+drive --playtest/--rpc perf sampling → debug_snapshot fps was contaminated by load/shader-compile stalls sitting in the 60-frame window; added debug_perf_reset bridge verb + devtools.frame.reset() so the window can start post-warmup (shipped in this branch), but drive still has no one-flag 'measure steady-state perf' mode

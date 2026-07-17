@@ -7,6 +7,7 @@ import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 
 import type { PostProcessingConfig, ToneMappingMode } from "@jgengine/core/render/postProcessing";
+import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { createGradePass } from "./gradeShader";
 
@@ -47,8 +48,14 @@ function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: 
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
  * post chain: RenderPass → GTAO → UnrealBloom → OutputPass → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+ *
+ * `quality` (the player's graphics-quality setting) gates the passes whose cost
+ * scales with scene geometry or resolution beyond the dpr cap: GTAO re-renders
+ * the whole scene for depth/normals and runs a multi-sample full-screen pass,
+ * and Bokeh DOF renders scene depth again — both run on "high" only. Bloom,
+ * tone mapping, and grade stay on every tier.
  */
-export function PostProcessing({ config }: { config: PostProcessingConfig }) {
+export function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
@@ -66,7 +73,8 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
     const composer = new EffectComposer(gl, target);
     composer.addPass(new RenderPass(scene, camera));
 
-    if (config.ao !== undefined && config.ao !== false) {
+    const heavyPasses = quality === "high";
+    if (heavyPasses && config.ao !== undefined && config.ao !== false) {
       const ao = new GTAOPass(scene, camera, width, height);
       ao.blendIntensity = config.ao.blend ?? 1;
       ao.updateGtaoMaterial({
@@ -92,7 +100,7 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
     }
 
     let dof: BokehPass | null = null;
-    if (config.dof !== undefined && config.dof !== false) {
+    if (heavyPasses && config.dof !== undefined && config.dof !== false) {
       const d = config.dof;
       dof = new BokehPass(scene, camera, {
         focus: d.focus ?? 18,
@@ -117,7 +125,7 @@ export function PostProcessing({ config }: { config: PostProcessingConfig }) {
       disposeGraph(graph);
       builtRef.current = null;
     };
-  }, [gl, scene, camera, config]);
+  }, [gl, scene, camera, config, quality]);
 
   useEffect(() => {
     const prevTone = gl.toneMapping;

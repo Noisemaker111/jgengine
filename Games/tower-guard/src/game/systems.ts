@@ -1,6 +1,7 @@
 import { defineSystem } from "@jgengine/core/game/defineSystem";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import { tickConstruction } from "./build/construction";
 import { tickTowers } from "./combat/towerAI";
 import { session } from "./session";
 import { tickWaves } from "./waves/director";
@@ -11,6 +12,14 @@ export const waves = defineSystem({
   tick: { type: "frame", stage: "ai" },
   update(ctx, dt) {
     if (!session.gameOver && !session.victory) tickWaves(ctx, dt);
+  },
+});
+
+export const construction = defineSystem({
+  id: "construction",
+  tick: { type: "frame", stage: "ai", after: "waves" },
+  update(ctx, dt) {
+    if (!session.gameOver && !session.victory) tickConstruction(ctx, dt);
   },
 });
 
@@ -30,4 +39,4 @@ export const worldHeartbeat = defineSystem({
   },
 });
 
-export const systems = [waves, towers, worldHeartbeat];
+export const systems = [waves, construction, towers, worldHeartbeat];

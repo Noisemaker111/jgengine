@@ -2,6 +2,7 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
+import { hudFrameStyle } from "./hudFrame";
 import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
 
 /**
@@ -14,16 +15,7 @@ import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, l
  * @capability hud-components opt-in drop-in health/hotbar/speed/clock/wave/currency HUD widgets
  */
 
-const PANEL: CSSProperties = {
-  background: "rgba(10,12,16,0.62)",
-  backdropFilter: "blur(6px)",
-  WebkitBackdropFilter: "blur(6px)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: 10,
-  color: "#f4f6fb",
-  fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-};
+const PANEL: CSSProperties = hudFrameStyle("glass");
 
 /** Named color ramps for {@link StatBar} tones. `fn` maps fill fraction (0..1) → gradient stops. */
 const TONES: Record<string, (t: number) => [string, string]> = {

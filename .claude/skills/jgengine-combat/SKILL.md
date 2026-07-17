@@ -29,5 +29,6 @@ Compose stages through registration/policy seams; adding a damage type, effect, 
 - Random rolls accept injected RNG and stable seeds.
 - Interceptors record why values changed; hidden callbacks make outcomes unauditable.
 - Reward generation and allocation are different operations, especially in multiplayer.
+- Compose multiple loot pools with `createLootPipeline` (ordered stages, gates, fallbacks, roll modifiers, per-drop provenance) over `lootTable`; keep genre concepts (world/dedicated/boss/luck/pity) in game-space stages and modifiers, never in core.
 - UI bars, reticles, and feedback route to `jgengine-ui`.
 

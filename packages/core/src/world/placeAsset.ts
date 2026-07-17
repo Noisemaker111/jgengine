@@ -1,3 +1,4 @@
+import { applyRotationPolicy, resolveFacingRotationY, type AssetSpace } from "../scene/assetSpace";
 import type { PlacementCommit } from "./placementController";
 import type { AddStructureInput, StructureVec3 } from "./placedStructureStore";
 
@@ -27,6 +28,14 @@ export interface ResolvePlaceAssetInput {
   kind?: string;
   label?: string;
   rotationY?: number;
+  /**
+   * Placement heading in degrees (engine north = `0`, clockwise). When set it takes precedence over
+   * `rotationY`: the resolved `rotationY` runs through `space.rotation` (the asset's rotation policy)
+   * and `space.forwardDegrees` (canonical facing), so the catalog owns the correction instead of games.
+   */
+  headingDegrees?: number;
+  /** Asset-space metadata driving the heading resolution when `headingDegrees` is set. */
+  space?: AssetSpace;
   id?: string;
   color?: string;
   meta?: Readonly<Record<string, unknown>>;
@@ -81,13 +90,17 @@ export function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResu
     ...(url === undefined ? {} : { url }),
     ...(input.meta ?? {}),
   };
+  const rotationY =
+    input.headingDegrees === undefined
+      ? (input.rotationY ?? 0)
+      : resolveFacingRotationY(applyRotationPolicy(input.headingDegrees, input.space?.rotation), input.space);
   return {
     id: placementId(assetId, input.id),
     assetId,
     kind,
     label,
     position,
-    rotationY: input.rotationY ?? 0,
+    rotationY,
     color: input.color ?? "#e2e8f0",
     meta,
   };

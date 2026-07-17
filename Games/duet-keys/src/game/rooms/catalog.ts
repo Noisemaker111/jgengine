@@ -1,3 +1,10 @@
+import {
+  getGridCell,
+  importAsciiGrid,
+  type EditorGridLayer,
+  type EditorGridPaletteEntry,
+} from "@jgengine/core/editor/index";
+
 import type { Dir, HeroId, V2 } from "../types";
 
 export interface Plate {
@@ -59,12 +66,52 @@ const RECEIVER_GLYPHS = "rstuvw";
 const GATE_GLYPHS = "GHIJK";
 const SPIKE_GLYPHS = "XYZ";
 
-function parseRoom(src: RoomSource): RoomDef {
-  const rows = src.map;
-  const height = rows.length;
-  const width = Math.max(...rows.map((row) => row.length));
+/**
+ * Palette registered for every duet-keys room grid layer. The value id equals the map glyph, so
+ * the ASCII maps below are a pure import adapter into the editor-owned grid document — the grid,
+ * not the ASCII, is the canonical representation the room parser, gameplay, and rendering read.
+ */
+export const ROOM_PALETTE: readonly EditorGridPaletteEntry[] = [
+  { id: "#", glyph: "#", label: "Wall", color: "#0f172a" },
+  { id: ".", glyph: ".", label: "Floor", color: "#334155" },
+  { id: "L", glyph: "L", label: "Lumen spawn", color: "#38bdf8" },
+  { id: "A", glyph: "A", label: "Anchor spawn", color: "#f59e0b" },
+  { id: "o", glyph: "o", label: "Lumen exit", color: "#22d3ee" },
+  { id: "0", glyph: "0", label: "Anchor exit", color: "#fbbf24" },
+  { id: "E", glyph: "E", label: "Prism emitter", color: "#a78bfa" },
+  ...[...PLATE_GLYPHS].map((glyph) => ({ id: glyph, glyph, label: `Plate ${glyph}`, color: "#fb923c" })),
+  ...[...RECEIVER_GLYPHS].map((glyph) => ({ id: glyph, glyph, label: `Receiver ${glyph}`, color: "#60a5fa" })),
+  ...[...GATE_GLYPHS].map((glyph) => ({ id: glyph, glyph, label: `Gate ${glyph}`, color: "#94a3b8" })),
+  ...[...SPIKE_GLYPHS].map((glyph) => ({ id: glyph, glyph, label: `Spikes ${glyph}`, color: "#ef4444" })),
+];
+
+/**
+ * Imports one room's ASCII map into an editor-owned grid layer positioned so cell (col,row) maps
+ * to the same world V2 the game uses. Space (and any padding) is the empty value = wall; every
+ * other glyph is stored as its own value id.
+ */
+export function roomGridLayer(src: RoomSource): EditorGridLayer {
+  const height = src.map.length;
+  const width = Math.max(...src.map.map((row) => row.length));
   const originX = -Math.floor((width - 1) / 2);
   const originZ = -Math.floor((height - 1) / 2);
+  return importAsciiGrid(src.map.join("\n"), {
+    id: `room_${src.id}`,
+    kind: "room",
+    label: src.name,
+    palette: ROOM_PALETTE,
+    empty: "",
+    origin: { x: originX, y: 0, z: originZ },
+    cellSize: 1,
+    meta: { objective: src.objective, ...(src.links === undefined ? {} : { links: src.links }) },
+  });
+}
+
+function parseRoom(layer: EditorGridLayer, src: RoomSource): RoomDef {
+  const width = layer.cols;
+  const height = layer.rows;
+  const originX = layer.origin.x;
+  const originZ = layer.origin.z;
 
   const floor: V2[] = [];
   const walls: V2[] = [];
@@ -77,9 +124,9 @@ function parseRoom(src: RoomSource): RoomDef {
   const spikeCells = new Map<string, V2[]>();
 
   for (let row = 0; row < height; row++) {
-    const line = rows[row] ?? "";
     for (let col = 0; col < width; col++) {
-      const glyph = line[col] ?? "#";
+      const raw = getGridCell(layer, col, row);
+      const glyph = raw === "" ? "#" : raw;
       const cell: V2 = { x: col + originX, z: row + originZ };
       if (glyph === "#" || glyph === " ") {
         walls.push(cell);
@@ -210,7 +257,9 @@ const SOURCES: readonly RoomSource[] = [
   },
 ];
 
-export const ROOMS: readonly RoomDef[] = SOURCES.map(parseRoom);
+/** Editor-owned grid layers for every room — the canonical, serializable room geometry. */
+export const ROOM_GRIDS: readonly EditorGridLayer[] = SOURCES.map(roomGridLayer);
+export const ROOMS: readonly RoomDef[] = SOURCES.map((src, index) => parseRoom(ROOM_GRIDS[index]!, src));
 export const ROOM_COUNT = ROOMS.length;
 
 export interface RoomBounds {

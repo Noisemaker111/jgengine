@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "provider": "duet-keys",
+  "declarations": [
+    {
+      "provenance": { "kind": "runtime", "providerId": "duet-keys", "instanceId": "note-field" },
+      "reason": "Rhythm game whose note field is generated from the code-owned chart at runtime. There is no authored 3D world, terrain, or placement to express in the editor."
+    }
+  ]
+}

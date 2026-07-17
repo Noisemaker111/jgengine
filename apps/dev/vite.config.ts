@@ -54,10 +54,6 @@ export default defineConfig({
   server: {
     host: true,
     proxy: devProxy,
-    hmr:
-      process.env.JG_PLAY_HMR_PORT === undefined
-        ? undefined
-        : { host: "localhost", clientPort: Number(process.env.JG_PLAY_HMR_PORT) },
   },
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],

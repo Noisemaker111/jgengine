@@ -43,10 +43,47 @@ export interface ExtractedGlb {
   bytes: Uint8Array;
 }
 
-export interface ExtractedTexture {
-  /** Path relative to the pack output dir, e.g. "Textures/colormap.png". */
+/** An image a pack's models reference, shipped flat beside the `.glb` files. */
+export interface ExtractedPackImage {
+  /** Flat basename, e.g. "citybits_texture.png" — models reference it relative to their own URL. */
   file: string;
   bytes: Uint8Array;
+}
+
+const PACK_IMAGE_EXT = /\.(png|jpe?g|webp)$/i;
+
+/** Flatten a glTF image URI ("../Textures/color%20map.png") to its decoded basename. */
+function imageUriBasename(uri: string): string {
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(uri);
+    } catch {
+      return uri;
+    }
+  })();
+  const clean = decoded.replace(/\\/g, "/");
+  return clean.split("/").pop() ?? clean;
+}
+
+interface GltfImageJson {
+  images?: { uri?: string; bufferView?: number }[];
+}
+
+/**
+ * Rewrite external image URIs to flat basenames so a model always finds its
+ * texture beside itself in the pack dir, no matter how the source archive
+ * nested it ("Textures/x.png", "../texture/x.png", "x.png" all become "x.png").
+ * Returns the basenames of every external image the model references.
+ */
+function normalizeGltfImageUris(json: GltfImageJson): string[] {
+  const referenced: string[] = [];
+  for (const image of json.images ?? []) {
+    if (image.uri === undefined || image.uri.startsWith("data:")) continue;
+    const base = imageUriBasename(image.uri);
+    image.uri = base;
+    referenced.push(base);
+  }
+  return referenced;
 }
 
 function resolveRelative(path: string, pageUrl: string): string {
@@ -237,24 +274,7 @@ function dedupeByBasename(archive: Uint8Array, pattern: RegExp): { file: string;
   );
 }
 
-/**
- * Pack a `.gltf` + optional external `.bin` into a single `.glb` so reindex /
- * the shell only ever deal in one-file models. Strips buffer `uri` fields so
- * the binary chunk is self-contained. External image URIs stay as-is (loaders
- * resolve relative to the catalog URL only for GLB-embedded images).
- * @internal
- */
-export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uint8Array {
-  const json = JSON.parse(new TextDecoder().decode(gltfBytes)) as {
-    buffers?: { uri?: string; byteLength?: number }[];
-  };
-  if (Array.isArray(json.buffers)) {
-    for (const buffer of json.buffers) {
-      delete buffer.uri;
-      if (binBytes !== undefined) buffer.byteLength = binBytes.byteLength;
-    }
-  }
-  const jsonText = JSON.stringify(json);
+function buildGlb(jsonText: string, binBytes?: Uint8Array): Uint8Array {
   const jsonPad = (4 - (jsonText.length % 4)) % 4;
   const jsonChunk = new Uint8Array(jsonText.length + jsonPad);
   new TextEncoder().encodeInto(jsonText, jsonChunk);
@@ -286,21 +306,119 @@ export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uin
   return out;
 }
 
+interface GlbChunks {
+  json: Record<string, unknown> & GltfImageJson;
+  bin?: Uint8Array;
+}
+
+/** Parse a `.glb` container into its JSON document and optional BIN chunk. Returns null for non-glb bytes. */
+function parseGlb(bytes: Uint8Array): GlbChunks | null {
+  if (bytes.byteLength < 20) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (view.getUint32(0, true) !== 0x46546c67) return null;
+  let offset = 12;
+  let json: GlbChunks["json"] | undefined;
+  let bin: Uint8Array | undefined;
+  while (offset + 8 <= bytes.byteLength) {
+    const length = view.getUint32(offset, true);
+    const kind = view.getUint32(offset + 4, true);
+    const body = bytes.subarray(offset + 8, offset + 8 + length);
+    if (kind === 0x4e4f534a) {
+      try {
+        json = JSON.parse(new TextDecoder().decode(body)) as GlbChunks["json"];
+      } catch {
+        return null;
+      }
+    } else if (kind === 0x004e4942) {
+      bin = body;
+    }
+    offset += 8 + length;
+  }
+  if (json === undefined) return null;
+  return bin === undefined ? { json } : { json, bin };
+}
+
 /**
- * Pull every GLB out of an archive. Also converts co-located `.gltf` + `.bin`
- * pairs (Quaternius Standard packs on OpenGameArt) into `.glb` so the catalog
- * stays one-file-per-model. GLB wins when both formats share a basename.
+ * External image basenames a packed `.glb` still references (its textures must
+ * sit beside it in the pack dir). Empty for self-contained models.
+ * @internal
+ */
+export function externalGlbImages(bytes: Uint8Array): string[] {
+  const chunks = parseGlb(bytes);
+  if (chunks === null) return [];
+  return (chunks.json.images ?? [])
+    .map((image) => image.uri)
+    .filter((uri): uri is string => uri !== undefined && !uri.startsWith("data:"))
+    .map((uri) => imageUriBasename(uri));
+}
+
+/** Rewrite a native `.glb`'s external image URIs to flat basenames; returns the input untouched when nothing changes. */
+function normalizeGlbImageUris(bytes: Uint8Array): { bytes: Uint8Array; referenced: string[] } {
+  const chunks = parseGlb(bytes);
+  if (chunks === null) return { bytes, referenced: [] };
+  const before = JSON.stringify(chunks.json.images ?? []);
+  const referenced = normalizeGltfImageUris(chunks.json);
+  if (referenced.length === 0 || JSON.stringify(chunks.json.images ?? []) === before) {
+    return { bytes, referenced };
+  }
+  return { bytes: buildGlb(JSON.stringify(chunks.json), chunks.bin), referenced };
+}
+
+/**
+ * Pack a `.gltf` + optional external `.bin` into a single `.glb` so reindex /
+ * the shell only ever deal in one-file models. Strips buffer `uri` fields so
+ * the binary chunk is self-contained; external image URIs are flattened to
+ * basenames so the pack ships each referenced texture beside the models
+ * (loaders resolve the relative URI against the model's own URL).
+ * @internal
+ */
+export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uint8Array {
+  const json = JSON.parse(new TextDecoder().decode(gltfBytes)) as {
+    buffers?: { uri?: string; byteLength?: number }[];
+  } & GltfImageJson;
+  if (Array.isArray(json.buffers)) {
+    for (const buffer of json.buffers) {
+      delete buffer.uri;
+      if (binBytes !== undefined) buffer.byteLength = binBytes.byteLength;
+    }
+  }
+  normalizeGltfImageUris(json);
+  return buildGlb(JSON.stringify(json), binBytes);
+}
+
+/** What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference. */
+export interface ExtractedPack {
+  models: ExtractedGlb[];
+  /** Every archive image some extracted model references, flattened to basenames. */
+  images: ExtractedPackImage[];
+}
+
+/**
+ * Pull every GLB out of an archive, plus the textures those models reference.
+ * Converts co-located `.gltf` + `.bin` pairs (Quaternius Standard packs on
+ * OpenGameArt, KayKit bits packs) into `.glb` so the catalog stays
+ * one-file-per-model; GLB wins when both formats share a basename. External
+ * image URIs are flattened to basenames and the matching archive images are
+ * returned for writing beside the models — a pulled pack renders textured, not
+ * as white clay (#1005).
   * @internal
   */
-export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
+export function extractGlbs(archive: Uint8Array): ExtractedPack {
   const entries = unzipSync(archive, {
-    filter: boundedExtractFilter((file) => /\.(glb|gltf|bin)$/i.test(file.name)),
+    filter: boundedExtractFilter(
+      (file) => /\.(glb|gltf|bin)$/i.test(file.name) || PACK_IMAGE_EXT.test(file.name),
+    ),
   });
   const byDirBase = new Map<string, { glb?: Uint8Array; gltf?: Uint8Array; bin?: Uint8Array }>();
+  const imagesByBase = new Map<string, Uint8Array>();
   for (const [path, bytes] of Object.entries(entries)) {
     const parts = path.replace(/\\/g, "/").split("/");
     const file = parts.pop();
     if (file === undefined || file.length === 0) continue;
+    if (PACK_IMAGE_EXT.test(file)) {
+      if (!imagesByBase.has(file)) imagesByBase.set(file, bytes);
+      continue;
+    }
     const dir = parts.join("/");
     // KayKit ships some files as `name.gltf.glb` — strip both suffixes for a clean id.
     const base = file.replace(/\.gltf\.glb$/i, "").replace(/\.(glb|gltf|bin)$/i, "");
@@ -317,20 +435,31 @@ export function extractGlbs(archive: Uint8Array): ExtractedGlb[] {
   }
 
   const byName = new Map<string, Uint8Array>();
+  const referenced = new Set<string>();
   for (const [key, slot] of byDirBase) {
     const base = key.split("\0")[1]!;
     const file = `${base}.glb`;
+    if (byName.has(file)) continue;
     if (slot.glb !== undefined) {
-      if (!byName.has(file)) byName.set(file, slot.glb);
+      const normalized = normalizeGlbImageUris(slot.glb);
+      byName.set(file, normalized.bytes);
+      for (const image of normalized.referenced) referenced.add(image);
       continue;
     }
     if (slot.gltf !== undefined) {
-      if (!byName.has(file)) byName.set(file, packGltfToGlb(slot.gltf, slot.bin));
+      const packed = packGltfToGlb(slot.gltf, slot.bin);
+      byName.set(file, packed);
+      for (const image of externalGlbImages(packed)) referenced.add(image);
     }
   }
-  return Array.from(byName, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
+  const models = Array.from(byName, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
     a.file.localeCompare(b.file),
   );
+  const images = Array.from(referenced)
+    .filter((file) => imagesByBase.has(file))
+    .map((file) => ({ file, bytes: imagesByBase.get(file)! }))
+    .sort((a, b) => a.file.localeCompare(b.file));
+  return { models, images };
 }
 
 /** One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`. */
@@ -344,25 +473,6 @@ export interface ExtractedSpriteFile {
  */
 export function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] {
   return dedupeByBasename(archive, /\.(svg|png)$/i);
-}
-
-const TEXTURE_ENTRY = /(?:^|\/)(Textures\/[^/]+)$/i;
-
-/** @internal */
-export function extractTextures(archive: Uint8Array): ExtractedTexture[] {
-  const entries = unzipSync(archive, {
-    filter: boundedExtractFilter((file) => TEXTURE_ENTRY.test(file.name)),
-  });
-  const byRel = new Map<string, Uint8Array>();
-  for (const [path, bytes] of Object.entries(entries)) {
-    const match = path.match(TEXTURE_ENTRY);
-    if (match === null) continue;
-    const rel = match[1]!;
-    if (!byRel.has(rel)) byRel.set(rel, bytes);
-  }
-  return Array.from(byRel, ([file, bytes]) => ({ file, bytes })).sort((a, b) =>
-    a.file.localeCompare(b.file),
-  );
 }
 
 /** @internal */

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "provider": "spire-cards",
+  "declarations": [
+    {
+      "provenance": { "kind": "runtime", "providerId": "spire-cards", "instanceId": "card-table" },
+      "reason": "Deck-building card battler with no authored 3D world. All presentation is HUD/code-owned cards and encounters, so there is no scene geometry, terrain, or placement to author in the editor."
+    }
+  ]
+}

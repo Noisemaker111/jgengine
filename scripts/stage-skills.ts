@@ -6,16 +6,16 @@ import { fileURLToPath } from "node:url";
 import { GAME_SKILLS } from "../packages/jgengine/src/skills";
 
 const PACKAGE_SKILLS: Record<string, readonly string[]> = {
-  core: ["jgengine", "jgengine-gameplay", "jgengine-combat", "jgengine-world"],
+  core: ["jgengine", "game-design", "jgengine-gameplay", "jgengine-combat", "jgengine-world"],
   ws: ["jgengine", "jgengine-multiplayer"],
   sql: ["jgengine", "jgengine-multiplayer"],
   convex: ["jgengine", "jgengine-multiplayer"],
   node: ["jgengine", "jgengine-multiplayer"],
   react: ["jgengine", "jgengine-ui"],
-  shell: ["jgengine", "jgengine-ui", "jgengine-world"],
+  shell: ["jgengine", "game-design", "level-design", "jgengine-ui", "jgengine-world"],
   assets: ["jgengine", "jgengine-assets"],
   github: ["jgengine"],
-  editor: ["jgengine", "jgengine-editor"],
+  editor: ["jgengine", "level-design", "jgengine-editor"],
   jgengine: GAME_SKILLS,
 };
 

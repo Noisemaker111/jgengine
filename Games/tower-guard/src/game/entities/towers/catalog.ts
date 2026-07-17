@@ -11,6 +11,8 @@ export interface TowerDef {
   label: string;
   description: string;
   cost: number;
+  /** Seconds a placed tower spends under construction before it becomes active. Omitted = instant. */
+  buildSeconds?: number;
   range: number;
   damage: number;
   fireRateHz: number;

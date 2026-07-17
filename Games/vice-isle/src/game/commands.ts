@@ -2,12 +2,31 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { handroll } from "./handroll";
 import { vehicleById } from "./entities/vehicles/catalog";
+import { CRED_GATES, credLevel } from "./progression/cred";
 import { GARAGE_POS } from "./world/districts";
 
 export const shopStore = defineStore<string | undefined>("vice.shop", undefined);
 export const garageStore = defineStore<boolean | undefined>("vice.garage", undefined);
 export const startedStore = defineStore<boolean | undefined>("vice.started", undefined);
 export const slotStore = defineStore<number | undefined>("vice.slot", undefined);
+/** True once a whole-world save was restored this boot — title shows Continue and start skips the intro. */
+export const continueStore = defineStore<boolean | undefined>("vice.continue", undefined);
+/** Palmview Bungalow ownership — persisted with the world save. */
+export const safehouseStore = defineStore<boolean | undefined>("vice.safehouse", undefined);
+/** Best Ocean Loop time in seconds — persisted; beating it pays a bonus. */
+export const bestRaceStore = defineStore<number | undefined>("vice.bestRace", undefined);
+
+export const SAFEHOUSE_PRICE = 5000;
+export const RACE_ENTRY_FEE = 200;
+export const RACE_WIN_PAYOUT = 600;
+export const RACE_BEST_BONUS = 250;
+
+/** Cred gate for a purchasable id, or null when the player clears it. */
+export function credGateBlocking(ctx: GameContext, id: string): number | null {
+  const gate = CRED_GATES[id];
+  if (gate === undefined || credLevel(ctx) >= gate) return null;
+  return gate;
+}
 
 function selectedHotbarItem(ctx: GameContext): string | null {
   const slots = ctx.player.inventory.state("hotbar").slots;
@@ -43,6 +62,8 @@ export function registerCommands(ctx: GameContext): void {
     apply(state) {
       if (startedStore.read(state) === true) return;
       startedStore.write(state, true);
+      // Continuing a save drops straight back into play; the flyover is a first-run intro.
+      if (continueStore.read(state) === true) return;
       const player = state.scene.entity.get(state.player.userId);
       const px = player?.position[0] ?? -176;
       const pz = player?.position[2] ?? 24;
@@ -94,6 +115,11 @@ export function registerCommands(ctx: GameContext): void {
     apply(state, input) {
       const itemId = (input as { item?: string }).item;
       if (itemId === undefined) return;
+      const gate = credGateBlocking(state, itemId);
+      if (gate !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: `NEEDS CRED ${gate}`, kind: "warn" });
+        return;
+      }
       const isWeapon = itemId.startsWith("pistol") || itemId.startsWith("smg") || itemId.startsWith("shotgun");
       const result = state.game.trade!.buy(itemId, 1, {
         shop: "shop_ammunation",
@@ -122,6 +148,11 @@ export function registerCommands(ctx: GameContext): void {
       const kind = (input as { vehicle?: string }).vehicle;
       const def = kind !== undefined ? vehicleById(kind) : undefined;
       if (def === undefined || def.price <= 0) return;
+      const gate = credGateBlocking(state, def.id);
+      if (gate !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: `NEEDS CRED ${gate}`, kind: "warn" });
+        return;
+      }
       const charge = state.game.economy.charge(state.player.userId, "cash", def.price);
       if (charge !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: "NOT ENOUGH CASH", kind: "warn" });
@@ -145,7 +176,41 @@ export function registerCommands(ctx: GameContext): void {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: "YOU NEED A CAR", kind: "warn" });
         return;
       }
-      handroll.startRace(state);
+      if (handroll.raceActive()) return;
+      const charge = state.game.economy.charge(state.player.userId, "cash", RACE_ENTRY_FEE);
+      if (charge !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: `ENTRY $${RACE_ENTRY_FEE}`, kind: "warn" });
+        return;
+      }
+      if (!handroll.startRace(state)) {
+        state.game.economy.grant(state.player.userId, "cash", RACE_ENTRY_FEE);
+        return;
+      }
+      state.game.feed.push("vice.log", { text: `Ocean Loop entry paid — $${RACE_ENTRY_FEE}.` });
+    },
+  });
+
+  ctx.game.commands.define("safehouse.buy", {
+    apply(state) {
+      if (safehouseStore.read(state) === true) return;
+      const charge = state.game.economy.charge(state.player.userId, "cash", SAFEHOUSE_PRICE);
+      if (charge !== null) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: "NOT ENOUGH CASH", kind: "warn" });
+        return;
+      }
+      safehouseStore.write(state, true);
+      state.game.feed.push("vice.log", { text: "Palmview Bungalow is yours — rest up, respawn here." });
+      state.scene.entity.floatText({ instanceId: state.player.userId, text: "SAFEHOUSE OWNED", kind: "good" });
+    },
+  });
+
+  ctx.game.commands.define("safehouse.rest", {
+    apply(state) {
+      if (safehouseStore.read(state) !== true) return;
+      const health = state.scene.entity.stats.get(state.player.userId, "health");
+      if (health === null) return;
+      state.scene.entity.stats.set(state.player.userId, "health", { current: health.max });
+      state.game.feed.push("vice.log", { text: "Rested at the bungalow — back to full health." });
     },
   });
 

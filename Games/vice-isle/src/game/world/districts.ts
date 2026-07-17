@@ -71,6 +71,23 @@ export const GUNSHOP_POS: readonly [number, number, number] = markerXYZ("gunshop
 export const GARAGE_POS: readonly [number, number, number] = markerXYZ("garage");
 export const DOCK_FIGHT_CENTER: readonly [number, number, number] = markerXYZ("dock_fight");
 export const BRIEFCASE_POS: readonly [number, number, number] = markerXYZ("briefcase");
+export const VCPD_POS: readonly [number, number, number] = markerXYZ("vcpd_station");
+export const SAFEHOUSE_POS: readonly [number, number, number] = markerXYZ("safehouse");
+export const CICADA_STAGE_POS: readonly [number, number, number] = markerXYZ("cicada_stage");
+
+export interface BountySpot {
+  id: string;
+  label: string;
+  position: readonly [number, number, number];
+}
+
+export const BOUNTY_SPOTS: readonly BountySpot[] = editorLayers.markers
+  .filter((marker) => marker.kind === "bounty")
+  .map((marker) => ({
+    id: marker.id,
+    label: marker.label ?? marker.id,
+    position: [marker.position.x, marker.position.y, marker.position.z] as const,
+  }));
 
 export function districtAt(x: number, z: number): District | null {
   let best: District | null = null;

@@ -21,6 +21,7 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "openworld" },
   save: "none",
+  persist: true,
   multiplayer: offline(),
   content,
   loop,
@@ -37,11 +38,11 @@ export const game = defineGame({
   entityModels,
   objectModels,
   lighting: {
-    ambient: { color: "#ffe6c4", intensity: 0.85 },
-    hemisphere: { skyColor: "#ffe9c0", groundColor: "#7a8560", intensity: 0.75 },
-    directional: [{ color: "#fff2d8", intensity: 1.1, position: [120, 220, 40], castShadow: false }],
+    ambient: { color: "#ffe6c4", intensity: 0.72 },
+    hemisphere: { skyColor: "#bfe2f2", groundColor: "#7a8560", intensity: 0.7 },
+    directional: [{ color: "#fff2d8", intensity: 1.25, position: [120, 220, 40], castShadow: true }],
   },
-  shadows: false,
+  shadows: true,
   worldHealthBars: { roles: ["enemy", "hostile"] },
   worldItem: {
     pickupRadius: 2.4,
@@ -68,7 +69,10 @@ export const game = defineGame({
     shake: { maxOffset: 0.24, maxRoll: 0.045, decayPerSecond: 2.8, exponent: 2, frequency: 21 },
     frustum: { far: 900 },
   },
-  backdrop: { background: "#ffe3b3" },
+  backdrop: {
+    background: "#a9dcf0",
+    fog: { color: "#cfe9f2", near: 150, far: 640 },
+  },
   time: { dayLength: 720, start: 320 },
   orientation: "landscape",
 });

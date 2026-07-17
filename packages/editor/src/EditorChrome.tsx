@@ -25,6 +25,7 @@ import {
 } from "./viewportContextMenu";
 import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi, EditorPerfSample } from "./session";
+import { classifyEditorPerf } from "./perfPill";
 import { newPlacementId, type EditorUiStore, type PlacementTool, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { BTN, MICRO } from "./chromeStyles";
@@ -66,6 +67,23 @@ function formatTriangles(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(0)}k`;
   return String(count);
+}
+
+const PERF_TONE_CLASS = {
+  idle: "text-neutral-500",
+  healthy: "text-emerald-400",
+  busy: "text-rose-400",
+} as const;
+
+/** Toolbar perf pill: neutral "idle" when the loop is throttled/at rest, red only for active low fps. */
+function PerfPill({ perf }: { perf: EditorPerfSample }) {
+  const tone = classifyEditorPerf(perf);
+  const rate = tone === "idle" ? "idle" : `${perf.fps.toFixed(0)} fps`;
+  return (
+    <span className={`ml-3 ${PERF_TONE_CLASS[tone]}`}>
+      {rate} · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris
+    </span>
+  );
 }
 
 let clipboardFragment: EditorDocument | null = null;
@@ -143,7 +161,7 @@ export function EditorChrome({
   api,
   assets,
   ui,
-  baselineJson,
+  baselineDocument,
   save,
 }: {
   gameId: string;
@@ -151,7 +169,8 @@ export function EditorChrome({
   api: EditorHostApi;
   assets: readonly EditorAssetEntry[];
   ui: EditorUiStore;
-  baselineJson?: string;
+  /** The document as loaded — drives the header unsaved-dot by reference compare. */
+  baselineDocument?: EditorDocument;
   save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
 }) {
   const [, setTick] = useState(0);
@@ -551,8 +570,11 @@ export function EditorChrome({
     }
   };
 
-  const currentJson = useMemo(() => session.exportJson(true), [session, state.document]);
-  const dirty = baselineJson !== undefined && currentJson !== baselineJson;
+  // Reference compare, not a serialize: stringifying the whole document per edit dispatch burned
+  // milliseconds on every nudge/stroke. Same tradeoff as `useDocumentSave.dirty` — undoing back to
+  // the pristine state may leave the dot on (history restores clones), which is the cheap side of
+  // wrong for an unsaved-edits hint.
+  const dirty = baselineDocument !== undefined && state.document !== baselineDocument;
 
   const startPlacement = (tool: PlacementTool) => {
     setAddOpen(false);
@@ -645,6 +667,9 @@ export function EditorChrome({
           <button type="button" className={BTN} onClick={() => ui.patch({ gridSize: uiState.gridSize >= 8 ? 0.5 : uiState.gridSize * 2 })}>±</button>
         ) : null}
         <button type="button" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showGrid ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showGrid: !uiState.showGrid })}>Grid G</button>
+        <button type="button" title="Surface-following iso-elevation contours" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showContours ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showContours: !uiState.showContours })}>Contours</button>
+        <button type="button" title="Terrain-draped reference grid" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showSurfaceGrid ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showSurfaceGrid: !uiState.showSurfaceGrid })}>Drape</button>
+        <button type="button" title="Measurable elevation readout" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showElevation ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showElevation: !uiState.showElevation })}>Elev</button>
         <div className="h-5 w-px bg-white/[0.07]" />
         <button type="button" className={BTN} onClick={() => api.handle({ method: "camera_frame" })}>Frame all</button>
         <button type="button" className={`${BTN} disabled:opacity-40`} onClick={() => session.dispatch({ type: "undo" })} disabled={!session.canUndo()}>Undo</button>
@@ -786,7 +811,7 @@ export function EditorChrome({
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[0.08] bg-black/70 px-4 py-1.5 text-[11px] text-neutral-400 shadow-lg shadow-black/40 backdrop-blur-md">
             <span>RMB orbit · MMB pan · click select · RMB menu · W/E/R · Ctrl+C/V · F frame · ? help</span>
             <span className="ml-3 text-neutral-500">{sceneStats.objects} objs{sceneStats.foliage > 0 ? ` · ≈${formatTriangles(sceneStats.foliage)} foliage` : ""}</span>
-            {perf !== null ? <span className={`ml-3 ${perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}`}>{perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris</span> : null}
+            {perf !== null ? <PerfPill perf={perf} /> : null}
           </div>
         </main>
 

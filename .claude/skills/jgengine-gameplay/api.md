@@ -171,6 +171,38 @@
 - `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 
+## @jgengine/core/economy/resourceLedger
+
+- `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
+- `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
+- `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
+- `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
+- `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
+- `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
+- `PolicyContext` (interface): interface PolicyContext — Read-only context handed to every {@link ResourcePolicy} for a transaction.
+- `PolicyRead` (type): type PolicyRead = string | ((ctx: PolicyContext) => number) — Reader over policy context: a `vars` key or a function of the context.
+- `Precision` (interface): interface Precision — Deterministic rounding applied to every transaction amount before it touches balances.
+- `ResourceLedger` (interface): interface ResourceLedger — Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors.
+- `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
+- `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
+- `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
+- `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
+- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
+- `addScheduledRule` (function): function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): ResourceLedger — Register a recurring rule and seed its cursor. Returns a new ledger; the rule's first cycle is due at `rule.startSeconds` (defaulting to the current clock).
+- `advanceLedger` (function): function advanceLedger(ledger: ResourceLedger, toSeconds: number, options: AdvanceOptions = {}): AdvanceResult — Advance the ledger clock to `toSeconds`, settling every due cycle deterministically. Rules are processed in sorted-id order; cycle counts are integer math; large deltas are bounded by `catchUp`, `maxCatchUpCycles`, and `maxCyclesPerRule`. Every produced transaction flows through the policy pipeline (transform, cap, reject, split, redirect, annotate) before it is quantised and applied to balances.
+- `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
+- `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
+- `cancelRule` (function): function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Remove a rule and its cursor entirely (hard cancellation).
+- `capAmount` (function): function capAmount(max: number | ((ctx: PolicyContext) => number)): ResourcePolicy — Clamp a transaction's amount to at most `max` (a fixed number or a function of context).
+- `createResourceLedger` (function): function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLedger — Create an empty scheduled-transaction ledger, or hydrate one from a saved snapshot. State is plain data: production, depletion, tax, and upkeep are all expressed as {@link ScheduledRule}s settled deterministically by {@link advanceLedger}.
+- `curveScale` (function): function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy — Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier (population upkeep, depletion falloff, difficulty income) over caller-provided context.
+- `pauseRule` (function): function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
+- `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
+- `rejectWhen` (function): function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyContext) => boolean): ResourcePolicy — Drop a transaction when `predicate` holds — the reject arm of the pipeline.
+- `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
+- `taxFraction` (function): function taxFraction(fraction: number, to?: string): ResourcePolicy — Take a fraction of the amount. With `to`, the taxed portion is split off into a second transaction toward that recipient (a transfer/tax); without it, the fraction is simply removed.
+- `thresholdScale` (function): function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy — Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in currencies or brackets.
+
 ## @jgengine/core/economy/sharedWallet
 
 - `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
@@ -185,6 +217,16 @@
 - `TechState` (type): type TechState = UnlockState — ⚠ undocumented
 - `TechTree` (interface): interface TechTree — ⚠ undocumented
 
+## @jgengine/core/economy/unlockPoints
+
+- `SpendOptions` (interface): interface SpendOptions — Options for {@link UnlockPoints.spend}.
+- `SpendRejection` (type): type SpendRejection = | "invalid-cost" | "already-unlocked" | "missing-prerequisites" | "insufficient-points" — Why a {@link UnlockPoints.spend} was refused; the pool is left untouched on any rejection.
+- `SpendResult` (type): type SpendResult = { ok: true; available: number } | { ok: false; reason: SpendRejection } — Result of {@link UnlockPoints.spend}: the new `available` balance on success, else a reason.
+- `UnlockPoints` (interface): interface UnlockPoints — A spendable unlock-point economy: a pool you earn (per level or by direct grant) and spend to unlock nodes, with per-unlock refunds and a full respec.
+- `UnlockPointsConfig` (interface): interface UnlockPointsConfig — Configuration for {@link createUnlockPoints}.
+- `UnlockPointsState` (interface): interface UnlockPointsState — Plain, JSON-serializable snapshot of a point pool. `earned` is the lifetime total ever banked; every committed unlock lives in `unlocked` as `id → cost paid`. `spent` and `available` are always derived (`spent = Σ unlocked`, `available = earned − spent`) so the two can never drift out of sync across a serialize/hydrate round-trip.
+- `createUnlockPoints` (function): function createUnlockPoints(config: UnlockPointsConfig = {}): UnlockPoints — Spendable unlock-point economy — the seam between leveling and a tech tree. Points are earned per level (via a configurable, possibly non-uniform grant curve) or granted directly, then spent to unlock nodes; spending can defer prerequisite checks to an injected predicate so it composes with `economy/techTree` (or any gate) without depending on it. Individual unlocks refund, and `respec` fully refunds a build while preserving lifetime earned points. All state is plain and JSON round-trips.
+
 ## @jgengine/core/economy/wallet
 
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
@@ -198,6 +240,25 @@
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
+
+## @jgengine/core/game/breeding
+
+- `BreedConfig` (interface): interface BreedConfig — Tuning for {@link breedOffspring}. Every field has an ARK-style default; all are optional.
+- `BreedResult` (interface): interface BreedResult — Result of {@link breedOffspring}: the new genome plus the mutations that produced it.
+- `Genome` (interface): interface Genome — A creature's heritable genome. `stats` are the inherited/mutated point values; `mutationCount` and `colorMutationCount` are the lineage counters that carry across generations and drive the mutation soft cap. Fully serializable — no methods or closures.
+- `ImprintBonusConfig` (interface): interface ImprintBonusConfig — Options controlling how an imprint bonus is applied.
+- `IncubationConfig` (interface): interface IncubationConfig — Temperature gate for {@link tickIncubation}.
+- `IncubationState` (interface): interface IncubationState — Serializable incubation/gestation state advanced by {@link tickIncubation}.
+- `MaturationStage` (interface): interface MaturationStage — A maturation stage keyed by the elapsed fraction (0..1) at which it begins.
+- `MutationEvent` (interface): interface MutationEvent — One mutation that occurred while breeding a single offspring.
+- `MutationSoftCap` (interface): interface MutationSoftCap — Soft-cap rule for mutation eligibility. When a parent's `mutationCount` exceeds `threshold` its lineage is considered "capped"; the per-roll mutation chance is then either zeroed (`mode: "block"`) or scaled by `reducedFactor` (`mode: "reduce"`). `scope` decides whether it takes `both` parents capped, or `either` one, to trigger.
+- `StatBlock` (type): type StatBlock = Record<string, number> — Deterministic creature breeding & genetics — a genre-agnostic engine primitive for taming/husbandry games. Everything here operates over plain serializable records so a genome round-trips through save/load and multiplayer sync, and every random decision is driven by an injected `rng: () => number` (values in `[0, 1)`) so identical inputs and an identical rng stream always produce the identical offspring.
+- `applyImprintBonus` (function): function applyImprintBonus(stats: StatBlock, imprint: number, config: ImprintBonusConfig = {}, options: { asOwner?: boolean } = {}): StatBlock — Apply the imprint rearing bonus to a stat block. Every stat is scaled by `1 + statBonusAtFull * imprint`; when `asOwner` is set, the imprinting handler additionally gets `1 + handlerBonusAtFull * imprint`. `imprint` is a 0..1 fraction (clamped) and scales both bonuses linearly, so half-imprint yields half the bonus. Returns a fresh stat block.
+- `breedOffspring` (function): function breedOffspring(parentA: Genome, parentB: Genome, rng: () => number, config: BreedConfig = {}): BreedResult — Breed one offspring from two parents. For each stat present in either parent (iterated in sorted id order for a stable rng stream) the offspring independently inherits the higher parent's value with probability `higherStatChance` (default `0.55`), else the lower — a per-stat coin flip, so a strong parent does not guarantee a strong child. Then up to `mutationRolls` mutation rolls fire at the soft-capped chance; each success adds `mutationDelta` to a random stat, bumps the heritable `mutationCount`, and is flagged cosmetic with probability `colorMutationChance`. Lineage counters carry as the max of the two parents plus the new mutations, keeping them monotonic and heritable.
+- `imprintIncrementPerRequest` (function): function imprintIncrementPerRequest(requestCount: number): number — Imprint gained per fulfilled care request when `requestCount` requests are scheduled over the maturation window: `1 / requestCount`, so fulfilling every request reaches full (1.0) imprint. Returns `0` for a non-positive request count.
+- `incubationViable` (function): function incubationViable(state: IncubationState): boolean — True while the incubation still has health to hatch.
+- `maturationStage` (function): function maturationStage(elapsed: number, duration: number, stages: readonly MaturationStage[]): string — Resolve the maturation stage for an elapsed time against a duration. Computes the clamped `elapsed / duration` fraction and returns the id of the last stage whose `at` threshold has been reached (boundaries inclusive). Stages need not be pre-sorted. Returns `""` when no stage qualifies (e.g. an empty list or all thresholds above the current fraction).
+- `tickIncubation` (function): function tickIncubation(state: IncubationState, temperature: number, dt: number, config: IncubationConfig): IncubationState — Advance incubation one tick. While `temperature` is within `[minTemp, maxTemp]` the embryo makes progress (`elapsed += dt`) and keeps its health; outside the range it makes no progress and loses `healthLossPerTick * dt` health (clamped at `0`). Pure — returns a new state, never mutates the input.
 
 ## @jgengine/core/game/chat
 
@@ -304,6 +365,7 @@
 - `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent — ⚠ undocumented
 - `QuestCompletedEvent` (interface): interface QuestCompletedEvent — ⚠ undocumented
 - `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent — ⚠ undocumented
+- `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
 - `SocialFriendAddedEvent` (interface): interface SocialFriendAddedEvent — ⚠ undocumented
 - `SocialPartyJoinedEvent` (interface): interface SocialPartyJoinedEvent — ⚠ undocumented
 - `SocialPartyLeftEvent` (interface): interface SocialPartyLeftEvent — ⚠ undocumented
@@ -311,6 +373,7 @@
 - `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent — ⚠ undocumented
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
+- `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
@@ -318,10 +381,14 @@
 ## @jgengine/core/game/feed
 
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `GameFeed` (interface): interface GameFeed — ⚠ undocumented
 - `GameFeedOptions` (interface): interface GameFeedOptions — ⚠ undocumented
+- `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
+- `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
 - `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
 - `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+- `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
 - `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
 
 ## @jgengine/core/game/gamePhase
@@ -379,6 +446,24 @@
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 
+## @jgengine/core/game/lootPipeline
+
+- `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
+- `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
+- `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
+- `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
+- `LootPipelineDeps` (interface): interface LootPipelineDeps — Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition.
+- `LootPlanEntry` (interface): interface LootPlanEntry — One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live eligibility and effective weight/chance. Modifiers rewrite these fields; the source `entry` object is never mutated, so table definitions stay shared and reusable.
+- `LootResolution` (interface): interface LootResolution — The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed.
+- `LootResolveContext` (interface): interface LootResolveContext<TCtx = unknown> — The caller-owned context, injected RNG, and optional seed threaded through a single resolution.
+- `LootRollPlan` (interface): interface LootRollPlan — The mutable roll plan a stage derives from its table before rolling. Modifiers transform this — gating entries, reweighting them, or changing the roll count — instead of touching table defs.
+- `LootStage` (interface): interface LootStage<TCtx = unknown> — One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
+- `LootStageKind` (type): type LootStageKind = "contribute" | "fallback" | "replace" — How a stage folds its rolled drops into the accumulating result: `"contribute"` appends, `"fallback"` rolls only when nothing has dropped yet, `"replace"` discards prior drops and overrides with its own (quest/boss overrides).
+- `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
+- `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
+- `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
+- `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
+
 ## @jgengine/core/game/lootTable
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
@@ -402,6 +487,24 @@
 - `ThresholdObjective` (interface): interface ThresholdObjective — A live-metric goal: hit `target` from the required `direction` (defaults to `atLeast`).
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
 - `evaluateObjectives` (function): function evaluateObjectives(objectives: readonly ThresholdObjective[], values: Readonly<Record<string, number>> | ((id: string) => number)): ObjectiveSummary — Evaluate every objective against current metric values (a lookup map or function) and roll them up into a met-count, completion flag, and mean progress — the brief/charter panel every sim renders.
+
+## @jgengine/core/game/paramLayers
+
+- `LayerConflict` (interface): interface LayerConflict — A single conflict surfaced by {@link validateLayers}.
+- `LayerOps` (type): type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>> — Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence.
+- `LayerRegistry` (interface): interface LayerRegistry — Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns.
+- `LayerSelection` (type): type LayerSelection = readonly string[] — A serializable, ordered reference to layers by stable id — what a save file or session setup stores.
+- `ParamContribution` (interface): interface ParamContribution — One recorded fold step — which layer's op ran and the value before/after. Contribution provenance.
+- `ParamDelta` (interface): interface ParamDelta — One parameter's change between two value maps, for preview/diff surfaces.
+- `ParamLayer` (interface): interface ParamLayer — A named, serializable bundle of parameter transforms with a stable id and precedence. `label` is an optional display name that may intentionally differ from the applied ops (e.g. a tier shown as "Mayhem 4" whose real multipliers are data). Higher `priority` applies later — on top — and ties break by the layer's index in the active list, so ordering is deterministic.
+- `ParamOp` (type): type ParamOp = | { readonly kind: "set"; readonly value: number } | { readonly kind: "add"; readonly value: number } | { readonly kind: "multiply"; readonly value: number } | { readonly kind: "clamp"; readonly min?: number; readonly max?: number } | { readonly kind: "curve"; readonly curve: Curve } — A single transform applied to one numeric parameter. `set` overrides, `add`/`multiply` accumulate, `clamp` bounds, and `curve` remaps the running value through a {@link Curve} (the same curve primitive progression tracks use), so a caller can reshape a value non-linearly mid-stack.
+- `ParamSnapshot` (interface): interface ParamSnapshot — A resolved effective-parameter snapshot: final `values` plus the ordered op trace per parameter.
+- `createLayerRegistry` (function): function createLayerRegistry(initial?: readonly ParamLayer[]): LayerRegistry — Create a {@link LayerRegistry} — the registration seam difficulty tiers, mutators, and presets install into. Duplicate ids throw at registration; unknown ids at resolve time are reported, not fatal, which is what keeps saved sessions reproducible across content/version drift.
+- `diffParams` (function): function diffParams(before: Readonly<Record<string, number>>, after: Readonly<Record<string, number>>): readonly ParamDelta[] — Compute the per-parameter deltas between two value maps — the preview/diff of applying a change, for showing a player what a difficulty tier or mutator will do before they commit.
+- `orderLayers` (function): function orderLayers(layers: readonly ParamLayer[]): readonly ParamLayer[] — Order layers into their well-defined application sequence: ascending `priority`, ties broken by the layer's index in `layers` (a stable sort). Same input, same order, on every platform.
+- `resolveParams` (function): function resolveParams(base: Readonly<Record<string, number>>, layers: readonly ParamLayer[]): ParamSnapshot — Fold an ordered stack of layers over `base` and return the effective {@link ParamSnapshot}. Layers apply in {@link orderLayers} sequence; within a layer each parameter's ops fold left-to-right. Every op is recorded in `contributions` for provenance/preview. Parameters a layer introduces but `base` omits start from `0`. Pure and deterministic — no ambient randomness or time.
+- `resolveSelection` (function): function resolveSelection(base: Readonly<Record<string, number>>, registry: LayerRegistry, ids: LayerSelection): { readonly snapshot: ParamSnapshot; readonly unknown: readonly string[] } — Reproducible session setup in one call: resolve a saved {@link LayerSelection} through a registry, fold the found layers over `base`, and return the snapshot alongside any unknown ids. The same base + registry + selection always yields the same snapshot.
+- `validateLayers` (function): function validateLayers(layers: readonly ParamLayer[]): readonly LayerConflict[] — Detect design conflicts in a layer set before resolving: duplicate ids, and competing `set` ops on the same parameter at the same priority (order-dependent, so worth surfacing). Returns an empty array when the set is clean, so callers can gate a difficulty/session build on it.
 
 ## @jgengine/core/game/ping
 
@@ -545,6 +648,16 @@
 - `RecordSubmission` (interface): interface RecordSubmission<K extends string> — ⚠ undocumented
 - `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
 
+## @jgengine/core/game/ruleSelection
+
+- `RuleDef` (interface): interface RuleDef<TPayload = unknown> — A selectable rule over a tagged pool. `tags` classify it for include/exclude filtering and for `requires`/`conflicts` matching (which match either another rule's id or one of its tags). `layers` are the parameter layers this rule contributes when active; `payload` is opaque caller data.
+- `RuleRegistry` (interface): interface RuleRegistry<TPayload = unknown> — Registered pool of {@link RuleDef}s — the install seam games register mutators/modes/events into.
+- `RuleSelection` (interface): interface RuleSelection<TPayload = unknown> — The result of a selection — the chosen rules and their ids (a serializable {@link LayerSelection}-style list).
+- `RuleSelectionConfig` (interface): interface RuleSelectionConfig — Deterministic selection inputs — plain serializable data a host can persist and replay.
+- `createRuleRegistry` (function): function createRuleRegistry<TPayload = unknown>(initial?: readonly RuleDef<TPayload>[]): RuleRegistry<TPayload> — Create a {@link RuleRegistry}. Rules install through `register` (duplicate ids throw); selection and `layersFor` are data-driven, so the core never branches on which mutators exist.
+- `rerollRules` (function): function rerollRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig, keepIds: readonly string[], salt: string | number = 0): RuleSelection<TPayload> — Reroll a prior selection: keep `keepIds` (the locked slots) and re-draw the rest under a fresh, still-deterministic stream derived from `config.seed` and `salt`. The same seed + salt + keep set reproduce the same reroll, so reroll history stays replayable.
+- `selectRules` (function): function selectRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig): RuleSelection<TPayload> — Select up to `count` rules from `pool` deterministically from `config.seed`. Locked ids are placed first (in order), then remaining slots are filled by weighted draw from tag-filtered, still-eligible candidates, honoring `requires`/`conflicts` after each pick. Each slot draws from an independent seed stream keyed by slot index, so a later slot's outcome never shifts an earlier one. Selection stops early when no compatible candidate remains. Pure given `pool` + `config`.
+
 ## @jgengine/core/game/runDraft
 
 - `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
@@ -653,6 +766,26 @@
 - `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
 - `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
 
+## @jgengine/core/game/tribe
+
+- `AssetAction` (type): type AssetAction = "inventory" | "use" | "command" — Per-asset action gated by rank on group-owned assets.
+- `AssetOwnership` (type): type AssetOwnership = { scope: "group" } | { scope: "personal"; memberId: string } — Who inside the group owns an asset: the group as a whole, or a specific member personally.
+- `AssetRef` (interface): interface AssetRef — Opaque reference to a shared thing (structure, creature, container) by kind + id.
+- `Tribe` (interface): interface Tribe — A shared-ownership group — a tribe, guild, clan, or company — as one first-class aggregate. Unifies ranked membership, group-vs-personal asset ownership, mutual alliances, and a bounded event log that otherwise have to be hand-assembled from parties, factions, build permissions, and per-owner rosters.
+- `TribeAssetRecord` (interface): interface TribeAssetRecord — An asset (structure/creature) owned within a tribe — group-shared or held by one member.
+- `TribeConfig` (interface): interface TribeConfig — Construction options for {@link createTribe}: id, founder, rank ladder, and log cap.
+- `TribeEvent` (interface): interface TribeEvent — One entry in a tribe's bounded event log. Optional fields present only when meaningful.
+- `TribeEventType` (type): type TribeEventType = | "member-added" | "member-removed" | "member-left" | "rank-changed" | "founder-transferred" | "asset-registered" | "asset-unregistered" | "alliance-formed" | "alliance-broken" — The kind of change recorded in a tribe's event log (membership, ownership, or alliance).
+- `TribeMemberRecord` (interface): interface TribeMemberRecord — A member of a tribe and the rank id that governs their permissions.
+- `TribeRankDef` (interface): interface TribeRankDef — A rank within a group's hierarchy. Higher `level` means more authority: a member can only manage (kick, re-rank) members strictly below their own level, and cannot promote anyone to a level at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game checks with {@link Tribe.can} (e.g. `"build"`, `"demolish"`, `"invite"`, `"kick"`, `"manage-ranks"`, plus the {@link AssetAction} slugs `"inventory"`, `"use"`, `"command"` for group-owned assets). A `bypass` rank (an admin) skips every permission check, exactly like the founder.
+- `TribeRegistry` (interface): interface TribeRegistry — A collection of {@link Tribe tribes} with mutual alliance management and cross-member relation lookups. Alliances are kept symmetric here (both sides updated together), and member-to-member relations resolve through tribe membership + alliances, mirroring the `faction` graph vocabulary.
+- `TribeRegistryDeps` (interface): interface TribeRegistryDeps — Injected dependencies for {@link createTribeRegistry} (e.g. a `now()` clock for event timestamps).
+- `TribeRegistrySnapshot` (interface): interface TribeRegistrySnapshot — Full serializable state of a tribe registry — every tribe's snapshot in one payload.
+- `TribeResult` (type): type TribeResult = { reason: string } | null — Standard `{ reason }`-on-failure / `null`-on-success result for authorized mutations.
+- `TribeSnapshot` (interface): interface TribeSnapshot — Full serializable state of one tribe — the save/replication baseline.
+- `createTribe` (function): function createTribe(config: TribeConfig): Tribe — Create a shared-ownership group aggregate (tribe / guild / clan / company). Members hold a {@link TribeRankDef rank} whose configurable permission slugs gate management actions and access to group-owned assets, while personally-owned assets stay with their member — and follow them out when they leave. Group↔group {@link Tribe.addAlly alliances} resolve allied tribes as friendly, and every membership / ownership / alliance change lands in a bounded ring-buffer {@link Tribe.events log}. All state is plain JSON via {@link Tribe.snapshot}/{@link Tribe.hydrate}; timestamps come from an injected clock for determinism. Compose many tribes with {@link createTribeRegistry} for mutual alliances and cross-member relation lookups.
+- `createTribeRegistry` (function): function createTribeRegistry(deps: TribeRegistryDeps = {}): TribeRegistry — Create a registry that owns many tribes, keeps alliances mutual, and resolves member relations.
+
 ## @jgengine/core/game/unlocks
 
 - `UnlockCatalog` (interface): interface UnlockCatalog — ⚠ undocumented
@@ -664,6 +797,17 @@
 - `grantUnlock` (function): function grantUnlock(granted: UnlockState, unlockId: string): string[] — ⚠ undocumented
 - `hasUnlock` (function): function hasUnlock(granted: UnlockState, unlockId: string): boolean — ⚠ undocumented
 - `unlockTree` (function): function unlockTree(defs: readonly UnlockDef[], categoryId: string): UnlockDef[] — ⚠ undocumented
+
+## @jgengine/core/game/vfxInstance
+
+- `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
+- `VfxInstancePatch` (interface): interface VfxInstancePatch — A partial update to a live retained VFX instance. Only the provided fields change; `params` is shallow-merged so a caller can nudge one knob without resending the whole bag. Setting a field to `undefined` clears it. Applying a patch refreshes the instance heartbeat.
+- `VfxInstanceSpec` (interface): interface VfxInstanceSpec — The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot `combat.vfx` burst this describes a long-lived effect whose endpoints and parameters are updated over time. `id` is caller-stable so repeated `upsert` calls address the same effect; omit it to mint one. `from`/`to` are {@link VfxRef}s (an entity instance id or a world point) that a renderer resolves each frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
+- `VfxInstanceState` (interface): interface VfxInstanceState — The stored, fully-resolved form of a retained VFX instance. It is a plain serializable record so hosts can replicate it and debug tooling can inspect it; renderers receive it verbatim and never merge partial state themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
+- `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
+- `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
+- `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
+- `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 
 ## @jgengine/core/game/worldItem
 
@@ -686,11 +830,17 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
+- `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
+- `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
+- `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
 - `AffixPool` (interface): interface AffixPool — ⚠ undocumented
+- `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
 - `AxisInput` (interface): interface AxisInput — ⚠ undocumented
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
+- `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
+- `BehaviorState` (type): type BehaviorState = Record<string, unknown> — A single behavior's mutable, serializable runtime state (e.g. current charge, rounds queued). Composed state is a map of these keyed by behavior id.
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
 - `BehaviourModule` (class): class BehaviourModule — A world-lifetime service with typed sibling access via `this.modules`. Modules awake and start before any behaviour during `world.start()`, subscribe to update dispatch first (their `onUpdate` fires before every behaviour's), and have no disable/destroy — they live as long as the world.
 - `BehaviourWorld` (interface): interface BehaviourWorld — ⚠ undocumented
@@ -698,8 +848,11 @@
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
+- `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
 - `CardPile` (interface): interface CardPile — ⚠ undocumented
 - `CardPileState` (interface): interface CardPileState — ⚠ undocumented
+- `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
 - `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
@@ -710,9 +863,15 @@
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
+- `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
+- `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
 - `CompiledSystemSchedule` (interface): interface CompiledSystemSchedule — Deterministic compiled schedule: stage buckets, multi-subscribe channels, dependency validation. Order never depends on import order — only stage tables + explicit before/after constraints.
+- `ComposedUse` (interface): interface ComposedUse<TWorld> — A resolved, ordered composition of behaviors for one item. Dispatch is transactional: `apply` commits the folded world only if every behavior in the chain succeeds, otherwise it returns the original world and state plus the first error.
+- `CompositionResult` (type): type CompositionResult<TWorld> = | { status: "ok"; composed: ComposedUse<TWorld> } | { status: "error"; reason: "unknown-behavior"; id: string } | { status: "error"; reason: "duplicate-behavior"; id: string } | { status: "error"; reason: "missing-capability"; id: string; capability: string } | { sta… — The outcome of composing an item's behavior refs: either a ready {@link ComposedUse} or a structured error naming the offending behavior.
+- `ConstraintViolation` (interface): interface ConstraintViolation — One failed {@link CompatibilityRule}, carrying the rule id, its kind, and a human-readable message for UI or generator diagnostics.
 - `CropDef` (interface): interface CropDef — ⚠ undocumented
 - `CropTileState` (interface): interface CropTileState — ⚠ undocumented
+- `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
 - `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
 - `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 500 — ⚠ undocumented
 - `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
@@ -723,17 +882,25 @@
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
+- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
+- `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
 - `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
 - `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
 - `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
+- `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
+- `EnqueueOptions` (interface): interface EnqueueOptions — Optional per-enqueue overrides.
+- `EnqueueResult` (type): type EnqueueResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link enqueue}. On rejection the state is returned unchanged.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
+- `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
 - `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
 - `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
 - `Friends` (interface): interface Friends — ⚠ undocumented
@@ -744,18 +911,46 @@
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GamePhase` (type): type GamePhase = "menu" | "playing" | "paused" | "ended" — Canonical run phase every game moves through. `menu` (title/main menu), `playing` (live), `paused` (mid-run pause), `ended` (win/lose/results). Touch controls are shown only while `playing`; menus and results never paint the touch dock over themselves.
+- `GenChoiceRecord` (interface): interface GenChoiceRecord — Provenance for one resolved step: which option stuck, its effective weight, how many options were eligible after constraints, and how many eligible options backtracking rejected before this one. A skipped optional step is recorded with an empty `optionId`.
+- `GenChoices` (interface): interface GenChoices — Read-only view of the choices resolved so far, threaded into a later step's pool, constraint, weight function, or transform so a decision can depend on earlier picks (dependent choice).
+- `GenDraft` (interface): interface GenDraft — The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their values, and the transformed fields. Returning false from any validator rerolls the whole generation up to the attempt budget.
+- `GenFieldRecord` (interface): interface GenFieldRecord — Provenance for one field mutation a transform made: which transform, field, op, and before/after.
+- `GenOption` (interface): interface GenOption<V = unknown> — One selectable option in a generation step's pool: a stable `id` used in provenance and pinning, the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
+- `GenOutcome` (type): type GenOutcome = | { ok: true; result: GenResult } | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number } — The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept rejecting drafts) and the attempts spent.
+- `GenPool` (type): type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]) — A step's candidate options: a fixed list, or a function of the choices resolved so far so pools can narrow to earlier picks (a slot pool that depends on a chosen category).
+- `GenProvenance` (interface): interface GenProvenance — The full explanation of a generated result: how many whole-pipeline attempts it took, every step choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and regeneration.
+- `GenResult` (interface): interface GenResult — A successful generation: the step-to-option map, step-to-value map, transformed numeric fields, and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through save/load and multiplayer sync unchanged.
+- `GenSchema` (interface): interface GenSchema — A caller-defined generation schema over plain data: ordered choice steps, optional field transforms, optional validators, and bounded reroll/backtracking budgets. Genre-agnostic — it carries no built-in notion of rarity, element, weapon, or name; those are caller step and option ids.
+- `GenStep` (interface): interface GenStep<V = unknown> — One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
+- `GenTransform` (interface): interface GenTransform — A named derivation over the numeric field bag, applied in schema order after all choices resolve (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
+- `GenValidator` (type): type GenValidator = (draft: GenDraft) => boolean — A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll.
+- `GenerateOptions` (interface): interface GenerateOptions — Per-call options for {@link generate}.
+- `IdentityQuery` (interface): interface IdentityQuery — A predicate over an {@link ItemIdentity}, expressed as data so a whole rule set round-trips through JSON. An empty query matches every identity; each present field narrows the match and all present fields must hold (AND).
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
 - `InventoryState` (interface): interface InventoryState — ⚠ undocumented
+- `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
+- `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
 - `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
 - `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
+- `Job` (interface): interface Job<TSpec, TReserve = undefined> — One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`).
+- `JobId` (type): type JobId = string — Generic timed work queue — a pure-data model for discrete jobs that reserve inputs, advance over game time, can be paused/cancelled, and emit an output on completion. It backs unit training, crafting jobs, construction, research, respawns, downloads, and fabrication without any of them re-implementing the reservation → progress → completion → output-routing loop.
+- `JobOrdering` (type): type JobOrdering<TSpec, TReserve = undefined> = ( a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>, ) => number — Comparator over jobs; negative means the first job runs sooner.
+- `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
+- `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
 - `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
 - `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
+- `LayerConflict` (interface): interface LayerConflict — A single conflict surfaced by {@link validateLayers}.
+- `LayerOps` (type): type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>> — Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence.
+- `LayerRegistry` (interface): interface LayerRegistry — Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns.
+- `LayerSelection` (type): type LayerSelection = readonly string[] — A serializable, ordered reference to layers by stable id — what a save file or session setup stores.
 - `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
+- `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
+- `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
 - `LevelProgress` (interface): interface LevelProgress — ⚠ undocumented
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
 - `LevelingConfig` (interface): interface LevelingConfig — ⚠ undocumented
@@ -765,7 +960,20 @@
 - `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
 - `LoadoutDef` (interface): interface LoadoutDef — ⚠ undocumented
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
+- `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
 - `LootFilterRule` (interface): interface LootFilterRule — ⚠ undocumented
+- `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
+- `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
+- `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
+- `LootPipelineDeps` (interface): interface LootPipelineDeps — Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition.
+- `LootPlanEntry` (interface): interface LootPlanEntry — One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live eligibility and effective weight/chance. Modifiers rewrite these fields; the source `entry` object is never mutated, so table definitions stay shared and reusable.
+- `LootResolution` (interface): interface LootResolution — The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed.
+- `LootResolveContext` (interface): interface LootResolveContext<TCtx = unknown> — The caller-owned context, injected RNG, and optional seed threaded through a single resolution.
+- `LootRollPlan` (interface): interface LootRollPlan — The mutable roll plan a stage derives from its table before rolling. Modifiers transform this — gating entries, reweighting them, or changing the roll count — instead of touching table defs.
+- `LootStage` (interface): interface LootStage<TCtx = unknown> — One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
+- `LootStageKind` (type): type LootStageKind = "contribute" | "fallback" | "replace" — How a stage folds its rolled drops into the accumulating result: `"contribute"` appends, `"fallback"` rolls only when nothing has dropped yet, `"replace"` discards prior drops and overrides with its own (quest/boss overrides).
+- `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
+- `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
@@ -776,9 +984,17 @@
 - `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+- `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
+- `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
+- `PairKeyOptions` (interface): interface PairKeyOptions — Direction and delimiter policy for {@link createPairKeyCodec}.
+- `ParamContribution` (interface): interface ParamContribution — One recorded fold step — which layer's op ran and the value before/after. Contribution provenance.
+- `ParamDelta` (interface): interface ParamDelta — One parameter's change between two value maps, for preview/diff surfaces.
+- `ParamLayer` (interface): interface ParamLayer — A named, serializable bundle of parameter transforms with a stable id and precedence. `label` is an optional display name that may intentionally differ from the applied ops (e.g. a tier shown as "Mayhem 4" whose real multipliers are data). Higher `priority` applies later — on top — and ties break by the layer's index in the active list, so ordering is deterministic.
+- `ParamOp` (type): type ParamOp = | { readonly kind: "set"; readonly value: number } | { readonly kind: "add"; readonly value: number } | { readonly kind: "multiply"; readonly value: number } | { readonly kind: "clamp"; readonly min?: number; readonly max?: number } | { readonly kind: "curve"; readonly curve: Curve } — A single transform applied to one numeric parameter. `set` overrides, `add`/`multiply` accumulate, `clamp` bounds, and `curve` remaps the running value through a {@link Curve} (the same curve primitive progression tracks use), so a caller can reshape a value non-linearly mid-stack.
+- `ParamSnapshot` (interface): interface ParamSnapshot — A resolved effective-parameter snapshot: final `values` plus the ordered op trace per parameter.
 - `PartDef` (interface): interface PartDef — ⚠ undocumented
 - `Party` (interface): interface Party — ⚠ undocumented
 - `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
@@ -791,14 +1007,28 @@
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
 - `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `PolicyContext` (interface): interface PolicyContext — Read-only context handed to every {@link ResourcePolicy} for a transaction.
+- `PolicyRead` (type): type PolicyRead = string | ((ctx: PolicyContext) => number) — Reader over policy context: a `vars` key or a function of the context.
+- `Precision` (interface): interface Precision — Deterministic rounding applied to every transaction amount before it touches balances.
+- `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
+- `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
+- `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
+- `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
 - `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
 - `QuestDef` (interface): interface QuestDef — ⚠ undocumented
 - `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
 - `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
+- `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
+- `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
+- `ResourceLedger` (interface): interface ResourceLedger — Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors.
+- `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
+- `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
+- `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
 - `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase — ⚠ undocumented
@@ -807,19 +1037,43 @@
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
+- `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
+- `RuleDef` (interface): interface RuleDef<TPayload = unknown> — A selectable rule over a tagged pool. `tags` classify it for include/exclude filtering and for `requires`/`conflicts` matching (which match either another rule's id or one of its tags). `layers` are the parameter layers this rule contributes when active; `payload` is opaque caller data.
+- `RuleEffectDefinition` (interface): interface RuleEffectDefinition — A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata.
+- `RuleEvent` (interface): interface RuleEvent — A typed event handed to the engine; roles feed target resolution, facts feed the predicate.
+- `RuleFiring` (interface): interface RuleFiring — The outcome of matching one rule against one event. `applied` is the effect the caller should now run through its own effect system; a blocked firing reports why. Provenance (rule, owner, event, timestamp) rides along for auditability.
+- `RuleRegistry` (interface): interface RuleRegistry<TPayload = unknown> — Registered pool of {@link RuleDef}s — the install seam games register mutators/modes/events into.
+- `RuleSelection` (interface): interface RuleSelection<TPayload = unknown> — The result of a selection — the chosen rules and their ids (a serializable {@link LayerSelection}-style list).
+- `RuleSelectionConfig` (interface): interface RuleSelectionConfig — Deterministic selection inputs — plain serializable data a host can persist and replay.
 - `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
 - `SaveStatus` (type): type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error" — Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write.
 - `SaveStore` (interface): interface SaveStore<T> — A pluggable-backend game save with autosave, named slots, and versioned migration. `value()`/`patch()` hold the live state; `load()` hydrates it from the backend; `save()` (or autosave) writes it back. Backend failures surface as `"error"` status and through `onError` — a save never throws into a tick.
 - `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
+- `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
+- `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
+- `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `Social` (interface): interface Social — ⚠ undocumented
 - `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
+- `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
+- `StatContributionStep` (interface): interface StatContributionStep extends StatContribution — One line of a provenance trace: a contribution plus the running total after it folds in.
+- `StatDeriveContext` (interface): interface StatDeriveContext — The read-only view a derived formula gets: resolved values of its declared dependencies.
+- `StatDerivedDef` (interface): interface StatDerivedDef — A derived value whose formula and dependencies are caller-owned. `compute` may return a scalar (shorthand for a single `add`) or an ordered list of contributions folded left-to-right, so additive/multiplicative/clamped and conditional modifiers are all expressed as plain data or branches inside the function.
+- `StatExplanation` (interface): interface StatExplanation — A full provenance trace for one stat: the ordered steps that produced its value.
+- `StatGraph` (interface): interface StatGraph — A compiled, immutable stat-graph schema that mints per-entity {@link StatSheet}s from base values or saved state.
+- `StatGraphDef` (interface): interface StatGraphDef — The full schema of a stat graph: its named inputs and caller-authored derived formulas.
+- `StatInputDef` (interface): interface StatInputDef — A game-owned named input value. The engine ships no attribute vocabulary — ids, bounds, defaults, and metadata are entirely caller data, so the same graph can model STR/AGI/INT, SPECIAL scores, skills, difficulty knobs, or anything else.
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
+- `StatModEntry` (type): type StatModEntry = StatContribution | readonly StatContribution[] — A modifier entry targeting one stat: a single contribution or an ordered list.
+- `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
+- `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
+- `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
 - `SystemDefinition` (interface): interface SystemDefinition — A reusable game capability — lifecycle, timing, events, and optional save / replication / reset / disposal. Pass instances via `defineGame({ systems })`. Prefer one system per meaningful capability (`combat`, `quests`), not per micro-tick.
 - `SystemEventHandlers` (type): type SystemEventHandlers = { readonly [eventName: string]: (ctx: GameContext, event: unknown) => void; } — Event name → handler. Payload is the engine event shape for that name.
 - `SystemTick` (type): type SystemTick = | { type: "fixed"; /** Steps per game-second. Default 60. */ rate?: number; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { type: "frame"; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { t… — How a system is scheduled. Omit `tick` (or use only `events`) for event-driven systems. Multiple systems may share the same channel; order within a channel is deterministic by stage then optional `before`/`after` constraints — never import order.
@@ -827,7 +1081,15 @@
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
+- `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
+- `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
+- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
+- `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
+- `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
+- `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
+- `TickResult` (interface): interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> — Outcome of {@link tick}: advanced state plus the events produced.
+- `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
@@ -836,28 +1098,69 @@
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
+- `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
+- `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
+- `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
+- `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
+- `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
+- `UnitReservation` (interface): interface UnitReservation — Reservation stored on a training job — the inputs to charge and refund.
+- `UnitSpawnOrder` (interface): interface UnitSpawnOrder — Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't.
+- `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
+- `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
+- `UseBehaviorContext` (interface): interface UseBehaviorContext<TWorld> — The context handed to each behavior hook: the shared folded `world`, this behavior's own `config` and `state` slice, and the triggering use input.
+- `UseBehaviorDef` (interface): interface UseBehaviorDef<TWorld> — A registered behavior implementation. The combat/game side registers these (charge, thrown-reload, projectile-replacement, …); the item core only ever stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init` builds serializable state, `can` gates, `apply` folds the world.
+- `UseBehaviorOutcome` (interface): interface UseBehaviorOutcome<TWorld> — The result of applying one behavior: the (possibly advanced) world, this behavior's updated state, an optional error that aborts the chain, and an optional `stop` that ends the chain after a successful apply.
+- `UseBehaviorRef` (interface): interface UseBehaviorRef — The reference an item stores for one composed behavior: a stable behavior id, optional config, and an optional order override. Pure data — the item core never holds the implementation, only this reference.
+- `UseBehaviorRegistry` (interface): interface UseBehaviorRegistry<TWorld> — A registry of use-behavior implementations plus a composer that turns an item's stored refs into an ordered, conflict-checked {@link ComposedUse}.
+- `UseBehaviorRejection` (interface): interface UseBehaviorRejection — A reason a behavior refused a use, surfaced from `can`.
+- `VfxInstancePatch` (interface): interface VfxInstancePatch — A partial update to a live retained VFX instance. Only the provided fields change; `params` is shallow-merged so a caller can nudge one knob without resending the whole bag. Setting a field to `undefined` clears it. Applying a patch refreshes the instance heartbeat.
+- `VfxInstanceSpec` (interface): interface VfxInstanceSpec — The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot `combat.vfx` burst this describes a long-lived effect whose endpoints and parameters are updated over time. `id` is caller-stable so repeated `upsert` calls address the same effect; omit it to mint one. `from`/`to` are {@link VfxRef}s (an entity instance id or a world point) that a renderer resolves each frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
+- `VfxInstanceState` (interface): interface VfxInstanceState — The stored, fully-resolved form of a retained VFX instance. It is a plain serializable record so hosts can replicate it and debug tooling can inspect it; renderers receive it verbatim and never merge partial state themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
+- `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
+- `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
+- `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
+- `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
+- `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
+- `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
+- `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
 - `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
+- `activeJobs` (function): function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] — Jobs currently progressing.
+- `activeSetBonuses` (function): function activeSetBonuses(identity: ItemIdentity, bonuses: readonly SetBonus[]): SetBonus[] — Select the set bonuses whose membership count meets their threshold, in the order they were declared.
+- `addScheduledRule` (function): function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): ResourceLedger — Register a recurring rule and seed its cursor. Returns a new ledger; the rule's first cycle is due at `rule.startSeconds` (defaulting to the current clock).
+- `addValue` (function): function addValue(record: Record<string, number>, key: string, delta: number, bounds?: NumericBounds): number — Add `delta` to `key` (clamped to `bounds`), writing the record in place. Returns the stored value.
+- `advanceLedger` (function): function advanceLedger(ledger: ResourceLedger, toSeconds: number, options: AdvanceOptions = {}): AdvanceResult — Advance the ledger clock to `toSeconds`, settling every due cycle deterministically. Rules are processed in sorted-id order; cycle counts are integer math; large deltas are bounded by `catchUp`, `maxCatchUpCycles`, and `maxCyclesPerRule`. Every produced transaction flows through the policy pipeline (transform, cap, reject, split, redirect, annotate) before it is quantised and applied to balances.
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
+- `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
 - `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
+- `applySetBonuses` (function): function applySetBonuses(stats: Record<string, number>, bonuses: readonly SetBonus[]): Record<string, number> — Fold a set of active bonuses' additive stats onto a stat map, returning a new map (the input is not mutated).
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
+- `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
+- `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
+- `cancelRule` (function): function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Remove a rule and its cursor entirely (hard cancellation).
+- `candidateViolatesForbid` (function): function candidateViolatesForbid(partial: ItemIdentity, candidate: CandidatePlacement, rules: readonly CompatibilityRule[]): ForbidRule | null — The generic backtracking contract for procedural generation (see #908): given a partial identity and a candidate part, return the first forbid rule the placement would violate, or null if it stays viable. Require rules are ignored here because they may still be satisfied by a later placement.
+- `capAmount` (function): function capAmount(max: number | ((ctx: PolicyContext) => number)): ResourcePolicy — Clamp a transaction's amount to at most `max` (a fixed number or a function of context).
+- `captureProvenance` (function): function captureProvenance(identity: ItemIdentity, activeBonuses: readonly SetBonus[], seed?: number): ItemProvenance — Capture the provenance of a generated item — family, tags, per-slot parts, active bonus ids, and optional seed — as a JSON-safe record.
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
+- `clampValue` (function): function clampValue(value: number, bounds?: NumericBounds): number — Clamp a scalar to `bounds` (identity when `bounds` is omitted). Pure — touches no record.
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `compileSystemSchedule` (function): function compileSystemSchedule(systems: readonly SystemDefinition[], options?: CompileSystemScheduleOptions): CompiledSystemSchedule — Compile system definitions into a deterministic schedule. Validates unique ids, `dependsOn`, and before/after cycles.
 - `composeGameLoop` (function): function composeGameLoop(systems: readonly SystemDefinition[] | undefined, loop: GameLoop<GameContext> | undefined, options?: ComposeGameLoopOptions): GameLoop<GameContext> — Merge a system list with an optional classic `GameLoop` into one loop the shell/runners drive. Systems install on first `onInit`; classic hooks still run for incremental migration.
 - `computeEffectiveStats` (function): function computeEffectiveStats(def: ModularItemDef, installed: readonly InstalledPart[]): Record<string, number> — ⚠ undocumented
+- `countSetMembers` (function): function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number — Count how many parts (or tags) contribute to a set bonus on an identity.
 - `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
 - `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
@@ -881,105 +1184,176 @@
 - `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — Use or consume items, applying their effects and per-item cooldowns.
 - `createKeyValueStore` (function): function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValueStore<T> — A lightweight mutable local save cell for single-player state (a credit bank, a settings blob, level progress) — the read-modify-write counterpart to the monotonic `recordBook`. Persists through a {@link KeyValueStorage} (browser `localStorage` by default); corrupt or unavailable storage degrades to in-memory and never throws into a game tick.
 - `createLapTimer` (function): function createLapTimer(): LapTimer — Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
+- `createLayerRegistry` (function): function createLayerRegistry(initial?: readonly ParamLayer[]): LayerRegistry — Create a {@link LayerRegistry} — the registration seam difficulty tiers, mutators, and presets install into. Duplicate ids throw at registration; unknown ids at resolve time are reported, not fatal, which is what keeps saved sessions reproducible across content/version drift.
 - `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
+- `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
+- `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
 - `createProductionState` (function): function createProductionState(): ProductionState — A production building that converts input items into outputs over time — factory/crafting station.
 - `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — Track accepted quests and their per-objective progress, granting rewards on completion.
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
 - `createRecipeGraph` (function): function createRecipeGraph(defs: readonly RecipeDef[] = []): RecipeGraph — ⚠ undocumented
 - `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
+- `createResourceLedger` (function): function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLedger — Create an empty scheduled-transaction ledger, or hydrate one from a saved snapshot. State is plain data: production, depletion, tax, and upkeep are all expressed as {@link ScheduledRule}s settled deterministically by {@link advanceLedger}.
 - `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
+- `createRuleRegistry` (function): function createRuleRegistry<TPayload = unknown>(initial?: readonly RuleDef<TPayload>[]): RuleRegistry<TPayload> — Create a {@link RuleRegistry}. Rules install through `register` (duplicate ids throw); selection and `layersFor` are data-driven, so the core never branches on which mutators exist.
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createSaveStore` (function): function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> — Create a {@link SaveStore}. Same call for offline and cloud — only the `backend` differs (localStorage, memory, or an async DB/Convex endpoint). Turn on `autosave` and every `set`/`patch` persists on a debounce; leave it off and call `save()` at checkpoints. Bump `version` + pass `migrate` when the save shape changes so old players keep their progress.
 - `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
 - `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
+- `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 - `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
+- `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
+- `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
+- `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
+- `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
+- `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
+- `curveScale` (function): function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy — Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier (population upkeep, depletion falloff, difficulty income) over caller-provided context.
+- `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
+- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+- `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
+- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
+- `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
+- `diffParams` (function): function diffParams(before: Readonly<Record<string, number>>, after: Readonly<Record<string, number>>): readonly ParamDelta[] — Compute the per-parameter deltas between two value maps — the preview/diff of applying a change, for showing a player what a difficulty tier or mutator will do before they commit.
 - `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
 - `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
+- `driftValue` (function): function driftValue(record: Record<string, number>, key: string, rate: number, rest = 0, bounds?: NumericBounds): number — Decay `key` toward a `rest` value (default `0`) by `rate` per call — the common "relationships cool off" / "heat fades" drift. Thin wrapper over {@link towardValue}.
 - `durabilityFraction` (function): function durabilityFraction(state: DurabilityState): number — ⚠ undocumented
+- `enqueue` (function): function enqueue<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, spec: TSpec, options?: EnqueueOptions): EnqueueResult<TSpec, TReserve> — Enqueue a new job. Validates capacity and the injected `validate` policy, then computes and stores the reservation. Charging the reservation (now or later) is the caller's responsibility using {@link EnqueueResult.job}'s `reservation`.
 - `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
+- `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
 - `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
+- `fifoOrdering` (function): function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Pure FIFO ordering by enqueue sequence.
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
+- `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
+- `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
+- `getValue` (function): function getValue(record: Record<string, number>, key: string, fallback = 0): number — Current value for `key`, or `fallback` (default `0`) when the record has no entry.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
+- `identityOf` (function): function identityOf(family: string, tags: readonly string[], parts: readonly InstalledPart[]): ItemIdentity — Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
+- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
 - `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
+- `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
+- `jobById` (function): function jobById<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): Job<TSpec, TReserve> | null — Look up a job by id, or `null` if absent/terminal.
+- `jobProgress` (function): function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number — Fractional progress of a job (0…1); a zero-duration job reads as complete.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
+- `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `localSaveBackend` (function): function localSaveBackend(storage?: KeyValueStorage | null): SaveBackend — A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the browser's `localStorage` by default (offline, on-device saves), a test stub, or `null` for memory-only. Storage errors (quota exceeded, private mode, no DOM) degrade to no-ops, so a save never throws into a game tick.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
+- `matchesQuery` (function): function matchesQuery(identity: ItemIdentity, query: IdentityQuery): boolean — Test whether an identity satisfies a declarative {@link IdentityQuery}.
 - `memorySaveBackend` (function): function memorySaveBackend(): SaveBackend — A memory-only {@link SaveBackend} — saves survive a reload only within the same session. For tests, SSR, or a "no persistence" mode that still exercises the same save code path.
 - `missingRequiredSlots` (function): function missingRequiredSlots(def: ModularItemDef, installed: readonly InstalledPart[]): string[] — ⚠ undocumented
 - `moveCards` (function): function moveCards(state: CardPileState, ids: readonly string[], from: ZoneName, to: ZoneName, position: "top" | "bottom" = "top"): PileResult — ⚠ undocumented
 - `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
+- `orderLayers` (function): function orderLayers(layers: readonly ParamLayer[]): readonly ParamLayer[] — Order layers into their well-defined application sequence: ascending `priority`, ties broken by the layer's index in `layers` (a stable sort). Same input, same order, on every platform.
 - `parDelta` (function): function parDelta(splits: readonly number[], reference: readonly number[]): number[] — Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap): positive means behind the reference at that checkpoint. Compared up to the shorter length — the `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
 - `partInSlot` (function): function partInSlot(installed: readonly InstalledPart[], slotId: string): PartDef | null — ⚠ undocumented
 - `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
+- `pauseJob` (function): function pauseJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Pause a queued or active job in place; a paused job keeps its progress and yields its slot.
+- `pauseRule` (function): function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
 - `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
 - `pileRng` (function): function pileRng(seed: string | number): () => number — ⚠ undocumented
 - `placementOf` (function): function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null — One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line.
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
+- `priorityOrdering` (function): function priorityOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Priority-first ordering (higher priority sooner), FIFO within equal priority.
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 - `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
+- `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
 - `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
+- `queueSize` (function): function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number — Non-terminal job count (queued + active + paused).
+- `queuedJobs` (function): function queuedJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, ordering: JobOrdering<TSpec, TReserve> = priorityOrdering): Job<TSpec, TReserve>[] — Jobs waiting for a slot, in selection order.
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
+- `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
+- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
+- `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
+- `rejectWhen` (function): function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyContext) => boolean): ResourcePolicy — Drop a transaction when `predicate` holds — the reject arm of the pipeline.
 - `remoteSaveBackend` (function): function remoteSaveBackend(backend: SaveBackend): SaveBackend — Adopt any async `read`/`write`/`remove` trio as a {@link SaveBackend} — the seam for cloud saves backed by a database, an HTTP endpoint, or Convex (see `@jgengine/convex/convexSaveBackend`). Reads/writes may reject; the save store surfaces the failure as `"error"` status instead of throwing.
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
+- `rerollRules` (function): function rerollRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig, keepIds: readonly string[], salt: string | number = 0): RuleSelection<TPayload> — Reroll a prior selection: keep `keepIds` (the locked slots) and re-draw the rest under a fresh, still-deterministic stream derived from `config.seed` and `salt`. The same seed + salt + keep set reproduce the same reroll, so reroll history stays replayable.
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
+- `resolveParams` (function): function resolveParams(base: Readonly<Record<string, number>>, layers: readonly ParamLayer[]): ParamSnapshot — Fold an ordered stack of layers over `base` and return the effective {@link ParamSnapshot}. Layers apply in {@link orderLayers} sequence; within a layer each parameter's ops fold left-to-right. Every op is recorded in `contributions` for provenance/preview. Parameters a layer introduces but `base` omits start from `0`. Pure and deterministic — no ambient randomness or time.
 - `resolvePowerGrid` (function): function resolvePowerGrid(supply: number, consumers: readonly PowerConsumer[]): PowerGridResult — ⚠ undocumented
+- `resolveSelection` (function): function resolveSelection(base: Readonly<Record<string, number>>, registry: LayerRegistry, ids: LayerSelection): { readonly snapshot: ParamSnapshot; readonly unknown: readonly string[] } — Reproducible session setup in one call: resolve a saved {@link LayerSelection} through a registry, fold the found layers over `base`, and return the snapshot alongside any unknown ids. The same base + registry + selection always yields the same snapshot.
+- `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
+- `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
+- `selectRules` (function): function selectRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig): RuleSelection<TPayload> — Select up to `count` rules from `pool` deterministically from `config.seed`. Locked ids are placed first (in order), then remaining slots are filled by weighted draw from tag-filtered, still-eligible candidates, honoring `requires`/`conflicts` after each pick. Each slot draws from an independent seed stream keyed by slot index, so a later slot's outcome never shifts an earlier one. Selection stops early when no compatible candidate remains. Pure given `pool` + `config`.
 - `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
+- `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
 - `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — Attach parts into an item's mount slots and resolve the combined stats.
 - `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 - `startRaceCountdown` (function): function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState — Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length skips straight to `racing` for a standing start with no countdown.
+- `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
+- `taxFraction` (function): function taxFraction(fraction: number, to?: string): ResourcePolicy — Take a fraction of the amount. With `to`, the taxed portion is split off into a second transaction toward that recipient (a transfer/tax); without it, the fraction is simply removed.
+- `thresholdScale` (function): function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy — Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in currencies or brackets.
+- `tick` (function): function tick<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, dt: number): TickResult<TSpec, TReserve, TOutput> — Advance the queue by `dt` seconds. Promotes queued jobs into up to `concurrency` active slots, advances active jobs, and completes those that reach their duration — emitting `started`/`completed` events in deterministic order. A large `dt` catches up across many jobs in one call: when a job completes with leftover time, the freed slot promotes the next queued job and applies the remainder, so a reconnect or save/load gap resolves in a single bounded pass. Completed jobs are removed from the returned state.
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
+- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
+- `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
 - `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
+- `unitTrainingConfig` (function): function unitTrainingConfig(options: UnitTrainingOptions): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> — Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is the unit's cost + population; duration is its train time; completion output is a {@link UnitSpawnOrder} for the caller to route to its spawn primitive.
+- `validateIdentity` (function): function validateIdentity(identity: ItemIdentity, rules: readonly CompatibilityRule[]): ConstraintViolation[] — Collect every compatibility rule a completed identity violates. An empty result means the identity is legal.
+- `validateLayers` (function): function validateLayers(layers: readonly ParamLayer[]): readonly LayerConflict[] — Detect design conflicts in a layer set before resolving: duplicate ids, and competing `set` ops on the same parameter at the same priority (order-dependent, so worth surfacing). Returns an empty array when the set is clean, so callers can gate a difficulty/session build on it.
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
+
+## @jgengine/core/inventory/encumbrance
+
+- `EncumbranceConfig` (interface): interface EncumbranceConfig — Tuning for where the encumbrance bands sit and how hard the carrier is slowed. Both fields are load *fractions* / multipliers in `0..1`, never absolute mass.
+- `EncumbranceState` (interface): interface EncumbranceState — Serializable snapshot of a carrier's load versus capacity and the movement consequences.
+- `EncumbranceTier` (type): type EncumbranceTier = "unencumbered" | "encumbered" | "immobile" — Coarse carry state: free-moving, slowed, or pinned in place.
+- `LoadEntry` (interface): interface LoadEntry — One carried stack: an item id and how many of it the carrier holds.
+- `MassResolver` (type): type MassResolver = (itemId: string) => number — Resolves the per-unit mass of an item id. Injected so mass tables stay decoupled from this module.
+- `encumbranceMoveMultiplier` (function): function encumbranceMoveMultiplier(fraction: number, config?: EncumbranceConfig): number — Progressive move-speed multiplier for a raw load fraction: 1 while at/below `soft`, a linear decay from 1 down toward `floor` across the `soft..1` band, and 0 once at/over capacity. Pure and side-effect free — the curve `resolveEncumbrance` reads for `moveMultiplier`.
+- `resolveEncumbrance` (function): function resolveEncumbrance(mass: number, capacity: number, config?: EncumbranceConfig): EncumbranceState — Resolve carried mass against carrying capacity into a serializable encumbrance state: load fraction, tier, and the movement consequences (`canSprint`/`canJump`/`immobile` gates plus a progressive `moveMultiplier`). Below `soft` the carrier is unencumbered and unhindered; from `soft` up to capacity it is encumbered — no sprint or jump, and speed decays from 1 toward `floor`; at or above capacity it is immobile (multiplier 0). Deterministic and allocation-light; pair with {@link totalLoad} to derive `mass` from an inventory and a mass table. A capacity of 0 or less pins any positive load as immobile (`fraction` 1) so the state stays finite/serializable.
+- `totalLoad` (function): function totalLoad(entries: readonly LoadEntry[], massOf: MassResolver): number — Sum the mass of every carried stack using an injected per-unit mass resolver. Bounded by the number of entries; allocates nothing. Missing or negative unit masses are treated as 0.
 
 ## @jgengine/core/inventory/inventoryModel
 
@@ -1064,11 +1438,51 @@
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
 
+## @jgengine/core/item/itemIdentity
+
+- `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
+- `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
+- `ConstraintViolation` (interface): interface ConstraintViolation — One failed {@link CompatibilityRule}, carrying the rule id, its kind, and a human-readable message for UI or generator diagnostics.
+- `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
+- `IdentityQuery` (interface): interface IdentityQuery — A predicate over an {@link ItemIdentity}, expressed as data so a whole rule set round-trips through JSON. An empty query matches every identity; each present field narrows the match and all present fields must hold (AND).
+- `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
+- `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
+- `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
+- `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
+- `activeSetBonuses` (function): function activeSetBonuses(identity: ItemIdentity, bonuses: readonly SetBonus[]): SetBonus[] — Select the set bonuses whose membership count meets their threshold, in the order they were declared.
+- `applySetBonuses` (function): function applySetBonuses(stats: Record<string, number>, bonuses: readonly SetBonus[]): Record<string, number> — Fold a set of active bonuses' additive stats onto a stat map, returning a new map (the input is not mutated).
+- `candidateViolatesForbid` (function): function candidateViolatesForbid(partial: ItemIdentity, candidate: CandidatePlacement, rules: readonly CompatibilityRule[]): ForbidRule | null — The generic backtracking contract for procedural generation (see #908): given a partial identity and a candidate part, return the first forbid rule the placement would violate, or null if it stays viable. Require rules are ignored here because they may still be satisfied by a later placement.
+- `captureProvenance` (function): function captureProvenance(identity: ItemIdentity, activeBonuses: readonly SetBonus[], seed?: number): ItemProvenance — Capture the provenance of a generated item — family, tags, per-slot parts, active bonus ids, and optional seed — as a JSON-safe record.
+- `countSetMembers` (function): function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number — Count how many parts (or tags) contribute to a set bonus on an identity.
+- `identityOf` (function): function identityOf(family: string, tags: readonly string[], parts: readonly InstalledPart[]): ItemIdentity — Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
+- `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
+- `matchesQuery` (function): function matchesQuery(identity: ItemIdentity, query: IdentityQuery): boolean — Test whether an identity satisfies a declarative {@link IdentityQuery}.
+- `validateIdentity` (function): function validateIdentity(identity: ItemIdentity, rules: readonly CompatibilityRule[]): ConstraintViolation[] — Collect every compatibility rule a completed identity violates. An empty result means the identity is legal.
+
 ## @jgengine/core/item/itemInstanceRegistry
 
 - `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).
 - `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
+
+## @jgengine/core/item/itemgen
+
+- `GenChoiceRecord` (interface): interface GenChoiceRecord — Provenance for one resolved step: which option stuck, its effective weight, how many options were eligible after constraints, and how many eligible options backtracking rejected before this one. A skipped optional step is recorded with an empty `optionId`.
+- `GenChoices` (interface): interface GenChoices — Read-only view of the choices resolved so far, threaded into a later step's pool, constraint, weight function, or transform so a decision can depend on earlier picks (dependent choice).
+- `GenDraft` (interface): interface GenDraft — The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their values, and the transformed fields. Returning false from any validator rerolls the whole generation up to the attempt budget.
+- `GenFieldRecord` (interface): interface GenFieldRecord — Provenance for one field mutation a transform made: which transform, field, op, and before/after.
+- `GenOption` (interface): interface GenOption<V = unknown> — One selectable option in a generation step's pool: a stable `id` used in provenance and pinning, the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
+- `GenOutcome` (type): type GenOutcome = | { ok: true; result: GenResult } | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number } — The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept rejecting drafts) and the attempts spent.
+- `GenPool` (type): type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]) — A step's candidate options: a fixed list, or a function of the choices resolved so far so pools can narrow to earlier picks (a slot pool that depends on a chosen category).
+- `GenProvenance` (interface): interface GenProvenance — The full explanation of a generated result: how many whole-pipeline attempts it took, every step choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and regeneration.
+- `GenResult` (interface): interface GenResult — A successful generation: the step-to-option map, step-to-value map, transformed numeric fields, and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through save/load and multiplayer sync unchanged.
+- `GenSchema` (interface): interface GenSchema — A caller-defined generation schema over plain data: ordered choice steps, optional field transforms, optional validators, and bounded reroll/backtracking budgets. Genre-agnostic — it carries no built-in notion of rarity, element, weapon, or name; those are caller step and option ids.
+- `GenStep` (interface): interface GenStep<V = unknown> — One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
+- `GenTransform` (interface): interface GenTransform — A named derivation over the numeric field bag, applied in schema order after all choices resolve (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
+- `GenValidator` (type): type GenValidator = (draft: GenDraft) => boolean — A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll.
+- `GenerateOptions` (interface): interface GenerateOptions — Per-call options for {@link generate}.
+- `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
+- `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
 
 ## @jgengine/core/item/modularItem
 
@@ -1097,12 +1511,44 @@
 - `ItemUseResult` (interface): interface ItemUseResult<TState> — ⚠ undocumented
 - `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — Use or consume items, applying their effects and per-item cooldowns.
 
+## @jgengine/core/item/useBehavior
+
+- `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
+- `BehaviorState` (type): type BehaviorState = Record<string, unknown> — A single behavior's mutable, serializable runtime state (e.g. current charge, rounds queued). Composed state is a map of these keyed by behavior id.
+- `ComposedUse` (interface): interface ComposedUse<TWorld> — A resolved, ordered composition of behaviors for one item. Dispatch is transactional: `apply` commits the folded world only if every behavior in the chain succeeds, otherwise it returns the original world and state plus the first error.
+- `CompositionResult` (type): type CompositionResult<TWorld> = | { status: "ok"; composed: ComposedUse<TWorld> } | { status: "error"; reason: "unknown-behavior"; id: string } | { status: "error"; reason: "duplicate-behavior"; id: string } | { status: "error"; reason: "missing-capability"; id: string; capability: string } | { sta… — The outcome of composing an item's behavior refs: either a ready {@link ComposedUse} or a structured error naming the offending behavior.
+- `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
+- `UseBehaviorContext` (interface): interface UseBehaviorContext<TWorld> — The context handed to each behavior hook: the shared folded `world`, this behavior's own `config` and `state` slice, and the triggering use input.
+- `UseBehaviorDef` (interface): interface UseBehaviorDef<TWorld> — A registered behavior implementation. The combat/game side registers these (charge, thrown-reload, projectile-replacement, …); the item core only ever stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init` builds serializable state, `can` gates, `apply` folds the world.
+- `UseBehaviorOutcome` (interface): interface UseBehaviorOutcome<TWorld> — The result of applying one behavior: the (possibly advanced) world, this behavior's updated state, an optional error that aborts the chain, and an optional `stop` that ends the chain after a successful apply.
+- `UseBehaviorRef` (interface): interface UseBehaviorRef — The reference an item stores for one composed behavior: a stable behavior id, optional config, and an optional order override. Pure data — the item core never holds the implementation, only this reference.
+- `UseBehaviorRegistry` (interface): interface UseBehaviorRegistry<TWorld> — A registry of use-behavior implementations plus a composer that turns an item's stored refs into an ordered, conflict-checked {@link ComposedUse}.
+- `UseBehaviorRejection` (interface): interface UseBehaviorRejection — A reason a behavior refused a use, surfaced from `can`.
+- `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
+
 ## @jgengine/core/item/weapon
 
 - `WeaponEntry` (interface): interface WeaponEntry — ⚠ undocumented
 - `WeaponStats` (interface): interface WeaponStats — ⚠ undocumented
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
+
+## @jgengine/core/progression/statGraph
+
+- `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
+- `StatContributionStep` (interface): interface StatContributionStep extends StatContribution — One line of a provenance trace: a contribution plus the running total after it folds in.
+- `StatDeriveContext` (interface): interface StatDeriveContext — The read-only view a derived formula gets: resolved values of its declared dependencies.
+- `StatDerivedDef` (interface): interface StatDerivedDef — A derived value whose formula and dependencies are caller-owned. `compute` may return a scalar (shorthand for a single `add`) or an ordered list of contributions folded left-to-right, so additive/multiplicative/clamped and conditional modifiers are all expressed as plain data or branches inside the function.
+- `StatExplanation` (interface): interface StatExplanation — A full provenance trace for one stat: the ordered steps that produced its value.
+- `StatGraph` (interface): interface StatGraph — A compiled, immutable stat-graph schema that mints per-entity {@link StatSheet}s from base values or saved state.
+- `StatGraphDef` (interface): interface StatGraphDef — The full schema of a stat graph: its named inputs and caller-authored derived formulas.
+- `StatInputDef` (interface): interface StatInputDef — A game-owned named input value. The engine ships no attribute vocabulary — ids, bounds, defaults, and metadata are entirely caller data, so the same graph can model STR/AGI/INT, SPECIAL scores, skills, difficulty knobs, or anything else.
+- `StatModEntry` (type): type StatModEntry = StatContribution | readonly StatContribution[] — A modifier entry targeting one stat: a single contribution or an ordered list.
+- `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
+- `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
+- `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
+- `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
+- `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 
 ## @jgengine/core/puzzle/cellGrid
 
@@ -1148,6 +1594,60 @@
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
+
+## @jgengine/core/relation/keyedValues
+
+- `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
+- `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
+- `PairKeyOptions` (interface): interface PairKeyOptions — Direction and delimiter policy for {@link createPairKeyCodec}.
+- `addValue` (function): function addValue(record: Record<string, number>, key: string, delta: number, bounds?: NumericBounds): number — Add `delta` to `key` (clamped to `bounds`), writing the record in place. Returns the stored value.
+- `clampValue` (function): function clampValue(value: number, bounds?: NumericBounds): number — Clamp a scalar to `bounds` (identity when `bounds` is omitted). Pure — touches no record.
+- `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
+- `driftValue` (function): function driftValue(record: Record<string, number>, key: string, rate: number, rest = 0, bounds?: NumericBounds): number — Decay `key` toward a `rest` value (default `0`) by `rate` per call — the common "relationships cool off" / "heat fades" drift. Thin wrapper over {@link towardValue}.
+- `getValue` (function): function getValue(record: Record<string, number>, key: string, fallback = 0): number — Current value for `key`, or `fallback` (default `0`) when the record has no entry.
+- `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
+- `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
+
+## @jgengine/core/relation/thresholds
+
+- `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
+- `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
+- `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
+- `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
+- `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
+- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
+
+## @jgengine/core/rules/predicate
+
+- `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
+- `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
+- `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
+- `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
+- `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
+- `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
+
+## @jgengine/core/rules/ruleEffects
+
+- `RuleEffectDefinition` (interface): interface RuleEffectDefinition — A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata.
+- `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
+- `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
+- `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
+
+## @jgengine/core/rules/triggeredRules
+
+- `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
+- `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
+- `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
+- `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
+- `RuleEvent` (interface): interface RuleEvent — A typed event handed to the engine; roles feed target resolution, facts feed the predicate.
+- `RuleFiring` (interface): interface RuleFiring — The outcome of matching one rule against one event. `applied` is the effect the caller should now run through its own effect system; a blocked firing reports why. Provenance (rule, owner, event, timestamp) rides along for auditability.
+- `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
+- `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
+- `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
+- `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
+- `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
+- `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
+- `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 
 ## @jgengine/core/session/contestedChannel
 
@@ -1204,8 +1704,16 @@
 - `DecayMeterConfig` (interface): interface DecayMeterConfig — ⚠ undocumented
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
 - `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
+- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
+- `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
+- `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
+- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+- `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
+- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
+- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
+- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
 
 ## @jgengine/core/survival/moodle
 
@@ -1306,3 +1814,41 @@
 - `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot — ⚠ undocumented
 - `TurnState` (interface): interface TurnState — ⚠ undocumented
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
+
+## @jgengine/core/work/jobQueue
+
+- `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
+- `EnqueueOptions` (interface): interface EnqueueOptions — Optional per-enqueue overrides.
+- `EnqueueResult` (type): type EnqueueResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link enqueue}. On rejection the state is returned unchanged.
+- `Job` (interface): interface Job<TSpec, TReserve = undefined> — One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`).
+- `JobId` (type): type JobId = string — Generic timed work queue — a pure-data model for discrete jobs that reserve inputs, advance over game time, can be paused/cancelled, and emit an output on completion. It backs unit training, crafting jobs, construction, research, respawns, downloads, and fabrication without any of them re-implementing the reservation → progress → completion → output-routing loop.
+- `JobOrdering` (type): type JobOrdering<TSpec, TReserve = undefined> = ( a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>, ) => number — Comparator over jobs; negative means the first job runs sooner.
+- `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
+- `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
+- `TickResult` (interface): interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> — Outcome of {@link tick}: advanced state plus the events produced.
+- `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
+- `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
+- `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
+- `activeJobs` (function): function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] — Jobs currently progressing.
+- `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
+- `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
+- `enqueue` (function): function enqueue<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, spec: TSpec, options?: EnqueueOptions): EnqueueResult<TSpec, TReserve> — Enqueue a new job. Validates capacity and the injected `validate` policy, then computes and stores the reservation. Charging the reservation (now or later) is the caller's responsibility using {@link EnqueueResult.job}'s `reservation`.
+- `fifoOrdering` (function): function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Pure FIFO ordering by enqueue sequence.
+- `jobById` (function): function jobById<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): Job<TSpec, TReserve> | null — Look up a job by id, or `null` if absent/terminal.
+- `jobProgress` (function): function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number — Fractional progress of a job (0…1); a zero-duration job reads as complete.
+- `pauseJob` (function): function pauseJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Pause a queued or active job in place; a paused job keeps its progress and yields its slot.
+- `priorityOrdering` (function): function priorityOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Priority-first ordering (higher priority sooner), FIFO within equal priority.
+- `queueSize` (function): function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number — Non-terminal job count (queued + active + paused).
+- `queuedJobs` (function): function queuedJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, ordering: JobOrdering<TSpec, TReserve> = priorityOrdering): Job<TSpec, TReserve>[] — Jobs waiting for a slot, in selection order.
+- `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
+- `tick` (function): function tick<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, dt: number): TickResult<TSpec, TReserve, TOutput> — Advance the queue by `dt` seconds. Promotes queued jobs into up to `concurrency` active slots, advances active jobs, and completes those that reach their duration — emitting `started`/`completed` events in deterministic order. A large `dt` catches up across many jobs in one call: when a job completes with leftover time, the freed slot promotes the next queued job and applies the remainder, so a reconnect or save/load gap resolves in a single bounded pass. Completed jobs are removed from the returned state.
+
+## @jgengine/core/work/unitTraining
+
+- `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
+- `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
+- `UnitReservation` (interface): interface UnitReservation — Reservation stored on a training job — the inputs to charge and refund.
+- `UnitSpawnOrder` (interface): interface UnitSpawnOrder — Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't.
+- `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
+- `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
+- `unitTrainingConfig` (function): function unitTrainingConfig(options: UnitTrainingOptions): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> — Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is the unit's cost + population; duration is its train time; completion output is a {@link UnitSpawnOrder} for the caller to route to its spawn primitive.
