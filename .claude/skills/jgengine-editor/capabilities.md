@@ -72,3 +72,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
 - `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
 - `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
+
+## world-streaming — schedule shard load/unload by camera proximity
+
+- `createWorldStreamer` (function) · `import { createWorldStreamer } from "@jgengine/core/editor"`
+- `shardDistance` (function) · `import { shardDistance } from "@jgengine/core/editor"`

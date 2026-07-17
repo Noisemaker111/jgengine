@@ -85,6 +85,9 @@ export {
 export type { EditorDocumentDiagnostic } from "./document";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
+export { createWorldStreamer, shardDistance } from "./streamer";
+/** A stateful proximity streamer that schedules shard load/unload as the camera moves. */
+export type { StreamUpdate, StreamerShard, WorldStreamer, WorldStreamerConfig } from "./streamer";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export { createEditorSession } from "./commands";
 /** Compact snapshot of a session state ΓÇö counts, selection, and the selected object. */
