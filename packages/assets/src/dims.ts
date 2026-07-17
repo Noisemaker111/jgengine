@@ -172,5 +172,6 @@ export function readGlbDims(bytes: Uint8Array): ModelDims | null {
     footprint: { w: bounds.max[0] - bounds.min[0], d: bounds.max[2] - bounds.min[2] },
     center: { x: (bounds.min[0] + bounds.max[0]) / 2, z: (bounds.min[2] + bounds.max[2]) / 2 },
     minY: bounds.min[1],
+    maxY: bounds.max[1],
   };
 }

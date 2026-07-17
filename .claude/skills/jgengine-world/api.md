@@ -927,6 +927,7 @@
 - `DEFAULT_ENTITY_HIT_RADIUS` (const): const DEFAULT_ENTITY_HIT_RADIUS: 0.5 — ⚠ undocumented
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
+- `ModelBodySource` (interface): interface ModelBodySource — The render-config subset collider fitting reads — structurally satisfied by a resolved `ModelConfig`, so the shell can hand its render config straight to the fitting math without a conversion step.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
 
 ## @jgengine/core/scene/companion

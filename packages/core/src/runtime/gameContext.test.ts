@@ -1039,3 +1039,101 @@ describe("ctx.snapshot / ctx.hydrate", () => {
     expect(client.game.chat!.channels().length).toBeGreaterThan(0);
   });
 });
+
+describe("model-fitted colliders", () => {
+  const ratDims = { footprint: { w: 0.6, d: 0.9 }, center: { x: 0, z: 0 }, minY: -0.05, maxY: 0.25 };
+
+  function makeFittedContext() {
+    return createGameContext({
+      definition: defineGame({ name: "Fitted", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {
+        entityById(catalogId) {
+          if (catalogId === "rat") return { stats: { health: { max: 5 } } };
+          if (catalogId === "armored-rat") {
+            return {
+              colliders: {
+                hitboxes: [
+                  { name: "body", purpose: "damage", shape: { kind: "sphere", radius: 3 } },
+                ],
+              },
+            };
+          }
+          if (catalogId === "giant") return { scale: 2 };
+          return null;
+        },
+        objectById(catalogId) {
+          if (catalogId === "crate") return {};
+          return null;
+        },
+      },
+      player: { userId: "user_a", isNew: true },
+      models: {
+        entity: (kind) => (kind === "rat" || kind === "giant" ? { dims: ratDims, targetHeight: 0.6 } : undefined),
+        object: (catalogId) => (catalogId === "crate" ? { dims: ratDims } : undefined),
+      },
+    });
+  }
+
+  test("an entity with a measured model gets a hitbox matching its rendered bounds", () => {
+    const ctx = makeFittedContext();
+    const rat = ctx.scene.entity.spawn("rat", { position: [0, 0, 0] });
+    const set = ctx.scene.entity.collidersOf(rat);
+    expect(set).not.toBeNull();
+    const box = set!.hitboxes![0]!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    // targetHeight 0.6 over a 0.3-tall model doubles every measured extent.
+    expect(box.halfExtents).toEqual([0.6, 0.3, 0.9]);
+    expect(box.offset).toEqual([0, 0.3, 0]);
+  });
+
+  test("authored catalog colliders beat the model fit; catalog scale loses to it", () => {
+    const ctx = makeFittedContext();
+    const armored = ctx.scene.entity.spawn("armored-rat", { position: [0, 0, 0] });
+    const authored = ctx.scene.entity.collidersOf(armored);
+    expect(authored!.hitboxes![0]!.shape.kind).toBe("sphere");
+    // "giant" has catalog scale 2, but its model fit wins over the scaled humanoid fallback
+    // because the renderer ignores catalog scale for modeled entities.
+    const giant = ctx.scene.entity.spawn("giant", { position: [0, 0, 0] });
+    const fitted = ctx.scene.entity.collidersOf(giant);
+    const box = fitted!.hitboxes![0]!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    expect(box.halfExtents).toEqual([0.6, 0.3, 0.9]);
+  });
+
+  test("per-instance setColliders still overrides the model fit", () => {
+    const ctx = makeFittedContext();
+    const rat = ctx.scene.entity.spawn("rat", { position: [0, 0, 0] });
+    ctx.scene.entity.setColliders(rat, {
+      hitboxes: [{ name: "body", purpose: "damage", shape: { kind: "sphere", radius: 9 } }],
+    });
+    expect(ctx.scene.entity.collidersOf(rat)!.hitboxes![0]!.shape.kind).toBe("sphere");
+  });
+
+  test("a placed object with a measured model gets a fitted blocking body", () => {
+    const ctx = makeFittedContext();
+    const crate = ctx.scene.object.place("crate", 0, 0, 0);
+    const set = ctx.scene.object.collidersOf(crate);
+    expect(set).not.toBeNull();
+    expect(set!.body!.purpose).toBe("physical");
+    const box = set!.body!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    expect(box.halfExtents).toEqual([0.3, 0.15, 0.45]);
+    expect(box.offset).toEqual([0, 0.15, 0]);
+  });
+
+  test("kinds without a model keep the existing fallbacks", () => {
+    const ctx = makeFittedContext();
+    const stranger = ctx.scene.entity.spawn("stranger", { position: [0, 0, 0] });
+    expect(ctx.scene.entity.collidersOf(stranger)).toBeNull();
+  });
+
+  test("scene raycasts hit inside the fitted box and miss where only the humanoid default reached", () => {
+    const ctx = makeFittedContext();
+    ctx.scene.entity.spawn("rat", { position: [0, 0, 0] });
+    // The rat's fitted box tops out at 0.6 world units (targetHeight), not the 1.8 default.
+    const low = ctx.scene.raycast({ origin: [-5, 0.3, 0], direction: [1, 0, 0], maxDistance: 20 });
+    expect(low?.targetKind).toBe("entity");
+    const high = ctx.scene.raycast({ origin: [-5, 1.0, 0], direction: [1, 0, 0], maxDistance: 20 });
+    expect(high).toBeNull();
+  });
+});

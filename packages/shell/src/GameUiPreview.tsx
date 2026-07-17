@@ -5,6 +5,7 @@ import { GameProvider } from "@jgengine/react/provider";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 
 import type { PlayableGame } from "./registry";
+import { contextModels } from "./render/resolveModel";
 
 export type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void;
 
@@ -53,10 +54,12 @@ export function GameUiPreview({
   const [ctx, setCtx] = useState<GameContext | null>(null);
 
   useEffect(() => {
+    const models = contextModels(playable);
     const context = createGameContext({
       definition: playable.game,
       content: playable.content,
       player: { userId: PREVIEW_USER_ID, isNew: true },
+      ...(models === undefined ? {} : { models }),
     });
     playable.loop.onInit(context);
     playable.loop.onNewPlayer(context);

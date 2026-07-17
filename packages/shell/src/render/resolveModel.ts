@@ -1,5 +1,6 @@
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { GameContextModels } from "@jgengine/core/runtime/gameContext";
 
 export interface ModelResolveContext {
   seam: "entityModels" | "objectModels" | "scatterModels";
@@ -111,6 +112,39 @@ export function resolveModelPlan(
     if (model !== undefined) out[key] = model;
   }
   return out;
+}
+
+function softModelLookup(
+  map: Record<string, string | ModelConfig> | undefined,
+  assets: AssetCatalog,
+): ((key: string) => ModelConfig | undefined) | undefined {
+  if (map === undefined) return undefined;
+  return (key: string) => {
+    const value = map[key];
+    if (value === undefined || typeof value !== "string") return value;
+    return tryResolveCatalogModel(value, assets);
+  };
+}
+
+/**
+ * The `createGameContext` `models` lookup derived from a playable's render maps: what each entity kind /
+ * object catalog id actually renders as, so colliders auto-fit the rendered mesh. Soft-resolves string
+ * ids (a missing catalog id keeps the default collider instead of throwing — the render path already
+ * reports it), passes inline configs through. `undefined` when the playable maps no models at all.
+ * @internal
+ */
+export function contextModels(playable: {
+  game: { assets: AssetCatalog };
+  entityModels?: Record<string, string | ModelConfig>;
+  objectModels?: Record<string, string | ModelConfig>;
+}): GameContextModels | undefined {
+  const entity = softModelLookup(playable.entityModels, playable.game.assets);
+  const object = softModelLookup(playable.objectModels, playable.game.assets);
+  if (entity === undefined && object === undefined) return undefined;
+  return {
+    ...(entity === undefined ? {} : { entity }),
+    ...(object === undefined ? {} : { object }),
+  };
 }
 
 /**

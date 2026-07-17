@@ -1,6 +1,6 @@
 import type { CommandResult } from "../commands/commandRegistry";
 import type { ModelAssetRef } from "../scene/assetCatalog";
-import type { GameContext, GameContextContent } from "./gameContext";
+import type { GameContext, GameContextContent, GameContextModels } from "./gameContext";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
 import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
 import type { WorldDiff } from "./worldReplication";
@@ -50,6 +50,8 @@ export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMul
   store?: HostedWorldStore;
   /** Minimum elapsed ms between auto-saves on tick, measured against `now` (defaults to `Date.now` when omitted). Default `0` — persist on every revision-changing tick. */
   saveIntervalMs?: number;
+  /** Render-model lookup for collider auto-fit, forwarded to the runner — see {@link HostedGameRunnerOptions.models}. */
+  models?: GameContextModels;
 }
 
 /**
@@ -93,6 +95,7 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
     ...(host === undefined ? {} : { host }),
     ...(now === undefined ? {} : { now }),
     ...(loaded === null ? {} : { restore: loaded.snapshot }),
+    ...(options.models === undefined ? {} : { models: options.models }),
   });
 
   let savedRevision = loaded?.revision ?? 0;

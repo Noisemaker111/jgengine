@@ -69,6 +69,7 @@ import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
 import { PostProcessing } from "./postfx/PostProcessing";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
+import { contextModels } from "./render/resolveModel";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { DevtoolsOverlay, DevtoolsRendererProbe, withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
 import { installAgentBridge } from "./devtools/agentBridge";
@@ -295,10 +296,12 @@ export function GamePlayerShell({
   useEffect(() => {
     setDiagnostics([]);
     try {
+      const models = contextModels(playable);
       const context = createGameContext({
         definition: playable.game,
         content: playable.content,
         player: { userId, isNew: true },
+        ...(models === undefined ? {} : { models }),
       });
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);

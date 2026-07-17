@@ -1,3 +1,4 @@
+import type { ModelDims } from "./assetCatalog";
 import type { EntityPosition } from "./entityStore";
 
 export type ColliderPurpose = "physical" | "damage";
@@ -112,6 +113,92 @@ export function scaledObjectColliders(scale: readonly [number, number, number]):
         halfExtents: [scale[0] / 2, scale[1] / 2, scale[2] / 2],
         offset: [0, scale[1] / 2, 0],
       },
+      damageEligible: false,
+      blocks: true,
+    },
+  };
+}
+
+/**
+ * The render-config subset collider fitting reads — structurally satisfied by a resolved `ModelConfig`,
+ * so the shell can hand its render config straight to the fitting math without a conversion step.
+ */
+export interface ModelBodySource {
+  /** Measured model-space bounds from the asset index; fitting requires `dims` with `maxY`. */
+  dims?: ModelDims;
+  /** Uniform render scale. Default `1`. */
+  scale?: number;
+  /** Normalize-to-height in world units — fitting composes it exactly like the renderer (`targetHeight / measured height`, multiplied by `scale`). */
+  targetHeight?: number;
+  /** Vertical render offset added to the placement Y. Default `0`. */
+  y?: number;
+  /** Placement registration. `"center"` (default) centers the footprint and grounds `minY` on the placement point; `"origin"` renders at the raw model origin. */
+  anchor?: "center" | "origin";
+}
+
+interface FittedBox {
+  halfExtents: EntityPosition;
+  offset: EntityPosition;
+}
+
+/**
+ * The entity-local AABB the rendered model actually occupies, from measured dims + render config — the
+ * same scale/normalize/anchor math the shell uses to place the mesh, so box equals visual by
+ * construction. `null` when the model is unmeasured (`dims`/`maxY` absent) or degenerate.
+ */
+function fittedModelBox(model: ModelBodySource): FittedBox | null {
+  const dims = model.dims;
+  if (dims === undefined || dims.maxY === undefined) return null;
+  const { w, d } = dims.footprint;
+  const height = dims.maxY - dims.minY;
+  if (!(w > 0) || !(d > 0) || !(height > 0)) return null;
+  if (!Number.isFinite(w) || !Number.isFinite(d) || !Number.isFinite(height)) return null;
+  const normalize = model.targetHeight !== undefined && model.targetHeight > 0 ? model.targetHeight / height : 1;
+  const scale = (model.scale ?? 1) * normalize;
+  if (!(scale > 0) || !Number.isFinite(scale)) return null;
+  const baseY = model.y ?? 0;
+  // The renderer centers/grounds whenever it normalizes to targetHeight or anchors "center" (the
+  // default); only a raw-origin model without targetHeight keeps its authored pivot.
+  const centered = model.targetHeight !== undefined || (model.anchor ?? "center") === "center";
+  const halfExtents: EntityPosition = [(w / 2) * scale, (height / 2) * scale, (d / 2) * scale];
+  const offset: EntityPosition = centered
+    ? [0, baseY + (height / 2) * scale, 0]
+    : [dims.center.x * scale, baseY + (dims.minY + height / 2) * scale, dims.center.z * scale];
+  return { halfExtents, offset };
+}
+
+/** Damage hitbox fitted to the rendered model's measured bounds — the model-aware replacement for the
+ * fixed humanoid default. `null` when the model is unmeasured, keeping the caller's existing fallback.
+ * @internal
+ */
+export function fittedEntityColliders(model: ModelBodySource): EntityColliderSet | null {
+  const box = fittedModelBox(model);
+  if (box === null) return null;
+  return {
+    hitboxes: [
+      {
+        name: "body",
+        purpose: "damage",
+        shape: { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset },
+        damageEligible: true,
+        blocks: false,
+      },
+    ],
+  };
+}
+
+/** Blocking physical body fitted to the rendered model's measured bounds — the model-aware replacement
+ * for the unit-cube-times-scale guess. `null` when the model is unmeasured.
+ * @internal
+ */
+export function fittedObjectColliders(model: ModelBodySource): EntityColliderSet | null {
+  const box = fittedModelBox(model);
+  if (box === null) return null;
+  return {
+    body: {
+      name: "body",
+      purpose: "physical",
+      shape: { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset },
       damageEligible: false,
       blocks: true,
     },

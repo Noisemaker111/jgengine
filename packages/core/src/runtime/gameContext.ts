@@ -96,7 +96,14 @@ import {
   type SpawnPose,
 } from "../scene/entityStore";
 import { createForms, type Forms } from "../scene/form";
-import { scaledEntityColliders, scaledObjectColliders, type EntityColliderSet } from "../scene/colliders";
+import {
+  fittedEntityColliders,
+  fittedObjectColliders,
+  scaledEntityColliders,
+  scaledObjectColliders,
+  type EntityColliderSet,
+  type ModelBodySource,
+} from "../scene/colliders";
 import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
 import { type Roster } from "../scene/roster";
@@ -203,6 +210,22 @@ export interface GameContextOptions<
    * client, exactly as before; the simulation is identical either way, so a game plays the same.
    */
   replication?: ReplicationPolicy;
+  /**
+   * Render-model lookup feeding collider auto-fit: what each entity kind / object catalog id renders as
+   * (resolved `entityModels`/`objectModels` — the shell wires this automatically). When set, entities and
+   * objects without authored `colliders` get hitboxes fitted to their model's measured bounds instead of
+   * the humanoid/unit-cube defaults. A multiplayer host should receive the same lookup as its clients so
+   * both resolve identical colliders.
+   */
+  models?: GameContextModels;
+}
+
+/** Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
+ * @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
+ */
+export interface GameContextModels {
+  entity?(kind: string): ModelBodySource | null | undefined;
+  object?(catalogId: string): ModelBodySource | null | undefined;
 }
 
 export interface SceneObjectContext extends ObjectStore {
@@ -610,12 +633,39 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const entityColliders = new Map<string, EntityColliderSet>();
   const objectColliders = new Map<string, EntityColliderSet>();
+  // Model-fitted sets are pure functions of static render config — cache per kind/catalog id so the
+  // per-ray collidersOf hot path never re-derives (or re-allocates) them.
+  const fittedEntityByKind = new Map<string, EntityColliderSet | null>();
+  const fittedObjectByCatalogId = new Map<string, EntityColliderSet | null>();
+
+  function fittedEntitySetFor(kind: string): EntityColliderSet | null {
+    const cached = fittedEntityByKind.get(kind);
+    if (cached !== undefined) return cached;
+    const model = options.models?.entity?.(kind);
+    const fitted = model === null || model === undefined ? null : fittedEntityColliders(model);
+    fittedEntityByKind.set(kind, fitted);
+    return fitted;
+  }
+
+  function fittedObjectSetFor(catalogId: string): EntityColliderSet | null {
+    const cached = fittedObjectByCatalogId.get(catalogId);
+    if (cached !== undefined) return cached;
+    const model = options.models?.object?.(catalogId);
+    const fitted = model === null || model === undefined ? null : fittedObjectColliders(model);
+    fittedObjectByCatalogId.set(catalogId, fitted);
+    return fitted;
+  }
 
   function entityCollidersOf(instanceId: string): EntityColliderSet | null {
     const override = entityColliders.get(instanceId);
     if (override !== undefined) return override;
     const entry = catalogEntry(instanceId);
     if (entry?.colliders !== undefined) return entry.colliders;
+    const kind = entities.get(instanceId)?.name;
+    if (kind !== undefined) {
+      const fitted = fittedEntitySetFor(kind);
+      if (fitted !== null) return fitted;
+    }
     const scale = entry?.scale;
     if (scale !== undefined && scale !== 1) return scaledEntityColliders(scale);
     return null;
@@ -632,7 +682,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     if (catalog?.colliders !== undefined) return catalog.colliders;
     if (catalog?.halfExtents !== undefined) return null;
     const object = objects.get(instanceId);
-    if (object === null || object.visual?.scale === undefined) return null;
+    if (object === null) return null;
+    const fitted = fittedObjectSetFor(object.catalogId);
+    if (fitted !== null) return fitted;
+    if (object.visual?.scale === undefined) return null;
     return scaledObjectColliders(objectVisualScale(object.visual));
   }
 

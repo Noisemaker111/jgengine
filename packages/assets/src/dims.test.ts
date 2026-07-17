@@ -42,18 +42,20 @@ function glbWith(
 }
 
 describe("readGlbDims", () => {
-  test("corner-pivot box reports footprint, center, and minY", () => {
+  test("corner-pivot box reports footprint, center, and vertical span", () => {
     const dims = readGlbDims(glbWith([0, 0, 0], [2, 1, 3]));
     expect(dims).not.toBeNull();
     expect(dims!.footprint).toEqual({ w: 2, d: 3 });
     expect(dims!.center).toEqual({ x: 1, z: 1.5 });
     expect(dims!.minY).toBe(0);
+    expect(dims!.maxY).toBe(1);
   });
 
   test("node translation shifts the measured bounds", () => {
     const dims = readGlbDims(glbWith([0, 0, 0], [2, 1, 2], { translation: [10, 5, -4] }));
     expect(dims!.center).toEqual({ x: 11, z: -3 });
     expect(dims!.minY).toBe(5);
+    expect(dims!.maxY).toBe(6);
   });
 
   test("node scale expands the footprint", () => {
