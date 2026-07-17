@@ -68,6 +68,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## minimap-track — project a world point to a 0..1 fraction along a linear track axis
+
+- `trackFraction` (function) · `import { trackFraction } from "@jgengine/core/world/minimapTrack"`
+
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`

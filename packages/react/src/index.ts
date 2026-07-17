@@ -10,6 +10,7 @@ export * from "./settings";
 export * from "./save";
 export * from "./components";
 export * from "./hud";
+export * from "./hudFrame";
 export * from "./keyHint";
 export * from "./startScreen";
 export * from "./engineStore";

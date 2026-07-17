@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { MinimapChrome, type MinimapChromeMarker } from "./map";
+import { MinimapChrome, MinimapTrack, type MinimapChromeMarker } from "./map";
 import type { MinimapView } from "@jgengine/core/world/minimap";
 
 function renderSvg(props: Parameters<typeof MinimapChrome>[0]): string {
@@ -64,5 +64,35 @@ describe("MinimapChrome", () => {
     const markers: MinimapChromeMarker[] = [{ id: "far", position: [500, 0], clampToEdge: false }];
     const html = renderSvg({ view, markers });
     expect(html).not.toContain('data-minimap-marker="far"');
+  });
+});
+
+describe("MinimapTrack", () => {
+  function renderTrack(props: Parameters<typeof MinimapTrack>[0]): string {
+    return renderToStaticMarkup(createElement(MinimapTrack, props));
+  }
+
+  test("a span renders at the right left% and width%", () => {
+    const html = renderTrack({ spans: [{ id: "zone", start: 0.25, end: 0.5, color: "#b7410e" }] });
+    expect(html).toContain('data-track-span="zone"');
+    expect(html).toContain("left:25%");
+    expect(html).toContain("width:25%");
+  });
+
+  test("a pip renders at the right left%", () => {
+    const html = renderTrack({ pips: [{ id: "you", at: 0.75, shape: "player" }] });
+    expect(html).toContain('data-track-pip="you"');
+    expect(html).toContain("left:75%");
+  });
+
+  test("player and gate pips render distinct shapes", () => {
+    const html = renderTrack({
+      pips: [
+        { id: "gate", at: 0.1, shape: "gate" },
+        { id: "player", at: 0.9, shape: "player" },
+      ],
+    });
+    expect(html).toContain('data-pip-shape="gate"');
+    expect(html).toContain('data-pip-shape="player"');
   });
 });
