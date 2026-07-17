@@ -182,6 +182,19 @@ const incomeSystem: SystemDefinition = defineSystem({
   },
 });
 
+/** The player's fielded combat units (non-hero, non-building), with live health, for the army row. */
+function armyRoster(ctx: GameContext): { id: string; kind: string; hp: number; max: number }[] {
+  const out: { id: string; kind: string; hp: number; max: number }[] = [];
+  for (const u of session.units.values()) {
+    if (u.faction !== "player" || u.kind !== "unit" || u.catalogId === "hero") continue;
+    const stat = ctx.scene.entity.stats.get(u.id, "health");
+    if (stat === null) continue;
+    out.push({ id: u.id, kind: u.catalogId, hp: Math.max(0, stat.current), max: stat.max });
+  }
+  out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return out;
+}
+
 /** Snapshot live economy + counts for the HUD a few times a second. */
 const hudSystem: SystemDefinition = defineSystem({
   id: "ironhold.hud",
@@ -217,6 +230,7 @@ const hudSystem: SystemDefinition = defineSystem({
       heroLevel: heroLevel(ctx),
       abilityReady: thunderClapReady(ctx),
       abilityCd: Math.max(0, Math.ceil(session.heroState.abilityCooldown)),
+      army: armyRoster(ctx),
     });
   },
 });

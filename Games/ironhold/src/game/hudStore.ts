@@ -4,6 +4,14 @@
 
 export type MatchPhase = "playing" | "won" | "lost";
 
+/** One live entry in the army row: a player combat unit with its current health. */
+export interface ArmyUnit {
+  id: string;
+  kind: string;
+  hp: number;
+  max: number;
+}
+
 export interface HudSnapshot {
   phase: MatchPhase;
   gold: number;
@@ -37,6 +45,8 @@ export interface HudSnapshot {
   heroLevel: number;
   abilityReady: boolean;
   abilityCd: number;
+  /** Live roster of the player's fielded combat units (for the army row). */
+  army: ArmyUnit[];
 }
 
 const initial: HudSnapshot = {
@@ -67,7 +77,17 @@ const initial: HudSnapshot = {
   heroLevel: 1,
   abilityReady: false,
   abilityCd: 0,
+  army: [],
 };
+
+/** Army rows churn every frame as HP ticks; compare on id/kind and integer HP to bound re-renders. */
+function armyChanged(a: ArmyUnit[], b: ArmyUnit[]): boolean {
+  if (a.length !== b.length) return true;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i]!.id !== b[i]!.id || a[i]!.kind !== b[i]!.kind || Math.round(a[i]!.hp) !== Math.round(b[i]!.hp)) return true;
+  }
+  return false;
+}
 
 let snapshot: HudSnapshot = initial;
 const listeners = new Set<() => void>();
@@ -99,7 +119,8 @@ function changed(next: HudSnapshot): boolean {
     p.researching !== next.researching ||
     p.heroLevel !== next.heroLevel ||
     p.abilityReady !== next.abilityReady ||
-    p.abilityCd !== next.abilityCd
+    p.abilityCd !== next.abilityCd ||
+    armyChanged(p.army, next.army)
   );
 }
 
