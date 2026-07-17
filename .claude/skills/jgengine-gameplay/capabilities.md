@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
 
+## cancel-work — remove a job and compute its refund from reservation and progress
+
+- `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
+
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
 - `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
@@ -35,6 +39,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## durability — track item wear, breakage, and repair
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
+
+## enqueue-work — reserve inputs and add a timed job, honoring capacity and validation policy
+
+- `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
 
 ## event-bus — typed publish/subscribe bus for gameplay events
 
@@ -153,6 +161,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
 
+## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
+
+- `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
+
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
 - `appendToast` (function) · `import { appendToast } from "@jgengine/core/gameplay"`
@@ -161,6 +173,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
+
+## unit-training — compose a timed work queue that trains catalog units into spawn orders
+
+- `unitTrainingConfig` (function) · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 
@@ -177,3 +193,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weighted-pick — pick one item from a set with an injected random source
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
+
+## work-queue — a serializable timed job queue with reservation, cancellation, completion, and output routing
+
+- `createWorkQueue` (function) · `import { createWorkQueue } from "@jgengine/core/gameplay"`

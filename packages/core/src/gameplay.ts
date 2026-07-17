@@ -267,3 +267,39 @@ export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regi
 export { createCommitController } from "./turn/commit";
 export { createIntentBoard } from "./turn/intent";
 export { createTurnLoop, type TurnLoop } from "./turn/turnLoop";
+export {
+  activeJobs,
+  cancelJob,
+  createWorkQueue,
+  enqueue,
+  fifoOrdering,
+  jobById,
+  jobProgress,
+  pauseJob,
+  priorityOrdering,
+  queueSize,
+  queuedJobs,
+  resumeJob,
+  tick,
+  type CancelResult,
+  type EnqueueOptions,
+  type EnqueueResult,
+  type Job,
+  type JobId,
+  type JobOrdering,
+  type JobStatus,
+  type JobValidation,
+  type TickResult,
+  type WorkQueueConfig,
+  type WorkQueueEvent,
+  type WorkQueueState,
+} from "./work/jobQueue";
+export {
+  unitTrainingConfig,
+  type ResourceCost,
+  type TrainableUnitDef,
+  type UnitReservation,
+  type UnitSpawnOrder,
+  type UnitTrainingOptions,
+  type UnitTrainingSpec,
+} from "./work/unitTraining";

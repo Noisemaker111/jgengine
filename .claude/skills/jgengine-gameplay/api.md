@@ -698,6 +698,7 @@
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
 - `CardPile` (interface): interface CardPile — ⚠ undocumented
 - `CardPileState` (interface): interface CardPileState — ⚠ undocumented
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
@@ -729,6 +730,8 @@
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
 - `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
+- `EnqueueOptions` (interface): interface EnqueueOptions — Optional per-enqueue overrides.
+- `EnqueueResult` (type): type EnqueueResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link enqueue}. On rejection the state is returned unchanged.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
@@ -752,6 +755,11 @@
 - `InventoryState` (interface): interface InventoryState — ⚠ undocumented
 - `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
 - `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
+- `Job` (interface): interface Job<TSpec, TReserve = undefined> — One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`).
+- `JobId` (type): type JobId = string — Generic timed work queue — a pure-data model for discrete jobs that reserve inputs, advance over game time, can be paused/cancelled, and emit an output on completion. It backs unit training, crafting jobs, construction, research, respawns, downloads, and fabrication without any of them re-implementing the reservation → progress → completion → output-routing loop.
+- `JobOrdering` (type): type JobOrdering<TSpec, TReserve = undefined> = ( a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>, ) => number — Comparator over jobs; negative means the first job runs sooner.
+- `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
+- `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
 - `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
 - `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
 - `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
@@ -799,6 +807,7 @@
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
 - `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase — ⚠ undocumented
@@ -828,6 +837,7 @@
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
+- `TickResult` (interface): interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> — Outcome of {@link tick}: advanced state plus the events produced.
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
@@ -836,15 +846,24 @@
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
+- `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
+- `UnitReservation` (interface): interface UnitReservation — Reservation stored on a training job — the inputs to charge and refund.
+- `UnitSpawnOrder` (interface): interface UnitSpawnOrder — Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't.
+- `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
+- `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
+- `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
+- `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
+- `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
 - `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
+- `activeJobs` (function): function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] — Jobs currently progressing.
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
@@ -852,6 +871,7 @@
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
+- `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -908,6 +928,7 @@
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
+- `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
@@ -916,10 +937,12 @@
 - `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
 - `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
 - `durabilityFraction` (function): function durabilityFraction(state: DurabilityState): number — ⚠ undocumented
+- `enqueue` (function): function enqueue<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, spec: TSpec, options?: EnqueueOptions): EnqueueResult<TSpec, TReserve> — Enqueue a new job. Validates capacity and the injected `validate` policy, then computes and stores the reservation. Charging the reservation (now or later) is the caller's responsibility using {@link EnqueueResult.job}'s `reservation`.
 - `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
 - `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
+- `fifoOrdering` (function): function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Pure FIFO ordering by enqueue sequence.
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
@@ -930,6 +953,8 @@
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
+- `jobById` (function): function jobById<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): Job<TSpec, TReserve> | null — Look up a job by id, or `null` if absent/terminal.
+- `jobProgress` (function): function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number — Fractional progress of a job (0…1); a zero-duration job reads as complete.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -943,15 +968,19 @@
 - `parDelta` (function): function parDelta(splits: readonly number[], reference: readonly number[]): number[] — Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap): positive means behind the reference at that checkpoint. Compared up to the shorter length — the `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
 - `partInSlot` (function): function partInSlot(installed: readonly InstalledPart[], slotId: string): PartDef | null — ⚠ undocumented
 - `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
+- `pauseJob` (function): function pauseJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Pause a queued or active job in place; a paused job keeps its progress and yields its slot.
 - `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
 - `pileRng` (function): function pileRng(seed: string | number): () => number — ⚠ undocumented
 - `placementOf` (function): function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null — One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line.
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
+- `priorityOrdering` (function): function priorityOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Priority-first ordering (higher priority sooner), FIFO within equal priority.
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 - `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
 - `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
+- `queueSize` (function): function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number — Non-terminal job count (queued + active + paused).
+- `queuedJobs` (function): function queuedJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, ordering: JobOrdering<TSpec, TReserve> = priorityOrdering): Job<TSpec, TReserve>[] — Jobs waiting for a slot, in selection order.
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
@@ -960,6 +989,7 @@
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 - `resolvePowerGrid` (function): function resolvePowerGrid(supply: number, consumers: readonly PowerConsumer[]): PowerGridResult — ⚠ undocumented
+- `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -972,11 +1002,13 @@
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 - `startRaceCountdown` (function): function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState — Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length skips straight to `racing` for a standing start with no countdown.
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
+- `tick` (function): function tick<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, dt: number): TickResult<TSpec, TReserve, TOutput> — Advance the queue by `dt` seconds. Promotes queued jobs into up to `concurrency` active slots, advances active jobs, and completes those that reach their duration — emitting `started`/`completed` events in deterministic order. A large `dt` catches up across many jobs in one call: when a job completes with leftover time, the freed slot promotes the next queued job and applies the remainder, so a reconnect or save/load gap resolves in a single bounded pass. Completed jobs are removed from the returned state.
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
 - `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
+- `unitTrainingConfig` (function): function unitTrainingConfig(options: UnitTrainingOptions): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> — Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is the unit's cost + population; duration is its train time; completion output is a {@link UnitSpawnOrder} for the caller to route to its spawn primitive.
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
@@ -1306,3 +1338,41 @@
 - `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot — ⚠ undocumented
 - `TurnState` (interface): interface TurnState — ⚠ undocumented
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
+
+## @jgengine/core/work/jobQueue
+
+- `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
+- `EnqueueOptions` (interface): interface EnqueueOptions — Optional per-enqueue overrides.
+- `EnqueueResult` (type): type EnqueueResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link enqueue}. On rejection the state is returned unchanged.
+- `Job` (interface): interface Job<TSpec, TReserve = undefined> — One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`).
+- `JobId` (type): type JobId = string — Generic timed work queue — a pure-data model for discrete jobs that reserve inputs, advance over game time, can be paused/cancelled, and emit an output on completion. It backs unit training, crafting jobs, construction, research, respawns, downloads, and fabrication without any of them re-implementing the reservation → progress → completion → output-routing loop.
+- `JobOrdering` (type): type JobOrdering<TSpec, TReserve = undefined> = ( a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>, ) => number — Comparator over jobs; negative means the first job runs sooner.
+- `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
+- `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
+- `TickResult` (interface): interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> — Outcome of {@link tick}: advanced state plus the events produced.
+- `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
+- `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
+- `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
+- `activeJobs` (function): function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] — Jobs currently progressing.
+- `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
+- `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
+- `enqueue` (function): function enqueue<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, spec: TSpec, options?: EnqueueOptions): EnqueueResult<TSpec, TReserve> — Enqueue a new job. Validates capacity and the injected `validate` policy, then computes and stores the reservation. Charging the reservation (now or later) is the caller's responsibility using {@link EnqueueResult.job}'s `reservation`.
+- `fifoOrdering` (function): function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Pure FIFO ordering by enqueue sequence.
+- `jobById` (function): function jobById<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): Job<TSpec, TReserve> | null — Look up a job by id, or `null` if absent/terminal.
+- `jobProgress` (function): function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number — Fractional progress of a job (0…1); a zero-duration job reads as complete.
+- `pauseJob` (function): function pauseJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Pause a queued or active job in place; a paused job keeps its progress and yields its slot.
+- `priorityOrdering` (function): function priorityOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Priority-first ordering (higher priority sooner), FIFO within equal priority.
+- `queueSize` (function): function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number — Non-terminal job count (queued + active + paused).
+- `queuedJobs` (function): function queuedJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, ordering: JobOrdering<TSpec, TReserve> = priorityOrdering): Job<TSpec, TReserve>[] — Jobs waiting for a slot, in selection order.
+- `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
+- `tick` (function): function tick<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, dt: number): TickResult<TSpec, TReserve, TOutput> — Advance the queue by `dt` seconds. Promotes queued jobs into up to `concurrency` active slots, advances active jobs, and completes those that reach their duration — emitting `started`/`completed` events in deterministic order. A large `dt` catches up across many jobs in one call: when a job completes with leftover time, the freed slot promotes the next queued job and applies the remainder, so a reconnect or save/load gap resolves in a single bounded pass. Completed jobs are removed from the returned state.
+
+## @jgengine/core/work/unitTraining
+
+- `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
+- `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
+- `UnitReservation` (interface): interface UnitReservation — Reservation stored on a training job — the inputs to charge and refund.
+- `UnitSpawnOrder` (interface): interface UnitSpawnOrder — Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't.
+- `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
+- `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
+- `unitTrainingConfig` (function): function unitTrainingConfig(options: UnitTrainingOptions): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> — Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is the unit's cost + population; duration is its train time; completion output is a {@link UnitSpawnOrder} for the caller to route to its spawn primitive.

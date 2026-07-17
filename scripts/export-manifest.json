@@ -313,6 +313,8 @@
     "./visibility/simulationCulling",
     "./visibility/spatialIndex",
     "./visibility/visibilitySystem",
+    "./work/jobQueue",
+    "./work/unitTraining",
     "./world",
     "./world/authoredObjects",
     "./world/buildPermissions",
