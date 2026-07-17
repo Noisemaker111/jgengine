@@ -72,3 +72,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
 - `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
 - `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
+
+## world-directives — apply a sparse overlay over materialized directive instances
+
+- `applyDirectiveOverlay` (function) · `import { applyDirectiveOverlay } from "@jgengine/core/editor"`
+- `materializeDirective` (function) · `import { materializeDirective } from "@jgengine/core/editor"`
+- `materializeDirectives` (function) · `import { materializeDirectives } from "@jgengine/core/editor"`
+- `materializePopulationDirective` (function) · `import { materializePopulationDirective } from "@jgengine/core/editor"`
+- `materializeScatterDirective` (function) · `import { materializeScatterDirective } from "@jgengine/core/editor"`
+- `resolveDirectiveFootprint` (function) · `import { resolveDirectiveFootprint } from "@jgengine/core/editor"`
