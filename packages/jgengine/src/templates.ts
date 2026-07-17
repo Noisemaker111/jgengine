@@ -1,10 +1,32 @@
 export type TemplateVariant = "standalone" | "in-repo";
 
+/** A marker as it appears in an authored `editor.scene.json` — only the fields the scaffold reads. */
+export interface EditorSceneMarker {
+  id?: string;
+  kind?: string;
+  position?: { x: number; y: number; z: number };
+  meta?: { on?: string; action?: string } & Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/** The subset of an authored scene document the scaffold inspects when promoting a folder. */
+export interface EditorSceneDoc {
+  version?: number;
+  markers?: EditorSceneMarker[];
+  [key: string]: unknown;
+}
+
 export interface TemplateOptions {
   id: string;
   name: string;
   variant: TemplateVariant;
   engineVersion: string;
+  /**
+   * An authored scene document to bake in as `src/editor.scene.json` instead of the starter scene —
+   * the "promote a scene folder into a game" path (`jgengine create --from-scene`). The generated
+   * scene test is tailored to what this document actually ships.
+   */
+  scene?: EditorSceneDoc;
 }
 
 export interface TemplateFile {
@@ -439,6 +461,40 @@ describe("authored scene", () => {
 });
 `;
 
+/** Does this document ship a goal marker that wins the moment the player walks into it? */
+function sceneHasWinGoal(scene: EditorSceneDoc): boolean {
+  return (scene.markers ?? []).some(
+    (marker) => marker.kind === "goal" && marker.meta?.on === "enter" && marker.meta?.action === "win",
+  );
+}
+
+// The scene test is generated to match the scene it ships: any runnable scene honors an authored
+// spawn, so that assertion is always emitted; the win-goal assertion is only emitted when the scene
+// actually carries such a goal, so a promoted scene without one still passes.
+function editorLayersTestFor(scene: EditorSceneDoc): string {
+  const goalBlock = sceneHasWinGoal(scene)
+    ? `
+  test("ships an authored goal that wins on enter — no game code", () => {
+    const goal = editorLayers.markers.find((marker) => marker.kind === "goal");
+    expect(goal?.meta?.on).toBe("enter");
+    expect(goal?.meta?.action).toBe("win");
+  });
+`
+    : "";
+  return `import { describe, expect, test } from "bun:test";
+
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+
+import { editorLayers } from "./editorLayers";
+
+describe("authored scene", () => {
+  test("ships a player_spawn marker the runtime honors", () => {
+    expect(authoredSpawnPosition(editorLayers)).not.toBeNull();
+  });
+${goalBlock}});
+`;
+}
+
 const gameAssetsTs = `import { createStarterCatalog } from "@jgengine/assets/catalogs/starter";
 
 /** Curated people/props/nature/urban starter packs — resolve asset:person_casual etc. */
@@ -845,10 +901,12 @@ export function editorScaffold(engineVersion: string): TemplateFile[] {
 
 /** @internal */
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {
-  const { id, name, variant, engineVersion } = options;
+  const { id, name, variant, engineVersion, scene } = options;
   if (!GAME_ID_PATTERN.test(id)) {
     throw new Error(`game id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`);
   }
+  const sceneContents = scene ? `${JSON.stringify(scene, null, 2)}\n` : editorSceneJson;
+  const sceneTest = scene ? editorLayersTestFor(scene) : editorLayersTest;
   return [
     { path: "index.html", contents: indexHtml(name) },
     { path: "vite.config.ts", contents: viteConfig(variant) },
@@ -862,9 +920,9 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/style.css", contents: styleCss },
     { path: "src/main.tsx", contents: mainTsx(id) },
     { path: "src/index.tsx", contents: indexTsx },
-    { path: "src/editor.scene.json", contents: editorSceneJson },
+    { path: "src/editor.scene.json", contents: sceneContents },
     { path: "src/editorLayers.ts", contents: editorLayersTs },
-    { path: "src/editorLayers.test.ts", contents: editorLayersTest },
+    { path: "src/editorLayers.test.ts", contents: sceneTest },
     { path: "src/game.config.ts", contents: gameConfigTs(name) },
     { path: "src/loop.ts", contents: loopTs },
     { path: "src/world.ts", contents: worldTs(id) },
