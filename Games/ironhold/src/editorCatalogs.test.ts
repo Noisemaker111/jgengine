@@ -25,9 +25,9 @@ describe("content.entityById", () => {
   });
 
   test("decor resolves to an inert mesh with no health", () => {
-    const tree = content.entityById!("tree");
-    expect(tree).not.toBeNull();
-    expect(tree?.stats).toBeUndefined();
+    const mine = content.entityById!("goldmine");
+    expect(mine).not.toBeNull();
+    expect(mine?.stats).toBeUndefined();
   });
 
   test("unknown ids resolve to null", () => {

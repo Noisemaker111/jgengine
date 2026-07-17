@@ -1,92 +1,116 @@
+import type { ReactNode } from "react";
 import { useSyncExternalStore } from "react";
+import { useEntityStat } from "@jgengine/react/hooks";
 import { useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type HudSnapshot } from "../../hudStore";
 import { FOOTMAN_COST } from "../../tuning";
+import { Minimap } from "./Minimap";
 
 function useHud(): HudSnapshot {
   return useSyncExternalStore(hudStore.subscribe, hudStore.get, hudStore.get);
 }
 
-function KeepBar({ label, hp, max, tone }: { label: string; hp: number; max: number; tone: string }) {
-  const pct = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0;
+const PANEL = "border border-amber-800/50 bg-gradient-to-b from-slate-800/95 to-slate-950/95 shadow-[0_2px_10px_rgba(0,0,0,0.5)] backdrop-blur-sm";
+
+function Meter({ value, max, tone }: { value: number; max: number; tone: string }) {
+  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   return (
-    <div className="flex flex-col gap-0.5">
-      <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-        <span>{label}</span>
-        <span>{hp}</span>
-      </div>
-      <div className="h-2 w-36 overflow-hidden rounded-full bg-slate-800/80 ring-1 ring-black/40">
-        <div className="h-full rounded-full transition-[width] duration-200" style={{ width: `${pct * 100}%`, background: tone }} />
-      </div>
+    <div className="h-2 w-full overflow-hidden rounded-full bg-black/60 ring-1 ring-black/50">
+      <div className="h-full rounded-full transition-[width] duration-200" style={{ width: `${pct * 100}%`, background: tone }} />
     </div>
   );
 }
 
-function TopBar() {
+/** Slim top strip: gold, both keeps' vitals, and the live head-count — the resource readout. */
+function TopStrip() {
   const hud = useHud();
   return (
-    <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-5 rounded-xl border border-slate-500/40 bg-slate-900/80 px-5 py-2.5 font-sans text-slate-100 shadow-lg backdrop-blur-sm">
+    <div className={"pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-4 rounded-lg px-4 py-2 font-sans text-slate-100 " + PANEL}>
       <div className="flex items-center gap-2">
-        <span className="text-lg">🪙</span>
+        <span className="text-base">🪙</span>
         <span className="min-w-[3ch] text-lg font-bold tabular-nums text-amber-300">{hud.gold}</span>
       </div>
-      <div className="h-8 w-px bg-slate-600/60" />
-      <KeepBar label="Enemy Warcamp" hp={hud.enemyKeepHp} max={hud.enemyKeepMax} tone="#ef5a3d" />
-      <KeepBar label="Ironhold Keep" hp={hud.playerKeepHp} max={hud.playerKeepMax} tone="#4c8dff" />
-      <div className="h-8 w-px bg-slate-600/60" />
-      <div className="flex gap-3 text-xs text-slate-300">
-        <span>⚔ {hud.playerUnits}</span>
-        <span className="text-rose-300">☠ {hud.enemyUnits}</span>
+      <div className="h-7 w-px bg-amber-800/40" />
+      <div className="flex w-40 flex-col gap-0.5">
+        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-rose-300"><span>Marauder Warcamp</span><span>{hud.enemyKeepHp}</span></div>
+        <Meter value={hud.enemyKeepHp} max={hud.enemyKeepMax} tone="#ef5a3d" />
+      </div>
+      <div className="flex w-40 flex-col gap-0.5">
+        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-sky-300"><span>Ironhold Keep</span><span>{hud.playerKeepHp}</span></div>
+        <Meter value={hud.playerKeepHp} max={hud.playerKeepMax} tone="#4c8dff" />
+      </div>
+      <div className="h-7 w-px bg-amber-800/40" />
+      <div className="flex gap-2 text-xs"><span className="text-sky-200">⚔ {hud.playerUnits}</span><span className="text-rose-300">☠ {hud.enemyUnits}</span></div>
+    </div>
+  );
+}
+
+function ConsoleButton({ label, sub, active, disabled, onClick }: { label: string; sub: string; active?: boolean; disabled?: boolean; onClick: () => void }) {
+  const tone = disabled
+    ? "cursor-not-allowed border-slate-700 bg-slate-800/60 text-slate-500"
+    : active
+      ? "border-amber-400 bg-amber-500/90 text-slate-900"
+      : "border-amber-700/60 bg-slate-700/80 text-slate-100 hover:bg-slate-600/80";
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} className={"flex h-16 w-24 flex-col items-start justify-between rounded-md border-2 px-2 py-1.5 text-left transition " + tone}>
+      <span className="text-xs font-bold leading-tight">{label}</span>
+      <span className="text-[10px] opacity-80">{sub}</span>
+    </button>
+  );
+}
+
+function HeroPortrait() {
+  const hp = useEntityStat("hero", "health");
+  const alive = hp !== null && hp.current > 0;
+  return (
+    <div className="flex items-center gap-3">
+      <div className={"flex h-16 w-16 items-center justify-center rounded-md border-2 " + (alive ? "border-amber-500/80 bg-gradient-to-b from-amber-700/40 to-slate-900/80" : "border-slate-700 bg-slate-900/80 grayscale")}>
+        <span className="text-3xl">{alive ? "🛡️" : "💀"}</span>
+      </div>
+      <div className="flex w-32 flex-col gap-1">
+        <span className="text-sm font-bold text-amber-200">Bram the Bold</span>
+        <span className="text-[10px] uppercase tracking-wide text-slate-400">Vanguard Hero</span>
+        {hp !== null ? <Meter value={hp.current} max={hp.max} tone="#46c85a" /> : null}
       </div>
     </div>
   );
 }
 
-function CommandBar() {
+/** WC3-style bottom console: framed minimap · commander portrait · command card. */
+function CommandConsole() {
   const hud = useHud();
   const { commands } = useGame();
   const canTrain = hud.phase === "playing" && hud.gold >= FOOTMAN_COST;
   return (
-    <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-2 rounded-xl border border-slate-500/40 bg-slate-900/80 p-2 font-sans text-slate-100 shadow-xl backdrop-blur-sm">
-      <button
-        type="button"
-        disabled={!canTrain}
-        onClick={() => commands.run("train.footman", {})}
-        className={
-          "flex w-32 flex-col items-start rounded-lg px-3 py-2 text-left transition " +
-          (canTrain ? "bg-blue-600/80 hover:bg-blue-500" : "cursor-not-allowed bg-slate-700/60 text-slate-400")
-        }
-      >
-        <span className="text-sm font-bold">Train Footman</span>
-        <span className="text-[11px] opacity-80">🪙 {FOOTMAN_COST} · [F]</span>
-      </button>
-      <button
-        type="button"
-        disabled={hud.phase !== "playing"}
-        onClick={() => commands.run("unit.attackMove", {})}
-        className={
-          "flex w-32 flex-col items-start rounded-lg px-3 py-2 text-left transition " +
-          (hud.attackMoveArmed ? "bg-amber-500 text-slate-900" : "bg-slate-700/70 hover:bg-slate-600")
-        }
-      >
-        <span className="text-sm font-bold">Attack-Move</span>
-        <span className="text-[11px] opacity-80">{hud.attackMoveArmed ? "armed — right-click" : "arm · [A]"}</span>
-      </button>
+    <div className={"pointer-events-auto absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-3 rounded-t-xl border-x-2 border-t-2 px-4 py-3 font-sans " + PANEL}>
+      <div className="rounded-md border border-amber-800/50 bg-black/40 p-1">
+        <Minimap />
+      </div>
+      <div className="w-px bg-amber-800/40" />
+      <div className="flex flex-col justify-center">
+        <HeroPortrait />
+      </div>
+      <div className="w-px bg-amber-800/40" />
+      <div className="flex flex-col justify-center">
+        <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">Command</div>
+        <div className="flex gap-2">
+          <ConsoleButton label="Train Footman" sub={`🪙${FOOTMAN_COST} · F`} disabled={!canTrain} onClick={() => commands.run("train.footman", {})} />
+          <ConsoleButton label="Attack-Move" sub={hud.attackMoveArmed ? "armed · RMB" : "arm · A"} active={hud.attackMoveArmed} disabled={hud.phase !== "playing"} onClick={() => commands.run("unit.attackMove", {})} />
+        </div>
+      </div>
     </div>
   );
 }
 
 function ControlsHint() {
   return (
-    <div className="pointer-events-none absolute bottom-4 left-4 z-20 max-w-[15rem] rounded-lg border border-slate-500/30 bg-slate-900/70 px-3 py-2 font-sans text-[11px] leading-relaxed text-slate-300 shadow backdrop-blur-sm">
-      <div className="mb-1 font-semibold text-slate-100">Command your Vanguard</div>
+    <div className={"pointer-events-none absolute left-3 top-3 z-20 max-w-[15rem] rounded-lg px-3 py-2 font-sans text-[11px] leading-relaxed text-slate-300 " + PANEL}>
+      <div className="mb-1 font-semibold text-amber-200">Command your Vanguard</div>
       <div>Drag to box-select · left-click a unit</div>
       <div>Right-click ground to move, an enemy to attack</div>
       <div>Raze the Marauder Warcamp to win</div>
-      <div className="mt-1 border-t border-slate-500/20 pt-1 text-[10px] text-slate-400">
-        A Warcraft III homage · art: KayKit &amp; Quaternius (CC0)
-      </div>
+      <div className="mt-1 border-t border-amber-800/30 pt-1 text-[10px] text-slate-400">A Warcraft III homage · art: KayKit &amp; Quaternius (CC0)</div>
     </div>
   );
 }
@@ -97,27 +121,20 @@ function EndOverlay() {
   const won = hud.phase === "won";
   return (
     <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-      <div
-        className={
-          "rounded-2xl border px-12 py-8 text-center font-sans shadow-2xl backdrop-blur-sm " +
-          (won ? "border-emerald-400/50 bg-emerald-700/85 text-white" : "border-rose-400/50 bg-rose-800/85 text-white")
-        }
-      >
+      <div className={"rounded-2xl border-2 px-12 py-8 text-center font-sans shadow-2xl backdrop-blur-sm " + (won ? "border-emerald-400/60 bg-emerald-800/85 text-white" : "border-rose-400/60 bg-rose-900/85 text-white")}>
         <div className="text-4xl font-black tracking-tight">{won ? "Victory" : "Defeat"}</div>
-        <div className="mt-2 text-sm opacity-90">
-          {won ? "The Marauder Warcamp lies in ruins." : "Ironhold Keep has fallen."}
-        </div>
+        <div className="mt-2 text-sm opacity-90">{won ? "The Marauder Warcamp lies in ruins." : "Ironhold Keep has fallen."}</div>
       </div>
     </div>
   );
 }
 
-export function RtsHud() {
+export function RtsHud(): ReactNode {
   return (
     <>
-      <TopBar />
-      <CommandBar />
+      <TopStrip />
       <ControlsHint />
+      <CommandConsole />
       <EndOverlay />
     </>
   );

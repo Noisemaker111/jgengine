@@ -78,8 +78,9 @@ export const COMBATANTS: Record<string, CombatantDef> = {
   }),
 };
 
-/** Decorative props spawned from the scene for cover/readability — no health, not selectable. */
-export const DECOR = new Set(["tree", "rock", "goldmine"]);
+/** Decorative props spawned from the scene — no health, not selectable. Forest fill is instanced
+ * scatter (see scatterModels); these are the placed hero props: gold seams and base dressing. */
+export const DECOR = new Set(["goldmine", "banner_blue", "banner_red", "torch", "barrel"]);
 
 export function combatantDef(catalogId: string): CombatantDef | null {
   return COMBATANTS[catalogId] ?? null;
