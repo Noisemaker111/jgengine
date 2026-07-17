@@ -52,6 +52,34 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world"`
 
+## formation-assignment — stable deterministic member-to-slot matching for a group formation
+
+- `assignFormationSlots` (function) · `import { assignFormationSlots } from "@jgengine/core/world"`
+
+## formation-box — box/grid slot generator for group destinations
+
+- `boxFormation` (function) · `import { boxFormation } from "@jgengine/core/world"`
+
+## formation-circle — ring/cordon slot generator for group destinations
+
+- `circleFormation` (function) · `import { circleFormation } from "@jgengine/core/world"`
+
+## formation-facing — group facing yaw from a travel direction on the XZ plane
+
+- `facingYaw` (function) · `import { facingYaw } from "@jgengine/core/world"`
+
+## formation-line — line (abreast) slot generator for group destinations
+
+- `lineFormation` (function) · `import { lineFormation } from "@jgengine/core/world"`
+
+## formation-placement — place a group formation's world slots around a destination
+
+- `placeFormation` (function) · `import { placeFormation } from "@jgengine/core/world"`
+
+## formation-wedge — wedge/arrowhead slot generator for group destinations
+
+- `wedgeFormation` (function) · `import { wedgeFormation } from "@jgengine/core/world"`
+
 ## forward-axis — declared front convention for parametric assets — auto-orient product shots
 
 - `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/world"`
@@ -71,6 +99,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
+
+## local-avoidance — bounded deterministic local collision avoidance for moving agents
+
+- `resolveLocalAvoidance` (function) · `import { resolveLocalAvoidance } from "@jgengine/core/world"`
 
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
