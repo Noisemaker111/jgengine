@@ -62,3 +62,29 @@ routeToolCall(api, { id: "1", name: "set_transform", arguments: { id: "boss", x:
 ## Local agent (no URL)
 
 Commands: `/help`, `/status`, `/summary`, `/selection`, `/frame`, `/undo`, `/redo`, `/clear`, `/select <id…>`, `/goto <id>`, `move <id> <x> <y> <z>`.
+
+## Grid / tile layers
+
+Grid-addressed content (rooms, tactics maps, farms, nav/rule layers) lives on the scene document as
+`EditorDocument.grids: EditorGridLayer[]` — a sparse `col,row → value-id` map with `origin`,
+`cellSize`, `axes` (`"xz"` top-down / `"xy"` side view), `cols`/`rows` bounds, an `empty` value, and
+a `palette` carrying each value's glyph/color/typed payload. Only non-empty cells are stored, so a
+large mostly-empty grid stays small. Import from `@jgengine/core/editor/grid` (ops + queries) and
+`@jgengine/core/editor/gridAdapters` (import/export). Do not hardcode tile arrays in game code —
+author the grid and read it at runtime.
+
+- Authoring ops (all immutable, undoable via the session): `setGridCell`/`eraseGridCell`,
+  `paintGridCells` (batch stroke), `fillGridRect` (rectangle), `floodFillGrid` (bucket),
+  `eyedropGridCell` (sample), `resizeGridLayer`, `createGridLayer`.
+- Rendering-independent runtime queries: `getGridCell`, `getGridCellAtWorld`, `gridCellEntries`,
+  `forEachGridCell`, `gridCellsOfValue`, `gridCellToWorld`/`worldToGridCell`. Renderers are adapters
+  over these — never bake tiles into the grid model.
+- Session commands: `addGridLayer`, `removeGridLayer`, `setGridLayer`, `paintGridCells`,
+  `fillGridRect`, `floodFillGrid`, `resizeGridLayer` (snapshot history → undo/redo).
+- RPC/CLI verbs: `list_grids`, `get_grid_cell`, `add_grid_layer`, `remove_grid_layer`,
+  `set_grid_layer`, `paint_grid_cells`, `fill_grid_rect`, `flood_fill_grid`, `resize_grid_layer`,
+  `import_grid` (ASCII or CSV).
+- Import/export adapters: `importAsciiGrid`/`exportAsciiGrid` (glyph maps) and
+  `importCsvGrid`/`exportCsvGrid` (value id per cell). ASCII/CSV are import paths **into** the grid
+  document, never the canonical representation — `migrateGridLayer` normalizes and version-migrates
+  any layer from disk or an adapter.

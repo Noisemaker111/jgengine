@@ -66,6 +66,8 @@
     "./economy/wallet",
     "./editor/commands",
     "./editor/document",
+    "./editor/grid",
+    "./editor/gridAdapters",
     "./editor/index",
     "./editor/liveSync",
     "./editor/runtimeInspector",

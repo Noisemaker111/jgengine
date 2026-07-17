@@ -127,3 +127,56 @@ export type {
   RuntimeInspectorSummary,
   RuntimePlayControl,
 } from "./runtimeInspector";
+export {
+  CURRENT_GRID_SCHEMA_VERSION,
+  cloneGridLayer,
+  createGridLayer,
+  eraseGridCell,
+  eyedropGridCell,
+  fillGridRect,
+  findGridPaletteEntry,
+  floodFillGrid,
+  forEachGridCell,
+  getGridCell,
+  getGridCellAtWorld,
+  gridCellCount,
+  gridCellEntries,
+  gridCellKey,
+  gridCellToWorld,
+  gridCellsOfValue,
+  gridEmptyValue,
+  gridGlyphMap,
+  inGridBounds,
+  migrateGridLayer,
+  paintGridCells,
+  parseGridCellKey,
+  resizeGridLayer,
+  setGridCell,
+  worldToGridCell,
+} from "./grid";
+/** How a grid layer's columns and rows map onto world axes (`"xz"` top-down, `"xy"` side view). */
+export type { EditorGridAxes } from "./grid";
+/** A sparse, editor-owned tile grid serialized on the scene document. */
+export type { EditorGridLayer } from "./grid";
+/** One selectable value in a grid layer's palette — value id, glyph, color, and typed payload. */
+export type { EditorGridPaletteEntry } from "./grid";
+/** One resolved cell of a grid layer — its column, row, and value id. */
+export type { EditorGridCell } from "./grid";
+/** A single paint/erase edit: set cell `col,row` to `value` (empty value erases). */
+export type { EditorGridCellEdit } from "./grid";
+/** Fields accepted when constructing a grid layer via `createGridLayer`. */
+export type { CreateGridLayerInit } from "./grid";
+export {
+  exportAsciiGrid,
+  exportCsvGrid,
+  importAsciiGrid,
+  importCsvGrid,
+} from "./gridAdapters";
+/** Options for importing an ASCII/glyph map into a grid layer. */
+export type { AsciiGridImportOptions } from "./gridAdapters";
+/** Options for rendering a grid layer back out as an ASCII/glyph map. */
+export type { AsciiGridExportOptions } from "./gridAdapters";
+/** Options for importing a CSV grid (one value id per cell) into a grid layer. */
+export type { CsvGridImportOptions } from "./gridAdapters";
+/** Options for exporting a grid layer as CSV. */
+export type { CsvGridExportOptions } from "./gridAdapters";

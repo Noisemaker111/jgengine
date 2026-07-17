@@ -31,6 +31,15 @@ import {
   isEditorObjectLocked,
   wouldCreateCycle,
 } from "./document";
+import {
+  fillGridRect,
+  floodFillGrid,
+  migrateGridLayer,
+  paintGridCells,
+  resizeGridLayer,
+  type EditorGridCellEdit,
+  type EditorGridLayer,
+} from "./grid";
 import type {
   EditorCatalogEntry,
   EditorCollection,
@@ -102,6 +111,13 @@ export type EditorCommand =
       patch: { color?: string; label?: string; meta?: Record<string, unknown> };
     }
   | { type: "assignMaterial"; ids: readonly string[]; materialId: string }
+  | { type: "addGridLayer"; layer: EditorGridLayer }
+  | { type: "removeGridLayer"; id: string }
+  | { type: "setGridLayer"; id: string; patch: Partial<Omit<EditorGridLayer, "id" | "cells">> }
+  | { type: "paintGridCells"; id: string; cells: readonly EditorGridCellEdit[] }
+  | { type: "fillGridRect"; id: string; col0: number; row0: number; col1: number; row1: number; value: string }
+  | { type: "floodFillGrid"; id: string; col: number; row: number; value: string }
+  | { type: "resizeGridLayer"; id: string; cols: number; rows: number }
   | { type: "setUiPanel"; id: string; patch: Partial<EditorUiPanelLayout> }
   | { type: "removeUiPanel"; id: string }
   | { type: "setUi"; ui: EditorUiDocument | undefined }
@@ -275,6 +291,25 @@ function tagWithInstance<T extends { meta?: Record<string, unknown> }>(
   instanceId: string,
 ): T {
   return { ...item, meta: { ...item.meta, prefabId, prefabInstanceId: instanceId } };
+}
+
+/**
+ * Replaces one grid layer in place via `transform`, returning `null` when the layer is missing and
+ * the same state when the transform is a no-op (so history skips it).
+ */
+function updateGridLayer(
+  state: EditorSessionState,
+  id: string,
+  transform: (layer: EditorGridLayer) => EditorGridLayer,
+): EditorSessionState | null {
+  const grids = state.document.grids;
+  if (grids === undefined) return null;
+  const index = grids.findIndex((layer) => layer.id === id);
+  if (index < 0) return null;
+  const next = transform(grids[index]!);
+  if (next === grids[index]) return state;
+  const updated = grids.map((layer, i) => (i === index ? next : layer));
+  return { ...state, document: { ...state.document, grids: updated } };
 }
 
 function applyMutating(state: EditorSessionState, command: EditorCommand): EditorSessionState | null {
@@ -529,6 +564,7 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
         prefabs: state.document.prefabs,
         collections: state.document.collections,
         catalogs: state.document.catalogs,
+        ...(state.document.grids === undefined ? {} : { grids: state.document.grids }),
         ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
       };
       return { ...state, document: nextDoc };
@@ -773,6 +809,36 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
       );
       return { ...state, document: { ...state.document, markers, volumes, paths, annotations } };
     }
+    case "addGridLayer": {
+      const layer = migrateGridLayer(command.layer);
+      const grids = state.document.grids ?? [];
+      return {
+        ...state,
+        document: {
+          ...state.document,
+          grids: [...grids.filter((entry) => entry.id !== layer.id), layer],
+        },
+      };
+    }
+    case "removeGridLayer": {
+      const grids = state.document.grids;
+      if (grids === undefined) return null;
+      const next = grids.filter((layer) => layer.id !== command.id);
+      if (next.length === grids.length) return null;
+      return { ...state, document: { ...state.document, grids: next } };
+    }
+    case "setGridLayer":
+      return updateGridLayer(state, command.id, (layer) => migrateGridLayer({ ...layer, ...command.patch }));
+    case "paintGridCells":
+      return updateGridLayer(state, command.id, (layer) => paintGridCells(layer, command.cells));
+    case "fillGridRect":
+      return updateGridLayer(state, command.id, (layer) =>
+        fillGridRect(layer, command.col0, command.row0, command.col1, command.row1, command.value),
+      );
+    case "floodFillGrid":
+      return updateGridLayer(state, command.id, (layer) => floodFillGrid(layer, command.col, command.row, command.value));
+    case "resizeGridLayer":
+      return updateGridLayer(state, command.id, (layer) => resizeGridLayer(layer, command.cols, command.rows));
     case "assignMaterial": {
       const ids = new Set(command.ids);
       const stamp = (meta: Record<string, unknown> | undefined) => ({ ...meta, materialId: command.materialId });
