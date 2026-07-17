@@ -1,7 +1,7 @@
-import { markerCatalogId, type AuthoredObjectMarkerLike } from "./authoredObjects";
+import { ENTITY_MARKER_KINDS, markerCatalogId, type AuthoredObjectMarkerLike } from "./authoredObjects";
 
-/** Marker kinds {@link authoredEntitySpawns} treats as spawnable entities by default. */
-export const ENTITY_MARKER_KINDS: readonly string[] = ["mob", "boss"];
+/** Marker kinds {@link authoredEntitySpawns} treats as spawnable entities by default. Re-exported from `authoredObjects` as the single source of truth (the same kinds `resolveAuthoredObjects` skips). */
+export { ENTITY_MARKER_KINDS };
 
 /** The minimal marker shape entity spawns read; any `EditorMarker` satisfies it. */
 export type AuthoredEntityMarkerLike = AuthoredObjectMarkerLike;
