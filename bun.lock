@@ -327,6 +327,16 @@
         "vite": "^8.1.3",
       },
     },
+    "examples/ark-survival-kit": {
+      "name": "@jgengine-examples/ark-survival-kit",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jgengine/core": "workspace:*",
+      },
+      "devDependencies": {
+        "typescript": "^5",
+      },
+    },
     "examples/convex-host": {
       "name": "@jgengine-examples/convex-host",
       "version": "0.1.0",
@@ -781,6 +791,8 @@
     "@jgengine-apps/dev": ["@jgengine-apps/dev@workspace:apps/dev"],
 
     "@jgengine-apps/web": ["@jgengine-apps/web@workspace:apps/web"],
+
+    "@jgengine-examples/ark-survival-kit": ["@jgengine-examples/ark-survival-kit@workspace:examples/ark-survival-kit"],
 
     "@jgengine-examples/convex-host": ["@jgengine-examples/convex-host@workspace:examples/convex-host"],
 

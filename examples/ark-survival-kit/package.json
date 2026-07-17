@@ -1,0 +1,15 @@
+{
+  "name": "@jgengine-examples/ark-survival-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsgo --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@jgengine/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
