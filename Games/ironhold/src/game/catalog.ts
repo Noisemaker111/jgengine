@@ -69,6 +69,20 @@ export const COMBATANTS: Record<string, CombatantDef> = {
     id: "footman", label: "Footman", faction: "player", kind: "unit",
     maxHealth: 130, walkSpeed: 4.7, damage: 9, attackRange: 1.9, attackCooldown: 0.85, aggroRadius: 8, food: 2,
   }),
+  rifleman: def({
+    id: "rifleman", label: "Rifleman", faction: "player", kind: "unit",
+    maxHealth: 90, walkSpeed: 4.5, damage: 14, attackRange: 7, attackCooldown: 1.3, aggroRadius: 9, food: 3,
+  }),
+  barracks: def({
+    id: "barracks", label: "Barracks", faction: "player", kind: "building", maxHealth: 700,
+  }),
+  farm: def({
+    id: "farm", label: "Farm", faction: "player", kind: "building", maxHealth: 420,
+  }),
+  guard_tower: def({
+    id: "guard_tower", label: "Guard Tower", faction: "player", kind: "building",
+    maxHealth: 560, damage: 15, attackRange: 9, attackCooldown: 1.1, aggroRadius: 9,
+  }),
   hero: def({
     id: "hero", label: "Bram the Bold", faction: "player", kind: "unit",
     maxHealth: 380, walkSpeed: 4.3, scale: 1.28, damage: 24, attackRange: 2.1, attackCooldown: 1, aggroRadius: 9, food: 5,
@@ -104,10 +118,28 @@ export const NODES: Record<string, { resource: string; label: string }> = {
   woods: { resource: "lumber", label: "Logging camp" },
 };
 
-/** What each producing building trains: cost (gold/lumber) and train time. */
+/** What each producing building trains: cost (gold/lumber) and train time. Units past the Peasant
+ * require a Barracks (gated in `canTrain`). */
 export const TRAINABLE: Record<string, TrainableDef> = {
   peasant: { cost: { gold: 55 }, trainSeconds: 8 },
   footman: { cost: { gold: 80, lumber: 10 }, trainSeconds: 14 },
+  rifleman: { cost: { gold: 70, lumber: 20 }, trainSeconds: 16 },
+};
+
+/** Units a Barracks unlocks (Town Hall only trains Peasants). */
+export const BARRACKS_UNITS = new Set(["footman", "rifleman"]);
+
+/** A player-constructed building: cost, build time, and (for a Farm) the supply it adds. */
+export interface BuildingDef {
+  cost: Record<string, number>;
+  buildSeconds: number;
+  supply?: number;
+}
+
+export const BUILDINGS: Record<string, BuildingDef> = {
+  barracks: { cost: { gold: 140, lumber: 60 }, buildSeconds: 20 },
+  farm: { cost: { gold: 60, lumber: 30 }, buildSeconds: 12, supply: 8 },
+  guard_tower: { cost: { gold: 90, lumber: 40 }, buildSeconds: 16 },
 };
 
 export function isNode(catalogId: string): boolean {

@@ -4,8 +4,10 @@ import { useEntityStat } from "@jgengine/react/hooks";
 import { useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type HudSnapshot } from "../../hudStore";
-import { COMBATANTS, TRAINABLE } from "../../catalog";
+import { BARRACKS_UNITS, BUILDINGS, COMBATANTS, TRAINABLE } from "../../catalog";
 import { Minimap } from "./Minimap";
+
+const BUILD_LABELS: Record<string, string> = { barracks: "Barracks", farm: "Farm", guard_tower: "Guard Tower" };
 
 function useHud(): HudSnapshot {
   return useSyncExternalStore(hudStore.subscribe, hudStore.get, hudStore.get);
@@ -86,17 +88,27 @@ function HeroPortrait() {
   );
 }
 
+function cost(gold?: number, lumber?: number): string {
+  return [gold ? `🪙${gold}` : "", lumber ? `🪵${lumber}` : ""].filter(Boolean).join(" ");
+}
+
 function affordable(hud: HudSnapshot, unitId: string): boolean {
   const t = TRAINABLE[unitId];
   if (t === undefined || hud.phase !== "playing") return false;
+  if (BARRACKS_UNITS.has(unitId) && !hud.hasBarracks) return false;
   if ((t.cost.gold ?? 0) > hud.gold) return false;
   if ((t.cost.lumber ?? 0) > hud.lumber) return false;
   return hud.foodUsed + (COMBATANTS[unitId]?.food ?? 0) <= hud.foodCap;
 }
 
+function buildAffordable(hud: HudSnapshot, type: string): boolean {
+  const b = BUILDINGS[type];
+  if (b === undefined || hud.phase !== "playing") return false;
+  return (b.cost.gold ?? 0) <= hud.gold && (b.cost.lumber ?? 0) <= hud.lumber;
+}
+
 function costLabel(unitId: string): string {
-  const c = TRAINABLE[unitId]?.cost ?? {};
-  return [c.gold ? `🪙${c.gold}` : "", c.lumber ? `🪵${c.lumber}` : ""].filter(Boolean).join(" ");
+  return cost(TRAINABLE[unitId]?.cost.gold, TRAINABLE[unitId]?.cost.lumber);
 }
 
 /** WC3-style bottom console: framed minimap · commander portrait · command card. */
@@ -123,14 +135,30 @@ function CommandConsole() {
         <HeroPortrait />
       </div>
       <div className="w-px bg-amber-800/40" />
-      <div className="flex flex-col justify-center">
-        <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">Command</div>
-        <div className="flex gap-2">
-          <ConsoleButton label="Train Peasant" sub={`${costLabel("peasant")} · gather`} disabled={!affordable(hud, "peasant")} onClick={() => commands.run("train.peasant", {})} />
-          <ConsoleButton label="Train Footman" sub={costLabel("footman")} disabled={!affordable(hud, "footman")} onClick={() => commands.run("train.footman", {})} />
-          <ConsoleButton label="Attack-Move" sub={hud.attackMoveArmed ? "armed · RMB" : "arm · A"} active={hud.attackMoveArmed} disabled={hud.phase !== "playing"} onClick={() => commands.run("unit.attackMove", {})} />
+      <div className="flex flex-col justify-center gap-2">
+        <div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">Train</div>
+          <div className="flex gap-2">
+            <ConsoleButton label="Peasant" sub={`${costLabel("peasant")} · gather`} disabled={!affordable(hud, "peasant")} onClick={() => commands.run("train.peasant", {})} />
+            <ConsoleButton label="Footman" sub={hud.hasBarracks ? costLabel("footman") : "needs Barracks"} disabled={!affordable(hud, "footman")} onClick={() => commands.run("train.footman", {})} />
+            <ConsoleButton label="Rifleman" sub={hud.hasBarracks ? costLabel("rifleman") : "needs Barracks"} disabled={!affordable(hud, "rifleman")} onClick={() => commands.run("train.rifleman", {})} />
+            <ConsoleButton label="Attack-Move" sub={hud.attackMoveArmed ? "armed · RMB" : "arm · A"} active={hud.attackMoveArmed} disabled={hud.phase !== "playing"} onClick={() => commands.run("unit.attackMove", {})} />
+          </div>
+        </div>
+        <div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">Build</div>
+          <div className="flex gap-2">
+            <ConsoleButton label="Barracks" sub={cost(BUILDINGS.barracks!.cost.gold, BUILDINGS.barracks!.cost.lumber)} active={hud.buildArmed === "barracks"} disabled={!buildAffordable(hud, "barracks")} onClick={() => commands.run("build.arm", { type: "barracks" })} />
+            <ConsoleButton label="Farm +food" sub={cost(BUILDINGS.farm!.cost.gold, BUILDINGS.farm!.cost.lumber)} active={hud.buildArmed === "farm"} disabled={!buildAffordable(hud, "farm")} onClick={() => commands.run("build.arm", { type: "farm" })} />
+            <ConsoleButton label="Guard Tower" sub={cost(BUILDINGS.guard_tower!.cost.gold, BUILDINGS.guard_tower!.cost.lumber)} active={hud.buildArmed === "guard_tower"} disabled={!buildAffordable(hud, "guard_tower")} onClick={() => commands.run("build.arm", { type: "guard_tower" })} />
+          </div>
         </div>
       </div>
+      {hud.buildArmed !== null ? (
+        <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-amber-500/60 bg-amber-500/90 px-3 py-1 text-xs font-bold text-slate-900">
+          Right-click a spot on your side to place the {BUILD_LABELS[hud.buildArmed] ?? "building"}
+        </div>
+      ) : null}
     </div>
   );
 }

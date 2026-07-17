@@ -2,6 +2,7 @@ import { createResourceNodeField, type ResourceNodeField } from "@jgengine/core/
 import { createWorkQueue, type WorkQueueState } from "@jgengine/core/gameplay";
 import type { UnitReservation, UnitTrainingSpec } from "@jgengine/core/work/unitTraining";
 
+import type { BuildSpec } from "./building";
 import { combatantDef, type CombatantKind } from "./catalog";
 import { TOWN_HALL_FOOD, type Faction } from "./tuning";
 
@@ -41,6 +42,10 @@ export interface SessionState {
   resourceField: ResourceNodeField | null;
   /** The Town Hall's timed unit-training queue. */
   production: WorkQueueState<UnitTrainingSpec, UnitReservation>;
+  /** Buildings under construction. */
+  buildQueue: WorkQueueState<BuildSpec, undefined>;
+  /** A building catalog id armed for placement; the next right-click drops it. */
+  buildArmed: string | null;
   /** Supply cap the player's buildings provide (Town Hall + farms). */
   supplyCap: number;
   /** Set by the Attack-Move verb; consumed by the next right-click order. */
@@ -56,6 +61,8 @@ function fresh(): SessionState {
     nodes: new Map(),
     resourceField: null,
     production: createWorkQueue<UnitTrainingSpec, UnitReservation>(),
+    buildQueue: createWorkQueue<BuildSpec, undefined>(),
+    buildArmed: null,
     supplyCap: TOWN_HALL_FOOD,
     attackMoveArmed: false,
     over: false,

@@ -3,7 +3,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { activeJobs, jobProgress, queuedJobs, tick as tickQueue } from "@jgengine/core/gameplay";
 
 import { tickUnits } from "./ai/units";
-import { combatantDef } from "./catalog";
+import { BUILDINGS, combatantDef, isHostile } from "./catalog";
+import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
 import { GOLD, INCOME_TRICKLE, LUMBER } from "./tuning";
@@ -66,6 +67,74 @@ const productionSystem: SystemDefinition = defineSystem({
   },
 });
 
+/** Raise a finished building at its placed spot; a Farm lifts the supply cap. */
+function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
+  const def = combatantDef(spec.type);
+  if (def === null) return;
+  session.trainSeq += 1;
+  const id = `${spec.type}_b${session.trainSeq}`;
+  ctx.scene.entity.spawn(spec.type, { id, position: [spec.x, 0, spec.z], role: "npc" });
+  session.units.set(id, {
+    id,
+    catalogId: spec.type,
+    faction: "player",
+    kind: "building",
+    command: { kind: "idle" },
+    guardPoint: { x: spec.x, z: spec.z },
+    leash: 0,
+    attackCooldown: 0,
+  });
+  const supply = BUILDINGS[spec.type]?.supply;
+  if (supply !== undefined) session.supplyCap += supply;
+}
+
+/** Advance construction; each finished job raises its building. */
+const constructionSystem: SystemDefinition = defineSystem({
+  id: "ironhold.construction",
+  tick: { type: "frame", stage: "combat" },
+  update(ctx, dt) {
+    if (session.over) return;
+    const result = tickQueue(session.buildQueue, BUILD_CONFIG, dt);
+    session.buildQueue = result.state;
+    for (const event of result.events) {
+      if (event.type === "completed") raiseBuilding(ctx, event.output);
+    }
+  },
+});
+
+/** Guard Towers auto-fire at the nearest hostile within range. */
+const towerSystem: SystemDefinition = defineSystem({
+  id: "ironhold.towers",
+  tick: { type: "frame", stage: "combat" },
+  update(ctx, dt) {
+    if (session.over) return;
+    for (const u of session.units.values()) {
+      if (u.kind !== "building") continue;
+      const def = combatantDef(u.catalogId);
+      if (def === null || def.damage <= 0) continue; // only armed structures
+      u.attackCooldown = Math.max(0, u.attackCooldown - dt);
+      const self = ctx.scene.entity.get(u.id);
+      if (self === null) continue;
+      let targetId: string | null = null;
+      let best = def.attackRange;
+      for (const other of session.units.values()) {
+        if (!isHostile(u.faction, other.faction)) continue;
+        const ent = ctx.scene.entity.get(other.id);
+        if (ent === null) continue;
+        const d = Math.hypot(self.position[0] - ent.position[0], self.position[2] - ent.position[2]);
+        if (d <= best) {
+          best = d;
+          targetId = other.id;
+        }
+      }
+      if (targetId !== null && u.attackCooldown <= 0) {
+        ctx.scene.entity.effect({ from: u.id, to: targetId, effect: "damage", via: { amount: def.damage } });
+        u.attackCooldown = def.attackCooldown;
+      }
+    }
+  },
+});
+
 /** A slow gold trickle so a stalled economy can still recover a little. */
 const incomeSystem: SystemDefinition = defineSystem({
   id: "ironhold.income",
@@ -98,8 +167,18 @@ const hudSystem: SystemDefinition = defineSystem({
       attackMoveArmed: session.attackMoveArmed,
       producing: active.length + queuedJobs(session.production).length,
       trainProgress: active.length > 0 ? jobProgress(active[0]!) : 0,
+      hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),
+      buildArmed: session.buildArmed,
+      building: activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length,
     });
   },
 });
 
-export const systems: readonly SystemDefinition[] = [aiSystem, productionSystem, incomeSystem, hudSystem];
+export const systems: readonly SystemDefinition[] = [
+  aiSystem,
+  productionSystem,
+  constructionSystem,
+  towerSystem,
+  incomeSystem,
+  hudSystem,
+];

@@ -26,6 +26,26 @@ const PLAN: Record<string, ModelPick> = {
     fallbackModel: `${ADV}/Rogue`,
     style: { targetHeight: 2.3, material: { color: VANGUARD }, animation: WARRIOR_ANIM },
   },
+  rifleman: {
+    model: `${ADV}/Mage`,
+    fallbackModel: `${ADV}/Rogue`,
+    style: { targetHeight: 2.2, material: { color: "#6fb0d8" }, animation: WARRIOR_ANIM },
+  },
+  barracks: {
+    model: `${CITY}/building_C`,
+    fallbackModel: `${CITY}/building_A`,
+    style: { targetHeight: 5.5, material: { color: "#b0a48c" } },
+  },
+  farm: {
+    model: `${CITY}/building_G`,
+    fallbackModel: `${CITY}/building_E`,
+    style: { targetHeight: 3.6, material: { color: "#c8b878" } },
+  },
+  guard_tower: {
+    model: `${CITY}/watertower`,
+    fallbackModel: `${CITY}/building_F`,
+    style: { targetHeight: 6.5, material: { color: "#9aa0a8" } },
+  },
   hero: {
     model: `${ADV}/Barbarian`,
     fallbackModel: `${ADV}/Knight`,

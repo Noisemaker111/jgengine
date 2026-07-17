@@ -20,6 +20,10 @@ export interface HudSnapshot {
   /** Units currently queued/training at the Town Hall, and the active job's 0..1 progress. */
   producing: number;
   trainProgress: number;
+  /** A Barracks exists (unlocks Footman/Rifleman), and any building armed for placement. */
+  hasBarracks: boolean;
+  buildArmed: string | null;
+  building: number;
 }
 
 const initial: HudSnapshot = {
@@ -37,6 +41,9 @@ const initial: HudSnapshot = {
   attackMoveArmed: false,
   producing: 0,
   trainProgress: 0,
+  hasBarracks: false,
+  buildArmed: null,
+  building: 0,
 };
 
 let snapshot: HudSnapshot = initial;
@@ -56,7 +63,10 @@ function changed(next: HudSnapshot): boolean {
     p.playerKeepHp !== next.playerKeepHp ||
     p.attackMoveArmed !== next.attackMoveArmed ||
     p.producing !== next.producing ||
-    Math.abs(p.trainProgress - next.trainProgress) > 0.02
+    Math.abs(p.trainProgress - next.trainProgress) > 0.02 ||
+    p.hasBarracks !== next.hasBarracks ||
+    p.buildArmed !== next.buildArmed ||
+    p.building !== next.building
   );
 }
 

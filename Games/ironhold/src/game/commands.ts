@@ -9,7 +9,8 @@ import {
   type Vec2,
 } from "@jgengine/core/movement/formation";
 
-import { combatantDef, COMBATANTS, TRAINABLE } from "./catalog";
+import { BARRACKS_UNITS, BUILDINGS, combatantDef, COMBATANTS, TRAINABLE } from "./catalog";
+import { BUILD_CONFIG } from "./building";
 import { TRAINING_CONFIG } from "./production";
 import { FORMATION_SPACING, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
 import { livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
@@ -79,15 +80,56 @@ function assignMoveFormation(ctx: GameContext, units: UnitRuntime[], x: number, 
   });
 }
 
-/** Right-click order: attack a hostile under the cursor, send peasants to harvest a node under the
- * cursor, else move (or attack-move if armed) the group into a box formation. */
+export function canAffordBuilding(ctx: GameContext, type: string): boolean {
+  const def = BUILDINGS[type];
+  if (def === undefined || session.over) return false;
+  for (const [currency, amount] of Object.entries(def.cost)) {
+    if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
+  }
+  return true;
+}
+
+/** A building may go on the player's half of the field, clear of gold/lumber nodes and other
+ * buildings. Deliberately generous — this is a skirmish, not a city planner. */
+function canPlaceAt(ctx: GameContext, x: number, z: number): boolean {
+  if (z < -6 || z > 44 || Math.abs(x) > 44) return false;
+  for (const node of session.nodes.values()) {
+    if (Math.hypot(node.x - x, node.z - z) < 5) return false;
+  }
+  for (const u of session.units.values()) {
+    if (u.kind !== "building") continue;
+    const ent = ctx.scene.entity.get(u.id);
+    if (ent !== null && Math.hypot(ent.position[0] - x, ent.position[2] - z) < 7) return false;
+  }
+  return true;
+}
+
+function placeBuilding(ctx: GameContext, type: string, x: number, z: number): void {
+  if (!canAffordBuilding(ctx, type) || !canPlaceAt(ctx, x, z)) return;
+  const result = enqueue(session.buildQueue, BUILD_CONFIG, { type, x, z });
+  if (!result.ok) return;
+  session.buildQueue = result.state;
+  for (const [currency, amount] of Object.entries(BUILDINGS[type]!.cost)) {
+    ctx.game.economy.charge(ctx.player.userId, currency, amount);
+  }
+}
+
+/** Right-click order: drop an armed building, else attack a hostile / send peasants to a node / move
+ * the group into a box formation. */
 export function orderSelection(ctx: GameContext, input: OrderInput): GameContext {
   if (session.over) return ctx;
-  const units = selectedPlayerUnits(input.selection);
-  if (units.length === 0) return ctx;
 
   const x = input.point[0];
   const z = input.point[2];
+
+  if (session.buildArmed !== null) {
+    placeBuilding(ctx, session.buildArmed, x, z);
+    session.buildArmed = null;
+    return ctx;
+  }
+
+  const units = selectedPlayerUnits(input.selection);
+  if (units.length === 0) return ctx;
   const armed = session.attackMoveArmed;
   session.attackMoveArmed = false;
 
@@ -121,6 +163,7 @@ export function canTrain(ctx: GameContext, unitId: string): boolean {
   if (livingUnits("player", "building").length === 0) return false;
   const def = TRAINABLE[unitId];
   if (def === undefined) return false;
+  if (BARRACKS_UNITS.has(unitId) && !livingUnits("player", "building").some((u) => u.catalogId === "barracks")) return false;
   for (const [currency, amount] of Object.entries(def.cost)) {
     if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
   }
@@ -139,9 +182,16 @@ function trainUnit(ctx: GameContext, unitId: string): GameContext {
   return ctx;
 }
 
+function armBuild(ctx: GameContext, type: string): GameContext {
+  if (!session.over && canAffordBuilding(ctx, type)) session.buildArmed = type;
+  return ctx;
+}
+
 export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<OrderInput>("unit.order", { apply: orderSelection });
   ctx.game.commands.define("unit.attackMove", { apply: armAttackMove });
   ctx.game.commands.define("train.peasant", { apply: (state) => trainUnit(state, "peasant") });
   ctx.game.commands.define("train.footman", { apply: (state) => trainUnit(state, "footman") });
+  ctx.game.commands.define("train.rifleman", { apply: (state) => trainUnit(state, "rifleman") });
+  ctx.game.commands.define<{ type: string }>("build.arm", { apply: (state, input) => armBuild(state, input.type) });
 }

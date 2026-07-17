@@ -8,11 +8,12 @@ describe("Ironhold roster", () => {
     expect(combatantDef("keep_enemy")?.faction).toBe("enemy");
   });
 
-  test("buildings are passive and immobile; units fight and move", () => {
+  test("buildings are immobile; a Guard Tower is the only armed structure; units fight and move", () => {
     for (const def of Object.values(COMBATANTS)) {
       if (def.kind === "building") {
         expect(def.walkSpeed).toBe(0);
-        expect(def.damage).toBe(0);
+        if (def.id === "guard_tower") expect(def.damage).toBeGreaterThan(0);
+        else expect(def.damage).toBe(0);
       } else {
         expect(def.walkSpeed).toBeGreaterThan(0);
         expect(def.damage).toBeGreaterThan(0);

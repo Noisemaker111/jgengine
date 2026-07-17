@@ -3,7 +3,7 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 
 import { editorLayers } from "../../editorLayers";
-import { combatantDef, DECOR, isNode, NODES } from "../catalog";
+import { BUILDINGS, combatantDef, DECOR, isNode, NODES } from "../catalog";
 import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
 import { GOLD, LUMBER, STARTING_GOLD, STARTING_LUMBER } from "../tuning";
@@ -44,6 +44,11 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
   }
   if (def.faction === "enemy" && def.kind === "unit" && def.bounty > 0) {
     ctx.game.economy.grant(ctx.player.userId, GOLD, def.bounty);
+  }
+  // A razed Farm lowers the supply cap.
+  const supply = BUILDINGS[event.catalogId]?.supply;
+  if (def.faction === "player" && def.kind === "building" && supply !== undefined) {
+    session.supplyCap = Math.max(0, session.supplyCap - supply);
   }
 }
 
