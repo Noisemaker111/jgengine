@@ -85,6 +85,9 @@ export {
 export type { EditorDocumentDiagnostic } from "./document";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
+export { environmentContentFromDocument, terrainBoundsFromDocument } from "./environment";
+/** Coordinate/placement content of an `environment()` world derived from the scene document. */
+export type { EnvironmentContent, EnvironmentContentOptions } from "./environment";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export { createEditorSession } from "./commands";
 /** Compact snapshot of a session state ΓÇö counts, selection, and the selected object. */
