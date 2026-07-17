@@ -1271,7 +1271,7 @@
 
 ## @jgengine/shell/postfx/PostProcessing
 
-- `PostProcessing` (function): function PostProcessing({ config }: { config: PostProcessingConfig }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/shell/postfx/gradeShader
 
@@ -1385,7 +1385,7 @@
 
 - `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
 - `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
-- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean): { shadows: boolean; dpr: number; uiScale: number } — ⚠ undocumented
+- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality } — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
 
 ## @jgengine/shell/settings/settingsController
