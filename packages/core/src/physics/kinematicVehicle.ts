@@ -14,6 +14,49 @@ export interface KinematicVehicleTuning {
   handbrakeGrip: number;
   /** Forward-speed decay per second when coasting (sleds, boats); default `0`. */
   rollingResistance?: number;
+  /** Optional higher-fidelity powertrain. Omit to preserve the direct arcade acceleration model. */
+  powertrain?: KinematicPowertrainTuning;
+  /** Optional bicycle-model steering with speed-sensitive lock and smoothed rack response. */
+  steering?: KinematicSteeringTuning;
+  /** Optional aerodynamic drag/downforce and electronic driver assists. */
+  dynamics?: KinematicDynamicsTuning;
+}
+
+/** Data-first gearbox and torque-curve tuning for a kinematic ground vehicle. */
+export interface KinematicPowertrainTuning {
+  idleRpm: number;
+  redlineRpm: number;
+  shiftUpRpm: number;
+  shiftDownRpm: number;
+  shiftSeconds: number;
+  finalDrive: number;
+  wheelRadius: number;
+  gears: readonly number[];
+  torqueCurve: GripCurve;
+}
+
+/** Bicycle-model steering settings; all angles are radians. */
+export interface KinematicSteeringTuning {
+  wheelbase: number;
+  maxAngle: number;
+  highSpeedAngle: number;
+  highSpeedAt: number;
+  response: number;
+  yawDamping?: number;
+}
+
+/** Aerodynamic and electronic-assist settings layered over tire grip. */
+export interface KinematicDynamicsTuning {
+  aerodynamicDrag?: number;
+  downforce?: number;
+  tractionControl?: number;
+  abs?: number;
+  stabilityControl?: number;
+  bodyPitchFactor?: number;
+  bodyRollFactor?: number;
+  maxBodyPitch?: number;
+  maxBodyRoll?: number;
+  attitudeResponse?: number;
 }
 
 export interface KinematicVehicleOptions {
@@ -59,6 +102,16 @@ export interface KinematicVehicleStep {
   slip: number;
   /** The `surfaceFriction` sample used this tick (`< 1` = off the ideal surface). */
   surface: number;
+  /** One-based forward gear, or `0` while reversing/neutral. */
+  gear: number;
+  rpm: number;
+  steerAngle: number;
+  yawRate: number;
+  longitudinalAcceleration: number;
+  tractionLimited: boolean;
+  absActive: boolean;
+  bodyPitch: number;
+  bodyRoll: number;
 }
 
 /**
@@ -92,6 +145,14 @@ export function createKinematicVehicle(
   let heading = options.heading ?? 0;
   let vx = 0;
   let vz = 0;
+  let gearIndex = 0;
+  let rpm = tuning.powertrain?.idleRpm ?? 0;
+  let shiftRemaining = 0;
+  let steerAngle = 0;
+  let yawRate = 0;
+  let previousForwardSpeed = 0;
+  let bodyPitch = 0;
+  let bodyRoll = 0;
 
   function forward(): readonly [number, number] {
     return [Math.sin(heading), Math.cos(heading)];
@@ -105,16 +166,68 @@ export function createKinematicVehicle(
 
       const [fx0, fz0] = forward();
       const speed = vx * fx0 + vz * fz0;
-      const steerScale = Math.min(1, Math.abs(speed) / tuning.turnSpeedRef);
-      const direction = speed >= 0 ? 1 : -1;
-      heading = steerYaw(heading, axis.steer * steerScale * direction, turnRate, dt);
+      if (tuning.steering === undefined) {
+        const steerScale = Math.min(1, Math.abs(speed) / tuning.turnSpeedRef);
+        const direction = speed >= 0 ? 1 : -1;
+        heading = steerYaw(heading, axis.steer * steerScale * direction, turnRate, dt);
+        yawRate = dt > 0 ? -axis.steer * steerScale * direction * turnRate : 0;
+        steerAngle = axis.steer;
+      } else {
+        const steering = tuning.steering;
+        const speedBlend = Math.min(1, Math.abs(speed) / Math.max(0.001, steering.highSpeedAt));
+        const lock = steering.maxAngle + (steering.highSpeedAngle - steering.maxAngle) * speedBlend;
+        const targetAngle = axis.steer * lock * (modifiers?.turnRateScale ?? 1);
+        const response = 1 - Math.exp(-Math.max(0, steering.response) * Math.max(0, dt));
+        steerAngle += (targetAngle - steerAngle) * response;
+        const targetYaw = Math.abs(speed) < 0.05 ? 0 : -(speed / Math.max(0.1, steering.wheelbase)) * Math.tan(steerAngle);
+        const yawResponse = 1 - Math.exp(-Math.max(0, steering.yawDamping ?? 10) * Math.max(0, dt));
+        yawRate += (targetYaw - yawRate) * yawResponse;
+        heading += yawRate * dt;
+      }
 
       const [fx, fz] = forward();
       let accel = 0;
-      if (axis.throttle > 0 && speed < topSpeed) accel += axis.throttle * engineAccel;
+      let tractionLimited = false;
+      let absActive = false;
+      if (axis.throttle > 0 && speed < topSpeed) {
+        if (tuning.powertrain === undefined) {
+          accel += axis.throttle * engineAccel;
+        } else {
+          const powertrain = tuning.powertrain;
+          shiftRemaining = Math.max(0, shiftRemaining - dt);
+          const ratio = powertrain.gears[Math.min(gearIndex, powertrain.gears.length - 1)] ?? 1;
+          const wheelRpm = Math.abs(speed) / Math.max(0.01, powertrain.wheelRadius) * 60 / (Math.PI * 2);
+          rpm = Math.max(powertrain.idleRpm, Math.min(powertrain.redlineRpm, wheelRpm * ratio * powertrain.finalDrive));
+          if (shiftRemaining <= 0 && rpm >= powertrain.shiftUpRpm && gearIndex < powertrain.gears.length - 1) {
+            gearIndex += 1;
+            shiftRemaining = powertrain.shiftSeconds;
+          } else if (shiftRemaining <= 0 && rpm <= powertrain.shiftDownRpm && gearIndex > 0) {
+            gearIndex -= 1;
+            shiftRemaining = powertrain.shiftSeconds;
+          }
+          const normalizedRpm = (rpm - powertrain.idleRpm) / Math.max(1, powertrain.redlineRpm - powertrain.idleRpm);
+          const torque = sampleGripCurve(powertrain.torqueCurve, normalizedRpm);
+          const drive = shiftRemaining > 0 ? 0.32 : 1;
+          accel += axis.throttle * engineAccel * torque * drive;
+        }
+      }
       if (axis.brake > 0) {
-        if (speed > 0.2) accel -= axis.brake * tuning.brakeAccel;
+        if (speed > 0.2) {
+          const abs = tuning.dynamics?.abs ?? 0;
+          const brakeScale = Math.max(0.15, 1 - abs * Math.max(0, Math.abs(speed) / Math.max(1, topSpeed) - 0.72));
+          absActive = brakeScale < 0.999;
+          accel -= axis.brake * tuning.brakeAccel * brakeScale;
+        }
         else if (speed > -tuning.reverseSpeed) accel -= axis.brake * engineAccel;
+      }
+      const traction = tuning.dynamics?.tractionControl ?? 0;
+      if (traction > 0 && Math.abs(speed) > 0.5) {
+        const lateral = Math.abs(-vx * fz + vz * fx);
+        const excess = Math.max(0, lateral / (Math.abs(speed) + 1) - 0.18);
+        if (excess > 0) {
+          accel *= Math.max(0.2, 1 - excess * traction * 3);
+          tractionLimited = true;
+        }
       }
       vx += fx * accel * dt;
       vz += fz * accel * dt;
@@ -124,10 +237,16 @@ export function createKinematicVehicle(
       const surface = surfaceFriction(x, z);
       const slip = Math.abs(lateralSpeed) / (Math.abs(forwardSpeed) + 1);
       const handbrakeFactor = 1 - axis.handbrake * (1 - tuning.handbrakeGrip);
-      const gripValue = sampleGripCurve(grip, slip) * surface * handbrakeFactor;
+      const downforce = 1 + (tuning.dynamics?.downforce ?? 0) * Math.min(1, Math.abs(forwardSpeed) / Math.max(1, topSpeed));
+      const gripValue = sampleGripCurve(grip, slip) * surface * handbrakeFactor * downforce;
       const keep = Math.max(0, 1 - gripValue * tuning.gripStrength * dt);
-      const keptLateral = lateralSpeed * keep;
+      const stability = tuning.dynamics?.stabilityControl ?? 0;
+      const keptLateral = lateralSpeed * keep * Math.max(0, 1 - stability * Math.abs(axis.steer) * dt);
       if (rollingResistance > 0) forwardSpeed *= Math.max(0, 1 - rollingResistance * dt);
+      const aerodynamicDrag = tuning.dynamics?.aerodynamicDrag ?? 0;
+      if (aerodynamicDrag > 0) {
+        forwardSpeed *= 1 / (1 + aerodynamicDrag * Math.abs(forwardSpeed) * dt);
+      }
 
       vx = fx * forwardSpeed - fz * keptLateral;
       vz = fz * forwardSpeed + fx * keptLateral;
@@ -153,6 +272,19 @@ export function createKinematicVehicle(
         z = toZ;
       }
 
+      const longitudinalAcceleration = dt > 0 ? (forwardSpeed - previousForwardSpeed) / dt : 0;
+      previousForwardSpeed = forwardSpeed;
+      const attitudeResponse = 1 - Math.exp(-Math.max(0, tuning.dynamics?.attitudeResponse ?? 7) * Math.max(0, dt));
+      const targetPitch = clampSigned(
+        -longitudinalAcceleration * (tuning.dynamics?.bodyPitchFactor ?? 0),
+        tuning.dynamics?.maxBodyPitch ?? 0.12,
+      );
+      const targetRoll = clampSigned(
+        -yawRate * forwardSpeed * (tuning.dynamics?.bodyRollFactor ?? 0),
+        tuning.dynamics?.maxBodyRoll ?? 0.16,
+      );
+      bodyPitch += (targetPitch - bodyPitch) * attitudeResponse;
+      bodyRoll += (targetRoll - bodyRoll) * attitudeResponse;
       return {
         position: [x, y, z],
         heading,
@@ -160,6 +292,15 @@ export function createKinematicVehicle(
         lateralSpeed: -vx * fz + vz * fx,
         slip,
         surface,
+        gear: speed < -0.2 ? 0 : gearIndex + 1,
+        rpm,
+        steerAngle,
+        yawRate,
+        longitudinalAcceleration,
+        tractionLimited,
+        absActive,
+        bodyPitch,
+        bodyRoll,
       };
     },
     pose: () => ({ position: [x, y, z], heading }),
@@ -175,6 +316,18 @@ export function createKinematicVehicle(
       heading = nextHeading;
       vx = 0;
       vz = 0;
+      gearIndex = 0;
+      rpm = tuning.powertrain?.idleRpm ?? 0;
+      shiftRemaining = 0;
+      steerAngle = 0;
+      yawRate = 0;
+      previousForwardSpeed = 0;
+      bodyPitch = 0;
+      bodyRoll = 0;
     },
   };
+}
+
+function clampSigned(value: number, magnitude: number): number {
+  return Math.max(-Math.abs(magnitude), Math.min(Math.abs(magnitude), value));
 }

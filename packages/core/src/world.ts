@@ -97,9 +97,31 @@ export { createBuoyantBody } from "./physics/buoyancy";
 export { Carryable, carrySpeedMultiplier } from "./physics/carryable";
 export { createDamageModel } from "./physics/damageZones";
 export { tickDrivableVehicle } from "./physics/drivableVehicle";
+export {
+  createAircraftDynamics,
+  type AircraftDynamics,
+  type AircraftKind,
+  type AircraftOptions,
+  type AircraftStep,
+  type AircraftTuning,
+  type FlightControlInput,
+  type FlightControlRates,
+  type FlightVector,
+} from "./physics/flightDynamics";
 export { ForceVolume, PlatformCarry } from "./physics/forceVolume";
 export {
+  combineGravity,
+  pointGravity,
+  uniformGravity,
+  type GravityField,
+  type GravityVector,
+  type PointGravityOptions,
+} from "./physics/gravityField";
+export {
   createKinematicVehicle,
+  type KinematicDynamicsTuning,
+  type KinematicPowertrainTuning,
+  type KinematicSteeringTuning,
   type KinematicVehicle,
   type KinematicVehicleStep,
   type KinematicVehicleTuning,

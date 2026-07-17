@@ -213,3 +213,47 @@ describe("createKinematicVehicle — clampMove", () => {
     }
   });
 });
+
+describe("createKinematicVehicle advanced dynamics", () => {
+  const advanced: KinematicVehicleTuning = {
+    ...TUNING,
+    powertrain: {
+      idleRpm: 900,
+      redlineRpm: 7600,
+      shiftUpRpm: 6800,
+      shiftDownRpm: 2200,
+      shiftSeconds: 0.12,
+      finalDrive: 3.7,
+      wheelRadius: 0.34,
+      gears: [3.1, 2.2, 1.55, 1.18, 0.94],
+      torqueCurve: { points: [[0, 0.55], [0.45, 1], [0.8, 0.92], [1, 0.62]] },
+    },
+    steering: { wheelbase: 2.6, maxAngle: 0.55, highSpeedAngle: 0.16, highSpeedAt: 30, response: 9 },
+    dynamics: { aerodynamicDrag: 0.0006, downforce: 0.35, tractionControl: 0.7, abs: 0.8, stabilityControl: 0.45 },
+  };
+
+  test("gearbox shifts under acceleration and exposes useful telemetry", () => {
+    const vehicle = createKinematicVehicle(advanced);
+    let step = vehicle.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 420; i += 1) step = vehicle.tick(DT, axis({ throttle: 1 }));
+    expect(step.gear).toBeGreaterThan(1);
+    expect(step.rpm).toBeGreaterThanOrEqual(advanced.powertrain!.idleRpm);
+    expect(step.forwardSpeed).toBeGreaterThan(10);
+  });
+
+  test("speed-sensitive steering reduces rack angle at high speed", () => {
+    const vehicle = createKinematicVehicle(advanced);
+    for (let i = 0; i < 240; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
+    const fast = vehicle.tick(DT, axis({ throttle: 1, steer: 1 }));
+    expect(Math.abs(fast.steerAngle)).toBeLessThan(advanced.steering!.maxAngle);
+    expect(Math.abs(fast.yawRate)).toBeGreaterThan(0);
+  });
+
+  test("ABS reports intervention during a high-speed stop", () => {
+    const vehicle = createKinematicVehicle(advanced);
+    for (let i = 0; i < 240; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
+    const braking = vehicle.tick(DT, axis({ brake: 1 }));
+    expect(braking.absActive).toBe(true);
+    expect(braking.longitudinalAcceleration).toBeLessThan(0);
+  });
+});

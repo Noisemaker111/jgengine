@@ -80,4 +80,9 @@ describe("placeAsset", () => {
     expect(result.kind).toBe("prop");
     expect(result.label).toBe("barrel");
   });
+
+  test("rapid placements always receive distinct ids", () => {
+    const ids = Array.from({ length: 20 }, () => resolvePlaceAsset({ assetId: "cone", position: [0, 0, 0] }).id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

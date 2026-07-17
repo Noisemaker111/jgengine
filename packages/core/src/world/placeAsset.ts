@@ -58,9 +58,12 @@ function normalizePosition(position: PlaceAssetVec3 | StructureVec3): PlaceAsset
   return { x: t[0], y: t[1], z: t[2] };
 }
 
+let placementSequence = 0;
+
 function placementId(assetId: string, explicit?: string): string {
   if (explicit !== undefined && explicit.length > 0) return explicit;
-  return `placed_${assetId}_${Date.now().toString(36)}`;
+  placementSequence += 1;
+  return `placed_${assetId}_${Date.now().toString(36)}_${placementSequence.toString(36)}`;
 }
 
 /**

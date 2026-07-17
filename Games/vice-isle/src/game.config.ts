@@ -9,6 +9,7 @@ import { entityModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { loop } from "./loop";
 import { physics, world } from "./world";
+import { drivingStore } from "./game/handroll";
 
 export const game = defineGame({
   name: "Vice Isle",
@@ -24,7 +25,14 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  capture: { play: ["game.start"] },
+  capture: {
+    play: ["game.start"],
+    probe: (ctx) => {
+      const vehicleId = drivingStore.read(ctx);
+      const entity = ctx.scene.entity.get(vehicleId ?? ctx.player.userId);
+      return { x: entity?.position[0] ?? 0, y: entity?.position[1] ?? 0, z: entity?.position[2] ?? 0 };
+    },
+  },
   prompts,
   entityModels,
   objectModels,
@@ -46,10 +54,18 @@ export const game = defineGame({
   pointer: { grabWorldItems: true },
   movement: { collideObjects: true },
   camera: {
-    perspective: "third",
-    minDistance: 4,
-    maxDistance: 18,
-    targetHeight: 1.7,
+    rig: "chase",
+    chase: {
+      distance: 7.5,
+      height: 3,
+      lookHeight: 1.15,
+      springDamping: 7.5,
+      fov: { base: 62, max: 84, speedForMax: 55 },
+      shakePerSpeed: 0.0015,
+      lead: { time: 0.22, max: 8 },
+      bank: { perYawRate: 0.09, max: 0.16, damping: 7 },
+    },
+    shake: { maxOffset: 0.24, maxRoll: 0.045, decayPerSecond: 2.8, exponent: 2, frequency: 21 },
     frustum: { far: 900 },
   },
   backdrop: { background: "#ffe3b3" },

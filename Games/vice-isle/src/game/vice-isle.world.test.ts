@@ -3,6 +3,7 @@ import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { world } from "../world";
 import {
   BRIEFCASE_POS,
+  AUTHORED_VEHICLE_SPAWNS,
   DISTRICTS,
   DOCK_FIGHT_CENTER,
   districtAt,
@@ -56,6 +57,17 @@ describe("vice-isle authored scene parity", () => {
     expect(GARAGE_POS).toEqual([-68, 0, 116]);
     expect(DOCK_FIGHT_CENTER).toEqual([130, 0, 196]);
     expect(BRIEFCASE_POS).toEqual([142, 0, 208]);
+  });
+
+  test("five aircraft spawn from editor-authored vehicle markers", () => {
+    expect(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.catalogId)).toEqual([
+      "air_helicopter",
+      "air_trainer",
+      "air_prop",
+      "air_jet",
+      "air_vtol",
+    ]);
+    expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(5);
   });
 });
 

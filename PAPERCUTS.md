@@ -238,3 +238,15 @@ running a clean export-manifest test after incremental builds -> stale dist file
 2026-07-16T22:58:49.747Z — gpt-5 — NoisemakerJon
 
 running ship:preflight immediately before commit as documented -> script rejected the required dirty tree and uncommitted branch as a no-op
+
+2026-07-16T23:38:41.918Z — gpt-5 — NoisemakerJon
+
+editor MCP help says repeat --rpc runs several requests, but parseEditorCliArgs retains only the final --rpc so multi-step scene authoring cannot persist in one session
+
+2026-07-16T23:57:35.868Z — gpt-5 — NoisemakerJon
+
+using the required agent-browser verification skill -> agent-browser is not installed or on PATH
+
+2026-07-17T00:08:24.662Z — gpt-5 — NoisemakerJon
+
+subscribing to PR notification activity with gh api booleans via -f -> GitHub rejected strings; -F was required

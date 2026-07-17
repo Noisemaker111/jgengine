@@ -6,6 +6,7 @@ import { handroll } from "../handroll";
 import { buildingsByStyle, type BuildingStyle } from "./buildings";
 import {
   BRIEFCASE_POS,
+  AUTHORED_VEHICLE_SPAWNS,
   districtAt,
   DOCK_FIGHT_CENTER,
   GUNSHOP_POS,
@@ -64,6 +65,17 @@ export function setupWorld(ctx: GameContext): void {
   const rng = seededRng("vice-isle-setup");
 
   placeBuildings(ctx, rng);
+
+  for (const spawn of AUTHORED_VEHICLE_SPAWNS) {
+    const x = spawn.position[0];
+    const z = spawn.position[2];
+    ctx.scene.entity.spawn(spawn.catalogId, {
+      id: spawn.id,
+      position: [x, ctx.world.groundHeightAt(x, z), z],
+      rotationY: spawn.rotationY,
+      role: "prop",
+    });
+  }
 
   ctx.scene.entity.spawn("contact_marco", { id: "npc_marco", position: ground(ctx, MARCO_POS[0], MARCO_POS[2]), role: "npc" });
 

@@ -2,7 +2,14 @@ import { cameraShake } from "@jgengine/shell/camera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import type { AxisBindingMap } from "@jgengine/core/input/axisInput";
-import { createKinematicVehicle, type KinematicVehicle, type KinematicVehicleTuning } from "@jgengine/core/physics/kinematicVehicle";
+import {
+  createAircraftDynamics,
+  createKinematicVehicle,
+  type AircraftDynamics,
+  type AircraftStep,
+  type KinematicVehicle,
+  type KinematicVehicleTuning,
+} from "@jgengine/core/world";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleSeats, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { advanceHeat, createHeatState, type HeatConfig, type HeatGain, type HeatState } from "@jgengine/core/ai/heatSystem";
@@ -10,13 +17,7 @@ import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFo
 import { seededRng } from "@jgengine/core/random/rng";
 import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
 import { RACE_CHECKPOINTS } from "./world/districts";
-
-export const CAR_TUNINGS: Record<string, KinematicVehicleTuning> = {
-  car_compact: { engineAccel: 14, brakeAccel: 22, topSpeed: 20, reverseSpeed: 7, turnRate: 2.4, turnSpeedRef: 6, gripStrength: 8, handbrakeGrip: 0.3 },
-  car_muscle: { engineAccel: 20, brakeAccel: 26, topSpeed: 28, reverseSpeed: 8, turnRate: 2.1, turnSpeedRef: 7, gripStrength: 6.5, handbrakeGrip: 0.22 },
-  car_sport: { engineAccel: 26, brakeAccel: 30, topSpeed: 36, reverseSpeed: 9, turnRate: 2.5, turnSpeedRef: 8, gripStrength: 7.5, handbrakeGrip: 0.2 },
-  car_cop: { engineAccel: 22, brakeAccel: 28, topSpeed: 30, reverseSpeed: 8, turnRate: 2.3, turnSpeedRef: 7, gripStrength: 7, handbrakeGrip: 0.22 },
-};
+import { vehicleById } from "./entities/vehicles/catalog";
 
 /** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
 const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
@@ -56,6 +57,17 @@ export interface RaceSnapshot {
   won: boolean;
 }
 
+export interface VehicleTelemetry {
+  mode: "ground" | "aircraft";
+  speedKmh: number;
+  altitude: number;
+  verticalSpeed: number;
+  gear: number;
+  rpm: number;
+  stalled: boolean;
+  vtol: boolean;
+}
+
 export const wantedStore = defineStore<WantedSnapshot | undefined>("vice.wanted", undefined);
 export const drivingStore = defineStore<string | null | undefined>("vice.driving", undefined);
 export const raceStore = defineStore<RaceSnapshot | undefined>("vice.race", undefined);
@@ -71,6 +83,7 @@ export interface Handroll {
   exitVehicle(ctx: GameContext): void;
   drivingVehicleId(): string | null;
   carSpeedKmh(): number;
+  telemetry(): VehicleTelemetry;
   tick(ctx: GameContext, dt: number): void;
   addHeat(ctx: GameContext, amount: number): void;
   clearWanted(ctx: GameContext): void;
@@ -84,9 +97,13 @@ export interface Handroll {
 export function createHandroll(): Handroll {
   const carVehicles = new Map<string, KinematicVehicle>();
   const cruiserVehicles = new Map<string, KinematicVehicle>();
+  const aircraft = new Map<string, AircraftDynamics>();
+  const flightThrottles = new Map<string, number>();
+  const vtolModes = new Map<string, boolean>();
   const vehicleSeats: VehicleSeats = createVehicleSeats();
   let driving: string | null = null;
   let lastSpeedKmh = 0;
+  let lastTelemetry: VehicleTelemetry = { mode: "ground", speedKmh: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
   let heatState: HeatState = createHeatState(HEAT_CONFIG);
   let peakStars = 0;
   let pendingGains: HeatGain[] = [];
@@ -109,13 +126,75 @@ export function createHandroll(): Handroll {
     const existing = carVehicles.get(vehicleId);
     if (existing !== undefined) return existing;
     const entity = ctx.scene.entity.get(vehicleId);
-    const tuning = CAR_TUNINGS[entity?.name ?? ""] ?? CAR_TUNINGS.car_compact!;
+    const definition = vehicleById(entity?.name ?? "");
+    const fallback = vehicleById("car_compact")?.dynamics;
+    const dynamics = definition?.dynamics.type === "ground" ? definition.dynamics : fallback;
+    if (dynamics?.type !== "ground") throw new Error("car_compact must use ground dynamics");
+    const tuning: KinematicVehicleTuning = dynamics.tuning;
     const created = createKinematicVehicle(tuning, {
       position: entity?.position ?? [0, 0, 0],
       heading: entity?.rotationY ?? 0,
     });
     carVehicles.set(vehicleId, created);
     return created;
+  }
+
+  function aircraftFor(ctx: GameContext, vehicleId: string): AircraftDynamics {
+    const existing = aircraft.get(vehicleId);
+    if (existing !== undefined) return existing;
+    const entity = ctx.scene.entity.get(vehicleId);
+    const definition = vehicleById(entity?.name ?? "");
+    if (definition?.dynamics.type !== "aircraft") throw new Error(`vehicle ${entity?.name ?? vehicleId} has no aircraft tuning`);
+    const created = createAircraftDynamics(definition.dynamics.tuning, {
+      position: entity?.position ?? [0, 0, 0],
+      rotation: [entity?.rotationX ?? 0, entity?.rotationY ?? 0, entity?.rotationZ ?? 0],
+      groundHeight: (x, z) => ctx.world.groundHeightAt(x, z),
+    });
+    aircraft.set(vehicleId, created);
+    flightThrottles.set(vehicleId, definition.dynamics.tuning.kind === "rotorcraft" ? 0.78 : 0.62);
+    vtolModes.set(vehicleId, definition.dynamics.tuning.kind === "vtol");
+    return created;
+  }
+
+  function tickAircraft(ctx: GameContext, vehicleId: string, dt: number): AircraftStep {
+    const entity = ctx.scene.entity.get(vehicleId)!;
+    const definition = vehicleById(entity.name)!;
+    const model = aircraftFor(ctx, vehicleId);
+    const throttleRate = 0.42;
+    const throttle = Math.max(0, Math.min(1, (flightThrottles.get(vehicleId) ?? 0.6) + ((ctx.input.isDown("flightThrottleUp") ? 1 : 0) - (ctx.input.isDown("flightThrottleDown") ? 1 : 0)) * throttleRate * dt));
+    flightThrottles.set(vehicleId, throttle);
+    if (ctx.input.justPressed("flightVectorToggle") && definition.dynamics.type === "aircraft" && definition.dynamics.tuning.kind === "vtol") {
+      vtolModes.set(vehicleId, !(vtolModes.get(vehicleId) ?? true));
+    }
+    const step = model.tick(dt, {
+      throttle,
+      collective: throttle,
+      pitch: (ctx.input.isDown("moveBack") ? 1 : 0) - (ctx.input.isDown("moveForward") ? 1 : 0),
+      roll: (ctx.input.isDown("moveRight") ? 1 : 0) - (ctx.input.isDown("moveLeft") ? 1 : 0),
+      yaw: (ctx.input.isDown("flightYawRight") ? 1 : 0) - (ctx.input.isDown("flightYawLeft") ? 1 : 0),
+      airbrake: ctx.input.isDown("flightAirbrake") ? 1 : 0,
+      afterburner: ctx.input.isDown("jump") ? 1 : 0,
+      vectoring: vtolModes.get(vehicleId) === true ? 1 : 0,
+    });
+    ctx.scene.entity.setPose(vehicleId, {
+      position: step.position,
+      rotationX: step.rotation[0],
+      rotationY: step.rotation[1],
+      rotationZ: step.rotation[2],
+      dt,
+    });
+    lastTelemetry = {
+      mode: "aircraft",
+      speedKmh: step.airspeed * 3.6,
+      altitude: step.position[1] - ctx.world.groundHeightAt(step.position[0], step.position[2]),
+      verticalSpeed: step.verticalSpeed,
+      gear: 0,
+      rpm: throttle * 100,
+      stalled: step.stalled,
+      vtol: vtolModes.get(vehicleId) === true,
+    };
+    lastSpeedKmh = lastTelemetry.speedKmh;
+    return step;
   }
 
   function setRiderFrozen(ctx: GameContext, riderId: string, frozen: boolean): void {
@@ -221,10 +300,13 @@ export function createHandroll(): Handroll {
         const z = target[2] + Math.cos(angle) * 70;
         const id = `cruiser_${cruiserCounter}`;
         ctx.scene.entity.spawn("car_cop", { id, position: [x, ctx.world.groundHeightAt(x, z), z], role: "prop" });
-        cruiserVehicles.set(
-          id,
-          createKinematicVehicle(CAR_TUNINGS.car_cop!, { position: [x, 0, z], heading: Math.atan2(target[0] - x, target[2] - z) }),
-        );
+        const copDynamics = vehicleById("car_cop")!.dynamics;
+        if (copDynamics.type === "ground") {
+          cruiserVehicles.set(
+            id,
+            createKinematicVehicle(copDynamics.tuning, { position: [x, 0, z], heading: Math.atan2(target[0] - x, target[2] - z) }),
+          );
+        }
       }
     }
 
@@ -327,13 +409,16 @@ export function createHandroll(): Handroll {
   return {
     enterVehicle(ctx, vehicleId) {
       if (driving !== null) return;
+      const definition = vehicleById(ctx.scene.entity.get(vehicleId)?.name ?? "");
+      if (definition === undefined) return;
       if (!vehicleSeats.mounts.isRegistered(vehicleId)) {
-        vehicleSeats.register({ id: vehicleId, kit: { kind: "ground" } });
+        vehicleSeats.register({ id: vehicleId, kit: { kind: definition.dynamics.type === "aircraft" ? "flying" : "ground" } });
       }
       const result = vehicleSeats.enter(ctx.player.userId, vehicleId);
       if (!result.ok) return;
       driving = vehicleId;
-      carVehicleFor(ctx, vehicleId);
+      if (definition.dynamics.type === "aircraft") aircraftFor(ctx, vehicleId);
+      else carVehicleFor(ctx, vehicleId);
       ctx.camera.follow(result.cameraTarget);
       setRiderFrozen(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
       drivingStore.write(ctx, vehicleId);
@@ -341,12 +426,21 @@ export function createHandroll(): Handroll {
     exitVehicle(ctx) {
       if (driving === null) return;
       const vehicle = ctx.scene.entity.get(driving);
+      const definition = vehicleById(vehicle?.name ?? "");
+      if (definition?.dynamics.type === "aircraft" && vehicle !== null) {
+        const altitude = vehicle.position[1] - ctx.world.groundHeightAt(vehicle.position[0], vehicle.position[2]);
+        if (altitude > 3) {
+          ctx.scene.entity.floatText({ instanceId: driving, text: "LAND BEFORE EXITING", kind: "warn" });
+          return;
+        }
+      }
       const result = vehicleSeats.exit(ctx.player.userId, {
         position: vehicle?.position ?? [0, 0, 0],
         rotationY: vehicle?.rotationY ?? 0,
       });
       driving = null;
       lastSpeedKmh = 0;
+      lastTelemetry = { mode: "ground", speedKmh: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
       drivingStore.write(ctx, null);
       if (!result.ok) return;
       ctx.camera.follow(result.cameraTarget);
@@ -355,6 +449,7 @@ export function createHandroll(): Handroll {
     },
     drivingVehicleId: () => driving,
     carSpeedKmh: () => lastSpeedKmh,
+    telemetry: () => lastTelemetry,
     addHeat(_ctx, amount) {
       pendingGains.push({ amount, witnessed: true });
     },
@@ -368,6 +463,7 @@ export function createHandroll(): Handroll {
     startRace(ctx) {
       if (race !== null) return false;
       if (driving === null) return false;
+      if (vehicleById(ctx.scene.entity.get(driving)?.name ?? "")?.dynamics.type !== "ground") return false;
       const track = raceTrack({
         checkpoints: RACE_CHECKPOINTS.map(([x, z], i) => ({
           id: `cp_${i}`,
@@ -411,6 +507,7 @@ export function createHandroll(): Handroll {
         vehicleSeats.mounts.dismount(ctx.player.userId);
         driving = null;
         lastSpeedKmh = 0;
+        lastTelemetry = { mode: "ground", speedKmh: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
         ctx.camera.follow(ctx.player.userId);
         const rider = ctx.scene.entity.get(ctx.player.userId);
         setRiderFrozen(ctx, ctx.player.userId, false);
@@ -420,6 +517,9 @@ export function createHandroll(): Handroll {
       }
       carVehicles.delete(vehicleId);
       cruiserVehicles.delete(vehicleId);
+      aircraft.delete(vehicleId);
+      flightThrottles.delete(vehicleId);
+      vtolModes.delete(vehicleId);
     },
     registerRoute(entityId, waypoints, speed, startT) {
       if (waypoints.length < 2) return;
@@ -438,14 +538,33 @@ export function createHandroll(): Handroll {
         if (vehicle === null) {
           driving = null;
         } else {
-          const kinematic = carVehicleFor(ctx, driving);
-          const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
-          const result = tickDrivableVehicle(kinematic, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
-          lastSpeedKmh = Math.abs(result.step.forwardSpeed) * 3.6;
-          ctx.scene.entity.setPose(driving, result.pose);
+          const definition = vehicleById(vehicle.name);
+          if (definition?.dynamics.type === "aircraft") {
+            tickAircraft(ctx, driving, dt);
+          } else {
+            const kinematic = carVehicleFor(ctx, driving);
+            const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
+            const result = tickDrivableVehicle(kinematic, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
+            lastSpeedKmh = Math.abs(result.step.forwardSpeed) * 3.6;
+            lastTelemetry = {
+              mode: "ground",
+              speedKmh: lastSpeedKmh,
+              altitude: 0,
+              verticalSpeed: 0,
+              gear: result.step.gear,
+              rpm: result.step.rpm,
+              stalled: false,
+              vtol: false,
+            };
+            ctx.scene.entity.setPose(driving, result.pose);
+          }
+          const driven = ctx.scene.entity.get(driving);
+          if (driven === null) return;
           ctx.scene.entity.setPose(ctx.player.userId, {
-            position: [result.pose.position[0], result.pose.position[1] + 0.4, result.pose.position[2]],
-            rotationY: result.pose.rotationY,
+            position: [driven.position[0], driven.position[1] + 0.4, driven.position[2]],
+            rotationX: driven.rotationX,
+            rotationY: driven.rotationY,
+            rotationZ: driven.rotationZ,
           });
         }
       }

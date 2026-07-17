@@ -6,6 +6,7 @@ export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   sources: [
     "kaykit-city-builder",
+    "kaykit-space-base",
     "kaykit-adventurers",
     "quaternius-stylized-nature",
     "kaykit-furniture",

@@ -519,6 +519,18 @@
 - `DrivableVehicleStep` (interface): interface DrivableVehicleStep — {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads.
 - `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: KinematicVehicle, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
 
+## @jgengine/core/physics/flightDynamics
+
+- `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
+- `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
+- `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
+- `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
+- `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
+- `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
+- `FlightControlRates` (interface): interface FlightControlRates — Angular authority, response, damping, and self-leveling configuration.
+- `FlightVector` (type): type FlightVector = readonly [number, number, number] — Three-dimensional world-space vector used by the flight model.
+- `createAircraftDynamics` (function): function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
+
 ## @jgengine/core/physics/flowTube
 
 - `FlowTube` (interface): interface FlowTube — An axial corridor of directional flow with radial core falloff and a spool scalar — fan tunnels, updraft shafts, river narrows, thruster wash. Pure math: sample `velocityAt(point, spool)` and add it to whatever integrator moves the body (walk controller drift, `BuoyantBody`, a custom sim).
@@ -540,8 +552,20 @@
 - `applyVolumeForce` (function): function applyVolumeForce(velocity: readonly [number, number, number], force: readonly [number, number, number], mode: ForceMode, dt: number): readonly [number, number, number] — One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator.
 - `createVolumeTrigger` (function): function createVolumeTrigger<TId = string>(config: VolumeTriggerConfig): VolumeTrigger<TId> — ⚠ undocumented
 
+## @jgengine/core/physics/gravityField
+
+- `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
+- `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
+- `PointGravityOptions` (interface): interface PointGravityOptions — Center, strength, and falloff for radial gravity.
+- `combineGravity` (function): function combineGravity(fields: readonly GravityField[]): GravityField — Adds several gravity sources into one field.
+- `pointGravity` (function): function pointGravity(options: PointGravityOptions): GravityField — Radial gravity toward one center, with optional inverse-square falloff for planetary worlds.
+- `uniformGravity` (function): function uniformGravity(vector: GravityVector = [0, -9.81, 0]): GravityField — Constant vector gravity for ordinary worlds, space stations, and sideways-gravity levels.
+
 ## @jgengine/core/physics/kinematicVehicle
 
+- `KinematicDynamicsTuning` (interface): interface KinematicDynamicsTuning — Aerodynamic and electronic-assist settings layered over tire grip.
+- `KinematicPowertrainTuning` (interface): interface KinematicPowertrainTuning — Data-first gearbox and torque-curve tuning for a kinematic ground vehicle.
+- `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleModifiers` (interface): interface KinematicVehicleModifiers — Per-tick multipliers layered over the base tuning — the transient overrides games apply for one frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
 - `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions — ⚠ undocumented
@@ -1146,6 +1170,11 @@
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
+- `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
+- `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
+- `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
+- `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
+- `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
 - `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
@@ -1187,6 +1216,9 @@
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
 - `FactionDef` (interface): interface FactionDef — ⚠ undocumented
 - `FireGrid` (interface): interface FireGrid — ⚠ undocumented
+- `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
+- `FlightControlRates` (interface): interface FlightControlRates — Angular authority, response, damping, and self-leveling configuration.
+- `FlightVector` (type): type FlightVector = readonly [number, number, number] — Three-dimensional world-space vector used by the flight model.
 - `FogCells` (interface): interface FogCells — ⚠ undocumented
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
@@ -1204,6 +1236,8 @@
 - `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
 - `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed"> — ⚠ undocumented
+- `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
+- `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — ⚠ undocumented
 - `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
 - `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
@@ -1214,6 +1248,9 @@
 - `Job` (interface): interface Job — ⚠ undocumented
 - `JobDef` (interface): interface JobDef — ⚠ undocumented
 - `JobReport` (interface): interface JobReport — ⚠ undocumented
+- `KinematicDynamicsTuning` (interface): interface KinematicDynamicsTuning — Aerodynamic and electronic-assist settings layered over tire grip.
+- `KinematicPowertrainTuning` (interface): interface KinematicPowertrainTuning — Data-first gearbox and torque-curve tuning for a kinematic ground vehicle.
+- `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
@@ -1263,6 +1300,7 @@
 - `PlacementPreview` (interface): interface PlacementPreview — ⚠ undocumented
 - `PlacementRules` (interface): interface PlacementRules — ⚠ undocumented
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
+- `PointGravityOptions` (interface): interface PointGravityOptions — Center, strength, and falloff for radial gravity.
 - `PositionedPrompt` (interface): interface PositionedPrompt — ⚠ undocumented
 - `ProximityPrompt` (interface): interface ProximityPrompt — ⚠ undocumented
 - `QteStep` (interface): interface QteStep — ⚠ undocumented
@@ -1392,6 +1430,7 @@
 - `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
+- `combineGravity` (function): function combineGravity(fields: readonly GravityField[]): GravityField — Adds several gravity sources into one field.
 - `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented
 - `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
 - `composeRealm` (function): function composeRealm(base: RealmBase, cards: readonly RealmCard[]): ComposedRealm — Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model. A major card is the biome base; minor cards layer weather, day length, and spawn edits. The result recomposes both the environment (into a sampleable field via `environmentField()`) and the spawn table, and it depends on the weather hooks in this group (#92) to turn its `weather` into gameplay modifiers. Cards apply in array order; sort your deck (majors first) before composing.
@@ -1399,6 +1438,7 @@
 - `constrainToNavGrid` (function): function constrainToNavGrid(grid: NavGrid, options?: NavConstrainOptions): (proposed: NavConstrainProposed, entity: NavConstrainEntity) => NavConstrainProposed | null — ⚠ undocumented
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
+- `createAircraftDynamics` (function): function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 - `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
@@ -1494,6 +1534,7 @@
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
 - `player` (function): function player(): PlayerBehavior — ⚠ undocumented
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
+- `pointGravity` (function): function pointGravity(options: PointGravityOptions): GravityField — Radial gravity toward one center, with optional inverse-square falloff for planetary worlds.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
 - `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
@@ -1559,6 +1600,7 @@
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
 - `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
 - `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
+- `uniformGravity` (function): function uniformGravity(vector: GravityVector = [0, -9.81, 0]): GravityField — Constant vector gravity for ordinary worlds, space stations, and sideways-gravity levels.
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.
