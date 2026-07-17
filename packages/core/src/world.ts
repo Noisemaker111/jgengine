@@ -87,9 +87,14 @@ export { createNavGrid, findPath, slopeStepCost, type NavGrid, type NavPoint } f
 export {
   advancePathFollow,
   createPathFollow,
+  pathFollowProgress,
+  pathFollowSeek,
   pathFromNav,
+  pathLength,
   type PathFollowConfig,
+  type PathFollowProgress,
   type PathFollowState,
+  type PathProgress,
   type Waypoint,
 } from "./nav/pathFollow";
 export { createBallisticSweep, type BallisticSweep, type BallisticSweepHit } from "./physics/ballisticSweep";
@@ -135,7 +140,15 @@ export {
   type TriggerSourceKind,
 } from "./scene/authoredTriggers";
 export { selectAutoTarget, type AutoTargetPolicy } from "./scene/autoTarget";
-export { advanceBehaviors } from "./scene/behaviorRuntime";
+export {
+  advanceBehaviors,
+  behaviorControl,
+  type BehaviorControl,
+  type BehaviorInspection,
+  type BehaviorResumePolicy,
+  type BehaviorSnapshot,
+  type BehaviorStatus,
+} from "./scene/behaviorRuntime";
 export { patrol, player, talkable, wander, type BehaviorDescriptor } from "./scene/behaviors";
 export { createBodyBind } from "./scene/bodyBind";
 export { type ColliderPurpose, type EntityColliderSet, type ResolvedCollider } from "./scene/colliders";

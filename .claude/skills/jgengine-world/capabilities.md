@@ -16,6 +16,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createAuthoredTriggerRuntime` (function) · `import { createAuthoredTriggerRuntime } from "@jgengine/core/world"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
 
+## behavior-control — pause/disable/resume/seek/inspect behavior instances per entity
+
+- `behaviorControl` (function) · `import { behaviorControl } from "@jgengine/core/world"`
+
 ## behavior-tick — auto-advance patrol/wander behaviors on spawned entities, no per-game route loop
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
@@ -71,6 +75,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
+
+## path-follow-progress — read normalized/distance/segment progress from follow state
+
+- `pathFollowProgress` (function) · `import { pathFollowProgress } from "@jgengine/core/world"`
+
+## path-follow-seek — jump a path-follower to normalized/distance/segment progress
+
+- `pathFollowSeek` (function) · `import { pathFollowSeek } from "@jgengine/core/world"`
+
+## path-length — total polyline distance for progress math and seeding
+
+- `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 

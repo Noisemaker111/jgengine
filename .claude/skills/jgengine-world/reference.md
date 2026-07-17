@@ -168,4 +168,23 @@ Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector r
 
 **Level sequence** (`game/levelSequence`) — `createLevelSequence({ levels: [{ id, config }], retriesPerLevel? })` is a pure, deterministic campaign machine: `start()` enters level 0, `clear()` marks the current level cleared, `advance()` moves to the next (or `"complete"` after the last), `fail()` consumes an attempt and returns `"retry"` while `retriesPerLevel` remain else `"failed"`, `retry()` restarts after a retry-eligible failure. `current()` → `{ id, index, config, attempt } | null`; `progress()` → `{ index, total, cleared }`; `reset()` rewinds to idle. Mirrors the reducer style of `game/race` and `ai/spawnDirector` — a level-select/roguelike-run campaign shell without hand-rolling the state machine per game.
 
+### Ambient behaviors + instance lifecycle (`scene/behaviors`, `scene/behaviorRuntime`)
+
+Attach `patrol({ waypoints, speed, loop?, startProgress?, groundClamp? })` or `wander({ radius })` in a spawn's `behaviors`; the host's `advanceBehaviors(ctx, dt)` (already wired in the runners) keeps the per-entity nav state and poses it — register-once ambient traffic/idle routes, never a per-game `advancePathFollow` + `setPose` loop. `startProgress` seeds a follower at a distributed phase (see `PathProgress` below); `groundClamp: true` samples world ground height for the pose Y so an XZ route rides terrain.
+
+`behaviorControl(ctx)` is the per-entity lifecycle surface (keyed by entity id, no full-world scan) games use instead of bypassing the runtime for possession/freezing/streaming/staggering:
+
+```ts
+const bc = behaviorControl(ctx);
+bc.pause(id, "driven");     // retain state, stop advance+pose (player commandeered the car)
+bc.resume(id);              // catch-up policy: "freeze" (default, deterministic) | "advance" (silently fast-forward paused span)
+bc.disable(id, "panic");    // hold off until enable() — frozen in place
+bc.enable(id);
+bc.seek(id, { kind: "normalized", value: 0.5 }); // patrol only; jump to semantic progress
+bc.serialize(id) / bc.restore(id, snap);         // BehaviorSnapshot round-trips exactly
+bc.status(id) / bc.reason(id) / bc.inspect(id) / bc.list(); // editor/debug inspection
+```
+
+Path progress adapter (`nav/pathFollow`): `PathProgress` is `{ kind: "normalized", value } | { kind: "distance", value } | { kind: "segment", index, fraction }` — travel direction falls out of the resulting `heading`. `pathFollowSeek(config, progress)` places a follower without simulating from the start (loops wrap, non-loops clamp + report `done`); `pathFollowProgress(config, state)` reads it back as `{ distance, normalized, segment, fraction }`; `pathLength(config)` sums the polyline. Vice-isle's traffic + pedestrians run entirely on this seam (phase-distributed `startProgress`, `pause` on drive-away, `disable` on wanted-panic) — no hand-rolled route loop.
+
 
