@@ -27,4 +27,4 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 
 - `jgengine` is intake and routing only. Load only domains the task needs; use each selected domain's `capabilities.md` for intent-to-import discovery, `api.md` for generated export inventory, and references for deeper workflows.
 - Each concept has one skill owner. `workflow` owns delivery, `fan-out` owns concurrency, `jgengine-verify` owns evidence, `improve` owns backlog passes and post-fix friction retrospectives, and domain skills own their package/API boundaries.
-- Skill descriptions stay short and trigger-oriented. `SKILL.md` holds decisions and canonical workflows, not export catalogs or repeated project facts. The repository gates root mirroring, route integrity, duplicate prose, and active-intake budgets.
+- Skill descriptions stay short and trigger-oriented. `SKILL.md` holds decisions and canonical workflows, not export catalogs or repeated project facts. The repository gates root mirroring, route integrity, and duplicate prose.
