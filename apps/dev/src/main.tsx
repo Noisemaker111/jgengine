@@ -5,6 +5,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";
+import { installAssetBase } from "@jgengine/shell/render/assetBase";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
@@ -19,6 +20,10 @@ import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 
 import { armCaptureReady, captureArmed, installPlaytestProbe, setCaptureStatus } from "./captureReady";
 import "./index.css";
+
+// The site mounts this runner under /play/ — resolve games' root-absolute
+// /models and /materials paths against wherever the app is actually served.
+installAssetBase(import.meta.env.BASE_URL);
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   orbit: { rig: "orbit" },

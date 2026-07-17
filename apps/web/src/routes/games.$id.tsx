@@ -1,0 +1,71 @@
+import { Link, createFileRoute } from "@tanstack/react-router";
+
+import { Page } from "../components/Layout";
+import { gameTitle, isGameId } from "../lib/games";
+import { seo } from "../lib/seo";
+
+export const Route = createFileRoute("/games/$id")({
+  head: ({ params }) =>
+    seo({
+      title: `${gameTitle(params.id)} — play in your browser · JGengine`,
+      description: `Play ${gameTitle(params.id)}, built with JGengine, right in your browser.`,
+      path: `/games/${params.id}`,
+    }),
+  component: GamePage,
+});
+
+function GamePage() {
+  const { id } = Route.useParams();
+  if (!isGameId(id)) {
+    return (
+      <Page>
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-4 px-4 py-24 sm:px-6">
+          <h1 className="text-2xl font-bold text-slate-50">No game called “{id}”</h1>
+          <Link to="/games" className="text-emerald-300 underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200">
+            ← Back to all games
+          </Link>
+        </div>
+      </Page>
+    );
+  }
+  const playUrl = `/play/?game=${id}`;
+  return (
+    <Page>
+      <section className="relative">
+        <div className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-ink-deep/60 shadow-[0_24px_80px_-24px_rgba(2,3,8,0.95)]">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-2.5">
+              <div className="flex min-w-0 items-center gap-3">
+                <Link
+                  to="/games"
+                  className="shrink-0 font-mono text-[11px] text-slate-500 transition hover:text-slate-300"
+                >
+                  ← games
+                </Link>
+                <span className="truncate text-sm font-semibold text-slate-100">{gameTitle(id)}</span>
+              </div>
+              <a
+                href={playUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 font-mono text-[11px] text-emerald-300/90 transition hover:text-emerald-200"
+              >
+                fullscreen ↗
+              </a>
+            </div>
+            <iframe
+              src={playUrl}
+              title={`${gameTitle(id)} — JGengine`}
+              allow="fullscreen; xr-spatial-tracking; gamepad"
+              className="h-[78vh] min-h-[520px] w-full border-0 bg-neutral-950"
+            />
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-500">
+            Runs entirely in your browser. Source:{" "}
+            <code className="text-slate-400">Games/{id}</code> — built by a coding agent on JGengine.
+          </p>
+        </div>
+      </section>
+    </Page>
+  );
+}

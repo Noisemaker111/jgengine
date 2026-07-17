@@ -1296,6 +1296,11 @@
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — ⚠ undocumented
 - `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, fallback, }: { model: ModelConfig; instanceId?: string; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 
+## @jgengine/shell/render/assetBase
+
+- `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.
+- `resolveAssetBaseUrl` (function): function resolveAssetBaseUrl(url: string): string — Resolves a root-absolute asset URL (`/models/…`, `/materials/…`) against the installed app base. Relative, protocol-relative, absolute-scheme (`https:`, `blob:`, `data:`), and already-based URLs pass through unchanged. Installed as the URL modifier on THREE loading managers so every model and texture load resolves correctly wherever the app is mounted.
+
 ## @jgengine/shell/render/modelRender
 
 - `MaterialCache` (interface): interface MaterialCache — ⚠ undocumented
