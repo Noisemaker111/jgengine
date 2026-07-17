@@ -1,3 +1,10 @@
+import {
+  advanceInterestGate,
+  createInterestGateState,
+  type InterestGateState,
+  type InterestSchedulerConfig,
+} from "@jgengine/core/ai/interestScheduler";
+import { acquireTarget, type AcquisitionPolicy } from "@jgengine/core/ai/targetAcquisition";
 import { createThreatTable, type ThreatTable } from "@jgengine/core/ai/threat";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -30,11 +37,19 @@ interface MobRuntime {
   nextSummonAt: number;
   summonedIds: string[];
   noRespawn?: boolean;
+  interest: InterestGateState;
 }
 
 const runtimesOf = perContext(() => new Map<string, MobRuntime>());
 const CRYPT_MOB_IDS = new Set(["crypt_shambler", "hollow_acolyte", "sexton_marrow", "morthen"]);
 const AGGRO_INTEREST = 130;
+// Interest gate: freeze a mob's acquisition/pathing once the player is beyond AGGRO_INTEREST, and run
+// it every tick while inside. Equal wake/sleep radii reproduce the prior hard cull exactly.
+const MOB_INTEREST: InterestSchedulerConfig = {
+  wakeRadius: AGGRO_INTEREST,
+  sleepRadius: AGGRO_INTEREST,
+  activeInterval: 0,
+};
 const MELEE_REACH = 2.6;
 const RESPAWN_SEC = 35;
 
@@ -129,6 +144,7 @@ export function spawnMobAt(
     nextSummonAt: 0,
     summonedIds: [],
     noRespawn: options?.noRespawn === true,
+    interest: createInterestGateState(MOB_INTEREST),
   });
   return instanceId;
 }
@@ -330,6 +346,26 @@ export function tickMobs(ctx: GameContext, dt: number): void {
   const playerDead = deadStore.read(ctx, playerId);
   const player = ctx.scene.entity.get(playerId);
   const now = ctx.time.now();
+  const playerLevel = player === null ? 1 : ctx.scene.entity.stats.get(playerId, "level")?.current ?? 1;
+  // Dynamic acquisition envelope: aggro range shifts with the mob-vs-player level gap, clamped to +/-4.
+  const acquire: AcquisitionPolicy | null =
+    player === null || playerDead
+      ? null
+      : {
+          candidates: () => [playerId],
+          distance: (selfId) => {
+            const self = ctx.scene.entity.get(selfId);
+            return self === null
+              ? null
+              : Math.hypot(self.position[0] - player.position[0], self.position[2] - player.position[2]);
+          },
+          range: (selfId) => {
+            const rt = runtimesOf(ctx).get(selfId);
+            const def = rt === undefined ? null : mobById(rt.defId);
+            if (rt === undefined || def === null) return 0;
+            return Math.max(4, def.aggroRadius + Math.min(4, Math.max(-4, rt.level - playerLevel)));
+          },
+        };
   for (const [instanceId, runtime] of runtimesOf(ctx)) {
     const def = mobById(runtime.defId);
     const self = ctx.scene.entity.get(instanceId);
@@ -351,16 +387,16 @@ export function tickMobs(ctx: GameContext, dt: number): void {
     }
     const playerDist =
       player === null ? Number.POSITIVE_INFINITY : Math.hypot(self.position[0] - player.position[0], self.position[2] - player.position[2]);
-    if (playerDist > AGGRO_INTEREST) continue;
+    // Interest gate: sleeping mobs skip acquisition/pathing while distant timers keep advancing.
+    if (!advanceInterestGate(runtime.interest, MOB_INTEREST, dt, { proximity: playerDist }).active) continue;
     runtime.threat.decay(dt);
     let targetId = runtime.threat.highest({ stickiness: 1.15 });
-    if (targetId === null && player !== null && !playerDead) {
-      const playerLevel = ctx.scene.entity.stats.get(playerId, "level")?.current ?? 1;
-      const aggroRadius = Math.max(4, def.aggroRadius + Math.min(4, Math.max(-4, runtime.level - playerLevel)));
-      if (playerDist <= aggroRadius) {
-        runtime.threat.add(playerId, 1);
-        targetId = playerId;
-        socialPull(ctx, def, instanceId, playerId);
+    if (targetId === null && acquire !== null) {
+      const acquired = acquireTarget(acquire, instanceId).targetId;
+      if (acquired !== null) {
+        runtime.threat.add(acquired, 1);
+        targetId = acquired;
+        socialPull(ctx, def, instanceId, acquired);
         if (def.packFrenzy !== undefined) runtime.frenzyUntil = now + def.packFrenzy.duration;
       }
     }

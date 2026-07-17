@@ -37,6 +37,21 @@
 - `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
 - `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
 
+## @jgengine/core/ai/interestScheduler
+
+- `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
+- `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
+- `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
+- `InterestGateState` (interface): interface InterestGateState — Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic.
+- `InterestGateStep` (interface): interface InterestGateStep — Per-tick output that tells the caller whether to run expensive work.
+- `InterestSchedulerConfig` (interface): interface InterestSchedulerConfig — Static configuration shared by every gate of one behavior class.
+- `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
+- `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
+- `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
+- `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
+- `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
+- `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
+
 ## @jgengine/core/ai/jobBoard
 
 - `Job` (interface): interface Job — ⚠ undocumented
@@ -84,6 +99,16 @@
 
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
+
+## @jgengine/core/ai/targetAcquisition
+
+- `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
+- `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
+- `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
+- `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
+- `TargetAcquirer` (interface): interface TargetAcquirer — A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}.
+- `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
+- `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 
 ## @jgengine/core/ai/threat
 
@@ -1144,6 +1169,10 @@
 ## @jgengine/core/world
 
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
+- `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
+- `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
+- `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
@@ -1211,6 +1240,14 @@
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
+- `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
+- `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
+- `InterestGateState` (interface): interface InterestGateState — Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic.
+- `InterestGateStep` (interface): interface InterestGateStep — Per-tick output that tells the caller whether to run expensive work.
+- `InterestSchedulerConfig` (interface): interface InterestSchedulerConfig — Static configuration shared by every gate of one behavior class.
+- `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
+- `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
 - `Job` (interface): interface Job — ⚠ undocumented
 - `JobDef` (interface): interface JobDef — ⚠ undocumented
 - `JobReport` (interface): interface JobReport — ⚠ undocumented
@@ -1320,6 +1357,7 @@
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `SynthPatch` (interface): interface SynthPatch — A procedural sound cue: a set of voices triggered together, each with its own `delay`, summed into one one-shot. Pure serialisable data — the shell realises it on Web Audio, so the same catalog runs headless in tests with no `AudioContext`.
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
+- `TargetAcquirer` (interface): interface TargetAcquirer — A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}.
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
 - `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
@@ -1371,7 +1409,9 @@
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
+- `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. The shell/host call this each frame; a game never does.
+- `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
@@ -1415,6 +1455,8 @@
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — Gliding/wingsuit descent control — lift, drag, and steering from a launch.
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
+- `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
+- `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
 - `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
@@ -1432,6 +1474,7 @@
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
+- `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
@@ -1463,6 +1506,7 @@
 - `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
 - `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
+- `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
 - `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.

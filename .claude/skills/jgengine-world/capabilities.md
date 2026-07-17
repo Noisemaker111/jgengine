@@ -60,6 +60,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
+## interest-census — running active/dormant gate tally folded into the caller's tick loop
+
+- `createInterestCensus` (function) · `import { createInterestCensus } from "@jgengine/core/world"`
+
+## interest-gate — per-agent sleep/wake + cadence gate state so far agents skip expensive ticks
+
+- `createInterestGateState` (function) · `import { createInterestGateState } from "@jgengine/core/world"`
+
+## interest-scheduler — advance a sleep/wake gate with hysteresis, cadence tiers, and stagger
+
+- `advanceInterestGate` (function) · `import { advanceInterestGate } from "@jgengine/core/world"`
+
+## interest-stagger — deterministic per-id cadence phase that spreads sibling gate ticks across frames
+
+- `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
@@ -105,6 +121,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
+
+## target-acquirer — stateful held-target wrapper over an acquisition policy with retention
+
+- `createTargetAcquirer` (function) · `import { createTargetAcquirer } from "@jgengine/core/world"`
+
+## target-acquisition — composable candidate/eligibility/range/perception/score/tie-break/retention target pick
+
+- `acquireTarget` (function) · `import { acquireTarget } from "@jgengine/core/world"`
 
 ## touch-controls — default on-screen button silhouette for a touch action
 
