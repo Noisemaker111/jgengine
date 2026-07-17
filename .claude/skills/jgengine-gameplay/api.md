@@ -686,6 +686,7 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
+- `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
 - `AffixPool` (interface): interface AffixPool — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
@@ -729,10 +730,12 @@
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
 - `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
+- `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
 - `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
 - `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
@@ -791,12 +794,17 @@
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
 - `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
+- `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
+- `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
+- `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
 - `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
 - `QuestDef` (interface): interface QuestDef — ⚠ undocumented
 - `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
 - `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
+- `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
 - `Ring` (interface): interface Ring — ⚠ undocumented
@@ -807,6 +815,9 @@
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
+- `RuleEffectDefinition` (interface): interface RuleEffectDefinition — A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata.
+- `RuleEvent` (interface): interface RuleEvent — A typed event handed to the engine; roles feed target resolution, facts feed the predicate.
+- `RuleFiring` (interface): interface RuleFiring — The outcome of matching one rule against one event. `applied` is the effect the caller should now run through its own effect system; a blocked firing reports why. Provenance (rule, owner, event, timestamp) rides along for auditability.
 - `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
@@ -819,6 +830,7 @@
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `Social` (interface): interface Social — ⚠ undocumented
 - `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
 - `SystemDefinition` (interface): interface SystemDefinition — A reusable game capability — lifecycle, timing, events, and optional save / replication / reset / disposal. Pass instances via `defineGame({ systems })`. Prefer one system per meaningful capability (`combat`, `quests`), not per micro-tick.
 - `SystemEventHandlers` (type): type SystemEventHandlers = { readonly [eventName: string]: (ctx: GameContext, event: unknown) => void; } — Event name → handler. Payload is the engine event shape for that name.
@@ -827,6 +839,8 @@
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
+- `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
+- `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
@@ -836,6 +850,9 @@
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
+- `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
+- `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
+- `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
@@ -904,6 +921,7 @@
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 - `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
+- `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
@@ -919,10 +937,12 @@
 - `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
+- `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
 - `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
+- `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
@@ -932,6 +952,7 @@
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
+- `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `localSaveBackend` (function): function localSaveBackend(storage?: KeyValueStorage | null): SaveBackend — A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the browser's `localStorage` by default (offline, on-device saves), a test stub, or `null` for memory-only. Storage errors (quota exceeded, private mode, no DOM) degrade to no-ops, so a save never throws into a game tick.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
@@ -955,6 +976,8 @@
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
+- `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
 - `remoteSaveBackend` (function): function remoteSaveBackend(backend: SaveBackend): SaveBackend — Adopt any async `read`/`write`/`remove` trio as a {@link SaveBackend} — the seam for cloud saves backed by a database, an HTTP endpoint, or Convex (see `@jgengine/convex/convexSaveBackend`). Reads/writes may reject; the save store surfaces the failure as `"error"` status instead of throwing.
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
@@ -1148,6 +1171,38 @@
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
+
+## @jgengine/core/rules/predicate
+
+- `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
+- `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
+- `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
+- `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
+- `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
+- `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
+
+## @jgengine/core/rules/ruleEffects
+
+- `RuleEffectDefinition` (interface): interface RuleEffectDefinition — A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata.
+- `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
+- `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
+- `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
+
+## @jgengine/core/rules/triggeredRules
+
+- `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
+- `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
+- `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
+- `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
+- `RuleEvent` (interface): interface RuleEvent — A typed event handed to the engine; roles feed target resolution, facts feed the predicate.
+- `RuleFiring` (interface): interface RuleFiring — The outcome of matching one rule against one event. `applied` is the effect the caller should now run through its own effect system; a blocked firing reports why. Provenance (rule, owner, event, timestamp) rides along for auditability.
+- `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
+- `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
+- `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
+- `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
+- `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
+- `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
+- `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 
 ## @jgengine/core/session/contestedChannel
 

@@ -24,6 +24,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
 
+## declarative-predicate — serializable data-driven conditions with no callbacks in saved content
+
+- `evaluatePredicate` (function) · `import { evaluatePredicate } from "@jgengine/core/gameplay"`
+- `readPath` (function) · `import { readPath } from "@jgengine/core/gameplay"`
+
 ## define-game — single public game-authoring path — compose systems, world, and loop in one definition
 
 - `defineGame` (function) · `import { defineGame } from "@jgengine/core/gameplay"`
@@ -161,6 +166,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
+
+## triggered-rules — event-conditioned effects with declarative predicates, lifetimes, and stacking
+
+- `createTriggeredRuleEngine` (function) · `import { createTriggeredRuleEngine } from "@jgengine/core/gameplay"`
+- `getRuleEffect` (function) · `import { getRuleEffect } from "@jgengine/core/gameplay"`
+- `listRuleEffects` (function) · `import { listRuleEffects } from "@jgengine/core/gameplay"`
+- `registerRuleEffect` (function) · `import { registerRuleEffect } from "@jgengine/core/gameplay"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 

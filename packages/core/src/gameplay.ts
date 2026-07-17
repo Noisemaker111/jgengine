@@ -258,6 +258,30 @@ export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";
 export { pickUniform, pickWeighted } from "./random/pick";
 export { seededStreams } from "./random/rng";
+export {
+  evaluatePredicate,
+  readPath,
+  type Predicate,
+  type PredicateFacts,
+  type PredicatePath,
+  type PredicateValue,
+} from "./rules/predicate";
+export { getRuleEffect, listRuleEffects, registerRuleEffect, type RuleEffectDefinition } from "./rules/ruleEffects";
+export {
+  createTriggeredRuleEngine,
+  type ActiveEffect,
+  type EffectRef,
+  type FiringBlock,
+  type RateLimit,
+  type RuleEvent,
+  type RuleFiring,
+  type StackPolicy,
+  type TargetRole,
+  type TargetSelector,
+  type TriggeredRule,
+  type TriggeredRuleEngine,
+  type TriggeredRuleState,
+} from "./rules/triggeredRules";
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";
