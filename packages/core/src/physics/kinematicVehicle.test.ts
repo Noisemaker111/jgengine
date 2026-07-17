@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import { NEUTRAL_AXIS, type AxisInput } from "../input/axisInput";
-import { createKinematicVehicle, type KinematicVehicleTuning } from "./kinematicVehicle";
+import {
+  createKinematicVehicle,
+  type KinematicChassisTuning,
+  type KinematicVehicleTuning,
+} from "./kinematicVehicle";
 
 const DT = 1 / 60;
 
