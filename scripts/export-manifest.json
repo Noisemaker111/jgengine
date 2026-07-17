@@ -394,6 +394,7 @@
     "./world/markers",
     "./world/massing",
     "./world/minimap",
+    "./world/minimapBake",
     "./world/minimapTrack",
     "./world/pathInstances",
     "./world/pathTerrain",
