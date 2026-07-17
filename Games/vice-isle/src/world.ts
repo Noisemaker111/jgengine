@@ -55,7 +55,13 @@ export const world: EnvironmentWorldFeature = environment({
     materialRegions: shoreRegions,
     flatten: cityFlatten,
   }),
-  sky: sky({ preset: "day", timeOfDay: true }),
+  sky: sky({
+    preset: "day",
+    timeOfDay: true,
+    zenithColor: "#2f8fd4",
+    horizonColor: "#bfe7f2",
+    hazeStrength: 0.3,
+  }),
   weather: rain({
     area: { w: 70, d: 70, h: 45, position: [-170, 0] },
     density: 0.9,

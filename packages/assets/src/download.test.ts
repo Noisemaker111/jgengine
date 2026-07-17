@@ -82,13 +82,92 @@ describe("packGltfToGlb / extractGlbs", () => {
       "pack/glTF/hero.gltf": gltf,
       "pack/glTF/hero.bin": new Uint8Array([1, 1]),
     });
-    const files = extractGlbs(archive);
-    const byName = Object.fromEntries(files.map((entry) => [entry.file, entry.bytes]));
+    const { models } = extractGlbs(archive);
+    const byName = Object.fromEntries(models.map((entry) => [entry.file, entry.bytes]));
     expect(Object.keys(byName).sort()).toEqual(["hero.glb", "prop.glb"]);
     expect(new TextDecoder().decode(byName["hero.glb"]!)).toBe("native-glb");
     expect(new TextDecoder().decode(byName["prop.glb"]!.slice(0, 4))).toBe("glTF");
   });
+
+  test("ships referenced textures beside the models with URIs flattened to basenames (#1005)", () => {
+    const texture = new Uint8Array([137, 80, 78, 71]);
+    const gltf = new TextEncoder().encode(
+      JSON.stringify({
+        asset: { version: "2.0" },
+        buffers: [{ uri: "building.bin", byteLength: 2 }],
+        images: [{ uri: "citybits_texture.png" }],
+      }),
+    );
+    const archive = zipSync({
+      "pack/Assets/gltf/building.gltf": gltf,
+      "pack/Assets/gltf/building.bin": new Uint8Array([1, 2]),
+      "pack/Assets/gltf/citybits_texture.png": texture,
+      "pack/Assets/obj/citybits_texture.png": texture,
+      "pack/Assets/texture/unreferenced.png": new Uint8Array([1]),
+    });
+    const { models, images } = extractGlbs(archive);
+    expect(models.map((m) => m.file)).toEqual(["building.glb"]);
+    expect(images.map((i) => i.file)).toEqual(["citybits_texture.png"]);
+    const json = glbJson(models[0]!.bytes);
+    expect(json.images).toEqual([{ uri: "citybits_texture.png" }]);
+  });
+
+  test("flattens nested and url-encoded image paths so the sidecar always resolves", () => {
+    const gltf = new TextEncoder().encode(
+      JSON.stringify({
+        asset: { version: "2.0" },
+        images: [{ uri: "../Textures/color%20map.png" }, { uri: "data:image/png;base64,AAAA" }],
+      }),
+    );
+    const archive = zipSync({
+      "pack/glTF/tree.gltf": gltf,
+      "pack/Textures/color map.png": new Uint8Array([7]),
+    });
+    const { models, images } = extractGlbs(archive);
+    expect(images.map((i) => i.file)).toEqual(["color map.png"]);
+    const json = glbJson(models[0]!.bytes);
+    expect(json.images).toEqual([{ uri: "color map.png" }, { uri: "data:image/png;base64,AAAA" }]);
+  });
+
+  test("normalizes external image URIs inside native glbs too", () => {
+    const inner = JSON.stringify({
+      asset: { version: "2.0" },
+      images: [{ uri: "textures/atlas.png" }],
+    });
+    const native = packGltfToGlbRaw(inner);
+    const archive = zipSync({
+      "pack/GLB/kiosk.glb": native,
+      "pack/textures/atlas.png": new Uint8Array([3]),
+    });
+    const { models, images } = extractGlbs(archive);
+    expect(images.map((i) => i.file)).toEqual(["atlas.png"]);
+    expect(glbJson(models[0]!.bytes).images).toEqual([{ uri: "atlas.png" }]);
+  });
 });
+
+/** Minimal GLB container around a JSON document, for native-glb fixtures. */
+function packGltfToGlbRaw(jsonText: string): Uint8Array {
+  const pad = (4 - (jsonText.length % 4)) % 4;
+  const jsonChunk = new Uint8Array(jsonText.length + pad).fill(0x20);
+  new TextEncoder().encodeInto(jsonText, jsonChunk);
+  const out = new Uint8Array(12 + 8 + jsonChunk.byteLength);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, out.byteLength, true);
+  view.setUint32(12, jsonChunk.byteLength, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  out.set(jsonChunk, 20);
+  return out;
+}
+
+function glbJson(bytes: Uint8Array): { images?: { uri?: string }[] } {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const length = view.getUint32(12, true);
+  return JSON.parse(new TextDecoder().decode(bytes.subarray(20, 20 + length))) as {
+    images?: { uri?: string }[];
+  };
+}
 
 describe("extractSpriteFiles", () => {
   test("pulls svg and png files out of a nested archive, deduped by basename", () => {
@@ -202,7 +281,7 @@ describe("downloadPackArchive", () => {
 
     expect(result.url).toBe(mirrorOverrideUrl(MIRROR_BASE, baseSource));
     expect(calls).toEqual([mirrorOverrideUrl(MIRROR_BASE, baseSource)]);
-    expect(extractGlbs(result.archive)).toHaveLength(1);
+    expect(extractGlbs(result.archive).models).toHaveLength(1);
   });
 
   test("falls back to the primary provider url when the mirror override fails", () =>
@@ -284,7 +363,7 @@ describe("downloadPackArchive", () => {
       const result = await downloadPackArchive(source, { mirrorBase: MIRROR_BASE, fetchImpl });
 
       expect(result.url).toBe(PRIMARY_URL);
-      expect(new TextDecoder().decode(extractGlbs(result.archive)[0]!.bytes)).toBe("good-bytes");
+      expect(new TextDecoder().decode(extractGlbs(result.archive).models[0]!.bytes)).toBe("good-bytes");
       expect(calls).toEqual([mirrorOverrideUrl(MIRROR_BASE, source), PRIMARY_URL]);
     }));
 
@@ -346,6 +425,6 @@ describe("downloadPackArchive", () => {
 
     expect(result.url).toBe(defaultReleaseUrl(baseSource));
     expect(calls).toEqual([defaultReleaseUrl(baseSource)]);
-    expect(extractGlbs(result.archive)).toHaveLength(1);
+    expect(extractGlbs(result.archive).models).toHaveLength(1);
   });
 });

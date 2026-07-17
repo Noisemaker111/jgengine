@@ -86,9 +86,11 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
 
 const objectPlan: Record<string, ModelPick> = {
   obj_palm_planter: {
+    // Quaternius nature textures aren't committed (multi-MB, #1005) — a flat toon
+    // green keeps street trees readable instead of untextured white.
     model: `${NATURE}/CommonTree_1`,
     fallbackModel: `${CITY}/bush`,
-    style: { targetHeight: 5.6 },
+    style: { targetHeight: 5.6, material: { color: "#57a05b" } },
   },
   obj_streetlight: {
     model: `${CITY}/streetlight`,
