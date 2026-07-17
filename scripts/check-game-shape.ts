@@ -95,9 +95,9 @@ for (const name of readdirSync(gamesDir)) {
   const configPath = join(srcDir, "game.config.ts");
   if (!existsSync(configPath)) {
     problems.push(`${rel(srcDir)}: missing canonical entry game.config.ts`);
-  } else if (!/from\s+["']@jgengine\/shell\/(defineGame|cartridge)["']/.test(readFileSync(configPath, "utf8"))) {
+  } else if (!/from\s+["']@jgengine\/shell\/defineGame["']/.test(readFileSync(configPath, "utf8"))) {
     problems.push(
-      `${rel(configPath)}: must define the game via defineGame from "@jgengine/shell/defineGame" or cartridge from "@jgengine/shell/cartridge"`,
+      `${rel(configPath)}: must define the game via defineGame from "@jgengine/shell/defineGame"`,
     );
   }
 
@@ -124,9 +124,7 @@ if (problems.length > 0) {
       `\n\nEvery game is one shape: src/ holds only the skeleton\n` +
       `  game.config.ts  index.tsx  main.tsx  loop.ts  world.ts  index.css  style.css\n` +
       `and all game-specific modules, ui, and tests live under src/game/.\n` +
-      `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame",\n` +
-      `or cartridge({...}) from "@jgengine/shell/cartridge" for declarative cartridge games\n` +
-      `(which drop loop.ts/world.ts entirely — the spec carries the whole game).\n` +
+      `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame".\n` +
       `Every game is also a standalone dev harness: index.html and vite.config.ts at the game root,\n` +
       `src/index.css for Tailwind (importing "./style.css") and a "dev" script in package.json to launch it.\n` +
       `src/style.css holds the game-specific CSS only — no "@import \\"tailwindcss\\"" — so the /play\n` +

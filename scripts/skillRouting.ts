@@ -10,7 +10,6 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   behaviour: "jgengine-gameplay",
   board: "jgengine-gameplay",
   cards: "jgengine-gameplay",
-  cartridge: MAIN,
   combat: "jgengine-combat",
   commands: MAIN,
   crafting: "jgengine-gameplay",
@@ -71,9 +70,7 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   // leave generated game-authoring API docs (still published; agents use CLI help).
 };
 
-export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {
-  shell: { cartridge: MAIN },
-};
+export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {};
 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
