@@ -271,6 +271,7 @@
     "./scene/possession",
     "./scene/roster",
     "./scene/sceneKinds",
+    "./scene/sceneOwnership",
     "./scene/sceneRaycast",
     "./scene/selection",
     "./scene/spatial",

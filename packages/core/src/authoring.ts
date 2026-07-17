@@ -50,3 +50,24 @@ export {
 
 export { contextVerb } from "./interaction/contextMenu";
 export { type ActionCodesMap } from "./input/actionBindings";
+
+export {
+  classifyOwnership,
+  collectOwnershipDiagnostics,
+  auditManifest,
+  ownershipKey,
+  isSceneOwnershipManifest,
+  SCENE_OWNERSHIP_MANIFEST_VERSION,
+  type SceneProvenance,
+  type SceneProvenanceKind,
+  type AuthoredProvenance,
+  type GeneratedProvenance,
+  type RuntimeProvenance,
+  type TransientProvenance,
+  type ProviderCapabilities,
+  type SceneOwnershipDeclaration,
+  type OwnershipDecision,
+  type OwnershipVerdict,
+  type OwnershipDiagnostic,
+  type SceneOwnershipManifest,
+} from "./scene/sceneOwnership";
