@@ -21,7 +21,7 @@ function markerPosition(marker: { position: { x: number; y?: number; z: number }
   return [marker.position.x, marker.position.y ?? 0, marker.position.z];
 }
 
-function playerKeepPoint(): { x: number; z: number } {
+export function playerKeepPoint(): { x: number; z: number } {
   const keep = editorLayers.markers.find((m) => markerCatalogId(m) === "keep_player");
   return keep === undefined ? { x: 0, z: 36 } : { x: keep.position.x, z: keep.position.z };
 }

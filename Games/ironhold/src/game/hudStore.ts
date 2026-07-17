@@ -17,6 +17,9 @@ export interface HudSnapshot {
   playerKeepHp: number;
   playerKeepMax: number;
   attackMoveArmed: boolean;
+  /** Marauder reinforcement pressure: waves mustered so far, and whole seconds to the next one. */
+  wavesSent: number;
+  nextWaveIn: number;
   /** Units currently queued/training at the Town Hall, and the active job's 0..1 progress. */
   producing: number;
   trainProgress: number;
@@ -39,6 +42,8 @@ const initial: HudSnapshot = {
   playerKeepHp: 0,
   playerKeepMax: 1,
   attackMoveArmed: false,
+  wavesSent: 0,
+  nextWaveIn: 0,
   producing: 0,
   trainProgress: 0,
   hasBarracks: false,
@@ -62,6 +67,8 @@ function changed(next: HudSnapshot): boolean {
     p.enemyKeepHp !== next.enemyKeepHp ||
     p.playerKeepHp !== next.playerKeepHp ||
     p.attackMoveArmed !== next.attackMoveArmed ||
+    p.wavesSent !== next.wavesSent ||
+    p.nextWaveIn !== next.nextWaveIn ||
     p.producing !== next.producing ||
     Math.abs(p.trainProgress - next.trainProgress) > 0.02 ||
     p.hasBarracks !== next.hasBarracks ||

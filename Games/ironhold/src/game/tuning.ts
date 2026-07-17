@@ -30,3 +30,12 @@ export const GOLD_PER_TRIP = 12;
 export const LUMBER_PER_TRIP = 8;
 export const GOLD_MINE_BUDGET = 600;
 export const LUMBER_NODE_BUDGET = 500;
+
+/** Enemy reinforcement cadence. The Marauder Warcamp musters escalating waves that attack-move the
+ * player keep; razing the warcamp cuts off reinforcements (that is how the tide is stemmed). */
+export const ENEMY_WAVE_FIRST_DELAY = 30;
+export const ENEMY_WAVE_INTERVAL = 42;
+/** Hold new waves while this many Marauders are already fielded — bounded pressure, not a swarm. */
+export const ENEMY_WAVE_MAX_FIELDED = 22;
+/** When at the fielded cap, recheck this often instead of waiting a full interval. */
+export const ENEMY_WAVE_RECHECK = 6;

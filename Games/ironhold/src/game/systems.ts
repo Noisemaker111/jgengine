@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { activeJobs, jobProgress, queuedJobs, tick as tickQueue } from "@jgengine/core/gameplay";
 
 import { tickUnits } from "./ai/units";
+import { tickEnemyWaves } from "./ai/director";
 import { BUILDINGS, combatantDef, isHostile } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore } from "./hudStore";
@@ -50,6 +51,15 @@ const aiSystem: SystemDefinition = defineSystem({
   tick: { type: "frame", stage: "ai" },
   update(ctx, dt) {
     tickUnits(ctx, dt);
+  },
+});
+
+/** The Marauder AI director: musters escalating reinforcement waves from the enemy Warcamp. */
+const enemyAiSystem: SystemDefinition = defineSystem({
+  id: "ironhold.enemyAi",
+  tick: { type: "frame", stage: "ai" },
+  update(ctx, dt) {
+    tickEnemyWaves(ctx, dt);
   },
 });
 
@@ -165,6 +175,8 @@ const hudSystem: SystemDefinition = defineSystem({
       playerKeepHp: playerKeep.current,
       playerKeepMax: playerKeep.max,
       attackMoveArmed: session.attackMoveArmed,
+      wavesSent: session.enemyWave.sent,
+      nextWaveIn: Math.max(0, Math.ceil(session.enemyWave.timer)),
       producing: active.length + queuedJobs(session.production).length,
       trainProgress: active.length > 0 ? jobProgress(active[0]!) : 0,
       hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),
@@ -176,6 +188,7 @@ const hudSystem: SystemDefinition = defineSystem({
 
 export const systems: readonly SystemDefinition[] = [
   aiSystem,
+  enemyAiSystem,
   productionSystem,
   constructionSystem,
   towerSystem,

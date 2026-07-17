@@ -53,6 +53,11 @@ function TopStrip() {
       </div>
       <div className="h-7 w-px bg-amber-800/40" />
       <div className="flex gap-2 text-xs"><span className="text-sky-200">⚔ {hud.playerUnits}</span><span className="text-rose-300">☠ {hud.enemyUnits}</span></div>
+      <div className="h-7 w-px bg-amber-800/40" />
+      <div className="flex flex-col items-center leading-tight" title="Marauder reinforcement waves">
+        <span className="text-[9px] font-semibold uppercase tracking-wide text-rose-300/80">Wave {hud.wavesSent}</span>
+        <span className="text-[11px] font-bold tabular-nums text-rose-200">⚑ {hud.nextWaveIn}s</span>
+      </div>
     </div>
   );
 }

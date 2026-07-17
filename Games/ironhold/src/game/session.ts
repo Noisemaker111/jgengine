@@ -4,7 +4,7 @@ import type { UnitReservation, UnitTrainingSpec } from "@jgengine/core/work/unit
 
 import type { BuildSpec } from "./building";
 import { combatantDef, type CombatantKind } from "./catalog";
-import { TOWN_HALL_FOOD, type Faction } from "./tuning";
+import { ENEMY_WAVE_FIRST_DELAY, TOWN_HALL_FOOD, type Faction } from "./tuning";
 
 /** A commanded intent for one unit. Serializable plain data — no closures, no entity refs. */
 export type UnitCommand =
@@ -34,6 +34,14 @@ export interface NodeInfo {
   z: number;
 }
 
+/** The enemy reinforcement clock. Serializable plain data the director advances each frame. */
+export interface EnemyWaveState {
+  /** Seconds until the next wave musters. */
+  timer: number;
+  /** How many waves have been sent so far — drives escalation of size and composition. */
+  sent: number;
+}
+
 export interface SessionState {
   units: Map<string, UnitRuntime>;
   /** World positions of the harvestable resource nodes, keyed by instance id. */
@@ -50,6 +58,8 @@ export interface SessionState {
   supplyCap: number;
   /** Set by the Attack-Move verb; consumed by the next right-click order. */
   attackMoveArmed: boolean;
+  /** Enemy reinforcement clock; the AI director musters escalating waves off it. */
+  enemyWave: EnemyWaveState;
   over: boolean;
   victory: boolean;
   trainSeq: number;
@@ -65,6 +75,7 @@ function fresh(): SessionState {
     buildArmed: null,
     supplyCap: TOWN_HALL_FOOD,
     attackMoveArmed: false,
+    enemyWave: { timer: ENEMY_WAVE_FIRST_DELAY, sent: 0 },
     over: false,
     victory: false,
     trainSeq: 0,
