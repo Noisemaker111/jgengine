@@ -1,24 +1,31 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
+    "lib": [
+      "ES2022"
+    ],
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@jgengine/core/*": ["../../packages/core/src/*"],
-      "@jgengine/node/*": ["../../packages/node/src/*"],
-      "@jgengine/ws/*": ["../../packages/ws/src/*"],
-      "@jgengine/sql/*": ["../../packages/sql/src/*"]
+      "@jgengine/core/*": [
+        "../../packages/core/src/*"
+      ],
+      "@jgengine/node/*": [
+        "../../packages/node/src/*"
+      ],
+      "@jgengine/ws/*": [
+        "../../packages/ws/src/*"
+      ],
+      "@jgengine/sql/*": [
+        "../../packages/sql/src/*"
+      ]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
