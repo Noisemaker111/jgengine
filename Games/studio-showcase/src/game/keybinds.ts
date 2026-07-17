@@ -7,4 +7,8 @@ export const keybinds: ActionCodesMap = {
   moveRight: ["KeyD"],
   jump: ["Space"],
   interact: ["KeyE"],
+  // Selection-bookmark recall (issue #916): a numbered control group and the
+  // non-numbered "home" bookmark, each re-centering the camera on recall.
+  recallGroup1: ["Digit1"],
+  recallHome: ["KeyH"],
 };

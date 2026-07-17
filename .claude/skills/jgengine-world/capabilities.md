@@ -98,6 +98,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
 
+## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
+
+- `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
+- `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
+
+## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
+
+- `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
+
+## selection-bookmarks — keyed saved-set store (RTS control groups, camera bookmarks, saved squads) with prune + serialize
+
+- `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
+
 ## skill-check — a timing-bar skill check where you release inside a zone
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`

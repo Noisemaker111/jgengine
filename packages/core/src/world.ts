@@ -38,6 +38,13 @@ export {
   tierForStanding,
 } from "./faction/reputation";
 export {
+  controlGroupKey,
+  resolveControlGroupIntent,
+  type ControlGroupInput,
+  type ControlGroupIntent,
+  type ControlGroupOptions,
+} from "./input/controlGroups";
+export {
   buildContextMenu,
   contextVerb,
   contextVerbInput,
@@ -166,6 +173,15 @@ export {
   type ScreenRect,
   type SelectionSet,
 } from "./scene/selection";
+export {
+  createSelectionBookmarks,
+  recallSelectionBookmark,
+  type BookmarkRecallMode,
+  type RecallBookmarkOptions,
+  type SelectionBookmarkSnapshot,
+  type SelectionBookmarks,
+  type SelectionPruneResult,
+} from "./scene/selectionBookmarks";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
