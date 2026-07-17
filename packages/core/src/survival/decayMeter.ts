@@ -55,32 +55,172 @@ export interface DecayMeterSet {
   ids(): readonly string[];
 }
 
+/**
+ * Plain-data meter values: `meter id → current value`. This is the whole serialized
+ * form — it drops straight into a `defineGame` state record and round-trips through
+ * save/load and multiplayer sync with no closure to rebuild.
+ */
+export type DecayMeterValues = Record<string, number>;
+
+/**
+ * Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's
+ * metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only).
+ * `1` / omitted leaves the base rates unscaled.
+ */
+export type DecayModifier = number | Record<string, number>;
+
 function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
 }
 
-interface MeterRuntime {
-  config: DecayMeterConfig;
-  min: number;
-  max: number;
-  value: number;
-  rate: number;
-  modifier: number;
+function meterMin(def: DecayMeterConfig): number {
+  return def.min ?? 0;
 }
 
-function toState(runtime: MeterRuntime): DecayMeterState {
-  const span = runtime.max - runtime.min;
+function initialValue(def: DecayMeterConfig): number {
+  return clamp(def.start ?? def.max, meterMin(def), def.max);
+}
+
+function valueOf(values: DecayMeterValues, def: DecayMeterConfig): number {
+  const current = values[def.id];
+  return current === undefined ? initialValue(def) : current;
+}
+
+function modifierFor(modifier: DecayModifier | undefined, id: string): number {
+  if (modifier === undefined) return 1;
+  if (typeof modifier === "number") return modifier;
+  return modifier[id] ?? 1;
+}
+
+function findDef(defs: readonly DecayMeterConfig[], id: string): DecayMeterConfig {
+  const def = defs.find((candidate) => candidate.id === id);
+  if (def === undefined) throw new Error(`unknown decay meter "${id}"`);
+  return def;
+}
+
+function stateOf(def: DecayMeterConfig, value: number): DecayMeterState {
+  const min = meterMin(def);
+  const span = def.max - min;
   return {
-    id: runtime.config.id,
-    value: runtime.value,
-    max: runtime.max,
-    min: runtime.min,
-    fraction: span > 0 ? (runtime.value - runtime.min) / span : 0,
+    id: def.id,
+    value,
+    max: def.max,
+    min,
+    fraction: span > 0 ? (value - min) / span : 0,
   };
 }
 
 function crossed(threshold: MeterThreshold, value: number): boolean {
   return threshold.when === "below" ? value < threshold.at : value > threshold.at;
+}
+
+/**
+ * Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a
+ * serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues {
+  const out: DecayMeterValues = {};
+  for (const def of defs) out[def.id] = initialValue(def);
+  return out;
+}
+
+/**
+ * Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`,
+ * clamped to its range, returning a new `id → value` record. Returns `values` unchanged when
+ * `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function decayMeters(
+  values: DecayMeterValues,
+  defs: readonly DecayMeterConfig[],
+  dt: number,
+  modifier?: DecayModifier,
+): DecayMeterValues {
+  if (dt <= 0) return values;
+  const out: DecayMeterValues = {};
+  for (const def of defs) {
+    out[def.id] = clamp(
+      valueOf(values, def) - def.rate * modifierFor(modifier, def.id) * dt,
+      meterMin(def),
+      def.max,
+    );
+  }
+  return out;
+}
+
+/**
+ * Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new
+ * record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function refillMeter(
+  values: DecayMeterValues,
+  defs: readonly DecayMeterConfig[],
+  id: string,
+  amount: number,
+): DecayMeterValues {
+  const def = findDef(defs, id);
+  return { ...values, [id]: clamp(valueOf(values, def) + amount, meterMin(def), def.max) };
+}
+
+/**
+ * Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function decayMeterState(
+  values: DecayMeterValues,
+  defs: readonly DecayMeterConfig[],
+  id: string,
+): DecayMeterState {
+  const def = findDef(defs, id);
+  return stateOf(def, valueOf(values, def));
+}
+
+/**
+ * Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function decayMeterSnapshot(
+  values: DecayMeterValues,
+  defs: readonly DecayMeterConfig[],
+): Record<string, DecayMeterState> {
+  const out: Record<string, DecayMeterState> = {};
+  for (const def of defs) out[def.id] = stateOf(def, valueOf(values, def));
+  return out;
+}
+
+/**
+ * Moodles for every crossed threshold, worst-first per meter in declared order.
+ *
+ * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
+ */
+export function decayMeterMoodles(
+  values: DecayMeterValues,
+  defs: readonly DecayMeterConfig[],
+): Moodle[] {
+  const out: Moodle[] = [];
+  for (const def of defs) {
+    const value = valueOf(values, def);
+    for (const threshold of def.thresholds ?? []) {
+      if (!crossed(threshold, value)) continue;
+      out.push({
+        id: threshold.id,
+        label: threshold.label,
+        severity: threshold.severity ?? "warning",
+        source: "meter",
+        stacks: 1,
+        ...(threshold.icon === undefined ? {} : { icon: threshold.icon }),
+        fraction: stateOf(def, value).fraction,
+      });
+    }
+  }
+  return out;
 }
 
 /**
@@ -93,72 +233,37 @@ function crossed(threshold: MeterThreshold, value: number): boolean {
  * @capability decay-meter survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
  */
 export function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet {
-  const meters = new Map<string, MeterRuntime>();
-  const order: string[] = [];
-  for (const config of configs) {
-    const min = config.min ?? 0;
-    const max = config.max;
-    const value = clamp(config.start ?? max, min, max);
-    meters.set(config.id, { config, min, max, value, rate: config.rate, modifier: 1 });
-    order.push(config.id);
-  }
-
-  const getMeter = (id: string): MeterRuntime => {
-    const runtime = meters.get(id);
-    if (runtime === undefined) throw new Error(`unknown decay meter "${id}"`);
-    return runtime;
-  };
+  // Mutable copy so setRate can override a meter's base rate without mutating the caller's defs.
+  const defs = configs.map((config) => ({ ...config }));
+  const order = defs.map((def) => def.id);
+  const modifiers: Record<string, number> = {};
+  let values = initDecayMeters(defs);
 
   return {
     tick(dt) {
-      if (dt <= 0) return;
-      for (const runtime of meters.values()) {
-        runtime.value = clamp(
-          runtime.value - runtime.rate * runtime.modifier * dt,
-          runtime.min,
-          runtime.max,
-        );
-      }
+      values = decayMeters(values, defs, dt, modifiers);
     },
     value(id) {
-      return getMeter(id).value;
+      return decayMeterState(values, defs, id).value;
     },
     state(id) {
-      return toState(getMeter(id));
+      return decayMeterState(values, defs, id);
     },
     refill(id, amount) {
-      const runtime = getMeter(id);
-      runtime.value = clamp(runtime.value + amount, runtime.min, runtime.max);
+      values = refillMeter(values, defs, id, amount);
     },
     setRate(id, rate) {
-      getMeter(id).rate = rate;
+      findDef(defs, id).rate = rate;
     },
     setRateModifier(id, multiplier) {
-      getMeter(id).modifier = multiplier;
+      findDef(defs, id);
+      modifiers[id] = multiplier;
     },
     moodles() {
-      const out: Moodle[] = [];
-      for (const id of order) {
-        const runtime = meters.get(id)!;
-        for (const threshold of runtime.config.thresholds ?? []) {
-          if (!crossed(threshold, runtime.value)) continue;
-          out.push({
-            id: threshold.id,
-            label: threshold.label,
-            severity: threshold.severity ?? "warning",
-            source: "meter",
-            stacks: 1,
-            ...(threshold.icon === undefined ? {} : { icon: threshold.icon }),
-            fraction: toState(runtime).fraction,
-          });
-        }
-      }
-      return out;
+      return decayMeterMoodles(values, defs);
     },
     snapshot() {
-      const out: Record<string, DecayMeterState> = {};
-      for (const id of order) out[id] = toState(meters.get(id)!);
-      return out;
+      return decayMeterSnapshot(values, defs);
     },
     ids() {
       return order;

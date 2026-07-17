@@ -68,7 +68,14 @@ export {
   type StatLevelUpEvent,
   type VfxKind,
 } from "./game/events";
-export { createGameFeed, type FeedEntry } from "./game/feed";
+export {
+  appendFeed,
+  createGameFeed,
+  pruneFeed,
+  type FeedEntry,
+  type FeedWindow,
+  type TimedFeedEntry,
+} from "./game/feed";
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
 export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
@@ -261,7 +268,18 @@ export { seededStreams } from "./random/rng";
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";
-export { createDecayMeterSet, type DecayMeterSet } from "./survival/decayMeter";
+export {
+  createDecayMeterSet,
+  decayMeterMoodles,
+  decayMeterSnapshot,
+  decayMeterState,
+  decayMeters,
+  initDecayMeters,
+  refillMeter,
+  type DecayMeterSet,
+  type DecayMeterValues,
+  type DecayModifier,
+} from "./survival/decayMeter";
 export { createMoodleStack, stackMoodles, type Moodle, type MoodleStack } from "./survival/moodle";
 export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regionHealth";
 export { createCommitController } from "./turn/commit";

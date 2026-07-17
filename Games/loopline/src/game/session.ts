@@ -1,3 +1,5 @@
+import { appendFeed } from "@jgengine/core/game/feed";
+
 import { STARTING_CASH } from "./catalog";
 
 export interface PlacedObject {
@@ -111,6 +113,6 @@ export function nextGuestId(): string {
 
 export function pushToast(text: string, tone: Tone, now: number): void {
   session.toastSeq += 1;
-  session.toasts.push({ id: session.toastSeq, text, tone, at: now });
-  if (session.toasts.length > 6) session.toasts.shift();
+  // Count-capped flat feed: the shared primitive keeps the newest 6, same as the old push/shift.
+  session.toasts = appendFeed(session.toasts, { id: session.toastSeq, text, tone, at: now }, { limit: 6 });
 }

@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import { createDecayMeterSet } from "./decayMeter";
+import {
+  createDecayMeterSet,
+  decayMeterMoodles,
+  decayMeterSnapshot,
+  decayMeterState,
+  decayMeters,
+  initDecayMeters,
+  refillMeter,
+  type DecayMeterConfig,
+} from "./decayMeter";
 
 describe("createDecayMeterSet", () => {
   test("drains at rate * dt on game time", () => {
@@ -86,5 +95,96 @@ describe("createDecayMeterSet", () => {
   test("unknown meter id throws", () => {
     const meters = createDecayMeterSet([{ id: "hunger", max: 100, rate: 1 }]);
     expect(() => meters.value("nope")).toThrow();
+  });
+});
+
+describe("pure decay meters", () => {
+  const defs: readonly DecayMeterConfig[] = [
+    { id: "hunger", max: 100, rate: 2 },
+    { id: "warmth", max: 100, min: 0, start: 50, rate: -5 },
+  ];
+
+  test("initDecayMeters seeds start ?? max clamped", () => {
+    expect(initDecayMeters(defs)).toEqual({ hunger: 100, warmth: 50 });
+  });
+
+  test("decayMeters drains/fills by rate * dt and returns a new record", () => {
+    const start = initDecayMeters(defs);
+    const next = decayMeters(start, defs, 5);
+    expect(next).toEqual({ hunger: 90, warmth: 75 });
+    expect(start).toEqual({ hunger: 100, warmth: 50 });
+  });
+
+  test("scalar modifier scales every meter (e.g. metabolism)", () => {
+    const next = decayMeters({ hunger: 100, warmth: 50 }, defs, 1, 2);
+    expect(next).toEqual({ hunger: 96, warmth: 60 });
+  });
+
+  test("per-meter modifier record scales only named meters", () => {
+    const next = decayMeters({ hunger: 100, warmth: 50 }, defs, 1, { hunger: 3 });
+    expect(next).toEqual({ hunger: 94, warmth: 55 });
+  });
+
+  test("dt <= 0 returns the same record reference", () => {
+    const start = { hunger: 100, warmth: 50 };
+    expect(decayMeters(start, defs, 0)).toBe(start);
+  });
+
+  test("values clamp to each meter range", () => {
+    const drained = decayMeters({ hunger: 3, warmth: 50 }, defs, 10);
+    expect(drained.hunger).toBe(0);
+    const filled = decayMeters({ hunger: 100, warmth: 98 }, defs, 10);
+    expect(filled.warmth).toBe(100);
+  });
+
+  test("refillMeter tops up one meter, clamped, immutably", () => {
+    const values = { hunger: 30, warmth: 50 };
+    expect(refillMeter(values, defs, "hunger", 50)).toEqual({ hunger: 80, warmth: 50 });
+    expect(refillMeter(values, defs, "hunger", 999).hunger).toBe(100);
+    expect(values.hunger).toBe(30);
+    expect(() => refillMeter(values, defs, "nope", 1)).toThrow();
+  });
+
+  test("decayMeterState reports fraction and snapshot covers every meter", () => {
+    const values = { hunger: 50, warmth: 25 };
+    expect(decayMeterState(values, defs, "hunger").fraction).toBe(0.5);
+    expect(Object.keys(decayMeterSnapshot(values, defs))).toEqual(["hunger", "warmth"]);
+  });
+
+  test("decayMeterMoodles raises crossed thresholds worst-first", () => {
+    const threshDefs: readonly DecayMeterConfig[] = [
+      {
+        id: "hunger",
+        max: 100,
+        rate: 1,
+        thresholds: [
+          { id: "peckish", label: "Peckish", at: 50, when: "below", severity: "neutral" },
+          { id: "starving", label: "Starving", at: 15, when: "below", severity: "critical" },
+        ],
+      },
+    ];
+    expect(decayMeterMoodles({ hunger: 40 }, threshDefs).map((m) => m.id)).toEqual(["peckish"]);
+    expect(decayMeterMoodles({ hunger: 10 }, threshDefs).map((m) => m.id).sort()).toEqual([
+      "peckish",
+      "starving",
+    ]);
+  });
+
+  test("state serializes and round-trips through JSON without a closure", () => {
+    let values = initDecayMeters(defs);
+    values = decayMeters(values, defs, 3);
+    const restored = JSON.parse(JSON.stringify(values)) as typeof values;
+    expect(restored).toEqual(values);
+    // Continuing the sim from the deserialized record is identical to never serializing.
+    expect(decayMeters(restored, defs, 2)).toEqual(decayMeters(values, defs, 2));
+  });
+
+  test("the closure form is observably equivalent to the pure form", () => {
+    const set = createDecayMeterSet(defs);
+    set.tick(5);
+    set.refill("hunger", 10);
+    let values = decayMeters(initDecayMeters(defs), defs, 5);
+    values = refillMeter(values, defs, "hunger", 10);
+    expect(set.snapshot()).toEqual(decayMeterSnapshot(values, defs));
   });
 });
