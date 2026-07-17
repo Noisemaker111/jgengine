@@ -369,6 +369,11 @@
 - `PerfMarkSummary` (interface): interface PerfMarkSummary — Rolling averages (ms) of the authoring marks recorded since the last flush.
 - `editorPerfMarks` (const): const editorPerfMarks: PerfAccumulator — Shared accumulator the sculpt/paint layer records into and the perf probe flushes each window.
 
+## @jgengine/editor/perfPill
+
+- `EDITOR_PERF_LOW_FPS` (const): const EDITOR_PERF_LOW_FPS: 30 — FPS at or below which an *actively rendering* editor frame is treated as struggling. Only applied when the loop is active — an idle / browser-throttled loop never trips it.
+- `EditorPerfTone` (type): type EditorPerfTone = "idle" | "healthy" | "busy" — Toolbar perf-pill health, separating an idle render-on-demand loop from a genuinely slow frame.
+
 ## @jgengine/editor/session
 
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
