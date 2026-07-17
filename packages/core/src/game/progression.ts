@@ -1,3 +1,8 @@
+/**
+ * The shape of a progression curve before rounding/clamping: a constant, a
+ * linear ramp, a `power` or `geometric` growth, discrete `steps`, or a
+ * `piecewise` interpolation between explicit points. Feed it to {@link evalCurve}.
+ */
 export type CurveDef =
   | { kind: "const"; value: number }
   | { kind: "linear"; base: number; per: number }
@@ -6,12 +11,14 @@ export type CurveDef =
   | { kind: "steps"; values: number[] }
   | { kind: "piecewise"; points: [number, number][] };
 
+/** Post-evaluation adjustments applied to a curve's raw output: rounding mode and min/max clamp. */
 export interface CurveShape {
   round?: "floor" | "ceil" | "round";
   min?: number;
   max?: number;
 }
 
+/** A fully specified progression curve — a {@link CurveDef} growth shape plus optional {@link CurveShape} rounding/clamp. */
 export type Curve = CurveDef & CurveShape;
 
 function rawCurve(def: CurveDef, x: number): number {
@@ -50,6 +57,14 @@ function interpolate(points: [number, number][], x: number): number {
   return last[1];
 }
 
+/**
+ * Evaluate a progression {@link Curve} at position `x`, applying its rounding
+ * mode and min/max clamp. This is the shared numeric backbone for XP-per-level,
+ * cost ramps, difficulty scaling, and any other level/rank → value mapping — use
+ * it instead of hand-rolling growth formulas.
+ *
+ * @capability progression-curve evaluate a level/rank curve (const, linear, power, geometric, steps, piecewise) at a point
+ */
 export function evalCurve(spec: Curve, x: number): number {
   let y = rawCurve(spec, x);
   if (spec.min !== undefined) y = Math.max(spec.min, y);
@@ -66,10 +81,12 @@ export function evalCurve(spec: Curve, x: number): number {
   }
 }
 
+/** Bind a {@link Curve} into a reusable `(x) => value` evaluator — a partial application of {@link evalCurve}. */
 export function curve(spec: Curve): (x: number) => number {
   return (x) => evalCurve(spec, x);
 }
 
+/** Result of resolving a level+xp pair: the settled `level`, leftover `xp` into the current level, the `xpMax` threshold for the next level, and how many `levelsGained` this resolution produced. */
 export interface LevelProgress {
   level: number;
   xp: number;
@@ -77,6 +94,12 @@ export interface LevelProgress {
   levelsGained: number;
 }
 
+/**
+ * Configuration for a {@link leveling} track: the `xpForLevel` {@link Curve}, the
+ * `maxLevel` cap, and optional `startLevel`, stat ids (`xpStat`/`levelStat`,
+ * default `"xp"`/`"level"`), and `thresholdMode` — `"perLevel"` (each level costs
+ * its own curve value) or `"cumulative"` (curve gives the total xp to reach a level).
+ */
 export interface LevelingConfig {
   xpForLevel: Curve;
   maxLevel: number;
@@ -86,11 +109,13 @@ export interface LevelingConfig {
   thresholdMode?: "perLevel" | "cumulative";
 }
 
+/** Adapter a {@link LevelingTrack} uses to read and write a user's level/xp stats, so the track stays decoupled from any concrete stats store. */
 export interface LevelingStatAccess {
   get(userId: string, statId: string): { current: number; max: number } | null;
   set(userId: string, statId: string, patch: { current?: number; max?: number }): unknown;
 }
 
+/** A resolved leveling track: the immutable `maxLevel`/`startLevel`, the `xpForLevel` threshold lookup, a pure `resolve`, and `grantXp` which writes back through a {@link LevelingStatAccess} and fires an `onLevelUp` callback. */
 export interface LevelingTrack {
   readonly maxLevel: number;
   readonly startLevel: number;
@@ -104,6 +129,16 @@ export interface LevelingTrack {
   ): number;
 }
 
+/**
+ * Build a leveling track from an xp-per-level {@link Curve} and a max level. The
+ * returned {@link LevelingTrack} resolves how many levels a given xp total earns
+ * (rolling over surplus xp, capping at `maxLevel`) and, via `grantXp`, writes the
+ * new level/xp back through a {@link LevelingStatAccess} and fires `onLevelUp` for
+ * each level gained. Reach for this instead of hand-tracking xp thresholds; pair
+ * it with `resource-pool` (mana/stamina) and `ability-bar` (cooldowns) for a hero.
+ *
+ * @capability leveling-track grant XP, resolve level-ups against a curve, and write level+xp stats back through a stat adapter
+ */
 export function leveling(config: LevelingConfig): LevelingTrack {
   const maxLevel = config.maxLevel;
   const startLevel = config.startLevel ?? 1;
