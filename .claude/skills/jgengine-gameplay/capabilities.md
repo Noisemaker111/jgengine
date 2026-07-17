@@ -149,6 +149,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
 
+## stat-graph — derive game-defined stats from named inputs with provenance and preview
+
+- `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
+
+## stat-graph-bridge — feed an existing StatModifierSet into a stat-graph source
+
+- `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
+
 ## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
