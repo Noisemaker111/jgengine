@@ -514,6 +514,20 @@ export {
   type TerrainPalette,
 } from "./world/terrain";
 export { VEGETATION_VOLUME_KIND } from "./world/vegetation";
+export {
+  VISIBILITY_HIDDEN,
+  VISIBILITY_OBSERVED,
+  VISIBILITY_REMEMBERED,
+  createVisibilityField,
+  type VisibilityCells,
+  type VisibilityDelta,
+  type VisibilityField,
+  type VisibilityFieldConfig,
+  type VisibilityFieldState,
+  type VisibilityGroupState,
+  type VisibilityMemory,
+  type VisibilityState,
+} from "./world/visibilityField";
 export { type VolumetricCloudsConfig, type VolumetricCloudsRules } from "./world/volumetricClouds";
 export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";

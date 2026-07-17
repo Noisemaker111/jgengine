@@ -1452,9 +1452,20 @@
 - `TriggerHandlers` (type): type TriggerHandlers = Readonly<Record<string, (event: TriggerDispatchEvent) => void>> — Handler map keyed by action id — unknown actions are skipped unless `onDispatch` is set.
 - `TriggerSourceKind` (type): type TriggerSourceKind = "marker" | "volume" — Document collection a trigger source lives on.
 - `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
+- `VISIBILITY_HIDDEN` (const): const VISIBILITY_HIDDEN: 0 — Numeric code for a cell no group member has seen, or has fully forgotten.
+- `VISIBILITY_OBSERVED` (const): const VISIBILITY_OBSERVED: 2 — Numeric code for a cell a group currently observes.
+- `VISIBILITY_REMEMBERED` (const): const VISIBILITY_REMEMBERED: 1 — Numeric code for a cell seen before but not currently in view (last-known).
 - `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
+- `VisibilityCells` (interface): interface VisibilityCells — Dense per-cell readout for one group, shaped for minimap/overlay drawing.
 - `VisibilityConfig` (interface): interface VisibilityConfig — Per-game visibility configuration, surfaced on `PlayableGame.visibility`. Everything is optional: an existing game that sets nothing gets the conservative engine defaults automatically. This is the scene-level and per-kind override seam (requirement: per-object, per-layer, per-scene, and global controls).
+- `VisibilityDelta` (interface): interface VisibilityDelta — The cells that changed state for one group in a single {@link VisibilityField.observe} call — a pure incremental readout for rendering, minimaps, AI, UI, and authoritative replication. Never lists unchanged cells, so it stays bounded by how much the group's view actually moved.
+- `VisibilityField` (interface): interface VisibilityField — A gameplay (fog-of-war) knowledge field: per viewer group, every grid cell is hidden, remembered, or observed. Distinct from render culling in `core/visibility` — this models what a team KNOWS, not what a camera can draw. It generalizes `world/fog`'s single-group reveal-once model to many groups with configurable terrain memory, and keeps each group's knowledge isolated so one group's hidden state can never be derived from another's.
+- `VisibilityFieldConfig` (interface): interface VisibilityFieldConfig — Construction options for {@link createVisibilityField}.
+- `VisibilityFieldState` (interface): interface VisibilityFieldState — Serializable snapshot of a whole field — JSON round-trips losslessly.
+- `VisibilityGroupState` (interface): interface VisibilityGroupState — Sparse serialized knowledge for one group — only non-hidden cells are stored.
+- `VisibilityMemory` (type): type VisibilityMemory = | { readonly kind: "permanent" } | { readonly kind: "none" } | { readonly kind: "decay"; readonly updates: number } — How a cell decays after a group stops observing it — the terrain-memory policy. `permanent` keeps last-known terrain forever (RTS explored map); `none` drops it straight back to hidden the moment it leaves view (pure line-of-sight stealth); `decay` remembers it for `updates` observe cycles, then hides it. Day/night, height, sensor, and stealth rules are NOT encoded here — the caller bakes those into which cells it reports as observed each update.
+- `VisibilityState` (type): type VisibilityState = "hidden" | "remembered" | "observed" — One viewer group's knowledge of a cell: never/forgotten, last-known, or live.
 - `VisibilitySystem` (interface): interface VisibilitySystem — ⚠ undocumented
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
@@ -1547,6 +1558,7 @@
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
+- `createVisibilityField` (function): function createVisibilityField(config: VisibilityFieldConfig): VisibilityField — Build a per-group gameplay visibility field. First adopters: an RTS/stealth team whose scout observes terrain (which stays remembered after it leaves) while enemy units re-hide once no scout observes their cell, and any authoritative host that must filter hidden entities out of a client's replica.
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 - `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
 - `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
@@ -2250,6 +2262,21 @@
 - `VEGETATION_VOLUME_KIND` (const): const VEGETATION_VOLUME_KIND: "vegetation" — The editor volume kind that marks an area as vegetation fill.
 - `VegetationPlacement` (interface): interface VegetationPlacement — One placed vegetation instance — position on the ground plane plus per-instance variation.
 - `VegetationSettings` (interface): interface VegetationSettings — How a vegetation volume fills its area, read from the volume's `meta`. `density` is items per square meter — the one slider number: grass blades, trees, bushes, rocks all scale with it. Every field has a default, so a freshly placed `kind: "vegetation"` volume already grows grass.
+
+## @jgengine/core/world/visibilityField
+
+- `VISIBILITY_HIDDEN` (const): const VISIBILITY_HIDDEN: 0 — Numeric code for a cell no group member has seen, or has fully forgotten.
+- `VISIBILITY_OBSERVED` (const): const VISIBILITY_OBSERVED: 2 — Numeric code for a cell a group currently observes.
+- `VISIBILITY_REMEMBERED` (const): const VISIBILITY_REMEMBERED: 1 — Numeric code for a cell seen before but not currently in view (last-known).
+- `VisibilityCells` (interface): interface VisibilityCells — Dense per-cell readout for one group, shaped for minimap/overlay drawing.
+- `VisibilityDelta` (interface): interface VisibilityDelta — The cells that changed state for one group in a single {@link VisibilityField.observe} call — a pure incremental readout for rendering, minimaps, AI, UI, and authoritative replication. Never lists unchanged cells, so it stays bounded by how much the group's view actually moved.
+- `VisibilityField` (interface): interface VisibilityField — A gameplay (fog-of-war) knowledge field: per viewer group, every grid cell is hidden, remembered, or observed. Distinct from render culling in `core/visibility` — this models what a team KNOWS, not what a camera can draw. It generalizes `world/fog`'s single-group reveal-once model to many groups with configurable terrain memory, and keeps each group's knowledge isolated so one group's hidden state can never be derived from another's.
+- `VisibilityFieldConfig` (interface): interface VisibilityFieldConfig — Construction options for {@link createVisibilityField}.
+- `VisibilityFieldState` (interface): interface VisibilityFieldState — Serializable snapshot of a whole field — JSON round-trips losslessly.
+- `VisibilityGroupState` (interface): interface VisibilityGroupState — Sparse serialized knowledge for one group — only non-hidden cells are stored.
+- `VisibilityMemory` (type): type VisibilityMemory = | { readonly kind: "permanent" } | { readonly kind: "none" } | { readonly kind: "decay"; readonly updates: number } — How a cell decays after a group stops observing it — the terrain-memory policy. `permanent` keeps last-known terrain forever (RTS explored map); `none` drops it straight back to hidden the moment it leaves view (pure line-of-sight stealth); `decay` remembers it for `updates` observe cycles, then hides it. Day/night, height, sensor, and stealth rules are NOT encoded here — the caller bakes those into which cells it reports as observed each update.
+- `VisibilityState` (type): type VisibilityState = "hidden" | "remembered" | "observed" — One viewer group's knowledge of a cell: never/forgotten, last-known, or live.
+- `createVisibilityField` (function): function createVisibilityField(config: VisibilityFieldConfig): VisibilityField — Build a per-group gameplay visibility field. First adopters: an RTS/stealth team whose scout observes terrain (which stays remembered after it leaves) while enemy units re-hide once no scout observes their cell, and any authoritative host that must filter hidden entities out of a client's replica.
 
 ## @jgengine/core/world/volumetricClouds
 

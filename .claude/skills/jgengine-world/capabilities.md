@@ -174,6 +174,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
 
+## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
+
+- `createVisibilityField` (function) · `import { createVisibilityField } from "@jgengine/core/world"`
+
 ## volumetric-clouds — raymarched cloud layer sky option
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
