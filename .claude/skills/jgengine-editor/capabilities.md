@@ -27,3 +27,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `planRuntimeInspectorSet` (function) · `import { planRuntimeInspectorSet } from "@jgengine/core/editor"`
 - `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
 - `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
+
+## scene-ownership — audit a whole ownership manifest for boundary violations
+
+- `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/scene/sceneOwnership"`
+- `classifyOwnership` (function) · `import { classifyOwnership } from "@jgengine/core/scene/sceneOwnership"`
+- `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
+- `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
+- `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`

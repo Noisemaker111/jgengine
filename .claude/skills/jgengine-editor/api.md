@@ -130,6 +130,27 @@
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
 
+## @jgengine/core/scene/sceneOwnership
+
+- `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
+- `GeneratedProvenance` (interface): interface GeneratedProvenance — An object derived from an authored document object — instances scattered from a painted layer, walls extruded from an authored footprint. Edits belong on the source object, not the generated instance.
+- `OwnershipDecision` (type): type OwnershipDecision = "expose" | "bake" | "reject" — The boundary's resolution for one object.
+- `OwnershipDiagnostic` (interface): interface OwnershipDiagnostic — One boundary problem found while auditing a set of declarations.
+- `OwnershipVerdict` (interface): interface OwnershipVerdict — The full verdict for one object: its decision plus the flags and diagnostic the editor needs to act on it.
+- `ProviderCapabilities` (interface): interface ProviderCapabilities — What a provider lets the editor do with one of its objects. Absent flags default to `false`.
+- `RuntimeProvenance` (interface): interface RuntimeProvenance — An object owned entirely by runtime or procedural code with no document entry. Not authorable unless its provider can bake it into schema-valid authored data.
+- `SCENE_OWNERSHIP_MANIFEST_VERSION` (const): const SCENE_OWNERSHIP_MANIFEST_VERSION: 1 — Current {@link SceneOwnershipManifest} schema version.
+- `SceneOwnershipDeclaration` (interface): interface SceneOwnershipDeclaration — A provider's explicit ownership declaration for one editor-visible object.
+- `SceneOwnershipManifest` (interface): interface SceneOwnershipManifest — Serializable record of a world's ownership declarations — persisted next to the scene document or shipped by a game.
+- `SceneProvenance` (type): type SceneProvenance = | AuthoredProvenance | GeneratedProvenance | RuntimeProvenance | TransientProvenance — The provenance of one editor-visible object — authored, generated, runtime, or transient.
+- `SceneProvenanceKind` (type): type SceneProvenanceKind = "authored" | "generated" | "runtime" | "transient" — Scene ownership boundary — gives every editor-visible object an explicit provenance and a single verdict (expose / bake / reject) so the editor never presents unauthored content as broken authored content.
+- `TransientProvenance` (interface): interface TransientProvenance — An ephemeral simulation object — a spawned agent, projectile, or particle that never persists.
+- `auditManifest` (function): function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagnostic[] — Audit every declaration in a manifest, keying diagnostics by each object's provenance id. An empty result means the manifest declares all of its content cleanly — every object is authored, generated, bakeable, or a reasoned runtime/transient object.
+- `classifyOwnership` (function): function classifyOwnership(declaration: SceneOwnershipDeclaration): OwnershipVerdict — Resolve one declaration into a single boundary verdict.
+- `collectOwnershipDiagnostics` (function): function collectOwnershipDiagnostics(entries: Iterable<readonly [string, SceneOwnershipDeclaration]>): OwnershipDiagnostic[] — Audit a keyed set of declarations and return one diagnostic per object that breaks the boundary contract (a `reject` verdict carrying a `violation`). Deterministic: diagnostics come back in the iteration order of `entries`.
+- `isSceneOwnershipManifest` (function): function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest — Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only — verifies the version, the declarations array, and each declaration's provenance shape; it does not judge whether declarations satisfy the boundary (use {@link auditManifest} for that).
+- `ownershipKey` (function): function ownershipKey(provenance: SceneProvenance): string — Stable identity string for a provenance (e.g. `runtime:town/building-3`), suitable for keying an object in an editor tree or a diagnostics table.
+
 ## @jgengine/editor
 
 - `AgentChatMessage` (interface): interface AgentChatMessage — One turn message exchanged with a pluggable agent endpoint (user, assistant, tool, or system).
