@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, relative, resolve, sep } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
@@ -7,6 +7,8 @@ import { EDITOR_SCENE_FILENAME, devSavePlugin } from "./devSavePlugin";
 const MODEL_EXT = /\.(glb|gltf)$/i;
 const ASSET_ROUTE = "/__jgengine/assets/";
 const MANIFEST_ROUTE = "/__jgengine/manifest";
+const IMPORT_ROUTE = "/__jgengine/import-asset";
+const MAX_ASSET_BYTES = 128 * 1024 * 1024;
 
 /** One placeable model the standalone editor lists — a stable id and a URL the dev server serves it from. */
 export interface EditorManifestAsset {
@@ -62,6 +64,55 @@ export function buildEditorManifest(sceneDir: string, assetsDir: string): Editor
   return { scene, assets };
 }
 
+/** Strips path components and unsafe characters from an uploaded model filename, keeping its `.glb`/`.gltf` extension. */
+function safeAssetFilename(filename: string): string {
+  const base = (filename.split(/[\\/]/).pop() ?? "").trim();
+  const ext = extname(base).toLowerCase();
+  const stem = base
+    .slice(0, base.length - ext.length)
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "");
+  return (stem.length > 0 ? stem : "asset") + ext;
+}
+
+/**
+ * Persists an uploaded model into the asset folder so it survives reload and the manifest scan re-lists it
+ * under the same id — the durable counterpart to the standalone editor's ephemeral blob imports. Returns the
+ * manifest entry (id/url/label) the scan would produce for the written file. The pure core `/__jgengine/import-asset` serves.
+ * @internal
+ */
+export function importEditorAsset(
+  assetsDir: string,
+  filename: string,
+  bytes: Uint8Array,
+): EditorManifestAsset {
+  if (!MODEL_EXT.test(filename)) {
+    throw new Error(`unsupported asset file (expected .glb/.gltf): ${filename}`);
+  }
+  const safe = safeAssetFilename(filename);
+  mkdirSync(assetsDir, { recursive: true });
+  writeFileSync(join(assetsDir, safe), bytes);
+  return { id: assetIdFromRel(safe), url: ASSET_ROUTE + safe, label: safe };
+}
+
+function readBodyBuffer(req: IncomingMessage): Promise<Buffer> {
+  return new Promise((resolvePromise, reject) => {
+    let size = 0;
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > MAX_ASSET_BYTES) {
+        reject(new Error("asset upload too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolvePromise(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
 interface DevServerLike {
   middlewares: {
     use(
@@ -88,8 +139,9 @@ export interface EditorHostOptions {
 /**
  * Dev-server plugin that turns any folder into a standalone-editor workspace: it serves the folder's
  * `editor.scene.json` and every model under it at `/__jgengine/manifest`, streams the model bytes at
- * `/__jgengine/assets/*`, and writes Save back to `editor.scene.json` — the server half of
- * `jgengine editor`, drop-in for a Vite dev config.
+ * `/__jgengine/assets/*`, persists uploaded models into the asset folder at `POST /__jgengine/import-asset`
+ * (so a dropped GLB survives reload as a durable catalog asset), and writes Save back to `editor.scene.json`
+ * — the server half of `jgengine editor`, drop-in for a Vite dev config.
  * @internal
  */
 export function editorHostPlugin(options: EditorHostOptions = {}): EditorHostPluginShape {
@@ -110,6 +162,33 @@ export function editorHostPlugin(options: EditorHostOptions = {}): EditorHostPlu
         }
         res.setHeader("content-type", "application/json");
         res.end(JSON.stringify(buildEditorManifest(dir, assetsDir)));
+      });
+      server.middlewares.use(IMPORT_ROUTE, (req, res, next) => {
+        if (req.method !== "POST") {
+          next();
+          return;
+        }
+        const header = req.headers["x-jg-filename"];
+        const rawName = Array.isArray(header) ? header[0] : header;
+        void readBodyBuffer(req)
+          .then((bytes) => {
+            let filename: string;
+            try {
+              filename = decodeURIComponent(rawName ?? "");
+            } catch {
+              filename = rawName ?? "";
+            }
+            const asset = importEditorAsset(assetsDir, filename, bytes);
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify(asset));
+          })
+          .catch((error: unknown) => {
+            res.statusCode = 400;
+            res.setHeader("content-type", "application/json");
+            res.end(
+              JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+            );
+          });
       });
       server.middlewares.use(ASSET_ROUTE, (req, res, next) => {
         const rel = decodeURIComponent((req.url ?? "").split("?")[0]).replace(/^\/+/, "");
