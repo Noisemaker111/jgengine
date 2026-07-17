@@ -14,6 +14,7 @@ import { BUILD_CONFIG } from "./building";
 import { TRAINING_CONFIG } from "./production";
 import { FORMATION_SPACING, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
 import { livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
+import { pendingRanks, RESEARCH_CONFIG, UPGRADES, upgradeRank } from "./upgrades";
 
 export interface OrderInput {
   selection: readonly string[];
@@ -187,6 +188,36 @@ function armBuild(ctx: GameContext, type: string): GameContext {
   return ctx;
 }
 
+/** Can the player start the next rank of `upgradeId`? One rank of an upgrade researches at a time;
+ * it needs the building, an unmet rank cap, and the gold/lumber for the next rank. Shared by the
+ * command and the HUD gate. */
+export function canResearch(ctx: GameContext, upgradeId: string): boolean {
+  if (session.over) return false;
+  const up = UPGRADES[upgradeId];
+  if (up === undefined) return false;
+  if (pendingRanks(upgradeId) > 0) return false; // already researching this upgrade
+  const rank = upgradeRank(upgradeId);
+  if (rank >= up.maxRank) return false;
+  if (!livingUnits("player", "building").some((u) => u.catalogId === up.requires)) return false;
+  for (const [currency, amount] of Object.entries(up.cost(rank))) {
+    if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
+  }
+  return true;
+}
+
+function research(ctx: GameContext, upgradeId: string): GameContext {
+  if (!canResearch(ctx, upgradeId)) return ctx;
+  const up = UPGRADES[upgradeId]!;
+  const rank = upgradeRank(upgradeId);
+  const result = enqueue(session.research.queue, RESEARCH_CONFIG, { upgradeId, toRank: rank + 1 });
+  if (!result.ok) return ctx;
+  session.research.queue = result.state;
+  for (const [currency, amount] of Object.entries(up.cost(rank))) {
+    ctx.game.economy.charge(ctx.player.userId, currency, amount);
+  }
+  return ctx;
+}
+
 export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<OrderInput>("unit.order", { apply: orderSelection });
   ctx.game.commands.define("unit.attackMove", { apply: armAttackMove });
@@ -194,4 +225,6 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("train.footman", { apply: (state) => trainUnit(state, "footman") });
   ctx.game.commands.define("train.rifleman", { apply: (state) => trainUnit(state, "rifleman") });
   ctx.game.commands.define<{ type: string }>("build.arm", { apply: (state, input) => armBuild(state, input.type) });
+  ctx.game.commands.define("research.weapons", { apply: (state) => research(state, "weapons") });
+  ctx.game.commands.define("research.armor", { apply: (state) => research(state, "armor") });
 }

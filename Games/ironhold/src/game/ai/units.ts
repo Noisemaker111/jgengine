@@ -4,6 +4,7 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
 import { playerDepot, session, type UnitRuntime } from "../session";
+import { resolveDamage } from "../upgrades";
 
 /** Extra reach against a building's broad footprint so attackers stop at the wall, not the centre. */
 const BUILDING_REACH_BONUS = 3.5;
@@ -148,7 +149,8 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
       faceToward(ctx, u.id, self.position, ent.position[0], ent.position[2]);
       u.attackCooldown -= dt;
       if (u.attackCooldown <= 0) {
-        ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount: def.damage } });
+        const amount = resolveDamage(def.damage, u.faction, target.faction);
+        ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
         u.attackCooldown = def.attackCooldown;
       }
       return;

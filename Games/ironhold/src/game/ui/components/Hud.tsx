@@ -5,6 +5,7 @@ import { useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type HudSnapshot } from "../../hudStore";
 import { BARRACKS_UNITS, BUILDINGS, COMBATANTS, TRAINABLE } from "../../catalog";
+import { UPGRADES } from "../../upgrades";
 import { Minimap } from "./Minimap";
 
 const BUILD_LABELS: Record<string, string> = { barracks: "Barracks", farm: "Farm", guard_tower: "Guard Tower" };
@@ -116,6 +117,30 @@ function costLabel(unitId: string): string {
   return cost(TRAINABLE[unitId]?.cost.gold, TRAINABLE[unitId]?.cost.lumber);
 }
 
+function researchState(hud: HudSnapshot, id: string): { rank: number; have: number } {
+  return id === "weapons"
+    ? { rank: hud.weaponsRank, have: hud.weaponsHave }
+    : { rank: hud.armorRank, have: hud.armorHave };
+}
+
+function researchAffordable(hud: HudSnapshot, id: string): boolean {
+  const up = UPGRADES[id];
+  if (up === undefined || hud.phase !== "playing" || !hud.hasBarracks) return false;
+  const { rank, have } = researchState(hud, id);
+  if (have >= up.maxRank || have > rank) return false; // capped, or a rank already in progress
+  const c = up.cost(have);
+  return (c.gold ?? 0) <= hud.gold && (c.lumber ?? 0) <= hud.lumber;
+}
+
+function researchSub(hud: HudSnapshot, id: string): string {
+  const up = UPGRADES[id]!;
+  const { rank, have } = researchState(hud, id);
+  if (have >= up.maxRank) return `L${rank} · max`;
+  if (have > rank) return `→ L${rank + 1} …`;
+  const c = up.cost(have);
+  return `L${rank} · ${cost(c.gold, c.lumber)}`;
+}
+
 /** WC3-style bottom console: framed minimap · commander portrait · command card. */
 function CommandConsole() {
   const hud = useHud();
@@ -156,6 +181,13 @@ function CommandConsole() {
             <ConsoleButton label="Barracks" sub={cost(BUILDINGS.barracks!.cost.gold, BUILDINGS.barracks!.cost.lumber)} active={hud.buildArmed === "barracks"} disabled={!buildAffordable(hud, "barracks")} onClick={() => commands.run("build.arm", { type: "barracks" })} />
             <ConsoleButton label="Farm +food" sub={cost(BUILDINGS.farm!.cost.gold, BUILDINGS.farm!.cost.lumber)} active={hud.buildArmed === "farm"} disabled={!buildAffordable(hud, "farm")} onClick={() => commands.run("build.arm", { type: "farm" })} />
             <ConsoleButton label="Guard Tower" sub={cost(BUILDINGS.guard_tower!.cost.gold, BUILDINGS.guard_tower!.cost.lumber)} active={hud.buildArmed === "guard_tower"} disabled={!buildAffordable(hud, "guard_tower")} onClick={() => commands.run("build.arm", { type: "guard_tower" })} />
+          </div>
+        </div>
+        <div>
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">Research{hud.hasBarracks ? "" : " · needs Barracks"}</div>
+          <div className="flex gap-2">
+            <ConsoleButton label={UPGRADES.weapons!.label} sub={researchSub(hud, "weapons")} disabled={!researchAffordable(hud, "weapons")} onClick={() => commands.run("research.weapons", {})} />
+            <ConsoleButton label={UPGRADES.armor!.label} sub={researchSub(hud, "armor")} disabled={!researchAffordable(hud, "armor")} onClick={() => commands.run("research.armor", {})} />
           </div>
         </div>
       </div>

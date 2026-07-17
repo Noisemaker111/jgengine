@@ -5,6 +5,7 @@ import type { UnitReservation, UnitTrainingSpec } from "@jgengine/core/work/unit
 import type { BuildSpec } from "./building";
 import { combatantDef, type CombatantKind } from "./catalog";
 import { ENEMY_WAVE_FIRST_DELAY, TOWN_HALL_FOOD, type Faction } from "./tuning";
+import type { ResearchSpec } from "./upgrades";
 
 /** A commanded intent for one unit. Serializable plain data — no closures, no entity refs. */
 export type UnitCommand =
@@ -52,6 +53,8 @@ export interface SessionState {
   production: WorkQueueState<UnitTrainingSpec, UnitReservation>;
   /** Buildings under construction. */
   buildQueue: WorkQueueState<BuildSpec, undefined>;
+  /** Player research: achieved upgrade ranks + the in-progress research queue. */
+  research: { ranks: Record<string, number>; queue: WorkQueueState<ResearchSpec, undefined> };
   /** A building catalog id armed for placement; the next right-click drops it. */
   buildArmed: string | null;
   /** Supply cap the player's buildings provide (Town Hall + farms). */
@@ -72,6 +75,7 @@ function fresh(): SessionState {
     resourceField: null,
     production: createWorkQueue<UnitTrainingSpec, UnitReservation>(),
     buildQueue: createWorkQueue<BuildSpec, undefined>(),
+    research: { ranks: {}, queue: createWorkQueue<ResearchSpec, undefined>() },
     buildArmed: null,
     supplyCap: TOWN_HALL_FOOD,
     attackMoveArmed: false,

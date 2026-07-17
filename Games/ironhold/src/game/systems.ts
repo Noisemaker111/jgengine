@@ -10,6 +10,7 @@ import { hudStore } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
 import { GOLD, INCOME_TRICKLE, LUMBER } from "./tuning";
 import { livingUnits, session, usedSupply, type UnitRuntime } from "./session";
+import { grantResearch, RESEARCH_CONFIG, resolveDamage, upgradeHave, upgradeRank } from "./upgrades";
 
 function keepStat(ctx: GameContext, faction: "player" | "enemy"): { current: number; max: number } {
   const keep = livingUnits(faction, "building")[0];
@@ -112,6 +113,20 @@ const constructionSystem: SystemDefinition = defineSystem({
   },
 });
 
+/** Advance the research queue; each finished job raises its upgrade's rank permanently. */
+const researchSystem: SystemDefinition = defineSystem({
+  id: "ironhold.research",
+  tick: { type: "frame", stage: "combat" },
+  update(ctx, dt) {
+    if (session.over) return;
+    const result = tickQueue(session.research.queue, RESEARCH_CONFIG, dt);
+    session.research.queue = result.state;
+    for (const event of result.events) {
+      if (event.type === "completed") grantResearch(event.output);
+    }
+  },
+});
+
 /** Guard Towers auto-fire at the nearest hostile within range. */
 const towerSystem: SystemDefinition = defineSystem({
   id: "ironhold.towers",
@@ -138,7 +153,9 @@ const towerSystem: SystemDefinition = defineSystem({
         }
       }
       if (targetId !== null && u.attackCooldown <= 0) {
-        ctx.scene.entity.effect({ from: u.id, to: targetId, effect: "damage", via: { amount: def.damage } });
+        const defender = session.units.get(targetId)?.faction ?? "enemy";
+        const amount = resolveDamage(def.damage, u.faction, defender);
+        ctx.scene.entity.effect({ from: u.id, to: targetId, effect: "damage", via: { amount } });
         u.attackCooldown = def.attackCooldown;
       }
     }
@@ -182,6 +199,11 @@ const hudSystem: SystemDefinition = defineSystem({
       hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),
       buildArmed: session.buildArmed,
       building: activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length,
+      weaponsRank: upgradeRank("weapons"),
+      weaponsHave: upgradeHave("weapons"),
+      armorRank: upgradeRank("armor"),
+      armorHave: upgradeHave("armor"),
+      researching: activeJobs(session.research.queue).length + queuedJobs(session.research.queue).length,
     });
   },
 });
@@ -191,6 +213,7 @@ export const systems: readonly SystemDefinition[] = [
   enemyAiSystem,
   productionSystem,
   constructionSystem,
+  researchSystem,
   towerSystem,
   incomeSystem,
   hudSystem,

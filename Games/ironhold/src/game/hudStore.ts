@@ -27,6 +27,12 @@ export interface HudSnapshot {
   hasBarracks: boolean;
   buildArmed: string | null;
   building: number;
+  /** Research: achieved rank and achieved+pending "have" per upgrade, plus jobs in the queue. */
+  weaponsRank: number;
+  weaponsHave: number;
+  armorRank: number;
+  armorHave: number;
+  researching: number;
 }
 
 const initial: HudSnapshot = {
@@ -49,6 +55,11 @@ const initial: HudSnapshot = {
   hasBarracks: false,
   buildArmed: null,
   building: 0,
+  weaponsRank: 0,
+  weaponsHave: 0,
+  armorRank: 0,
+  armorHave: 0,
+  researching: 0,
 };
 
 let snapshot: HudSnapshot = initial;
@@ -73,7 +84,12 @@ function changed(next: HudSnapshot): boolean {
     Math.abs(p.trainProgress - next.trainProgress) > 0.02 ||
     p.hasBarracks !== next.hasBarracks ||
     p.buildArmed !== next.buildArmed ||
-    p.building !== next.building
+    p.building !== next.building ||
+    p.weaponsRank !== next.weaponsRank ||
+    p.weaponsHave !== next.weaponsHave ||
+    p.armorRank !== next.armorRank ||
+    p.armorHave !== next.armorHave ||
+    p.researching !== next.researching
   );
 }
 
