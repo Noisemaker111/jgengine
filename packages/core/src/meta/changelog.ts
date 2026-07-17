@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.10.0";
+export const VERSION = "0.11.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.11.0": {
+    migrate: [
+      "Bump lockstep SDK packages to ^0.11.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine and @jgengine/github may lag on their own version lines.",
+      "Nothing required — classic loop.onTick fan-out still runs after systems. Prefer moving per-frame work into defineGame({ systems: [...] }) with defineSystem (@jgengine/core/game/defineSystem); install a system with feature: \"quest\" (etc.) instead of a redundant features flag.",
+    ],
+    added: [
+      "Composable game systems (#842) — defineSystem / compileSystemSchedule / composeGameLoop / installSystems. defineGame({ systems }) is the single authoring path: fixed / frame / interval / event-only / manual ticks, multi-subscribe channels, deterministic stage order + optional before/after/dependsOn, system-owned save / replicate / reset / dispose. Installing a system activates its feature without a separate flag. GameLoop gains optional onReset / onDispose. ctx.game.registerSave / registerReplicate for system modules. Adopters: tower-guard, claudecraft (runtime without a giant tick fan-out).",
+    ],
+    changed: [],
+    removed: [],
+  },
   "0.10.0": {
     migrate: [
       "Bump lockstep SDK packages to ^0.10.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine and @jgengine/github may lag on their own version lines.",

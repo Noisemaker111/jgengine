@@ -424,12 +424,12 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
         "fflate": "^0.8.2",
       },
       "devDependencies": {
@@ -438,9 +438,9 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -454,15 +454,15 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.10.0",
+      "version": "0.11.0",
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
-        "@jgengine/react": "^0.10.0",
-        "@jgengine/shell": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
+        "@jgengine/react": "^0.11.0",
+        "@jgengine/shell": "^0.11.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -488,12 +488,12 @@
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.8.5",
+      "version": "0.8.6",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
       "dependencies": {
-        "@jgengine/assets": "^0.10.0",
+        "@jgengine/assets": "^0.11.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -501,10 +501,10 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
-        "@jgengine/ws": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
+        "@jgengine/ws": "^0.11.0",
         "ws": "^8.18.0",
       },
       "devDependencies": {
@@ -516,9 +516,9 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -533,11 +533,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
-        "@jgengine/react": "^0.10.0",
-        "@jgengine/ws": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
+        "@jgengine/react": "^0.11.0",
+        "@jgengine/ws": "^0.11.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -558,9 +558,9 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
       },
       "devDependencies": {
         "pg-mem": "^3.0.5",
@@ -568,9 +568,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
-        "@jgengine/core": "^0.10.0",
+        "@jgengine/core": "^0.11.0",
       },
     },
     "registry": {
