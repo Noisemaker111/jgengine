@@ -37,6 +37,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   random: "jgengine-gameplay",
   relation: "jgengine-gameplay",
   render: "jgengine-ui",
+  rules: "jgengine-gameplay",
   runtime: MAIN,
   scene: "jgengine-world",
   sensor: "jgengine-world",
