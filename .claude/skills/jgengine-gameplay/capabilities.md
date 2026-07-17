@@ -112,6 +112,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
 
+## param-layers — register parameter layers by stable id and resolve serialized selections
+
+- `createLayerRegistry` (function) · `import { createLayerRegistry } from "@jgengine/core/gameplay"`
+- `diffParams` (function) · `import { diffParams } from "@jgengine/core/gameplay"`
+- `orderLayers` (function) · `import { orderLayers } from "@jgengine/core/gameplay"`
+- `resolveParams` (function) · `import { resolveParams } from "@jgengine/core/gameplay"`
+- `resolveSelection` (function) · `import { resolveSelection } from "@jgengine/core/gameplay"`
+- `validateLayers` (function) · `import { validateLayers } from "@jgengine/core/gameplay"`
+
 ## ping-wheel — contextual ping/marker communication between teammates
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
@@ -136,6 +145,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## race-track — a checkpoint race with laps, standings, splits, and win conditions
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
+
+## rule-selection — register rules and bridge a selection to its contributed parameter layers
+
+- `createRuleRegistry` (function) · `import { createRuleRegistry } from "@jgengine/core/gameplay"`
+- `rerollRules` (function) · `import { rerollRules } from "@jgengine/core/gameplay"`
+- `selectRules` (function) · `import { selectRules } from "@jgengine/core/gameplay"`
 
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
