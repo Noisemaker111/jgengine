@@ -175,6 +175,8 @@ export function useActionBar(defs: readonly ActionDef[], options?: UseActionBarO
   };
 }
 
+// Slot chrome reads the shared HudTheme tokens (#1034) with the built-in look as fallbacks, so a
+// theme restyles action slots alongside the bars/frames and a bare game is byte-identical to before.
 const ITEM_BASE: CSSProperties = {
   position: "relative",
   boxSizing: "border-box",
@@ -183,9 +185,9 @@ const ITEM_BASE: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: 2,
-  border: "1px solid rgba(255,255,255,0.14)",
-  borderRadius: 8,
-  background: "rgba(14,17,22,0.72)",
+  border: "var(--jg-slot-border, 1px solid rgba(255,255,255,0.14))",
+  borderRadius: "var(--jg-slot-radius, 8px)",
+  background: "var(--jg-slot-bg, rgba(14,17,22,0.72))",
   color: "#eef2f8",
   font: "600 12px/1.1 ui-sans-serif, system-ui, sans-serif",
   cursor: "pointer",
@@ -413,12 +415,12 @@ export function ActionBarChrome({
 
 const PANEL: CSSProperties = {
   padding: 8,
-  borderRadius: 12,
-  background: "rgba(10,12,16,0.6)",
+  borderRadius: "var(--jg-frame-radius, 12px)",
+  background: "var(--jg-frame-bg, rgba(10,12,16,0.6))",
   backdropFilter: "blur(6px)",
   WebkitBackdropFilter: "blur(6px)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
+  border: "var(--jg-frame-border, 1px solid rgba(255,255,255,0.1))",
+  boxShadow: "var(--jg-frame-glow, 0 4px 16px rgba(0,0,0,0.35))",
 };
 
 /**

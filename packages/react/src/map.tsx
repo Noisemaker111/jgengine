@@ -262,7 +262,8 @@ export function Minimap({
         borderRadius: 14,
         padding: 8,
         background: "linear-gradient(160deg, rgba(24,28,36,0.94), rgba(12,15,20,0.94))",
-        border: "1px solid rgba(148,163,184,0.28)",
+        // Ring color reads the shared HudTheme `--jg-ring` token (#1034); fallback = the built-in ring.
+        border: "1px solid var(--jg-ring, rgba(148,163,184,0.28))",
         boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
         color: "#e2e8f0",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
