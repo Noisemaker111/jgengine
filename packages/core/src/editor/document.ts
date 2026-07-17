@@ -827,6 +827,26 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
+  // Placeable object ids form one document-global namespace (selection, parenting, and removal all
+  // treat them that way), so a document that reuses an id — even across two different collections —
+  // is malformed and rejected here with the offending path, rather than silently loading a scene
+  // where one id shadows another. Combine paths (merge/duplicate/overlay) re-id instead; this is the
+  // single-document decode boundary, where a collision is an authoring error, not something to paper over.
+  const seenIds = new Set<string>();
+  for (const [collection, list] of [
+    ["markers", markers],
+    ["volumes", volumes],
+    ["paths", paths],
+    ["annotations", annotations],
+  ] as const) {
+    list.forEach((item, index) => {
+      if (seenIds.has(item.id)) {
+        errors.push({ path: `$.${collection}[${index}].id`, message: `duplicate id "${item.id}"` });
+      } else {
+        seenIds.add(item.id);
+      }
+    });
+  }
   if (errors.length > 0) return { ok: false, errors };
   const terrain = raw.terrain === undefined ? undefined : migrateTerrainSnapshot(raw.terrain as EditorTerrain);
   const ui = decodeEditorUiDocument(raw.ui);

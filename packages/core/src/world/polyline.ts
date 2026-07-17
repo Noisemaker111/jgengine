@@ -78,6 +78,10 @@ export function closestPoint(line: Polyline, query: Vec2): PolylineHit {
     return { point: points[0]!, distanceAlong: 0, segment: 0, lateral: distance(points[0]!, query) };
   }
   let best: PolylineHit = { point: points[0]!, distanceAlong: 0, segment: 0, lateral: Infinity };
+  // Track the unsigned nearest distance separately: `best.lateral` carries a *signed* offset for
+  // the caller, so comparing the next candidate's unsigned distance against it would freeze the
+  // search the moment a negative-side segment lands (unsigned >= 0 never beats a stored negative).
+  let bestDistance = Infinity;
   for (let i = 1; i < points.length; i += 1) {
     const a = points[i - 1]!;
     const b = points[i]!;
@@ -87,9 +91,12 @@ export function closestPoint(line: Polyline, query: Vec2): PolylineHit {
     const t = segLenSq <= 0 ? 0 : Math.max(0, Math.min(1, ((query[0] - a[0]) * abx + (query[1] - a[1]) * aby) / segLenSq));
     const point: Vec2 = [a[0] + abx * t, a[1] + aby * t];
     const lateral = distance(point, query);
-    if (lateral < best.lateral) {
+    if (lateral < bestDistance) {
+      bestDistance = lateral;
       const along = cumulative[i - 1]! + t * Math.sqrt(segLenSq);
-      const side = Math.sign(perp(normalize([abx, aby]))[0] * (query[0] - point[0]) + perp(normalize([abx, aby]))[1] * (query[1] - point[1]));
+      const unit = normalize([abx, aby]);
+      const normal = perp(unit);
+      const side = Math.sign(normal[0] * (query[0] - point[0]) + normal[1] * (query[1] - point[1]));
       best = { point, distanceAlong: along, segment: i - 1, lateral: lateral * (side === 0 ? 1 : side) };
     }
   }

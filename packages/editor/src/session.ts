@@ -2,6 +2,7 @@ import {
   createDocumentLiveSync,
   createEditorSession,
   createRuntimePlayControl,
+  decodeEditorDocument,
   editorChildren,
   editorDocumentBounds,
   editorParentOf,
@@ -65,6 +66,19 @@ import { getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
 import { TERRAIN_MATERIALS } from "./uiStore";
 
 registerBuiltinSceneKinds();
+
+/** True when any of `ids` names a placeable object (marker/volume/path/note) in the document — used
+ * to reject batch mutations that would match nothing, so the caller hears an honest `ok:false`. */
+function documentHasAnyId(doc: EditorDocument, ids: readonly string[]): boolean {
+  if (ids.length === 0) return false;
+  const wanted = new Set(ids);
+  return (
+    doc.markers.some((m) => wanted.has(m.id)) ||
+    doc.volumes.some((v) => wanted.has(v.id)) ||
+    doc.paths.some((p) => wanted.has(p.id)) ||
+    doc.annotations.some((n) => wanted.has(n.id))
+  );
+}
 
 /** Which document collection an object lives in, plus its current kind + meta ΓÇö for generic `set_meta`. */
 function findMetaTarget(
@@ -791,7 +805,17 @@ export function createEditorHost(options: {
             return { ok: true, result: summarizeEditorSession(session.getState()) };
           case "push_document_patch": {
             const force = request.force === true;
-            const patch = request.patch;
+            const rawPatch: unknown = request.patch;
+            if (rawPatch === null || typeof rawPatch !== "object") {
+              return { ok: false, error: "push_document_patch requires a patch object" };
+            }
+            const patch = rawPatch as DocumentPatch;
+            if (patch.type !== "snapshot" && patch.type !== "commands") {
+              return { ok: false, error: `unknown document patch type: ${String((patch as { type?: unknown }).type)} (snapshot | commands)` };
+            }
+            if (typeof patch.baseRevision !== "number") {
+              return { ok: false, error: "push_document_patch requires a numeric baseRevision" };
+            }
             if (!force && patch.baseRevision !== liveSync.getRevision()) {
               return {
                 ok: false,
@@ -799,7 +823,14 @@ export function createEditorHost(options: {
               };
             }
             if (patch.type === "snapshot") {
-              session.dispatch({ type: "replaceDocument", document: patch.document });
+              // A snapshot replaces the whole document, so it must clear the same decode/migrate
+              // boundary a disk or `import_document` document does — otherwise a fuzzed snapshot
+              // would reach `replaceDocument` uncoerced.
+              const decoded = decodeEditorDocument(patch.document);
+              if (!decoded.ok) {
+                return { ok: false, error: `invalid snapshot document: ${decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ")}` };
+              }
+              session.dispatch({ type: "replaceDocument", document: decoded.document });
               return {
                 ok: true,
                 result: {
@@ -808,6 +839,7 @@ export function createEditorHost(options: {
                 },
               };
             }
+            if (!Array.isArray(patch.commands)) return { ok: false, error: "commands patch requires a commands array" };
             if (patch.commands.length === 0) return { ok: false, error: "commands patch is empty" };
             for (const command of patch.commands) {
               const { applied } = dispatchGuarded(command);
@@ -1254,12 +1286,22 @@ export function createEditorHost(options: {
             });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
           }
-          case "detach_prefab_instance":
+          case "detach_prefab_instance": {
+            const doc = session.getState().document;
+            const carries = (item: { meta?: Record<string, unknown> }) => item.meta?.prefabInstanceId === request.instanceId;
+            const hasInstance =
+              doc.markers.some(carries) || doc.volumes.some(carries) || doc.paths.some(carries) || doc.annotations.some(carries);
+            if (!hasInstance) return { ok: false, error: `prefab instance not found: ${request.instanceId}` };
             session.dispatch({ type: "detachPrefabInstance", instanceId: request.instanceId });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
-          case "delete_prefab":
+          }
+          case "delete_prefab": {
+            if (findEditorPrefab(session.getState().document, request.prefabId) === undefined) {
+              return { ok: false, error: `prefab not found: ${request.prefabId}` };
+            }
             session.dispatch({ type: "deletePrefab", prefabId: request.prefabId });
             return { ok: true, result: { prefabs: session.getState().document.prefabs } };
+          }
           case "list_collections":
             return { ok: true, result: { collections: session.getState().document.collections } };
           case "create_collection":
@@ -1270,22 +1312,45 @@ export function createEditorHost(options: {
               ...(request.memberIds === undefined ? {} : { memberIds: request.memberIds }),
             });
             return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
-          case "rename_collection":
+          case "rename_collection": {
+            if (findEditorCollection(session.getState().document, request.id) === undefined) {
+              return { ok: false, error: `collection not found: ${request.id}` };
+            }
             session.dispatch({ type: "renameCollection", id: request.id, name: request.name });
             return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
-          case "delete_collection":
+          }
+          case "delete_collection": {
+            if (findEditorCollection(session.getState().document, request.id) === undefined) {
+              return { ok: false, error: `collection not found: ${request.id}` };
+            }
             session.dispatch({ type: "deleteCollection", id: request.id });
             return { ok: true, result: { collections: session.getState().document.collections } };
-          case "set_collection_members":
+          }
+          case "set_collection_members": {
+            if (findEditorCollection(session.getState().document, request.id) === undefined) {
+              return { ok: false, error: `collection not found: ${request.id}` };
+            }
             session.dispatch({ type: "setCollectionMembers", id: request.id, memberIds: request.memberIds });
             return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
-          case "add_to_collection":
+          }
+          case "add_to_collection": {
+            if (findEditorCollection(session.getState().document, request.id) === undefined) {
+              return { ok: false, error: `collection not found: ${request.id}` };
+            }
             session.dispatch({ type: "addToCollection", id: request.id, ids: request.ids });
             return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
-          case "remove_from_collection":
+          }
+          case "remove_from_collection": {
+            if (findEditorCollection(session.getState().document, request.id) === undefined) {
+              return { ok: false, error: `collection not found: ${request.id}` };
+            }
             session.dispatch({ type: "removeFromCollection", id: request.id, ids: request.ids });
             return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
-          case "set_collection_flags":
+          }
+          case "set_collection_flags": {
+            if (findEditorCollection(session.getState().document, request.id) === undefined) {
+              return { ok: false, error: `collection not found: ${request.id}` };
+            }
             session.dispatch({
               type: "setCollectionFlags",
               id: request.id,
@@ -1296,13 +1361,17 @@ export function createEditorHost(options: {
               },
             });
             return { ok: true, result: findEditorCollection(session.getState().document, request.id) };
+          }
           case "select_collection": {
             const collection = findEditorCollection(session.getState().document, request.id);
             if (collection === undefined) return { ok: false, error: `collection not found: ${request.id}` };
             session.dispatch({ type: "selectCollection", id: request.id });
             return { ok: true, result: { selection: session.getState().selection } };
           }
-          case "batch_set_properties":
+          case "batch_set_properties": {
+            if (!documentHasAnyId(session.getState().document, request.ids)) {
+              return { ok: false, error: "batch_set_properties matched no objects" };
+            }
             session.dispatch({
               type: "batchSetProperties",
               ids: request.ids,
@@ -1313,9 +1382,14 @@ export function createEditorHost(options: {
               },
             });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
-          case "assign_material":
+          }
+          case "assign_material": {
+            if (!documentHasAnyId(session.getState().document, request.ids)) {
+              return { ok: false, error: "assign_material matched no objects" };
+            }
             session.dispatch({ type: "assignMaterial", ids: request.ids, materialId: request.materialId });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
+          }
           case "list_grids": {
             const grids = session.getState().document.grids ?? [];
             return { ok: true, result: { grids: grids.map(gridLayerSummary) } };
