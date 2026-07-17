@@ -2,6 +2,7 @@ import { createThreatTable, type ThreatTable } from "@jgengine/core/ai/threat";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
+import { annulusRegion, discRegion, rectRegion, samplePoint } from "@jgengine/core/world";
 
 import { LEASH_DISTANCE, mitigate, mobDamage, mobHp } from "../math/combat";
 import type { MobDef } from "../model";
@@ -76,27 +77,29 @@ function placementFor(def: MobDef, roll: () => number, index: number): readonly 
   const dungeon = def.dungeonId === undefined ? null : dungeonById(def.dungeonId);
   if (dungeon !== null) {
     if (def.boss === true) return [dungeon.center[0], dungeon.center[1] + 4];
-    const angle = roll() * Math.PI * 2;
-    const radius = 5 + roll() * Math.max(4, dungeon.radius - 9);
-    return [dungeon.center[0] + Math.cos(angle) * radius, dungeon.center[1] + Math.sin(angle) * radius];
+    const outer = 5 + Math.max(4, dungeon.radius - 9);
+    return annulusRegion([dungeon.center[0], dungeon.center[1]], 5, outer, { distribution: "radial" }).sample(roll);
   }
   if (CRYPT_MOB_IDS.has(def.id)) {
     if (def.id === "morthen") return [CRYPT.x, CRYPT.z + 6];
-    const angle = roll() * Math.PI * 2;
-    const radius = 6 + roll() * (CRYPT.radius - 10);
-    return [CRYPT.x + Math.cos(angle) * radius, CRYPT.z + Math.sin(angle) * radius];
+    return annulusRegion([CRYPT.x, CRYPT.z], 6, CRYPT.radius - 4, { distribution: "radial" }).sample(roll);
   }
   const zone = zoneById(def.zone);
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const x = -168 + roll() * 336;
-    const z = zone.zMin + 14 + roll() * (zone.zMax - zone.zMin - 28);
-    const hub = zone.hub;
-    const hubDist = Math.hypot(x - hub.x, z - hub.z);
-    const graveDist = Math.hypot(x - zone.graveyard.x, z - zone.graveyard.z);
-    const cryptDist = Math.hypot(x - CRYPT.x, z - CRYPT.z);
-    if (hubDist > hub.radius + 14 && graveDist > 14 && cryptDist > CRYPT.radius + 8) return [x, z];
-  }
-  return [zone.hub.x + 40 + index * 3, (zone.zMin + zone.zMax) / 2];
+  const fallback: readonly [number, number] = [zone.hub.x + 40 + index * 3, (zone.zMin + zone.zMax) / 2];
+  const result = samplePoint<readonly [number, number]>({
+    region: rectRegion({ minX: -168, maxX: 168, minZ: zone.zMin + 14, maxZ: zone.zMax - 14 }),
+    rng: roll,
+    constraints: {
+      exclude: [
+        discRegion([zone.hub.x, zone.hub.z], zone.hub.radius + 14),
+        discRegion([zone.graveyard.x, zone.graveyard.z], 14),
+        discRegion([CRYPT.x, CRYPT.z], CRYPT.radius + 8),
+      ],
+    },
+    maxAttempts: 40,
+    fallback: { point: fallback },
+  });
+  return result.point ?? fallback;
 }
 
 export function spawnMobAt(

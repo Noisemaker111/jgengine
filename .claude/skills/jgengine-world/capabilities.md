@@ -106,6 +106,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
+## spatial-sample — draw one deterministic position from a region under include/exclude/distance constraints
+
+- `samplePoint` (function) · `import { samplePoint } from "@jgengine/core/world"`
+
+## spatial-sample-batch — place many deterministic spaced points from a region with minimum separation
+
+- `sampleBatch` (function) · `import { sampleBatch } from "@jgengine/core/world"`
+
+## spatial-sample-stratified — evenly cover an area with one jittered point per grid cell, deterministic
+
+- `sampleStratified` (function) · `import { sampleStratified } from "@jgengine/core/world"`
+
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
