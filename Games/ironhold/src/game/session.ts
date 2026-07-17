@@ -63,6 +63,8 @@ export interface SessionState {
   attackMoveArmed: boolean;
   /** Enemy reinforcement clock; the AI director musters escalating waves off it. */
   enemyWave: EnemyWaveState;
+  /** Hero ability state. Mana/XP/level live on the hero entity pools; only the cooldown is here. */
+  heroState: { abilityCooldown: number };
   over: boolean;
   victory: boolean;
   trainSeq: number;
@@ -80,6 +82,7 @@ function fresh(): SessionState {
     supplyCap: TOWN_HALL_FOOD,
     attackMoveArmed: false,
     enemyWave: { timer: ENEMY_WAVE_FIRST_DELAY, sent: 0 },
+    heroState: { abilityCooldown: 0 },
     over: false,
     victory: false,
     trainSeq: 0,

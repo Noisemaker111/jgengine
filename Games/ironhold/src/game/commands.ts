@@ -15,6 +15,7 @@ import { TRAINING_CONFIG } from "./production";
 import { FORMATION_SPACING, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
 import { livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
 import { pendingRanks, RESEARCH_CONFIG, UPGRADES, upgradeRank } from "./upgrades";
+import { castThunderClap } from "./hero";
 
 export interface OrderInput {
   selection: readonly string[];
@@ -227,4 +228,10 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ type: string }>("build.arm", { apply: (state, input) => armBuild(state, input.type) });
   ctx.game.commands.define("research.weapons", { apply: (state) => research(state, "weapons") });
   ctx.game.commands.define("research.armor", { apply: (state) => research(state, "armor") });
+  ctx.game.commands.define("hero.ability", {
+    apply: (state) => {
+      castThunderClap(state);
+      return state;
+    },
+  });
 }

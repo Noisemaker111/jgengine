@@ -33,6 +33,10 @@ export interface HudSnapshot {
   armorRank: number;
   armorHave: number;
   researching: number;
+  /** Hero: current level, whether Thunder Clap can fire, and whole seconds left on its cooldown. */
+  heroLevel: number;
+  abilityReady: boolean;
+  abilityCd: number;
 }
 
 const initial: HudSnapshot = {
@@ -60,6 +64,9 @@ const initial: HudSnapshot = {
   armorRank: 0,
   armorHave: 0,
   researching: 0,
+  heroLevel: 1,
+  abilityReady: false,
+  abilityCd: 0,
 };
 
 let snapshot: HudSnapshot = initial;
@@ -89,7 +96,10 @@ function changed(next: HudSnapshot): boolean {
     p.weaponsHave !== next.weaponsHave ||
     p.armorRank !== next.armorRank ||
     p.armorHave !== next.armorHave ||
-    p.researching !== next.researching
+    p.researching !== next.researching ||
+    p.heroLevel !== next.heroLevel ||
+    p.abilityReady !== next.abilityReady ||
+    p.abilityCd !== next.abilityCd
   );
 }
 

@@ -78,18 +78,29 @@ function ConsoleButton({ label, sub, active, disabled, onClick }: { label: strin
 }
 
 function HeroPortrait() {
+  const hud = useHud();
+  const { commands } = useGame();
   const hp = useEntityStat("hero", "health");
+  const mana = useEntityStat("hero", "mana");
+  const xp = useEntityStat("hero", "xp");
   const alive = hp !== null && hp.current > 0;
+  const clapSub = !alive ? "—" : hud.abilityReady ? "ready · Q" : hud.abilityCd > 0 ? `${hud.abilityCd}s` : "no mana";
   return (
     <div className="flex items-center gap-3">
-      <div className={"flex h-16 w-16 items-center justify-center rounded-md border-2 " + (alive ? "border-amber-500/80 bg-gradient-to-b from-amber-700/40 to-slate-900/80" : "border-slate-700 bg-slate-900/80 grayscale")}>
-        <span className="text-3xl">{alive ? "🛡️" : "💀"}</span>
+      <div className="relative">
+        <div className={"flex h-16 w-16 items-center justify-center rounded-md border-2 " + (alive ? "border-amber-500/80 bg-gradient-to-b from-amber-700/40 to-slate-900/80" : "border-slate-700 bg-slate-900/80 grayscale")}>
+          <span className="text-3xl">{alive ? "🛡️" : "💀"}</span>
+        </div>
+        <span className="absolute -bottom-1 -right-1 rounded-full border border-amber-300/70 bg-slate-900 px-1.5 text-[10px] font-bold text-amber-200 tabular-nums">L{hud.heroLevel}</span>
       </div>
-      <div className="flex w-32 flex-col gap-1">
+      <div className="flex w-32 flex-col gap-0.5">
         <span className="text-sm font-bold text-amber-200">Bram the Bold</span>
         <span className="text-[10px] uppercase tracking-wide text-slate-400">Vanguard Hero</span>
         {hp !== null ? <Meter value={hp.current} max={hp.max} tone="#46c85a" /> : null}
+        {mana !== null ? <Meter value={mana.current} max={mana.max} tone="#4c8dff" /> : null}
+        {xp !== null && alive ? <Meter value={xp.current} max={xp.max} tone="#c9a227" /> : null}
       </div>
+      <ConsoleButton label="Thunder Clap" sub={clapSub} active={alive && hud.abilityReady} disabled={!alive || !hud.abilityReady} onClick={() => commands.run("hero.ability", {})} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { activeJobs, jobProgress, queuedJobs, tick as tickQueue } from "@jgengin
 
 import { tickUnits } from "./ai/units";
 import { tickEnemyWaves } from "./ai/director";
+import { heroLevel, tickHero, thunderClapReady } from "./hero";
 import { BUILDINGS, combatantDef, isHostile } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore } from "./hudStore";
@@ -61,6 +62,15 @@ const enemyAiSystem: SystemDefinition = defineSystem({
   tick: { type: "frame", stage: "ai" },
   update(ctx, dt) {
     tickEnemyWaves(ctx, dt);
+  },
+});
+
+/** Hero upkeep: mana regen + ability cooldown. */
+const heroSystem: SystemDefinition = defineSystem({
+  id: "ironhold.hero",
+  tick: { type: "frame", stage: "combat" },
+  update(ctx, dt) {
+    tickHero(ctx, dt);
   },
 });
 
@@ -204,6 +214,9 @@ const hudSystem: SystemDefinition = defineSystem({
       armorRank: upgradeRank("armor"),
       armorHave: upgradeHave("armor"),
       researching: activeJobs(session.research.queue).length + queuedJobs(session.research.queue).length,
+      heroLevel: heroLevel(ctx),
+      abilityReady: thunderClapReady(ctx),
+      abilityCd: Math.max(0, Math.ceil(session.heroState.abilityCooldown)),
     });
   },
 });
@@ -211,6 +224,7 @@ const hudSystem: SystemDefinition = defineSystem({
 export const systems: readonly SystemDefinition[] = [
   aiSystem,
   enemyAiSystem,
+  heroSystem,
   productionSystem,
   constructionSystem,
   researchSystem,

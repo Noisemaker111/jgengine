@@ -6,4 +6,5 @@ export const keybinds: ActionCodesMap = {
   attackMove: ["KeyA"],
   trainPeasant: ["KeyE"],
   trainFootman: ["KeyF"],
+  heroAbility: ["KeyQ"],
 };

@@ -4,6 +4,7 @@ import type { EntityDiedEvent } from "@jgengine/core/game/events";
 
 import { editorLayers } from "../../editorLayers";
 import { BUILDINGS, combatantDef, DECOR, isNode, NODES } from "../catalog";
+import { grantHeroXp, heroXpFor } from "../hero";
 import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
 import { GOLD, LUMBER, STARTING_GOLD, STARTING_LUMBER } from "../tuning";
@@ -42,8 +43,9 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
     hudStore.set({ phase: "lost" });
     return;
   }
-  if (def.faction === "enemy" && def.kind === "unit" && def.bounty > 0) {
-    ctx.game.economy.grant(ctx.player.userId, GOLD, def.bounty);
+  if (def.faction === "enemy" && def.kind === "unit") {
+    if (def.bounty > 0) ctx.game.economy.grant(ctx.player.userId, GOLD, def.bounty);
+    grantHeroXp(ctx, heroXpFor(event.catalogId)); // the hero champions the kill
   }
   // A razed Farm lowers the supply cap.
   const supply = BUILDINGS[event.catalogId]?.supply;

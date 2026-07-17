@@ -5,6 +5,7 @@ import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
 import { playerDepot, session, type UnitRuntime } from "../session";
 import { resolveDamage } from "../upgrades";
+import { heroAttackBonus } from "../hero";
 
 /** Extra reach against a building's broad footprint so attackers stop at the wall, not the centre. */
 const BUILDING_REACH_BONUS = 3.5;
@@ -149,7 +150,8 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
       faceToward(ctx, u.id, self.position, ent.position[0], ent.position[2]);
       u.attackCooldown -= dt;
       if (u.attackCooldown <= 0) {
-        const amount = resolveDamage(def.damage, u.faction, target.faction);
+        const base = def.damage + heroAttackBonus(ctx, u.catalogId);
+        const amount = resolveDamage(base, u.faction, target.faction);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
         u.attackCooldown = def.attackCooldown;
       }
