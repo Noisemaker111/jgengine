@@ -99,6 +99,65 @@ export function clearTriggerActions(): void {
   actionRegistry.clear();
 }
 
+/**
+ * The engine's built-in trigger actions — the shared `announce` / `win` / `advance` vocabulary every
+ * game gets for free, so "enter this zone → win" is authored entirely in the editor with no bespoke
+ * action code. Their params land flat on the object's `meta` like any registered action; drive them
+ * at runtime with the handlers from {@link createTriggerOutcome}.
+ *
+ * @capability authored-triggers built-in announce/win/advance actions authorable on any marker or volume
+ */
+export const BUILTIN_TRIGGER_ACTIONS: readonly TriggerActionDefinition[] = [
+  {
+    id: "announce",
+    label: "Announce",
+    schema: {
+      fields: [
+        { type: "text", key: "message", label: "Message", default: "Entered zone" },
+        {
+          type: "select",
+          key: "tone",
+          label: "Tone",
+          options: [
+            { value: "info", label: "Info" },
+            { value: "warn", label: "Warn" },
+            { value: "good", label: "Good" },
+          ],
+          default: "info",
+        },
+      ],
+    },
+  },
+  {
+    id: "win",
+    label: "Win the game",
+    schema: {
+      fields: [{ type: "text", key: "message", label: "Message", default: "You win!" }],
+    },
+  },
+  {
+    id: "advance",
+    label: "Advance objective",
+    schema: {
+      fields: [
+        { type: "text", key: "objective", label: "Next objective", default: "" },
+        { type: "text", key: "message", label: "Message", default: "" },
+      ],
+    },
+  },
+];
+
+/**
+ * Register the engine's built-in {@link BUILTIN_TRIGGER_ACTIONS} so they appear in the editor's
+ * trigger inspector. Idempotent; call at module load (a game may still register its own actions or
+ * re-register a built-in id to override it).
+ *
+ * @capability authored-triggers register the shared announce/win/advance actions
+ */
+export function registerBuiltinTriggerActions(): void {
+  for (const definition of BUILTIN_TRIGGER_ACTIONS) registerTriggerAction(definition);
+}
+
 function isTriggerEvent(value: unknown): value is TriggerEvent {
   return typeof value === "string" && (TRIGGER_EVENTS as readonly string[]).includes(value);
 }
@@ -425,6 +484,88 @@ export function createAuthoredTriggerRuntime(options: {
       members = next;
       emit(events);
       return events;
+    },
+  };
+}
+
+/** Serializable read-model the built-in trigger actions write — the HUD/game reads it each frame. */
+export interface TriggerOutcome {
+  /** True once a `win` action fired. */
+  won: boolean;
+  /** Latest announce/win/advance message to surface, or null before any fires. */
+  message: string | null;
+  /** Tone for the latest message: `"info" | "warn" | "good"`. */
+  tone: string;
+  /** Current objective id from the latest `advance`, or null. */
+  objective: string | null;
+  /** Bumped on every change — a cheap key for `useSyncExternalStore`. */
+  revision: number;
+}
+
+/** Outcome store: the built-in action handlers plus a subscribable snapshot of what they produced. */
+export interface TriggerOutcomeStore {
+  /** Current outcome snapshot (stable reference until the next change). */
+  get(): TriggerOutcome;
+  /** Subscribe to outcome changes; returns an unsubscribe fn. */
+  subscribe(listener: () => void): () => void;
+  /** Handlers for `createAuthoredTriggerRuntime({ handlers })` — wires announce/win/advance. */
+  handlers: TriggerHandlers;
+  /** Reset to the initial (un-won) outcome — new run / retry. */
+  reset(): void;
+}
+
+const INITIAL_OUTCOME: TriggerOutcome = { won: false, message: null, tone: "info", objective: null, revision: 0 };
+
+/**
+ * Default runtime for the built-in {@link BUILTIN_TRIGGER_ACTIONS}: a small serializable outcome the
+ * HUD renders, with no engine-side UI. Pass {@link TriggerOutcomeStore.handlers} to
+ * {@link createAuthoredTriggerRuntime} and read {@link TriggerOutcomeStore.get} from the HUD via
+ * `useSyncExternalStore` — that is the whole zero-code "reach the zone to win" wiring.
+ *
+ * @capability authored-triggers headless win/announce/objective outcome for the built-in actions
+ */
+export function createTriggerOutcome(): TriggerOutcomeStore {
+  let outcome: TriggerOutcome = INITIAL_OUTCOME;
+  const listeners = new Set<() => void>();
+  const commit = (next: Omit<TriggerOutcome, "revision">): void => {
+    outcome = { ...next, revision: outcome.revision + 1 };
+    for (const listener of listeners) listener();
+  };
+  const messageOf = (event: TriggerDispatchEvent, fallback: string): string => {
+    const value = event.params.message;
+    return typeof value === "string" && value.length > 0 ? value : fallback;
+  };
+  const stringParam = (event: TriggerDispatchEvent, key: string): string | undefined => {
+    const value = event.params[key];
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  };
+  return {
+    get: () => outcome,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    handlers: {
+      announce: (event) => {
+        commit({ won: outcome.won, message: messageOf(event, "Entered zone"), tone: stringParam(event, "tone") ?? "info", objective: outcome.objective });
+      },
+      win: (event) => {
+        commit({ won: true, message: messageOf(event, "You win!"), tone: "good", objective: outcome.objective });
+      },
+      advance: (event) => {
+        commit({
+          won: outcome.won,
+          message: stringParam(event, "message") ?? outcome.message,
+          tone: outcome.tone,
+          objective: stringParam(event, "objective") ?? outcome.objective,
+        });
+      },
+    },
+    reset() {
+      outcome = INITIAL_OUTCOME;
+      for (const listener of listeners) listener();
     },
   };
 }

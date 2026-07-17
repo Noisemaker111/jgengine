@@ -75,10 +75,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `authoredSpawnRotation` (function) · `import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn"`
 - `markersOfKind` (function) · `import { markersOfKind } from "@jgengine/core/world/authoredSpawn"`
 
-## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
+## authored-triggers — built-in announce/win/advance actions authorable on any marker or volume
 
+- `BUILTIN_TRIGGER_ACTIONS` (const) · `import { BUILTIN_TRIGGER_ACTIONS } from "@jgengine/core/scene/authoredTriggers"`
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/world"`
 - `createAuthoredTriggerRuntime` (function) · `import { createAuthoredTriggerRuntime } from "@jgengine/core/world"`
+- `createTriggerOutcome` (function) · `import { createTriggerOutcome } from "@jgengine/core/scene/authoredTriggers"`
+- `registerBuiltinTriggerActions` (function) · `import { registerBuiltinTriggerActions } from "@jgengine/core/scene/authoredTriggers"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
 
 ## behavior-control — pause/disable/resume/seek/inspect behavior instances per entity

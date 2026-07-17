@@ -391,7 +391,15 @@ const editorSceneJson = `{
     { "id": "crate_2", "kind": "prop", "position": { "x": 4.4, "y": 0, "z": -2.8 }, "rotationY": 1.2, "label": "Crate", "catalogId": "crate" },
     { "id": "tree_1", "kind": "prop", "position": { "x": -8, "y": 0, "z": -10 }, "label": "Tree", "catalogId": "tree" },
     { "id": "tree_2", "kind": "prop", "position": { "x": 10, "y": 0, "z": -14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
-    { "id": "tree_3", "kind": "prop", "position": { "x": -12, "y": 0, "z": 4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" }
+    { "id": "tree_3", "kind": "prop", "position": { "x": -12, "y": 0, "z": 4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" },
+    {
+      "id": "goal",
+      "kind": "goal",
+      "position": { "x": 0, "y": 0, "z": -18 },
+      "label": "Goal — walk here to win",
+      "color": "#22c55e",
+      "meta": { "on": "enter", "action": "win", "message": "You reached the goal — you win!", "triggerRadius": 3 }
+    }
   ]
 }
 `;
@@ -421,6 +429,12 @@ describe("authored scene", () => {
 
   test("ships placed content", () => {
     expect(editorLayers.markers.length).toBeGreaterThan(1);
+  });
+
+  test("ships an authored goal that wins on enter — no game code", () => {
+    const goal = editorLayers.markers.find((marker) => marker.kind === "goal");
+    expect(goal?.meta?.on).toBe("enter");
+    expect(goal?.meta?.action).toBe("win");
   });
 });
 `;
@@ -491,9 +505,31 @@ export const physics: PhysicsConfig = { gravity: -24 };
 
 const loopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import {
+  createAuthoredTriggerRuntime,
+  createTriggerOutcome,
+  registerBuiltinTriggerActions,
+  type AuthoredTriggerRuntime,
+} from "@jgengine/core/scene/authoredTriggers";
 
 import { editorLayers } from "./editorLayers";
 import { PLAYER, SPAWN } from "./game/tuning";
+
+// Built-in announce/win/advance actions are authorable in the editor (select an object → Triggers).
+// The starter scene ships a "goal" marker with { on: enter, action: win }, so walking to it wins —
+// authored in the document, zero game code. Add your own rules in the editor, not here.
+registerBuiltinTriggerActions();
+
+/** The win/announce/objective read-model the built-in actions write; GameUI renders it. */
+export const outcome = createTriggerOutcome();
+
+let triggers: AuthoredTriggerRuntime | null = null;
+function triggerRuntime(): AuthoredTriggerRuntime {
+  if (triggers === null) {
+    triggers = createAuthoredTriggerRuntime({ document: editorLayers, handlers: outcome.handlers });
+  }
+  return triggers;
+}
 
 /** @internal */
 export function onInit(_ctx: GameContext): void {}
@@ -508,7 +544,15 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 
 /** @internal */
-export function onTick(_ctx: GameContext, _dt: number): void {}
+export function onTick(ctx: GameContext, _dt: number): void {
+  // Feed the local player's pose to the authored triggers; enter/exit/interact fire from the scene.
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  if (player === null) return;
+  triggerRuntime().step({
+    actors: [{ id: ctx.player.userId, position: player.position }],
+    interact: ctx.input.justPressed("interact") ? [ctx.player.userId] : [],
+  });
+}
 `;
 
 const tuningTs = `export const PLAYER = "player";
@@ -548,7 +592,10 @@ export const keybinds: ActionCodesMap = {
 };
 `;
 
-const gameUiTsx = (id: string, name: string) => `import { HudCanvas, useHudLayout } from "@jgengine/react";
+const gameUiTsx = (id: string, name: string) => `import { useSyncExternalStore } from "react";
+import { HudCanvas, useHudLayout } from "@jgengine/react";
+
+import { outcome } from "../../loop";
 
 // ${name} — your HUD starts as an empty canvas the engine imposes nothing on. Drop widgets from
 // "@jgengine/react" into <HudPanel> slots as you need them (each is self-styled and reads the
@@ -564,7 +611,23 @@ const gameUiTsx = (id: string, name: string) => `import { HudCanvas, useHudLayou
 /** @internal */
 export function GameUI() {
   const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
-  return <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />;
+  // The built-in trigger actions (announce/win/advance) write here; the starter goal wins on enter.
+  const status = useSyncExternalStore(outcome.subscribe, outcome.get, outcome.get);
+  const tone = status.won
+    ? "bg-emerald-600/90 text-white"
+    : status.tone === "warn"
+      ? "bg-amber-600/90 text-white"
+      : "bg-slate-800/85 text-slate-100";
+  return (
+    <>
+      <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />
+      {status.message !== null ? (
+        <div className={"pointer-events-none absolute left-1/2 top-6 z-30 -translate-x-1/2 rounded-lg px-4 py-2 text-center font-sans text-sm font-semibold shadow-lg " + tone}>
+          {status.message}
+        </div>
+      ) : null}
+    </>
+  );
 }
 `;
 

@@ -5,6 +5,7 @@ import {
   clearTriggerActions,
   collectAuthoredTriggers,
   createAuthoredTriggerRuntime,
+  createTriggerOutcome,
   DEFAULT_TRIGGER_RADIUS,
   getTriggerAction,
   listTriggerActions,
@@ -12,6 +13,7 @@ import {
   pointNearMarker,
   readFlatTrigger,
   readTriggerSpecs,
+  registerBuiltinTriggerActions,
   registerTriggerAction,
   triggerMetaPatch,
   triggerRadiusOf,
@@ -324,6 +326,80 @@ describe("createAuthoredTriggerRuntime", () => {
     expect(runtime.step({ actors: [{ id: "p", position: [0, 0, 0] }] })).toHaveLength(0);
     runtime.reset();
     expect(runtime.step({ actors: [{ id: "p", position: [0, 0, 0] }] })).toHaveLength(1);
+  });
+});
+
+describe("built-in actions + createTriggerOutcome", () => {
+  test("registerBuiltinTriggerActions exposes announce/win/advance", () => {
+    registerBuiltinTriggerActions();
+    expect(listTriggerActions().map((a) => a.id).sort()).toEqual(["advance", "announce", "win"]);
+    expect(getTriggerAction("win")?.label).toBe("Win the game");
+  });
+
+  test("entering a win marker flips the outcome to won with its message (reach zone to win)", () => {
+    registerBuiltinTriggerActions();
+    const outcome = createTriggerOutcome();
+    const document = doc({
+      markers: [
+        {
+          id: "goal",
+          kind: "goal",
+          position: { x: 0, y: 0, z: 0 },
+          meta: { on: "enter", action: "win", message: "You reached the goal!" },
+        },
+      ],
+    });
+    const runtime = createAuthoredTriggerRuntime({ document, handlers: outcome.handlers });
+    expect(outcome.get().won).toBe(false);
+    runtime.step({ actors: [{ id: "p", position: [10, 0, 0] }] }); // outside the goal radius
+    expect(outcome.get().won).toBe(false);
+    runtime.step({ actors: [{ id: "p", position: [0, 0, 0] }] }); // enter → win
+    expect(outcome.get().won).toBe(true);
+    expect(outcome.get().message).toBe("You reached the goal!");
+    expect(outcome.get().tone).toBe("good");
+    expect(outcome.get().revision).toBeGreaterThan(0);
+  });
+
+  test("announce and advance update message/objective; reset clears", () => {
+    registerBuiltinTriggerActions();
+    const outcome = createTriggerOutcome();
+    let notified = 0;
+    const unsub = outcome.subscribe(() => {
+      notified += 1;
+    });
+    const document = doc({
+      volumes: [
+        {
+          id: "zone",
+          kind: "zone",
+          shape: "sphere",
+          center: { x: 0, y: 0, z: 0 },
+          radius: 4,
+          meta: { on: "enter", action: "announce", message: "Watch out", tone: "warn" },
+        },
+        {
+          id: "checkpoint",
+          kind: "zone",
+          shape: "sphere",
+          center: { x: 100, y: 0, z: 0 },
+          radius: 4,
+          meta: { on: "enter", action: "advance", objective: "find_exit", message: "Objective updated" },
+        },
+      ],
+    });
+    const runtime = createAuthoredTriggerRuntime({ document, handlers: outcome.handlers });
+    runtime.step({ actors: [{ id: "p", position: [0, 0, 0] }] });
+    expect(outcome.get().message).toBe("Watch out");
+    expect(outcome.get().tone).toBe("warn");
+    runtime.step({ actors: [{ id: "p", position: [100, 0, 0] }] });
+    expect(outcome.get().objective).toBe("find_exit");
+    expect(outcome.get().message).toBe("Objective updated");
+    expect(notified).toBe(2);
+    outcome.reset();
+    expect(outcome.get().won).toBe(false);
+    expect(outcome.get().message).toBeNull();
+    expect(outcome.get().objective).toBeNull();
+    unsub();
   });
 });
 
