@@ -117,6 +117,23 @@ export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./g
 export { resolveOneShotClip } from "./game/modelAnimation";
 export { evaluateObjective } from "./game/objectives";
 export {
+  createLayerRegistry,
+  diffParams,
+  orderLayers,
+  resolveParams,
+  resolveSelection,
+  validateLayers,
+  type LayerConflict,
+  type LayerOps,
+  type LayerRegistry,
+  type LayerSelection,
+  type ParamContribution,
+  type ParamDelta,
+  type ParamLayer,
+  type ParamOp,
+  type ParamSnapshot,
+} from "./game/paramLayers";
+export {
   DEFAULT_PING_CATEGORIES,
   PING_FEED_ACTION,
   createPingSystem,
@@ -181,6 +198,15 @@ export {
   tickRaceSession,
 } from "./game/race";
 export { createRecordBook } from "./game/recordBook";
+export {
+  createRuleRegistry,
+  rerollRules,
+  selectRules,
+  type RuleDef,
+  type RuleRegistry,
+  type RuleSelection,
+  type RuleSelectionConfig,
+} from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
 export {
   createSaveStore,

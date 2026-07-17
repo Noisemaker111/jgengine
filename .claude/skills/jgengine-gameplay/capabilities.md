@@ -4,17 +4,9 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## advance-ledger — settle due scheduled transactions through a policy pipeline
-
-- `advanceLedger` (function) · `import { advanceLedger } from "@jgengine/core/gameplay"`
-
 ## best-record — persist personal-best times/scores with safe storage fallback
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
-
-## cancel-work — remove a job and compute its refund from reservation and progress
-
-- `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
 
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
@@ -43,10 +35,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## durability — track item wear, breakage, and repair
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
-
-## enqueue-work — reserve inputs and add a timed job, honoring capacity and validation policy
-
-- `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
 
 ## event-bus — typed publish/subscribe bus for gameplay events
 
@@ -124,33 +112,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
 
+## param-layers — register parameter layers by stable id and resolve serialized selections
+
+- `createLayerRegistry` (function) · `import { createLayerRegistry } from "@jgengine/core/gameplay"`
+- `diffParams` (function) · `import { diffParams } from "@jgengine/core/gameplay"`
+- `orderLayers` (function) · `import { orderLayers } from "@jgengine/core/gameplay"`
+- `resolveParams` (function) · `import { resolveParams } from "@jgengine/core/gameplay"`
+- `resolveSelection` (function) · `import { resolveSelection } from "@jgengine/core/gameplay"`
+- `validateLayers` (function) · `import { validateLayers } from "@jgengine/core/gameplay"`
+
 ## ping-wheel — contextual ping/marker communication between teammates
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
-
-## policy-cap — cap a scheduled transaction amount by context
-
-- `capAmount` (function) · `import { capAmount } from "@jgengine/core/gameplay"`
-
-## policy-curve — scale a transaction by a curve over context
-
-- `curveScale` (function) · `import { curveScale } from "@jgengine/core/gameplay"`
-
-## policy-redirect — redirect a scheduled transaction's source or recipient
-
-- `redirect` (function) · `import { redirect } from "@jgengine/core/gameplay"`
-
-## policy-reject — reject scheduled transactions by predicate
-
-- `rejectWhen` (function) · `import { rejectWhen } from "@jgengine/core/gameplay"`
-
-## policy-tax — split off a fraction of a transaction as tax or transfer
-
-- `taxFraction` (function) · `import { taxFraction } from "@jgengine/core/gameplay"`
-
-## policy-threshold — scale a transaction by a context threshold band
-
-- `thresholdScale` (function) · `import { thresholdScale } from "@jgengine/core/gameplay"`
 
 ## production-building — a factory building converting inputs to outputs over time
 
@@ -173,9 +146,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
 
-## resource-ledger — schedule recurring resource transactions with policy transforms
+## rule-selection — register rules and bridge a selection to its contributed parameter layers
 
-- `createResourceLedger` (function) · `import { createResourceLedger } from "@jgengine/core/gameplay"`
+- `createRuleRegistry` (function) · `import { createRuleRegistry } from "@jgengine/core/gameplay"`
+- `rerollRules` (function) · `import { rerollRules } from "@jgengine/core/gameplay"`
+- `selectRules` (function) · `import { selectRules } from "@jgengine/core/gameplay"`
 
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
@@ -193,10 +168,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
 
-## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
-
-- `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
-
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
 - `appendToast` (function) · `import { appendToast } from "@jgengine/core/gameplay"`
@@ -205,10 +176,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
-
-## unit-training — compose a timed work queue that trains catalog units into spawn orders
-
-- `unitTrainingConfig` (function) · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 
@@ -225,7 +192,3 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weighted-pick — pick one item from a set with an injected random source
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
-
-## work-queue — a serializable timed job queue with reservation, cancellation, completion, and output routing
-
-- `createWorkQueue` (function) · `import { createWorkQueue } from "@jgengine/core/gameplay"`
