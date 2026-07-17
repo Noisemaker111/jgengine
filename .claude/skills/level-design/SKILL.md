@@ -11,7 +11,7 @@ Own the spatial realization of game design: player metrics, topology, routes, la
 
 All authorable world content belongs in `editor.scene.json`, changed through the editor GUI or RPC/CLI. Never hand-edit the document or keep geometry, paths, spawns, zones, objectives, terrain, foliage, encounters, or coordinate arrays in code. File an editor `[FEATURE]` issue before any fallback.
 
-Read [references/application-playbook.md](references/application-playbook.md) whenever creating, auditing, or improving spatial play. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
+Read [references/application-playbook.md](references/application-playbook.md) whenever creating, auditing, or improving spatial play. Read [references/live-editor-loop.md](references/live-editor-loop.md) whenever live captures, an editor-agent handoff, or iterative scene improvement is involved. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
 
 ## Choose the mode
 
@@ -24,6 +24,8 @@ Measure the real controller, camera, interaction, combat, AI, and network constr
 Start with a spatial-truth audit. Inventory every source of coordinates and semantics; report any gameplay placement outside `editor.scene.json` as a blocking ownership defect. Reconstruct the critical path and representative optional path from scene data and live play. Measure travel, decision, encounter, retry, and recovery time. Inspect first-look orientation, reverse navigation, affordances, spawn safety, combat positions, pacing contrast, and visual hierarchy.
 
 “Improve with level design” is an authoring and implementation request. Do not stop at a map critique: select the highest-leverage route/zone/encounter slice, author the change through editor operations, connect runtime semantics, and prove it in play.
+
+For a live editor handoff, send evidence and an executable authoring contract—not an aesthetic request. Require the editor agent to inspect authority, document revision, ids, layers, assets, runtime state, and tool support before mutation; apply one coherent hypothesis through undoable operations; then return the exact revision/change log for replay and comparison. Stop when the live editor is not connected to the runtime's authoritative scene or the required operation is unsupported.
 
 ## Required output contract
 
