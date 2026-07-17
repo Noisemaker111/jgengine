@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { generate, type GenProvenance, type GenSchema } from "@jgengine/core/item/itemgen";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { bonus } from "./characters";
 import { ffylStore } from "./stores";
@@ -184,10 +185,16 @@ const ELEMENT_PREFIX: Record<GunElement, string> = {
 export const LEVEL_DAMAGE_GROWTH = 1.13;
 
 const gunRegistry = new Map<string, GunDef>();
+const gunProvenanceById = new Map<string, GenProvenance>();
 let gunSerial = 0;
 
 export function gunById(id: string): GunDef | undefined {
   return gunRegistry.get(id);
+}
+
+/** The generation provenance for a rolled gun — every family/rarity/manufacturer pick and its weight. */
+export function gunProvenance(id: string): GenProvenance | undefined {
+  return gunProvenanceById.get(id);
 }
 
 export function registerGun(def: GunDef): GunDef {
@@ -222,22 +229,59 @@ export interface RollGunOptions {
   luck?: number;
 }
 
-export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
-  const base = options.family !== undefined
-    ? FAMILY_BASES.find((candidate) => candidate.family === options.family) ?? pick(rng, FAMILY_BASES)
-    : pick(rng, FAMILY_BASES);
-  const rarity = options.rarity ?? rollRarity(rng, options.luck ?? 1);
-  const tier = RARITY_TIERS.find((candidate) => candidate.id === rarity) ?? RARITY_TIERS[0]!;
+/**
+ * Weighted family/rarity/manufacturer selection expressed on the engine's composable generation
+ * seam (`@jgengine/core/item/itemgen`). The uniform/weighted picks consume the injected rng in the
+ * same order the hand-rolled selection did, so drops stay identical while the roll now carries
+ * serializable provenance (see {@link gunProvenance}). The gun-specific stat, element, and name
+ * feel below stays game-local — the seam owns selection, not the numbers.
+ */
+function gunSelectionSchema(luck: number): GenSchema {
+  return {
+    steps: [
+      { id: "family", select: "uniform", pool: FAMILY_BASES.map((value) => ({ id: value.family, value })) },
+      {
+        id: "rarity",
+        select: "weighted",
+        pool: RARITY_TIERS.map((value) => ({ id: value.id, value })),
+        weightOf: (option) => (option.value as RarityTier).weight * (option.id === "common" ? 1 : luck),
+      },
+      {
+        id: "maker",
+        select: "uniform",
+        pool: (choices) => {
+          if (choices.optionId("rarity") === "legendary") {
+            const fam = (choices.value<FamilyBase>("family") ?? FAMILY_BASES[0]!).family;
+            return LEGENDARY_NAMES[fam].map(([makerId, legendaryName]) => ({
+              id: `${makerId}:${legendaryName}`,
+              value: {
+                manufacturer: MANUFACTURERS.find((candidate) => candidate.id === makerId) ?? MANUFACTURERS[0]!,
+                legendaryName: legendaryName as string | null,
+              },
+            }));
+          }
+          return MANUFACTURERS.map((manufacturer) => ({
+            id: manufacturer.id,
+            value: { manufacturer, legendaryName: null as string | null },
+          }));
+        },
+      },
+    ],
+  };
+}
 
-  let manufacturer: Manufacturer;
-  let legendaryName: string | null = null;
-  if (rarity === "legendary") {
-    const [makerId, name] = pick(rng, LEGENDARY_NAMES[base.family]);
-    manufacturer = MANUFACTURERS.find((candidate) => candidate.id === makerId) ?? pick(rng, MANUFACTURERS);
-    legendaryName = name;
-  } else {
-    manufacturer = pick(rng, MANUFACTURERS);
-  }
+export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
+  const pin: Record<string, string> = {};
+  if (options.family !== undefined) pin.family = options.family;
+  if (options.rarity !== undefined) pin.rarity = options.rarity;
+  const rolled = generate(gunSelectionSchema(options.luck ?? 1), rng, { pin });
+  if (!rolled.ok) throw new Error(`gun roll failed: ${rolled.reason}`);
+  const base = rolled.result.values.family as FamilyBase;
+  const tier = rolled.result.values.rarity as RarityTier;
+  const rarity = tier.id;
+  const maker = rolled.result.values.maker as { manufacturer: Manufacturer; legendaryName: string | null };
+  const manufacturer = maker.manufacturer;
+  const legendaryName = maker.legendaryName;
 
   let element: GunElement = "none";
   if (manufacturer.neverElemental !== true) {
@@ -286,6 +330,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
       ...(base.stats.explosion !== undefined ? { explosion: base.stats.explosion } : {}),
     },
   };
+  gunProvenanceById.set(def.id, rolled.result.provenance);
   return registerGun(def);
 }
 

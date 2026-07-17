@@ -238,6 +238,24 @@ export {
 } from "./item/durability";
 export { createItemInstanceRegistry, proceduralLootEntry } from "./item/itemInstanceRegistry";
 export {
+  generate,
+  type GenChoiceRecord,
+  type GenChoices,
+  type GenDraft,
+  type GenFieldRecord,
+  type GenOption,
+  type GenOutcome,
+  type GenPool,
+  type GenProvenance,
+  type GenResult,
+  type GenSchema,
+  type GenStep,
+  type GenTransform,
+  type GenValidator,
+  type GenerateOptions,
+  type TransformApi,
+} from "./item/itemgen";
+export {
   computeEffectiveStats,
   createModularItem,
   install,

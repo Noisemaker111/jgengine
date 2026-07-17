@@ -3,6 +3,7 @@ import { seededRng } from "@jgengine/core/random/rng";
 import {
   elementalDamageMult,
   gunById,
+  gunProvenance,
   rollGun,
   rollRarity,
   RARITY_TIERS,
@@ -20,6 +21,15 @@ describe("gun generation", () => {
       expect(gun.name.length).toBeGreaterThan(2);
       expect(gunById(gun.id)).toBe(gun);
     }
+  });
+
+  test("rolled guns carry generation provenance for family, rarity, and manufacturer", () => {
+    const gun = rollGun(seededRng("prov-test"), 8, { rarity: "legendary", family: "sniper" });
+    const provenance = gunProvenance(gun.id);
+    expect(provenance).toBeDefined();
+    expect(provenance?.choices.map((choice) => choice.step)).toEqual(["family", "rarity", "maker"]);
+    // Pinned steps resolve without rerolls; the maker choice reflects the legendary pool.
+    expect(provenance?.choices.find((choice) => choice.step === "rarity")?.optionId).toBe("legendary");
   });
 
   test("legendary guns carry real legendary names and tighter spread", () => {

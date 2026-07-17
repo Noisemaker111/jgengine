@@ -52,6 +52,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
+## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
+
+- `generate` (function) · `import { generate } from "@jgengine/core/gameplay"`
+
 ## item-instance-registry — a runtime store for procedurally generated item instances
 
 - `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
