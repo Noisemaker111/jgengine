@@ -352,6 +352,26 @@ export {
   type TerrainField,
   type TerrainPalette,
 } from "./world/terrain";
+export {
+  chooseContourInterval,
+  drapePolyline,
+  extractContours,
+  sampleElevation,
+  summarizeElevation,
+  surfaceGridLines,
+  surfaceRing,
+  terrainContourGuides,
+  type ContourLine,
+  type ContourOptions,
+  type DrapeOptions,
+  type ElevationReadout,
+  type ElevationSummary,
+  type GroundPoint,
+  type GuideRegion,
+  type HeightSampler,
+  type SurfaceGridLine,
+  type SurfaceGridOptions,
+} from "./world/terrainGuides";
 export { VEGETATION_VOLUME_KIND } from "./world/vegetation";
 export { type VolumetricCloudsConfig, type VolumetricCloudsRules } from "./world/volumetricClouds";
 export { createVoxelField, type VoxelFace } from "./world/voxelField";

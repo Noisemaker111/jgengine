@@ -263,6 +263,14 @@
 
 - `TerrainPanel` (function): function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
 
+## @jgengine/editor/TerrainReadout
+
+- `TerrainReadout` (function): function TerrainReadout({ groundHeightAt, region, showContours, showSurfaceGrid, version, readout, }: { groundHeightAt: (x: number, z: number) => number; region: GuideRegion; showContours: boolean; showSurfaceGrid: boolean; /** Bumped by the host when the terrain changes, so the overlay rebuilds off… — Surface-following terrain-readability overlay: draws iso-elevation contour lines and an optional terrain-draped reference grid from the live ground field, and tracks the cursor's elevation. All geometry comes from headless `@jgengine/core/world/terrainGuides` math; this component only turns it into three.js lines and publishes the measured feedback to the readout store.
+
+## @jgengine/editor/TerrainReadoutHud
+
+- `TerrainReadoutHud` (function): function TerrainReadoutHud({ readout }: { readout: TerrainReadoutStore }): React.JSX.Element — The measurable terrain-readability legend: cursor elevation and delta from the `y = 0` reference, plus the region's min/max/mean relief and the active contour interval. Reads live measurements from the readout store the {@link TerrainReadout} overlay publishes; renders nothing until shown.
+
 ## @jgengine/editor/agent/AgentPanel
 
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
@@ -382,6 +390,12 @@
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
+
+## @jgengine/editor/terrainReadoutStore
+
+- `TerrainReadoutState` (interface): interface TerrainReadoutState — Live, transient terrain-readability feedback shared by the viewport overlay and the HUD legend.
+- `TerrainReadoutStore` (interface): interface TerrainReadoutStore — Subscribable store for transient terrain-readout feedback (not persisted — it is live measurement).
+- `createTerrainReadoutStore` (function): function createTerrainReadoutStore(): TerrainReadoutStore — Creates the readout store the terrain overlay writes and the HUD reads.
 
 ## @jgengine/editor/uiStore
 

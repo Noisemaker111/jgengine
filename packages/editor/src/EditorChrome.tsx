@@ -645,6 +645,9 @@ export function EditorChrome({
           <button type="button" className={BTN} onClick={() => ui.patch({ gridSize: uiState.gridSize >= 8 ? 0.5 : uiState.gridSize * 2 })}>±</button>
         ) : null}
         <button type="button" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showGrid ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showGrid: !uiState.showGrid })}>Grid G</button>
+        <button type="button" title="Surface-following iso-elevation contours" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showContours ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showContours: !uiState.showContours })}>Contours</button>
+        <button type="button" title="Terrain-draped reference grid" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showSurfaceGrid ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showSurfaceGrid: !uiState.showSurfaceGrid })}>Drape</button>
+        <button type="button" title="Measurable elevation readout" className={`rounded-md px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15 ${uiState.showElevation ? "bg-white/10 text-neutral-200" : "bg-white/[0.03] text-neutral-500"}`} onClick={() => ui.patch({ showElevation: !uiState.showElevation })}>Elev</button>
         <div className="h-5 w-px bg-white/[0.07]" />
         <button type="button" className={BTN} onClick={() => api.handle({ method: "camera_frame" })}>Frame all</button>
         <button type="button" className={`${BTN} disabled:opacity-40`} onClick={() => session.dispatch({ type: "undo" })} disabled={!session.canUndo()}>Undo</button>

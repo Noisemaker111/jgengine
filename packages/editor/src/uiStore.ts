@@ -106,6 +106,12 @@ export interface EditorUiState {
   snapMode: SnapMode;
   gridSize: number;
   showGrid: boolean;
+  /** Surface-following iso-elevation contour overlay (terrain readability). */
+  showContours: boolean;
+  /** Terrain-draped reference grid overlay that climbs relief instead of being occluded by it. */
+  showSurfaceGrid: boolean;
+  /** Measurable elevation HUD: cursor height/delta, region min/max/mean, contour interval. */
+  showElevation: boolean;
   placement: PlacementTool | null;
   pathDraft: readonly EditorVec3[];
   pathPoint: { pathId: string; index: number } | null;
@@ -142,6 +148,9 @@ export function createEditorUiStore(): EditorUiStore {
     snapMode: "ground",
     gridSize: 1,
     showGrid: true,
+    showContours: false,
+    showSurfaceGrid: false,
+    showElevation: false,
     placement: null,
     pathDraft: [],
     pathPoint: null,
