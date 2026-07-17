@@ -16,6 +16,13 @@ export interface RoadSegment {
   to: readonly [number, number];
 }
 
+export interface AuthoredVehicleSpawn {
+  id: string;
+  catalogId: string;
+  position: readonly [number, number, number];
+  rotationY: number;
+}
+
 function markerXYZ(id: string): readonly [number, number, number] {
   const marker = editorLayers.markers.find((m) => m.id === id);
   if (marker === undefined) throw new Error(`vice-isle scene is missing marker "${id}"`);
@@ -42,6 +49,20 @@ export const ROADS: readonly RoadSegment[] = editorLayers.paths
 export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] = (
   editorLayers.paths.find((path) => path.id === "race-loop")?.points ?? []
 ).map((point) => [point.x, point.z] as const);
+
+export const AUTHORED_VEHICLE_SPAWNS: readonly AuthoredVehicleSpawn[] = editorLayers.markers
+  .filter((marker) => marker.kind === "vehicle_spawn")
+  .flatMap((marker) => {
+    const catalogId = typeof marker.meta?.assetId === "string" ? marker.meta.assetId : null;
+    return catalogId === null
+      ? []
+      : [{
+          id: marker.id,
+          catalogId,
+          position: [marker.position.x, marker.position.y, marker.position.z] as const,
+          rotationY: marker.rotationY ?? 0,
+        }];
+  });
 
 export const KINGPIN_POS: readonly [number, number, number] = markerXYZ("kingpin");
 export const PLAYER_SPAWN: readonly [number, number, number] = markerXYZ("player_spawn");

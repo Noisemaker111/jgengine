@@ -15,6 +15,8 @@ export interface DrivableVehicleOptions {
 export interface DrivableVehiclePose {
   position: DrivableVehiclePosition;
   rotationY: number;
+  rotationX: number;
+  rotationZ: number;
   dt: number;
 }
 
@@ -41,7 +43,7 @@ export function tickDrivableVehicle(
   const [x, y, z] = step.position;
   const resolvedY = options.groundHeight === undefined ? y : options.groundHeight(x, z);
   return {
-    pose: { position: [x, resolvedY, z], rotationY: step.heading, dt },
+    pose: { position: [x, resolvedY, z], rotationX: step.bodyPitch, rotationY: step.heading, rotationZ: step.bodyRoll, dt },
     step,
   };
 }

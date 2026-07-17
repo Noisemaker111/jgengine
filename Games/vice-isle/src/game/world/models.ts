@@ -6,6 +6,7 @@ import { BUILDING_SPECS } from "./buildings";
 
 const CHAR = "kaykit-adventurers";
 const CITY = "kaykit-city-builder";
+const SPACE = "kaykit-space-base";
 const NATURE = "quaternius-stylized-nature";
 const DUNGEON = "kaykit-dungeon";
 const FURN = "kaykit-furniture";
@@ -86,6 +87,31 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
     model: `${CITY}/car_police`,
     fallbackModel: `${CITY}/car_taxi`,
     style: { targetHeight: 1.4 },
+  },
+  air_helicopter: {
+    model: `${SPACE}/lander_B`,
+    fallbackModel: `${CITY}/car_sedan`,
+    style: { targetHeight: 2.2, material: { color: "#e7e9ee", metalness: 0.55, roughness: 0.32 } },
+  },
+  air_trainer: {
+    model: `${SPACE}/lander_A`,
+    fallbackModel: `${CITY}/car_sedan`,
+    style: { targetHeight: 1.8, material: { color: "#f4d35e", metalness: 0.28, roughness: 0.45 } },
+  },
+  air_prop: {
+    model: `${SPACE}/spacetruck`,
+    fallbackModel: `${CITY}/car_stationwagon`,
+    style: { targetHeight: 2, material: { color: "#e85d4a", metalness: 0.35, roughness: 0.38 } },
+  },
+  air_jet: {
+    model: `${SPACE}/spacetruck_large`,
+    fallbackModel: `${CITY}/car_police`,
+    style: { targetHeight: 1.65, material: { color: "#697582", metalness: 0.72, roughness: 0.25 } },
+  },
+  air_vtol: {
+    model: `${SPACE}/lander_base`,
+    fallbackModel: `${CITY}/car_police`,
+    style: { targetHeight: 1.9, material: { color: "#3d5a45", metalness: 0.68, roughness: 0.3 } },
   },
 });
 

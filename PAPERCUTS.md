@@ -239,6 +239,18 @@ running a clean export-manifest test after incremental builds -> stale dist file
 
 running ship:preflight immediately before commit as documented -> script rejected the required dirty tree and uncommitted branch as a no-op
 
+2026-07-16T23:38:41.918Z — gpt-5 — NoisemakerJon
+
+editor MCP help says repeat --rpc runs several requests, but parseEditorCliArgs retains only the final --rpc so multi-step scene authoring cannot persist in one session
+
+2026-07-16T23:57:35.868Z — gpt-5 — NoisemakerJon
+
+using the required agent-browser verification skill -> agent-browser is not installed or on PATH
+
+2026-07-17T00:08:24.662Z — gpt-5 — NoisemakerJon
+
+subscribing to PR notification activity with gh api booleans via -f -> GitHub rejected strings; -F was required
+
 2026-07-17T06:56:02.774Z — unknown — Claude
 
 profiling the-robots in a cloud session → vite dev server silently stopped invalidating changed modules mid-session (served stale game.config.ts transforms twice), so perf A/B measurements compared identical code; likely inotify watcher death after pulling 250+ model files into apps/dev/public. Workaround: curl the /@fs transform and diff against disk before trusting a measurement, restart vite when stale — drive could grow a freshness self-check.

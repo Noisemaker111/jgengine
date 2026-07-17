@@ -4,6 +4,7 @@ import { world } from "../world";
 import {
   BOUNTY_SPOTS,
   BRIEFCASE_POS,
+  AUTHORED_VEHICLE_SPAWNS,
   CICADA_STAGE_POS,
   DISTRICTS,
   DOCK_FIGHT_CENTER,
@@ -76,6 +77,17 @@ describe("vice-isle authored scene parity", () => {
     expect(new Set(BOUNTY_SPOTS.map((s) => s.id)).size).toBe(5);
     const districts = new Set(BOUNTY_SPOTS.map((s) => districtAt(s.position[0], s.position[2])?.id ?? "streets"));
     expect(districts.size).toBeGreaterThanOrEqual(4);
+  });
+
+  test("five aircraft spawn from editor-authored vehicle markers", () => {
+    expect(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.catalogId)).toEqual([
+      "air_helicopter",
+      "air_trainer",
+      "air_prop",
+      "air_jet",
+      "air_vtol",
+    ]);
+    expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(5);
   });
 });
 

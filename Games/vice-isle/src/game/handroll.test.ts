@@ -47,6 +47,22 @@ describe("handroll drivable-vehicle adoption", () => {
     expect(handroll.carSpeedKmh()).toBeGreaterThan(0);
   });
 
+  test("helicopter collective lifts the aircraft and publishes flight telemetry", () => {
+    const ctx = boot();
+    const handroll = createHandroll();
+    ctx.scene.entity.spawn("air_helicopter", { id: "heli_1", position: [0, 1, 0], role: "prop" });
+    handroll.enterVehicle(ctx, "heli_1");
+
+    ctx.input.publish(["flightThrottleUp", "moveForward"]);
+    for (let i = 0; i < 300; i += 1) handroll.tick(ctx, STEP);
+
+    const helicopter = ctx.scene.entity.get("heli_1")!;
+    expect(helicopter.position[1]).toBeGreaterThan(3);
+    expect(Math.abs(helicopter.position[2])).toBeGreaterThan(1);
+    expect(handroll.telemetry().mode).toBe("aircraft");
+    expect(handroll.telemetry().altitude).toBeGreaterThan(2);
+  });
+
   test("witnessed heat gains escalate stars, unwitnessed gains do not", () => {
     const ctx = boot();
     const handroll = createHandroll();
