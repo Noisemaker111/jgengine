@@ -21,7 +21,20 @@ import {
 } from "@jgengine/core/ui/actionModel";
 import { actionTooltip, placePopover, type PopoverSide, type TooltipContent } from "@jgengine/core/ui/tooltipModel";
 
+import { GameIcon, iconForAction } from "./gameIcons";
 import { Keycap } from "./keyHint";
+
+/**
+ * The default action icon (#1035): an explicit `action.icon` wins; otherwise a `GameIcon` glyph
+ * resolved from the action id/label — a real painted glyph instead of two text initials — falling
+ * back to the initials only when nothing resolves. Pass `renderIcon` to override entirely.
+ */
+function defaultActionIcon(action: ResolvedAction): ReactNode {
+  if (action.icon !== undefined && action.icon !== null) return action.icon;
+  const name = iconForAction(action.id) ?? iconForAction(action.label);
+  if (name !== null) return <GameIcon name={name} size={20} color="#eef2f8" />;
+  return action.label.slice(0, 2);
+}
 
 /**
  * Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) —
@@ -291,7 +304,7 @@ export function ActionButton({
         </span>
       ) : null}
       <span style={{ fontSize: renderIcon ? undefined : 18, lineHeight: 1 }} data-action-icon aria-hidden>
-        {renderIcon ? renderIcon(action) : (action.icon ?? action.label.slice(0, 2))}
+        {renderIcon ? renderIcon(action) : defaultActionIcon(action)}
       </span>
       {action.costs.length > 0 ? (
         <span data-action-costs style={{ display: "flex", gap: 4, fontSize: 9 }}>

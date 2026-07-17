@@ -92,3 +92,20 @@ describe("action renderers (SSR)", () => {
     expect(html).toContain('data-action-id="stop"');
   });
 });
+
+describe("default action icon (#1035)", () => {
+  test("resolves a GameIcon glyph from the action id when no icon is set", () => {
+    const [resolved] = resolveActionCollection([{ id: "attack", label: "Attack", hotkey: "1" }]);
+    const html = renderToStaticMarkup(createElement(ActionButton, { action: resolved! }));
+    expect(html).toContain("<svg"); // the resolved "sword" glyph, not the text "At"
+  });
+
+  test("an explicit action icon still wins; an unresolved id falls back to initials", () => {
+    const [withEmoji] = resolveActionCollection([{ id: "attack", label: "Attack", icon: "🔥" }]);
+    expect(renderToStaticMarkup(createElement(ActionButton, { action: withEmoji! }))).toContain("🔥");
+    const [unresolved] = resolveActionCollection([{ id: "xyzzy", label: "Xyzzy" }]);
+    const html = renderToStaticMarkup(createElement(ActionButton, { action: unresolved! }));
+    expect(html).not.toContain("<svg");
+    expect(html).toContain("Xy");
+  });
+});
