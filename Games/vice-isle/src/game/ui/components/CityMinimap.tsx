@@ -1,4 +1,5 @@
 import { useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { HudFrame } from "@jgengine/react/hudFrame";
 import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/react/map";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/world/minimap";
@@ -129,9 +130,11 @@ export function CityMinimap() {
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <div
-        className="relative overflow-hidden rounded-sm border-2 border-black bg-[#0e2431] shadow-[4px_4px_0_#000]"
-        style={{ width: SIZE, height: SIZE }}
+      <HudFrame
+        variation="retro"
+        shape="square"
+        className="relative overflow-hidden"
+        style={{ width: SIZE, height: SIZE, background: "#0e2431" }}
       >
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
           <rect width={SIZE} height={SIZE} fill="#123244" />
@@ -143,7 +146,7 @@ export function CityMinimap() {
           <MinimapChrome view={view} markers={markers} />
         </svg>
         <div className="absolute right-1 top-0.5 text-[10px] font-black text-white/70">N</div>
-      </div>
+      </HudFrame>
       <div className="-skew-x-6 border-2 border-black bg-[#f2599b] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-black">
         {district?.label ?? "Vice Isle"}
       </div>

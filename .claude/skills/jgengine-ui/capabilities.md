@@ -61,6 +61,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
 
+## hud-frame — shared framed HUD chrome — glass/plate/retro skins, optional title/aside header, reused across every widget instead of a bespoke panel per widget
+
+- `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -68,6 +72,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## keycap — styled keyboard/mouse key cap for control hints
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/react"`
+
+## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
+
+- `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
@@ -80,6 +88,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## minimap-panel — circular minimap with zone label, clock, and compass composed together
 
 - `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/react"`
+
+## minimap-track-hud — horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
+
+- `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/react"`
 
 ## nameplates — billboarded name + HP bar over nearby entities
 

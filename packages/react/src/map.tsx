@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { useMemo, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import type { FogCells, FogField } from "@jgengine/core/world/fog";
 import {
   DEFAULT_MARKER_KINDS,
@@ -702,6 +702,137 @@ export function MinimapPanel({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`). */
+export interface MinimapTrackSpan {
+  id: string;
+  /** 0..1 fraction where the span starts. */
+  start: number;
+  /** 0..1 fraction where the span ends. */
+  end: number;
+  /** Fill color; defaults to a translucent white. */
+  color?: string;
+  /** Tooltip / accessible label for the span. */
+  label?: string;
+}
+
+/** A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player). */
+export interface MinimapTrackPip {
+  id: string;
+  /** 0..1 fraction along the rail. */
+  at: number;
+  /** Marker color; defaults to the rail foreground. */
+  color?: string;
+  /** Accessible label for the marker. */
+  label?: string;
+  /** Tooltip text (rendered as the `title` attribute). */
+  title?: string;
+  /** Silhouette: `gate` (thin tall bar) or a `dot`/`exit`/`player` circle of increasing size (default `dot`). */
+  shape?: "gate" | "dot" | "exit" | "player";
+}
+
+/** Props for {@link MinimapTrack}. */
+export interface MinimapTrackProps {
+  /** Colored zone spans painted along the rail. */
+  spans?: readonly MinimapTrackSpan[];
+  /** Point markers (gates, exit, player) placed by 0..1 fraction. */
+  pips?: readonly MinimapTrackPip[];
+  /** Rail width (default `100%`). */
+  width?: number | string;
+  /** Rail thickness in px (default 12). */
+  height?: number;
+  /** Rail track color (default `rgba(255,255,255,0.10)`). */
+  railColor?: string;
+  className?: string;
+  style?: CSSProperties;
+  children?: ReactNode;
+}
+
+const TRACK_PIP_DIAMETER: Record<"dot" | "exit" | "player", number> = {
+  dot: 6,
+  exit: 8,
+  player: 12,
+};
+
+/**
+ * Horizontal linear track minimap — a rounded progress rail with colored zone
+ * `spans` and gate/exit/player `pips` positioned by 0..1 fraction. The
+ * structural counterpart to the radial {@link Minimap} for corridor/route
+ * games: fractions are supplied by the caller (via core `trackFraction`), so it
+ * reads no store and stays presentation-only, sharing chrome with the radial
+ * minimap.
+ *
+ * @capability minimap-track-hud horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
+ */
+export function MinimapTrack({
+  spans = [],
+  pips = [],
+  width = "100%",
+  height = 12,
+  railColor = "rgba(255,255,255,0.10)",
+  className,
+  style,
+  children,
+}: MinimapTrackProps): ReactNode {
+  return (
+    <div
+      className={className}
+      data-minimap-track
+      style={{ position: "relative", width, height, borderRadius: 9999, background: railColor, ...style }}
+    >
+      {spans.map((span) => (
+        <div
+          key={span.id}
+          data-track-span={span.id}
+          title={span.label}
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: `${span.start * 100}%`,
+            width: `${(span.end - span.start) * 100}%`,
+            background: span.color ?? "rgba(255,255,255,0.25)",
+            opacity: 0.4,
+            borderRadius: 9999,
+          }}
+        />
+      ))}
+      {pips.map((pip) => {
+        const shape = pip.shape ?? "dot";
+        const color = pip.color ?? "#f4f6fb";
+        const common: CSSProperties = {
+          position: "absolute",
+          top: "50%",
+          left: `${pip.at * 100}%`,
+          transform: "translate(-50%, -50%)",
+          background: color,
+        };
+        if (shape === "gate") {
+          return (
+            <div
+              key={pip.id}
+              data-track-pip={pip.id}
+              data-pip-shape="gate"
+              title={pip.title ?? pip.label}
+              style={{ ...common, width: 3, height: height + 6, borderRadius: 2 }}
+            />
+          );
+        }
+        const diameter = TRACK_PIP_DIAMETER[shape];
+        return (
+          <div
+            key={pip.id}
+            data-track-pip={pip.id}
+            data-pip-shape={shape}
+            title={pip.title ?? pip.label}
+            style={{ ...common, width: diameter, height: diameter, borderRadius: 9999, border: "1px solid rgba(0,0,0,0.6)" }}
+          />
+        );
+      })}
+      {children}
     </div>
   );
 }

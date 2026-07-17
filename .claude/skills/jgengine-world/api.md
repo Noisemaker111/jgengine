@@ -2259,6 +2259,11 @@
 - `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
 
+## @jgengine/core/world/minimapTrack
+
+- `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
+- `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
+
 ## @jgengine/core/world/pathInstances
 
 - `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
