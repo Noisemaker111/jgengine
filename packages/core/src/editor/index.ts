@@ -110,6 +110,30 @@ export type {
 } from "./world";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
+/** A procedural directive on the scene document — scatter props or a mob population. */
+export type {
+  EditorDirective,
+  EditorDirectiveArea,
+  EditorDirectiveKind,
+  EditorPopulationDirective,
+  EditorPopulationSpecies,
+  EditorScatterDirective,
+} from "./types";
+export {
+  applyDirectiveOverlay,
+  materializeDirective,
+  materializeDirectives,
+  materializePopulationDirective,
+  materializeScatterDirective,
+  resolveDirectiveFootprint,
+} from "./directives";
+/** The deterministic bake of scene directives into per-instance placements + sparse overlays. */
+export type {
+  DirectiveFootprint,
+  DirectiveInstancePatch,
+  EditorDirectiveOverlay,
+  MaterializedInstance,
+} from "./directives";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export { createEditorSession } from "./commands";
 /** Compact snapshot of a session state ΓÇö counts, selection, and the selected object. */
