@@ -37,14 +37,16 @@ export function useSettingsRevision(store: SettingsStore): number {
 export function useGraphicsSettings(
   store: SettingsStore,
   shadowsDefault: boolean,
-): { shadows: boolean; dpr: number; uiScale: number } {
+): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality } {
   useSettingsRevision(store);
-  const quality = store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY) as GraphicsQuality;
+  const rawQuality = store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY) as GraphicsQuality;
+  const quality: GraphicsQuality = GRAPHICS_QUALITY_DPR[rawQuality] !== undefined ? rawQuality : "high";
   const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
   return {
     shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
-    dpr: GRAPHICS_QUALITY_DPR[quality] ?? GRAPHICS_QUALITY_DPR.high,
+    dpr: GRAPHICS_QUALITY_DPR[quality],
     uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
+    quality,
   };
 }
 

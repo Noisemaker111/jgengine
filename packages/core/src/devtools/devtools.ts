@@ -205,6 +205,8 @@ export interface Devtools {
     stats(): FrameStats | null;
     longFrames(): readonly LongFrameEvent[];
     clearLongFrames(): void;
+    /** Drop all frame/phase/long-frame history so the next stats() window starts clean — use after load/shader warmup before measuring. */
+    reset(): void;
   };
   profile: {
     begin(name: string): () => void;
@@ -921,6 +923,13 @@ export function createDevtools(): Devtools {
       longFrames: () => longFrameEvents,
       clearLongFrames() {
         longFrameEvents.length = 0;
+      },
+      reset() {
+        frameIndex = 0;
+        frameCount = 0;
+        longFrameEvents.length = 0;
+        phaseAccumulators.clear();
+        resetCurrentPhases();
       },
     },
     profile: {

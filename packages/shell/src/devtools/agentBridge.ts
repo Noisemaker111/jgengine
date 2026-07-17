@@ -1,3 +1,4 @@
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { PlayableGame } from "../registry";
 import {
@@ -145,6 +146,9 @@ export function installAgentBridge(options: {
         return { ok: true, snapshot: buildLeanReport(playable) };
       case "debug_report":
         return { ok: true, report: buildFullReport(playable) };
+      case "debug_perf_reset":
+        devtools.frame.reset();
+        return { ok: true };
       case "canvas_state":
         return { ok: true, layouts: canvasPanels() };
       case "canvas_set_editing": {
