@@ -4,8 +4,11 @@ export {
   createBlankPlayable,
   blankWorld,
   downloadSaver,
+  importAssetToHost,
+  loadDroppedAssets,
   type StandaloneEditorProps,
   type StandaloneAsset,
+  type AssetImporter,
   type BlankPlayableOptions,
 } from "./StandaloneEditor";
 export { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
