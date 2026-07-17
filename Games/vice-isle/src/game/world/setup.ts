@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+import { patrol } from "@jgengine/core/scene/behaviors";
+import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import { furnitureSpots, laneCenters, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
 import { streets } from "../../world";
-import { handroll } from "../handroll";
 import { buildingsByStyle, type BuildingStyle } from "./buildings";
 import {
   BRIEFCASE_POS,
@@ -77,11 +78,24 @@ export function setupWorld(ctx: GameContext): void {
       if (point === null) continue;
       pedCount += 1;
       const id = `ped_${pedCount}`;
-      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, point[0], point[1]), role: "npc" });
       const walk = sidewalkPoint(street, side, Math.min(1, fraction + 0.25));
-      if (walk !== null) {
-        handroll.registerRoute(id, [point, walk, point], 1.5, rng() * 40);
-      }
+      const behaviors =
+        walk !== null
+          ? [
+              patrol({
+                waypoints: [
+                  [point[0], 0, point[1]],
+                  [walk[0], 0, walk[1]],
+                  [point[0], 0, point[1]],
+                ] as Waypoint[],
+                speed: 1.5,
+                loop: true,
+                groundClamp: true,
+                startProgress: { kind: "distance", value: 1.5 * rng() * 40 },
+              }),
+            ]
+          : [];
+      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, point[0], point[1]), role: "npc", behaviors });
     }
   });
 
@@ -114,8 +128,20 @@ export function setupWorld(ctx: GameContext): void {
       const id = `traffic_${i}_${lap}`;
       const kind = (i + lap) % 3 === 2 ? "car_muscle" : "car_compact";
       const start = loop[0]!;
-      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, start[0], start[1]), role: "prop" });
-      handroll.registerRoute(id, loop, 8, rng() * 200 + lap * 90);
+      ctx.scene.entity.spawn(kind, {
+        id,
+        position: ground(ctx, start[0], start[1]),
+        role: "prop",
+        behaviors: [
+          patrol({
+            waypoints: loop.map(([x, z]) => [x, 0, z] as const),
+            speed: 8,
+            loop: true,
+            groundClamp: true,
+            startProgress: { kind: "distance", value: 8 * (rng() * 200 + lap * 90) },
+          }),
+        ],
+      });
     }
   });
 
