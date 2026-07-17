@@ -6,8 +6,8 @@
  * @capability catenary sagging cable curve between two anchors
  */
 
-/** A world-space triple `[x, y, z]`. */
-export type Vec3 = readonly [number, number, number];
+export type { Vec3 } from "./geometry";
+import type { Vec3 } from "./geometry";
 
 /**
  * Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span

@@ -1645,7 +1645,7 @@
 
 ## @jgengine/core/world/catenary
 
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — Generic sag/catenary curve → point string, ready to loft into a tube. Genre-agnostic — power lines, suspension-bridge cables, ziplines, ropes, hanging chains, festoon lights all hang the same way. `sagCurve` is a cheap quadratic-Bézier droop; `catenaryCurve` is the true cosh hyperbolic cable.
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
 - `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
 - `sagCurve` (function): function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[] — Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span lowest point droops by exactly `sag` meters below the chord. Cheap and stable; the go-to for cables where exact catenary physics don't matter. Returns `segments + 1` points.
 
@@ -1800,6 +1800,7 @@
 - `Footprint` (interface): interface Footprint — ⚠ undocumented
 - `MoveOptions` (interface): interface MoveOptions — ⚠ undocumented
 - `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
 
 ## @jgengine/core/world/grassKind
 
