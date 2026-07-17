@@ -87,6 +87,7 @@
     "./editor/liveSync",
     "./editor/runtimeInspector",
     "./editor/types",
+    "./editor/world",
     "./faction/factions",
     "./faction/reputation",
     "./format/distance",
