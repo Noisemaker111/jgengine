@@ -1,6 +1,6 @@
 ---
 name: jgengine-verify
-description: Prove code, scene, gameplay, and visual claims with proportional evidence.
+description: Prove a change works, looks right, or ships with proportional evidence: screenshots, gameplay, scene data.
 ---
 
 # JGengine verification
