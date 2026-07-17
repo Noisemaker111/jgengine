@@ -258,6 +258,26 @@ export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";
 export { pickUniform, pickWeighted } from "./random/pick";
 export { seededStreams } from "./random/rng";
+export {
+  addValue,
+  clampValue,
+  createPairKeyCodec,
+  driftValue,
+  getValue,
+  setValue,
+  towardValue,
+  type NumericBounds,
+  type PairKeyCodec,
+  type PairKeyOptions,
+} from "./relation/keyedValues";
+export {
+  crossThresholds,
+  tierAt,
+  type CrossThresholdsOptions,
+  type ThresholdBoundary,
+  type ThresholdCrossing,
+  type ThresholdDirection,
+} from "./relation/thresholds";
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";

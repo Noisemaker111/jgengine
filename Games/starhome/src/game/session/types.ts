@@ -1,3 +1,5 @@
+import { createPairKeyCodec } from "@jgengine/core/relation/keyedValues";
+
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 import type { NeedId } from "../needs/needs";
 
@@ -39,8 +41,11 @@ export interface HouseholdState {
   eventSeq: number;
 }
 
+/** Undirected, delimiter-safe key for a member pair; order-independent and serializable. */
+const REL_KEY_CODEC = createPairKeyCodec();
+
 export function pairKey(a: string, b: string): string {
-  return a < b ? `${a}|${b}` : `${b}|${a}`;
+  return REL_KEY_CODEC.key(a, b);
 }
 
 export function createHousehold(seed: string): HouseholdState {

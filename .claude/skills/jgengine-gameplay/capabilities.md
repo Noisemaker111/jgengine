@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
 
+## build — a serializable directed/undirected pair key that resists delimiter collisions
+
+- `createPairKeyCodec` (function) · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
+
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
 - `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
@@ -27,6 +31,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## define-game — single public game-authoring path — compose systems, world, and loop in one definition
 
 - `defineGame` (function) · `import { defineGame } from "@jgengine/core/gameplay"`
+
+## detect — fire-once threshold/milestone/tier crossings when a value moves
+
+- `crossThresholds` (function) · `import { crossThresholds } from "@jgengine/core/gameplay"`
 
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
@@ -104,6 +112,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/gameplay"`
 
+## move — a keyed value toward a target by a bounded step
+
+- `towardValue` (function) · `import { towardValue } from "@jgengine/core/gameplay"`
+
 ## name-generator — generate procedural names from templates and word banks
 
 - `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/gameplay"`
@@ -137,9 +149,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
 
+## resolve — the current tier/band label for a keyed or scalar value
+
+- `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`
+
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
+
+## set — a bounded keyed value in a caller-owned serializable record
+
+- `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
 
 ## social-emotes — emotes and social interactions between nearby players
 
