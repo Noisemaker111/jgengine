@@ -40,6 +40,16 @@ Resolved **once** by the engine when the last stat in the receive order hits min
 - Respawning under the same instance id revives it (it can die again). Same-id respawn must not happen synchronously inside the `entity.died` handler — defer a tick.
 - `quest.bind("entity.died")` credits kill objectives from the same event; leaderboards and kill feeds hang off it too.
 
+## Reward allocation (multiplayer distribution)
+
+Generation and allocation are different operations. A loot table (`@jgengine/core/game/lootTable`) or any roll produces `RewardResult`s; `@jgengine/core/combat`'s `allocateRewards(kind, request)` then decides **who gets what** among participants — the co-op question single-player kills never ask. It is deterministic and serializable: the same seeds, recipients, and results yield a byte-identical `AllocationOutcome` on host and every peer regardless of join order, so allocation replicates as data without re-rolling.
+
+- Policies (`kind`): `instanced` (each recipient rolls its own results from a stable per-id stream — private by default), `copy` (full copy to everyone), `shared` (weight-split one count with a conserving largest-remainder distribution), `roundRobin` (one result each in deterministic rotation), `assigned` (caller `assignment` map), `claimed` (defer results into a `ClaimablePool`).
+- Keep `allocationSeed` (ordering, splits, rotation, reservation) separate from `generationSeed` (per-recipient `instanced` rolls) so a late joiner never perturbs existing players' rolls. Recipient order is seed-shuffled, never input order.
+- Claims resolve authoritatively via `resolveClaim(pool, claimantId, { nowMs })` — idempotent (re-claiming your own pool re-returns the same grants), with eligibility, `reservedFor`, and `expiresAtMs` enforced by the authority, not UI hiding. `first` pools are open/contested; `reserved` pools tie to one recipient (personal quest reward).
+- `filterOutcomeFor(outcome, viewerId)` is the replication filter: private grants for other recipients and pools the viewer cannot claim are dropped, so private rewards never leak. Provenance (`grant.via`) survives projection.
+- Works for any reward, not just items — split XP/currency by contribution weight the same way.
+
 ## Combat feel (melee, defense, telegraphs)
 
 Layered on top of effects/projectiles/death — none of it replaces them, it adds **feel**. All models are renderer-free pure `@jgengine/core` factories a game composes per entity (like the `ctx`-vs-factory split above); the shell renders the telegraphs, styled damage numbers, hitstop shake.
