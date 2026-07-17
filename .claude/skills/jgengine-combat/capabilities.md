@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
 
+## anti-one-shot — clamp a near-lethal hit to leave a health floor then grant recovery immunity
+
+- `createAntiOneShotPolicy` (function) · `import { createAntiOneShotPolicy } from "@jgengine/core/combat"`
+
 ## cast-bar — run a channeled cast timer that movement or damage can interrupt
 
 - `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat"`
@@ -24,13 +28,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat"`
 
-## damage-hit — resolve a full data-defined damage hit — matchup, impact, receiver modifiers, and status application — with provenance
+## damage-clamp — cap incoming damage per hit at a configured maximum
 
-- `resolveDamageHit` (function) · `import { resolveDamageHit } from "@jgengine/core/combat"`
+- `createDamageClamp` (function) · `import { createDamageClamp } from "@jgengine/core/combat"`
 
-## damage-matchup — score a data-defined damage channel against a target's traits into independent typed multipliers
+## damage-interception — intercept a pending damage application before lethal resolution with ordered, inspectable stages
 
-- `resolveMatchup` (function) · `import { resolveMatchup } from "@jgengine/core/combat"`
+- `resolveDamage` (function) · `import { resolveDamage } from "@jgengine/core/combat"`
+
+## damage-pipeline — install and remove ordered damage interceptors that transitions toggle at runtime
+
+- `createDamagePipeline` (function) · `import { createDamagePipeline } from "@jgengine/core/combat"`
 
 ## death-system — resolve entity death and its on-death consequences
 
@@ -52,6 +60,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
 
+## immunity-window — reject damage during a per-target invulnerability window installed by transitions
+
+- `createImmunityWindow` (function) · `import { createImmunityWindow } from "@jgengine/core/combat"`
+
 ## impact-feel — calibrated hitstop + trauma preset for a named impact event
 
 - `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat"`
@@ -68,10 +80,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## projectiles — spawn and advance projectiles with travel and hit resolution
 
 - `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`
-
-## received-damage — apply data-defined receiver-side damage modifiers (amplify, reduce, cap, convert, redirect, immunity) with typed predicates
-
-- `resolveReceivedDamage` (function) · `import { resolveReceivedDamage } from "@jgengine/core/combat"`
 
 ## regen-shield — a rechargeable overshield that absorbs damage and refills after a lull
 
@@ -90,10 +98,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createStats` (function) · `import { createStats } from "@jgengine/core/combat"`
 
-## status-application — resolve a data-defined status application with chance, matchup scaling, and stacking policy
-
-- `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
-
 ## status-effects — apply and tick timed status effects and buffs on entities
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
+
+## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
+
+- `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/combat"`
