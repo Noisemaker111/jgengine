@@ -1,4 +1,5 @@
 import { createPairKeyCodec } from "@jgengine/core/relation/keyedValues";
+import { appendFeed, pruneFeed } from "@jgengine/core/game/feed";
 
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 import type { NeedId } from "../needs/needs";
@@ -70,10 +71,11 @@ export function pushEvent(
   tone: LifeEvent["tone"] = "info",
 ): void {
   state.eventSeq += 1;
-  state.events = [...state.events, { id: `ev${state.eventSeq}`, text, at, tone }].slice(-6);
+  // `LifeEvent` is a flat timestamped entry, so the shared feed primitive bounds it with no envelope.
+  state.events = appendFeed(state.events, { id: `ev${state.eventSeq}`, text, at, tone }, { limit: 6 });
 }
 
 export function pruneEvents(state: HouseholdState, now: number, ttl: number): void {
-  const kept = state.events.filter((event) => now - event.at < ttl);
-  if (kept.length !== state.events.length) state.events = kept;
+  // pruneFeed returns the same reference when nothing expired, preserving the old no-op skip.
+  state.events = pruneFeed(state.events, now, ttl);
 }

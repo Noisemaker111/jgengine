@@ -318,10 +318,14 @@
 ## @jgengine/core/game/feed
 
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `GameFeed` (interface): interface GameFeed — ⚠ undocumented
 - `GameFeedOptions` (interface): interface GameFeedOptions — ⚠ undocumented
+- `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
+- `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
 - `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
 - `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+- `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
 - `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
 
 ## @jgengine/core/game/gamePhase
@@ -713,7 +717,6 @@
 - `CompiledSystemSchedule` (interface): interface CompiledSystemSchedule — Deterministic compiled schedule: stage buckets, multi-subscribe channels, dependency validation. Order never depends on import order — only stage tables + explicit before/after constraints.
 - `CropDef` (interface): interface CropDef — ⚠ undocumented
 - `CropTileState` (interface): interface CropTileState — ⚠ undocumented
-- `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
 - `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
 - `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 500 — ⚠ undocumented
 - `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
@@ -724,6 +727,8 @@
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
+- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
+- `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
 - `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
 - `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
@@ -734,6 +739,7 @@
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
 - `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
 - `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
@@ -777,12 +783,9 @@
 - `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
-- `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
-- `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
-- `PairKeyOptions` (interface): interface PairKeyOptions — Direction and delimiter policy for {@link createPairKeyCodec}.
 - `PartDef` (interface): interface PartDef — ⚠ undocumented
 - `Party` (interface): interface Party — ⚠ undocumented
 - `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
@@ -832,9 +835,7 @@
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
-- `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
-- `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
-- `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
+- `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
@@ -852,9 +853,9 @@
 - `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
-- `addValue` (function): function addValue(record: Record<string, number>, key: string, delta: number, bounds?: NumericBounds): number — Add `delta` to `key` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
 - `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
@@ -862,7 +863,6 @@
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
-- `clampValue` (function): function clampValue(value: number, bounds?: NumericBounds): number — Clamp a scalar to `bounds` (identity when `bounds` is omitted). Pure — touches no record.
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `compileSystemSchedule` (function): function compileSystemSchedule(systems: readonly SystemDefinition[], options?: CompileSystemScheduleOptions): CompiledSystemSchedule — Compile system definitions into a deterministic schedule. Validates unique ids, `dependsOn`, and before/after cycles.
 - `composeGameLoop` (function): function composeGameLoop(systems: readonly SystemDefinition[] | undefined, loop: GameLoop<GameContext> | undefined, options?: ComposeGameLoopOptions): GameLoop<GameContext> — Merge a system list with an optional classic `GameLoop` into one loop the shell/runners drive. Systems install on first `onInit`; classic hooks still run for incremental migration.
@@ -899,7 +899,6 @@
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
-- `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
 - `createProductionState` (function): function createProductionState(): ProductionState — A production building that converts input items into outputs over time — factory/crafting station.
 - `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — Track accepted quests and their per-objective progress, granting rewards on completion.
@@ -918,15 +917,17 @@
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
-- `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
+- `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
+- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+- `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
+- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
 - `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
 - `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
-- `driftValue` (function): function driftValue(record: Record<string, number>, key: string, rate: number, rest = 0, bounds?: NumericBounds): number — Decay `key` toward a `rest` value (default `0`) by `rate` per call — the common "relationships cool off" / "heat fades" drift. Thin wrapper over {@link towardValue}.
 - `durabilityFraction` (function): function durabilityFraction(state: DurabilityState): number — ⚠ undocumented
 - `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
@@ -935,9 +936,9 @@
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
-- `getValue` (function): function getValue(record: Record<string, number>, key: string, fallback = 0): number — Current value for `key`, or `fallback` (default `0`) when the record has no entry.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
+- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
 - `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
@@ -964,10 +965,12 @@
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 - `productionBuilding` (function): function productionBuilding(config: ProductionBuildingConfig): ProductionBuildingDef — ⚠ undocumented
+- `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
 - `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
 - `remoteSaveBackend` (function): function remoteSaveBackend(backend: SaveBackend): SaveBackend — Adopt any async `read`/`write`/`remove` trio as a {@link SaveBackend} — the seam for cloud saves backed by a database, an HTTP endpoint, or Convex (see `@jgengine/convex/convexSaveBackend`). Reads/writes may reject; the save store surfaces the failure as `"error"` status instead of throwing.
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
@@ -979,7 +982,6 @@
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
-- `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
 - `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — Attach parts into an item's mount slots and resolve the combined stats.
 - `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
@@ -988,10 +990,8 @@
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
-- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
-- `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
 - `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
@@ -1165,28 +1165,6 @@
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
 
-## @jgengine/core/relation/keyedValues
-
-- `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
-- `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
-- `PairKeyOptions` (interface): interface PairKeyOptions — Direction and delimiter policy for {@link createPairKeyCodec}.
-- `addValue` (function): function addValue(record: Record<string, number>, key: string, delta: number, bounds?: NumericBounds): number — Add `delta` to `key` (clamped to `bounds`), writing the record in place. Returns the stored value.
-- `clampValue` (function): function clampValue(value: number, bounds?: NumericBounds): number — Clamp a scalar to `bounds` (identity when `bounds` is omitted). Pure — touches no record.
-- `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
-- `driftValue` (function): function driftValue(record: Record<string, number>, key: string, rate: number, rest = 0, bounds?: NumericBounds): number — Decay `key` toward a `rest` value (default `0`) by `rate` per call — the common "relationships cool off" / "heat fades" drift. Thin wrapper over {@link towardValue}.
-- `getValue` (function): function getValue(record: Record<string, number>, key: string, fallback = 0): number — Current value for `key`, or `fallback` (default `0`) when the record has no entry.
-- `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
-- `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
-
-## @jgengine/core/relation/thresholds
-
-- `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
-- `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
-- `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
-- `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
-- `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
-- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
-
 ## @jgengine/core/session/contestedChannel
 
 - `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented
@@ -1242,8 +1220,16 @@
 - `DecayMeterConfig` (interface): interface DecayMeterConfig — ⚠ undocumented
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
 - `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
+- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
+- `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
+- `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
+- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+- `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
+- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
+- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
+- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
 
 ## @jgengine/core/survival/moodle
 

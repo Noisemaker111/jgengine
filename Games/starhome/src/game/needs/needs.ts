@@ -1,3 +1,5 @@
+import { decayMeters, type DecayMeterConfig } from "@jgengine/core/survival/decayMeter";
+
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 
 export const NEEDS = ["hunger", "energy", "social", "fun"] as const;
@@ -21,18 +23,33 @@ export function emptyNeeds(): Record<NeedId, number> {
   return { hunger: 78, energy: 78, social: 70, fun: 70 };
 }
 
+// Cache the per-day-length meter defs so the hot sim loop (every member, every tick) doesn't
+// rebuild them; dayLength is a constant in practice.
+let cachedDayLength = -1;
+let cachedDefs: DecayMeterConfig[] = [];
+
+function needDecayDefs(dayLength: number): DecayMeterConfig[] {
+  if (dayLength !== cachedDayLength) {
+    cachedDayLength = dayLength;
+    cachedDefs = NEEDS.map((need) => ({
+      id: need,
+      max: 100,
+      min: 0,
+      rate: NEED_DEFS[need].decayPerDay / dayLength,
+    }));
+  }
+  return cachedDefs;
+}
+
 export function decayNeeds(
   needs: Record<NeedId, number>,
   plan: AlienBodyPlan,
   dayLength: number,
   dt: number,
 ): Record<NeedId, number> {
-  const next: Record<NeedId, number> = { ...needs };
-  for (const need of NEEDS) {
-    const rate = (NEED_DEFS[need].decayPerDay / dayLength) * plan.metabolism;
-    next[need] = clamp(next[need] - rate * dt);
-  }
-  return next;
+  // Decay is now the shared `decayMeters` primitive: base rate is decay-per-day over the day
+  // length, and metabolism is the scalar rate modifier. Behaviour is identical to the old loop.
+  return decayMeters(needs, needDecayDefs(dayLength), dt, plan.metabolism) as Record<NeedId, number>;
 }
 
 export function clamp(value: number): number {

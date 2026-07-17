@@ -27,6 +27,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
+- `decayMeterMoodles` (function) · `import { decayMeterMoodles } from "@jgengine/core/gameplay"`
+- `decayMeterSnapshot` (function) · `import { decayMeterSnapshot } from "@jgengine/core/gameplay"`
+- `decayMeterState` (function) · `import { decayMeterState } from "@jgengine/core/gameplay"`
+- `decayMeters` (function) · `import { decayMeters } from "@jgengine/core/gameplay"`
+- `initDecayMeters` (function) · `import { initDecayMeters } from "@jgengine/core/gameplay"`
+- `refillMeter` (function) · `import { refillMeter } from "@jgengine/core/gameplay"`
 
 ## define-game — single public game-authoring path — compose systems, world, and loop in one definition
 
@@ -119,6 +125,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## name-generator — generate procedural names from templates and word banks
 
 - `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/gameplay"`
+
+## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
+
+- `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
+- `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
 ## objectives — check progress of a threshold objective against a live metric
 
