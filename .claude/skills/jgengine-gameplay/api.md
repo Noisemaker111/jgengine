@@ -304,6 +304,7 @@
 - `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent — ⚠ undocumented
 - `QuestCompletedEvent` (interface): interface QuestCompletedEvent — ⚠ undocumented
 - `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent — ⚠ undocumented
+- `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
 - `SocialFriendAddedEvent` (interface): interface SocialFriendAddedEvent — ⚠ undocumented
 - `SocialPartyJoinedEvent` (interface): interface SocialPartyJoinedEvent — ⚠ undocumented
 - `SocialPartyLeftEvent` (interface): interface SocialPartyLeftEvent — ⚠ undocumented
@@ -311,6 +312,7 @@
 - `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent — ⚠ undocumented
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
+- `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
@@ -665,6 +667,17 @@
 - `hasUnlock` (function): function hasUnlock(granted: UnlockState, unlockId: string): boolean — ⚠ undocumented
 - `unlockTree` (function): function unlockTree(defs: readonly UnlockDef[], categoryId: string): UnlockDef[] — ⚠ undocumented
 
+## @jgengine/core/game/vfxInstance
+
+- `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
+- `VfxInstancePatch` (interface): interface VfxInstancePatch — A partial update to a live retained VFX instance. Only the provided fields change; `params` is shallow-merged so a caller can nudge one knob without resending the whole bag. Setting a field to `undefined` clears it. Applying a patch refreshes the instance heartbeat.
+- `VfxInstanceSpec` (interface): interface VfxInstanceSpec — The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot `combat.vfx` burst this describes a long-lived effect whose endpoints and parameters are updated over time. `id` is caller-stable so repeated `upsert` calls address the same effect; omit it to mint one. `from`/`to` are {@link VfxRef}s (an entity instance id or a world point) that a renderer resolves each frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
+- `VfxInstanceState` (interface): interface VfxInstanceState — The stored, fully-resolved form of a retained VFX instance. It is a plain serializable record so hosts can replicate it and debug tooling can inspect it; renderers receive it verbatim and never merge partial state themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
+- `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
+- `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
+- `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
+- `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
+
 ## @jgengine/core/game/worldItem
 
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
@@ -710,6 +723,7 @@
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
+- `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
 - `CompiledSystemSchedule` (interface): interface CompiledSystemSchedule — Deterministic compiled schedule: stage buckets, multi-subscribe channels, dependency validation. Order never depends on import order — only stage tables + explicit before/after constraints.
 - `CropDef` (interface): interface CropDef — ⚠ undocumented
 - `CropTileState` (interface): interface CropTileState — ⚠ undocumented
@@ -799,6 +813,7 @@
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
 - `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase — ⚠ undocumented
@@ -838,7 +853,14 @@
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
+- `VfxInstancePatch` (interface): interface VfxInstancePatch — A partial update to a live retained VFX instance. Only the provided fields change; `params` is shallow-merged so a caller can nudge one knob without resending the whole bag. Setting a field to `undefined` clears it. Applying a patch refreshes the instance heartbeat.
+- `VfxInstanceSpec` (interface): interface VfxInstanceSpec — The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot `combat.vfx` burst this describes a long-lived effect whose endpoints and parameters are updated over time. `id` is caller-stable so repeated `upsert` calls address the same effect; omit it to mint one. `from`/`to` are {@link VfxRef}s (an entity instance id or a world point) that a renderer resolves each frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
+- `VfxInstanceState` (interface): interface VfxInstanceState — The stored, fully-resolved form of a retained VFX instance. It is a plain serializable record so hosts can replicate it and debug tooling can inspect it; renderers receive it verbatim and never merge partial state themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
+- `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
+- `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
+- `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
+- `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
@@ -907,6 +929,7 @@
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
+- `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
