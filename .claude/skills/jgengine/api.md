@@ -205,6 +205,7 @@
 - `GameContextItemEntry` (interface): interface GameContextItemEntry — ⚠ undocumented
 - `GameContextItemUse` (interface): interface GameContextItemUse — ⚠ undocumented
 - `GameContextLoot` (interface): interface GameContextLoot — ⚠ undocumented
+- `GameContextModels` (interface): interface GameContextModels — Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
 - `GameContextObjectEntry` (interface): interface GameContextObjectEntry — ⚠ undocumented
 - `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
 - `GameContextRace` (interface): interface GameContextRace — ⚠ undocumented

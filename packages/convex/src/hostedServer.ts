@@ -14,7 +14,7 @@ import type {
 } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
-import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
+import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
 import { INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import {
   createHostedWorldSession,
@@ -31,6 +31,8 @@ import { jgengineHostedTables, resolveActor, type JgAuthMode } from "./server";
 export interface HostedGameConfig {
   definition: GameDefinition<ModelAssetRef, unknown>;
   content: GameContextContent;
+  /** Render-model lookup for collider auto-fit — pass the same lookup the shell derives (`contextModels(playable)`) so the authoritative host resolves the hitboxes clients see. */
+  models?: GameContextModels;
 }
 
 /**
@@ -69,6 +71,7 @@ export function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): Host
     content: game.content,
     store: { load: () => loaded, save: () => {} },
     ...(now === undefined ? {} : { now }),
+    ...(game.models === undefined ? {} : { models: game.models }),
   });
   for (const userId of members) session.runner().resume(userId);
   for (const [userId, frame] of Object.entries(inputs)) session.input(userId, frame);

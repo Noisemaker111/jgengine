@@ -5,6 +5,8 @@ export interface ModelDims {
   footprint: { w: number; d: number };
   center: { x: number; z: number };
   minY: number;
+  /** Highest Y in model space (pre-scale). `maxY - minY` is the measured model height; absent in indexes generated before it was measured. */
+  maxY?: number;
 }
 
 export interface ModelAssetRef {

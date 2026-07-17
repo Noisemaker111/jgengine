@@ -3,6 +3,8 @@ import {
   colliderBounds,
   defaultEntityColliders,
   defaultObjectColliders,
+  fittedEntityColliders,
+  fittedObjectColliders,
   resolveColliders,
   scaledEntityColliders,
   scaledObjectColliders,
@@ -84,5 +86,66 @@ describe("colliders", () => {
     const bounds = colliderBounds(sphere, [10, 0, 0], 0);
     expect(bounds.min).toEqual([8, -1, -2]);
     expect(bounds.max).toEqual([12, 3, 2]);
+  });
+
+  const ratDims = { footprint: { w: 0.6, d: 0.9 }, center: { x: 0.1, z: -0.2 }, minY: -0.05, maxY: 0.25 };
+
+  test("fittedEntityColliders wraps the rendered model bounds, centered and grounded", () => {
+    const set = fittedEntityColliders({ dims: ratDims });
+    expect(set).not.toBeNull();
+    const resolved = resolveColliders(set!);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]!.purpose).toBe("damage");
+    expect(resolved[0]!.blocks).toBe(false);
+    const bounds = colliderBounds(resolved[0]!, [0, 0, 0], 0);
+    expect(bounds.min[0]).toBeCloseTo(-0.3);
+    expect(bounds.max[0]).toBeCloseTo(0.3);
+    expect(bounds.min[1]).toBeCloseTo(0);
+    expect(bounds.max[1]).toBeCloseTo(0.3);
+    expect(bounds.min[2]).toBeCloseTo(-0.45);
+    expect(bounds.max[2]).toBeCloseTo(0.45);
+  });
+
+  test("fitted colliders compose scale and targetHeight exactly like the renderer", () => {
+    // targetHeight 3 over a 0.3-tall model normalizes by 10; scale 0.5 halves it → world height 1.5.
+    const set = fittedEntityColliders({ dims: ratDims, targetHeight: 3, scale: 0.5 });
+    const bounds = colliderBounds(resolveColliders(set!)[0]!, [0, 0, 0], 0);
+    expect(bounds.min[1]).toBeCloseTo(0);
+    expect(bounds.max[1]).toBeCloseTo(1.5);
+    expect(bounds.max[0] - bounds.min[0]).toBeCloseTo(0.6 * 5);
+    expect(bounds.max[2] - bounds.min[2]).toBeCloseTo(0.9 * 5);
+  });
+
+  test("origin-anchored models keep their authored pivot offset", () => {
+    const set = fittedEntityColliders({ dims: ratDims, anchor: "origin", scale: 2 });
+    const box = set!.hitboxes![0]!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    expect(box.offset).toEqual([0.2, (-0.05 + 0.15) * 2, -0.4]);
+    // targetHeight forces the renderer down its measured centering path even for origin anchors.
+    const normalized = fittedEntityColliders({ dims: ratDims, anchor: "origin", targetHeight: 0.3 });
+    const normalizedBox = normalized!.hitboxes![0]!.shape;
+    if (normalizedBox.kind !== "aabb") throw new Error("expected aabb");
+    expect(normalizedBox.offset).toEqual([0, 0.15, 0]);
+  });
+
+  test("fittedObjectColliders is a blocking physical body over the same box", () => {
+    const set = fittedObjectColliders({ dims: ratDims, y: 0.1 });
+    const resolved = resolveColliders(set!);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]!.purpose).toBe("physical");
+    expect(resolved[0]!.blocks).toBe(true);
+    expect(resolved[0]!.damageEligible).toBe(false);
+    const bounds = colliderBounds(resolved[0]!, [0, 0, 0], 0);
+    expect(bounds.min[1]).toBeCloseTo(0.1);
+    expect(bounds.max[1]).toBeCloseTo(0.4);
+  });
+
+  test("fitting declines unmeasured or degenerate models", () => {
+    expect(fittedEntityColliders({})).toBeNull();
+    expect(fittedEntityColliders({ dims: { footprint: { w: 1, d: 1 }, center: { x: 0, z: 0 }, minY: 0 } })).toBeNull();
+    expect(
+      fittedEntityColliders({ dims: { footprint: { w: 1, d: 1 }, center: { x: 0, z: 0 }, minY: 1, maxY: 1 } }),
+    ).toBeNull();
+    expect(fittedObjectColliders({ dims: ratDims, scale: 0 })).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
-import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
+import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
 import { createHostedWorldSession, type HostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import { createWorldGameHost, type WorldGameHost } from "@jgengine/ws/worldHost";
@@ -10,6 +10,8 @@ import { createGameWsServer, type GameWsServer, type GameWsServerOptions } from 
 export interface HostedGameDefinition {
   game: GameDefinition<ModelAssetRef, unknown>;
   content: GameContextContent;
+  /** Render-model lookup for collider auto-fit — pass the same lookup the shell derives (`contextModels(playable)`) so the authoritative host resolves the hitboxes clients see. */
+  models?: GameContextModels;
 }
 
 /** Config for {@link createWorldGameServer}: how to resolve a game by id, the tick cadence, and the underlying ws-server/router options (minus `host`, which the server builds). */
@@ -64,6 +66,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
         content: resolved.content,
         now: clock,
         store: persistence.store({ gameId, serverId }),
+        ...(resolved.models === undefined ? {} : { models: resolved.models }),
       });
       liveSessions.set(serverId, session);
       return session;

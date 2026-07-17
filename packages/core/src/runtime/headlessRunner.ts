@@ -7,7 +7,7 @@ import {
 } from "../movement/playerMovement";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { advanceBehaviors } from "../scene/behaviorRuntime";
-import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
+import { createGameContext, type GameContext, type GameContextContent, type GameContextModels } from "./gameContext";
 import type { InputSnapshot } from "./inputSnapshot";
 
 /** One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame. */
@@ -38,6 +38,8 @@ export interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultipl
   playerMovement?: boolean;
   /** Yaw heading (radians) fed to the movement controller when `playerMovement` is on; the shell supplies its camera yaw. */
   heading?: number;
+  /** Render-model lookup for collider auto-fit — pass what the shell would derive from `entityModels`/`objectModels` so headless raycasts hit the same boxes as play. */
+  models?: GameContextModels;
 }
 
 /**
@@ -77,6 +79,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     content,
     player,
     ...(options.now === undefined ? {} : { now: options.now }),
+    ...(options.models === undefined ? {} : { models: options.models }),
   });
 
   loop?.onInit?.(ctx);

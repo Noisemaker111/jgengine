@@ -3,7 +3,7 @@ import type { GameDefinition, LoopPlayer } from "../game/defineGame";
 import { syncLifecyclePhase } from "../game/gamePhase";
 import { advanceBehaviors } from "../scene/behaviorRuntime";
 import type { ModelAssetRef } from "../scene/assetCatalog";
-import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
+import { createGameContext, type GameContext, type GameContextContent, type GameContextModels } from "./gameContext";
 import { type InputFrame } from "./inputSnapshot";
 import { createWorldReplicator, type WorldDiff } from "./worldReplication";
 import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
@@ -26,6 +26,8 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
    * snapshot overlays the world state it seeded. Omit for a long-lived stateful host (ws) that keeps one runner.
    */
   restore?: WorldSnapshot;
+  /** Render-model lookup for collider auto-fit — pass the same lookup the shell derives from `entityModels`/`objectModels` so host and clients resolve identical hitboxes. */
+  models?: GameContextModels;
 }
 
 /**
@@ -68,6 +70,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     player: host ?? { userId: "host", isNew: true },
     ...(now === undefined ? {} : { now }),
     ...(definition.replication === undefined ? {} : { replication: definition.replication }),
+    ...(options.models === undefined ? {} : { models: options.models }),
   });
   const loop = definition.loop ?? {};
   const replicator = createWorldReplicator(() => ctx.snapshot(), {
