@@ -3,7 +3,13 @@
   "private": true,
   "type": "module",
   "workspaces": {
-    "packages": ["packages/*", "Games/*", "apps/*", "examples/*", "registry"],
+    "packages": [
+      "packages/*",
+      "Games/*",
+      "apps/*",
+      "examples/*",
+      "registry"
+    ],
     "catalog": {
       "@react-three/drei": "^10.7.7",
       "@tailwindcss/vite": "^4.0.15",
@@ -50,13 +56,14 @@
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
     "papercut": "bun scripts/papercut.ts",
-    "games:studio-showcase": "bun run --cwd Games/studio-showcase dev",
-    "games:the-robots": "bun run --cwd Games/the-robots dev",
     "games:claudecraft": "bun run --cwd Games/claudecraft dev",
     "games:duet-keys": "bun run --cwd Games/duet-keys dev",
+    "games:ironhold": "bun run --cwd Games/ironhold dev",
     "games:loopline": "bun run --cwd Games/loopline dev",
     "games:spire-cards": "bun run --cwd Games/spire-cards dev",
     "games:starhome": "bun run --cwd Games/starhome dev",
+    "games:studio-showcase": "bun run --cwd Games/studio-showcase dev",
+    "games:the-robots": "bun run --cwd Games/the-robots dev",
     "games:tower-guard": "bun run --cwd Games/tower-guard dev",
     "games:vice-isle": "bun run --cwd Games/vice-isle dev",
     "games:wreckway": "bun run --cwd Games/wreckway dev"

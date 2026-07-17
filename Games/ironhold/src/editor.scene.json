@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "markers": [
+    { "id": "keep_player", "kind": "structure", "position": { "x": 0, "y": 0, "z": 36 }, "label": "Ironhold Keep", "catalogId": "keep_player", "color": "#4c8dff" },
+    { "id": "keep_enemy", "kind": "structure", "position": { "x": 0, "y": 0, "z": -36 }, "label": "Marauder Warcamp", "catalogId": "keep_enemy", "color": "#e0553b" },
+
+    { "id": "hero", "kind": "unit", "position": { "x": 0, "y": 0, "z": 27 }, "label": "Bram the Bold", "catalogId": "hero" },
+    { "id": "footman_1", "kind": "unit", "position": { "x": -8, "y": 0, "z": 29 }, "catalogId": "footman" },
+    { "id": "footman_2", "kind": "unit", "position": { "x": -4, "y": 0, "z": 30 }, "catalogId": "footman" },
+    { "id": "footman_3", "kind": "unit", "position": { "x": 4, "y": 0, "z": 30 }, "catalogId": "footman" },
+    { "id": "footman_4", "kind": "unit", "position": { "x": 8, "y": 0, "z": 29 }, "catalogId": "footman" },
+    { "id": "footman_5", "kind": "unit", "position": { "x": 0, "y": 0, "z": 31 }, "catalogId": "footman" },
+
+    { "id": "grunt_guard_1", "kind": "unit", "position": { "x": -6, "y": 0, "z": -32 }, "catalogId": "grunt", "meta": { "stance": "guard" } },
+    { "id": "grunt_guard_2", "kind": "unit", "position": { "x": 6, "y": 0, "z": -32 }, "catalogId": "grunt", "meta": { "stance": "guard" } },
+    { "id": "grunt_guard_3", "kind": "unit", "position": { "x": 0, "y": 0, "z": -33 }, "catalogId": "grunt", "meta": { "stance": "guard" } },
+    { "id": "reaver_guard_1", "kind": "unit", "position": { "x": 0, "y": 0, "z": -30 }, "catalogId": "reaver", "meta": { "stance": "guard" } },
+
+    { "id": "grunt_raid_1", "kind": "unit", "position": { "x": -11, "y": 0, "z": -24 }, "catalogId": "grunt", "meta": { "stance": "assault" } },
+    { "id": "grunt_raid_2", "kind": "unit", "position": { "x": 11, "y": 0, "z": -24 }, "catalogId": "grunt", "meta": { "stance": "assault" } },
+    { "id": "reaver_raid_1", "kind": "unit", "position": { "x": 0, "y": 0, "z": -22 }, "catalogId": "reaver", "meta": { "stance": "assault" } },
+
+    { "id": "goldmine_w", "kind": "prop", "position": { "x": -26, "y": 0, "z": 2 }, "label": "Gold seam", "catalogId": "goldmine" },
+    { "id": "goldmine_e", "kind": "prop", "position": { "x": 26, "y": 0, "z": -2 }, "label": "Gold seam", "catalogId": "goldmine" },
+
+    { "id": "tree_1", "kind": "prop", "position": { "x": -18, "y": 0, "z": 10 }, "catalogId": "tree" },
+    { "id": "tree_2", "kind": "prop", "position": { "x": -14, "y": 0, "z": 6 }, "rotationY": 1.1, "catalogId": "tree" },
+    { "id": "tree_3", "kind": "prop", "position": { "x": 16, "y": 0, "z": -8 }, "catalogId": "tree" },
+    { "id": "tree_4", "kind": "prop", "position": { "x": 20, "y": 0, "z": 12 }, "rotationY": 2.4, "catalogId": "tree" },
+    { "id": "tree_5", "kind": "prop", "position": { "x": -20, "y": 0, "z": -12 }, "catalogId": "tree" },
+    { "id": "rock_1", "kind": "prop", "position": { "x": 8, "y": 0, "z": 2 }, "catalogId": "rock" },
+    { "id": "rock_2", "kind": "prop", "position": { "x": -6, "y": 0, "z": -6 }, "rotationY": 0.8, "catalogId": "rock" },
+    { "id": "rock_3", "kind": "prop", "position": { "x": 14, "y": 0, "z": 20 }, "catalogId": "rock" }
+  ]
+}

@@ -1,0 +1,90 @@
+import type { Faction } from "./tuning";
+
+/**
+ * The Ironhold roster. Positions are authored in `editor.scene.json`; this catalog holds the
+ * per-type stats that drive both the engine entity entry (health/speed/scale/role) and the RTS AI
+ * (damage/reach/cooldown/aggro) — the combat numbers no `entities` editor schema can express. One
+ * source of truth: `content.ts` and `editorCatalogs.ts` both read it, the AI reads it, the models
+ * plan keys off its ids.
+ */
+
+export type CombatantKind = "unit" | "building";
+
+export interface CombatantDef {
+  id: string;
+  label: string;
+  faction: Faction;
+  kind: CombatantKind;
+  /** Engine role — cosmetic here; hostility is decided by `faction`, not role. */
+  role: "npc" | "enemy";
+  maxHealth: number;
+  /** 0 for buildings. */
+  walkSpeed: number;
+  scale: number;
+  /** Melee damage per swing (0 for buildings — keeps are passive in this slice). */
+  damage: number;
+  /** Reach at which a unit stops to swing. */
+  attackRange: number;
+  /** Seconds between swings. */
+  attackCooldown: number;
+  /** Auto-acquire hostiles within this radius when idle/guarding or attack-moving. */
+  aggroRadius: number;
+  /** Gold awarded to the player when this dies (enemy units only). */
+  bounty: number;
+}
+
+function def(d: Partial<CombatantDef> & Pick<CombatantDef, "id" | "label" | "faction" | "kind">): CombatantDef {
+  return {
+    role: d.faction === "enemy" ? "enemy" : "npc",
+    maxHealth: 100,
+    walkSpeed: d.kind === "building" ? 0 : 4.4,
+    scale: 1,
+    damage: d.kind === "building" ? 0 : 8,
+    attackRange: 1.9,
+    attackCooldown: 1,
+    aggroRadius: 8,
+    bounty: 0,
+    ...d,
+  };
+}
+
+export const COMBATANTS: Record<string, CombatantDef> = {
+  // — Vanguard (player) —
+  footman: def({
+    id: "footman", label: "Footman", faction: "player", kind: "unit",
+    maxHealth: 130, walkSpeed: 4.7, damage: 9, attackRange: 1.9, attackCooldown: 0.85, aggroRadius: 8,
+  }),
+  hero: def({
+    id: "hero", label: "Bram the Bold", faction: "player", kind: "unit",
+    maxHealth: 380, walkSpeed: 4.3, scale: 1.28, damage: 24, attackRange: 2.1, attackCooldown: 1, aggroRadius: 9,
+  }),
+  keep_player: def({
+    id: "keep_player", label: "Ironhold Keep", faction: "player", kind: "building",
+    maxHealth: 1600, scale: 1,
+  }),
+
+  // — Marauders (enemy) —
+  grunt: def({
+    id: "grunt", label: "Marauder", faction: "enemy", kind: "unit",
+    maxHealth: 110, walkSpeed: 4.3, damage: 8, attackRange: 1.9, attackCooldown: 1, aggroRadius: 8, bounty: 14,
+  }),
+  reaver: def({
+    id: "reaver", label: "Reaver", faction: "enemy", kind: "unit",
+    maxHealth: 240, walkSpeed: 3.9, scale: 1.22, damage: 17, attackRange: 2.1, attackCooldown: 1.1, aggroRadius: 9, bounty: 28,
+  }),
+  keep_enemy: def({
+    id: "keep_enemy", label: "Marauder Warcamp", faction: "enemy", kind: "building",
+    maxHealth: 1300, scale: 1,
+  }),
+};
+
+/** Decorative props spawned from the scene for cover/readability — no health, not selectable. */
+export const DECOR = new Set(["tree", "rock", "goldmine"]);
+
+export function combatantDef(catalogId: string): CombatantDef | null {
+  return COMBATANTS[catalogId] ?? null;
+}
+
+export function isHostile(a: Faction, b: Faction): boolean {
+  return a !== b;
+}

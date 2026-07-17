@@ -120,3 +120,4 @@ in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
 | Game | id | Lineage |
 | --- | --- | --- |
 | **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
+| **[Ironhold](Games/ironhold)** | `ironhold` | Blizzard Entertainment's **Warcraft III** — the base-and-army real-time-strategy skirmish (select, command, attack-move, focus-fire). Original code, art, and map; only the feel and verb set are harvested. |
