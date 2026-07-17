@@ -382,6 +382,12 @@ export function launchChrome(debugPort: number, prefix = "jg-drive-"): ChildProc
       "--no-first-run",
       "--no-default-browser-check",
       "--disable-background-networking",
+      // Without these three, a long-lived headless Chrome can throttle rAF on
+      // pages it considers occluded/backgrounded — frame times read as seconds
+      // and perf evidence from the debug snapshot becomes garbage.
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
       "--disable-component-update",
       "--disable-sync",
       "--disable-extensions",

@@ -362,44 +362,16 @@ function AnchorWeightProp({ position }: { position: [number, number, number] }) 
   );
 }
 
+/**
+ * Latched devices for the current room: Anchor's dropped weight and Lumen's prism crystal. The prism's light
+ * beam is a retained VFX instance driven from the sim loop (see `updateBeamVfx` in `loop.ts`) and rendered by the
+ * shell, so it moves with the traced path without a game-local mesh.
+ */
 export function DuetVfx() {
-  const ctx = useGameContext();
-  const beamRef = useRef<THREE.Mesh>(null);
   const latch = useStore(duetStore, (s) => s.latch);
-
-  useFrame(() => {
-    const room = ROOMS[duetStore.peek(ctx)?.roomIndex ?? 0];
-    const beam = beamRef.current;
-    if (latch.prism === null || room === undefined) {
-      if (beam !== null) beam.visible = false;
-      return;
-    }
-    const state = currentRoomState(ctx, room);
-    const dir = DIR_VECTORS[latch.prism.dir];
-    const start = latch.prism.cell;
-    const end = state.beamPath.length > 0 ? state.beamPath[state.beamPath.length - 1]! : start;
-    const length = Math.abs(end.x - start.x) + Math.abs(end.z - start.z);
-    if (beam !== null) {
-      beam.visible = length > 0;
-      if (length > 0) {
-        beam.position.set((start.x + end.x) / 2 + dir.x * 0.5, 0.5, (start.z + end.z) / 2 + dir.z * 0.5);
-        beam.scale.set(dir.x !== 0 ? length + 1 : 0.14, 0.14, dir.z !== 0 ? length + 1 : 0.14);
-      }
-    }
-  });
 
   return (
     <group>
-      <mesh ref={beamRef} visible={false}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color={HEROES.lumen.color}
-          emissive={HEROES.lumen.glow}
-          emissiveIntensity={1.4}
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
       {latch.anchorCell !== null ? (
         <ModelBoundary>
           <AnchorWeightProp position={[latch.anchorCell.x, 0, latch.anchorCell.z]} />

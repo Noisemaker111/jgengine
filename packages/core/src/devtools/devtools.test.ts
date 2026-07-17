@@ -121,6 +121,24 @@ describe("devtools frame stats", () => {
     dev.frame.clearLongFrames();
     expect(dev.frame.longFrames()).toHaveLength(0);
   });
+
+  test("reset drops frame, phase, and long-frame history so a post-warmup window starts clean", () => {
+    const dev = createDevtools();
+    dev.profile.add("physics", 30);
+    dev.frame.record({ frameMs: 900, simMs: 40 });
+    expect(dev.frame.stats()).not.toBeNull();
+    expect(dev.frame.longFrames()).toHaveLength(1);
+    dev.profile.add("in-flight", 3);
+    dev.frame.reset();
+    expect(dev.frame.stats()).toBeNull();
+    expect(dev.frame.longFrames()).toHaveLength(0);
+    expect(dev.profile.current()).toEqual({});
+    dev.frame.record({ frameMs: 16, simMs: 2 });
+    const stats = dev.frame.stats()!;
+    expect(stats.samples).toBe(1);
+    expect(stats.avgFrameMs).toBeCloseTo(16, 5);
+    expect(stats.phases).toHaveLength(0);
+  });
 });
 
 describe("devtools logs and latency", () => {

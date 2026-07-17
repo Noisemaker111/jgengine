@@ -4,13 +4,14 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { downloadPackArchive, extractGlbs, extractSpriteFiles, extractTextures } from "../download";
+import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
 import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
 import { generatedSpriteIndex } from "../generated-sprites";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
 import { extractMaterialMaps } from "../materials";
+import { validateAssetReferences } from "../provisioning";
 import { registryCatalog } from "../registry";
 import {
   componentWiringSnippet,
@@ -238,17 +239,12 @@ async function fetchPackInto(
     for (const file of files) writeFileSync(join(outDir, file.file), file.bytes);
     return { outDir, models: files.length, textures: 0, url };
   }
-  const glbs = extractGlbs(archive);
-  if (glbs.length === 0) fail(`no .glb files found in ${source.id} archive`);
+  const { models, images } = extractGlbs(archive);
+  if (models.length === 0) fail(`no .glb files found in ${source.id} archive`);
   mkdirSync(outDir, { recursive: true });
-  for (const glb of glbs) writeFileSync(join(outDir, glb.file), glb.bytes);
-  const textures = extractTextures(archive);
-  for (const texture of textures) {
-    const dest = join(outDir, texture.file);
-    mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, texture.bytes);
-  }
-  return { outDir, models: glbs.length, textures: textures.length, url };
+  for (const glb of models) writeFileSync(join(outDir, glb.file), glb.bytes);
+  for (const image of images) writeFileSync(join(outDir, image.file), image.bytes);
+  return { outDir, models: models.length, textures: images.length, url };
 }
 
 function readSingles(): SingleAsset[] {
@@ -476,6 +472,35 @@ function cmdVerify(): void {
   fail(`verify failed with ${result.errors.length} problem(s)`);
 }
 
+/**
+ * Resolve each id against the provisioning contract and print its owner —
+ * `committed`, `provisioned` (with the `assets pull <source>` step), or
+ * `dangling`. Exits non-zero if any id is dangling, so a clean-clone gate can
+ * feed it logical ids and fail on references no source or single owns.
+ */
+function cmdProvenance(argv: string[]): void {
+  const ids = argv.filter((arg) => !arg.startsWith("--"));
+  if (ids.length === 0) fail("usage: assets provenance <id> [<id>...]");
+  const references = ids.map((id) => ({ consumer: "cli", id }));
+  const result = validateAssetReferences(references);
+  for (const row of result.results) {
+    const p = row.provenance;
+    const detail =
+      p.kind === "provisioned"
+        ? `${p.resolvedPath}  (${p.provisioningStep})`
+        : p.kind === "committed"
+          ? `${p.resolvedPath}`
+          : "no owner";
+    const mark = row.ok ? "✓" : "✗";
+    console.log(`  ${mark} ${p.id}: ${p.kind} — ${detail}`);
+  }
+  if (result.provisioning.length > 0) {
+    console.log(`provisioning steps: ${result.provisioning.join(", ")}`);
+  }
+  if (!result.ok) fail(`provenance: ${result.errors.length} dangling reference(s)`);
+  console.log("provenance: ok");
+}
+
 if (import.meta.main) {
   const [command, ...rest] = process.argv.slice(2);
   switch (command) {
@@ -503,8 +528,13 @@ if (import.meta.main) {
     case "verify":
       cmdVerify();
       break;
+    case "provenance":
+      cmdProvenance(rest);
+      break;
     default:
-      console.log("usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify> [...args]");
+      console.log(
+        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify|provenance> [...args]",
+      );
       if (command !== undefined && command !== "help") process.exit(1);
   }
 }

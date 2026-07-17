@@ -3,7 +3,7 @@ import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { terrainField, world } from "../../world";
 import { MAIN_QUEST_IDS, quests } from "../quests/catalog";
 import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
-import { PLAYER_SPAWN } from "./sites";
+import { BOLT_POS, BOLT_YAW, PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
 
 describe("the-robots world", () => {
@@ -26,6 +26,37 @@ describe("the-robots world", () => {
     expect(ROUTES.length + SPUR_ROUTES.length).toBe(authoredRoads.length);
     expect(AUTHORED_PIECES.length).toBeGreaterThan(300);
     expect(authoredScene.markers.every((marker) => marker.position !== undefined)).toBe(true);
+  });
+
+  test("the authored scene owns the opening player and guide composition", () => {
+    const playerMarker = authoredScene.markers.find((marker) => marker.id === "player_spawn");
+    const boltMarker = authoredScene.markers.find((marker) => marker.id === "bolt");
+    expect(playerMarker).toBeDefined();
+    expect(boltMarker).toBeDefined();
+    expect(PLAYER_SPAWN).toEqual([
+      playerMarker!.position.x,
+      playerMarker!.position.y,
+      playerMarker!.position.z,
+    ]);
+    expect(PLAYER_SPAWN_YAW).toBe(playerMarker!.rotationY!);
+    expect(BOLT_POS).toEqual([boltMarker!.position.x, boltMarker!.position.y, boltMarker!.position.z]);
+    expect(BOLT_YAW).toBe(boltMarker!.rotationY!);
+
+    const openingRoad = authoredScene.paths.find(
+      (path) => path.id === playerMarker!.meta?.routeId,
+    );
+    expect(openingRoad).toBeDefined();
+    const routePointIndex = playerMarker!.meta?.routePointIndex;
+    expect(routePointIndex).toBeTypeOf("number");
+    const destination = openingRoad!.points[routePointIndex as number]!;
+    const desiredYaw = Math.atan2(
+      destination.x - PLAYER_SPAWN[0],
+      destination.z - PLAYER_SPAWN[2],
+    );
+    expect(Math.cos(PLAYER_SPAWN_YAW - desiredYaw)).toBeGreaterThan(0.95);
+    const boltDistance = Math.hypot(BOLT_POS[0] - PLAYER_SPAWN[0], BOLT_POS[2] - PLAYER_SPAWN[2]);
+    expect(boltDistance).toBeGreaterThan(30);
+    expect(boltDistance).toBeLessThan(45);
   });
 
   test("every settlement zone contributes a structure group", () => {

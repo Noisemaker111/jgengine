@@ -85,6 +85,28 @@ describe("editor document", () => {
     expect(paths).toContain("$.paths");
   });
 
+  test("decodeEditorDocument rejects a document-global duplicate id with its path", () => {
+    // Same id on a marker and a volume: legal per-collection, but selection/parenting/removal treat
+    // ids as one global namespace, so a single imported document that reuses one is malformed.
+    const decoded = decodeEditorDocument({
+      markers: [{ id: "gate", kind: "boss", position: { x: 0, y: 0, z: 0 } }],
+      volumes: [{ id: "gate", kind: "zone", shape: "sphere", center: { x: 1, y: 0, z: 1 }, radius: 4 }],
+    });
+    expect(decoded.ok).toBe(false);
+    if (decoded.ok) throw new Error("expected decode failure");
+    expect(decoded.errors).toContainEqual({ path: "$.volumes[0].id", message: 'duplicate id "gate"' });
+  });
+
+  test("importEditorDocumentJson throws on a duplicate id (import can never load a colliding id)", () => {
+    const raw = JSON.stringify({
+      markers: [
+        { id: "dup", kind: "prop", position: { x: 0, y: 0, z: 0 } },
+        { id: "dup", kind: "prop", position: { x: 1, y: 0, z: 1 } },
+      ],
+    });
+    expect(() => importEditorDocumentJson(raw)).toThrow(/duplicate id "dup"/);
+  });
+
   test("decodeEditorDocument round-trips a v1 document", () => {
     const original = normalizeEditorLayers({
       markers: [{ id: "boss_warrior", kind: "boss", position: { x: -80, y: 0, z: -660 }, label: "Warrior" }],

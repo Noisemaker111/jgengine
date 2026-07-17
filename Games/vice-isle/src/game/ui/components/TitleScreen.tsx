@@ -1,6 +1,6 @@
 import { useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { startedStore } from "../../commands";
+import { continueStore, startedStore } from "../../commands";
 
 export function useGameStarted(): boolean {
   return useStore(startedStore, (v) => v ?? false);
@@ -8,6 +8,7 @@ export function useGameStarted(): boolean {
 
 export function TitleScreen() {
   const { commands } = useGame();
+  const hasSave = useStore(continueStore, (v) => v ?? false);
   return (
     <div data-jg-menu className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#2b1a3f] via-[#c94f7c] to-[#ffb020]">
       <div
@@ -31,7 +32,7 @@ export function TitleScreen() {
           onClick={() => commands.run("game.start", {})}
           className="mt-10 -skew-x-6 border-4 border-black bg-[#3fbf5a] px-12 py-3 text-2xl font-black uppercase tracking-wider text-black shadow-[8px_8px_0_#000] transition-transform hover:scale-105 hover:bg-[#5fdf7a]"
         >
-          ▶ Hit the Street
+          {hasSave ? "▶ Continue" : "▶ Hit the Street"}
         </button>
         <div className="mt-6 flex gap-2">
           {["WASD move", "E enter · F exit", "Mouse fire", "1-4 weapons"].map((hint) => (

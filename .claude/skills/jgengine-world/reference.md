@@ -55,6 +55,7 @@ Renderer-free survival/environment primitives that extend the world query layer 
 - **Weather → gameplay** (`world/weather`): `resolveWeather(state, table)` turns a `WeatherState { kind, intensity }` into concrete `ResolvedWeather` (`grip`, `visibility`, `structureDamage`, `chill`, `ignition`, `spread`) via a game-owned `WeatherModifierTable` — multipliers interpolate from neutral by intensity, rate effects scale linearly. Read `grip`/`visibility` in movement and AI, `structureDamage` on a building tick.
 - **Fire spread** (`world/weather`): `createFireGrid({ cols, rows, cellSize, origin, fuelAt, spreadRate, burnRate, wind, windBias })` → `FireGrid` is a **coarse cellular** propagation (not a fluid solver): `ignite(x, z)` / `igniteCell(col, row)`, then `step(dt, { spread, wetnessAt })` transfers heat to neighbours biased by wind, consumes fuel (`unburnt → burning → burnt`), and honours firebreaks (zero-fuel cells) and rain/wetness suppression. `resolveWeather(...).spread` feeds the step; `@jgengine/shell/weather` `FireSpreadLayer` renders the burning/scorched cells.
 - **Realm composition** (`world/realm`): `composeRealm(base, cards)` assembles a played instance at runtime from a deck of modifier **cards** (Nightingale realm cards) — a `major` card is the biome base, `minor` cards layer environment param overrides, a `WeatherState`, and spawn-table edits (`set`/`add`/`scale`/`remove`). The result recomposes both the environment (into a sampleable field via `composed.environmentField(extra?)`) and the `spawnTable`, and depends on the weather hooks above to turn its `weather` into gameplay modifiers.
+- **Gameplay visibility / fog-of-war** (`world/visibilityField`, distinct from render culling in `core/visibility`): `createVisibilityField({ bounds, cellSize, memory })` → `VisibilityField` tracks per **viewer group** whether each grid cell is `hidden`, `remembered`, or `observed`. Each update the caller feeds a group's observed cells — `observe(group, cells)` or `observeCircle(group, x, z, radius)`, unioning multiple sources via `cellsInRadius(...out)` — and gets back a bounded `VisibilityDelta` (never a full-grid scan). Terrain memory is injected, not baked: `{ kind: "permanent" }` keeps last-known terrain (RTS explored map, generalizing single-group `world/fog`), `"none"` is pure line-of-sight, `{ kind: "decay", updates }` ages memory out. Day/night, height, stealth, and sensor rules stay the caller's job — they decide which cells count as observed. `visibleTo(group, entities, positionOf)` is the authoritative disclosure filter: it returns only entities in cells the group currently **observes**, so a unit that left view (or a rival group's units) never leaks into a client's replica — enemy re-hides while remembered terrain stays. `toState()`/`restore` round-trips sparsely; `cells(group)` gives dense codes for minimap draw.
 ### Survival meters, moodles & multi-region health
 The `survival/` domain — decay-over-time meters and per-part health, both feeding one stacking **moodle** status display distinct from numeric bars.
 - **Decay meters** (`survival/decayMeter`): `createDecayMeterSet([{ id, max, min?, start?, rate, thresholds }])` → `DecayMeterSet`. Each named meter (hunger, thirst, oxygen, sanity, warmth, stamina) drains/recovers on `tick(dt)` at `rate`, refills from consumables/actions via `refill(id, amount)`, and raises threshold moodles (`below`/`above`). `setRateModifier(id, mult)` lets the environment drive them — read an env field, then speed warmth loss when cold or oxygen loss in a toxic biome.
@@ -99,6 +100,7 @@ Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/F
 
 **Traversal (`physics/traversal`).** `Grapple` fires a rope from a body to a fixed world point on the joint API — `fire(x,y,z)` attaches a `distance` (rigid) or `elastic` (spring) joint, `reel(dt)`/`payOut(dt)` shorten/lengthen the rope to pull the traveller in, `moveAnchor` re-points it (ziplines, grapple-to-moving-target). Grapple/zipline/swing (Sekiro, Deep Rock, Just Cause) are all the same primitive; the raycast that finds the anchor is the caller's. `Glide` is a reduced-gravity, forward-thrust wingsuit/glider over a body — call `apply(dt, steerX, steerZ)` each frame before `step` to feed back most of gravity (`gravityScale`), thrust along the steer vector, and clamp descent; stop calling it to fall normally, no attach/detach state.
 **Structural destruction (`physics/structure`).** `StructureGraph` models a building as nodes (pieces) + load-bearing edges with some nodes `anchor`ed (foundations). `damage(id, n)`/`damageEdge(a,b,n)`/`severEdge(a,b)` wear pieces and connections; when one breaks, the graph recomputes reachability to an anchor and returns a single `CollapseEvent { fell }` — every piece the loss disconnected. `toDebris(world, event)` sinks the fallen pieces into a `PhysicsWorld` as rigid bodies (The Finals, Rainbow Six). It is coarse by design: **replicate the collapse event (the `fell` id list), not each fragment's physics** — game clients re-derive the debris locally. Piece integrity and edge strength default from a `StructureMaterial` table (DATA).
+**Group movement (`movement/formation` + `movement/avoidance`).** Three separable seams keep "where the group stands" apart from "how each member gets there" so a game can pair them with any route source. `placeFormation(destination, facing, count, generator)` maps a `FormationSlotGenerator`'s local `[right, forward]` offsets into world XZ slots around a target — formation shape is **caller data**, not an engine enum; `lineFormation`/`boxFormation`/`wedgeFormation`/`circleFormation` are sample generators and a custom one needs no engine edit. `assignFormationSlots(members, slots, { previous?, stickiness? })` is deterministic greedy nearest matching (`assignment[member] = slot`, `-1` when short on slots); `stickiness` biases a member toward its previous slot to cut per-frame reshuffle. `facingYaw(from, to)` orients a formation along its travel heading. Then `resolveLocalAvoidance(agents, { iterations?, strength?, padding?, weights? })` pushes overlapping circular agents apart in place — a bounded, deterministic Jacobi relaxation over an internal 3×3 hash grid (never an O(n²) whole-world scan), honoring per-agent radii and inverse-mass `weights` (`0` = pinned anchor/obstacle). Route planning (nav path, flow field, direct seek) stays the caller's; this owns slot geometry, matching, and separation only. Squads, parties, convoys, and non-formation crowds all compose the same three calls.
 ### Vehicles, mounts, crash damage & racing
 Five primitives layer a driving/racing game over the physics sim and `world/water`. All are **data-first** (spec the chassis/wheels/grip curve, damage thresholds, and checkpoint layout as catalog data) and pure `@jgengine/core`; renderers live in the game/shell. Each `update(dt, …)` runs **before** the shared `world.step(dt)`.
 - **Analog input — `input/axisInput`.** `AxisInput { throttle, brake, steer, handbrake }` is a continuous channel, **distinct from the digital action bindings**. `new AxisChannel({ bindings, smoothing })` ramps held keys into pedal-like analog values (`sample(dt, isDown)`), or `setAnalog(axis, value)` drives it straight from a gamepad axis. `DRIVE_AXIS_BINDINGS` is a ready WASD/arrow map. `sampleAxisBindings` is the instantaneous, unsmoothed read the channel ramps toward each frame — exposed headlessly as `ctx.input.axis(bindings, ranges?)`, bound to **action names** rather than raw key codes (#533.7).
@@ -160,6 +162,29 @@ runtime.step({
 
 Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector renders action params from the declared schema when the game has registered actions.
 
+### Continuous area effects (source-following membership)
+
+The dynamic counterpart to authored triggers: moving sources emit an area that **follows them** each tick, receivers get `enter`/`refresh`/`leave` edges, and membership is cleaned up on source removal/disable/clear. Genre-agnostic and pure — it never applies damage/heals/stats itself; you route each edge through your own pipeline (auras, hazard/heal fields, capture zones, silence/music areas). `@jgengine/core/area/areaEffectField`:
+
+```ts
+const field = createAreaEffectField<{ dps: number }>();
+// each tick, per live source (so the shape follows its emitter):
+field.setSource({ id: bossId, shape: { kind: "sphere", center: bossPos, radius: 3 }, payload: { dps: 6 }, refreshMs: 700 });
+field.removeSource(deadBossId); // -> leave edges (reason "source-removed"); auto cleanup
+const events = field.step({
+  dtMs: dt * 1000,
+  candidates: (shape) => index.querySphere(shape.center[0], shape.center[1], shape.center[2], shape.radius, out), // bounded broad phase
+  positionOf: (id) => positions.get(id),         // undefined => receiver gone -> leave
+  eligible: (sourceId, receiverId) => isEnemy(receiverId), // optional team/immunity gate
+});
+for (const e of events) if (e.kind === "refresh") applyDamage(e.receiverId, e.payload.dps * (e.ticks ?? 1));
+```
+
+- Bounded by design (caller supplies the candidate query) and serializable (`serialize()` keeps membership + refresh phase across save/load; re-`setSource` live shapes before the next `step`).
+- `custom` shape leaves a seam for authored volumes / non-sphere shapes while still exposing a bounding sphere for the broad phase.
+- Overlap aggregation is a policy over `field.membershipsOf(receiverId)` — `@jgengine/core/area/stackPolicy`: `independentStacks` · `uniqueByStackKey` · `cappedStacks` · `extremumStack` (strongest/weakest) · `sumMagnitude` (additive).
+- First adopter: `Games/the-robots` boss overload auras (`game/entities/enemies/hazardAura.ts`).
+
 ### Spawn placement
 
 `spawn(catalogId, { id?, position | anchor, offset?, parentSpace?, group? })` — anchor `{ kind: "entity" | "zone", id }` with offset `{ radius, pattern }` or `{ xyz }`. Catalog supplies movement/model; no behaviors on spawn.
@@ -167,5 +192,31 @@ Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector r
 **Named spawn/respawn points** (`game/spawnPoints`) — `createSpawnPoints()`: `record(id, { x, y, z, rotationY? })` names a point (level bounds, team spawns, checkpoints), `get(id)`/`list()` read them back, `respawn(entities, entityId, spawnId)` teleports an existing entity to a recorded point via `setPose` in one call — the id-keyed alternative to threading raw coordinates through respawn logic by hand.
 
 **Level sequence** (`game/levelSequence`) — `createLevelSequence({ levels: [{ id, config }], retriesPerLevel? })` is a pure, deterministic campaign machine: `start()` enters level 0, `clear()` marks the current level cleared, `advance()` moves to the next (or `"complete"` after the last), `fail()` consumes an attempt and returns `"retry"` while `retriesPerLevel` remain else `"failed"`, `retry()` restarts after a retry-eligible failure. `current()` → `{ id, index, config, attempt } | null`; `progress()` → `{ index, total, cleared }`; `reset()` rewinds to idle. Mirrors the reducer style of `game/race` and `ai/spawnDirector` — a level-select/roguelike-run campaign shell without hand-rolling the state machine per game.
+
+### Ambient behaviors + instance lifecycle (`scene/behaviors`, `scene/behaviorRuntime`)
+
+Attach `patrol({ waypoints, speed, loop?, startProgress?, groundClamp? })` or `wander({ radius })` in a spawn's `behaviors`; the host's `advanceBehaviors(ctx, dt)` (already wired in the runners) keeps the per-entity nav state and poses it — register-once ambient traffic/idle routes, never a per-game `advancePathFollow` + `setPose` loop. `startProgress` seeds a follower at a distributed phase (see `PathProgress` below); `groundClamp: true` samples world ground height for the pose Y so an XZ route rides terrain.
+
+`behaviorControl(ctx)` is the per-entity lifecycle surface (keyed by entity id, no full-world scan) games use instead of bypassing the runtime for possession/freezing/streaming/staggering:
+
+```ts
+const bc = behaviorControl(ctx);
+bc.pause(id, "driven");     // retain state, stop advance+pose (player commandeered the car)
+bc.resume(id);              // catch-up policy: "freeze" (default, deterministic) | "advance" (silently fast-forward paused span)
+bc.disable(id, "panic");    // hold off until enable() — frozen in place
+bc.enable(id);
+bc.seek(id, { kind: "normalized", value: 0.5 }); // patrol only; jump to semantic progress
+bc.serialize(id) / bc.restore(id, snap);         // BehaviorSnapshot round-trips exactly
+bc.status(id) / bc.reason(id) / bc.inspect(id) / bc.list(); // editor/debug inspection
+```
+
+Path progress adapter (`nav/pathFollow`): `PathProgress` is `{ kind: "normalized", value } | { kind: "distance", value } | { kind: "segment", index, fraction }` — travel direction falls out of the resulting `heading`. `pathFollowSeek(config, progress)` places a follower without simulating from the start (loops wrap, non-loops clamp + report `done`); `pathFollowProgress(config, state)` reads it back as `{ distance, normalized, segment, fraction }`; `pathLength(config)` sums the polyline. Vice-isle's traffic + pedestrians run entirely on this seam (phase-distributed `startProgress`, `pause` on drive-away, `disable` on wanted-panic) — no hand-rolled route loop.
+### Entity orders (command queue)
+
+`orders/orderQueue` + `orders/orderKinds` — a serializable per-entity command queue for player- or AI-issued intent, instead of a hard-coded RTS verb kit. Build a shared registry once with `createOrderRegistry<Ctx>()` and register verbs as data; engine code never branches on a verb. Give each commandable unit its own `createOrderQueue(registry, { genId?, onEvent? })`.
+
+- **Lifecycle**: `issue(request)` validates and queues; `tick(ctx, dt)` activates the next order, advances the active one, and completes/cancels it — returning `{ active, activated, completed, canceled }`. `cancelActive`/`cancelAll`/`clear` force cleanup. `serialize()`/`load()` (or the `initial` option) round-trip mid-flight state for save and host-authoritative replication.
+- **Preemption policy** on each issue: `replace` (preempt active + clear pending), `append` (shift-queue), `front` (jump the queue without dropping the active order), `reject` (refuse while busy). Mark an order `uninterruptible` and a replacing order waits until it finishes; explicit `cancelActive` still forces it.
+- **Order kinds** are `OrderKind<Ctx, Payload>` with `start`/`update`/`finish`, composed over two narrow adapters — `OrderMover` (`position`/`moveToward`/`halt`) and `OrderTargeting` (`acquire`/`positionOf`). Built-ins ship as ordinary compositions with a configurable `kind` string so a game re-skins a verb ("harvest") without engine edits: `defineMoveOrder`, `defineStopOrder`, `defineHoldOrder`, `defineAttackMoveOrder`, `defineTargetedOrder`, `definePatrolOrder`. Engagement verbs write `{ engaging, inRange }` into `order.state`; the game reads it to run the actual attack/effect, keeping combat resolution game-side.
 
 

@@ -1,4 +1,18 @@
 export { type HeatConfig, type HeatGain, type HeatLevelDef, type HeatState } from "./ai/heatSystem";
+export {
+  advanceInterestGate,
+  createInterestCensus,
+  createInterestGateState,
+  interestPhase,
+  type InterestCensus,
+  type InterestCensusAccumulator,
+  type InterestGateInput,
+  type InterestGateState,
+  type InterestGateStep,
+  type InterestSchedulerConfig,
+  type InterestState,
+  type InterestTier,
+} from "./ai/interestScheduler";
 export { type Job, type JobDef, type JobReport } from "./ai/jobBoard";
 export {
   advanceSpawnDirector,
@@ -12,7 +26,37 @@ export {
   type SpawnRequest,
   type WaveManifest,
 } from "./ai/spawnDirector";
+export {
+  acquireTarget,
+  createTargetAcquirer,
+  type AcquisitionEnvelope,
+  type AcquisitionPolicy,
+  type AcquisitionResult,
+  type AcquisitionRetention,
+  type TargetAcquirer,
+} from "./ai/targetAcquisition";
 export { createThreatTable, type ThreatTable } from "./ai/threat";
+export {
+  createAreaEffectField,
+  type AreaEffectEvent,
+  type AreaEffectField,
+  type AreaEventKind,
+  type AreaFieldState,
+  type AreaLeaveReason,
+  type AreaMembership,
+  type AreaShape,
+  type AreaSourceSpec,
+  type AreaStepInput,
+} from "./area/areaEffectField";
+export {
+  cappedStacks,
+  extremumStack,
+  independentStacks,
+  sumMagnitude,
+  uniqueByStackKey,
+  type AreaStackPolicy,
+  type MagnitudeOf,
+} from "./area/stackPolicy";
 export {
   computeFalloffGain,
   distance3,
@@ -37,6 +81,13 @@ export {
   effectiveRelation,
   tierForStanding,
 } from "./faction/reputation";
+export {
+  controlGroupKey,
+  resolveControlGroupIntent,
+  type ControlGroupInput,
+  type ControlGroupIntent,
+  type ControlGroupOptions,
+} from "./input/controlGroups";
 export {
   buildContextMenu,
   contextVerb,
@@ -74,6 +125,22 @@ export {
   type SkillCheckConfig,
   type SkillCheckResult,
 } from "./interaction/skillCheck";
+export { resolveLocalAvoidance, type AvoidanceAgent, type LocalAvoidanceOptions } from "./movement/avoidance";
+export {
+  assignFormationSlots,
+  boxFormation,
+  circleFormation,
+  facingYaw,
+  lineFormation,
+  placeFormation,
+  wedgeFormation,
+  type BoxFormationOptions,
+  type CircleFormationOptions,
+  type FormationSlotGenerator,
+  type LineFormationOptions,
+  type SlotAssignmentOptions,
+  type WedgeFormationOptions,
+} from "./movement/formation";
 export { createGlideModel } from "./movement/glideModel";
 export { createGrappleSwing } from "./movement/grappleSwing";
 export { createLeaderTrail } from "./movement/leaderTrail";
@@ -87,11 +154,58 @@ export { createNavGrid, findPath, slopeStepCost, type NavGrid, type NavPoint } f
 export {
   advancePathFollow,
   createPathFollow,
+  pathFollowProgress,
+  pathFollowSeek,
   pathFromNav,
+  pathLength,
   type PathFollowConfig,
+  type PathFollowProgress,
   type PathFollowState,
+  type PathProgress,
   type Waypoint,
 } from "./nav/pathFollow";
+export {
+  defineAttackMoveOrder,
+  defineHoldOrder,
+  defineMoveOrder,
+  definePatrolOrder,
+  defineStopOrder,
+  defineTargetedOrder,
+  type AttackMoveOrderPayload,
+  type EmptyOrderPayload,
+  type EngagementKindConfig,
+  type EngagementOrderState,
+  type MoveOrderPayload,
+  type OrderKindConfig,
+  type OrderMoveResult,
+  type OrderMover,
+  type OrderTargeting,
+  type PatrolOrderPayload,
+  type PatrolOrderState,
+  type TargetedOrderPayload,
+} from "./orders/orderKinds";
+export {
+  createOrderQueue,
+  createOrderRegistry,
+  type Order,
+  type OrderCancelReason,
+  type OrderEvent,
+  type OrderIssueResult,
+  type OrderKind,
+  type OrderOutcome,
+  type OrderPhase,
+  type OrderProgress,
+  type OrderQueue,
+  type OrderQueueOptions,
+  type OrderQueuePolicy,
+  type OrderQueueState,
+  type OrderRegistry,
+  type OrderRejection,
+  type OrderRequest,
+  type OrderStartResult,
+  type OrderTickReport,
+  type OrderVec3,
+} from "./orders/orderQueue";
 export { createBallisticSweep, type BallisticSweep, type BallisticSweepHit } from "./physics/ballisticSweep";
 export { createBuoyantBody } from "./physics/buoyancy";
 export { Carryable, carrySpeedMultiplier } from "./physics/carryable";
@@ -120,6 +234,24 @@ export { DEFAULT_GRIP_CURVE, createVehicleBody, sampleGripCurve, type GripCurve 
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
 export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
+  applyRotationPolicy,
+  headingToRotationY,
+  normalizeDegrees,
+  parseAssetSpace,
+  parseRotationPolicy,
+  resolveAnchorOffset,
+  resolveFacingRotationY,
+  rotatedFootprint,
+  rotationYToHeading,
+  snapHeading,
+  toEngineUnits,
+  validateAssetSpace,
+  type AssetAnchor,
+  type AssetSpace,
+  type AssetSpaceIssue,
+  type PlacementRotationPolicy,
+} from "./scene/assetSpace";
+export {
   collectAuthoredTriggers,
   createAuthoredTriggerRuntime,
   getTriggerAction,
@@ -135,7 +267,15 @@ export {
   type TriggerSourceKind,
 } from "./scene/authoredTriggers";
 export { selectAutoTarget, type AutoTargetPolicy } from "./scene/autoTarget";
-export { advanceBehaviors } from "./scene/behaviorRuntime";
+export {
+  advanceBehaviors,
+  behaviorControl,
+  type BehaviorControl,
+  type BehaviorInspection,
+  type BehaviorResumePolicy,
+  type BehaviorSnapshot,
+  type BehaviorStatus,
+} from "./scene/behaviorRuntime";
 export { patrol, player, talkable, wander, type BehaviorDescriptor } from "./scene/behaviors";
 export { createBodyBind } from "./scene/bodyBind";
 export { type ColliderPurpose, type EntityColliderSet, type ResolvedCollider } from "./scene/colliders";
@@ -166,6 +306,15 @@ export {
   type ScreenRect,
   type SelectionSet,
 } from "./scene/selection";
+export {
+  createSelectionBookmarks,
+  recallSelectionBookmark,
+  type BookmarkRecallMode,
+  type RecallBookmarkOptions,
+  type SelectionBookmarkSnapshot,
+  type SelectionBookmarks,
+  type SelectionPruneResult,
+} from "./scene/selectionBookmarks";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
@@ -273,6 +422,12 @@ export {
 } from "./world/minimap";
 export { placeAlongPath } from "./world/pathInstances";
 export {
+  withPathProfiles,
+  type PathHeightPolicy,
+  type PathRetaining,
+  type TerrainPathProfile,
+} from "./world/pathTerrain";
+export {
   placeAssetFromCommit,
   resolvePlaceAsset,
   toEditorMarker,
@@ -312,6 +467,36 @@ export {
 } from "./world/scatterRegion";
 export { SOIL_KIND, SOIL_SCHEMA, type SoilRules } from "./world/soilKind";
 export {
+  annulusRegion,
+  boxRegion,
+  customRegion,
+  discRegion,
+  pointSetRegion,
+  polygonRegion,
+  rectRegion,
+  sampleBatch,
+  samplePoint,
+  sampleStratified,
+  shellRegion,
+  sphereRegion,
+  weightedRegion,
+  type AreaDistribution,
+  type FallbackPolicy,
+  type Point3,
+  type RadialDistribution,
+  type SampleBatchOptions,
+  type SampleBatchResult,
+  type SampleConstraints,
+  type SamplePoint,
+  type SamplePointOptions,
+  type SampleReason,
+  type SampleRegion,
+  type SampleResult,
+  type StratifiedOptions,
+  type VolumeDistribution,
+  type WeightedRegionEntry,
+} from "./world/spatialSample";
+export {
   furnitureSpots,
   laneCenters,
   offsetPath,
@@ -347,12 +532,47 @@ export {
 } from "./world/terraform";
 export {
   TERRAIN_MATERIAL_PALETTES,
+  applyPathProfiles,
   type NoiseFieldConfig,
   type ResolvedTerrainDetail,
   type TerrainField,
   type TerrainPalette,
 } from "./world/terrain";
+export {
+  chooseContourInterval,
+  drapePolyline,
+  extractContours,
+  sampleElevation,
+  summarizeElevation,
+  surfaceGridLines,
+  surfaceRing,
+  terrainContourGuides,
+  type ContourLine,
+  type ContourOptions,
+  type DrapeOptions,
+  type ElevationReadout,
+  type ElevationSummary,
+  type GroundPoint,
+  type GuideRegion,
+  type HeightSampler,
+  type SurfaceGridLine,
+  type SurfaceGridOptions,
+} from "./world/terrainGuides";
 export { VEGETATION_VOLUME_KIND } from "./world/vegetation";
+export {
+  VISIBILITY_HIDDEN,
+  VISIBILITY_OBSERVED,
+  VISIBILITY_REMEMBERED,
+  createVisibilityField,
+  type VisibilityCells,
+  type VisibilityDelta,
+  type VisibilityField,
+  type VisibilityFieldConfig,
+  type VisibilityFieldState,
+  type VisibilityGroupState,
+  type VisibilityMemory,
+  type VisibilityState,
+} from "./world/visibilityField";
 export { type VolumetricCloudsConfig, type VolumetricCloudsRules } from "./world/volumetricClouds";
 export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";

@@ -1,3 +1,6 @@
+import { createPairKeyCodec } from "@jgengine/core/relation/keyedValues";
+import { appendFeed, pruneFeed } from "@jgengine/core/game/feed";
+
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 import type { NeedId } from "../needs/needs";
 
@@ -39,8 +42,11 @@ export interface HouseholdState {
   eventSeq: number;
 }
 
+/** Undirected, delimiter-safe key for a member pair; order-independent and serializable. */
+const REL_KEY_CODEC = createPairKeyCodec();
+
 export function pairKey(a: string, b: string): string {
-  return a < b ? `${a}|${b}` : `${b}|${a}`;
+  return REL_KEY_CODEC.key(a, b);
 }
 
 export function createHousehold(seed: string): HouseholdState {
@@ -65,10 +71,11 @@ export function pushEvent(
   tone: LifeEvent["tone"] = "info",
 ): void {
   state.eventSeq += 1;
-  state.events = [...state.events, { id: `ev${state.eventSeq}`, text, at, tone }].slice(-6);
+  // `LifeEvent` is a flat timestamped entry, so the shared feed primitive bounds it with no envelope.
+  state.events = appendFeed(state.events, { id: `ev${state.eventSeq}`, text, at, tone }, { limit: 6 });
 }
 
 export function pruneEvents(state: HouseholdState, now: number, ttl: number): void {
-  const kept = state.events.filter((event) => now - event.at < ttl);
-  if (kept.length !== state.events.length) state.events = kept;
+  // pruneFeed returns the same reference when nothing expired, preserving the old no-op skip.
+  state.events = pruneFeed(state.events, now, ttl);
 }

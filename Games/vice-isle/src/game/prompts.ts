@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
+import { safehouseStore } from "./commands";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { handroll } from "./handroll";
-import { GARAGE_POS, GUNSHOP_POS, MARCO_POS } from "./world/districts";
+import { GARAGE_POS, GUNSHOP_POS, MARCO_POS, SAFEHOUSE_POS } from "./world/districts";
 
 const staticPrompts: readonly PositionedPrompt[] = [
   {
@@ -45,6 +46,19 @@ const racePrompt: PositionedPrompt = {
   },
 };
 
+function safehousePrompt(ctx: GameContext): PositionedPrompt {
+  const owned = safehouseStore.read(ctx) === true;
+  return {
+    id: owned ? "safehouse:rest" : "safehouse:buy",
+    position: { x: SAFEHOUSE_POS[0], z: SAFEHOUSE_POS[2] },
+    prompt: {
+      radius: 4,
+      display: { kind: "keybind", actionId: "interact" },
+      invoke: { name: owned ? "safehouse.rest" : "safehouse.buy", input: undefined },
+    },
+  };
+}
+
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   if (handroll.drivingVehicleId() !== null) {
     if (handroll.raceActive()) return [];
@@ -62,10 +76,11 @@ export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
       nearestCar = { id: entity.id, x: entity.position[0], z: entity.position[2] };
     }
   }
-  if (nearestCar === null) return [...staticPrompts, garagePrompt];
+  if (nearestCar === null) return [...staticPrompts, garagePrompt, safehousePrompt(ctx)];
   return [
     ...staticPrompts,
     garagePrompt,
+    safehousePrompt(ctx),
     {
       id: `enter:${nearestCar.id}`,
       position: { x: nearestCar.x, z: nearestCar.z },

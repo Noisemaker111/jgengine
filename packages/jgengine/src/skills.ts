@@ -17,7 +17,9 @@ export const API_SKILL_DIRS = [
   "jgengine-editor",
 ] as const;
 
-export const GAME_SKILLS = [...API_SKILL_DIRS, "jgengine-verify"] as const;
+export const DESIGN_SKILL_DIRS = ["game-design", "level-design"] as const;
+
+export const GAME_SKILLS = [...API_SKILL_DIRS, ...DESIGN_SKILL_DIRS, "jgengine-verify"] as const;
 
 export type SkillsScope = "global" | "project";
 

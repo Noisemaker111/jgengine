@@ -96,6 +96,7 @@ import {
   WorldTelegraphs,
 } from "./world/WorldHud";
 import { WorldSpellVfx } from "./world/WorldVfx";
+import { RetainedVfx } from "./world/RetainedVfx";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
@@ -736,7 +737,11 @@ export function GamePlayerShell({
               }
         }
         shadows={graphics.shadows}
-        dpr={graphics.dpr}
+        // Quality tiers are a devicePixelRatio *ceiling*: a bare number would
+        // force that ratio even on 1x displays (r3f uses numbers verbatim),
+        // quadrupling fill cost for most desktop players. The range form
+        // clamps the real devicePixelRatio instead.
+        dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
         gl={{ preserveDrawingBuffer: true }}
         style={{ touchAction: "none" }}
       >
@@ -802,6 +807,7 @@ export function GamePlayerShell({
           <WorldItems config={playable.worldItem} />
           <WorldTelegraphs />
           <WorldSpellVfx />
+          <RetainedVfx />
           <WorldFloatText />
           <ProjectileTracers />
           {devtoolsEnabled ? <CollisionDebugWorld /> : null}
@@ -848,7 +854,7 @@ export function GamePlayerShell({
         />
         <DevtoolsRendererProbe />
         {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
-          <PostProcessing config={resolvedLook.postProcessing} />
+          <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} />
         ) : null}
       </Canvas>
       {!poster && !orientationGate && coarsePointer && controlsActive && touchScheme !== null && (touchScheme.gestures !== null || touchScheme.look) ? (
