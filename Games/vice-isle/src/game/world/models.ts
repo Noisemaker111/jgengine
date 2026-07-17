@@ -61,6 +61,11 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${CHAR}/Barbarian`,
     style: { targetHeight: 1.9, material: { color: "#20242e" } },
   },
+  bounty_mark: {
+    model: `${CHAR}/Barbarian`,
+    fallbackModel: `${CHAR}/Rogue`,
+    style: { targetHeight: 1.95, material: { color: "#6d2f8f" } },
+  },
 
   car_compact: {
     model: `${CITY}/car_hatchback`,
@@ -97,6 +102,16 @@ const objectPlan: Record<string, ModelPick> = {
   },
   obj_gunshop_sign: {
     model: `${CITY}/trafficlight_A`,
+    fallbackModel: `${DUNGEON}/banner_red`,
+    style: { targetHeight: 2.4 },
+  },
+  obj_safehouse_sign: {
+    model: `${DUNGEON}/banner_green`,
+    fallbackModel: `${DUNGEON}/banner_red`,
+    style: { targetHeight: 2.4 },
+  },
+  obj_vcpd_sign: {
+    model: `${DUNGEON}/banner_blue`,
     fallbackModel: `${DUNGEON}/banner_red`,
     style: { targetHeight: 2.4 },
   },

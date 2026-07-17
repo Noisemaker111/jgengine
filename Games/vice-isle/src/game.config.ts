@@ -20,6 +20,7 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "openworld" },
   save: "none",
+  persist: true,
   multiplayer: offline(),
   content,
   loop,

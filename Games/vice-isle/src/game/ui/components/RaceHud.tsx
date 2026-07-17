@@ -11,7 +11,7 @@ export function RaceHud() {
           race.won ? "bg-[#3fbf5a] text-black" : "bg-[#c23b3b] text-white"
         }`}
       >
-        {race.won ? `Won the Ocean Loop — ${race.timeSec.toFixed(1)}s` : "Lost — talk to the starter to retry"}
+        {race.won ? `Won the Ocean Loop — ${race.timeSec.toFixed(1)}s` : "Lost — the garage runs it again anytime"}
       </div>
     );
   }
