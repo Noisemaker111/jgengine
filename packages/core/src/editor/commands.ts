@@ -75,6 +75,8 @@ export type EditorCommand =
       entryId: string;
       patch: { label?: string; meta?: Record<string, unknown> };
     }
+  | { type: "addCatalogEntry"; catalogId: string; entry: EditorCatalogEntry }
+  | { type: "removeCatalogEntry"; catalogId: string; entryId: string }
   | { type: "remove"; id: string }
   | { type: "removeMany"; ids: readonly string[] }
   | { type: "duplicate"; ids: readonly string[]; offset?: EditorVec3 }
@@ -516,6 +518,40 @@ function applyMutating(state: EditorSessionState, command: EditorCommand): Edito
           }),
         };
       });
+      return { ...state, document: { ...state.document, catalogs } };
+    }
+    case "addCatalogEntry": {
+      const trimmedId = command.entry.id.trim();
+      if (trimmedId.length === 0) return null;
+      const existing = state.document.catalogs.find((catalog) => catalog.id === command.catalogId);
+      const taken = new Set((existing?.entries ?? []).map((entry) => entry.id));
+      let id = trimmedId;
+      let n = 2;
+      while (taken.has(id)) {
+        id = `${trimmedId}_${n}`;
+        n += 1;
+      }
+      const entry: EditorCatalogEntry = {
+        id,
+        ...(command.entry.label === undefined ? {} : { label: command.entry.label }),
+        ...(command.entry.meta === undefined ? {} : { meta: { ...command.entry.meta } }),
+      };
+      const catalogs =
+        existing === undefined
+          ? [...state.document.catalogs, { id: command.catalogId, entries: [entry] }]
+          : state.document.catalogs.map((catalog) =>
+              catalog.id === command.catalogId ? { ...catalog, entries: [...catalog.entries, entry] } : catalog,
+            );
+      return { ...state, document: { ...state.document, catalogs } };
+    }
+    case "removeCatalogEntry": {
+      const catalog = state.document.catalogs.find((entry) => entry.id === command.catalogId);
+      if (catalog === undefined || !catalog.entries.some((entry) => entry.id === command.entryId)) return null;
+      const catalogs = state.document.catalogs.map((row) =>
+        row.id === command.catalogId
+          ? { ...row, entries: row.entries.filter((entry) => entry.id !== command.entryId) }
+          : row,
+      );
       return { ...state, document: { ...state.document, catalogs } };
     }
     case "remove":

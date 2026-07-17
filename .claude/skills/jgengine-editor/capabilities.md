@@ -13,6 +13,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `findEditorCatalogEntry` (function) · `import { findEditorCatalogEntry } from "@jgengine/core/editor"`
 - `seedEditorCatalogs` (function) · `import { seedEditorCatalogs } from "@jgengine/core/editor"`
 
+## editor-entities — Author entity stats/movement per catalog row instead of hardcoding TS.
+
+- `entityDefinitionSchema` (const) · `import { entityDefinitionSchema } from "@jgengine/core/editor"`
+- `entityEntryFromCatalog` (function) · `import { entityEntryFromCatalog } from "@jgengine/core/editor"`
+
 ## editor-grid-import — Configure an ASCII/glyph → grid-layer import.
 
 - `AsciiGridImportOptions` (interface) · `import { AsciiGridImportOptions } from "@jgengine/core/editor"`

@@ -107,6 +107,45 @@ describe("catalog RPC tools", () => {
     dispose();
   });
 
+  test("add_catalog_entry seeds a new row from schema defaults and persists it", () => {
+    const { api, dispose } = host();
+    const added = api.handle({ method: "add_catalog_entry", catalogId: "weapons", entryId: "spear", label: "Spear" });
+    expect(added.ok).toBe(true);
+    const got = api.handle({ method: "get_catalog_entry", catalogId: "weapons", entryId: "spear" });
+    expect(got.ok).toBe(true);
+    const entry = (got.result as { entry: { label?: string; meta: Record<string, unknown> } }).entry;
+    expect(entry.label).toBe("Spear");
+    // Seeded from WEAPON_SCHEMA defaults (damage 10, rate 1).
+    expect(entry.meta).toEqual({ damage: 10, rate: 1 });
+    dispose();
+  });
+
+  test("add_catalog_entry overlays provided meta and validates against the schema", () => {
+    const { api, dispose } = host();
+    expect(api.handle({ method: "add_catalog_entry", catalogId: "weapons", entryId: "sling", meta: { damage: 5 } }).ok).toBe(true);
+    const got = api.handle({ method: "get_catalog_entry", catalogId: "weapons", entryId: "sling" });
+    expect((got.result as { entry: { meta: Record<string, unknown> } }).entry.meta).toEqual({ damage: 5, rate: 1 });
+    const bad = api.handle({ method: "add_catalog_entry", catalogId: "weapons", entryId: "railgun", meta: { damage: 999 } });
+    expect(bad.ok).toBe(false);
+    expect(bad.error).toContain("damage");
+    dispose();
+  });
+
+  test("add_catalog_entry rejects a duplicate id and an unknown catalog", () => {
+    const { api, dispose } = host();
+    expect(api.handle({ method: "add_catalog_entry", catalogId: "weapons", entryId: "bow" }).ok).toBe(false);
+    expect(api.handle({ method: "add_catalog_entry", catalogId: "nope", entryId: "x" }).ok).toBe(false);
+    dispose();
+  });
+
+  test("remove_catalog_entry deletes a row and reports a miss", () => {
+    const { api, dispose } = host();
+    expect(api.handle({ method: "remove_catalog_entry", catalogId: "weapons", entryId: "bow" }).ok).toBe(true);
+    expect(api.handle({ method: "get_catalog_entry", catalogId: "weapons", entryId: "bow" }).ok).toBe(false);
+    expect(api.handle({ method: "remove_catalog_entry", catalogId: "weapons", entryId: "bow" }).ok).toBe(false);
+    dispose();
+  });
+
   test("export_document includes catalogs for round-trip persistence", () => {
     const { api, dispose } = host();
     api.handle({ method: "set_catalog_entry", catalogId: "weapons", entryId: "cannon", patch: { rate: 1.1 } });

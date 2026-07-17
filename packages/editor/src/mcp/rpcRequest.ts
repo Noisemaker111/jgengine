@@ -54,6 +54,8 @@ const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly RpcField
   list_catalogs: [],
   get_catalog_entry: [s("catalogId"), s("entryId")],
   set_catalog_entry: [s("catalogId"), s("entryId"), o("patch"), s("label")],
+  add_catalog_entry: [s("catalogId"), s("entryId"), o("meta"), s("label")],
+  remove_catalog_entry: [s("catalogId"), s("entryId")],
   list_selection: [],
   get_marker: [s("id")],
   get_volume: [s("id")],

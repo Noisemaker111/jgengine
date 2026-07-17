@@ -63,6 +63,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
 
+## authored-entities — spawn authored mob/boss markers from the editor document at runtime
+
+- `authoredEntitySpawns` (function) · `import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities"`
+
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`

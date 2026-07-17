@@ -29,6 +29,10 @@ export type { EditorCatalogData } from "./types";
 export type { EditorCatalogDefinition } from "./types";
 /** Accepted shape for a game's `editorCatalogs` export: definitions, or a factory. */
 export type { EditorCatalogsInput } from "./types";
+/** Well-known catalog id for authored entity definitions consumed by the default content path. */
+export { ENTITY_CATALOG_ID, entityDefinitionSchema, entityEntryFromCatalog } from "./entityCatalog";
+/** Minimal document shape {@link entityEntryFromCatalog} reads — any `EditorDocument` satisfies it. */
+export type { EntityCatalogDocumentLike } from "./entityCatalog";
 /** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */
 export type { EditorLayersInput } from "./types";
 /** A placeable point object in the scene ΓÇö spawn, mob, chest, POI, etc. */

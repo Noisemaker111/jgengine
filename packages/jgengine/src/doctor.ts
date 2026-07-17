@@ -21,6 +21,8 @@ const SKELETON_FILES = new Set([
   "style.css",
   "editorLayers.ts",
   "editorLayers.test.ts",
+  "editorCatalogs.ts",
+  "editorCatalogs.test.ts",
   "editor.scene.json",
 ]);
 const SKELETON_DIRS = new Set(["game"]);
@@ -192,7 +194,7 @@ export function diagnose(dir: string): Finding[] {
     findings.push({
       ok: strays.length === 0,
       label: "src/ holds only the skeleton (everything else under src/game/)",
-      fix: `move ${strays.join(", ")} under src/game/ — src/ is only game.config.ts, index.tsx, main.tsx, loop.ts, world.ts, editorLayers.ts, editorLayers.test.ts, editor.scene.json, index.css, style.css`,
+      fix: `move ${strays.join(", ")} under src/game/ — src/ is only game.config.ts, index.tsx, main.tsx, loop.ts, world.ts, editorLayers.ts, editorLayers.test.ts, editorCatalogs.ts, editorCatalogs.test.ts, editor.scene.json, index.css, style.css`,
     });
 
     const unguardedCallers = unguardedSaveEndpointCallers(srcDir);

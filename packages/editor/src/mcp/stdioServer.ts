@@ -50,6 +50,20 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
         ...(typeof args.label === "string" ? { label: args.label } : {}),
       };
+    case "add_catalog_entry":
+      return {
+        method: "add_catalog_entry",
+        catalogId: String(args.catalogId ?? ""),
+        entryId: String(args.entryId ?? ""),
+        ...(typeof args.meta === "object" && args.meta !== null ? { meta: args.meta as Record<string, unknown> } : {}),
+        ...(typeof args.label === "string" ? { label: args.label } : {}),
+      };
+    case "remove_catalog_entry":
+      return {
+        method: "remove_catalog_entry",
+        catalogId: String(args.catalogId ?? ""),
+        entryId: String(args.entryId ?? ""),
+      };
     case "list_selection":
       return { method: "list_selection" };
     case "get_marker":

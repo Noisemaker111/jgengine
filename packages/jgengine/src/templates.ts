@@ -319,6 +319,7 @@ import { createRoot } from "react-dom/client";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { GameHost } from "@jgengine/shell/GameHost";
 
+import { editorCatalogs } from "./editorCatalogs";
 import { game } from "./game.config";
 
 const GAME_ID = "${id}";
@@ -327,7 +328,13 @@ if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", GAME_ID);
 // Editor mode (F2+E / ?mode=editor) loads as a lazy chunk — never bundled into gameplay.
 const EditorApp = lazy(async () => {
   const mod = await import("@jgengine/editor");
-  return { default: mod.EditorApp as ComponentType<{ gameId: string; playable: typeof game }> };
+  return {
+    default: mod.EditorApp as ComponentType<{
+      gameId: string;
+      playable: typeof game;
+      catalogs?: typeof editorCatalogs;
+    }>,
+  };
 });
 
 function App() {
@@ -361,7 +368,7 @@ function App() {
   if (!editor) return <GameHost playable={game} />;
   return (
     <Suspense fallback={null}>
-      <EditorApp gameId={GAME_ID} playable={game} />
+      <EditorApp gameId={GAME_ID} playable={game} catalogs={editorCatalogs} />
     </Suspense>
   );
 }
@@ -373,6 +380,7 @@ createRoot(root).render(<App />);
 
 const indexTsx = `export { game } from "./game.config";
 export { editorLayers } from "./editorLayers";
+export { editorCatalogs } from "./editorCatalogs";
 `;
 
 // Starter scene document: the authored spawn plus a few placed catalog props, so the very first
@@ -392,6 +400,7 @@ const editorSceneJson = `{
     { "id": "tree_1", "kind": "prop", "position": { "x": -8, "y": 0, "z": -10 }, "label": "Tree", "catalogId": "tree" },
     { "id": "tree_2", "kind": "prop", "position": { "x": 10, "y": 0, "z": -14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
     { "id": "tree_3", "kind": "prop", "position": { "x": -12, "y": 0, "z": 4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" },
+    { "id": "grunt_1", "kind": "mob", "position": { "x": -4, "y": 0, "z": -9 }, "label": "Grunt", "catalogId": "grunt" },
     {
       "id": "goal",
       "kind": "goal",
@@ -414,6 +423,58 @@ import sceneJson from "./editor.scene.json";
  * of hand-editing the JSON or hardcoding coordinates in game code.
  */
 export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorDocument);
+`;
+
+const editorCatalogsTs = `import {
+  ENTITY_CATALOG_ID,
+  entityDefinitionSchema,
+  type EditorCatalogDefinition,
+} from "@jgengine/core/editor/index";
+
+import { MAX_HEALTH, PLAYER, WALK_SPEED } from "./game/tuning";
+
+/**
+ * Gameplay data catalogs surfaced in the editor Data tab (F2+E → Data). Schemas stay in code; the
+ * tuned values persist on the scene document (editor.scene.json). The \`entities\` catalog defines
+ * each entity's role/health/speed/scale — add a row for a new mob, place a \`mob\` marker whose
+ * catalog id is that row's id, and it spawns with those stats. No entity data hardcoded in TS.
+ */
+export const editorCatalogs: readonly EditorCatalogDefinition[] = [
+  {
+    id: ENTITY_CATALOG_ID,
+    label: "Entities",
+    schema: entityDefinitionSchema,
+    entries: [
+      { id: PLAYER, label: "Player", meta: { role: "player", maxHealth: MAX_HEALTH, walkSpeed: WALK_SPEED, scale: 1 } },
+      { id: "grunt", label: "Grunt", meta: { role: "enemy", maxHealth: 20, walkSpeed: 2.5, scale: 1 } },
+    ],
+  },
+];
+`;
+
+const editorCatalogsTest = `import { describe, expect, test } from "bun:test";
+
+import { ENTITY_CATALOG_ID, entityEntryFromCatalog } from "@jgengine/core/editor/index";
+
+import { editorCatalogs } from "./editorCatalogs";
+import { editorLayers } from "./editorLayers";
+
+describe("editorCatalogs", () => {
+  test("ships an entities catalog so the Data tab is never empty", () => {
+    const entities = editorCatalogs.find((catalog) => catalog.id === ENTITY_CATALOG_ID);
+    expect(entities).toBeDefined();
+    expect(entities?.entries.length ?? 0).toBeGreaterThan(0);
+  });
+
+  test("an authored mob marker resolves its stats/speed from the catalog — no game code", () => {
+    const mob = editorLayers.markers.find((marker) => marker.kind === "mob");
+    expect(mob?.catalogId).toBe("grunt");
+    const entry = entityEntryFromCatalog(editorLayers, mob?.catalogId ?? "", editorCatalogs);
+    expect(entry?.role).toBe("enemy");
+    expect(entry?.stats?.health?.max).toBe(20);
+    expect(entry?.movement?.walkSpeed).toBe(2.5);
+  });
+});
 `;
 
 const editorLayersTest = `import { describe, expect, test } from "bun:test";
@@ -453,6 +514,8 @@ import { assets } from "./assets";
 /** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
 export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
   player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
+  // The authored "grunt" mob (see the entities catalog / Data tab) renders as a figure too.
+  grunt: { model: "asset:person_casual", style: { targetHeight: 1.7 } },
 });
 
 export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
@@ -504,6 +567,7 @@ export const physics: PhysicsConfig = { gravity: -24 };
 `;
 
 const loopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 import {
   createAuthoredTriggerRuntime,
@@ -532,7 +596,13 @@ function triggerRuntime(): AuthoredTriggerRuntime {
 }
 
 /** @internal */
-export function onInit(_ctx: GameContext): void {}
+export function onInit(ctx: GameContext): void {
+  // Spawn every authored mob/boss marker at its placed position, with the stats/speed defined for
+  // its catalog id in the editor Data tab — place and tune entities in the editor (F2+E), not here.
+  for (const spawn of authoredEntitySpawns(editorLayers)) {
+    ctx.scene.entity.spawn(spawn.catalogId, { id: spawn.markerId, position: spawn.position });
+  }
+}
 
 /** @internal */
 export function onNewPlayer(ctx: GameContext): void {
@@ -561,21 +631,20 @@ export const WALK_SPEED = 4;
 export const SPAWN: [number, number, number] = [0, 0, 0];
 `;
 
-const contentTs = `import type { GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
+const contentTs = `import { entityEntryFromCatalog } from "@jgengine/core/editor/index";
+import type { GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 
-import { MAX_HEALTH, PLAYER, WALK_SPEED } from "./tuning";
+import { editorCatalogs } from "../editorCatalogs";
+import { editorLayers } from "../editorLayers";
 
-/** @internal */
+/**
+ * Resolves an entity's runtime definition (role/stats/movement) from the authored \`entities\` catalog
+ * — the values you tune in the editor Data tab and save to editor.scene.json. Define a new entity by
+ * adding a catalog row; nothing here changes. Returns null for ids the catalog does not define.
+ * @internal
+ */
 export function entityById(catalogId: string): GameContextEntityEntry | null {
-  if (catalogId === PLAYER) {
-    return {
-      role: "player",
-      stats: { health: { max: MAX_HEALTH, min: 0 } },
-      receive: { damage: { order: ["health"] } },
-      movement: { walkSpeed: WALK_SPEED },
-    };
-  }
-  return null;
+  return entityEntryFromCatalog(editorLayers, catalogId, editorCatalogs);
 }
 `;
 
@@ -691,7 +760,7 @@ Prefer these over guessing: tune numbers in debug mode, fix HUD layout in canvas
 
 ## Project rules
 
-- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`, \`index.css\`, \`style.css\`; everything else under \`src/game/\`.
+- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editorCatalogs.ts\`, \`editorCatalogs.test.ts\`, \`editor.scene.json\`, \`index.css\`, \`style.css\`; everything else under \`src/game/\`.
 - Entry: \`defineGame({...})\` from \`@jgengine/shell/defineGame\` in \`game.config.ts\`.
 - World content: the scaffold ships \`src/editor.scene.json\` wired via \`defineGame({ editorLayers })\` — place spawns, props, zones, and paths in editor mode (F2+E, Ctrl+S saves), never as coordinate tables in code. The player spawns at the authored \`player_spawn\` marker (\`authoredSpawnPosition\`).
 - Prove world content with \`summarizeEnvironment\` in \`bun test\` (\`src/game/world.world.test.ts\`), not screenshot loops.
@@ -865,6 +934,8 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/editor.scene.json", contents: editorSceneJson },
     { path: "src/editorLayers.ts", contents: editorLayersTs },
     { path: "src/editorLayers.test.ts", contents: editorLayersTest },
+    { path: "src/editorCatalogs.ts", contents: editorCatalogsTs },
+    { path: "src/editorCatalogs.test.ts", contents: editorCatalogsTest },
     { path: "src/game.config.ts", contents: gameConfigTs(name) },
     { path: "src/loop.ts", contents: loopTs },
     { path: "src/world.ts", contents: worldTs(id) },

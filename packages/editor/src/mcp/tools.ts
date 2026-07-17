@@ -48,6 +48,31 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
     },
   },
   {
+    name: "add_catalog_entry",
+    description: "Add a new row (entry) to a gameplay catalog — e.g. define a new entity in the `entities` catalog. Meta is seeded from the catalog ParamSchema defaults, then overlaid with any provided meta and validated.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        catalogId: { type: "string" },
+        entryId: { type: "string" },
+        meta: { type: "object" },
+        label: { type: "string" },
+      },
+      required: ["catalogId", "entryId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "remove_catalog_entry",
+    description: "Remove a row (entry) from a gameplay catalog by catalogId + entryId.",
+    inputSchema: {
+      type: "object",
+      properties: { catalogId: { type: "string" }, entryId: { type: "string" } },
+      required: ["catalogId", "entryId"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "list_selection",
     description: "Return currently selected editor object ids.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },

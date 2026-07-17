@@ -2005,6 +2005,14 @@
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
+## @jgengine/core/world/authoredEntities
+
+- `AuthoredEntityDocumentLike` (interface): interface AuthoredEntityDocumentLike — The minimal document shape {@link authoredEntitySpawns} walks; any `EditorDocument` satisfies it.
+- `AuthoredEntityMarkerLike` (type): type AuthoredEntityMarkerLike = AuthoredObjectMarkerLike — The minimal marker shape entity spawns read; any `EditorMarker` satisfies it.
+- `AuthoredEntitySpawn` (interface): interface AuthoredEntitySpawn — One resolved entity to spawn from the authored scene — its marker id, catalog id, and pose.
+- `ENTITY_MARKER_KINDS` (const): const ENTITY_MARKER_KINDS: readonly string[] — Marker kinds {@link authoredEntitySpawns} treats as spawnable entities by default.
+- `authoredEntitySpawns` (function): function authoredEntitySpawns(document: AuthoredEntityDocumentLike, kinds: readonly string[] = ENTITY_MARKER_KINDS): AuthoredEntitySpawn[] — Every authored entity marker (`mob`/`boss` by default) that carries a `catalogId`, as a spawn plan the runtime feeds to `ctx.scene.entity.spawn(catalogId, { id, position })`. Reads the same document the editor authors, so placing a mob and setting its catalog id in the editor is all it takes to spawn it — no coordinates or spawn tables copied into game code. Markers without a catalog id are skipped (they are placement-only, e.g. a boss arena marker a game handles specially).
+
 ## @jgengine/core/world/authoredObjects
 
 - `AuthoredObject` (interface): interface AuthoredObject — One authored catalog prop resolved from an editor marker — grounded at `x`/`z` with yaw, ready for `ctx.scene.object.place` or {@link placeAuthoredObjects}.
