@@ -133,6 +133,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
 
+## flight-dynamics — simulate fixed-wing, helicopter, and VTOL aircraft
+
+- `createAircraftDynamics` (function) · `import { createAircraftDynamics } from "@jgengine/core/world"`
+
 ## follow-trail — trailing follower/snake formation that chases a leader
 
 - `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/world"`
@@ -180,6 +184,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
+
+## gravity-field — sample configurable uniform, radial, or combined gravity
+
+- `combineGravity` (function) · `import { combineGravity } from "@jgengine/core/world"`
+- `pointGravity` (function) · `import { pointGravity } from "@jgengine/core/world"`
+- `uniformGravity` (function) · `import { uniformGravity } from "@jgengine/core/world"`
 
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
