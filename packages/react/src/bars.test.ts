@@ -100,6 +100,15 @@ describe("shape", () => {
   });
 });
 
+describe("fill override", () => {
+  test("an explicit fill wins over the token and disables the low-threshold swap", () => {
+    const html = renderToStaticMarkup(createElement(HealthBar, { value: 5, max: 100, fill: "#00ffcc" }));
+    expect(html).toContain("#00ffcc");
+    expect(html).not.toContain("data-low"); // fill override suppresses the danger swap
+    expect(html).not.toContain("var(--jg-health,"); // token not used for the fill
+  });
+});
+
 describe("BossBar", () => {
   test("renders a boss-tinted bar with the encounter name", () => {
     const html = renderToStaticMarkup(createElement(BossBar, { value: 900, max: 1000, name: "Ancient Wyrm" }));

@@ -102,7 +102,6 @@ function cssVar(key: keyof BarTokens): string {
   return `var(${TOKEN_VAR[key]}, ${DEFAULT_BAR_TOKENS[key]})`;
 }
 
-/** Shared shape for every atomic bar — bound (statId/entityId) or explicit (value/max/min). */
 /** Trough shape language — `rect` (default), `pill` (fully round), `skew` (parallelogram, upright
  * label), or `chamfer` (cut corners). Matches a game's skin without hand-rolling a local bar. */
 export type BarShape = "rect" | "pill" | "skew" | "chamfer";
@@ -111,6 +110,9 @@ export type BarShape = "rect" | "pill" | "skew" | "chamfer";
 export interface AtomicBarProps {
   /** Trough shape language. Default `rect`. */
   shape?: BarShape;
+  /** Explicit fill color, overriding the token (and the low-threshold swap) — for per-instance
+   * colors a token can't express (e.g. a class-colored resource bar). Caller overrides win. */
+  fill?: string;
   /** Explicit current value; when set the bar is pure and needs no game provider. */
   value?: number;
   /** Explicit max (default 100 when `value` is set without one). */
@@ -169,6 +171,7 @@ function BarView({
   segments,
   endCap,
   shape = "rect",
+  fillOverride,
   style,
   className,
 }: {
@@ -180,12 +183,13 @@ function BarView({
   segments?: number;
   endCap?: ReactNode;
   shape?: BarShape;
+  fillOverride?: string;
   style?: CSSProperties;
   className?: string;
 }) {
   const low =
-    config.lowColorKey !== undefined && fraction <= (config.lowThreshold ?? 0.25);
-  const fill = cssVar(low ? config.lowColorKey! : config.colorKey);
+    fillOverride === undefined && config.lowColorKey !== undefined && fraction <= (config.lowThreshold ?? 0.25);
+  const fill = fillOverride ?? cssVar(low ? config.lowColorKey! : config.colorKey);
   const shaped = shapeStyles(shape);
   const trough = (
     <div
@@ -297,6 +301,7 @@ function StaticBar({ props, config }: { props: AtomicBarProps; config: RenderBar
       segments={props.segments}
       endCap={props.endCap}
       shape={props.shape}
+      fillOverride={props.fill}
       style={props.style}
       className={props.className}
     />
@@ -318,6 +323,7 @@ function BoundBar({ props, config, defaultStatId }: { props: AtomicBarProps; con
       segments={props.segments}
       endCap={props.endCap}
       shape={props.shape}
+      fillOverride={props.fill}
       style={props.style}
       className={props.className}
     />
