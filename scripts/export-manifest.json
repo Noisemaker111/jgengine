@@ -193,6 +193,8 @@
     "./random/pick",
     "./random/rng",
     "./random/seedLink",
+    "./relation/keyedValues",
+    "./relation/thresholds",
     "./render/color",
     "./render/lookPreset",
     "./render/postProcessing",
