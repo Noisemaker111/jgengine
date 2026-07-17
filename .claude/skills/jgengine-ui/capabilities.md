@@ -73,6 +73,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `IconSchool` (type) · `import { IconSchool } from "@jgengine/react"`
 
+## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
+
+- `SlotItem` (interface) · `import { SlotItem } from "@jgengine/react"`
+
 ## hud-theme — one token object + genre presets driving bars, frames, slots, and minimap ring
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`

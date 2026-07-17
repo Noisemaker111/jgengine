@@ -492,6 +492,7 @@
     "./selectionHud",
     "./settings",
     "./skillCheckPaint",
+    "./slots",
     "./social",
     "./startScreen",
     "./store",
