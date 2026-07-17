@@ -477,6 +477,8 @@
     "./hudTheme",
     "./hudThemePreview",
     "./hudViewport",
+    "./iconTreatment",
+    "./iconsPreview",
     "./identity",
     "./index",
     "./keyHint",
