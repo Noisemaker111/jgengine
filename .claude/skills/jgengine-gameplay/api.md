@@ -185,6 +185,16 @@
 - `TechState` (type): type TechState = UnlockState — ⚠ undocumented
 - `TechTree` (interface): interface TechTree — ⚠ undocumented
 
+## @jgengine/core/economy/unlockPoints
+
+- `SpendOptions` (interface): interface SpendOptions — Options for {@link UnlockPoints.spend}.
+- `SpendRejection` (type): type SpendRejection = | "invalid-cost" | "already-unlocked" | "missing-prerequisites" | "insufficient-points" — Why a {@link UnlockPoints.spend} was refused; the pool is left untouched on any rejection.
+- `SpendResult` (type): type SpendResult = { ok: true; available: number } | { ok: false; reason: SpendRejection } — Result of {@link UnlockPoints.spend}: the new `available` balance on success, else a reason.
+- `UnlockPoints` (interface): interface UnlockPoints — A spendable unlock-point economy: a pool you earn (per level or by direct grant) and spend to unlock nodes, with per-unlock refunds and a full respec.
+- `UnlockPointsConfig` (interface): interface UnlockPointsConfig — Configuration for {@link createUnlockPoints}.
+- `UnlockPointsState` (interface): interface UnlockPointsState — Plain, JSON-serializable snapshot of a point pool. `earned` is the lifetime total ever banked; every committed unlock lives in `unlocked` as `id → cost paid`. `spent` and `available` are always derived (`spent = Σ unlocked`, `available = earned − spent`) so the two can never drift out of sync across a serialize/hydrate round-trip.
+- `createUnlockPoints` (function): function createUnlockPoints(config: UnlockPointsConfig = {}): UnlockPoints — Spendable unlock-point economy — the seam between leveling and a tech tree. Points are earned per level (via a configurable, possibly non-uniform grant curve) or granted directly, then spent to unlock nodes; spending can defer prerequisite checks to an injected predicate so it composes with `economy/techTree` (or any gate) without depending on it. Individual unlocks refund, and `respec` fully refunds a build while preserving lifetime earned points. All state is plain and JSON round-trips.
+
 ## @jgengine/core/economy/wallet
 
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
@@ -198,6 +208,25 @@
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
+
+## @jgengine/core/game/breeding
+
+- `BreedConfig` (interface): interface BreedConfig — Tuning for {@link breedOffspring}. Every field has an ARK-style default; all are optional.
+- `BreedResult` (interface): interface BreedResult — Result of {@link breedOffspring}: the new genome plus the mutations that produced it.
+- `Genome` (interface): interface Genome — A creature's heritable genome. `stats` are the inherited/mutated point values; `mutationCount` and `colorMutationCount` are the lineage counters that carry across generations and drive the mutation soft cap. Fully serializable — no methods or closures.
+- `ImprintBonusConfig` (interface): interface ImprintBonusConfig — Options controlling how an imprint bonus is applied.
+- `IncubationConfig` (interface): interface IncubationConfig — Temperature gate for {@link tickIncubation}.
+- `IncubationState` (interface): interface IncubationState — Serializable incubation/gestation state advanced by {@link tickIncubation}.
+- `MaturationStage` (interface): interface MaturationStage — A maturation stage keyed by the elapsed fraction (0..1) at which it begins.
+- `MutationEvent` (interface): interface MutationEvent — One mutation that occurred while breeding a single offspring.
+- `MutationSoftCap` (interface): interface MutationSoftCap — Soft-cap rule for mutation eligibility. When a parent's `mutationCount` exceeds `threshold` its lineage is considered "capped"; the per-roll mutation chance is then either zeroed (`mode: "block"`) or scaled by `reducedFactor` (`mode: "reduce"`). `scope` decides whether it takes `both` parents capped, or `either` one, to trigger.
+- `StatBlock` (type): type StatBlock = Record<string, number> — Deterministic creature breeding & genetics — a genre-agnostic engine primitive for taming/husbandry games. Everything here operates over plain serializable records so a genome round-trips through save/load and multiplayer sync, and every random decision is driven by an injected `rng: () => number` (values in `[0, 1)`) so identical inputs and an identical rng stream always produce the identical offspring.
+- `applyImprintBonus` (function): function applyImprintBonus(stats: StatBlock, imprint: number, config: ImprintBonusConfig = {}, options: { asOwner?: boolean } = {}): StatBlock — Apply the imprint rearing bonus to a stat block. Every stat is scaled by `1 + statBonusAtFull * imprint`; when `asOwner` is set, the imprinting handler additionally gets `1 + handlerBonusAtFull * imprint`. `imprint` is a 0..1 fraction (clamped) and scales both bonuses linearly, so half-imprint yields half the bonus. Returns a fresh stat block.
+- `breedOffspring` (function): function breedOffspring(parentA: Genome, parentB: Genome, rng: () => number, config: BreedConfig = {}): BreedResult — Breed one offspring from two parents. For each stat present in either parent (iterated in sorted id order for a stable rng stream) the offspring independently inherits the higher parent's value with probability `higherStatChance` (default `0.55`), else the lower — a per-stat coin flip, so a strong parent does not guarantee a strong child. Then up to `mutationRolls` mutation rolls fire at the soft-capped chance; each success adds `mutationDelta` to a random stat, bumps the heritable `mutationCount`, and is flagged cosmetic with probability `colorMutationChance`. Lineage counters carry as the max of the two parents plus the new mutations, keeping them monotonic and heritable.
+- `imprintIncrementPerRequest` (function): function imprintIncrementPerRequest(requestCount: number): number — Imprint gained per fulfilled care request when `requestCount` requests are scheduled over the maturation window: `1 / requestCount`, so fulfilling every request reaches full (1.0) imprint. Returns `0` for a non-positive request count.
+- `incubationViable` (function): function incubationViable(state: IncubationState): boolean — True while the incubation still has health to hatch.
+- `maturationStage` (function): function maturationStage(elapsed: number, duration: number, stages: readonly MaturationStage[]): string — Resolve the maturation stage for an elapsed time against a duration. Computes the clamped `elapsed / duration` fraction and returns the id of the last stage whose `at` threshold has been reached (boundaries inclusive). Stages need not be pre-sorted. Returns `""` when no stage qualifies (e.g. an empty list or all thresholds above the current fraction).
+- `tickIncubation` (function): function tickIncubation(state: IncubationState, temperature: number, dt: number, config: IncubationConfig): IncubationState — Advance incubation one tick. While `temperature` is within `[minTemp, maxTemp]` the embryo makes progress (`elapsed += dt`) and keeps its health; outside the range it makes no progress and loses `healthLossPerTick * dt` health (clamped at `0`). Pure — returns a new state, never mutates the input.
 
 ## @jgengine/core/game/chat
 
@@ -653,6 +682,26 @@
 - `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
 - `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
 
+## @jgengine/core/game/tribe
+
+- `AssetAction` (type): type AssetAction = "inventory" | "use" | "command" — Per-asset action gated by rank on group-owned assets.
+- `AssetOwnership` (type): type AssetOwnership = { scope: "group" } | { scope: "personal"; memberId: string } — Who inside the group owns an asset: the group as a whole, or a specific member personally.
+- `AssetRef` (interface): interface AssetRef — Opaque reference to a shared thing (structure, creature, container) by kind + id.
+- `Tribe` (interface): interface Tribe — A shared-ownership group — a tribe, guild, clan, or company — as one first-class aggregate. Unifies ranked membership, group-vs-personal asset ownership, mutual alliances, and a bounded event log that otherwise have to be hand-assembled from parties, factions, build permissions, and per-owner rosters.
+- `TribeAssetRecord` (interface): interface TribeAssetRecord — An asset (structure/creature) owned within a tribe — group-shared or held by one member.
+- `TribeConfig` (interface): interface TribeConfig — Construction options for {@link createTribe}: id, founder, rank ladder, and log cap.
+- `TribeEvent` (interface): interface TribeEvent — One entry in a tribe's bounded event log. Optional fields present only when meaningful.
+- `TribeEventType` (type): type TribeEventType = | "member-added" | "member-removed" | "member-left" | "rank-changed" | "founder-transferred" | "asset-registered" | "asset-unregistered" | "alliance-formed" | "alliance-broken" — The kind of change recorded in a tribe's event log (membership, ownership, or alliance).
+- `TribeMemberRecord` (interface): interface TribeMemberRecord — A member of a tribe and the rank id that governs their permissions.
+- `TribeRankDef` (interface): interface TribeRankDef — A rank within a group's hierarchy. Higher `level` means more authority: a member can only manage (kick, re-rank) members strictly below their own level, and cannot promote anyone to a level at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game checks with {@link Tribe.can} (e.g. `"build"`, `"demolish"`, `"invite"`, `"kick"`, `"manage-ranks"`, plus the {@link AssetAction} slugs `"inventory"`, `"use"`, `"command"` for group-owned assets). A `bypass` rank (an admin) skips every permission check, exactly like the founder.
+- `TribeRegistry` (interface): interface TribeRegistry — A collection of {@link Tribe tribes} with mutual alliance management and cross-member relation lookups. Alliances are kept symmetric here (both sides updated together), and member-to-member relations resolve through tribe membership + alliances, mirroring the `faction` graph vocabulary.
+- `TribeRegistryDeps` (interface): interface TribeRegistryDeps — Injected dependencies for {@link createTribeRegistry} (e.g. a `now()` clock for event timestamps).
+- `TribeRegistrySnapshot` (interface): interface TribeRegistrySnapshot — Full serializable state of a tribe registry — every tribe's snapshot in one payload.
+- `TribeResult` (type): type TribeResult = { reason: string } | null — Standard `{ reason }`-on-failure / `null`-on-success result for authorized mutations.
+- `TribeSnapshot` (interface): interface TribeSnapshot — Full serializable state of one tribe — the save/replication baseline.
+- `createTribe` (function): function createTribe(config: TribeConfig): Tribe — Create a shared-ownership group aggregate (tribe / guild / clan / company). Members hold a {@link TribeRankDef rank} whose configurable permission slugs gate management actions and access to group-owned assets, while personally-owned assets stay with their member — and follow them out when they leave. Group↔group {@link Tribe.addAlly alliances} resolve allied tribes as friendly, and every membership / ownership / alliance change lands in a bounded ring-buffer {@link Tribe.events log}. All state is plain JSON via {@link Tribe.snapshot}/{@link Tribe.hydrate}; timestamps come from an injected clock for determinism. Compose many tribes with {@link createTribeRegistry} for mutual alliances and cross-member relation lookups.
+- `createTribeRegistry` (function): function createTribeRegistry(deps: TribeRegistryDeps = {}): TribeRegistry — Create a registry that owns many tribes, keeps alliances mutual, and resolves member relations.
+
 ## @jgengine/core/game/unlocks
 
 - `UnlockCatalog` (interface): interface UnlockCatalog — ⚠ undocumented
@@ -980,6 +1029,17 @@
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
+
+## @jgengine/core/inventory/encumbrance
+
+- `EncumbranceConfig` (interface): interface EncumbranceConfig — Tuning for where the encumbrance bands sit and how hard the carrier is slowed. Both fields are load *fractions* / multipliers in `0..1`, never absolute mass.
+- `EncumbranceState` (interface): interface EncumbranceState — Serializable snapshot of a carrier's load versus capacity and the movement consequences.
+- `EncumbranceTier` (type): type EncumbranceTier = "unencumbered" | "encumbered" | "immobile" — Coarse carry state: free-moving, slowed, or pinned in place.
+- `LoadEntry` (interface): interface LoadEntry — One carried stack: an item id and how many of it the carrier holds.
+- `MassResolver` (type): type MassResolver = (itemId: string) => number — Resolves the per-unit mass of an item id. Injected so mass tables stay decoupled from this module.
+- `encumbranceMoveMultiplier` (function): function encumbranceMoveMultiplier(fraction: number, config?: EncumbranceConfig): number — Progressive move-speed multiplier for a raw load fraction: 1 while at/below `soft`, a linear decay from 1 down toward `floor` across the `soft..1` band, and 0 once at/over capacity. Pure and side-effect free — the curve `resolveEncumbrance` reads for `moveMultiplier`.
+- `resolveEncumbrance` (function): function resolveEncumbrance(mass: number, capacity: number, config?: EncumbranceConfig): EncumbranceState — Resolve carried mass against carrying capacity into a serializable encumbrance state: load fraction, tier, and the movement consequences (`canSprint`/`canJump`/`immobile` gates plus a progressive `moveMultiplier`). Below `soft` the carrier is unencumbered and unhindered; from `soft` up to capacity it is encumbered — no sprint or jump, and speed decays from 1 toward `floor`; at or above capacity it is immobile (multiplier 0). Deterministic and allocation-light; pair with {@link totalLoad} to derive `mass` from an inventory and a mass table. A capacity of 0 or less pins any positive load as immobile (`fraction` 1) so the state stays finite/serializable.
+- `totalLoad` (function): function totalLoad(entries: readonly LoadEntry[], massOf: MassResolver): number — Sum the mass of every carried stack using an injected per-unit mass resolver. Bounded by the number of entries; allocates nothing. Missing or negative unit masses are treated as 0.
 
 ## @jgengine/core/inventory/inventoryModel
 

@@ -24,9 +24,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
 
+## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
+
+- `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
+
+## build-socket-catalog — data-driven named-socket snap catalog for modular base building
+
+- `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
+
 ## catenary — sagging cable curve between two anchors
 
 - `Vec3` (type) · `import { Vec3 } from "@jgengine/core/world/catenary"`
+
+## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
+
+- `resolveCompanionIntent` (function) · `import { resolveCompanionIntent } from "@jgengine/core/scene/companion"`
+
+## companion-roster — manage tamed companions — allegiance, commands, per-companion stats/leveling, and mobBrain-shaped intent
+
+- `createCompanionRoster` (function) · `import { createCompanionRoster } from "@jgengine/core/scene/companion"`
 
 ## crouch-prone — stance/pose transitions that change the hitbox
 
@@ -72,6 +88,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
+## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
+
+- `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/world/buildSockets"`
+
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
 - `PlaceAssetResult` (interface) · `import { PlaceAssetResult } from "@jgengine/core/world"`
@@ -86,6 +106,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validatePlacement` (function) · `import { validatePlacement } from "@jgengine/core/world"`
 
+## population-director — ambient per-region creature population manager with timed weighted respawns and caps
+
+- `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
+
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
@@ -97,6 +121,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## reputation — faction standing that crosses named reputation tiers
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
+
+## resource-node — depletable, respawning harvest nodes with tool-dependent yields
+
+- `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 
