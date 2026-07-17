@@ -32,7 +32,7 @@ export interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultipl
   maxStepSeconds?: number;
   /**
    * Drive the built-in keyboard player-movement controller from the held-action set each step, exactly as the shell's
-   * FrameDriver does for pose-driven games. Off by default — cartridge/tick-driven games move their own entities inside
+   * FrameDriver does for pose-driven games. Off by default — tick-driven games move their own entities inside
    * `onTick` and don't need it.
    */
   playerMovement?: boolean;

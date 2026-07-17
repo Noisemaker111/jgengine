@@ -50,10 +50,6 @@ Multiple systems may share a channel. Order is stage tables + optional `before`/
 
 Default stages: fixed `input → movement → combat → ai → activities → cleanup`; frame includes those plus `animation → camera → effects`.
 
-## Cartridge path
-
-Cartridge remains a convenience wrapper. Express the same shape as ordinary systems (`runFlow`, wave director, combat) under `defineGame({ systems })` when you outgrow the cartridge schema — one authoring model, no rewrite cliff.
-
 ## Ownership
 
 - **Save / replicate** — system modules register via `ctx.game.registerSave` / `registerReplicate` at install.

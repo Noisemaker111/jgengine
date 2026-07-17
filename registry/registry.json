@@ -2134,30 +2134,6 @@
       }
     },
     {
-      "name": "cartridge-panels",
-      "type": "registry:ui",
-      "title": "Cartridge Panels",
-      "description": "Standard panel bindings for @jgengine/shell/cartridge: vital/xp/timer/score/ability-bar HUD items, upgrade-draft modal, and win/lose screens composed from the jgengine UI kit.",
-      "registryDependencies": [
-        "ability-slot",
-        "death-screen-view",
-        "hud-panel",
-        "match-timer",
-        "menu-button",
-        "results-screen",
-        "score-readout",
-        "vital-bar",
-        "xp-bar"
-      ],
-      "files": [
-        {
-          "path": "jgengine/cartridge-panels.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/cartridge-panels.tsx"
-        }
-      ]
-    },
-    {
       "name": "mount",
       "type": "registry:ui",
       "title": "Mount",

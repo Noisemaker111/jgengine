@@ -146,7 +146,7 @@ Design-resolution fit is on by default for every game: each `HudCanvas` auto-sca
 
 ### Phase-gated HUD visibility (`showDuring`)
 
-`HudCanvas` and `HudPanel` take an opt-in `showDuring?: GamePhase[]` — the element renders only while `gamePhase` is one of the listed phases (`"menu" | "playing" | "paused" | "ended"`), so a non-cartridge game hides its HUD under menu/end overlays without hand-rolling a phase check. Omit it for the default always-visible behavior. Gate the whole HUD with `<HudCanvas showDuring={["playing"]}>`, or keep a single results panel up with a per-`HudPanel` value. The read degrades to `"playing"` when the component renders outside a `GameProvider` (component showcases, previews), so it never throws there.
+`HudCanvas` and `HudPanel` take an opt-in `showDuring?: GamePhase[]` — the element renders only while `gamePhase` is one of the listed phases (`"menu" | "playing" | "paused" | "ended"`), so a game hides its HUD under menu/end overlays without hand-rolling a phase check. Omit it for the default always-visible behavior. Gate the whole HUD with `<HudCanvas showDuring={["playing"]}>`, or keep a single results panel up with a per-`HudPanel` value. The read degrades to `"playing"` when the component renders outside a `GameProvider` (component showcases, previews), so it never throws there.
 
 ### Shared viewport allocation (`GameViewportProvider`, region collision)
 

@@ -52,11 +52,6 @@
       "description": "Row of chamfered buff/debuff chips with stack counts and a remaining-duration underline, driven by a plain chip array."
     },
     {
-      "name": "cartridge-panels",
-      "title": "Cartridge Panels",
-      "description": "Standard panel bindings for @jgengine/shell/cartridge: vital/xp/timer/score/ability-bar HUD items, upgrade-draft modal, and win/lose screens composed from the jgengine UI kit."
-    },
-    {
       "name": "cast-bar",
       "title": "Cast Bar",
       "description": "Slant-clipped cast/channel progress bar with a bright leading edge and an interrupted state."
