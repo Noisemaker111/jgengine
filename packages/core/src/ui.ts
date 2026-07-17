@@ -35,6 +35,22 @@ export {
   type SettingsVariant,
 } from "./settings/settingsModel";
 export {
+  actionByHotkey,
+  actionCooldown,
+  actionCooldownFromFraction,
+  actionCost,
+  moveGridFocus,
+  resolveAction,
+  resolveActionCollection,
+  type ActionCooldown,
+  type ActionCost,
+  type ActionDef,
+  type ActionReason,
+  type FocusDirection,
+  type GridFocusOptions,
+  type ResolvedAction,
+} from "./ui/actionModel";
+export {
   type GameLayoutMode,
   type GameViewportLayout,
   type HudPriority,
@@ -74,4 +90,26 @@ export {
   resolveOrientationRequirement,
   type LayoutOrientation,
 } from "./ui/orientation";
+export {
+  moveSelectionFocus,
+  selectionWindow,
+  summarizeSelection,
+  type EntitySummaryDef,
+  type EntityVital,
+  type SelectionFocusDirection,
+  type SelectionGroup,
+  type SelectionView,
+  type SelectionWindow,
+  type SummarizeSelectionOptions,
+} from "./ui/selectionModel";
 export { swingTimerState, type SwingTargetInput } from "./ui/swingTimer";
+export {
+  actionTooltip,
+  placePopover,
+  type PopoverOptions,
+  type PopoverPlacement,
+  type PopoverSide,
+  type TooltipContent,
+  type UiRect,
+  type UiSize,
+} from "./ui/tooltipModel";
