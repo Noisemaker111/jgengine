@@ -196,7 +196,7 @@ function BarView({
       style={{
         position: "relative",
         flex: endCap === undefined ? undefined : "1 1 auto",
-        width: endCap === undefined ? width : undefined,
+        width: endCap === undefined ? "100%" : undefined,
         height: cssVar("height"),
         border: `${cssVar("frameWidth")} solid ${cssVar("frame")}`,
         background: cssVar("track"),
@@ -264,7 +264,7 @@ function BarView({
 
   if (endCap === undefined) {
     return (
-      <div className={className} style={{ display: "inline-block", ...style }}>
+      <div className={className} style={{ display: "inline-block", width, ...style }}>
         {trough}
       </div>
     );
