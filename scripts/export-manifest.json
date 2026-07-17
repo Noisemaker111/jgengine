@@ -358,6 +358,7 @@
     "./world/terrain",
     "./world/vec2",
     "./world/vegetation",
+    "./world/visibilityField",
     "./world/volumetricClouds",
     "./world/voxelField",
     "./world/walls",
