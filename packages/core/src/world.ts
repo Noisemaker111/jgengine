@@ -148,6 +148,48 @@ export {
   type PathProgress,
   type Waypoint,
 } from "./nav/pathFollow";
+export {
+  defineAttackMoveOrder,
+  defineHoldOrder,
+  defineMoveOrder,
+  definePatrolOrder,
+  defineStopOrder,
+  defineTargetedOrder,
+  type AttackMoveOrderPayload,
+  type EmptyOrderPayload,
+  type EngagementKindConfig,
+  type EngagementOrderState,
+  type MoveOrderPayload,
+  type OrderKindConfig,
+  type OrderMoveResult,
+  type OrderMover,
+  type OrderTargeting,
+  type PatrolOrderPayload,
+  type PatrolOrderState,
+  type TargetedOrderPayload,
+} from "./orders/orderKinds";
+export {
+  createOrderQueue,
+  createOrderRegistry,
+  type Order,
+  type OrderCancelReason,
+  type OrderEvent,
+  type OrderIssueResult,
+  type OrderKind,
+  type OrderOutcome,
+  type OrderPhase,
+  type OrderProgress,
+  type OrderQueue,
+  type OrderQueueOptions,
+  type OrderQueuePolicy,
+  type OrderQueueState,
+  type OrderRegistry,
+  type OrderRejection,
+  type OrderRequest,
+  type OrderStartResult,
+  type OrderTickReport,
+  type OrderVec3,
+} from "./orders/orderQueue";
 export { createBallisticSweep, type BallisticSweep, type BallisticSweepHit } from "./physics/ballisticSweep";
 export { createBuoyantBody } from "./physics/buoyancy";
 export { Carryable, carrySpeedMultiplier } from "./physics/carryable";

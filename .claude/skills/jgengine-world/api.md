@@ -37,21 +37,6 @@
 - `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
 - `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
 
-## @jgengine/core/ai/interestScheduler
-
-- `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
-- `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
-- `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
-- `InterestGateState` (interface): interface InterestGateState — Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic.
-- `InterestGateStep` (interface): interface InterestGateStep — Per-tick output that tells the caller whether to run expensive work.
-- `InterestSchedulerConfig` (interface): interface InterestSchedulerConfig — Static configuration shared by every gate of one behavior class.
-- `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
-- `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
-- `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
-- `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
-- `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
-- `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
-
 ## @jgengine/core/ai/jobBoard
 
 - `Job` (interface): interface Job — ⚠ undocumented
@@ -99,16 +84,6 @@
 
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-
-## @jgengine/core/ai/targetAcquisition
-
-- `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
-- `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
-- `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
-- `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
-- `TargetAcquirer` (interface): interface TargetAcquirer — A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}.
-- `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
-- `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 
 ## @jgengine/core/ai/threat
 
@@ -507,6 +482,50 @@
 - `TimetablePose` (interface): interface TimetablePose — ⚠ undocumented
 - `TimetableStop` (interface): interface TimetableStop — ⚠ undocumented
 - `createRouteTimetable` (function): function createRouteTimetable(config: RouteTimetableConfig): RouteTimetable — ⚠ undocumented
+
+## @jgengine/core/orders/orderKinds
+
+- `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
+- `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
+- `EngagementKindConfig` (interface): interface EngagementKindConfig extends OrderKindConfig — Move + engagement config carrying the default radii the payload may override.
+- `EngagementOrderState` (interface): interface EngagementOrderState — Live intent an attack-move/targeted order writes into `Order.state`; the game reads it to run the actual attack. Serializable.
+- `MoveOrderPayload` (interface): interface MoveOrderPayload — Payload for a move order: go to a point and complete on arrival.
+- `OrderKindConfig` (interface): interface OrderKindConfig — Shared factory config: override the verb key so a game can register the composition under its own name.
+- `OrderMoveResult` (interface): interface OrderMoveResult — Result of one movement step, from the game's motion adapter.
+- `OrderMover` (interface): interface OrderMover — Narrow motion adapter an order kind drives. The game implements it over its own controller/motor (`scene.moveToward`, a nav follower, physics) for one entity; the kind never touches the scene directly.
+- `OrderTargeting` (interface): interface OrderTargeting — Narrow targeting adapter for engagement verbs. `acquire` returns the id of a hostile within `radius` (nearest, or whatever policy the game injects), and `positionOf` locates a known target. Actual damage/effects stay game-side.
+- `PatrolOrderPayload` (interface): interface PatrolOrderPayload — Payload for a patrol: walk a waypoint route, optionally looping forever.
+- `PatrolOrderState` (interface): interface PatrolOrderState — Serializable patrol progress.
+- `TargetedOrderPayload` (interface): interface TargetedOrderPayload — Payload for a targeted action: pursue one target until in range, holding within a leash.
+- `defineAttackMoveOrder` (function): function defineAttackMoveOrder<TCtx extends OrderMover & OrderTargeting>(config: EngagementKindConfig = {}): OrderKind<TCtx, AttackMoveOrderPayload> — Attack-move: advance toward a destination but break off to engage any hostile acquired within `aggroRadius`, pursuing it to `attackRange` and writing the engagement intent into `order.state` for the game to act on. Completes on reaching the destination with nothing to engage.
+- `defineHoldOrder` (function): function defineHoldOrder<TCtx extends OrderMover>(config: OrderKindConfig = {}): OrderKind<TCtx, EmptyOrderPayload> — Hold position: stand ground indefinitely (never completes on its own) until preempted or canceled — the "guard here" verb.
+- `defineMoveOrder` (function): function defineMoveOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, MoveOrderPayload> — The plain "go here" verb: step toward a point each tick, complete on arrival, fail if the entity despawns. The completion predicate is arrival within `arriveRadius`.
+- `definePatrolOrder` (function): function definePatrolOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, PatrolOrderPayload> — Patrol: walk a waypoint route, advancing the serialized `index` as each point is reached. Loops forever by default, or completes at the last waypoint when `loop` is `false`.
+- `defineStopOrder` (function): function defineStopOrder<TCtx extends OrderMover>(config: OrderKindConfig = {}): OrderKind<TCtx, EmptyOrderPayload> — Stop: halt immediately and complete the same tick — the interrupt that clears a unit's intent to standstill.
+- `defineTargetedOrder` (function): function defineTargetedOrder<TCtx extends OrderMover & OrderTargeting>(config: EngagementKindConfig = {}): OrderKind<TCtx, TargetedOrderPayload> — Targeted action: pursue one specific target until within `range`, writing the engagement intent into `order.state`. Completes when the target is gone (despawned/dead), so the game's effect loop runs while `inRange` is true.
+
+## @jgengine/core/orders/orderQueue
+
+- `Order` (interface): interface Order<TPayload = unknown> — One issued order. Fully serializable: `kind` is a registry key (not a closure), `payload` is the caller's plain data, and `state` is the kind's own plain progress scratch (e.g. a patrol waypoint index) written during `start`/`update`. Never holds functions, so the whole queue round-trips through `JSON`/`structuredClone`.
+- `OrderCancelReason` (type): type OrderCancelReason = "replaced" | "preempted" | "requested" | "invalid" | "failed" | "cleared" — Why an order left the queue without completing. `replaced`/`preempted` come from a newer order taking over; `requested` from explicit `cancelActive`; `invalid` when the kind's `start` rejects; `failed` when `update` reports failure; `cleared` from a full `clear`/`cancelAll`.
+- `OrderEvent` (interface): interface OrderEvent — A lifecycle event emitted synchronously as orders move through the queue.
+- `OrderIssueResult` (type): type OrderIssueResult<TPayload = unknown> = | { status: "accepted"; order: Order<TPayload> } | { status: "queued"; order: Order<TPayload> } | { status: "rejected"; reason: string } — Outcome of `issue`: `accepted` entered the queue, `queued` entered behind an uninterruptible/active order, `rejected` was refused (validation or `reject` policy).
+- `OrderKind` (interface): interface OrderKind<TCtx, TPayload = unknown> — The composition seam for one order verb. `TCtx` is the game's world adapter (movement, targeting, effects) shared by every kind in a registry; `TPayload` is this verb's caller data. `start` seeds `order.state`, `update` advances it and reports lifecycle, and `finish` releases anything the kind held. Kinds are pure over their injected `ctx` -- no globals, no direct scene reach.
+- `OrderOutcome` (interface): interface OrderOutcome — Terminal outcome handed to a kind's `finish` cleanup hook.
+- `OrderPhase` (type): type OrderPhase = "queued" | "active" | "completed" | "canceled" — Lifecycle phase of a single order. `queued` waits behind the active order; `active` is ticking; `completed`/`canceled` are terminal.
+- `OrderProgress` (type): type OrderProgress = { status: "running" } | { status: "completed" } | { status: "failed"; reason: string } — Result of a kind's `update` tick. `running` keeps the order active; the completion predicate lives in the kind (returns `completed`); `failed` cancels the order (reason `failed`) so the queue advances to the next one.
+- `OrderQueue` (interface): interface OrderQueue<TCtx, TPayload = unknown> — A per-entity order queue: one commandable unit's lifecycle of intent. The game ticks it with its world adapter; it activates, advances, completes, and cancels orders and enforces preemption policy. State is serializable for save and host-authoritative replication.
+- `OrderQueueOptions` (interface): interface OrderQueueOptions<TPayload = unknown> — Construction options for a queue.
+- `OrderQueuePolicy` (type): type OrderQueuePolicy = "replace" | "append" | "front" | "reject" — How a newly issued order interacts with what's already queued. `replace` preempts the active order and clears pending; `append` queues it behind everything (shift-queue); `front` makes it the next to run without touching the active order; `reject` refuses it while anything is queued.
+- `OrderQueueState` (interface): interface OrderQueueState<TPayload = unknown> — Serializable snapshot of a queue: the active order plus the pending list, in order.
+- `OrderRegistry` (interface): interface OrderRegistry<TCtx> — Registry of order kinds keyed by verb string; the queue dispatches through it so engine code never switches on a verb.
+- `OrderRejection` (interface): interface OrderRejection — A kind's refusal of a payload (from `validate`) — surfaced to the issuer as a rejection reason.
+- `OrderRequest` (interface): interface OrderRequest<TPayload = unknown> — A request to issue an order; `policy` defaults to `replace`, `id` is generated when omitted.
+- `OrderStartResult` (type): type OrderStartResult = { ok: true } | { ok: false; reason: string } — Result of a kind's `start`: `ok:false` skips the order and cancels it with reason `invalid`. The kind seeds `order.state` directly when `ok:true`.
+- `OrderTickReport` (interface): interface OrderTickReport<TPayload = unknown> — What one `tick` did this frame, for tests and game reactions (play a bark on activation, flash on completion). Bounded per tick.
+- `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
+- `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
+- `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 
 ## @jgengine/core/physics/ballisticSweep
 
@@ -1169,13 +1188,10 @@
 ## @jgengine/core/world
 
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
-- `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
-- `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
-- `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
-- `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
+- `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
 - `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
 - `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
@@ -1209,7 +1225,10 @@
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
+- `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
 - `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
+- `EngagementKindConfig` (interface): interface EngagementKindConfig extends OrderKindConfig — Move + engagement config carrying the default radii the payload may override.
+- `EngagementOrderState` (interface): interface EngagementOrderState — Live intent an attack-move/targeted order writes into `Order.state`; the game reads it to run the actual attack. Serializable.
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented
 - `EnvironmentField` (interface): interface EnvironmentField — ⚠ undocumented
@@ -1240,14 +1259,6 @@
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
-- `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
-- `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
-- `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
-- `InterestGateState` (interface): interface InterestGateState — Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic.
-- `InterestGateStep` (interface): interface InterestGateStep — Per-tick output that tells the caller whether to run expensive work.
-- `InterestSchedulerConfig` (interface): interface InterestSchedulerConfig — Static configuration shared by every gate of one behavior class.
-- `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
-- `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
 - `Job` (interface): interface Job — ⚠ undocumented
 - `JobDef` (interface): interface JobDef — ⚠ undocumented
 - `JobReport` (interface): interface JobReport — ⚠ undocumented
@@ -1272,6 +1283,7 @@
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
 - `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
+- `MoveOrderPayload` (interface): interface MoveOrderPayload — Payload for a move order: go to a point and complete on arrival.
 - `MovementPose` (type): type MovementPose = "standing" | "crouch" | "prone" | "running" — ⚠ undocumented
 - `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a plain sine voice so a theme is never silent.
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
@@ -1282,6 +1294,28 @@
 - `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
 - `ObjectVisual` (interface): interface ObjectVisual — ⚠ undocumented
 - `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
+- `Order` (interface): interface Order<TPayload = unknown> — One issued order. Fully serializable: `kind` is a registry key (not a closure), `payload` is the caller's plain data, and `state` is the kind's own plain progress scratch (e.g. a patrol waypoint index) written during `start`/`update`. Never holds functions, so the whole queue round-trips through `JSON`/`structuredClone`.
+- `OrderCancelReason` (type): type OrderCancelReason = "replaced" | "preempted" | "requested" | "invalid" | "failed" | "cleared" — Why an order left the queue without completing. `replaced`/`preempted` come from a newer order taking over; `requested` from explicit `cancelActive`; `invalid` when the kind's `start` rejects; `failed` when `update` reports failure; `cleared` from a full `clear`/`cancelAll`.
+- `OrderEvent` (interface): interface OrderEvent — A lifecycle event emitted synchronously as orders move through the queue.
+- `OrderIssueResult` (type): type OrderIssueResult<TPayload = unknown> = | { status: "accepted"; order: Order<TPayload> } | { status: "queued"; order: Order<TPayload> } | { status: "rejected"; reason: string } — Outcome of `issue`: `accepted` entered the queue, `queued` entered behind an uninterruptible/active order, `rejected` was refused (validation or `reject` policy).
+- `OrderKind` (interface): interface OrderKind<TCtx, TPayload = unknown> — The composition seam for one order verb. `TCtx` is the game's world adapter (movement, targeting, effects) shared by every kind in a registry; `TPayload` is this verb's caller data. `start` seeds `order.state`, `update` advances it and reports lifecycle, and `finish` releases anything the kind held. Kinds are pure over their injected `ctx` -- no globals, no direct scene reach.
+- `OrderKindConfig` (interface): interface OrderKindConfig — Shared factory config: override the verb key so a game can register the composition under its own name.
+- `OrderMoveResult` (interface): interface OrderMoveResult — Result of one movement step, from the game's motion adapter.
+- `OrderMover` (interface): interface OrderMover — Narrow motion adapter an order kind drives. The game implements it over its own controller/motor (`scene.moveToward`, a nav follower, physics) for one entity; the kind never touches the scene directly.
+- `OrderOutcome` (interface): interface OrderOutcome — Terminal outcome handed to a kind's `finish` cleanup hook.
+- `OrderPhase` (type): type OrderPhase = "queued" | "active" | "completed" | "canceled" — Lifecycle phase of a single order. `queued` waits behind the active order; `active` is ticking; `completed`/`canceled` are terminal.
+- `OrderProgress` (type): type OrderProgress = { status: "running" } | { status: "completed" } | { status: "failed"; reason: string } — Result of a kind's `update` tick. `running` keeps the order active; the completion predicate lives in the kind (returns `completed`); `failed` cancels the order (reason `failed`) so the queue advances to the next one.
+- `OrderQueue` (interface): interface OrderQueue<TCtx, TPayload = unknown> — A per-entity order queue: one commandable unit's lifecycle of intent. The game ticks it with its world adapter; it activates, advances, completes, and cancels orders and enforces preemption policy. State is serializable for save and host-authoritative replication.
+- `OrderQueueOptions` (interface): interface OrderQueueOptions<TPayload = unknown> — Construction options for a queue.
+- `OrderQueuePolicy` (type): type OrderQueuePolicy = "replace" | "append" | "front" | "reject" — How a newly issued order interacts with what's already queued. `replace` preempts the active order and clears pending; `append` queues it behind everything (shift-queue); `front` makes it the next to run without touching the active order; `reject` refuses it while anything is queued.
+- `OrderQueueState` (interface): interface OrderQueueState<TPayload = unknown> — Serializable snapshot of a queue: the active order plus the pending list, in order.
+- `OrderRegistry` (interface): interface OrderRegistry<TCtx> — Registry of order kinds keyed by verb string; the queue dispatches through it so engine code never switches on a verb.
+- `OrderRejection` (interface): interface OrderRejection — A kind's refusal of a payload (from `validate`) — surfaced to the issuer as a rejection reason.
+- `OrderRequest` (interface): interface OrderRequest<TPayload = unknown> — A request to issue an order; `policy` defaults to `replace`, `id` is generated when omitted.
+- `OrderStartResult` (type): type OrderStartResult = { ok: true } | { ok: false; reason: string } — Result of a kind's `start`: `ok:false` skips the order and cancels it with reason `invalid`. The kind seeds `order.state` directly when `ok:true`.
+- `OrderTargeting` (interface): interface OrderTargeting — Narrow targeting adapter for engagement verbs. `acquire` returns the id of a hostile within `radius` (nearest, or whatever policy the game injects), and `positionOf` locates a known target. Actual damage/effects stay game-side.
+- `OrderTickReport` (interface): interface OrderTickReport<TPayload = unknown> — What one `tick` did this frame, for tests and game reactions (play a bark on activation, flash on completion). Bounded per tick.
+- `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
 - `POSE_HITBOX` (const): const POSE_HITBOX: Record<MovementPose, PoseHitbox> — ⚠ undocumented
 - `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented
 - `PadSize` (type): type PadSize = readonly [number, number] | { radius: number } — ⚠ undocumented
@@ -1291,6 +1325,8 @@
 - `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
 - `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
+- `PatrolOrderPayload` (interface): interface PatrolOrderPayload — Payload for a patrol: walk a waypoint route, optionally looping forever.
+- `PatrolOrderState` (interface): interface PatrolOrderState — Serializable patrol progress.
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
@@ -1357,7 +1393,7 @@
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `SynthPatch` (interface): interface SynthPatch — A procedural sound cue: a set of voices triggered together, each with its own `delay`, summed into one one-shot. Pure serialisable data — the shell realises it on Web Audio, so the same catalog runs headless in tests with no `AudioContext`.
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
-- `TargetAcquirer` (interface): interface TargetAcquirer — A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}.
+- `TargetedOrderPayload` (interface): interface TargetedOrderPayload — Payload for a targeted action: pursue one target until in range, holding within a leash.
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
 - `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
@@ -1409,9 +1445,7 @@
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
-- `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. The shell/host call this each frame; a game never does.
-- `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
@@ -1455,14 +1489,14 @@
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — Gliding/wingsuit descent control — lift, drag, and steering from a launch.
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
-- `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
-- `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
 - `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
+- `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
+- `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
@@ -1474,7 +1508,6 @@
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
-- `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
@@ -1483,6 +1516,12 @@
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 - `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
 - `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
+- `defineAttackMoveOrder` (function): function defineAttackMoveOrder<TCtx extends OrderMover & OrderTargeting>(config: EngagementKindConfig = {}): OrderKind<TCtx, AttackMoveOrderPayload> — Attack-move: advance toward a destination but break off to engage any hostile acquired within `aggroRadius`, pursuing it to `attackRange` and writing the engagement intent into `order.state` for the game to act on. Completes on reaching the destination with nothing to engage.
+- `defineHoldOrder` (function): function defineHoldOrder<TCtx extends OrderMover>(config: OrderKindConfig = {}): OrderKind<TCtx, EmptyOrderPayload> — Hold position: stand ground indefinitely (never completes on its own) until preempted or canceled — the "guard here" verb.
+- `defineMoveOrder` (function): function defineMoveOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, MoveOrderPayload> — The plain "go here" verb: step toward a point each tick, complete on arrival, fail if the entity despawns. The completion predicate is arrival within `arriveRadius`.
+- `definePatrolOrder` (function): function definePatrolOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, PatrolOrderPayload> — Patrol: walk a waypoint route, advancing the serialized `index` as each point is reached. Loops forever by default, or completes at the last waypoint when `loop` is `false`.
+- `defineStopOrder` (function): function defineStopOrder<TCtx extends OrderMover>(config: OrderKindConfig = {}): OrderKind<TCtx, EmptyOrderPayload> — Stop: halt immediately and complete the same tick — the interrupt that clears a unit's intent to standstill.
+- `defineTargetedOrder` (function): function defineTargetedOrder<TCtx extends OrderMover & OrderTargeting>(config: EngagementKindConfig = {}): OrderKind<TCtx, TargetedOrderPayload> — Targeted action: pursue one specific target until within `range`, writing the engagement intent into `order.state`. Completes when the target is gone (despawned/dead), so the game's effect loop runs while `inRange` is true.
 - `distance` (function): function distance(a: Vec3, b: Vec3): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
@@ -1506,7 +1545,6 @@
 - `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
 - `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
-- `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
 - `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.

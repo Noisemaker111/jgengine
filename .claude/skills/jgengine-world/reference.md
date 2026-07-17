@@ -209,5 +209,12 @@ bc.status(id) / bc.reason(id) / bc.inspect(id) / bc.list(); // editor/debug insp
 ```
 
 Path progress adapter (`nav/pathFollow`): `PathProgress` is `{ kind: "normalized", value } | { kind: "distance", value } | { kind: "segment", index, fraction }` — travel direction falls out of the resulting `heading`. `pathFollowSeek(config, progress)` places a follower without simulating from the start (loops wrap, non-loops clamp + report `done`); `pathFollowProgress(config, state)` reads it back as `{ distance, normalized, segment, fraction }`; `pathLength(config)` sums the polyline. Vice-isle's traffic + pedestrians run entirely on this seam (phase-distributed `startProgress`, `pause` on drive-away, `disable` on wanted-panic) — no hand-rolled route loop.
+### Entity orders (command queue)
+
+`orders/orderQueue` + `orders/orderKinds` — a serializable per-entity command queue for player- or AI-issued intent, instead of a hard-coded RTS verb kit. Build a shared registry once with `createOrderRegistry<Ctx>()` and register verbs as data; engine code never branches on a verb. Give each commandable unit its own `createOrderQueue(registry, { genId?, onEvent? })`.
+
+- **Lifecycle**: `issue(request)` validates and queues; `tick(ctx, dt)` activates the next order, advances the active one, and completes/cancels it — returning `{ active, activated, completed, canceled }`. `cancelActive`/`cancelAll`/`clear` force cleanup. `serialize()`/`load()` (or the `initial` option) round-trip mid-flight state for save and host-authoritative replication.
+- **Preemption policy** on each issue: `replace` (preempt active + clear pending), `append` (shift-queue), `front` (jump the queue without dropping the active order), `reject` (refuse while busy). Mark an order `uninterruptible` and a replacing order waits until it finishes; explicit `cancelActive` still forces it.
+- **Order kinds** are `OrderKind<Ctx, Payload>` with `start`/`update`/`finish`, composed over two narrow adapters — `OrderMover` (`position`/`moveToward`/`halt`) and `OrderTargeting` (`acquire`/`positionOf`). Built-ins ship as ordinary compositions with a configurable `kind` string so a game re-skins a verb ("harvest") without engine edits: `defineMoveOrder`, `defineStopOrder`, `defineHoldOrder`, `defineAttackMoveOrder`, `defineTargetedOrder`, `definePatrolOrder`. Engagement verbs write `{ engaging, inRange }` into `order.state`; the game reads it to run the actual attack/effect, keeping combat resolution game-side.
 
 

@@ -182,6 +182,8 @@
     "./nav/pathFollow",
     "./nav/railGraph",
     "./nav/timetable",
+    "./orders/orderKinds",
+    "./orders/orderQueue",
     "./physics/ballisticSweep",
     "./physics/buoyancy",
     "./physics/carryable",
