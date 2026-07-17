@@ -142,6 +142,20 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(fileOf(files, "src/loop.ts")).toContain("authoredSpawnPosition(editorLayers)");
       expect(fileOf(files, "src/index.css")).toContain('@import "./style.css"');
     });
+
+    test(`${variant}: scaffold authors a zero-code "reach the goal to win"`, () => {
+      const files = render(variant);
+      const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
+        markers: { kind: string; meta?: { on?: string; action?: string } }[];
+      };
+      const goal = scene.markers.find((marker) => marker.kind === "goal");
+      expect(goal?.meta?.on).toBe("enter");
+      expect(goal?.meta?.action).toBe("win");
+      // The loop wires the shared trigger primitive; the win rule lives in the document, not code.
+      expect(fileOf(files, "src/loop.ts")).toContain("registerBuiltinTriggerActions");
+      expect(fileOf(files, "src/loop.ts")).toContain("createTriggerOutcome");
+      expect(fileOf(files, "src/game/ui/GameUI.tsx")).toContain("outcome");
+    });
   }
 
   test("templates carry the verify gate and agent onboarding", () => {

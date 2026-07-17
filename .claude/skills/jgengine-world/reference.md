@@ -160,6 +160,15 @@ runtime.step({
 // types: TriggerEvent · TriggerActionDefinition · AuthoredTrigger · TriggerHandlers · TriggerSourceKind · AuthoredTriggerRuntime
 ```
 
+**Built-in actions** — every game gets `announce` / `win` / `advance` for free, so "enter this zone → win" is authored entirely in the editor with no bespoke action code. `registerBuiltinTriggerActions()` exposes them in the inspector; `createTriggerOutcome()` returns a headless, serializable `TriggerOutcome` (`{ won, message, tone, objective, revision }`) plus the `handlers` to pass the runtime — the HUD reads it via `useSyncExternalStore`. That pair is the whole zero-code "reach the goal to win" wiring the create scaffold ships (a `goal` marker with `{ on: enter, action: win }`).
+
+```ts
+registerBuiltinTriggerActions();                 // announce/win/advance in the editor
+const outcome = createTriggerOutcome();          // { get, subscribe, handlers, reset }
+const runtime = createAuthoredTriggerRuntime({ document: editorLayers, handlers: outcome.handlers });
+// HUD: const status = useSyncExternalStore(outcome.subscribe, outcome.get, outcome.get);  // status.won / status.message
+```
+
 Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector renders action params from the declared schema when the game has registered actions.
 
 ### Continuous area effects (source-following membership)

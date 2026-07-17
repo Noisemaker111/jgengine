@@ -3,7 +3,7 @@ import {
   createAuthoredTriggerRuntime,
   getTriggerAction,
   listTriggerActions,
-  registerTriggerAction,
+  registerBuiltinTriggerActions,
   type AuthoredTriggerRuntime,
   type TriggerDispatchEvent,
 } from "@jgengine/core/scene/authoredTriggers";
@@ -11,30 +11,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { editorLayers } from "../editorLayers";
 
-/**
- * Showcase action — "when player enters this volume, announce a message". Params are schema'd so
- * the editor inspector renders message + tone fields without custom JSX.
- */
-registerTriggerAction({
-  id: "announce",
-  label: "Announce",
-  schema: {
-    fields: [
-      { type: "text", key: "message", label: "Message", default: "Entered zone" },
-      {
-        type: "select",
-        key: "tone",
-        label: "Tone",
-        options: [
-          { value: "info", label: "Info" },
-          { value: "warn", label: "Warn" },
-          { value: "good", label: "Good" },
-        ],
-        default: "info",
-      },
-    ],
-  },
-});
+// First adopter of the shared primitive: the `announce` action (plus `win`/`advance`) is engine-owned
+// now, so the showcase just registers the built-ins and supplies a handler — no bespoke action schema.
+registerBuiltinTriggerActions();
 
 export type Announcement = {
   message: string;
