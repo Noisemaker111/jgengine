@@ -4,10 +4,6 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## attack-move-order — advance-and-engage order that pursues hostiles en route and completes at its destination
-
-- `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
-
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
@@ -52,34 +48,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world"`
 
-## formation-assignment — stable deterministic member-to-slot matching for a group formation
-
-- `assignFormationSlots` (function) · `import { assignFormationSlots } from "@jgengine/core/world"`
-
-## formation-box — box/grid slot generator for group destinations
-
-- `boxFormation` (function) · `import { boxFormation } from "@jgengine/core/world"`
-
-## formation-circle — ring/cordon slot generator for group destinations
-
-- `circleFormation` (function) · `import { circleFormation } from "@jgengine/core/world"`
-
-## formation-facing — group facing yaw from a travel direction on the XZ plane
-
-- `facingYaw` (function) · `import { facingYaw } from "@jgengine/core/world"`
-
-## formation-line — line (abreast) slot generator for group destinations
-
-- `lineFormation` (function) · `import { lineFormation } from "@jgengine/core/world"`
-
-## formation-placement — place a group formation's world slots around a destination
-
-- `placeFormation` (function) · `import { placeFormation } from "@jgengine/core/world"`
-
-## formation-wedge — wedge/arrowhead slot generator for group destinations
-
-- `wedgeFormation` (function) · `import { wedgeFormation } from "@jgengine/core/world"`
-
 ## forward-axis — declared front convention for parametric assets — auto-orient product shots
 
 - `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/world"`
@@ -92,17 +60,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
-## hold-order — stand-ground order that holds position until preempted or canceled
-
-- `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
-
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
-
-## local-avoidance — bounded deterministic local collision avoidance for moving agents
-
-- `resolveLocalAvoidance` (function) · `import { resolveLocalAvoidance } from "@jgengine/core/world"`
 
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
@@ -112,21 +72,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
-## move-order — go-to-point order that completes on arrival, composed over a motion adapter
+## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
-- `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
-
-## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
-
-- `createOrderQueue` (function) · `import { createOrderQueue } from "@jgengine/core/world"`
-
-## order-registry — register order verbs (move/attack/custom) as data so engine code never branches on a verb
-
-- `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
-
-## patrol-order — waypoint-route order that cycles a path, looping or completing at the end
-
-- `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
+- `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
+- `withPathProfiles` (function) · `import { withPathProfiles } from "@jgengine/core/world"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
@@ -162,21 +111,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
-## stop-order — halt-and-complete order that brings a unit to an immediate standstill
-
-- `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
-
-## targeted-order — pursue-a-target order with leash/standoff that ends when the target is gone
-
-- `defineTargetedOrder` (function) · `import { defineTargetedOrder } from "@jgengine/core/world"`
-
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
-
-## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
-
-- `createVisibilityField` (function) · `import { createVisibilityField } from "@jgengine/core/world"`
 
 ## volumetric-clouds — raymarched cloud layer sky option
 
