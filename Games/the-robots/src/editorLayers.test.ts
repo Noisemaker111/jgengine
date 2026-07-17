@@ -3,9 +3,10 @@ import { describe, expect, test } from "bun:test";
 import { buildTheRobotsEditorLayers } from "./editorLayers";
 
 describe("the-robots editorLayers", () => {
-  test("exposes zones, spawns, bosses, and activation ranges", () => {
+  test("exposes generated zones, bosses, and activation ranges without duplicating scene-owned sites", () => {
     const doc = buildTheRobotsEditorLayers();
-    expect(doc.markers.some((m) => m.id === "player_spawn")).toBe(true);
+    expect(doc.markers.some((m) => m.id === "player_spawn")).toBe(false);
+    expect(doc.markers.some((m) => m.id === "bolt")).toBe(false);
     expect(doc.markers.some((m) => m.id === "boss_warrior")).toBe(true);
     expect(doc.markers.some((m) => m.id === "boss_rusk")).toBe(true);
     expect(doc.volumes.some((v) => v.id === "zone_windshear_waste")).toBe(true);

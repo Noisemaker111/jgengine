@@ -33,7 +33,7 @@ import {
   reactorOpenStore,
 } from "./game/stores";
 import { TRAVEL_STATIONS, zoneAt, zoneLevelAt } from "./game/world/sites";
-import { PLAYER_SPAWN, respawnClusters, setupWorld } from "./game/world/setup";
+import { PLAYER_SPAWN, PLAYER_SPAWN_YAW, respawnClusters, setupWorld } from "./game/world/setup";
 
 const dropRng = seededRng("bl2-gun-drops");
 const RESPAWN_SWEEP_SECONDS = 25;
@@ -233,6 +233,7 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.scene.entity.spawn(player.id, {
     id: ctx.player.userId,
     position: [PLAYER_SPAWN[0], y, PLAYER_SPAWN[2]],
+    rotationY: PLAYER_SPAWN_YAW,
     role: "player",
   });
   if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
