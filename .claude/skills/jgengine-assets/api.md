@@ -8,7 +8,10 @@
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
+- `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
+- `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
+- `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
@@ -27,9 +30,11 @@
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
 - `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
+- `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
 - `RegistryCatalog` (interface): interface RegistryCatalog — ⚠ undocumented
 - `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
 - `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
+- `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
 - `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
 - `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.people`, …).
 - `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
@@ -38,6 +43,8 @@
 - `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
 - `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
 - `StarterTheme` (type): type StarterTheme = "people" | "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `entityModels: { guest: "asset:person_casual" }`. Never Kenney — Quaternius / KayKit only.
+- `ValidateAssetReferencesOptions` (interface): interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions — Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check.
+- `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
 - `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
 - `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
@@ -71,11 +78,13 @@
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
 - `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
+- `resolveProvenance` (function): function resolveProvenance(id: string, options: ResolveProvenanceOptions = {}): AssetProvenance — Resolve one logical asset id (a pack id, a single id, or an alias key) to its {@link AssetProvenance}. Aliases are followed one hop to their target. An id that matches no declared owner is `dangling` — the signal a clean-clone gate turns into a hard failure, because no provisioning step can ever satisfy it.
 - `singles` (const): const singles: readonly SingleAsset[] — ⚠ undocumented
 - `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
 - `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
 - `spriteSources` (const): const spriteSources: readonly AssetSource[] — Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`.
 - `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
+- `validateAssetReferences` (function): function validateAssetReferences(references: readonly AssetReference[], options: ValidateAssetReferencesOptions = {}): ValidateAssetReferencesResult — Validate that every {@link AssetReference} resolves against the declared provisioning contract — not by grepping source text, but by resolving each logical id to its committed / provisioned / dangling owner. A `dangling` reference fails with the referencing consumer, the logical id, the (null) resolved path, and the missing provisioning step; a `provisioned` reference passes and contributes its `assets pull <source>` step to `provisioning` (unless `present` is supplied and reports the bytes absent).
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
 ## @jgengine/assets/aliases
@@ -184,6 +193,18 @@
 - `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: people, props, nature, urban.
 - `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
 - `StarterTheme` (type): type StarterTheme = "people" | "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `entityModels: { guest: "asset:person_casual" }`. Never Kenney — Quaternius / KayKit only.
+
+## @jgengine/assets/provisioning
+
+- `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
+- `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
+- `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
+- `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
+- `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
+- `ValidateAssetReferencesOptions` (interface): interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions — Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check.
+- `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
+- `resolveProvenance` (function): function resolveProvenance(id: string, options: ResolveProvenanceOptions = {}): AssetProvenance — Resolve one logical asset id (a pack id, a single id, or an alias key) to its {@link AssetProvenance}. Aliases are followed one hop to their target. An id that matches no declared owner is `dangling` — the signal a clean-clone gate turns into a hard failure, because no provisioning step can ever satisfy it.
+- `validateAssetReferences` (function): function validateAssetReferences(references: readonly AssetReference[], options: ValidateAssetReferencesOptions = {}): ValidateAssetReferencesResult — Validate that every {@link AssetReference} resolves against the declared provisioning contract — not by grepping source text, but by resolving each logical id to its committed / provisioned / dangling owner. A `dangling` reference fails with the referencing consumer, the logical id, the (null) resolved path, and the missing provisioning step; a `provisioned` reference passes and contributes its `assets pull <source>` step to `provisioning` (unless `present` is supplied and reports the bytes absent).
 
 ## @jgengine/assets/registry
 

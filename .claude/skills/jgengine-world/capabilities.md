@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## asset-load-diagnostics — classify a model fetch (missing / HTML fallback / corrupt / unsupported) before parsing
+
+- `classifyAssetResponse` (function) · `import { classifyAssetResponse } from "@jgengine/core/scene/assetDiagnostics"`
+
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`

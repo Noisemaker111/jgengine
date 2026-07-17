@@ -58,7 +58,14 @@ assets register <path|url> --category <c> --license <l> [--author <a>]
 assets reindex [public/models]                # regenerate generated/*.json from pulled model packs
 assets reindex-sprites [public/sprites]       # regenerate generated-sprites/*.json from pulled sprite packs
 assets verify                                 # license + alias-integrity gate
+assets provenance <id> [<id>...]              # resolve each id's owner (committed/provisioned/dangling); non-zero on any dangling
 ```
+
+### Reference integrity
+
+Every logical asset id resolves to a declared **owner** through the provisioning contract (`resolveProvenance`): `committed` (a single's shipped URL — resolves on a clean clone with no pull), `provisioned` (a pack index entry whose GLB `assets pull <source>` fetches into the served dir), or `dangling` (nothing owns it, so it can never resolve). `validateAssetReferences(refs)` turns a set of `{ consumer, id }` references into a clean-clone gate: it fails on any dangling reference — naming the consumer, the logical id, and the null resolved path — and returns the exact `assets pull <source>` steps the checkout still needs so provisioning stays deterministic and `ensure-ready`-driven. It resolves references structurally against the catalog rather than grepping source text.
+
+At runtime the shell validates a model fetch *before* parsing (`classifyAssetResponse` in `@jgengine/core/scene/assetDiagnostics`): it checks HTTP status, content type, and the GLB/glTF signature, then reports `missing`, `html` (a dev-server fallback page served in place of the file), `corrupt`, or `unsupported` with the URL — replacing the opaque `Unexpected token <` GLTF parse error the old path produced when a model was absent.
 
 Run in-repo with `bun run --cwd packages/assets src/cli/pull.ts <verb> GǪ`. (`add <path|url> --license GǪ` still works as an alias for `register`.)
 

@@ -642,6 +642,14 @@
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 
+## @jgengine/core/scene/assetDiagnostics
+
+- `AssetLoadDiagnosis` (interface): interface AssetLoadDiagnosis — The verdict for one model-asset fetch: its {@link AssetLoadKind} plus a ready-to-log message.
+- `AssetLoadKind` (type): type AssetLoadKind = "ok" | "missing" | "html" | "corrupt" | "unsupported" — Pure, zero-dependency classification of a model-asset fetch before it reaches a GLTF parser. Runtime loaders hand the raw response (status, content type, and the first bytes) to {@link classifyAssetResponse} so a missing or mis-served file surfaces as an actionable diagnostic naming the broken asset contract, instead of the opaque "Unexpected token < in JSON" parse error a dev-server HTML fallback otherwise produces. No `fetch`, DOM, or three.js dependency lives here — callers supply the already-read bytes.
+- `AssetResponseProbe` (interface): interface AssetResponseProbe — A probe of a model-asset fetch: the URL, an optional logical asset id for the diagnostic, and whatever the caller managed to read. Any field may be absent (e.g. a network error yields no `status` or `bytes`); the classifier degrades gracefully.
+- `classifyAssetResponse` (function): function classifyAssetResponse(probe: AssetResponseProbe): AssetLoadDiagnosis — Turn a {@link AssetResponseProbe} into an {@link AssetLoadDiagnosis}. HTTP status is checked first (a `>= 400` or `0` status is `missing`), then the `Content-Type` and byte signature decide between an HTML fallback, a parseable model (`ok`), an unsupported-but-recognizable format, and otherwise corrupt bytes. The returned `message` always names the asset and URL and, for failures, points at the likely fix (provision the pack, check the serving path).
+- `readByteSignature` (function): function readByteSignature(bytes: Uint8Array): AssetByteSignature — Classify the leading bytes of a response body by their format signature, with no HTTP context. Recognizes GLB (`glTF` magic), glTF-JSON (a leading `{`), an HTML fallback page (`<!doctype`, `<html`, or a bare `<`), and a few common non-model binaries (PNG, JPEG, ZIP) so they can be reported as unsupported rather than corrupt.
+
 ## @jgengine/core/scene/assetGenerator
 
 - `AssetGeneratorDefinition` (interface): interface AssetGeneratorDefinition — A registered asset generator — schema drives the inspector; `generate` is a pure seeded function.
