@@ -38,6 +38,11 @@ function useLocalPlayerId(entityId: string | undefined): string | null {
  * A polished stat bar (health/mana/stamina/shield/xp) — a rounded, glassy meter with a tone-colored
  * fill and an optional value readout. Reads `statId` off `entityId` (defaults to the local player).
  * Renders nothing until the stat exists.
+ *
+ * @deprecated The `tone`-switched umbrella is being retired (#1033). Use the atomic, purpose-named,
+ * token-themed bars from `@jgengine/react/bars` instead — `HealthBar`, `ShieldBar`, `ManaBar`,
+ * `StaminaBar`, `ExperienceBar`, `SoulBar`, `BossBar`, `AmmoCounter` — each does one readout and is
+ * restyled globally via the shared `--jg-*` tokens (`barTokens`). Kept as a thin shim during migration.
  */
 export function StatBar({
   statId = "health",
