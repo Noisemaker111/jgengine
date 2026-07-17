@@ -11,6 +11,10 @@ This skill owns runtime spatial behavior: authored-scene consumption, environmen
 
 Search [capabilities.md](capabilities.md) by intent before designing a primitive. Use [api.md](api.md) for exact exports and [reference.md](reference.md) for environment, camera, navigation, physics, audio, and authored-scene recipes.
 
+For a *connected* walkthrough that wires several primitives into a running loop, read the goal-oriented recipes under [recipes/](recipes/) — organized by composition seam (what connects to what), never by genre. Start there before reading a game's source to learn how pieces fit; a hybrid game is just a different composition of the same primitives.
+
+- [recipes/commanding-entities.md](recipes/commanding-entities.md) — select → order → tick → resolve: direct command over a group of entities (the command loop behind squad control, base-defense, herding, autobattle, or a mutating game's real-time phase).
+
 ## Canonical workflows
 
 ### Authored world
