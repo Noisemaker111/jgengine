@@ -189,6 +189,33 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(() => gameTemplate({ id: "My Game", name: "My Game", variant: "standalone", engineVersion: "0.8.0" })).toThrow();
   });
 
+  test("a promoted scene is baked in with a test tailored to what it ships", () => {
+    const scene = {
+      version: 1,
+      markers: [
+        { id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 9 } },
+        { id: "prop", kind: "prop", position: { x: 1, y: 0, z: 1 }, catalogId: "rock" },
+      ],
+    };
+    const files = gameTemplate({ id: "probe-game", name: "Probe Game", variant: "standalone", engineVersion: "0.8.0", scene });
+    expect(JSON.parse(fileOf(files, "src/editor.scene.json")).markers[0].position.z).toBe(9);
+    // No win-goal in this scene → the goal assertion is omitted so the generated test passes.
+    expect(fileOf(files, "src/editorLayers.test.ts")).toContain("player_spawn marker the runtime honors");
+    expect(fileOf(files, "src/editorLayers.test.ts")).not.toContain("wins on enter");
+  });
+
+  test("a promoted scene with a win-goal keeps the goal assertion", () => {
+    const scene = {
+      version: 1,
+      markers: [
+        { id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } },
+        { id: "goal", kind: "goal", position: { x: 0, y: 0, z: -5 }, meta: { on: "enter", action: "win" } },
+      ],
+    };
+    const files = gameTemplate({ id: "probe-game", name: "Probe Game", variant: "standalone", engineVersion: "0.8.0", scene });
+    expect(fileOf(files, "src/editorLayers.test.ts")).toContain("wins on enter");
+  });
+
   test("displayNameFromId title-cases", () => {
     expect(displayNameFromId("maze-muncher")).toBe("Maze Muncher");
   });

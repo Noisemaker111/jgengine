@@ -130,10 +130,10 @@ function validateMetaForKind(kind: string, meta: Record<string, unknown> | undef
   return `invalid ${kind} params: ${issues.map((issue) => `${issue.key} (${issue.message})`).join(", ")}`;
 }
 
-/** How the editor hosts the game: frozen placement view, roamable world, or the real game. */
-export type EditorRunMode = "edit" | "walk" | "play";
+/** How the editor hosts the game: frozen placement view, roamable world, the real game, or HUD-layout authoring. */
+export type EditorRunMode = "edit" | "walk" | "play" | "hud";
 
-const EDITOR_RUN_MODES: readonly EditorRunMode[] = ["edit", "walk", "play"];
+const EDITOR_RUN_MODES: readonly EditorRunMode[] = ["edit", "walk", "play", "hud"];
 
 /** RPC request shapes the editor host understands, used by the MCP bridge and UI. */
 export type EditorBridgeRequest =
@@ -531,7 +531,7 @@ export function createEditorHost(options: {
             };
           case "set_mode": {
             if (!EDITOR_RUN_MODES.includes(request.mode)) {
-              return { ok: false, error: `unknown mode: ${String(request.mode)} (edit | walk | play)` };
+              return { ok: false, error: `unknown mode: ${String(request.mode)} (edit | walk | play | hud)` };
             }
             api.setMode(request.mode);
             return { ok: true, result: { mode: request.mode } };

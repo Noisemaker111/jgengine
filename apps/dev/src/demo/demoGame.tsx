@@ -6,7 +6,7 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { CurrencyPill, HealthBar, SlotGrid } from "@jgengine/react/components";
+import { CurrencyPill, SlotGrid, StatMeter } from "@jgengine/react/components";
 import { useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -178,13 +178,13 @@ function onTick(ctx: GameContext, dt: number): void {
 function VitalsPanel({ userId }: { userId: string }) {
   return (
     <div className="rounded bg-black/60 p-2">
-      <HealthBar
+      <StatMeter
         instanceId={userId}
         statId="health"
         className="h-2.5 overflow-hidden rounded bg-white/15"
         fillClassName="bg-emerald-400"
       />
-      <HealthBar
+      <StatMeter
         instanceId={userId}
         statId="mana"
         className="mt-1 h-1.5 overflow-hidden rounded bg-white/15"
@@ -205,7 +205,7 @@ function TargetPanel({ userId }: { userId: string }) {
   return (
     <div className="rounded bg-black/60 p-2">
       <p className="text-xs uppercase tracking-wide text-red-300">{targetName}</p>
-      <HealthBar
+      <StatMeter
         instanceId={targetId}
         statId="health"
         className="mt-1 h-2 overflow-hidden rounded bg-white/15"

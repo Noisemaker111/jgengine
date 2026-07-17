@@ -442,6 +442,19 @@ export {
   type MinimapView,
   type WorldXZ,
 } from "./world/minimap";
+export {
+  DEFAULT_MINIMAP_PALETTE,
+  bakeMinimapBackground,
+  bakeMinimapImage,
+  encodeBakePng,
+  minimapBakeToPngDataUri,
+  type MinimapBake,
+  type MinimapBakeBounds,
+  type MinimapBakeOptions,
+  type MinimapBakePalette,
+  type MinimapBakeSource,
+  type MinimapBakeZone,
+} from "./world/minimapBake";
 export { placeAlongPath } from "./world/pathInstances";
 export {
   withPathProfiles,

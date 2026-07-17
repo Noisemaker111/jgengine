@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { registerRootGameScript, writeGame } from "./create";
+import { readPromotedScene, registerRootGameScript, writeGame } from "./create";
 import { diagnose } from "./doctor";
 import { parseCreateName } from "./templates";
 
@@ -61,6 +61,76 @@ describe("writeGame", () => {
     expect(readFileSync(join(dir, "index.html"), "utf8")).toContain("<title>My Game Name</title>");
     const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string };
     expect(pkg.name).toBe("my-game-name");
+  });
+});
+
+describe("readPromotedScene", () => {
+  test("reads editor.scene.json from a folder and keeps its authored spawn", () => {
+    const dir = scratch();
+    writeFileSync(
+      join(dir, "editor.scene.json"),
+      JSON.stringify({
+        version: 1,
+        markers: [
+          { id: "player_spawn", kind: "player_spawn", position: { x: 5, y: 0, z: 5 } },
+          { id: "rock", kind: "prop", position: { x: 1, y: 0, z: 1 }, catalogId: "rock" },
+        ],
+      }),
+    );
+
+    const scene = readPromotedScene(dir);
+    const spawn = scene.markers?.find((marker) => marker.kind === "player_spawn");
+    expect(spawn?.position).toEqual({ x: 5, y: 0, z: 5 });
+    expect(scene.markers).toHaveLength(2);
+  });
+
+  test("injects a spawn at the origin when the authored scene has none", () => {
+    const file = join(scratch(), "authored.json");
+    writeFileSync(file, JSON.stringify({ markers: [{ id: "obelisk", kind: "prop", position: { x: 2, y: 0, z: 2 } }] }));
+
+    const scene = readPromotedScene(file);
+    const spawn = scene.markers?.find((marker) => marker.kind === "player_spawn");
+    expect(spawn?.position).toEqual({ x: 0, y: 0, z: 0 });
+    expect(scene.markers).toHaveLength(2);
+  });
+
+  test("errors clearly when the folder has no editor.scene.json", () => {
+    expect(() => readPromotedScene(scratch())).toThrow(/no editor\.scene\.json/);
+  });
+
+  test("errors clearly on malformed JSON", () => {
+    const file = join(scratch(), "broken.json");
+    writeFileSync(file, "{ not json");
+    expect(() => readPromotedScene(file)).toThrow(/not valid JSON/);
+  });
+});
+
+describe("writeGame from a promoted scene", () => {
+  test("bakes the authored scene into editor.scene.json and a passing scene test", () => {
+    const src = scratch();
+    writeFileSync(
+      join(src, "editor.scene.json"),
+      JSON.stringify({
+        version: 1,
+        markers: [
+          { id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 12 } },
+          { id: "totem", kind: "prop", position: { x: 3, y: 0, z: 0 }, catalogId: "totem" },
+        ],
+      }),
+    );
+
+    const dir = join(scratch(), "promoted-game");
+    writeGame(dir, "promoted-game", "Promoted Game", "standalone", readPromotedScene(src));
+
+    const baked = JSON.parse(readFileSync(join(dir, "src", "editor.scene.json"), "utf8")) as {
+      markers: { id: string; position: { z: number } }[];
+    };
+    expect(baked.markers.find((marker) => marker.id === "player_spawn")?.position.z).toBe(12);
+
+    // A scene with no win-goal must not generate the goal assertion (it would fail).
+    const test = readFileSync(join(dir, "src", "editorLayers.test.ts"), "utf8");
+    expect(test).toContain("player_spawn marker the runtime honors");
+    expect(test).not.toContain("wins on enter");
   });
 });
 

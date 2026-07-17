@@ -224,18 +224,32 @@ function parseSerialized(raw: string): Map<string, PanelOverride> {
 }
 
 const activeHudLayouts = new Set<HudLayoutStore>();
+const activeHudLayoutListeners = new Set<() => void>();
 
 /** @internal Agent bridge seam — HudCanvas registers its store while mounted so headless drivers can reach canvas mode. */
 export function registerActiveHudLayout(store: HudLayoutStore): () => void {
   activeHudLayouts.add(store);
+  for (const listener of [...activeHudLayoutListeners]) listener();
   return () => {
-    activeHudLayouts.delete(store);
+    if (!activeHudLayouts.delete(store)) return;
+    for (const listener of [...activeHudLayoutListeners]) listener();
   };
 }
 
 /** @internal */
 export function listActiveHudLayouts(): HudLayoutStore[] {
   return [...activeHudLayouts];
+}
+
+/**
+ * @internal Notified whenever a `HudCanvas` mounts or unmounts (the active-layout set changes).
+ * Lets the editor's HUD-layout surface enable editing on layouts that mount after it opens.
+ */
+export function subscribeActiveHudLayouts(listener: () => void): () => void {
+  activeHudLayoutListeners.add(listener);
+  return () => {
+    activeHudLayoutListeners.delete(listener);
+  };
 }
 
 function panelToUi(panel: HudPanelState): import("./hudDocument").EditorUiPanelLayout {

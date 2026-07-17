@@ -87,8 +87,63 @@ export {
 } from "./document";
 /** One field-level failure surfaced while decoding an untrusted editor document. */
 export type { EditorDocumentDiagnostic } from "./document";
+export {
+  WORLD_BASE_SHARD_ID,
+  WORLD_MANIFEST_KIND,
+  decodeWorldManifest,
+  exportWorldManifestJson,
+  loadWorldDocument,
+  selectWorldShards,
+  shardMatchesQuery,
+  singleShardWorldManifest,
+  splitEditorDocumentIntoShards,
+} from "./world";
+/** A sharded world manifest (`world.json`): grid + shard list + streaming config. */
+export type {
+  DecodeWorldManifestResult,
+  SplitWorldOptions,
+  SplitWorldResult,
+  WorldGrid,
+  WorldManifest,
+  WorldManifestShard,
+  WorldQuery,
+  WorldShardBounds,
+  WorldShardResidency,
+  WorldShardResolver,
+  WorldStreamingConfig,
+} from "./world";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
+export { environmentContentFromDocument, terrainBoundsFromDocument } from "./environment";
+/** Coordinate/placement content of an `environment()` world derived from the scene document. */
+export type { EnvironmentContent, EnvironmentContentOptions } from "./environment";
+export { createWorldStreamer, shardDistance } from "./streamer";
+/** A stateful proximity streamer that schedules shard load/unload as the camera moves. */
+export type { StreamUpdate, StreamerShard, WorldStreamer, WorldStreamerConfig } from "./streamer";
+/** A procedural directive on the scene document — scatter props or a mob population. */
+export type {
+  EditorDirective,
+  EditorDirectiveArea,
+  EditorDirectiveKind,
+  EditorPopulationDirective,
+  EditorPopulationSpecies,
+  EditorScatterDirective,
+} from "./types";
+export {
+  applyDirectiveOverlay,
+  materializeDirective,
+  materializeDirectives,
+  materializePopulationDirective,
+  materializeScatterDirective,
+  resolveDirectiveFootprint,
+} from "./directives";
+/** The deterministic bake of scene directives into per-instance placements + sparse overlays. */
+export type {
+  DirectiveFootprint,
+  DirectiveInstancePatch,
+  EditorDirectiveOverlay,
+  MaterializedInstance,
+} from "./directives";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
 export { createEditorSession } from "./commands";
 /** Compact snapshot of a session state ΓÇö counts, selection, and the selected object. */

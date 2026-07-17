@@ -1,18 +1,67 @@
 ﻿import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 import { findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPackageManager, sdkVersion } from "./pkg";
 import { installSkills } from "./skills";
-import { gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
+import { type EditorSceneDoc, gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
 
 /** @internal */
-export function writeGame(targetDir: string, id: string, name: string, variant: TemplateVariant): void {
-  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion() })) {
+export function writeGame(
+  targetDir: string,
+  id: string,
+  name: string,
+  variant: TemplateVariant,
+  scene?: EditorSceneDoc,
+): void {
+  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), scene })) {
     const dest = join(targetDir, file.path);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.contents);
   }
+}
+
+const PLAYER_SPAWN_KIND = "player_spawn";
+
+/**
+ * Read an authored scene for the promote flow. `pathArg` may point at a folder holding an
+ * `editor.scene.json` (what the standalone editor writes) or directly at a `.json` scene file. The
+ * returned document always carries a `player_spawn` marker so the promoted game is walkable from the
+ * scene that was authored — one is added at the origin only when the scene doesn't already have one.
+ * @internal
+ */
+export function readPromotedScene(pathArg: string): EditorSceneDoc {
+  const resolved = resolve(pathArg);
+  if (!existsSync(resolved)) {
+    throw new Error(`--from-scene path not found: ${resolved}`);
+  }
+  const scenePath = statSync(resolved).isDirectory() ? join(resolved, "editor.scene.json") : resolved;
+  if (!existsSync(scenePath)) {
+    throw new Error(`--from-scene: no editor.scene.json in ${resolved} (author one in the editor and save first)`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(scenePath, "utf8"));
+  } catch (error) {
+    throw new Error(`--from-scene: ${scenePath} is not valid JSON (${error instanceof Error ? error.message : error})`);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`--from-scene: ${scenePath} is not a scene document (expected an object with "markers")`);
+  }
+
+  const scene = parsed as EditorSceneDoc;
+  const markers = Array.isArray(scene.markers) ? [...scene.markers] : [];
+  if (!markers.some((marker) => marker.kind === PLAYER_SPAWN_KIND)) {
+    markers.unshift({
+      id: PLAYER_SPAWN_KIND,
+      kind: PLAYER_SPAWN_KIND,
+      position: { x: 0, y: 0, z: 0 },
+      label: "Player spawn",
+      color: "#22d3ee",
+    });
+  }
+  return { version: 1, ...scene, markers };
 }
 
 /** @internal */
@@ -32,7 +81,7 @@ export function registerRootGameScript(rootDir: string, id: string, folderName: 
   return true;
 }
 
-const VALUE_FLAGS = new Set(["--pm"]);
+const VALUE_FLAGS = new Set(["--pm", "--from-scene"]);
 
 function positionalArg(argv: string[]): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
@@ -68,7 +117,7 @@ export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {
     console.error(
-      'usage: jgengine create "<Game Name>" [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]',
+      'usage: jgengine create "<Game Name>" [--from-scene <folder>] [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]',
     );
     return 1;
   }
@@ -77,6 +126,9 @@ export function runCreate(argv: string[]): number {
   let folderName: string;
   let id: string;
   try {
+    const sceneArg = flag(argv, "from-scene");
+    const scene = sceneArg !== undefined ? readPromotedScene(sceneArg) : undefined;
+
     const { parentHint, titlePart } = splitCreateArg(nameArg);
     ({ displayName, folderName, id } = parseCreateName(titlePart));
 
@@ -118,9 +170,12 @@ export function runCreate(argv: string[]): number {
       return 1;
     }
 
-    writeGame(targetDir, id, displayName, variant);
+    writeGame(targetDir, id, displayName, variant, scene);
     console.log(`created ${displayName} (${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
+    if (scene !== undefined) {
+      console.log(`  promoted authored scene from ${resolve(sceneArg!)} → src/editor.scene.json`);
+    }
 
     if (variant === "in-repo" && workspaceRoot !== null) {
       if (registerRootGameScript(workspaceRoot, id, folderName)) {
