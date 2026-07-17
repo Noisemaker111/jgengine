@@ -105,6 +105,38 @@ describe("editor CLI entry", () => {
     expect(response.result?.markers).toBe(objectCount);
   });
 
+  test("--serve starts the HTTP bridge and answers /health (#996)", async () => {
+    // Before the fix the serve branch referenced `options.serve`/`options.port` after those values
+    // were destructured into bare bindings, so `--serve` threw `options is not defined` and never
+    // bound. Spawn it for real and prove the bridge comes up.
+    const port = 17939;
+    const proc = Bun.spawn(["bun", cliEntry, "--game", "__no-such-game__", "--serve", "--port", String(port)], {
+      cwd: repoRoot,
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+    });
+    try {
+      let healthy = false;
+      for (let attempt = 0; attempt < 50 && !healthy; attempt += 1) {
+        try {
+          const res = await fetch(`http://127.0.0.1:${port}/health`);
+          if (res.ok) {
+            const body = (await res.json()) as { ok?: boolean };
+            healthy = body.ok === true;
+          }
+        } catch {
+          // server not bound yet
+        }
+        if (!healthy) await Bun.sleep(100);
+      }
+      expect(healthy).toBe(true);
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  }, 20000);
+
   test("imports a large document via --rpc - (stdin)", async () => {
     const objectCount = 400;
     const rpc = buildLargeImportRpc(objectCount);
