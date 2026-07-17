@@ -392,10 +392,10 @@ export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = [
   },
   {
     name: "set_mode",
-    description: "Switch the live editor between edit, walk, and play modes.",
+    description: "Switch the live editor between edit, walk, play, and hud (HUD-layout authoring) modes.",
     inputSchema: {
       type: "object",
-      properties: { mode: { type: "string", enum: ["edit", "walk", "play"] } },
+      properties: { mode: { type: "string", enum: ["edit", "walk", "play", "hud"] } },
       required: ["mode"],
       additionalProperties: false,
     },

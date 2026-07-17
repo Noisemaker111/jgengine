@@ -6,6 +6,7 @@ import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { WorldFeature } from "@jgengine/core/world/features";
 import type { GuideRegion } from "@jgengine/core/world/terrainGuides";
+import { listActiveHudLayouts, subscribeActiveHudLayouts } from "@jgengine/core/ui/hudLayout";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -255,6 +256,64 @@ function EditorModeChipHost({
   return <Chip mode={mode} onExit={onExit} />;
 }
 
+/**
+ * HUD-layout authoring surface, mounted in `hud` run mode over the game's real `HudCanvas`.
+ * Enables drag/resize editing on every mounted HUD layout (including ones that mount after this
+ * opens), so panel placement is reachable straight from the editor — no separate F2+C chord. Layout
+ * edits flow through each layout's `onDocumentPatch` into undoable `setUiPanel` document writes. When
+ * the author finishes (the canvas "Done" button, Esc, or F2+C toggles editing off), HUD mode exits
+ * back to edit. F2+E also exits. Editing is turned back off for every layout on unmount.
+ */
+function HudLayoutEditingHost({ api }: { api: EditorHostApi }) {
+  const exit = useCallback(() => api.setMode("edit"), [api]);
+  useF2Chord("KeyE", exit);
+  useEffect(() => {
+    const tracked = new Map<ReturnType<typeof listActiveHudLayouts>[number], () => void>();
+    let disposed = false;
+    const arm = (layout: ReturnType<typeof listActiveHudLayouts>[number]) => {
+      if (tracked.has(layout)) return;
+      // Force editing on first, then watch: a later transition back to `editing: false`
+      // (author pressed Done/Esc/F2+C) is the signal to leave HUD mode.
+      layout.setEditing(true);
+      const unsubscribe = layout.subscribe((state) => {
+        if (!disposed && !state.editing) exit();
+      });
+      tracked.set(layout, unsubscribe);
+    };
+    const sync = () => {
+      for (const layout of listActiveHudLayouts()) arm(layout);
+    };
+    sync();
+    const unsubscribeRegistry = subscribeActiveHudLayouts(sync);
+    return () => {
+      disposed = true;
+      unsubscribeRegistry();
+      for (const [layout, unsubscribe] of tracked) {
+        unsubscribe();
+        layout.setEditing(false);
+      }
+    };
+  }, [exit]);
+  const hasPanels = listActiveHudLayouts().length > 0;
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[60] flex justify-center">
+      <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/10 bg-black/80 px-4 py-1.5 text-[11px] text-neutral-100 shadow-lg shadow-black/40 backdrop-blur-md">
+        <span className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+          {hasPanels ? "HUD layout — drag panels to place; edits save to the scene" : "This game mounts no HUD panels to lay out"}
+        </span>
+        <button
+          type="button"
+          className="rounded-full bg-white/[0.06] px-2.5 py-1 ring-1 ring-inset ring-white/10 transition-colors hover:bg-white/15"
+          onClick={exit}
+        >
+          Done (F2+E)
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Prefer a grounded spawn for the first shot — full-world framing clips past default far=300. */
 function resolveEditorCamera(document: EditorDocument): {
   target: { x: number; y: number; z: number };
@@ -434,6 +493,51 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       onDispose: playable.loop.onDispose,
     };
 
+    const { target, span, far } = initialCamera;
+    // Free-orbit inspection camera shared by edit and HUD-layout modes: no pointer lock, so the HUD
+    // panels stay draggable while the authored world renders behind them.
+    const inspectionCamera = {
+      rig: "inspection" as const,
+      frustum: { fov: 55, near: 0.5, far },
+      inspection: {
+        target,
+        initialDistance: span,
+        initialPosition: {
+          x: target.x + span * 0.35,
+          y: target.y + span * 0.55,
+          z: target.z + span * 0.75,
+        },
+        minDistance: 4,
+        maxDistance: Math.max(far * 0.9, span * 8),
+        pan: true,
+        rotateSpeed: 0.7,
+        zoomSpeed: 1.1,
+        minPolarAngle: 0.15,
+        maxPolarAngle: Math.PI * 0.48,
+      },
+    };
+
+    if (mode === "hud") {
+      const BaseUI = playable.GameUI;
+      return {
+        ...playable,
+        GameUI: function EditorHudUi() {
+          return (
+            <>
+              {BaseUI !== undefined ? <BaseUI /> : null}
+              <HudLayoutEditingHost api={host.api} />
+            </>
+          );
+        },
+        WorldOverlay: function EditorHudOverlay() {
+          return <PerfProbe api={host.api} />;
+        },
+        shadows: false,
+        loop: frozenLoop,
+        camera: inspectionCamera,
+      };
+    }
+
     if (mode === "play") {
       const BaseUI = playable.GameUI;
       const BaseOverlay = playable.WorldOverlay;
@@ -497,7 +601,6 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     const GameUI: ComponentType = function EditorUi() {
       return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineDocument={host.baselineDocument} save={saveFn} />;
     };
-    const { target, span, far } = initialCamera;
     return {
       ...playable,
       GameUI,
@@ -506,30 +609,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       loop: frozenLoop,
       // Drop FPS gun chrome; keep world only.
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
-      camera: {
-        rig: "inspection",
-        frustum: {
-          fov: 55,
-          near: 0.5,
-          far,
-        },
-        inspection: {
-          target,
-          initialDistance: span,
-          initialPosition: {
-            x: target.x + span * 0.35,
-            y: target.y + span * 0.55,
-            z: target.z + span * 0.75,
-          },
-          minDistance: 4,
-          maxDistance: Math.max(far * 0.9, span * 8),
-          pan: true,
-          rotateSpeed: 0.7,
-          zoomSpeed: 1.1,
-          minPolarAngle: 0.15,
-          maxPolarAngle: Math.PI * 0.48,
-        },
-      },
+      camera: inspectionCamera,
     };
   }, [playable, host, gameId, initialCamera, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip]);
 

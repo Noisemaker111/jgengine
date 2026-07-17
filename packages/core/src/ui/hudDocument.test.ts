@@ -296,4 +296,31 @@ describe("editor session setUiPanel is undoable", () => {
     session.dispatch({ type: "removeUiPanel", id: "health" });
     expect(session.getState().document.ui).toBeUndefined();
   });
+
+  test("canvas edits routed to setUiPanel write ui.panels and stay undoable", () => {
+    // The exact seam the editor's HUD-layout mode relies on: a HudCanvas layout's onDocumentPatch
+    // dispatches an undoable setUiPanel into the live editor session.
+    const session = createEditorSession(createEmptyEditorDocument());
+    const layout = createHudLayout({
+      onDocumentPatch: (id, panel) => {
+        session.dispatch({ type: "setUiPanel", id, patch: panel });
+      },
+    });
+    layout.register("score", anchoredPlacement("top-left", { x: 16, y: 16 }), { width: 120 });
+    expect(session.getState().document.ui).toBeUndefined();
+
+    // Author drags the panel toward the bottom-right corner.
+    layout.move("score", { x: 860, y: 540, width: 120, height: 40 }, { width: 1000, height: 600 });
+    const written = session.getState().document.ui?.panels.score;
+    expect(written).toBeDefined();
+    expect(written).toEqual(layout.toDocumentUi().panels.score);
+    expect(session.canUndo()).toBe(true);
+
+    // Undo restores the pre-edit document (no ui section authored yet).
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.ui).toBeUndefined();
+
+    session.dispatch({ type: "redo" });
+    expect(session.getState().document.ui?.panels.score).toEqual(written);
+  });
 });
