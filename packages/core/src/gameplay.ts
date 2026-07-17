@@ -96,8 +96,10 @@ export {
   type EntityFloatTextEvent,
   type GameEventMap,
   type GameEvents,
+  type RetainedVfxKind,
   type StatLevelUpEvent,
   type VfxKind,
+  type VfxRef,
 } from "./game/events";
 export {
   appendFeed,
@@ -259,6 +261,16 @@ export {
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
+export {
+  createVfxInstanceStore,
+  type CombatVfxInstanceEvent,
+  type VfxInstancePatch,
+  type VfxInstanceSpec,
+  type VfxInstanceState,
+  type VfxInstanceStopOptions,
+  type VfxInstanceStore,
+  type VfxInstanceStoreOptions,
+} from "./game/vfxInstance";
 export {
   DEFAULT_PICKUP_RADIUS,
   WORLD_ITEM_ENTITY_NAME,

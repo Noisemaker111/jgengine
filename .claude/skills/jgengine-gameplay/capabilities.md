@@ -153,6 +153,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
 
+## retained-vfx — create/update/stop long-lived dynamic visual effects (beam, tether, zone, target line) by stable id
+
+- `createVfxInstanceStore` (function) · `import { createVfxInstanceStore } from "@jgengine/core/gameplay"`
+
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`

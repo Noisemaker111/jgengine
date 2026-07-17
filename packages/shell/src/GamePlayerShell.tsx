@@ -96,6 +96,7 @@ import {
   WorldTelegraphs,
 } from "./world/WorldHud";
 import { WorldSpellVfx } from "./world/WorldVfx";
+import { RetainedVfx } from "./world/RetainedVfx";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
@@ -802,6 +803,7 @@ export function GamePlayerShell({
           <WorldItems config={playable.worldItem} />
           <WorldTelegraphs />
           <WorldSpellVfx />
+          <RetainedVfx />
           <WorldFloatText />
           <ProjectileTracers />
           {devtoolsEnabled ? <CollisionDebugWorld /> : null}

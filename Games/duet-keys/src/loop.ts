@@ -3,7 +3,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { registerCommands } from "./game/abilities";
 import { ROOMS } from "./game/rooms/catalog";
-import { activeSpikeCells } from "./game/rooms/engine";
+import { activeSpikeCells, type Latch, type RoomState } from "./game/rooms/engine";
 import { applyRoomVisuals, currentRoomState } from "./game/rooms/setup";
 import { advanceRoom, loadCurrentRoom, seatPlayer, startRun } from "./game/runtime";
 import { duetStore } from "./game/stores";
@@ -11,7 +11,50 @@ import { cellKey, HERO_IDS } from "./game/types";
 
 const SOLVE_HOLD_SECONDS = 1.4;
 
+/** Stable id + tint for Lumen's retained light beam (`combat.vfxInstance`). */
+const BEAM_VFX_ID = "duet-prism-beam";
+const BEAM_COLOR = 0x38f0ff;
+
 const lastSignature = perContext(() => ({ value: "" }));
+const beamTracker = perContext(() => ({ active: false, key: "" }));
+
+/**
+ * Drive Lumen's prism beam as a single retained VFX instance instead of a game-local mesh: create it when the
+ * prism is latched and its beam reaches a cell, move it (partial update) as the traced path end shifts, and stop
+ * it (with a short fade) when the prism is unlatched or blocked. Only emits on change, so a held, unchanging beam
+ * costs no per-tick command traffic.
+ */
+function updateBeamVfx(ctx: GameContext, latch: Latch, state: RoomState): void {
+  const tracker = beamTracker(ctx);
+  const stopBeam = (): void => {
+    if (!tracker.active) return;
+    ctx.scene.entity.vfxInstance.stop(BEAM_VFX_ID, { fadeMs: 160 });
+    tracker.active = false;
+    tracker.key = "";
+  };
+  const prism = latch.prism;
+  if (prism === null) {
+    stopBeam();
+    return;
+  }
+  const start = prism.cell;
+  const end = state.beamPath.length > 0 ? state.beamPath[state.beamPath.length - 1]! : start;
+  if (start.x === end.x && start.z === end.z) {
+    stopBeam();
+    return;
+  }
+  const key = `${start.x},${start.z}->${end.x},${end.z}`;
+  const from: [number, number, number] = [start.x, 0.5, start.z];
+  const to: [number, number, number] = [end.x, 0.5, end.z];
+  if (!tracker.active) {
+    ctx.scene.entity.vfxInstance.upsert({ id: BEAM_VFX_ID, kind: "beam", color: BEAM_COLOR, from, to, radius: 0.14 });
+    tracker.active = true;
+    tracker.key = key;
+  } else if (key !== tracker.key) {
+    ctx.scene.entity.vfxInstance.update(BEAM_VFX_ID, { from, to });
+    tracker.key = key;
+  }
+}
 
 function onInit(ctx: GameContext): void {
   registerCommands(ctx);
@@ -67,6 +110,8 @@ function onTick(ctx: GameContext, dt: number): void {
     }));
     lastSignature(ctx).value = signature;
   }
+
+  updateBeamVfx(ctx, store.latch, state);
 
   if (store.status === "playing") {
     if (state.solved) duetStore.update(ctx, (s) => ({ ...s, status: "solved", solveTimer: SOLVE_HOLD_SECONDS }));
