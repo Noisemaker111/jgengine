@@ -38,6 +38,7 @@ import {
   speedToFov,
   springArmStep,
   topDownPose,
+  velocityYawTarget,
   type CameraPose,
 } from "./rigMath";
 import { usePlayerFov } from "./PlayerFov";
@@ -535,6 +536,7 @@ export function ChaseRig(props: RigProps) {
   const posRef = useRef<Vec3 | null>(null);
   const lastFollowRef = useRef<Vec3 | null>(null);
   const lastYawRef = useRef<number | null>(null);
+  const anchorYawRef = useRef<number | null>(null);
   const rollRef = useRef(0);
   const view = config?.view ?? "chase";
 
@@ -572,8 +574,19 @@ export function ChaseRig(props: RigProps) {
       return;
     }
 
+    let anchorYaw = yaw;
+    if (resolved.velocityYawBlend > 0) {
+      const velocity: Vec3 =
+        dt > 0
+          ? { x: (follow.x - last.x) / dt, y: 0, z: (follow.z - last.z) / dt }
+          : { x: 0, y: 0, z: 0 };
+      const targetYaw = velocityYawTarget(yaw, velocity, resolved);
+      anchorYaw = smoothYaw(anchorYawRef.current ?? targetYaw, targetYaw, resolved.velocityYawResponse, dt);
+      anchorYawRef.current = anchorYaw;
+    }
+
     const led = leadFollowPoint(follow, last, dt, resolved);
-    const desired = chaseDesiredPosition(led, yaw, resolved);
+    const desired = chaseDesiredPosition(led, anchorYaw, resolved);
     const prev = posRef.current ?? desired;
     const smoothed = springArmStep(prev, desired, resolved.springDamping, dt);
     posRef.current = smoothed;
@@ -582,7 +595,7 @@ export function ChaseRig(props: RigProps) {
       shake.shake(Math.min(resolved.shakePerSpeed * speed * dt, 0.1));
     }
 
-    const pose: CameraPose = { position: smoothed, lookAt: chaseLookAt(led, yaw, resolved), fov };
+    const pose: CameraPose = { position: smoothed, lookAt: chaseLookAt(led, anchorYaw, resolved), fov };
     commit(pose, dt);
     if (rollRef.current !== 0) camera.rotateZ(rollRef.current);
   }, CAMERA_RIG_FRAME_PRIORITY);

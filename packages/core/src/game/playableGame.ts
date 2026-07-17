@@ -206,6 +206,17 @@ export interface ChaseCameraConfig {
   lead?: { time: number; max?: number };
   /** Roll into turns (#286.10): radians of camera roll per rad/s of the target's yaw rate, clamped to `max` (default 0.35), exponentially smoothed by `damping` (default 8). */
   bank?: { perYawRate: number; max?: number; damping?: number };
+  /**
+   * Drift-lag (#1051): when the target slides, rotate the chase anchor partway from
+   * its heading toward its travel (velocity) direction so the player sees the car's
+   * side while the framing stays stable. Omitting the block keeps the pure-heading
+   * behavior. `blend` (default 0.65) is the max fraction of the slip angle to
+   * follow, itself scaled by how far the slip has opened so straight-line driving
+   * is untouched; below `minSpeed` (default 4) planar speed the feature is off for
+   * parking-lot stability; reversing never swings the camera around. `response`
+   * (default 6) drives `1-exp(-response*dt)` smoothing toward the blended yaw.
+   */
+  velocityYaw?: { blend?: number; minSpeed?: number; response?: number };
   /** Which view to mount. Default "chase". */
   view?: ChaseView;
   /** Local offset for cockpit/hood/rear seats (relative to the vehicle, +z forward). */
