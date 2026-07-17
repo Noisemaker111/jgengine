@@ -40,6 +40,14 @@ Resolved **once** by the engine when the last stat in the receive order hits min
 - Respawning under the same instance id revives it (it can die again). Same-id respawn must not happen synchronously inside the `entity.died` handler — defer a tick.
 - `quest.bind("entity.died")` credits kill objectives from the same event; leaderboards and kill feeds hang off it too.
 
+## Damage interception and threshold transitions
+
+Two genre-agnostic seams that sit **before** lethal resolution and drive **phase** logic, so games never hand-code "crossed threshold" branches or a boss-only invuln path. Both are pure/serializable `@jgengine/core/combat` factories.
+
+- **Interception pipeline** (`combat/damageInterceptors`) — `resolveDamage(interceptors, pending, ctx)` runs a `PendingDamage` through an ordered list; each `DamageInterceptor.intercept` returns `pass | transform | clamp | redirect | split | defer | reject`, and every decision lands in `DamageResolution.provenance` (no hidden callbacks). Split parts continue at the *next* interceptor and total work is capped by `MAX_INTERCEPT_STEPS`, so redirect/split can't recurse. `createDamagePipeline()` is the mutable install/remove chain a transition toggles (`install`/`remove`/`has`). `ctx` carries `nowMs` (deterministic clock) and optional `healthOf(target)`.
+- **Reusable policies** — `createDamageClamp({ maxPerHit })` caps a hit; `createImmunityWindow(id)` is a per-target invuln window (`grant`/`grantFor`/`active`/`clear`/`clearExpired`, `snapshot`/`restore`) installed and removed by transitions — i-frames and phase invuln are ordinary policies, not a boss branch; `createAntiOneShotPolicy({ guardAboveFraction, leaveFraction, recoverMs })` is the "cannot cross lethal while above X, leave Y, recover for Z" composition (clamps the killing blow to a health floor, then arms recovery immunity).
+- **Threshold crossings** (`combat/thresholdCrossings`) — `createThresholdTracker({ thresholds, trigger?, hysteresis?, policy?, initial? })` watches any numeric source (boss HP %, stamina, armor, an objective counter). `update(value)` returns ordered `ThresholdCrossing[]` with `direction` (`falling`/`rising`), honoring `trigger` filtering, a `hysteresis` dead-band, `once`/`repeat` policy, and skipped-threshold handling (a single big jump emits every mark it passed, in travel order). `snapshot`/`restore` round-trip the sides + once-ledger for save/load. Wire crossings to whatever a phase owns — installing an immunity interceptor, swapping AI, music, objectives. Non-health consumers (resource warnings) use the same tracker.
+
 ## Combat feel (melee, defense, telegraphs)
 
 Layered on top of effects/projectiles/death — none of it replaces them, it adds **feel**. All models are renderer-free pure `@jgengine/core` factories a game composes per entity (like the `ctx`-vs-factory split above); the shell renders the telegraphs, styled damage numbers, hitstop shake.

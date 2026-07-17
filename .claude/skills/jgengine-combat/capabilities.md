@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
 
+## anti-one-shot — clamp a near-lethal hit to leave a health floor then grant recovery immunity
+
+- `createAntiOneShotPolicy` (function) · `import { createAntiOneShotPolicy } from "@jgengine/core/combat"`
+
 ## cast-bar — run a channeled cast timer that movement or damage can interrupt
 
 - `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat"`
@@ -23,6 +27,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## combo-points — build up and spend finisher/combo points
 
 - `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat"`
+
+## damage-clamp — cap incoming damage per hit at a configured maximum
+
+- `createDamageClamp` (function) · `import { createDamageClamp } from "@jgengine/core/combat"`
+
+## damage-interception — intercept a pending damage application before lethal resolution with ordered, inspectable stages
+
+- `resolveDamage` (function) · `import { resolveDamage } from "@jgengine/core/combat"`
+
+## damage-pipeline — install and remove ordered damage interceptors that transitions toggle at runtime
+
+- `createDamagePipeline` (function) · `import { createDamagePipeline } from "@jgengine/core/combat"`
 
 ## death-system — resolve entity death and its on-death consequences
 
@@ -43,6 +59,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## event-meter — a heat/streak gauge that builds from repeated hits and cools down over time
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
+
+## immunity-window — reject damage during a per-target invulnerability window installed by transitions
+
+- `createImmunityWindow` (function) · `import { createImmunityWindow } from "@jgengine/core/combat"`
 
 ## impact-feel — calibrated hitstop + trauma preset for a named impact event
 
@@ -81,3 +101,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## status-effects — apply and tick timed status effects and buffs on entities
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
+
+## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
+
+- `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/combat"`

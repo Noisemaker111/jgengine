@@ -10,6 +10,25 @@ export { createBuildupMeter, createStaggerMeter, type BuildupProc } from "./comb
 export { createCastRunner } from "./combat/castRunner";
 export { createComboPoints } from "./combat/comboPoints";
 export { advanceCombo, createComboRunner, type ComboStep } from "./combat/comboString";
+export {
+  MAX_INTERCEPT_STEPS,
+  createAntiOneShotPolicy,
+  createDamageClamp,
+  createDamagePipeline,
+  createImmunityWindow,
+  resolveDamage,
+  type AntiOneShotConfig,
+  type AntiOneShotPolicy,
+  type DamageClampConfig,
+  type DamageInterceptor,
+  type DamagePipeline,
+  type DamageResolution,
+  type ImmunityWindow,
+  type InterceptContext,
+  type InterceptDecision,
+  type InterceptRecord,
+  type PendingDamage,
+} from "./combat/damageInterceptors";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
 export { createDefensiveWindow, resolveDefense } from "./combat/defensiveWindow";
@@ -46,6 +65,17 @@ export {
   type ShotOriginPolicy,
 } from "./combat/shotOrigin";
 export { type TelegraphConfig, type TelegraphShape } from "./combat/telegraph";
+export {
+  createThresholdTracker,
+  type CrossingDirection,
+  type CrossingPolicy,
+  type CrossingTrigger,
+  type ThresholdCrossing,
+  type ThresholdCrossingConfig,
+  type ThresholdMark,
+  type ThresholdTracker,
+  type ThresholdTrackerSnapshot,
+} from "./combat/thresholdCrossings";
 export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";
