@@ -69,6 +69,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
 
+## hud-vitals — atomic purpose-named health/shield/mana/stamina/xp/soul/ammo/boss bars themed from shared tokens
+
+- `BarTokens` (interface) · `import { BarTokens } from "@jgengine/react"`
+- `barTokens` (function) · `import { barTokens } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
