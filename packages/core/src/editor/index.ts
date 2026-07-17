@@ -110,6 +110,9 @@ export type {
 } from "./world";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
+export { createWorldStreamer, shardDistance } from "./streamer";
+/** A stateful proximity streamer that schedules shard load/unload as the camera moves. */
+export type { StreamUpdate, StreamerShard, WorldStreamer, WorldStreamerConfig } from "./streamer";
 /** A procedural directive on the scene document — scatter props or a mob population. */
 export type {
   EditorDirective,

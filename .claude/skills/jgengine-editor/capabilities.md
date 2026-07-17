@@ -90,3 +90,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `shardMatchesQuery` (function) · `import { shardMatchesQuery } from "@jgengine/core/editor"`
 - `singleShardWorldManifest` (function) · `import { singleShardWorldManifest } from "@jgengine/core/editor"`
 - `splitEditorDocumentIntoShards` (function) · `import { splitEditorDocumentIntoShards } from "@jgengine/core/editor"`
+
+## world-streaming — schedule shard load/unload by camera proximity
+
+- `createWorldStreamer` (function) · `import { createWorldStreamer } from "@jgengine/core/editor"`
+- `shardDistance` (function) · `import { shardDistance } from "@jgengine/core/editor"`
