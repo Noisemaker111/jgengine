@@ -11,15 +11,6 @@ export { createCastRunner } from "./combat/castRunner";
 export { createComboPoints } from "./combat/comboPoints";
 export { advanceCombo, createComboRunner, type ComboStep } from "./combat/comboString";
 export {
-  resolveMatchup,
-  type DamageChannelId,
-  type DamageMatchup,
-  type MatchupOutputs,
-  type ResolvedMatchup,
-  type TargetTraitId,
-} from "./combat/damageMatchup";
-export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
-export {
   MAX_INTERCEPT_STEPS,
   createAntiOneShotPolicy,
   createDamageClamp,
@@ -38,6 +29,15 @@ export {
   type InterceptRecord,
   type PendingDamage,
 } from "./combat/damageInterceptors";
+export {
+  resolveMatchup,
+  type DamageChannelId,
+  type DamageMatchup,
+  type MatchupOutputs,
+  type ResolvedMatchup,
+  type TargetTraitId,
+} from "./combat/damageMatchup";
+export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
 export { createDefensiveWindow, resolveDefense } from "./combat/defensiveWindow";

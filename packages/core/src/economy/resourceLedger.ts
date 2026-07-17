@@ -191,7 +191,11 @@ export function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): R
   };
 }
 
-/** Remove a rule and its cursor entirely (hard cancellation). */
+/**
+ * Remove a rule and its cursor entirely (hard cancellation).
+ *
+ * @capability cancel-scheduled-rule remove a scheduled rule and its cursor entirely
+ */
 export function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger {
   if (ledger.rules[ruleId] === undefined) return ledger;
   const rules = { ...ledger.rules };
@@ -201,7 +205,11 @@ export function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedg
   return { ...ledger, rules, cursors };
 }
 
-/** Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}. */
+/**
+ * Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
+ *
+ * @capability pause-scheduled-rule stop a scheduled rule from firing while retaining its cursor
+ */
 export function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger {
   return setPaused(ledger, ruleId, true);
 }
@@ -209,6 +217,8 @@ export function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedge
 /**
  * Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed
  * cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
+ *
+ * @capability resume-scheduled-rule resume a paused scheduled rule, deferring missed cycles to its catch-up policy
  */
 export function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger {
   return setPaused(ledger, ruleId, false);
@@ -503,7 +513,11 @@ export function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyCont
   return (txn, ctx) => (predicate(txn, ctx) ? [] : [txn]);
 }
 
-/** Append a provenance tag to a transaction without changing its value. */
+/**
+ * Append a provenance tag to a transaction without changing its value.
+ *
+ * @capability policy-annotate tag a scheduled transaction's provenance without changing its value
+ */
 export function annotate(tag: string): ResourcePolicy {
   return (txn) => [{ ...txn, provenance: tagged(txn, tag) }];
 }

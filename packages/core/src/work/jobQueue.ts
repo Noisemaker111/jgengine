@@ -114,12 +114,20 @@ export type CancelResult<TSpec, TReserve = undefined> =
     }
   | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string };
 
-/** Pure FIFO ordering by enqueue sequence. */
+/**
+ * Pure FIFO ordering by enqueue sequence.
+ *
+ * @capability work-order-fifo order queued jobs by enqueue sequence
+ */
 export function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number {
   return a.seq - b.seq;
 }
 
-/** Priority-first ordering (higher priority sooner), FIFO within equal priority. */
+/**
+ * Priority-first ordering (higher priority sooner), FIFO within equal priority.
+ *
+ * @capability work-order-priority order queued jobs by priority, then FIFO within equal priority
+ */
 export function priorityOrdering<TSpec, TReserve = undefined>(
   a: Job<TSpec, TReserve>,
   b: Job<TSpec, TReserve>,
@@ -136,12 +144,20 @@ export function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<T
   return { jobs: [], nextId: 1, seq: 0 };
 }
 
-/** Non-terminal job count (queued + active + paused). */
+/**
+ * Non-terminal job count (queued + active + paused).
+ *
+ * @capability work-queue-size count non-terminal jobs in a work queue
+ */
 export function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number {
   return state.jobs.length;
 }
 
-/** Look up a job by id, or `null` if absent/terminal. */
+/**
+ * Look up a job by id, or `null` if absent/terminal.
+ *
+ * @capability work-job-by-id look up a queued job by id
+ */
 export function jobById<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   id: JobId,
@@ -149,7 +165,11 @@ export function jobById<TSpec, TReserve>(
   return state.jobs.find((job) => job.id === id) ?? null;
 }
 
-/** Jobs waiting for a slot, in selection order. */
+/**
+ * Jobs waiting for a slot, in selection order.
+ *
+ * @capability work-queued-jobs list jobs waiting for a slot, in selection order
+ */
 export function queuedJobs<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   ordering: JobOrdering<TSpec, TReserve> = priorityOrdering,
@@ -157,12 +177,20 @@ export function queuedJobs<TSpec, TReserve>(
   return state.jobs.filter((job) => job.status === "queued").sort(ordering);
 }
 
-/** Jobs currently progressing. */
+/**
+ * Jobs currently progressing.
+ *
+ * @capability work-active-jobs list jobs currently progressing in a work queue
+ */
 export function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] {
   return state.jobs.filter((job) => job.status === "active");
 }
 
-/** Fractional progress of a job (0…1); a zero-duration job reads as complete. */
+/**
+ * Fractional progress of a job (0…1); a zero-duration job reads as complete.
+ *
+ * @capability work-job-progress compute a job's fractional progress
+ */
 export function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number {
   if (job.duration <= 0) return 1;
   return Math.min(1, Math.max(0, job.elapsed / job.duration));
@@ -243,7 +271,11 @@ function setStatus<TSpec, TReserve>(
   return changed ? { ...state, jobs } : state;
 }
 
-/** Pause a queued or active job in place; a paused job keeps its progress and yields its slot. */
+/**
+ * Pause a queued or active job in place; a paused job keeps its progress and yields its slot.
+ *
+ * @capability pause-work pause a queued or active job in place, retaining its progress
+ */
 export function pauseJob<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   id: JobId,
@@ -252,7 +284,11 @@ export function pauseJob<TSpec, TReserve>(
   return active !== state ? active : setStatus(state, id, "queued", "paused");
 }
 
-/** Resume a paused job; it re-enters the queue and competes for a slot by ordering. */
+/**
+ * Resume a paused job; it re-enters the queue and competes for a slot by ordering.
+ *
+ * @capability resume-work resume a paused job back into the queue's slot competition
+ */
 export function resumeJob<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   id: JobId,

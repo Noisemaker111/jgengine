@@ -314,6 +314,8 @@ export interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> {
 /**
  * A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point
  * table" region. `contains` is exact membership. Empty when the set is empty.
+ *
+ * @capability spatial-region-point-set sample from a fixed, optionally weighted candidate point table
  */
 export function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> {
   const pool = points.map((p) => [p[0], p[1]] as Vec2);
@@ -434,6 +436,8 @@ export function annulusRegion(
  * An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's
  * bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the
  * sampler's attempt budget bounds the rejection, not a hidden inner loop).
+ *
+ * @capability spatial-region-polygon sample within an arbitrary closed polygon on the XZ plane
  */
 export function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> {
   const bounds = polygonBounds(polygon);
@@ -455,6 +459,8 @@ export function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> {
 /**
  * A composite that first picks one member by weight, then delegates to its sampler — the
  * "weighted subregions" distribution policy. `contains` is true when any member contains the point.
+ *
+ * @capability spatial-region-weighted compose sub-regions behind a weighted selection policy
  */
 export function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> {
   const usable = entries.filter((e) => e.weight > 0 && !e.region.isEmpty);
@@ -480,6 +486,8 @@ export function weightedRegion<P extends SamplePoint>(entries: readonly Weighted
 /**
  * Wrap a caller-defined sampler and bounds test as a {@link SampleRegion} — the escape hatch for
  * regions the built-ins do not cover (a navmesh cell, a heightfield mask, a spline tube).
+ *
+ * @capability spatial-region-custom wrap a caller-defined sampler and bounds test as a region
  */
 export function customRegion<P extends SamplePoint>(spec: {
   dimensions: 2 | 3;
@@ -501,6 +509,8 @@ export function customRegion<P extends SamplePoint>(spec: {
 
 /**
  * An axis-aligned box `[min..max]` in 3D. Uniform density; draws x, y, z in order.
+ *
+ * @capability spatial-region-box sample uniformly within an axis-aligned 3D box
  */
 export function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> {
   const size: Point3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
@@ -536,6 +546,8 @@ function volumeRadius(rng: () => number, inner: number, outer: number, distribut
 /**
  * A filled ball. `"volume"` is volume-uniform (∛-corrected radius); `"radial"` is radius-uniform.
  * Direction is drawn first (two draws), then radius.
+ *
+ * @capability spatial-region-sphere sample within a filled 3D ball, volume- or radius-uniform
  */
 export function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> {
   const distribution = options.distribution ?? "volume";
@@ -557,6 +569,8 @@ export function sphereRegion(center: Point3, radius: number, options: { distribu
 /**
  * A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even
  * density; `"radial"` spreads uniformly in radius. Direction first, then radius.
+ *
+ * @capability spatial-region-shell sample within a 3D spherical shell, volume- or radius-uniform
  */
 export function shellRegion(
   center: Point3,

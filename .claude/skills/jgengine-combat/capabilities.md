@@ -32,9 +32,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDamageClamp` (function) · `import { createDamageClamp } from "@jgengine/core/combat"`
 
+## damage-hit — resolve a full data-defined damage hit — matchup, impact, receiver modifiers, and status application — with provenance
+
+- `resolveDamageHit` (function) · `import { resolveDamageHit } from "@jgengine/core/combat"`
+
 ## damage-interception — intercept a pending damage application before lethal resolution with ordered, inspectable stages
 
 - `resolveDamage` (function) · `import { resolveDamage } from "@jgengine/core/combat"`
+
+## damage-matchup — score a data-defined damage channel against a target's traits into independent typed multipliers
+
+- `resolveMatchup` (function) · `import { resolveMatchup } from "@jgengine/core/combat"`
 
 ## damage-pipeline — install and remove ordered damage interceptors that transitions toggle at runtime
 
@@ -121,6 +129,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`
 
+## received-damage — apply data-defined receiver-side damage modifiers (amplify, reduce, cap, convert, redirect, immunity) with typed predicates
+
+- `resolveReceivedDamage` (function) · `import { resolveReceivedDamage } from "@jgengine/core/combat"`
+
 ## regen-shield — a rechargeable overshield that absorbs damage and refills after a lull
 
 - `createRegenShield` (function) · `import { createRegenShield } from "@jgengine/core/combat"`
@@ -143,6 +155,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-block — base stats with stacking, expiring buffs and debuffs applied on read
 
 - `createStats` (function) · `import { createStats } from "@jgengine/core/combat"`
+
+## status-application — resolve a data-defined status application with chance, matchup scaling, and stacking policy
+
+- `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
 
 ## status-effects — apply and tick timed status effects and buffs on entities
 
