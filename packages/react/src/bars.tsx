@@ -103,7 +103,14 @@ function cssVar(key: keyof BarTokens): string {
 }
 
 /** Shared shape for every atomic bar — bound (statId/entityId) or explicit (value/max/min). */
+/** Trough shape language — `rect` (default), `pill` (fully round), `skew` (parallelogram, upright
+ * label), or `chamfer` (cut corners). Matches a game's skin without hand-rolling a local bar. */
+export type BarShape = "rect" | "pill" | "skew" | "chamfer";
+
+/** Shared props for every atomic bar — bound to a stat (`statId`/`entityId`) or explicit (`value`). */
 export interface AtomicBarProps {
+  /** Trough shape language. Default `rect`. */
+  shape?: BarShape;
   /** Explicit current value; when set the bar is pure and needs no game provider. */
   value?: number;
   /** Explicit max (default 100 when `value` is set without one). */
@@ -136,6 +143,22 @@ interface RenderBarConfig {
   dataBar: string;
 }
 
+const SKEW_DEG = 8;
+
+/** Shape → trough clip/radius/transform, plus the counter-transform that keeps the label upright. */
+function shapeStyles(shape: BarShape): { trough: CSSProperties; label: CSSProperties } {
+  switch (shape) {
+    case "pill":
+      return { trough: { borderRadius: 9999 }, label: {} };
+    case "skew":
+      return { trough: { borderRadius: 2, transform: `skewX(-${SKEW_DEG}deg)` }, label: { transform: `skewX(${SKEW_DEG}deg)` } };
+    case "chamfer":
+      return { trough: { borderRadius: 0, clipPath: "polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%)" }, label: {} };
+    default:
+      return { trough: { borderRadius: cssVar("radius") }, label: {} };
+  }
+}
+
 /** The pure, hook-free bar renderer every atomic component funnels through. */
 function BarView({
   fraction,
@@ -145,6 +168,7 @@ function BarView({
   width = 200,
   segments,
   endCap,
+  shape = "rect",
   style,
   className,
 }: {
@@ -155,15 +179,18 @@ function BarView({
   width?: number | string;
   segments?: number;
   endCap?: ReactNode;
+  shape?: BarShape;
   style?: CSSProperties;
   className?: string;
 }) {
   const low =
     config.lowColorKey !== undefined && fraction <= (config.lowThreshold ?? 0.25);
   const fill = cssVar(low ? config.lowColorKey! : config.colorKey);
+  const shaped = shapeStyles(shape);
   const trough = (
     <div
       data-bar={config.dataBar}
+      data-bar-shape={shape}
       data-fill-fraction={fraction.toFixed(4)}
       {...(low ? { "data-low": "" } : {})}
       style={{
@@ -171,12 +198,12 @@ function BarView({
         flex: endCap === undefined ? undefined : "1 1 auto",
         width: endCap === undefined ? width : undefined,
         height: cssVar("height"),
-        borderRadius: cssVar("radius"),
         border: `${cssVar("frameWidth")} solid ${cssVar("frame")}`,
         background: cssVar("track"),
         boxShadow: cssVar("bevel"),
         overflow: "hidden",
         boxSizing: "border-box",
+        ...shaped.trough,
       }}
     >
       <div
@@ -229,8 +256,8 @@ function BarView({
           pointerEvents: "none",
         }}
       >
-        {label !== undefined ? <span style={{ textTransform: "uppercase", opacity: 0.85 }}>{label}</span> : null}
-        {valueText !== null ? <span style={{ fontVariantNumeric: "tabular-nums" }}>{valueText}</span> : null}
+        {label !== undefined ? <span style={{ textTransform: "uppercase", opacity: 0.85, ...shaped.label }}>{label}</span> : null}
+        {valueText !== null ? <span style={{ fontVariantNumeric: "tabular-nums", ...shaped.label }}>{valueText}</span> : null}
       </div>
     </div>
   );
@@ -269,6 +296,7 @@ function StaticBar({ props, config }: { props: AtomicBarProps; config: RenderBar
       width={props.width}
       segments={props.segments}
       endCap={props.endCap}
+      shape={props.shape}
       style={props.style}
       className={props.className}
     />
@@ -289,6 +317,7 @@ function BoundBar({ props, config, defaultStatId }: { props: AtomicBarProps; con
       width={props.width}
       segments={props.segments}
       endCap={props.endCap}
+      shape={props.shape}
       style={props.style}
       className={props.className}
     />

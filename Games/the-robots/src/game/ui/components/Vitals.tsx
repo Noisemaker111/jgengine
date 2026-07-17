@@ -1,30 +1,32 @@
+import { ExperienceBar, HealthBar, ShieldBar, barTokens } from "@jgengine/react/bars";
 import { useEntityStat, usePlayer } from "@jgengine/react/hooks";
+import type { CSSProperties } from "react";
+
 import { FERRALON } from "../../palette";
 
-function Bar({ percent, from, to, label }: { percent: number; from: string; to: string; label: string }) {
-  return (
-    <div className="relative h-5 skew-x-[-12deg] overflow-hidden border-2 border-black/80 bg-black/70 shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
-      <div
-        className="h-full transition-[width] duration-150 ease-out"
-        style={{ width: `${Math.max(0, Math.min(100, percent))}%`, background: `linear-gradient(90deg, ${from}, ${to})` }}
-      />
-      <span className="absolute inset-0 flex skew-x-[12deg] items-center justify-center text-[11px] font-black tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
-        {label}
-      </span>
-    </div>
-  );
-}
+// The Ferralon skin, expressed as shared vitals tokens (#1033/#1034) instead of a hand-rolled `Bar`:
+// the skewed parallelogram shape comes from the atomic bars' `shape="skew"`, the palette from tokens.
+const VITALS_TOKENS: CSSProperties = {
+  ...barTokens({
+    health: FERRALON.hudRed,
+    healthLow: "#7a1810",
+    shield: FERRALON.hudShield,
+    xp: FERRALON.hudXp,
+    track: "rgba(0,0,0,0.7)",
+    frame: "rgba(0,0,0,0.8)",
+    frameWidth: "2px",
+    height: "20px",
+    bevel: "0 2px 6px rgba(0,0,0,0.7)",
+    text: "#ffffff",
+  }),
+};
+
+const XP_THIN = { "--jg-bar-height": "7px", "--jg-bar-frame-width": "1px" } as CSSProperties;
 
 export function VitalsPlate() {
   const { userId } = usePlayer();
-  const health = useEntityStat(userId, "health");
-  const shield = useEntityStat(userId, "shield");
   const level = useEntityStat(userId, "level");
-  const xp = useEntityStat(userId, "xp");
   const skillPoints = useEntityStat(userId, "skillPoints");
-  const healthPercent = health === null || health.max <= 0 ? 0 : (health.current / health.max) * 100;
-  const shieldPercent = shield === null || shield.max <= 0 ? 0 : (shield.current / shield.max) * 100;
-  const xpPercent = xp === null || xp.max <= 0 ? 0 : (xp.current / xp.max) * 100;
 
   return (
     <div className="min-w-[17rem]">
@@ -44,22 +46,10 @@ export function VitalsPlate() {
           </span>
         ) : null}
       </div>
-      <div className="flex flex-col gap-1">
-        <Bar
-          percent={shieldPercent}
-          from="#1c5f8c"
-          to={FERRALON.hudShield}
-          label={`${Math.round(shield?.current ?? 0)} / ${Math.round(shield?.max ?? 0)}`}
-        />
-        <Bar
-          percent={healthPercent}
-          from="#7a1810"
-          to={FERRALON.hudRed}
-          label={`${Math.round(health?.current ?? 0)} / ${Math.round(health?.max ?? 0)}`}
-        />
-        <div className="h-1.5 skew-x-[-12deg] overflow-hidden border border-black/70 bg-black/60">
-          <div className="h-full" style={{ width: `${xpPercent}%`, background: FERRALON.hudXp }} />
-        </div>
+      <div className="flex flex-col gap-1" style={VITALS_TOKENS}>
+        <ShieldBar entityId={userId} shape="skew" width="100%" />
+        <HealthBar entityId={userId} shape="skew" width="100%" />
+        <ExperienceBar entityId={userId} shape="skew" showValue={false} width="100%" style={XP_THIN} />
       </div>
     </div>
   );

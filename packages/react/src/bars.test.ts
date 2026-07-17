@@ -87,6 +87,19 @@ describe("segments and composition", () => {
   });
 });
 
+describe("shape", () => {
+  test("each shape marks the trough and skew keeps the label upright", () => {
+    for (const shape of ["rect", "pill", "skew", "chamfer"] as const) {
+      const html = renderToStaticMarkup(createElement(HealthBar, { value: 50, max: 100, shape }));
+      expect(html).toContain(`data-bar-shape="${shape}"`);
+    }
+    const skew = renderToStaticMarkup(createElement(HealthBar, { value: 50, max: 100, shape: "skew", label: "HP" }));
+    expect(skew).toContain("skewX(-8deg)"); // trough
+    expect(skew).toContain("skewX(8deg)"); // counter-skewed label
+    expect(renderToStaticMarkup(createElement(HealthBar, { value: 50, max: 100, shape: "chamfer" }))).toContain("clip-path");
+  });
+});
+
 describe("BossBar", () => {
   test("renders a boss-tinted bar with the encounter name", () => {
     const html = renderToStaticMarkup(createElement(BossBar, { value: 900, max: 1000, name: "Ancient Wyrm" }));
