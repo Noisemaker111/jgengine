@@ -10,6 +10,15 @@ export { createBuildupMeter, createStaggerMeter, type BuildupProc } from "./comb
 export { createCastRunner } from "./combat/castRunner";
 export { createComboPoints } from "./combat/comboPoints";
 export { advanceCombo, createComboRunner, type ComboStep } from "./combat/comboString";
+export {
+  resolveMatchup,
+  type DamageChannelId,
+  type DamageMatchup,
+  type MatchupOutputs,
+  type ResolvedMatchup,
+  type TargetTraitId,
+} from "./combat/damageMatchup";
+export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
 export { createDefensiveWindow, resolveDefense } from "./combat/defensiveWindow";
@@ -24,6 +33,14 @@ export {
   type ProjectileSystemDeps,
   type RaycastHit,
 } from "./combat/projectiles";
+export {
+  resolveReceivedDamage,
+  type DamageContext,
+  type DamagePredicate,
+  type ReceivedDamageResult,
+  type ReceivedModifier,
+  type ReceivedPolicy,
+} from "./combat/receivedDamage";
 export { createRegenShield } from "./combat/regenShield";
 export {
   DEFAULT_FIRE_PULSE_SECONDS,
@@ -45,6 +62,14 @@ export {
   resolveShot,
   type ShotOriginPolicy,
 } from "./combat/shotOrigin";
+export {
+  resolveStatusApplication,
+  type StatusApplicationOutcome,
+  type StatusApplicationSpec,
+  type StatusImmunity,
+  type StatusInstance,
+  type StatusStackPolicy,
+} from "./combat/statusApplication";
 export { type TelegraphConfig, type TelegraphShape } from "./combat/telegraph";
 export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";

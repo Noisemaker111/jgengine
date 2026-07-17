@@ -1,3 +1,5 @@
+import { resolveMatchup, type DamageMatchup } from "@jgengine/core/combat/damageMatchup";
+import { resolveReceivedDamage, type ReceivedModifier } from "@jgengine/core/combat/receivedDamage";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { AMMO_STAT_IDS, type AmmoPool } from "./ammo";
 import { bonus } from "./characters";
@@ -410,6 +412,42 @@ export function isFluxed(targetId: string, nowMs: number): boolean {
   return (fluxedUntil.get(targetId) ?? 0) > nowMs;
 }
 
+/**
+ * Element-vs-surface matchup as core-owned data instead of an inlined if/else. Traits are
+ * `shielded` (which overrides surface, matching the original precedence) or the bare surface
+ * (`flesh`/`armor`); unlisted element/trait pairs fall through to the identity `default`.
+ */
+const ELEMENT_MATCHUP: DamageMatchup<GunElement, "shielded" | Surface> = {
+  entries: {
+    shock: { shielded: { impact: 2 } },
+    incendiary: { shielded: { impact: 0.75 }, armor: { impact: 0.75 }, flesh: { impact: 1.5 } },
+    corrosive: { shielded: { impact: 0.75 }, armor: { impact: 1.5 }, flesh: { impact: 0.9 } },
+    flux: { shielded: { impact: 0.75 } },
+  },
+  default: { impact: 1 },
+};
+
+/** Every element except flux — the channels the flux debuff amplifies. */
+const NON_FLUX_ELEMENTS: readonly GunElement[] = [
+  "none",
+  "incendiary",
+  "shock",
+  "corrosive",
+  "explosive",
+];
+
+/**
+ * The flux debuff expressed as a generic receiver-side modifier: while the target carries `flux`,
+ * every non-flux channel it receives is amplified. Amplification is data, not a hardcoded branch.
+ */
+const FLUX_AMPLIFY: readonly ReceivedModifier[] = [
+  {
+    id: "flux",
+    when: { whileStatus: ["flux"], channels: NON_FLUX_ELEMENTS },
+    policy: { kind: "scale", factor: FLUX_DAMAGE_MULT },
+  },
+];
+
 export function elementalDamageMult(
   element: GunElement,
   surface: Surface,
@@ -417,16 +455,18 @@ export function elementalDamageMult(
   targetId: string,
   nowMs: number,
 ): number {
-  let mult = 1;
-  if (targetShielded) {
-    mult = element === "shock" ? 2 : element === "none" || element === "explosive" ? 1 : 0.75;
-  } else if (surface === "armor") {
-    mult = element === "corrosive" ? 1.5 : element === "incendiary" ? 0.75 : 1;
-  } else {
-    mult = element === "incendiary" ? 1.5 : element === "corrosive" ? 0.9 : 1;
-  }
-  if (isFluxed(targetId, nowMs) && element !== "flux") mult *= FLUX_DAMAGE_MULT;
-  return mult;
+  const traits: readonly ("shielded" | Surface)[] = targetShielded ? ["shielded"] : [surface];
+  const base = resolveMatchup(ELEMENT_MATCHUP, element, traits).impact;
+  const received = resolveReceivedDamage({
+    amount: base,
+    context: {
+      channel: element,
+      target: targetId,
+      targetStatuses: isFluxed(targetId, nowMs) ? ["flux"] : [],
+    },
+    modifiers: FLUX_AMPLIFY,
+  });
+  return received.amount;
 }
 
 export function applyElementalProc(
