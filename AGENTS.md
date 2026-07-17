@@ -16,7 +16,8 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 ## Change governance
 
 - Preserve user work. Never discard or overwrite unrelated changes. Start a new task branch from current `origin/main`; do not stack new work on a parked or merged task branch.
-- Move in slices; bound recon. Read only what the smallest end-to-end change needs, then act — recon must terminate in a commit or an approved plan, never in open-ended narration. Prefer a working vertical slice over broad discovery, and reserve fan-out for work whose shape is already known.
+- Move in slices; bound recon. Read only what the smallest end-to-end change needs, then act — recon must terminate in a commit or an approved plan, never in open-ended narration. Prefer a working vertical slice over broad discovery.
+- Parallelize by default. When the task has two or more legs that do not need each other's output — separate subsystems, separate files, independent audits or verification suites — spawn one Opus subagent per leg in a single batch instead of working them serially. Keep planning, overlapping edits, and final synthesis in the main agent; never give two workers the same files; judge worker evidence rather than trusting claims. Serial work on independent legs is the exception and needs a reason.
 - Claim a tracked issue before implementation. A fixed issue is closed by the PR with `Closes #N` (or explicitly when auto-close cannot work).
 - A PR is one coherent, independently reviewable and revertible change. Combine work sharing a root cause, API migration, files, acceptance criteria, and verification story. Split work that is independently releasable, reviewable, revertible, or likely to conflict. Issue count never determines PR count.
 - Follow the `workflow` skill for issue → change → verify → ship. Push with a standalone `git push` command. Never merge, enable auto-merge, or bump versions/releases unless the user explicitly asks; the user owns merge and release timing.
@@ -26,5 +27,5 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 ## Skill architecture
 
 - `jgengine` is intake and routing only. Load only domains the task needs; use each selected domain's `capabilities.md` for intent-to-import discovery, `api.md` for generated export inventory, and references for deeper workflows.
-- Each concept has one skill owner. `workflow` owns delivery, `fan-out` owns concurrency, `jgengine-verify` owns evidence, `improve` owns backlog passes and post-fix friction retrospectives, and domain skills own their package/API boundaries.
+- Each concept has one skill owner. `workflow` owns delivery, `jgengine-verify` owns evidence, `improve` owns backlog passes and post-fix friction retrospectives, and domain skills own their package/API boundaries. Concurrency has no skill: the parallelize-by-default invariant above and the per-prompt reminder in `.claude/fanout-reminder.md` are the whole policy.
 - Skill descriptions stay short and trigger-oriented. `SKILL.md` holds decisions and canonical workflows, not export catalogs or repeated project facts. The repository gates root mirroring, route integrity, and duplicate prose.

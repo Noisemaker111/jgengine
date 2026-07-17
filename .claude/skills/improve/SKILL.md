@@ -11,7 +11,7 @@ Use this for backlog missions ("look at all the issues, plan each one, implement
 
 1. List open issues, drop stale or duplicate ones, and group the rest by shared root cause or seam using `workflow` PR-boundary rules.
 2. Order the queue so early fixes create seams later fixes reuse: infrastructure-shaped issues first, consumers after.
-3. Use `fan-out` only for groups that are genuinely independent; keep issues sharing a seam in one sequential lane.
+3. Run genuinely independent groups as parallel subagent lanes; keep issues sharing a seam in one sequential lane.
 
 ## Ship one issue
 

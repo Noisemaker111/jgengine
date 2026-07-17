@@ -31,6 +31,6 @@ packages/*/src/**/*.d.ts.map
 # scripts/stage-skills.ts — never author or commit these by hand.
 packages/*/skills/
 
-# Ephemeral git worktrees created by fan-out shipping subagents
+# Ephemeral git worktrees created by parallel shipping subagents
 # (Agent({ isolation: "worktree" })) — transient, never committed.
 .claude/worktrees/
