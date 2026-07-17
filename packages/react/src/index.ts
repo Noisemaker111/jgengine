@@ -10,6 +10,8 @@ export * from "./settings";
 export * from "./save";
 export * from "./components";
 export * from "./hud";
+export * from "./bars";
+export * from "./barsPreview";
 export * from "./hudFrame";
 export * from "./keyHint";
 export * from "./startScreen";

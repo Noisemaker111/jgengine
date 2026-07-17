@@ -12,18 +12,49 @@ import type {
   EditorCatalogDefinition,
   EditorCatalogEntry,
   EditorCollection,
+  EditorDirective,
+  EditorDirectiveArea,
   EditorDocument,
   EditorFragmentContent,
   EditorLayersInput,
   EditorMarker,
   EditorNote,
   EditorPath,
+  EditorPopulationSpecies,
   EditorPrefab,
   EditorTerrain,
   EditorVec3,
   EditorVolume,
   EditorVolumeShape,
 } from "./types";
+
+function cloneDirective(directive: EditorDirective): EditorDirective {
+  const area =
+    directive.area === undefined
+      ? undefined
+      : { min: [...directive.area.min] as [number, number], max: [...directive.area.max] as [number, number] };
+  const base = {
+    id: directive.id,
+    ...(directive.region === undefined ? {} : { region: directive.region }),
+    ...(area === undefined ? {} : { area }),
+    ...(directive.seed === undefined ? {} : { seed: directive.seed }),
+    ...(directive.meta === undefined ? {} : { meta: { ...directive.meta } }),
+  };
+  if (directive.kind === "scatter") {
+    return { ...base, kind: "scatter", asset: directive.asset, density: directive.density,
+      ...(directive.minSpacing === undefined ? {} : { minSpacing: directive.minSpacing }),
+      ...(directive.jitter === undefined ? {} : { jitter: directive.jitter }),
+      ...(directive.minScale === undefined ? {} : { minScale: directive.minScale }),
+      ...(directive.maxScale === undefined ? {} : { maxScale: directive.maxScale }),
+      ...(directive.minYaw === undefined ? {} : { minYaw: directive.minYaw }),
+      ...(directive.maxYaw === undefined ? {} : { maxYaw: directive.maxYaw }) };
+  }
+  return { ...base, kind: "population", species: directive.species.map((s) => ({ ...s })) };
+}
+
+function cloneDirectives(directives: readonly EditorDirective[] | undefined): EditorDirective[] | undefined {
+  return directives === undefined ? undefined : directives.map(cloneDirective);
+}
 
 function migrateGrids(grids: readonly EditorGridLayer[] | undefined): EditorGridLayer[] | undefined {
   return grids === undefined ? undefined : grids.map(migrateGridLayer);
@@ -48,6 +79,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
   grids?: EditorGridLayer[];
   terrain?: EditorTerrain;
   ui?: EditorDocument["ui"];
+  directives?: EditorDirective[];
 } {
   return {
     prefabs: doc.prefabs,
@@ -56,6 +88,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
     ...(doc.grids === undefined ? {} : { grids: doc.grids }),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(doc.ui === undefined ? {} : { ui: doc.ui }),
+    ...(doc.directives === undefined ? {} : { directives: doc.directives }),
   };
 }
 
@@ -135,6 +168,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     ...(doc.grids === undefined ? {} : { grids: doc.grids.map(cloneGridLayer) }),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(ui === undefined ? {} : { ui }),
+    ...(cloneDirectives(doc.directives) === undefined ? {} : { directives: cloneDirectives(doc.directives) }),
   };
 }
 
@@ -183,6 +217,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     ...(migrateGrids(resolved.grids) === undefined ? {} : { grids: migrateGrids(resolved.grids) }),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
     ...(ui === undefined ? {} : { ui }),
+    ...(cloneDirectives(resolved.directives) === undefined ? {} : { directives: cloneDirectives(resolved.directives) }),
   };
 }
 
@@ -232,6 +267,9 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     const mergedGrids = upsertGrids(out.grids, doc.grids);
     if (mergedGrids !== undefined) out.grids = mergedGrids;
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
+    if (doc.directives !== undefined) {
+      out.directives = upsertById(out.directives ?? [], doc.directives);
+    }
     if (doc.ui !== undefined) {
       out.ui = {
         panels: {
@@ -723,6 +761,73 @@ function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagno
   return { id: item.id, entries };
 }
 
+function decodeDirectiveArea(
+  value: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): EditorDirectiveArea | undefined {
+  if (value === undefined) return undefined;
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  const pair = (v: unknown, p: string): [number, number] | null => {
+    if (!Array.isArray(v) || v.length !== 2 || typeof v[0] !== "number" || typeof v[1] !== "number") {
+      errors.push({ path: p, message: "expected [number, number]" });
+      return null;
+    }
+    return [v[0], v[1]];
+  };
+  const min = pair(value.min, `${path}.min`);
+  const max = pair(value.max, `${path}.max`);
+  if (min === null || max === null) return undefined;
+  return { min, max };
+}
+
+function decodeSpecies(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorPopulationSpecies | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.cap !== "number") errors.push({ path: `${path}.cap`, message: "expected a number" });
+  if (typeof item.id !== "string" || typeof item.cap !== "number") return null;
+  const species: EditorPopulationSpecies = { id: item.id, cap: item.cap };
+  if (typeof item.weight === "number") species.weight = item.weight;
+  return species;
+}
+
+function decodeDirective(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorDirective | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  const kindOk = item.kind === "scatter" || item.kind === "population";
+  if (!kindOk) errors.push({ path: `${path}.kind`, message: "expected \"scatter\" | \"population\"" });
+  const area = decodeDirectiveArea(item.area, `${path}.area`, errors);
+  if (typeof item.id !== "string" || !kindOk) return null;
+  const base = {
+    id: item.id,
+    ...(typeof item.region === "string" ? { region: item.region } : {}),
+    ...(area === undefined ? {} : { area }),
+    ...(typeof item.seed === "string" || typeof item.seed === "number" ? { seed: item.seed } : {}),
+    ...(isPlainObject(item.meta) ? { meta: item.meta } : {}),
+  };
+  if (item.kind === "scatter") {
+    if (typeof item.asset !== "string") errors.push({ path: `${path}.asset`, message: "expected a string" });
+    if (typeof item.density !== "number") errors.push({ path: `${path}.density`, message: "expected a number" });
+    if (typeof item.asset !== "string" || typeof item.density !== "number") return null;
+    const scatter: EditorDirective = { ...base, kind: "scatter", asset: item.asset, density: item.density };
+    for (const key of ["minSpacing", "jitter", "minScale", "maxScale", "minYaw", "maxYaw"] as const) {
+      if (typeof item[key] === "number") scatter[key] = item[key] as number;
+    }
+    return scatter;
+  }
+  const species = decodeArray(item.species, `${path}.species`, decodeSpecies, errors);
+  return { ...base, kind: "population", species };
+}
+
 const GRID_AXES: ReadonlySet<string> = new Set(["xz", "xy"]);
 
 function decodeGridPaletteEntry(
@@ -824,6 +929,8 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   const collections = decodeArray(raw.collections, "$.collections", decodeCollection, errors);
   const catalogs = decodeArray(raw.catalogs, "$.catalogs", decodeCatalog, errors);
   const grids = raw.grids === undefined ? undefined : decodeArray(raw.grids, "$.grids", decodeGridLayer, errors);
+  const directives =
+    raw.directives === undefined ? undefined : decodeArray(raw.directives, "$.directives", decodeDirective, errors);
   if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
@@ -864,6 +971,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       ...(grids === undefined ? {} : { grids }),
       ...(terrain === undefined ? {} : { terrain }),
       ...(ui === undefined ? {} : { ui }),
+      ...(directives === undefined ? {} : { directives }),
     },
   };
 }
@@ -918,6 +1026,9 @@ export function applyEditorDocumentOverlay(
     ...(upsertGrids(base.grids, overlay.grids) === undefined ? {} : { grids: upsertGrids(base.grids, overlay.grids) }),
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),
+    ...(base.directives === undefined && overlay.directives === undefined
+      ? {}
+      : { directives: upsertById(base.directives ?? [], overlay.directives ?? []) }),
   };
 }
 

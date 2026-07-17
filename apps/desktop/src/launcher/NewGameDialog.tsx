@@ -16,7 +16,7 @@ export function NewGameDialog(props: {
       <div className="w-full max-w-md rounded-xl border border-neutral-700 bg-neutral-950 p-4 shadow-2xl">
         <h2 className="text-sm font-semibold text-white">New Game</h2>
         <p className="mt-1 text-[11px] text-neutral-500">
-          Runs <code className="text-neutral-300">bun run new:game</code> and scaffolds Games/&lt;id&gt;
+          Runs <code className="text-neutral-300">jgengine create</code> and scaffolds Games/&lt;id&gt;
         </p>
         <form
           className="mt-4 grid gap-3"
