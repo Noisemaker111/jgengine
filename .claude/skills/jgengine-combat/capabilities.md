@@ -40,6 +40,46 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDownedState` (function) · `import { createDownedState } from "@jgengine/core/combat"`
 
+## encounter-active-phase — read the id of the phase an encounter is currently waiting on
+
+- `activePhaseId` (function) · `import { activePhaseId } from "@jgengine/core/combat"`
+
+## encounter-advance — step a hierarchical encounter, resolving predicate-gated completion, repeats, and nested advance with lifecycle events
+
+- `updateEncounter` (function) · `import { updateEncounter } from "@jgengine/core/combat"`
+
+## encounter-force-complete — externally complete an active encounter phase to drive scripted or failure-retry transitions
+
+- `forceCompletePhase` (function) · `import { forceCompletePhase } from "@jgengine/core/combat"`
+
+## encounter-inject-phase — dynamically insert a phase or branch into a running encounter, e.g. a boss on the final wave
+
+- `injectPhase` (function) · `import { injectPhase } from "@jgengine/core/combat"`
+
+## encounter-phase-status — read whether a specific encounter phase is pending, active, or complete
+
+- `phaseStatus` (function) · `import { phaseStatus } from "@jgengine/core/combat"`
+
+## encounter-predicates — gate encounter phase completion on timers, cleared spawns, metrics, events, or a quorum of conditions
+
+- `BUILTIN_COMPLETION_PREDICATES` (const) · `import { BUILTIN_COMPLETION_PREDICATES } from "@jgengine/core/combat"`
+
+## encounter-progress — read completed-vs-total progress across a hierarchical encounter for HUD or objective display
+
+- `encounterProgress` (function) · `import { encounterProgress } from "@jgengine/core/combat"`
+
+## encounter-spawn-providers — turn an entered encounter phase into spawn requests from authored scene points or an inline list
+
+- `BUILTIN_SPAWN_PROVIDERS` (const) · `import { BUILTIN_SPAWN_PROVIDERS } from "@jgengine/core/combat"`
+
+## encounter-start — enter the first phase of a hierarchical encounter and emit its opening spawn events
+
+- `startEncounter` (function) · `import { startEncounter } from "@jgengine/core/combat"`
+
+## encounter-state — create the serializable starting state of a hierarchical encounter sequence
+
+- `createEncounterState` (function) · `import { createEncounterState } from "@jgengine/core/combat"`
+
 ## event-meter — a heat/streak gauge that builds from repeated hits and cools down over time
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`

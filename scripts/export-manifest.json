@@ -37,6 +37,7 @@
     "./combat/dotField",
     "./combat/downed",
     "./combat/effects",
+    "./combat/encounterSequence",
     "./combat/hitReaction",
     "./combat/magazine",
     "./combat/projectiles",
