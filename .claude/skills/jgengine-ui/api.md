@@ -360,6 +360,7 @@
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
+- `HUD_THEME_PRESETS` (const): const HUD_THEME_PRESETS: { "arcane-stone": HudTheme; "survival-wood": HudTheme; "military-flat": HudTheme; "sleek-hex": HudTheme; "elemental-circle": HudTheme; "sandbox-slot": HudTheme; } — Built-in genre presets — a one-prop identity choice; the ten-classic-styles surface.
 - `HealthBar` (const): const HealthBar: (props: AtomicBarProps) => React.JSX.Element — Player/enemy health — danger-flashes to `--jg-health-low` below a quarter full.
 - `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; style?: CSSProperties; className?: string; }): React.JSX.Element — A numbered hotbar bound to an inventory — glassy slots, an active-slot highlight, item id + count, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one.
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
@@ -368,8 +369,15 @@
 - `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Shared framed HUD chrome — a single `<div data-hud-frame>` with a `glass`, `plate`, or `retro` skin, an optional `title`/`aside` header row, and caller `style` merged last. The one chrome primitive every framed widget reuses instead of hand-rolling a bespoke panel `<div>` per widget.
 - `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
 - `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
-- `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), or `retro` (a hard black-outlined frame).
+- `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" | "themed" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens).
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudTheme` (interface): interface HudTheme — A full HUD theme.
+- `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
+- `HudThemeFrame` (interface): interface HudThemeFrame — Frame material + shape tokens (panels, `HudFrame variation="themed"`).
+- `HudThemePalette` (interface): interface HudThemePalette — `HudTheme` (#1034): one token object that restyles the shared HUD chrome at once. It is the superset of the atomic-bar tokens (#1033) — `hudThemeVars(theme)` emits the same `--jg-*` custom properties the bars already read, plus frame / slot / minimap-ring tokens — so setting it on any HUD ancestor re-skins every token-driven primitive under it. Purely CSS-token driven (no image assets); layout and per-widget `style` overrides still win, and games can ignore presets entirely.
+- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — A genre-preset name.
+- `HudThemePreview` (function): function HudThemePreview({ className }: { className?: string }): React.JSX.Element — Renders the default theme plus every genre preset as a deterministic matrix.
+- `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
@@ -466,13 +474,16 @@
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
+- `defaultHudTheme` (const): const defaultHudTheme: HudTheme — The upgraded default theme — a bare game reads as designed chrome, not a generic dark-glass dashboard.
 - `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
+- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
+- `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
@@ -739,7 +750,7 @@
 - `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Shared framed HUD chrome — a single `<div data-hud-frame>` with a `glass`, `plate`, or `retro` skin, an optional `title`/`aside` header row, and caller `style` merged last. The one chrome primitive every framed widget reuses instead of hand-rolling a bespoke panel `<div>` per widget.
 - `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
 - `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
-- `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), or `retro` (a hard black-outlined frame).
+- `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" | "themed" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens).
 
 ## @jgengine/react/hudLayout
 
@@ -749,6 +760,23 @@
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** When true (defau… — ⚠ undocumented
+
+## @jgengine/react/hudTheme
+
+- `HUD_THEME_PRESETS` (const): const HUD_THEME_PRESETS: { "arcane-stone": HudTheme; "survival-wood": HudTheme; "military-flat": HudTheme; "sleek-hex": HudTheme; "elemental-circle": HudTheme; "sandbox-slot": HudTheme; } — Built-in genre presets — a one-prop identity choice; the ten-classic-styles surface.
+- `HudTheme` (interface): interface HudTheme — A full HUD theme.
+- `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
+- `HudThemeFrame` (interface): interface HudThemeFrame — Frame material + shape tokens (panels, `HudFrame variation="themed"`).
+- `HudThemePalette` (interface): interface HudThemePalette — `HudTheme` (#1034): one token object that restyles the shared HUD chrome at once. It is the superset of the atomic-bar tokens (#1033) — `hudThemeVars(theme)` emits the same `--jg-*` custom properties the bars already read, plus frame / slot / minimap-ring tokens — so setting it on any HUD ancestor re-skins every token-driven primitive under it. Purely CSS-token driven (no image assets); layout and per-widget `style` overrides still win, and games can ignore presets entirely.
+- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — A genre-preset name.
+- `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
+- `defaultHudTheme` (const): const defaultHudTheme: HudTheme — The upgraded default theme — a bare game reads as designed chrome, not a generic dark-glass dashboard.
+- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
+- `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
+
+## @jgengine/react/hudThemePreview
+
+- `HudThemePreview` (function): function HudThemePreview({ className }: { className?: string }): React.JSX.Element — Renders the default theme plus every genre preset as a deterministic matrix.
 
 ## @jgengine/react/hudViewport
 

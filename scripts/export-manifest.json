@@ -474,6 +474,8 @@
     "./hud",
     "./hudFrame",
     "./hudLayout",
+    "./hudTheme",
+    "./hudThemePreview",
     "./hudViewport",
     "./identity",
     "./index",
