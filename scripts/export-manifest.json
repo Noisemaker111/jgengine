@@ -357,6 +357,7 @@
     "./work/unitTraining",
     "./world",
     "./world/authoredObjects",
+    "./world/authoredSpawn",
     "./world/buildPermissions",
     "./world/buildingGenerator",
     "./world/buildingIndex",

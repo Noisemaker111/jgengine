@@ -2,6 +2,17 @@
   "version": 1,
   "markers": [
     {
+      "id": "player_spawn",
+      "kind": "player_spawn",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "label": "Player spawn",
+      "color": "#22d3ee"
+    },
+    {
       "id": "bookcase_1",
       "kind": "prop",
       "position": {

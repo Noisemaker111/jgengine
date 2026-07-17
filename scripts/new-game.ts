@@ -3,23 +3,27 @@
  *
  *   bun run new:game my-game --name "My Game"
  *
- * Generates the full in-repo harness (index.html, vite.config.ts, tsconfig
- * with the required @jgengine path aliases, package.json, src skeleton with a
- * flat() world, a spawning loop, a minimal HUD, and a world test stub) and
- * inserts the root `games:<id>` script alphabetically.
+ * Thin wrapper over the same template `npx jgengine create` uses — one template source, so the
+ * in-repo and external scaffolds can never drift. Emits the full in-repo harness (standalone dev
+ * harness, tsconfig path aliases, walkable WASD skeleton, wired editor.scene.json + editorLayers,
+ * HUD canvas, world test stub) and inserts the root `games:<id>` script alphabetically.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+
+import { registerRootGameScript } from "../packages/jgengine/src/create";
+import { displayNameFromId, gameTemplate } from "../packages/jgengine/src/templates";
 
 const argv = process.argv.slice(2);
 const id = argv.find((value) => !value.startsWith("--"));
 const nameFlag = argv.indexOf("--name");
-const title = nameFlag !== -1 ? (argv[nameFlag + 1] ?? id) : id;
 
-if (id === undefined || !/^[a-z0-9][a-z0-9-]*$/.test(id)) {
-  console.error("usage: bun run new:game <kebab-case-id> [--name \"Display Name\"]");
+if (id === undefined || !/^[a-z][a-z0-9-]*$/.test(id)) {
+  console.error('usage: bun run new:game <kebab-case-id> [--name "Display Name"]');
   process.exit(1);
 }
+
+const title = nameFlag !== -1 ? (argv[nameFlag + 1] ?? displayNameFromId(id)) : displayNameFromId(id);
 
 const repoRoot = resolve(import.meta.dir, "..");
 const gameDir = join(repoRoot, "Games", id);
@@ -28,360 +32,20 @@ if (existsSync(gameDir)) {
   process.exit(1);
 }
 
-const files: Record<string, string> = {
-  "package.json": `${JSON.stringify(
-    {
-      name: `@games/${id}`,
-      version: "0.1.0",
-      private: true,
-      type: "module",
-      scripts: {
-        dev: "vite",
-        "check-types": "tsgo --noEmit -p tsconfig.json",
-        test: "bun test src",
-      },
-      dependencies: {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        react: "19.2.3",
-        "react-dom": "19.2.3",
-        three: "^0.182.0",
-      },
-      devDependencies: {
-        "@react-three/drei": "^10.7.7",
-        "@tailwindcss/vite": "^4.0.15",
-        "@types/react": "^19",
-        "@types/react-dom": "^19",
-        "@types/three": "^0.182.0",
-        "@vitejs/plugin-react": "^4.3.4",
-        tailwindcss: "^4.0.15",
-        typescript: "^5",
-        vite: "^6.2.2",
-      },
-      exports: { ".": "./src/index.tsx", "./*": "./src/*" },
-    },
-    null,
-    2,
-  )}\n`,
-  "tsconfig.json": `${JSON.stringify(
-    {
-      compilerOptions: {
-        target: "ES2022",
-        lib: ["ES2022", "DOM"],
-        module: "ESNext",
-        moduleResolution: "bundler",
-        jsx: "react-jsx",
-        strict: true,
-        skipLibCheck: true,
-        isolatedModules: true,
-        verbatimModuleSyntax: true,
-        types: ["vite/client"],
-        paths: {
-          "@jgengine/core/*": ["../../packages/core/src/*"],
-          "@jgengine/react": ["../../packages/react/src/index.ts"],
-          "@jgengine/react/*": ["../../packages/react/src/*"],
-          "@jgengine/ws/*": ["../../packages/ws/src/*"],
-          "@jgengine/shell/*": ["../../packages/shell/src/*"],
-          "@jgengine/editor": ["../../packages/editor/src/index.ts"],
-          "@jgengine/editor/*": ["../../packages/editor/src/*"],
-          "@jgengine/assets": ["../../packages/assets/src/index.ts"],
-          "@jgengine/assets/*": ["../../packages/assets/src/*"],
-        },
-      },
-      include: ["src"],
-      exclude: ["src/**/*.test.ts"],
-    },
-    null,
-    2,
-  )}\n`,
-  "index.html": `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>${title}</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
-`,
-  "vite.config.ts": `import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-
-import { devSavePlugin } from "../../apps/dev/devSavePlugin";
-
-const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
-const gamesDir = fileURLToPath(new URL("..", import.meta.url));
-
-export default defineConfig({
-  plugins: [react(), tailwindcss(), devSavePlugin(gamesDir)],
-  resolve: {
-    alias: existsSync(engineSrc("core"))
-      ? [
-          { find: /^@jgengine\\/core\\/(.*)$/, replacement: \`\${engineSrc("core")}/$1\` },
-          { find: /^@jgengine\\/react\\/(.*)$/, replacement: \`\${engineSrc("react")}/$1\` },
-          { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
-          { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
-          { find: /^@jgengine\\/editor$/, replacement: \`\${engineSrc("editor")}/index.ts\` },
-          { find: /^@jgengine\\/editor\\/(.*)$/, replacement: \`\${engineSrc("editor")}/$1\` },
-          { find: /^@jgengine\\/assets$/, replacement: \`\${engineSrc("assets")}/index.ts\` },
-          { find: /^@jgengine\\/assets\\/(.*)$/, replacement: \`\${engineSrc("assets")}/$1\` },
-        ]
-      : [],
-  },
-});
-`,
-  "src/index.css": `@import "tailwindcss";
-@import "./style.css";
-@source "../../../packages/react/src";
-@source "../../../packages/shell/src";
-`,
-  "src/style.css": `html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-  background: #0c0e12;
-}
-`,
-  "src/main.tsx": `import "./index.css";
-
-import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
-import { createRoot } from "react-dom/client";
-import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
-import { GameHost } from "@jgengine/shell/GameHost";
-import { game } from "./game.config";
-
-const GAME_ID = "${id}";
-if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", GAME_ID);
-
-// Editor mode (F2+E / ?mode=editor) loads as a lazy chunk — never bundled into gameplay.
-const EditorApp = lazy(async () => {
-  const mod = await import("@jgengine/editor");
-  return { default: mod.EditorApp as ComponentType<{ gameId: string; playable: typeof game }> };
-});
-
-function App() {
-  const [editor, setEditor] = useState(
-    new URLSearchParams(window.location.search).get("mode") === "editor",
-  );
-  useEffect(() => {
-    if (editor) return;
-    const summon = () => setEditor(true);
-    (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
-    let f2Held = false;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "F2") f2Held = true;
-      else if (event.code === "KeyE" && f2Held) {
-        event.preventDefault();
-        summon();
-      }
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.code === "F2") f2Held = false;
-    };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      const host = window as { __jgengineSummonEditor?: () => void };
-      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
-    };
-  }, [editor]);
-  if (!editor) return <GameHost playable={game} />;
-  return (
-    <Suspense fallback={null}>
-      <EditorApp gameId={GAME_ID} playable={game} />
-    </Suspense>
-  );
+for (const file of gameTemplate({ id, name: title, variant: "in-repo", engineVersion: "0.0.0" })) {
+  const path = join(gameDir, file.path);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, file.contents);
 }
 
-const root = document.getElementById("root");
-if (root === null) throw new Error("main: missing #root mount element");
-createRoot(root).render(<App />);
-`,
-  "src/index.tsx": `export { game } from "./game.config";
-`,
-  "src/world.ts": `import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { flat, type WorldFeature } from "@jgengine/core/world/features";
-
-export const world: WorldFeature = flat();
-
-export const physics: PhysicsConfig = { gravity: -30 };
-`,
-  "src/loop.ts": `import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { player } from "./game/entities/players/catalog";
-
-function onInit(ctx: GameContext): void {
-  void ctx;
-}
-
-function onNewPlayer(ctx: GameContext): void {
-  ctx.scene.entity.spawn(player.id, { id: ctx.player.userId, position: [0, 0, 0], role: "player" });
-}
-
-function onTick(ctx: GameContext, dt: number): void {
-  void ctx;
-  void dt;
-}
-
-export const loop = { onInit, onNewPlayer, onTick };
-`,
-  "src/game/assets.ts": `import { createStarterCatalog } from "@jgengine/assets";
-
-/** Curated people/props/nature/urban starter packs — resolve asset:person_casual etc. */
-export const assets = createStarterCatalog({ basePath: "/models" });
-`,
-  "src/game/models.ts": `import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { resolveModelPlan } from "@jgengine/shell/render/resolveModel";
-
-import { assets } from "./assets";
-
-/** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
-export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
-  player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
-});
-
-export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
-  crate: { model: "asset:prop_crate", style: { targetHeight: 1.2 } },
-  tree: { model: "asset:nature_tree", style: { targetHeight: 4.5 } },
-});
-`,
-  "src/game.config.ts": `import { offline } from "@jgengine/core/runtime/adapter";
-import { defineGame } from "@jgengine/shell/defineGame";
-
-import { assets } from "./game/assets";
-import { content } from "./game/content";
-import { keybinds } from "./game/keybinds";
-import { entityModels, objectModels } from "./game/models";
-import { GameUI } from "./game/ui/GameUI";
-import { loop } from "./loop";
-import { physics, world } from "./world";
-
-export const game = defineGame({
-  name: ${JSON.stringify(title)},
-  assets,
-  world,
-  physics,
-  input: keybinds,
-  server: "persistent",
-  save: "none",
-  multiplayer: offline(),
-  content,
-  loop,
-  GameUI,
-  entityModels,
-  objectModels,
-  camera: { perspective: "third" },
-});
-`,
-  "src/game/keybinds.ts": `import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
-
-export const keybinds: ActionCodesMap = {
-  moveForward: ["KeyW"],
-  moveBack: ["KeyS"],
-  moveLeft: ["KeyA"],
-  moveRight: ["KeyD"],
-  jump: ["Space"],
-  interact: ["KeyE"],
-};
-`,
-  "src/game/entities/players/catalog.ts": `import type { StatCatalog } from "@jgengine/core/scene/entityStats";
-
-export interface PlayerDef {
-  id: string;
-  name: string;
-  walkSpeed: number;
-  stats: StatCatalog;
-}
-
-export const player: PlayerDef = {
-  id: "player",
-  name: "Player",
-  walkSpeed: 5.4,
-  stats: { health: { max: 100 } },
-};
-
-export const players: PlayerDef[] = [player];
-`,
-  "src/game/content.ts": `import type { GameContextContent, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
-import { players } from "./entities/players/catalog";
-
-const playersById = new Map(players.map((entry) => [entry.id, entry]));
-
-function entityById(catalogId: string): GameContextEntityEntry | null {
-  const def = playersById.get(catalogId);
-  if (def === undefined) return null;
-  return { stats: def.stats, movement: { poses: ["standing"], walkSpeed: def.walkSpeed } };
-}
-
-export const content: GameContextContent = { entityById };
-`,
-  "src/game/ui/GameUI.tsx": `import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
-
-// Your HUD starts BLANK — the engine imposes nothing. Opt into drop-in widgets from
-// "@jgengine/react" as you need them (each is self-styled and reads the local player):
-//
-//   import { StatBar, Hotbar, Speedometer, Clock, WaveBanner, Coins, Crosshair } from "@jgengine/react";
-//   <HudPanel id="health" anchor="bottom-left"><StatBar statId="health" tone="health" /></HudPanel>
-//   <HudPanel id="hotbar" anchor="bottom-center"><Hotbar inventoryId="hotbar" /></HudPanel>
-//   <HudPanel id="clock"  anchor="top-left"><Clock /></HudPanel>
-//   <HudPanel id="coins"  anchor="top-right"><Coins currencyId="gold" /></HudPanel>
-//
-// Or write your own — anything you put in a <HudPanel> is yours.
-
-export function GameUI() {
-  const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
-  return <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />;
-}
-`,
-};
-
-for (const [relative, contents] of Object.entries(files)) {
-  const path = join(gameDir, relative);
-  mkdirSync(resolve(path, ".."), { recursive: true });
-  writeFileSync(path, contents);
-}
-
-const rootPackagePath = join(repoRoot, "package.json");
-const rootPackage = readFileSync(rootPackagePath, "utf-8");
-const scriptLine = `    "games:${id}": "bun run --cwd Games/${id} dev",`;
-const lines = rootPackage.split("\n");
-const gameLines = lines
-  .map((line, index) => ({ line, index }))
-  .filter((entry) => entry.line.trimStart().startsWith('"games:'));
-if (gameLines.length === 0) {
-  console.error("could not find games:* scripts block in root package.json — add the script by hand");
-} else {
-  const insertBefore = gameLines.find((entry) => entry.line > scriptLine);
-  if (insertBefore !== undefined) {
-    lines.splice(insertBefore.index, 0, scriptLine);
-  } else {
-    const last = gameLines[gameLines.length - 1]!;
-    const lastHadComma = last.line.trimEnd().endsWith(",");
-    if (!lastHadComma) lines[last.index] = `${last.line.trimEnd()},`;
-    lines.splice(last.index + 1, 0, lastHadComma ? scriptLine : scriptLine.replace(/,$/, ""));
-  }
-  writeFileSync(rootPackagePath, lines.join("\n"));
-  const parsed: unknown = JSON.parse(readFileSync(rootPackagePath, "utf-8"));
-  void parsed;
-}
+registerRootGameScript(repoRoot, id);
 
 const install = Bun.spawnSync(["bun", "install"], { cwd: repoRoot, stdout: "ignore", stderr: "ignore" });
 if (install.exitCode !== 0) console.error("bun install failed — run it by hand");
 
 console.log(`Games/${id} scaffolded.`);
 console.log(`  play it:   bun run games:${id}`);
+console.log(`  editor:    F2+E in the running game opens src/editor.scene.json (Ctrl+S saves)`);
 console.log(`  verify:    bun run check-types && bun test Games/${id}`);
 console.log(`  models:    pull starter packs once so GLBs resolve:`);
 console.log(`             bun run --cwd packages/assets src/cli/pull.ts pull kaykit-adventurers --dir ../../apps/dev/public`);

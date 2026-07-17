@@ -1,5 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { entityMetaOf } from "@jgengine/core/scene/entityStore";
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import { editorLayers } from "./editorLayers";
 import { createControlGroupManager, HOME_BOOKMARK, type ControlGroupManager } from "./game/controlGroups";
 import { player } from "./game/entities/players/catalog";
 import { tickAuthoredTriggers } from "./game/triggers";
@@ -27,9 +29,10 @@ function onInit(ctx: GameContext): void {
 }
 
 function onNewPlayer(ctx: GameContext): void {
+  // Spawn where the scene's player_spawn marker sits — move it in the editor, not here.
   ctx.scene.entity.spawn(player.id, {
     id: ctx.player.userId,
-    position: [0, 0, 0],
+    position: authoredSpawnPosition(editorLayers) ?? [0, 0, 0],
     role: "player",
     meta: { kind: "player" } satisfies PlayerMeta,
   });
