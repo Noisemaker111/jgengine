@@ -45,6 +45,7 @@ Within each selected domain:
 1. Search `capabilities.md` by intent; it maps needs to imports.
 2. Open `api.md` only when exact signatures or export inventory are needed.
 3. Open the linked reference only for a deeper recipe or trap.
+4. For how several primitives wire into a running loop, read the domain's `recipes/` — connected, genre-free walkthroughs organized by composition seam. Prefer a recipe over reading a game's source; the games under `Games/*` are not templates or references, and a hybrid game is just a different composition of the same primitives.
 
 If no capability fits, identify the upstream package seam before writing game-local code. In this repository, implement a reusable primitive with its first adopter; if editor-owned content cannot be expressed, file the editor gap first.
 
