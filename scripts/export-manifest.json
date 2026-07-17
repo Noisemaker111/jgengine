@@ -249,6 +249,7 @@
     "./scene/assetCatalog",
     "./scene/assetGenerator",
     "./scene/assetPreload",
+    "./scene/assetSpace",
     "./scene/authoredTriggers",
     "./scene/autoTarget",
     "./scene/behaviorRuntime",

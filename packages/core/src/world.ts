@@ -234,6 +234,24 @@ export { DEFAULT_GRIP_CURVE, createVehicleBody, sampleGripCurve, type GripCurve 
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
 export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
+  applyRotationPolicy,
+  headingToRotationY,
+  normalizeDegrees,
+  parseAssetSpace,
+  parseRotationPolicy,
+  resolveAnchorOffset,
+  resolveFacingRotationY,
+  rotatedFootprint,
+  rotationYToHeading,
+  snapHeading,
+  toEngineUnits,
+  validateAssetSpace,
+  type AssetAnchor,
+  type AssetSpace,
+  type AssetSpaceIssue,
+  type PlacementRotationPolicy,
+} from "./scene/assetSpace";
+export {
   collectAuthoredTriggers,
   createAuthoredTriggerRuntime,
   getTriggerAction,

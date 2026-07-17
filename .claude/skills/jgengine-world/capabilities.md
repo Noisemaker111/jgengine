@@ -4,6 +4,33 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## asset-anchor — resolve a model's pivot offset from its footprint center
+
+- `resolveAnchorOffset` (function) · `import { resolveAnchorOffset } from "@jgengine/core/world"`
+
+## asset-facing — resolve a placement heading into a Three.js Y-rotation using canonical forward
+
+- `resolveFacingRotationY` (function) · `import { resolveFacingRotationY } from "@jgengine/core/world"`
+
+## asset-footprint — rotate a rectangular footprint into its axis-aligned extent
+
+- `rotatedFootprint` (function) · `import { rotatedFootprint } from "@jgengine/core/world"`
+
+## asset-heading — turn a north-relative degree heading into a Three.js Y-rotation
+
+- `headingToRotationY` (function) · `import { headingToRotationY } from "@jgengine/core/world"`
+- `normalizeDegrees` (function) · `import { normalizeDegrees } from "@jgengine/core/world"`
+- `rotationYToHeading` (function) · `import { rotationYToHeading } from "@jgengine/core/world"`
+
+## asset-space — parse serialized asset-space metadata into a validated shape
+
+- `parseAssetSpace` (function) · `import { parseAssetSpace } from "@jgengine/core/world"`
+- `validateAssetSpace` (function) · `import { validateAssetSpace } from "@jgengine/core/world"`
+
+## asset-units — convert a source-space length to engine meters via catalog unit scale
+
+- `toEngineUnits` (function) · `import { toEngineUnits } from "@jgengine/core/world"`
+
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
@@ -90,6 +117,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## placement-math — grid/surface footprint validity for build mode
 
 - `validatePlacement` (function) · `import { validatePlacement } from "@jgengine/core/world"`
+
+## placement-rotation — apply a rotation policy to a candidate placement heading
+
+- `applyRotationPolicy` (function) · `import { applyRotationPolicy } from "@jgengine/core/world"`
+- `parseRotationPolicy` (function) · `import { parseRotationPolicy } from "@jgengine/core/world"`
+- `snapHeading` (function) · `import { snapHeading } from "@jgengine/core/world"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
