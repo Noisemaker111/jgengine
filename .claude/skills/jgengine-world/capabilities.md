@@ -395,6 +395,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/world"`
 
+## terrain-raycast — pick a point on a heightfield along a camera/pointer ray
+
+- `raycastHeightField` (function) · `import { raycastHeightField } from "@jgengine/core/world/terrain"`
+
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`

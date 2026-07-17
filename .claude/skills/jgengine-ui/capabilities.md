@@ -61,6 +61,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
 
+## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
+
+- `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`
+
 ## hud-frame — shared framed HUD chrome — glass/plate/retro skins, optional title/aside header, reused across every widget instead of a bespoke panel per widget
 
 - `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`

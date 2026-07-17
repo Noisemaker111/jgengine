@@ -161,7 +161,7 @@ export function EditorChrome({
   api,
   assets,
   ui,
-  baselineJson,
+  baselineDocument,
   save,
 }: {
   gameId: string;
@@ -169,7 +169,8 @@ export function EditorChrome({
   api: EditorHostApi;
   assets: readonly EditorAssetEntry[];
   ui: EditorUiStore;
-  baselineJson?: string;
+  /** The document as loaded — drives the header unsaved-dot by reference compare. */
+  baselineDocument?: EditorDocument;
   save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
 }) {
   const [, setTick] = useState(0);
@@ -569,8 +570,11 @@ export function EditorChrome({
     }
   };
 
-  const currentJson = useMemo(() => session.exportJson(true), [session, state.document]);
-  const dirty = baselineJson !== undefined && currentJson !== baselineJson;
+  // Reference compare, not a serialize: stringifying the whole document per edit dispatch burned
+  // milliseconds on every nudge/stroke. Same tradeoff as `useDocumentSave.dirty` — undoing back to
+  // the pristine state may leave the dot on (history restores clones), which is the cheap side of
+  // wrong for an unsaved-edits hint.
+  const dirty = baselineDocument !== undefined && state.document !== baselineDocument;
 
   const startPlacement = (tool: PlacementTool) => {
     setAddOpen(false);

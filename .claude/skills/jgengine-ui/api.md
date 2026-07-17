@@ -1509,6 +1509,9 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
+- `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
+- `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
+- `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1524,6 +1527,7 @@
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
 ## @jgengine/shell/terrain
 
@@ -1542,6 +1546,9 @@
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
+- `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
+- `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
+- `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
@@ -1557,6 +1564,7 @@
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
@@ -1603,6 +1611,13 @@
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
 - `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
+
+## @jgengine/shell/terrain/heightfieldGeometry
+
+- `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
+- `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
+- `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
+- `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
 ## @jgengine/shell/terrain/random
 

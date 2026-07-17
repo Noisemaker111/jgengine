@@ -5,7 +5,11 @@ import * as THREE from "three";
 import type { EditorSession } from "@jgengine/core/editor/index";
 import type { TerrainEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 import type { Aabb } from "@jgengine/core/world/geometry";
-import { createTerrainPaletteSampler, type TerrainPalette } from "@jgengine/core/world/terrain";
+import {
+  createTerrainPaletteSampler,
+  raycastHeightField,
+  type TerrainPalette,
+} from "@jgengine/core/world/terrain";
 import {
   beginSurfaceStroke,
   beginTerraformStroke,
@@ -17,11 +21,23 @@ import {
   type TerraformStroke,
 } from "@jgengine/core/world/terraform";
 import { useGameContext } from "@jgengine/react/provider";
-import { normalizeHeightBlend, TerraformBrushCursor } from "@jgengine/shell/terrain";
+import {
+  displaceHeightfieldGeometry,
+  normalizeHeightBlend,
+  TerraformBrushCursor,
+} from "@jgengine/shell/terrain";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
-import { TERRAIN_MATERIAL_COLORS, type EditorUiStore, type SculptSettings, type TerrainBrushKind } from "./uiStore";
+import {
+  TERRAIN_MATERIAL_COLORS,
+  type EditorUiState,
+  type EditorUiStore,
+  type SculptSettings,
+  type TerrainBrushKind,
+  type TerrainMode,
+} from "./uiStore";
+import { useStoreSelector } from "./useStoreSelector";
 
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const LOW = new THREE.Color("#3f5d34");
@@ -91,9 +107,19 @@ function editFromSettings(
   };
 }
 
-const PAINT_TINT = new THREE.Color();
 const BLEND_A = new THREE.Color();
 const BLEND_B = new THREE.Color();
+
+/** Parsed once — `toneAt` runs per vertex, so hex→Color parsing must not. */
+const SURFACE_COLOR_CACHE = new Map<string, THREE.Color>();
+function surfaceColor(hex: string): THREE.Color {
+  let color = SURFACE_COLOR_CACHE.get(hex);
+  if (color === undefined) {
+    color = new THREE.Color(hex);
+    SURFACE_COLOR_CACHE.set(hex, color);
+  }
+  return color;
+}
 
 /** World-unit spacing between topographic relief bands drawn on the sculpt preview. */
 const CONTOUR_INTERVAL = 1.5;
@@ -129,6 +155,7 @@ function toneAt(
   out: THREE.Color,
   paletteAt: PaletteSampler | null,
   heightRange: readonly [number, number],
+  layerColors: readonly THREE.Color[],
 ): void {
   const layers = terrain.layers;
   if (layers.length > 0) {
@@ -141,10 +168,10 @@ function toneAt(
       for (let l = 0; l < layers.length; l += 1) {
         const w = weights[l]! * (layers[l]!.opacity ?? 1);
         if (w <= 0) continue;
-        BLEND_B.set(layerColor(layers[l]!));
-        r += BLEND_B.r * w;
-        g += BLEND_B.g * w;
-        b += BLEND_B.b * w;
+        const color = layerColors[l]!;
+        r += color.r * w;
+        g += color.g * w;
+        b += color.b * w;
         total += w;
       }
       if (total > 0) {
@@ -156,7 +183,7 @@ function toneAt(
   const surface = terrain.surfaceAt(x, z);
   const painted = surface === null ? undefined : TERRAIN_MATERIAL_COLORS[surface];
   if (painted !== undefined) {
-    out.copy(PAINT_TINT.set(painted));
+    out.copy(surfaceColor(painted));
     return;
   }
   if (paletteAt !== null) {
@@ -170,11 +197,11 @@ function toneAt(
 }
 
 /**
- * Re-samples vertex Y and vertex color from the live terrain (in place — no reallocation). When a
- * dirty `region` is given, only vertices inside it re-sample — the whole-mesh resample per stamp is
- * the sculpt hot path — while normals recompute across the mesh for seamless shading. Painted/blended
- * layers win the vertex color; unpainted ground falls back to the runtime terrain palette (or the
- * flat height gradient with no descriptor). Records rebuild time.
+ * Re-samples vertex Y, vertex color, and vertex normals from the live terrain via the shared
+ * {@link displaceHeightfieldGeometry} primitive. A dirty `region` keeps a brush stamp O(brush
+ * footprint) — no whole-mesh normal or bounding pass per stamp. Painted/blended layers win the
+ * vertex color; unpainted ground falls back to the runtime terrain palette (or the flat height
+ * gradient with no descriptor). Records rebuild time.
  */
 function displace(
   geometry: THREE.BufferGeometry,
@@ -186,40 +213,38 @@ function displace(
   contourStrength: number,
 ): void {
   const started = performance.now();
-  const position = geometry.attributes.position as THREE.BufferAttribute;
-  const cx = (bounds.minX + bounds.maxX) / 2;
-  const cz = (bounds.minZ + bounds.maxZ) / 2;
-  let colors = geometry.attributes.color as THREE.BufferAttribute | undefined;
-  const full = region === null || colors === undefined || colors.count !== position.count;
-  if (colors === undefined || colors.count !== position.count) {
-    colors = new THREE.BufferAttribute(new Float32Array(position.count * 3), 3);
-    geometry.setAttribute("color", colors);
-  }
-  const tone = new THREE.Color();
-  for (let index = 0; index < position.count; index += 1) {
-    const x = position.getX(index) + cx;
-    const z = position.getZ(index) + cz;
-    if (!full && (x < region!.minX || x > region!.maxX || z < region!.minZ || z > region!.maxZ)) continue;
-    const height = terrain.sampleHeight(x, z);
-    position.setY(index, height);
-    toneAt(terrain, x, z, height, tone, paletteAt, heightRange);
-    applyRelief(tone, height, contourStrength);
-    colors.setXYZ(index, tone.r, tone.g, tone.b);
-  }
-  position.needsUpdate = true;
-  colors.needsUpdate = true;
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
+  const layerColors = terrain.layers.map((layer) => surfaceColor(layerColor(layer)));
+  displaceHeightfieldGeometry(geometry, terrain.sampleHeight, {
+    bounds,
+    region,
+    color: (x, z, height, out) => {
+      toneAt(terrain, x, z, height, out, paletteAt, heightRange, layerColors);
+      applyRelief(out, height, contourStrength);
+    },
+  });
   editorPerfMarks.record("rebuild", performance.now() - started);
 }
 
-function SculptMesh({
+/** What the next displace pass must cover: everything, or the union of stamped dirty regions.
+ * `null` means nothing is queued (an effect re-run for other reasons rebuilds fully to stay safe). */
+type PendingDisplace = { kind: "full" } | { kind: "region"; region: Aabb };
+
+function unionRect(a: Aabb, b: Aabb): Aabb {
+  return {
+    minX: Math.min(a.minX, b.minX),
+    minZ: Math.min(a.minZ, b.minZ),
+    maxX: Math.max(a.maxX, b.maxX),
+    maxZ: Math.max(a.maxZ, b.maxZ),
+  };
+}
+
+/** Memoized so cursor-hover state updates in the parent never reconcile the mesh subtree. */
+const SculptMesh = memo(function SculptMesh({
   terrain,
   bounds,
   segments,
   revision,
-  regionRef,
-  meshRef,
+  pendingRef,
   paletteAt,
   heightRange,
   contourStrength,
@@ -228,8 +253,7 @@ function SculptMesh({
   bounds: Aabb;
   segments: number;
   revision: number;
-  regionRef: React.MutableRefObject<Aabb | null>;
-  meshRef: React.MutableRefObject<THREE.Mesh | null>;
+  pendingRef: React.MutableRefObject<PendingDisplace | null>;
   paletteAt: PaletteSampler | null;
   heightRange: readonly [number, number];
   contourStrength: number;
@@ -245,14 +269,53 @@ function SculptMesh({
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => {
-    displace(geometry, terrain, bounds, regionRef.current, paletteAt, heightRange, contourStrength);
+    // Consume the queued work; a re-run triggered by anything other than a stamp (palette,
+    // contour strength, fresh geometry) sees no pending entry and rebuilds the whole mesh.
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    const region = pending !== null && pending.kind === "region" ? pending.region : null;
+    displace(geometry, terrain, bounds, region, paletteAt, heightRange, contourStrength);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength]);
 
   return (
-    <mesh ref={meshRef} geometry={geometry} receiveShadow>
+    <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial vertexColors roughness={0.95} metalness={0} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
     </mesh>
+  );
+});
+
+/** The UI slice the sculpt layer renders from (tool gate + brush cursor), so unrelated UI churn
+ * (gizmo mode, placement, context menus) never re-renders the mesh-owning subtree. Event handlers
+ * read the live store instead. */
+interface SculptUiSlice {
+  tool: EditorUiState["tool"];
+  terrainMode: TerrainMode;
+  sculptRadius: number;
+  sculptBrush: TerrainBrushKind;
+  sculptInvert: boolean;
+  paintRadius: number;
+}
+
+function selectSculptUi(state: EditorUiState): SculptUiSlice {
+  return {
+    tool: state.tool,
+    terrainMode: state.terrainMode,
+    sculptRadius: state.sculpt.radius,
+    sculptBrush: state.sculpt.brush,
+    sculptInvert: state.sculpt.invert,
+    paintRadius: state.paint.radius,
+  };
+}
+
+function sculptUiEqual(a: SculptUiSlice, b: SculptUiSlice): boolean {
+  return (
+    a.tool === b.tool &&
+    a.terrainMode === b.terrainMode &&
+    a.sculptRadius === b.sculptRadius &&
+    a.sculptBrush === b.sculptBrush &&
+    a.sculptInvert === b.sculptInvert &&
+    a.paintRadius === b.paintRadius
   );
 }
 
@@ -287,30 +350,36 @@ export const TerrainSculpt = memo(function TerrainSculpt({
     [terrainDescriptor],
   );
 
-  const [, setTick] = useState(0);
-  useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
-  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
-
-  const snapshot = session.getState().document.terrain ?? null;
+  // Selector subscriptions: only the terrain snapshot and the sculpt-relevant UI slice re-render
+  // this layer — selection changes, marker edits, and unrelated UI churn no longer touch it.
+  const snapshot = useStoreSelector(session, (state) => state.document.terrain ?? null);
+  const uiSlice = useStoreSelector(ui, selectSculptUi, sculptUiEqual);
   const base = ctx.world.ground;
-  const uiState = ui.getState();
-  const toolActive = uiState.tool === "terrain";
+  const toolActive = uiSlice.tool === "terrain";
 
   const editableRef = useRef<EditableTerrain | null>(null);
   const boundsRef = useRef<Aabb | null>(null);
-  const meshRef = useRef<THREE.Mesh | null>(null);
   const syncedRef = useRef<TerraformSnapshot | null>(null);
   const gridKeyRef = useRef<string | null>(null);
-  const regionRef = useRef<Aabb | null>(null);
+  const pendingRef = useRef<PendingDisplace | null>({ kind: "full" });
   const [revision, setRevision] = useState(0);
   const [cursor, setCursor] = useState<{ x: number; y: number; z: number } | null>(null);
 
   const segments = snapshot === null ? 0 : segmentsFor(snapshot);
   const gridKey =
     snapshot === null ? null : `${boundsKey(snapshot.bounds, segments)}:${snapshot.cellSize}`;
-  // region === null forces a whole-mesh rebuild; a stamp passes only its dirty footprint.
+  // region === null queues a whole-mesh rebuild; a stamp queues only its dirty footprint. Queued
+  // regions union (two stamps before an effect flush both get displaced), and a queued full
+  // rebuild is never downgraded by a later stamp.
   const refresh = (region: Aabb | null = null) => {
-    regionRef.current = region;
+    const pending = pendingRef.current;
+    if (region === null || pending?.kind === "full") {
+      pendingRef.current = { kind: "full" };
+    } else if (pending === null) {
+      pendingRef.current = { kind: "region", region };
+    } else {
+      pendingRef.current = { kind: "region", region: unionRect(pending.region, region) };
+    }
     setRevision((value) => value + 1);
   };
 
@@ -354,14 +423,23 @@ export const TerrainSculpt = memo(function TerrainSculpt({
 
     const pick = (clientX: number, clientY: number): { x: number; z: number } | null => {
       const started = performance.now();
-      const mesh = meshRef.current;
       const rect = canvas.getBoundingClientRect();
       ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
       let result: { x: number; z: number } | null = null;
-      if (mesh !== null) {
-        const hit = raycaster.intersectObject(mesh, false)[0];
-        if (hit !== undefined) result = { x: hit.point.x, z: hit.point.z };
+      // Heightfield raymarch against the live terrain — O(steps along the ray) instead of a
+      // brute-force triangle raycast against the whole preview mesh on every pointer move.
+      const terrain = editableRef.current;
+      const terrainBounds = boundsRef.current;
+      if (terrain !== null && terrainBounds !== null) {
+        const { origin, direction } = raycaster.ray;
+        const hit = raycastHeightField(
+          terrain.sampleHeight,
+          [origin.x, origin.y, origin.z],
+          [direction.x, direction.y, direction.z],
+          { bounds: terrainBounds, step: Math.max(0.25, (snapshot?.cellSize ?? 1) / 2) },
+        );
+        if (hit !== null) result = { x: hit.x, z: hit.z };
       }
       if (result === null && raycaster.ray.intersectPlane(GROUND_PLANE, planeHit) !== null) {
         result = { x: planeHit.x, z: planeHit.z };
@@ -506,8 +584,7 @@ export const TerrainSculpt = memo(function TerrainSculpt({
         bounds={boundsRef.current}
         segments={segments}
         revision={revision}
-        regionRef={regionRef}
-        meshRef={meshRef}
+        pendingRef={pendingRef}
         paletteAt={paletteAt}
         heightRange={heightRange}
         contourStrength={toolActive ? 1 : 0.45}
@@ -516,8 +593,8 @@ export const TerrainSculpt = memo(function TerrainSculpt({
         <TerraformBrushCursor
           center={[cursor.x, cursor.z]}
           y={cursor.y + 0.1}
-          radius={uiState.terrainMode === "paint" ? uiState.paint.radius : uiState.sculpt.radius}
-          mode={uiState.terrainMode === "paint" ? "paint" : effectiveBrush(uiState.sculpt.brush, uiState.sculpt.invert)}
+          radius={uiSlice.terrainMode === "paint" ? uiSlice.paintRadius : uiSlice.sculptRadius}
+          mode={uiSlice.terrainMode === "paint" ? "paint" : effectiveBrush(uiSlice.sculptBrush, uiSlice.sculptInvert)}
         />
       ) : null}
     </>
