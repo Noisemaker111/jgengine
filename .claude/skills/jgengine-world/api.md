@@ -77,6 +77,18 @@
 - `MobVec3` (type): type MobVec3 = readonly [number, number, number] — ⚠ undocumented
 - `MobWanderConfig` (interface): interface MobWanderConfig — ⚠ undocumented
 
+## @jgengine/core/ai/populationDirector
+
+- `PopulationCensus` (type): type PopulationCensus = Record<string, Record<string, number>> — Live census of alive counts keyed `region -> species -> count`, used to reconcile the director to reality.
+- `PopulationDirector` (interface): interface PopulationDirector — Stateful ambient population manager for one world; drive it with `tick` and lifecycle notifications.
+- `PopulationDirectorConfig` (interface): interface PopulationDirectorConfig — Full ambient-population configuration: per-region species budgets plus global refill limits and PRNG seed.
+- `PopulationDirectorState` (interface): interface PopulationDirectorState — Opaque, JSON-serializable persistence for a {@link PopulationDirector}. Round-trip it through `snapshot`/`hydrate`; never read or mutate the fields directly.
+- `PopulationRegionConfig` (interface): interface PopulationRegionConfig — Ambient population budget for a single region: its species ceilings, refill timing, and spawn geometry.
+- `PopulationSpawnRequest` (interface): interface PopulationSpawnRequest — A single ambient spawn the game should realise, refilling a region toward its species caps.
+- `PopulationSpeciesEntry` (interface): interface PopulationSpeciesEntry — One species that ambiently populates a region: how heavily it is favoured and its alive ceiling.
+- `PopulationTickContext` (interface): interface PopulationTickContext — Per-call spawn-point selection hook, letting a game apply bias (distance from players, etc.) at tick time.
+- `createPopulationDirector` (function): function createPopulationDirector(config: PopulationDirectorConfig): PopulationDirector — Ambient open-world population director. Holds a target creature population per region and refills it over time, distinct from wave/horde spawning: instead of a budget draining down a wave, each region has per-species caps and a timed respawn queue. Removing a creature frees a slot; after a respawn delay `tick` emits weighted spawn requests (bounded per tick) that refill toward the caps without ever exceeding them. Species are chosen through a persisted, serializable {@link RandomSeed} cursor, so the same seed and the same lifecycle events always yield the same requests. Regions are independent, spawn points are optional, and the whole state round-trips through `snapshot`/`hydrate`.
+
 ## @jgengine/core/ai/spawnDirector
 
 - `DirectorContext` (interface): interface DirectorContext — ⚠ undocumented
@@ -887,6 +899,20 @@
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+
+## @jgengine/core/scene/companion
+
+- `CompanionAdoptOptions` (interface): interface CompanionAdoptOptions — Options for {@link CompanionRoster.adopt}.
+- `CompanionCommand` (type): type CompanionCommand = "follow" | "stay" | "passive" | "neutral" | "aggressive" — A tamed companion's standing order. Genre-agnostic aggression + posture preset: - `follow` — heel to the owner and assist whatever the owner is fighting. - `stay` — hold at `home` and assist the owner's target from there. - `passive` — heel to the owner and never engage (a pacifist escort). - `neutral` — heel to the owner and only fight back nearby threats (defensive). - `aggressive` — heel to the owner and proactively engage nearby threats and the owner's target.
+- `CompanionConfig` (interface): interface CompanionConfig — Per-companion configuration shared by every companion the roster mints.
+- `CompanionIntent` (interface): interface CompanionIntent — The companion's decision for one tick, shaped for `ai/mobBrain`: feed `candidates` into `MobBrainDeps.candidates()`, treat `leashTo` as the brain's `home`, and pass `leashDistance` as `leashDistance`. `kind` summarises the posture for HUD/animation.
+- `CompanionIntentContext` (interface): interface CompanionIntentContext — Per-tick world context the game supplies so a command resolves into a concrete intent.
+- `CompanionRecord` (interface): interface CompanionRecord — Serializable per-companion state: who owns it, its standing order, where it holds, its leash radius, and its levelled stat pool. Plain data — JSON round-trips without loss.
+- `CompanionRoster` (interface): interface CompanionRoster — A set of tamed companions keyed by companion id, scoped to owners. Wraps allegiance/command state, per-companion levelled stats, and intent resolution behind create/command/level/ snapshot/hydrate — the counterpart of `scene/roster` for creatures that fight beside you.
+- `CompanionSpendResult` (type): type CompanionSpendResult = | { status: "ok"; record: CompanionRecord; stat: StatValue } | { status: "rejected"; reason: string } — Outcome of {@link CompanionRoster.spend}: the updated record + stat, or a rejection reason.
+- `CompanionStatUpgrade` (interface): interface CompanionStatUpgrade — Rule for turning one spent level-point into a stat gain. Absent from config ⇒ the stat can't be upgraded.
+- `createCompanionRoster` (function): function createCompanionRoster(config: CompanionConfig = {}): CompanionRoster — Build a {@link CompanionRoster}. Composes `scene/roster` ownership (via `ownerId`/`sourceId`), `scene/entityStats` for the per-companion stat pool, and {@link resolveCompanionIntent} for `ai/mobBrain`-shaped behavior — turning a captured creature into a loyal, levelling ally.
+- `resolveCompanionIntent` (function): function resolveCompanionIntent(record: CompanionRecord, context: CompanionIntentContext): CompanionIntent — Pure command → intent resolver. Maps a companion's standing order plus this tick's owner position, owner target, and nearby threats into the {@link CompanionIntent} a game feeds into `ai/mobBrain` (or executes directly). Deterministic and allocation-light — no import of the `@internal` brain factory; the two interoperate purely by shape.
 
 ## @jgengine/core/scene/entityStats
 
@@ -1967,6 +1993,26 @@
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 
+## @jgengine/core/world/buildSockets
+
+- `BuildCell` (interface): interface BuildCell — One integer grid cell — structurally the `GridCell` of `world/footprintGrid` (no import needed).
+- `BuildFootprint` (interface): interface BuildFootprint — A rectangular footprint (world units) a piece occupies on the build grid — the occupancy bridge.
+- `BuildPieceDef` (interface): interface BuildPieceDef — A registered piece type: its named sockets and, optionally, the footprint it claims when placed.
+- `BuildSocketCatalog` (interface): interface BuildSocketCatalog — Handle returned by {@link createBuildSocketCatalog}.
+- `BuildSocketCatalogConfig` (interface): interface BuildSocketCatalogConfig — Serializable catalog config; also the shape returned by {@link BuildSocketCatalog.toJSON}.
+- `ConnectionRule` (interface): interface ConnectionRule — Declares that two socket kinds may snap together; `mutual` (default `true`) also allows `b`→`a`.
+- `ModelSocketLike` (interface): interface ModelSocketLike — A `{ name, offset }` attach point — structurally the `ModelSocket` of `scene/modelSockets`.
+- `PieceTransform` (interface): interface PieceTransform — World transform of a placed piece: position plus a yaw about +Y.
+- `PlacedPiece` (interface): interface PlacedPiece — An already-placed piece the resolver snaps candidates against.
+- `PlacedSocket` (interface): interface PlacedSocket — A piece's socket resolved into world space.
+- `ResolveSnapsOptions` (interface): interface ResolveSnapsOptions — Options for {@link BuildSocketCatalog.resolveSnaps}.
+- `SnapCandidate` (interface): interface SnapCandidate — A resolved snap: which sockets mate and the world transform that lands the candidate onto the target.
+- `SocketDef` (interface): interface SocketDef — One named socket on a piece: where it sits and which horizontal direction it faces (yaw about Y).
+- `SocketVec3` (type): type SocketVec3 = readonly [number, number, number] — Data-driven modular build-piece snap system: a catalog of piece types, each declaring named sockets (local position + outward facing + a generic "kind"), plus a connection-rule table saying which socket kinds may mate. Given a placed piece and a candidate type it resolves every valid snap — the world transform that lands the candidate's socket exactly on the placed piece's socket, facing back into it. Genre-agnostic: foundation/wall/ceiling/pillar/edge snapping falls out of the catalog data, with no game-specific piece names baked in. Pure and serializable; composes with `world/footprintGrid` occupancy (via an injected `isFree` predicate — never imported) and with `scene/modelSockets` named attach points (via {@link pieceSocketsFromModel}).
+- `createBuildSocketCatalog` (function): function createBuildSocketCatalog(config: BuildSocketCatalogConfig): BuildSocketCatalog — Build a modular snap catalog from piece definitions and a connection-rule table. Resolves the set of valid snap transforms when hovering a candidate piece near a placed one: for every compatible socket pair it computes the world transform that seats the candidate's socket onto the placed socket, oriented to face back into it. Deterministic ordering (nearest a cursor when given, else declaration order) and an optional occupancy predicate keep it drop-in for a build-mode controller.
+- `footprintCells` (function): function footprintCells(position: SocketVec3, footprint: BuildFootprint, yaw = 0, cellSize = 1): BuildCell[] — The grid cells a piece `footprint` centered on `position` (world units) covers, honoring `yaw` (snapped to the nearest quarter turn). Mirrors `world/footprintGrid`'s `cellsFor` so a game can feed the result straight into `grid.isFree`/`grid.reserve` after committing a resolved snap — without this module importing the grid.
+- `pieceSocketsFromModel` (function): function pieceSocketsFromModel(sockets: readonly ModelSocketLike[], kindOf: (name: string) => string, yawOf?: (name: string) => number): SocketDef[] — Turn a model's named attach points (from `scene/modelSockets`' `readNamedSockets`) into {@link SocketDef}s, classifying each into a connection `kind` via `kindOf` and, optionally, an outward `yaw` via `yawOf`. Lets an artist author snap sockets as empties in a GLB instead of by hand in the catalog. Pure and structural — no three.js or scene import.
+
 ## @jgengine/core/world/buildingGenerator
 
 - `BUILDING_GENERATOR_ID` (const): const BUILDING_GENERATOR_ID: "building" — The generator id a catalog entry / placed marker references.
@@ -2346,6 +2392,20 @@
 - `Rgb` (type): type Rgb = readonly [number, number, number] — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
+
+## @jgengine/core/world/resourceNode
+
+- `HarvestOptions` (interface): interface HarvestOptions — Options for a single harvest.
+- `HarvestResult` (interface): interface HarvestResult — Outcome of one harvest attempt.
+- `Quantity` (type): type Quantity = number | readonly [number, number] — A quantity that is either fixed or a uniformly sampled `[min, max]` range resolved by the field rng.
+- `ResourceGrant` (interface): interface ResourceGrant — One resource kind granted by a harvest and its resolved amount.
+- `ResourceNodeDef` (interface): interface ResourceNodeDef — A harvestable node definition: a finite budget, the resources it yields, and how it respawns.
+- `ResourceNodeField` (interface): interface ResourceNodeField — A set of harvestable nodes: harvest with tool profiles, tick respawn timers, snapshot/hydrate for save-load.
+- `ResourceNodeFieldConfig` (interface): interface ResourceNodeFieldConfig — Construction options for {@link createResourceNodeField}: node definitions and an optional RNG/suppression hook.
+- `ResourceNodeState` (interface): interface ResourceNodeState — Serializable per-node runtime state — round-trips through save/load and multiplayer sync.
+- `ResourceYield` (interface): interface ResourceYield — One resource kind a node can yield and its base per-harvest amount (before tool bias and harvester multiplier).
+- `ToolProfile` (interface): interface ToolProfile — How a tool extracts from a node — its per-hit power and per-resource yield bias. Two profiles over the same multi-resource node return different resources and amounts: the generic pick-vs-hatchet mechanic.
+- `createResourceNodeField` (function): function createResourceNodeField(config: ResourceNodeFieldConfig): ResourceNodeField — A field of depletable, respawning harvest nodes with tool-dependent yields — the generic rock / tree / bush / vein / corpse. Each node holds a finite budget across one or more resource kinds. A harvest applies a {@link ToolProfile} whose per-resource biases decide *which* resources and *how much* the same node returns (pick favors ore, hatchet favors wood), scaled by a creature/harvester multiplier and optional deterministic rng variance; the budget drops by the tool's power. When a node empties it starts a respawn timer that `tick(dt)` counts down and refills — unless respawn is suppressed by the per-node flag or the injected predicate (a structure claimed the spot). All state is plain and serializable for save-load and multiplayer sync via {@link snapshot}/{@link hydrate}.
 
 ## @jgengine/core/world/roads
 
