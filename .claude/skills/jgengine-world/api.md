@@ -37,6 +37,21 @@
 - `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
 - `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
 
+## @jgengine/core/ai/interestScheduler
+
+- `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
+- `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
+- `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
+- `InterestGateState` (interface): interface InterestGateState — Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic.
+- `InterestGateStep` (interface): interface InterestGateStep — Per-tick output that tells the caller whether to run expensive work.
+- `InterestSchedulerConfig` (interface): interface InterestSchedulerConfig — Static configuration shared by every gate of one behavior class.
+- `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
+- `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
+- `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
+- `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
+- `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
+- `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
+
 ## @jgengine/core/ai/jobBoard
 
 - `Job` (interface): interface Job — ⚠ undocumented
@@ -85,6 +100,16 @@
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
 
+## @jgengine/core/ai/targetAcquisition
+
+- `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
+- `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
+- `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
+- `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
+- `TargetAcquirer` (interface): interface TargetAcquirer — A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}.
+- `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
+- `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
+
 ## @jgengine/core/ai/threat
 
 - `HighestThreatOptions` (interface): interface HighestThreatOptions — ⚠ undocumented
@@ -96,29 +121,6 @@
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
-
-## @jgengine/core/area/areaEffectField
-
-- `AreaEffectEvent` (interface): interface AreaEffectEvent<P> — One membership edge emitted by `step`, `removeSource`, or `clear`.
-- `AreaEffectField` (interface): interface AreaEffectField<P> — Runtime handle tracking continuous area membership across ticks.
-- `AreaEventKind` (type): type AreaEventKind = "enter" | "refresh" | "leave" — The three membership edges a step can emit.
-- `AreaFieldState` (interface): interface AreaFieldState<P> — Serialized field state: source descriptors (minus their transient shape) and per-member refresh phase.
-- `AreaLeaveReason` (type): type AreaLeaveReason = "exit" | "source-removed" | "disabled" | "cleared" — Why a `leave` edge fired.
-- `AreaMembership` (interface): interface AreaMembership<P> — One active (source, receiver) membership — feed a receiver's list to a stacking policy.
-- `AreaShape` (type): type AreaShape = | { readonly kind: "sphere"; readonly center: EntityPosition; readonly radius: number } | { readonly kind: "custom"; /** Bounding-sphere center the caller's broad-phase `candidates` query is built from. */ readonly center: EntityPosition; /** Bounding-sphere radius the caller's broa… — The area a source occupies this tick. `sphere` is first-class; `custom` leaves a seam for authored volumes and other shapes while still exposing a bounding sphere (`center`/`radius`) for the caller's broad-phase candidate query.
-- `AreaSourceSpec` (interface): interface AreaSourceSpec<P> — Descriptor for one continuous area source; re-supplied each tick so its shape follows the emitter.
-- `AreaStepInput` (interface): interface AreaStepInput — Per-tick inputs the field needs to reconcile membership without scanning the world.
-- `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
-
-## @jgengine/core/area/stackPolicy
-
-- `AreaStackPolicy` (type): type AreaStackPolicy<P> = (memberships: readonly AreaMembership<P>[]) => AreaMembership<P>[] — Reduce one receiver's overlapping memberships to the subset that applies under a stacking rule.
-- `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
-- `cappedStacks` (function): function cappedStacks<P>(limit: number, magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most `limit` memberships per `stackKey` (the highest-magnitude ones when `magnitudeOf` is given, else the first-seen). Models capped stacks — e.g. a poison that stacks up to 5 times.
-- `extremumStack` (function): function extremumStack<P>(magnitudeOf: MagnitudeOf<P>, weakest = false): AreaStackPolicy<P> — Reduce to the single strongest membership overall (`weakest = false` picks the weakest); ties broken by `sourceId`. Use when only the best or worst overlapping source should apply.
-- `independentStacks` (function): function independentStacks<P>(): AreaStackPolicy<P> — Every overlapping membership applies independently (no deduplication) — the default for hazards, fields, and lights where two sources genuinely stack.
-- `sumMagnitude` (function): function sumMagnitude<P>(memberships: readonly AreaMembership<P>[], magnitudeOf: MagnitudeOf<P>): number — Sum a numeric magnitude across memberships — additive aggregation for a total field strength (total damage per tick, total slow). A terminal reducer, not a filter, so it returns the number.
-- `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
 
 ## @jgengine/core/audio/audioFalloff
 
@@ -479,16 +481,11 @@
 
 - `HeightSampler` (interface): interface HeightSampler — ⚠ undocumented
 - `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
-- `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
-- `PathProgress` (type): type PathProgress = | { readonly kind: "normalized"; readonly value: number } /** World-distance travelled from the first waypoint (looping paths wrap; clamped otherwise). */ | { readonly kind: "distance"; readonly value: number } /** Segment `index` (0-based) plus `fraction` `0..1` along that segme… — Semantic seek target for {@link pathFollowSeek} — the caller-facing progress vocabulary a stateful path behavior restores from, so a follower can start at a distributed phase or resume a serialized route without knowing waypoint internals. `direction` (forward heading) falls out of the resulting {@link PathFollowState.heading}, so it is an output rather than a seek input.
 - `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
-- `pathFollowProgress` (function): function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress — Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek}, for editor/debug inspection and progress HUDs. Pure and allocation-light.
-- `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, pathLength]` and report `done` at the end.
 - `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSampler = 0, offset = 0): Waypoint[] — ⚠ undocumented
-- `pathLength` (function): function pathLength(config: PathFollowConfig): number — Total world-distance of a path — sum of every segment, including the wrap segment back to the first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
 
 ## @jgengine/core/nav/railGraph
 
@@ -709,13 +706,7 @@
 
 ## @jgengine/core/scene/behaviorRuntime
 
-- `BehaviorControl` (interface): interface BehaviorControl — Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance, seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable entity id without a full-world scan. Obtain it with {@link behaviorControl}.
-- `BehaviorInspection` (interface): interface BehaviorInspection — Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}.
-- `BehaviorResumePolicy` (type): type BehaviorResumePolicy = "freeze" | "advance" — Catch-up policy applied when a paused instance resumes. `freeze` (default, deterministic) discards the time spent paused; `advance` silently fast-forwards the instance by the paused duration without emitting intermediate pose writes. Only patrol honors `advance`; wander treats it as `freeze`.
-- `BehaviorSnapshot` (type): type BehaviorSnapshot = | { readonly kind: "patrol"; readonly state: PathFollowState } | { readonly kind: "wander"; readonly origin: Waypoint; readonly target: Waypoint | null } — Serializable snapshot of one behavior instance — round-trips exactly through {@link BehaviorControl.serialize}/{@link BehaviorControl.restore}.
-- `BehaviorStatus` (type): type BehaviorStatus = "active" | "paused" | "disabled" — Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining state (`paused`), or is held off until re-enabled (`disabled`).
-- `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.
-- `behaviorControl` (function): function behaviorControl(ctx: GameContext): BehaviorControl — Obtain the per-context {@link BehaviorControl} surface for suspending, resuming, seeking, serializing, and inspecting behavior instances by entity id — the lifecycle contract games use to hand pose ownership to possession/streaming/staggering code instead of bypassing the behavior runtime.
+- `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. The shell/host call this each frame; a game never does.
 
 ## @jgengine/core/scene/behaviors
 
@@ -724,7 +715,7 @@
 - `PlayerBehavior` (interface): interface PlayerBehavior — ⚠ undocumented
 - `PromptableBehavior` (interface): interface PromptableBehavior — ⚠ undocumented
 - `WanderBehavior` (interface): interface WanderBehavior — ⚠ undocumented
-- `patrol` (function): function patrol({ waypoints, speed, loop = true, startProgress, groundClamp, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; startProgress?: PathProgress; groundClamp?: boolean; }): PatrolBehavior — ⚠ undocumented
+- `patrol` (function): function patrol({ waypoints, speed, loop = true, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; }): PatrolBehavior — ⚠ undocumented
 - `player` (function): function player(): PlayerBehavior — ⚠ undocumented
 - `promptable` (function): function promptable(prompt: ProximityPrompt): PromptableBehavior — ⚠ undocumented
 - `talkable` (function): function talkable(dialogueId: string): PromptableBehavior — ⚠ undocumented
@@ -1178,18 +1169,12 @@
 ## @jgengine/core/world
 
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
+- `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
+- `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
+- `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
-- `AreaEffectEvent` (interface): interface AreaEffectEvent<P> — One membership edge emitted by `step`, `removeSource`, or `clear`.
-- `AreaEffectField` (interface): interface AreaEffectField<P> — Runtime handle tracking continuous area membership across ticks.
-- `AreaEventKind` (type): type AreaEventKind = "enter" | "refresh" | "leave" — The three membership edges a step can emit.
-- `AreaFieldState` (interface): interface AreaFieldState<P> — Serialized field state: source descriptors (minus their transient shape) and per-member refresh phase.
-- `AreaLeaveReason` (type): type AreaLeaveReason = "exit" | "source-removed" | "disabled" | "cleared" — Why a `leave` edge fired.
-- `AreaMembership` (interface): interface AreaMembership<P> — One active (source, receiver) membership — feed a receiver's list to a stacking policy.
-- `AreaShape` (type): type AreaShape = | { readonly kind: "sphere"; readonly center: EntityPosition; readonly radius: number } | { readonly kind: "custom"; /** Bounding-sphere center the caller's broad-phase `candidates` query is built from. */ readonly center: EntityPosition; /** Bounding-sphere radius the caller's broa… — The area a source occupies this tick. `sphere` is first-class; `custom` leaves a seam for authored volumes and other shapes while still exposing a bounding sphere (`center`/`radius`) for the caller's broad-phase candidate query.
-- `AreaSourceSpec` (interface): interface AreaSourceSpec<P> — Descriptor for one continuous area source; re-supplied each tick so its shape follows the emitter.
-- `AreaStackPolicy` (type): type AreaStackPolicy<P> = (memberships: readonly AreaMembership<P>[]) => AreaMembership<P>[] — Reduce one receiver's overlapping memberships to the subset that applies under a stacking rule.
-- `AreaStepInput` (interface): interface AreaStepInput — Per-tick inputs the field needs to reconcile membership without scanning the world.
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
 - `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
@@ -1199,12 +1184,7 @@
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
 - `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
-- `BehaviorControl` (interface): interface BehaviorControl — Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance, seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable entity id without a full-world scan. Obtain it with {@link behaviorControl}.
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented
-- `BehaviorInspection` (interface): interface BehaviorInspection — Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}.
-- `BehaviorResumePolicy` (type): type BehaviorResumePolicy = "freeze" | "advance" — Catch-up policy applied when a paused instance resumes. `freeze` (default, deterministic) discards the time spent paused; `advance` silently fast-forwards the instance by the paused duration without emitting intermediate pose writes. Only patrol honors `advance`; wander treats it as `freeze`.
-- `BehaviorSnapshot` (type): type BehaviorSnapshot = | { readonly kind: "patrol"; readonly state: PathFollowState } | { readonly kind: "wander"; readonly origin: Waypoint; readonly target: Waypoint | null } — Serializable snapshot of one behavior instance — round-trips exactly through {@link BehaviorControl.serialize}/{@link BehaviorControl.restore}.
-- `BehaviorStatus` (type): type BehaviorStatus = "active" | "paused" | "disabled" — Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining state (`paused`), or is held off until re-enabled (`disabled`).
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
@@ -1260,6 +1240,14 @@
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
+- `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
+- `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
+- `InterestGateState` (interface): interface InterestGateState — Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic.
+- `InterestGateStep` (interface): interface InterestGateStep — Per-tick output that tells the caller whether to run expensive work.
+- `InterestSchedulerConfig` (interface): interface InterestSchedulerConfig — Static configuration shared by every gate of one behavior class.
+- `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
+- `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
 - `Job` (interface): interface Job — ⚠ undocumented
 - `JobDef` (interface): interface JobDef — ⚠ undocumented
 - `JobReport` (interface): interface JobReport — ⚠ undocumented
@@ -1273,7 +1261,6 @@
 - `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
 - `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
-- `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
 - `MapMarker` (interface): interface MapMarker<TMeta = unknown> — ⚠ undocumented
 - `MapRoute` (interface): interface MapRoute — ⚠ undocumented
@@ -1303,9 +1290,7 @@
 - `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
 - `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
 - `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
-- `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
-- `PathProgress` (type): type PathProgress = | { readonly kind: "normalized"; readonly value: number } /** World-distance travelled from the first waypoint (looping paths wrap; clamped otherwise). */ | { readonly kind: "distance"; readonly value: number } /** Segment `index` (0-based) plus `fraction` `0..1` along that segme… — Semantic seek target for {@link pathFollowSeek} — the caller-facing progress vocabulary a stateful path behavior restores from, so a follower can start at a distributed phase or resume a serialized route without knowing waypoint internals. `direction` (forward heading) falls out of the resulting {@link PathFollowState.heading}, so it is an output rather than a seek input.
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
@@ -1372,6 +1357,7 @@
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `SynthPatch` (interface): interface SynthPatch — A procedural sound cue: a set of voices triggered together, each with its own `delay`, summed into one one-shot. Pure serialisable data — the shell realises it on Web Audio, so the same catalog runs headless in tests with no `AudioContext`.
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
+- `TargetAcquirer` (interface): interface TargetAcquirer — A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}.
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
 - `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
@@ -1423,7 +1409,9 @@
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
-- `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.
+- `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
+- `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. The shell/host call this each frame; a game never does.
+- `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
@@ -1432,14 +1420,12 @@
 - `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
 - `beginSurfaceStroke` (function): function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke — Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
 - `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
-- `behaviorControl` (function): function behaviorControl(ctx: GameContext): BehaviorControl — Obtain the per-context {@link BehaviorControl} surface for suspending, resuming, seeking, serializing, and inspecting behavior instances by entity id — the lifecycle contract games use to hand pose ownership to possession/streaming/staggering code instead of bypassing the behavior runtime.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
-- `cappedStacks` (function): function cappedStacks<P>(limit: number, magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most `limit` memberships per `stackKey` (the highest-magnitude ones when `magnitudeOf` is given, else the first-seen). Models capped stacks — e.g. a poison that stacks up to 5 times.
 - `carrySpeedMultiplier` (function): function carrySpeedMultiplier(mass: number, carryCapacity: number, owners: number): number — Movement multiplier (1 = unhindered, →0 = crushed) for a body of `mass` carried by `owners`. Pure — the HUD/movement kit reads it to slow a laden hauler (Lethal Company) and to gate items that need 2+ people (R.E.P.O.).
 - `carvableTerrain` (function): function carvableTerrain(base: TerrainField): CarvableField — ⚠ undocumented
 - `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
@@ -1453,7 +1439,6 @@
 - `constrainToNavGrid` (function): function constrainToNavGrid(grid: NavGrid, options?: NavConstrainOptions): (proposed: NavConstrainProposed, entity: NavConstrainEntity) => NavConstrainProposed | null — ⚠ undocumented
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
-- `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 - `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
@@ -1470,6 +1455,8 @@
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — Gliding/wingsuit descent control — lift, drag, and steering from a launch.
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
+- `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
+- `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
 - `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
@@ -1487,6 +1474,7 @@
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
+- `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
@@ -1504,7 +1492,6 @@
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
-- `extremumStack` (function): function extremumStack<P>(magnitudeOf: MagnitudeOf<P>, weakest = false): AreaStackPolicy<P> — Reduce to the single strongest membership overall (`weakest = false` picks the weakest); ties broken by `sourceId`. Use when only the best or worst overlapping source should apply.
 - `findPath` (function): function findPath(grid: NavGrid, from: NavPoint, to: NavPoint, options: FindPathOptions = {}): NavPoint[] | null — A* over the walkable grid. Returns a polyline of world-space `[x, z]` waypoints from `from` to `to`, or `null` when no route exists. Blocked start/goal snap to the nearest walkable cell so a click on an obstacle still routes to its edge.
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
@@ -1519,7 +1506,7 @@
 - `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
 - `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
-- `independentStacks` (function): function independentStacks<P>(): AreaStackPolicy<P> — Every overlapping membership applies independently (no deduplication) — the default for hazards, fields, and lights where two sources genuinely stack.
+- `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
 - `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
@@ -1540,11 +1527,8 @@
 - `parkingSpots` (function): function parkingSpots(road: RoadEnvironmentDescriptor, options: ParkingSpotOptions = {}): readonly ParkingSpot[] — Curbside parking anchors along a road: hugging the edge of the asphalt, headed parallel to the street in that side's direction of travel. Spawn parked vehicles here instead of eyeballing coordinates in the middle of the carriageway.
 - `parseParams` (function): function parseParams(schema: ParamSchema, meta: Record<string, unknown> | undefined): ParsedParams — Parse a raw `meta` bag against a schema into typed params — every field present, invalid/missing values replaced by the field default, numbers clamped to their range. The single parser every studio shares instead of hand-writing its own `metaNumber`/`metaBool` ladder.
 - `partsBounds` (function): function partsBounds(parts: readonly GeneratedPart[]): GeneratedAsset["bounds"] — Compute bounds from parts (each part is an axis-aligned box at its center) — a helper generators return so callers can frame/ground the asset without re-deriving it.
-- `pathFollowProgress` (function): function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress — Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek}, for editor/debug inspection and progress HUDs. Pure and allocation-light.
-- `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, pathLength]` and report `done` at the end.
 - `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSampler = 0, offset = 0): Waypoint[] — ⚠ undocumented
-- `pathLength` (function): function pathLength(config: PathFollowConfig): number — Total world-distance of a path — sum of every segment, including the wrap segment back to the first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
-- `patrol` (function): function patrol({ waypoints, speed, loop = true, startProgress, groundClamp, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; startProgress?: PathProgress; groundClamp?: boolean; }): PatrolBehavior — ⚠ undocumented
+- `patrol` (function): function patrol({ waypoints, speed, loop = true, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; }): PatrolBehavior — ⚠ undocumented
 - `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
@@ -1609,7 +1593,6 @@
 - `steerYaw` (function): function steerYaw(yaw: number, steerRight: number, turnRatePerSecond: number, dt: number): number — Integrate one steering step. `steerRight` is the signed steer input (+1 = turn right, matching `DRIVE_AXIS_BINDINGS`' KeyD/ArrowRight), `turnRatePerSecond` is radians per second at full lock. Steering right decreases yaw in the engine frame; this helper owns that sign so game code never re-derives it.
 - `stepLock` (function): function stepLock(spec: LockSpec, col: number, row: number, action: LockAction): { result: LockStepResult; col: number; row: number } — Authoritative single step. The caller owns the lives economy: a slip/bind/trap does not advance the pick and should cost a life; advanced/success move the pick.
 - `stepPlayerMovement` (function): function stepPlayerMovement(ctx: GameContext, userId: string, input: InputFrame, dt: number, tuning: PlayerMovementTuning, heading?: number): void — Integrate one player's movement for a tick from their held-input frame and commit the pose — the single genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call, so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain, scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions.
-- `sumMagnitude` (function): function sumMagnitude<P>(memberships: readonly AreaMembership<P>[], magnitudeOf: MagnitudeOf<P>): number — Sum a numeric magnitude across memberships — additive aggregation for a total field strength (total damage per tick, total slow). A terminal reducer, not a filter, so it returns the number.
 - `summarizeEnvironment` (function): function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary — ⚠ undocumented
 - `talkable` (function): function talkable(dialogueId: string): PromptableBehavior — ⚠ undocumented
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
@@ -1620,7 +1603,6 @@
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
 - `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
 - `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
-- `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
 - `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.

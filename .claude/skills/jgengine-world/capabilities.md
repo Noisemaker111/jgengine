@@ -4,30 +4,6 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
-
-- `createAreaEffectField` (function) · `import { createAreaEffectField } from "@jgengine/core/world"`
-
-## area-stack-additive — sum a magnitude across overlapping area memberships
-
-- `sumMagnitude` (function) · `import { sumMagnitude } from "@jgengine/core/world"`
-
-## area-stack-capped — cap area memberships per stack key at a maximum count
-
-- `cappedStacks` (function) · `import { cappedStacks } from "@jgengine/core/world"`
-
-## area-stack-extremum — keep only the strongest or weakest overlapping area membership
-
-- `extremumStack` (function) · `import { extremumStack } from "@jgengine/core/world"`
-
-## area-stack-independent — apply every overlapping area membership independently
-
-- `independentStacks` (function) · `import { independentStacks } from "@jgengine/core/world"`
-
-## area-stack-unique — keep one area membership per stack key, strongest wins
-
-- `uniqueByStackKey` (function) · `import { uniqueByStackKey } from "@jgengine/core/world"`
-
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
@@ -40,10 +16,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createAuthoredTriggerRuntime` (function) · `import { createAuthoredTriggerRuntime } from "@jgengine/core/world"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
 
-## behavior-control — pause/disable/resume/seek/inspect behavior instances per entity
-
-- `behaviorControl` (function) · `import { behaviorControl } from "@jgengine/core/world"`
-
 ## behavior-tick — auto-advance patrol/wander behaviors on spawned entities, no per-game route loop
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
@@ -51,6 +23,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
+
+## catenary — sagging cable curve between two anchors
+
+- `Vec3` (type) · `import { Vec3 } from "@jgengine/core/world/catenary"`
 
 ## crouch-prone — stance/pose transitions that change the hitbox
 
@@ -84,6 +60,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
+## interest-census — running active/dormant gate tally folded into the caller's tick loop
+
+- `createInterestCensus` (function) · `import { createInterestCensus } from "@jgengine/core/world"`
+
+## interest-gate — per-agent sleep/wake + cadence gate state so far agents skip expensive ticks
+
+- `createInterestGateState` (function) · `import { createInterestGateState } from "@jgengine/core/world"`
+
+## interest-scheduler — advance a sleep/wake gate with hysteresis, cadence tiers, and stagger
+
+- `advanceInterestGate` (function) · `import { advanceInterestGate } from "@jgengine/core/world"`
+
+## interest-stagger — deterministic per-id cadence phase that spreads sibling gate ticks across frames
+
+- `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
@@ -95,18 +87,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
-
-## path-follow-progress — read normalized/distance/segment progress from follow state
-
-- `pathFollowProgress` (function) · `import { pathFollowProgress } from "@jgengine/core/world"`
-
-## path-follow-seek — jump a path-follower to normalized/distance/segment progress
-
-- `pathFollowSeek` (function) · `import { pathFollowSeek } from "@jgengine/core/world"`
-
-## path-length — total polyline distance for progress math and seeding
-
-- `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
@@ -134,19 +114,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
 
-## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
-
-- `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
-- `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
-
-## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
-
-- `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
-
-## selection-bookmarks — keyed saved-set store (RTS control groups, camera bookmarks, saved squads) with prune + serialize
-
-- `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
-
 ## skill-check — a timing-bar skill check where you release inside a zone
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`
@@ -155,17 +122,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
-## spatial-sample — draw one deterministic position from a region under include/exclude/distance constraints
+## target-acquirer — stateful held-target wrapper over an acquisition policy with retention
 
-- `samplePoint` (function) · `import { samplePoint } from "@jgengine/core/world"`
+- `createTargetAcquirer` (function) · `import { createTargetAcquirer } from "@jgengine/core/world"`
 
-## spatial-sample-batch — place many deterministic spaced points from a region with minimum separation
+## target-acquisition — composable candidate/eligibility/range/perception/score/tie-break/retention target pick
 
-- `sampleBatch` (function) · `import { sampleBatch } from "@jgengine/core/world"`
-
-## spatial-sample-stratified — evenly cover an area with one jittered point per grid cell, deterministic
-
-- `sampleStratified` (function) · `import { sampleStratified } from "@jgengine/core/world"`
+- `acquireTarget` (function) · `import { acquireTarget } from "@jgengine/core/world"`
 
 ## touch-controls — default on-screen button silhouette for a touch action
 

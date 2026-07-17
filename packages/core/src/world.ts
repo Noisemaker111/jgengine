@@ -1,4 +1,18 @@
 export { type HeatConfig, type HeatGain, type HeatLevelDef, type HeatState } from "./ai/heatSystem";
+export {
+  advanceInterestGate,
+  createInterestCensus,
+  createInterestGateState,
+  interestPhase,
+  type InterestCensus,
+  type InterestCensusAccumulator,
+  type InterestGateInput,
+  type InterestGateState,
+  type InterestGateStep,
+  type InterestSchedulerConfig,
+  type InterestState,
+  type InterestTier,
+} from "./ai/interestScheduler";
 export { type Job, type JobDef, type JobReport } from "./ai/jobBoard";
 export {
   advanceSpawnDirector,
@@ -12,6 +26,15 @@ export {
   type SpawnRequest,
   type WaveManifest,
 } from "./ai/spawnDirector";
+export {
+  acquireTarget,
+  createTargetAcquirer,
+  type AcquisitionEnvelope,
+  type AcquisitionPolicy,
+  type AcquisitionResult,
+  type AcquisitionRetention,
+  type TargetAcquirer,
+} from "./ai/targetAcquisition";
 export { createThreatTable, type ThreatTable } from "./ai/threat";
 export {
   createAreaEffectField,
