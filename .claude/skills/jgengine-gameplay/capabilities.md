@@ -24,11 +24,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
 
-## declarative-predicate — serializable data-driven conditions with no callbacks in saved content
-
-- `evaluatePredicate` (function) · `import { evaluatePredicate } from "@jgengine/core/gameplay"`
-- `readPath` (function) · `import { readPath } from "@jgengine/core/gameplay"`
-
 ## define-game — single public game-authoring path — compose systems, world, and loop in one definition
 
 - `defineGame` (function) · `import { defineGame } from "@jgengine/core/gameplay"`
@@ -57,14 +52,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
-## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
+## item-identity — resolve which match/set bonuses an item qualifies for
 
-- `generate` (function) · `import { generate } from "@jgengine/core/gameplay"`
+- `activeSetBonuses` (function) · `import { activeSetBonuses } from "@jgengine/core/gameplay"`
+- `applySetBonuses` (function) · `import { applySetBonuses } from "@jgengine/core/gameplay"`
+- `candidateViolatesForbid` (function) · `import { candidateViolatesForbid } from "@jgengine/core/gameplay"`
+- `captureProvenance` (function) · `import { captureProvenance } from "@jgengine/core/gameplay"`
+- `countSetMembers` (function) · `import { countSetMembers } from "@jgengine/core/gameplay"`
+- `identityOf` (function) · `import { identityOf } from "@jgengine/core/gameplay"`
+- `isIdentityValid` (function) · `import { isIdentityValid } from "@jgengine/core/gameplay"`
+- `matchesQuery` (function) · `import { matchesQuery } from "@jgengine/core/gameplay"`
+- `validateIdentity` (function) · `import { validateIdentity } from "@jgengine/core/gameplay"`
 
 ## item-instance-registry — a runtime store for procedurally generated item instances
 
 - `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
 - `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/gameplay"`
+
+## item-use-composition — compose pluggable, ordered item use-behaviors from serializable references
+
+- `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
 
 ## lap-splits — per-lap durations from a cumulative split book
 
@@ -104,11 +111,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
 
-## loot-pipeline — compose ordered loot pools with fallbacks, roll modifiers, and provenance
-
-- `createLootPipeline` (function) · `import { createLootPipeline } from "@jgengine/core/gameplay"`
-- `defineLootPipeline` (function) · `import { defineLootPipeline } from "@jgengine/core/gameplay"`
-
 ## loot-table — register loot tables and roll weighted randomized drops
 
 - `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`
@@ -125,15 +127,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## objectives — check progress of a threshold objective against a live metric
 
 - `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
-
-## param-layers — register parameter layers by stable id and resolve serialized selections
-
-- `createLayerRegistry` (function) · `import { createLayerRegistry } from "@jgengine/core/gameplay"`
-- `diffParams` (function) · `import { diffParams } from "@jgengine/core/gameplay"`
-- `orderLayers` (function) · `import { orderLayers } from "@jgengine/core/gameplay"`
-- `resolveParams` (function) · `import { resolveParams } from "@jgengine/core/gameplay"`
-- `resolveSelection` (function) · `import { resolveSelection } from "@jgengine/core/gameplay"`
-- `validateLayers` (function) · `import { validateLayers } from "@jgengine/core/gameplay"`
 
 ## ping-wheel — contextual ping/marker communication between teammates
 
@@ -160,12 +153,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
 
-## rule-selection — register rules and bridge a selection to its contributed parameter layers
-
-- `createRuleRegistry` (function) · `import { createRuleRegistry } from "@jgengine/core/gameplay"`
-- `rerollRules` (function) · `import { rerollRules } from "@jgengine/core/gameplay"`
-- `selectRules` (function) · `import { selectRules } from "@jgengine/core/gameplay"`
-
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
@@ -190,13 +177,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
-
-## triggered-rules — event-conditioned effects with declarative predicates, lifetimes, and stacking
-
-- `createTriggeredRuleEngine` (function) · `import { createTriggeredRuleEngine } from "@jgengine/core/gameplay"`
-- `getRuleEffect` (function) · `import { getRuleEffect } from "@jgengine/core/gameplay"`
-- `listRuleEffects` (function) · `import { listRuleEffects } from "@jgengine/core/gameplay"`
-- `registerRuleEffect` (function) · `import { registerRuleEffect } from "@jgengine/core/gameplay"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 

@@ -691,6 +691,8 @@
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
 - `AxisInput` (interface): interface AxisInput — ⚠ undocumented
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
+- `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
+- `BehaviorState` (type): type BehaviorState = Record<string, unknown> — A single behavior's mutable, serializable runtime state (e.g. current charge, rounds queued). Composed state is a map of these keyed by behavior id.
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
 - `BehaviourModule` (class): class BehaviourModule — A world-lifetime service with typed sibling access via `this.modules`. Modules awake and start before any behaviour during `world.start()`, subscribe to update dispatch first (their `onUpdate` fires before every behaviour's), and have no disable/destroy — they live as long as the world.
 - `BehaviourWorld` (interface): interface BehaviourWorld — ⚠ undocumented
@@ -698,6 +700,7 @@
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
 - `CardPile` (interface): interface CardPile — ⚠ undocumented
 - `CardPileState` (interface): interface CardPileState — ⚠ undocumented
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
@@ -710,7 +713,11 @@
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
+- `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
 - `CompiledSystemSchedule` (interface): interface CompiledSystemSchedule — Deterministic compiled schedule: stage buckets, multi-subscribe channels, dependency validation. Order never depends on import order — only stage tables + explicit before/after constraints.
+- `ComposedUse` (interface): interface ComposedUse<TWorld> — A resolved, ordered composition of behaviors for one item. Dispatch is transactional: `apply` commits the folded world only if every behavior in the chain succeeds, otherwise it returns the original world and state plus the first error.
+- `CompositionResult` (type): type CompositionResult<TWorld> = | { status: "ok"; composed: ComposedUse<TWorld> } | { status: "error"; reason: "unknown-behavior"; id: string } | { status: "error"; reason: "duplicate-behavior"; id: string } | { status: "error"; reason: "missing-capability"; id: string; capability: string } | { sta… — The outcome of composing an item's behavior refs: either a ready {@link ComposedUse} or a structured error naming the offending behavior.
+- `ConstraintViolation` (interface): interface ConstraintViolation — One failed {@link CompatibilityRule}, carrying the rule id, its kind, and a human-readable message for UI or generator diagnostics.
 - `CropDef` (interface): interface CropDef — ⚠ undocumented
 - `CropTileState` (interface): interface CropTileState — ⚠ undocumented
 - `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
@@ -734,6 +741,7 @@
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
 - `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
 - `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
 - `Friends` (interface): interface Friends — ⚠ undocumented
@@ -744,26 +752,15 @@
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GamePhase` (type): type GamePhase = "menu" | "playing" | "paused" | "ended" — Canonical run phase every game moves through. `menu` (title/main menu), `playing` (live), `paused` (mid-run pause), `ended` (win/lose/results). Touch controls are shown only while `playing`; menus and results never paint the touch dock over themselves.
-- `GenChoiceRecord` (interface): interface GenChoiceRecord — Provenance for one resolved step: which option stuck, its effective weight, how many options were eligible after constraints, and how many eligible options backtracking rejected before this one. A skipped optional step is recorded with an empty `optionId`.
-- `GenChoices` (interface): interface GenChoices — Read-only view of the choices resolved so far, threaded into a later step's pool, constraint, weight function, or transform so a decision can depend on earlier picks (dependent choice).
-- `GenDraft` (interface): interface GenDraft — The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their values, and the transformed fields. Returning false from any validator rerolls the whole generation up to the attempt budget.
-- `GenFieldRecord` (interface): interface GenFieldRecord — Provenance for one field mutation a transform made: which transform, field, op, and before/after.
-- `GenOption` (interface): interface GenOption<V = unknown> — One selectable option in a generation step's pool: a stable `id` used in provenance and pinning, the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
-- `GenOutcome` (type): type GenOutcome = | { ok: true; result: GenResult } | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number } — The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept rejecting drafts) and the attempts spent.
-- `GenPool` (type): type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]) — A step's candidate options: a fixed list, or a function of the choices resolved so far so pools can narrow to earlier picks (a slot pool that depends on a chosen category).
-- `GenProvenance` (interface): interface GenProvenance — The full explanation of a generated result: how many whole-pipeline attempts it took, every step choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and regeneration.
-- `GenResult` (interface): interface GenResult — A successful generation: the step-to-option map, step-to-value map, transformed numeric fields, and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through save/load and multiplayer sync unchanged.
-- `GenSchema` (interface): interface GenSchema — A caller-defined generation schema over plain data: ordered choice steps, optional field transforms, optional validators, and bounded reroll/backtracking budgets. Genre-agnostic — it carries no built-in notion of rarity, element, weapon, or name; those are caller step and option ids.
-- `GenStep` (interface): interface GenStep<V = unknown> — One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
-- `GenTransform` (interface): interface GenTransform — A named derivation over the numeric field bag, applied in schema order after all choices resolve (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
-- `GenValidator` (type): type GenValidator = (draft: GenDraft) => boolean — A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll.
-- `GenerateOptions` (interface): interface GenerateOptions — Per-call options for {@link generate}.
+- `IdentityQuery` (interface): interface IdentityQuery — A predicate over an {@link ItemIdentity}, expressed as data so a whole rule set round-trips through JSON. An empty query matches every identity; each present field narrows the match and all present fields must hold (AND).
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
 - `InventoryState` (interface): interface InventoryState — ⚠ undocumented
+- `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
+- `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
 - `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
 - `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
 - `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
@@ -813,6 +810,7 @@
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
 - `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase — ⚠ undocumented
@@ -827,6 +825,8 @@
 - `SaveStatus` (type): type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error" — Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write.
 - `SaveStore` (interface): interface SaveStore<T> — A pluggable-backend game save with autosave, named slots, and versioned migration. `value()`/`patch()` hold the live state; `load()` hydrates it from the backend; `save()` (or autosave) writes it back. Backend failures surface as `"error"` status and through `onError` — a save never throws into a tick.
 - `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
+- `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
+- `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
@@ -850,9 +850,14 @@
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
-- `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
+- `UseBehaviorContext` (interface): interface UseBehaviorContext<TWorld> — The context handed to each behavior hook: the shared folded `world`, this behavior's own `config` and `state` slice, and the triggering use input.
+- `UseBehaviorDef` (interface): interface UseBehaviorDef<TWorld> — A registered behavior implementation. The combat/game side registers these (charge, thrown-reload, projectile-replacement, …); the item core only ever stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init` builds serializable state, `can` gates, `apply` folds the world.
+- `UseBehaviorOutcome` (interface): interface UseBehaviorOutcome<TWorld> — The result of applying one behavior: the (possibly advanced) world, this behavior's updated state, an optional error that aborts the chain, and an optional `stop` that ends the chain after a successful apply.
+- `UseBehaviorRef` (interface): interface UseBehaviorRef — The reference an item stores for one composed behavior: a stable behavior id, optional config, and an optional order override. Pure data — the item core never holds the implementation, only this reference.
+- `UseBehaviorRegistry` (interface): interface UseBehaviorRegistry<TWorld> — A registry of use-behavior implementations plus a composer that turns an item's stored refs into an ordered, conflict-checked {@link ComposedUse}.
+- `UseBehaviorRejection` (interface): interface UseBehaviorRejection — A reason a behavior refused a use, surfaced from `can`.
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
@@ -860,19 +865,24 @@
 - `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
+- `activeSetBonuses` (function): function activeSetBonuses(identity: ItemIdentity, bonuses: readonly SetBonus[]): SetBonus[] — Select the set bonuses whose membership count meets their threshold, in the order they were declared.
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
+- `applySetBonuses` (function): function applySetBonuses(stats: Record<string, number>, bonuses: readonly SetBonus[]): Record<string, number> — Fold a set of active bonuses' additive stats onto a stat map, returning a new map (the input is not mutated).
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
+- `candidateViolatesForbid` (function): function candidateViolatesForbid(partial: ItemIdentity, candidate: CandidatePlacement, rules: readonly CompatibilityRule[]): ForbidRule | null — The generic backtracking contract for procedural generation (see #908): given a partial identity and a candidate part, return the first forbid rule the placement would violate, or null if it stays viable. Require rules are ignored here because they may still be satisfied by a later placement.
+- `captureProvenance` (function): function captureProvenance(identity: ItemIdentity, activeBonuses: readonly SetBonus[], seed?: number): ItemProvenance — Capture the provenance of a generated item — family, tags, per-slot parts, active bonus ids, and optional seed — as a JSON-safe record.
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `compileSystemSchedule` (function): function compileSystemSchedule(systems: readonly SystemDefinition[], options?: CompileSystemScheduleOptions): CompiledSystemSchedule — Compile system definitions into a deterministic schedule. Validates unique ids, `dependsOn`, and before/after cycles.
 - `composeGameLoop` (function): function composeGameLoop(systems: readonly SystemDefinition[] | undefined, loop: GameLoop<GameContext> | undefined, options?: ComposeGameLoopOptions): GameLoop<GameContext> — Merge a system list with an optional classic `GameLoop` into one loop the shell/runners drive. Systems install on first `onInit`; classic hooks still run for incremental migration.
 - `computeEffectiveStats` (function): function computeEffectiveStats(def: ModularItemDef, installed: readonly InstalledPart[]): Record<string, number> — ⚠ undocumented
+- `countSetMembers` (function): function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number — Count how many parts (or tags) contribute to a set bonus on an identity.
 - `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
 - `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
@@ -922,6 +932,7 @@
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
+- `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
@@ -938,13 +949,14 @@
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
-- `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
+- `identityOf` (function): function identityOf(family: string, tags: readonly string[], parts: readonly InstalledPart[]): ItemIdentity — Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
 - `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
+- `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
@@ -952,6 +964,7 @@
 - `localSaveBackend` (function): function localSaveBackend(storage?: KeyValueStorage | null): SaveBackend — A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the browser's `localStorage` by default (offline, on-device saves), a test stub, or `null` for memory-only. Storage errors (quota exceeded, private mode, no DOM) degrade to no-ops, so a save never throws into a game tick.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
+- `matchesQuery` (function): function matchesQuery(identity: ItemIdentity, query: IdentityQuery): boolean — Test whether an identity satisfies a declarative {@link IdentityQuery}.
 - `memorySaveBackend` (function): function memorySaveBackend(): SaveBackend — A memory-only {@link SaveBackend} — saves survive a reload only within the same session. For tests, SSR, or a "no persistence" mode that still exercises the same save code path.
 - `missingRequiredSlots` (function): function missingRequiredSlots(def: ModularItemDef, installed: readonly InstalledPart[]): string[] — ⚠ undocumented
 - `moveCards` (function): function moveCards(state: CardPileState, ids: readonly string[], from: ZoneName, to: ZoneName, position: "top" | "bottom" = "top"): PileResult — ⚠ undocumented
@@ -993,6 +1006,7 @@
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
 - `uninstall` (function): function uninstall(installed: readonly InstalledPart[], slotId: string): readonly InstalledPart[] — ⚠ undocumented
+- `validateIdentity` (function): function validateIdentity(identity: ItemIdentity, rules: readonly CompatibilityRule[]): ConstraintViolation[] — Collect every compatibility rule a completed identity violates. An empty result means the identity is legal.
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
@@ -1080,30 +1094,32 @@
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `wearAmount` (function): function wearAmount(spec: DurabilitySpec, kind: WearKind): number — ⚠ undocumented
 
+## @jgengine/core/item/itemIdentity
+
+- `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
+- `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
+- `ConstraintViolation` (interface): interface ConstraintViolation — One failed {@link CompatibilityRule}, carrying the rule id, its kind, and a human-readable message for UI or generator diagnostics.
+- `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
+- `IdentityQuery` (interface): interface IdentityQuery — A predicate over an {@link ItemIdentity}, expressed as data so a whole rule set round-trips through JSON. An empty query matches every identity; each present field narrows the match and all present fields must hold (AND).
+- `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
+- `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
+- `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
+- `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
+- `activeSetBonuses` (function): function activeSetBonuses(identity: ItemIdentity, bonuses: readonly SetBonus[]): SetBonus[] — Select the set bonuses whose membership count meets their threshold, in the order they were declared.
+- `applySetBonuses` (function): function applySetBonuses(stats: Record<string, number>, bonuses: readonly SetBonus[]): Record<string, number> — Fold a set of active bonuses' additive stats onto a stat map, returning a new map (the input is not mutated).
+- `candidateViolatesForbid` (function): function candidateViolatesForbid(partial: ItemIdentity, candidate: CandidatePlacement, rules: readonly CompatibilityRule[]): ForbidRule | null — The generic backtracking contract for procedural generation (see #908): given a partial identity and a candidate part, return the first forbid rule the placement would violate, or null if it stays viable. Require rules are ignored here because they may still be satisfied by a later placement.
+- `captureProvenance` (function): function captureProvenance(identity: ItemIdentity, activeBonuses: readonly SetBonus[], seed?: number): ItemProvenance — Capture the provenance of a generated item — family, tags, per-slot parts, active bonus ids, and optional seed — as a JSON-safe record.
+- `countSetMembers` (function): function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number — Count how many parts (or tags) contribute to a set bonus on an identity.
+- `identityOf` (function): function identityOf(family: string, tags: readonly string[], parts: readonly InstalledPart[]): ItemIdentity — Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
+- `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
+- `matchesQuery` (function): function matchesQuery(identity: ItemIdentity, query: IdentityQuery): boolean — Test whether an identity satisfies a declarative {@link IdentityQuery}.
+- `validateIdentity` (function): function validateIdentity(identity: ItemIdentity, rules: readonly CompatibilityRule[]): ConstraintViolation[] — Collect every compatibility rule a completed identity violates. An empty result means the identity is legal.
+
 ## @jgengine/core/item/itemInstanceRegistry
 
 - `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).
 - `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
-
-## @jgengine/core/item/itemgen
-
-- `GenChoiceRecord` (interface): interface GenChoiceRecord — Provenance for one resolved step: which option stuck, its effective weight, how many options were eligible after constraints, and how many eligible options backtracking rejected before this one. A skipped optional step is recorded with an empty `optionId`.
-- `GenChoices` (interface): interface GenChoices — Read-only view of the choices resolved so far, threaded into a later step's pool, constraint, weight function, or transform so a decision can depend on earlier picks (dependent choice).
-- `GenDraft` (interface): interface GenDraft — The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their values, and the transformed fields. Returning false from any validator rerolls the whole generation up to the attempt budget.
-- `GenFieldRecord` (interface): interface GenFieldRecord — Provenance for one field mutation a transform made: which transform, field, op, and before/after.
-- `GenOption` (interface): interface GenOption<V = unknown> — One selectable option in a generation step's pool: a stable `id` used in provenance and pinning, the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
-- `GenOutcome` (type): type GenOutcome = | { ok: true; result: GenResult } | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number } — The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept rejecting drafts) and the attempts spent.
-- `GenPool` (type): type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]) — A step's candidate options: a fixed list, or a function of the choices resolved so far so pools can narrow to earlier picks (a slot pool that depends on a chosen category).
-- `GenProvenance` (interface): interface GenProvenance — The full explanation of a generated result: how many whole-pipeline attempts it took, every step choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and regeneration.
-- `GenResult` (interface): interface GenResult — A successful generation: the step-to-option map, step-to-value map, transformed numeric fields, and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through save/load and multiplayer sync unchanged.
-- `GenSchema` (interface): interface GenSchema — A caller-defined generation schema over plain data: ordered choice steps, optional field transforms, optional validators, and bounded reroll/backtracking budgets. Genre-agnostic — it carries no built-in notion of rarity, element, weapon, or name; those are caller step and option ids.
-- `GenStep` (interface): interface GenStep<V = unknown> — One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
-- `GenTransform` (interface): interface GenTransform — A named derivation over the numeric field bag, applied in schema order after all choices resolve (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
-- `GenValidator` (type): type GenValidator = (draft: GenDraft) => boolean — A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll.
-- `GenerateOptions` (interface): interface GenerateOptions — Per-call options for {@link generate}.
-- `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
-- `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
 
 ## @jgengine/core/item/modularItem
 
@@ -1131,6 +1147,21 @@
 - `ItemUseRejection` (interface): interface ItemUseRejection — ⚠ undocumented
 - `ItemUseResult` (interface): interface ItemUseResult<TState> — ⚠ undocumented
 - `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — Use or consume items, applying their effects and per-item cooldowns.
+
+## @jgengine/core/item/useBehavior
+
+- `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
+- `BehaviorState` (type): type BehaviorState = Record<string, unknown> — A single behavior's mutable, serializable runtime state (e.g. current charge, rounds queued). Composed state is a map of these keyed by behavior id.
+- `ComposedUse` (interface): interface ComposedUse<TWorld> — A resolved, ordered composition of behaviors for one item. Dispatch is transactional: `apply` commits the folded world only if every behavior in the chain succeeds, otherwise it returns the original world and state plus the first error.
+- `CompositionResult` (type): type CompositionResult<TWorld> = | { status: "ok"; composed: ComposedUse<TWorld> } | { status: "error"; reason: "unknown-behavior"; id: string } | { status: "error"; reason: "duplicate-behavior"; id: string } | { status: "error"; reason: "missing-capability"; id: string; capability: string } | { sta… — The outcome of composing an item's behavior refs: either a ready {@link ComposedUse} or a structured error naming the offending behavior.
+- `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
+- `UseBehaviorContext` (interface): interface UseBehaviorContext<TWorld> — The context handed to each behavior hook: the shared folded `world`, this behavior's own `config` and `state` slice, and the triggering use input.
+- `UseBehaviorDef` (interface): interface UseBehaviorDef<TWorld> — A registered behavior implementation. The combat/game side registers these (charge, thrown-reload, projectile-replacement, …); the item core only ever stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init` builds serializable state, `can` gates, `apply` folds the world.
+- `UseBehaviorOutcome` (interface): interface UseBehaviorOutcome<TWorld> — The result of applying one behavior: the (possibly advanced) world, this behavior's updated state, an optional error that aborts the chain, and an optional `stop` that ends the chain after a successful apply.
+- `UseBehaviorRef` (interface): interface UseBehaviorRef — The reference an item stores for one composed behavior: a stable behavior id, optional config, and an optional order override. Pure data — the item core never holds the implementation, only this reference.
+- `UseBehaviorRegistry` (interface): interface UseBehaviorRegistry<TWorld> — A registry of use-behavior implementations plus a composer that turns an item's stored refs into an ordered, conflict-checked {@link ComposedUse}.
+- `UseBehaviorRejection` (interface): interface UseBehaviorRejection — A reason a behavior refused a use, surfaced from `can`.
+- `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
 
 ## @jgengine/core/item/weapon
 
