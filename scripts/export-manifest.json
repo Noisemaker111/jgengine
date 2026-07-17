@@ -61,6 +61,7 @@
     "./devtools/tunableSchema",
     "./economy/currency",
     "./economy/listingBook",
+    "./economy/resourceLedger",
     "./economy/sharedWallet",
     "./economy/techTree",
     "./economy/wallet",

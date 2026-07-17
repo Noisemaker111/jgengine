@@ -1,12 +1,43 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import {
+  advanceLedger,
+  balanceOf,
+  type ResourceLedger,
+  type ResourcePolicy,
+} from "@jgengine/core/economy/resourceLedger";
 
-import { MILESTONES } from "../catalog";
+import { DAY_LENGTH, MILESTONES } from "../catalog";
 import { buildableDef } from "../objects/catalog";
 import { pushToast, session } from "../session";
 import { computeMetrics, ratingTarget, type ParkMetrics } from "./rating";
 import { placedList } from "../build/placement";
 
 const BANKRUPT_LIMIT = 3;
+
+/** The nominal `daily-upkeep` cycle carries no amount; the real cost is the live park metrics. */
+const dailyUpkeepAmount: ResourcePolicy = (txn, ctx) => [
+  { ...txn, amount: (ctx.vars.upkeep ?? 0) + (ctx.vars.restock ?? 0) },
+];
+
+/**
+ * Settle one day's upkeep+restock through the shared scheduled-transaction ledger. The park
+ * balance is re-seeded from live `cash` (absorbing the day's ticket/stall/build flows) before the
+ * scheduled rule debits it, so the ledger stays authoritative for the recurring charge without
+ * changing observable cash.
+ */
+export function settleDailyUpkeep(
+  ledger: ResourceLedger,
+  cash: number,
+  upkeep: number,
+  restock: number,
+): { ledger: ResourceLedger; cash: number } {
+  const seeded: ResourceLedger = { ...ledger, accounts: { ...ledger.accounts, park: { cash } } };
+  const res = advanceLedger(seeded, seeded.nowSeconds + DAY_LENGTH, {
+    vars: { upkeep, restock },
+    policies: [dailyUpkeepAmount],
+  });
+  return { ledger: res.ledger, cash: balanceOf(res.ledger, "park", "cash") };
+}
 
 export function currentMetrics(): ParkMetrics {
   return computeMetrics(placedList());
@@ -33,7 +64,9 @@ export function economyDayTick(ctx: GameContext): void {
   const metrics = currentMetrics();
   const restock = restockCost();
   const total = metrics.dailyUpkeep + restock;
-  session.cash -= total;
+  const settled = settleDailyUpkeep(session.ledger, session.cash, metrics.dailyUpkeep, restock);
+  session.ledger = settled.ledger;
+  session.cash = settled.cash;
   restockStalls();
   session.upkeepYesterday = total;
   session.revenueYesterday = session.revenueToday;

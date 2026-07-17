@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## advance-ledger — settle due scheduled transactions through a policy pipeline
+
+- `advanceLedger` (function) · `import { advanceLedger } from "@jgengine/core/gameplay"`
+
 ## best-record — persist personal-best times/scores with safe storage fallback
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
@@ -124,6 +128,30 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
 
+## policy-cap — cap a scheduled transaction amount by context
+
+- `capAmount` (function) · `import { capAmount } from "@jgengine/core/gameplay"`
+
+## policy-curve — scale a transaction by a curve over context
+
+- `curveScale` (function) · `import { curveScale } from "@jgengine/core/gameplay"`
+
+## policy-redirect — redirect a scheduled transaction's source or recipient
+
+- `redirect` (function) · `import { redirect } from "@jgengine/core/gameplay"`
+
+## policy-reject — reject scheduled transactions by predicate
+
+- `rejectWhen` (function) · `import { rejectWhen } from "@jgengine/core/gameplay"`
+
+## policy-tax — split off a fraction of a transaction as tax or transfer
+
+- `taxFraction` (function) · `import { taxFraction } from "@jgengine/core/gameplay"`
+
+## policy-threshold — scale a transaction by a context threshold band
+
+- `thresholdScale` (function) · `import { thresholdScale } from "@jgengine/core/gameplay"`
+
 ## production-building — a factory building converting inputs to outputs over time
 
 - `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/gameplay"`
@@ -144,6 +172,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## race-track — a checkpoint race with laps, standings, splits, and win conditions
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
+
+## resource-ledger — schedule recurring resource transactions with policy transforms
+
+- `createResourceLedger` (function) · `import { createResourceLedger } from "@jgengine/core/gameplay"`
 
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
