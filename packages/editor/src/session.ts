@@ -20,11 +20,18 @@ import {
   seedEditorCatalogs,
   summarizeEditorSession,
   summarizeRuntimeInspector,
+  createGridLayer,
+  eyedropGridCell,
+  gridCellCount,
+  importAsciiGrid,
+  importCsvGrid,
   type DocumentLiveSync,
   type DocumentPatch,
   type EditorCatalogDefinition,
   type EditorCommand,
   type EditorDocument,
+  type EditorGridLayer,
+  type EditorGridPaletteEntry,
   type EditorKindVisibility,
   type EditorLayersInput,
   type EditorSession,
@@ -73,6 +80,31 @@ function findMetaTarget(
   const note = doc.annotations.find((n) => n.id === id);
   if (note !== undefined) return { target: "note", kind: "note", meta: note.meta };
   return null;
+}
+
+/** Compact grid-layer summary returned by the grid RPC verbs — never the full sparse cell map. */
+function gridLayerSummary(layer: EditorGridLayer): {
+  id: string;
+  kind: string;
+  label?: string;
+  cols: number;
+  rows: number;
+  cellSize: number;
+  cellCount: number;
+  visible: boolean;
+  paletteIds: string[];
+} {
+  return {
+    id: layer.id,
+    kind: layer.kind,
+    ...(layer.label === undefined ? {} : { label: layer.label }),
+    cols: layer.cols,
+    rows: layer.rows,
+    cellSize: layer.cellSize,
+    cellCount: gridCellCount(layer),
+    visible: layer.visible ?? true,
+    paletteIds: (layer.palette ?? []).map((entry) => entry.id),
+  };
 }
 
 /** Validates a merged meta bag against a registered kind's schema; returns an error string or null. */
@@ -184,6 +216,50 @@ export type EditorBridgeRequest =
   | { method: "select_collection"; id: string }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
   | { method: "assign_material"; ids: string[]; materialId: string }
+  | { method: "list_grids" }
+  | { method: "get_grid_cell"; id: string; col: number; row: number }
+  | {
+      method: "add_grid_layer";
+      id: string;
+      kind: string;
+      cols: number;
+      rows: number;
+      label?: string;
+      cellSize?: number;
+      origin?: { x: number; y: number; z: number };
+      axes?: "xz" | "xy";
+      empty?: string;
+      palette?: EditorGridPaletteEntry[];
+    }
+  | { method: "remove_grid_layer"; id: string }
+  | {
+      method: "set_grid_layer";
+      id: string;
+      label?: string;
+      kind?: string;
+      visible?: boolean;
+      empty?: string;
+      cellSize?: number;
+      origin?: { x: number; y: number; z: number };
+      axes?: "xz" | "xy";
+      palette?: EditorGridPaletteEntry[];
+    }
+  | { method: "paint_grid_cells"; id: string; cells: { col: number; row: number; value: string }[] }
+  | { method: "fill_grid_rect"; id: string; col0: number; row0: number; col1: number; row1: number; value: string }
+  | { method: "flood_fill_grid"; id: string; col: number; row: number; value: string }
+  | { method: "resize_grid_layer"; id: string; cols: number; rows: number }
+  | {
+      method: "import_grid";
+      id: string;
+      kind: string;
+      format: "ascii" | "csv";
+      text: string;
+      empty?: string;
+      cellSize?: number;
+      origin?: { x: number; y: number; z: number };
+      glyphMap?: Record<string, string>;
+      palette?: EditorGridPaletteEntry[];
+    }
   | { method: "push_document_patch"; patch: DocumentPatch; force?: boolean }
   | { method: "pull_document_patches"; sinceRevision?: number }
   | { method: "document_revision"; includeDocument?: boolean }
@@ -1234,6 +1310,114 @@ export function createEditorHost(options: {
           case "assign_material":
             session.dispatch({ type: "assignMaterial", ids: request.ids, materialId: request.materialId });
             return { ok: true, result: summarizeEditorSession(session.getState()) };
+          case "list_grids": {
+            const grids = session.getState().document.grids ?? [];
+            return { ok: true, result: { grids: grids.map(gridLayerSummary) } };
+          }
+          case "get_grid_cell": {
+            const layer = (session.getState().document.grids ?? []).find((entry) => entry.id === request.id);
+            if (layer === undefined) return { ok: false, error: `grid layer not found: ${request.id}` };
+            return { ok: true, result: { id: request.id, col: request.col, row: request.row, value: eyedropGridCell(layer, request.col, request.row) } };
+          }
+          case "add_grid_layer": {
+            const layer = createGridLayer({
+              id: request.id,
+              kind: request.kind,
+              cols: request.cols,
+              rows: request.rows,
+              ...(request.label === undefined ? {} : { label: request.label }),
+              ...(request.cellSize === undefined ? {} : { cellSize: request.cellSize }),
+              ...(request.origin === undefined ? {} : { origin: request.origin }),
+              ...(request.axes === undefined ? {} : { axes: request.axes }),
+              ...(request.empty === undefined ? {} : { empty: request.empty }),
+              ...(request.palette === undefined ? {} : { palette: request.palette }),
+            });
+            const { applied } = dispatchGuarded({ type: "addGridLayer", layer });
+            if (!applied) return { ok: false, error: "add_grid_layer rejected: no effect" };
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
+          case "remove_grid_layer": {
+            const { applied } = dispatchGuarded({ type: "removeGridLayer", id: request.id });
+            if (!applied) return { ok: false, error: `grid layer not found: ${request.id}` };
+            return { ok: true, result: { removed: request.id } };
+          }
+          case "set_grid_layer": {
+            const patch: Partial<Omit<EditorGridLayer, "id" | "cells">> = {};
+            if (request.label !== undefined) patch.label = request.label;
+            if (request.kind !== undefined) patch.kind = request.kind;
+            if (request.visible !== undefined) patch.visible = request.visible;
+            if (request.empty !== undefined) patch.empty = request.empty;
+            if (request.cellSize !== undefined) patch.cellSize = request.cellSize;
+            if (request.origin !== undefined) patch.origin = request.origin;
+            if (request.axes !== undefined) patch.axes = request.axes;
+            if (request.palette !== undefined) patch.palette = request.palette;
+            const { applied, state } = dispatchGuarded({ type: "setGridLayer", id: request.id, patch });
+            if (!applied) return { ok: false, error: `set_grid_layer rejected: no effect (${request.id})` };
+            const layer = (state.document.grids ?? []).find((entry) => entry.id === request.id)!;
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
+          case "paint_grid_cells": {
+            const { applied, state } = dispatchGuarded({ type: "paintGridCells", id: request.id, cells: request.cells });
+            if (!applied) return { ok: false, error: `paint_grid_cells rejected: no effect (${request.id})` };
+            const layer = (state.document.grids ?? []).find((entry) => entry.id === request.id)!;
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
+          case "fill_grid_rect": {
+            const { applied, state } = dispatchGuarded({
+              type: "fillGridRect",
+              id: request.id,
+              col0: request.col0,
+              row0: request.row0,
+              col1: request.col1,
+              row1: request.row1,
+              value: request.value,
+            });
+            if (!applied) return { ok: false, error: `fill_grid_rect rejected: no effect (${request.id})` };
+            const layer = (state.document.grids ?? []).find((entry) => entry.id === request.id)!;
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
+          case "flood_fill_grid": {
+            const { applied, state } = dispatchGuarded({
+              type: "floodFillGrid",
+              id: request.id,
+              col: request.col,
+              row: request.row,
+              value: request.value,
+            });
+            if (!applied) return { ok: false, error: `flood_fill_grid rejected: no effect (${request.id})` };
+            const layer = (state.document.grids ?? []).find((entry) => entry.id === request.id)!;
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
+          case "resize_grid_layer": {
+            const { applied, state } = dispatchGuarded({ type: "resizeGridLayer", id: request.id, cols: request.cols, rows: request.rows });
+            if (!applied) return { ok: false, error: `resize_grid_layer rejected: no effect (${request.id})` };
+            const layer = (state.document.grids ?? []).find((entry) => entry.id === request.id)!;
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
+          case "import_grid": {
+            const layer =
+              request.format === "csv"
+                ? importCsvGrid(request.text, {
+                    id: request.id,
+                    kind: request.kind,
+                    ...(request.empty === undefined ? {} : { empty: request.empty }),
+                    ...(request.cellSize === undefined ? {} : { cellSize: request.cellSize }),
+                    ...(request.origin === undefined ? {} : { origin: request.origin }),
+                    ...(request.palette === undefined ? {} : { palette: request.palette }),
+                  })
+                : importAsciiGrid(request.text, {
+                    id: request.id,
+                    kind: request.kind,
+                    ...(request.empty === undefined ? {} : { empty: request.empty }),
+                    ...(request.cellSize === undefined ? {} : { cellSize: request.cellSize }),
+                    ...(request.origin === undefined ? {} : { origin: request.origin }),
+                    ...(request.glyphMap === undefined ? {} : { glyphMap: request.glyphMap }),
+                    ...(request.palette === undefined ? {} : { palette: request.palette }),
+                  });
+            const { applied } = dispatchGuarded({ type: "addGridLayer", layer });
+            if (!applied) return { ok: false, error: "import_grid rejected: no effect" };
+            return { ok: true, result: gridLayerSummary(layer) };
+          }
         }
       } catch (error) {
         return {

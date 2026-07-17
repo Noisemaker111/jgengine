@@ -3,8 +3,18 @@ import type { EditorBridgeRequest } from "../session";
 /** Every `method` an {@link EditorBridgeRequest} may carry — kept in lockstep with the union in `session.ts`. */
 const EDITOR_BRIDGE_METHODS: ReadonlySet<EditorBridgeRequest["method"]> = new Set([
   "add_foliage",
+  "add_grid_layer",
   "add_to_collection",
   "assign_material",
+  "fill_grid_rect",
+  "flood_fill_grid",
+  "get_grid_cell",
+  "import_grid",
+  "list_grids",
+  "paint_grid_cells",
+  "remove_grid_layer",
+  "resize_grid_layer",
+  "set_grid_layer",
   "auto_paint",
   "batch_set_properties",
   "blend_terrain",

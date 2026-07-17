@@ -11,7 +11,6 @@ const FILE_THRESHOLD = 15;
 
 const EXEMPT: Record<string, string> = {
   "spire-cards": "geometry-free card game — no world/level placement to author in the editor",
-  "duet-keys": "geometry-free rhythm game — no world/level placement to author in the editor",
 };
 
 const NUM = "-?\\d[\\d._eE+-]*";
