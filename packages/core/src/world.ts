@@ -273,6 +273,12 @@ export {
 } from "./world/minimap";
 export { placeAlongPath } from "./world/pathInstances";
 export {
+  withPathProfiles,
+  type PathHeightPolicy,
+  type PathRetaining,
+  type TerrainPathProfile,
+} from "./world/pathTerrain";
+export {
   placeAssetFromCommit,
   resolvePlaceAsset,
   toEditorMarker,
@@ -347,6 +353,7 @@ export {
 } from "./world/terraform";
 export {
   TERRAIN_MATERIAL_PALETTES,
+  applyPathProfiles,
   type NoiseFieldConfig,
   type ResolvedTerrainDetail,
   type TerrainField,

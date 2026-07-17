@@ -14,7 +14,7 @@ import {
   type WorldFeature,
 } from "@jgengine/core/world/features";
 import { FERRALON } from "./game/palette";
-import { ROUTES, SPUR_ROUTES, SIDE_POIS, roadFlattenMasks } from "./game/world/level";
+import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
 export const FERRALON_SEED = "pandora-arid-badlands-2026";
@@ -129,8 +129,9 @@ const terrainDescriptor = terrain({
       center: [zone.center.x, zone.center.z] as const,
       radius: zone.flattenRadius,
     })),
-    ...roadFlattenMasks((x, z) => rawField.sampleHeight(x, z)),
+    ...poiFlattenMasks((x, z) => rawField.sampleHeight(x, z)),
   ],
+  pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
 const SCRUB_COLORS = ["#b39a4e", "#cbb469", "#e2d288"] as const;

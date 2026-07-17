@@ -338,6 +338,7 @@
     "./world/massing",
     "./world/minimap",
     "./world/pathInstances",
+    "./world/pathTerrain",
     "./world/placeAsset",
     "./world/placedStructureStore",
     "./world/placement",

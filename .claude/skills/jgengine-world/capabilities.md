@@ -72,6 +72,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
+## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
+
+- `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
+- `withPathProfiles` (function) · `import { withPathProfiles } from "@jgengine/core/world"`
+
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
 - `PlaceAssetResult` (interface) · `import { PlaceAssetResult } from "@jgengine/core/world"`

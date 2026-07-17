@@ -14,6 +14,7 @@ import type {
   WorldFeature,
 } from "./features";
 import type { AvoidZone } from "./geometry";
+import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
 import { nearestOnPath } from "./roads";
 import type { TerraformSnapshot } from "./terraform";
 
@@ -872,11 +873,33 @@ export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): 
           waterLevel: descriptor.waterLevel,
           bounds: descriptor.bounds,
         });
-  if (descriptor.flatten === undefined || descriptor.flatten.length === 0) return base;
-  return fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
-    bounds: base.bounds,
-    waterLevel: base.waterLevel,
-  });
+  const flattened =
+    descriptor.flatten === undefined || descriptor.flatten.length === 0
+      ? base
+      : fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
+          bounds: base.bounds,
+          waterLevel: base.waterLevel,
+        });
+  if (descriptor.pathProfiles === undefined || descriptor.pathProfiles.length === 0) return flattened;
+  return applyPathProfiles(flattened, descriptor.pathProfiles);
+}
+
+/**
+ * Composes authored path profiles onto a field — the shared seam that turns a scene road/river/ramp path
+ * into flattened, graded, carved, or retained ground. Applies after `flatten` masks in `resolveTerrainField`
+ * so a corridor grades over already-leveled pads; call it directly to layer profiles onto any field a game
+ * builds by hand. Returns the field unchanged when no profile is given.
+ * @capability path-terrain apply flatten/grade/carve/retaining path profiles to a terrain field
+ */
+export function applyPathProfiles(field: TerrainField, profiles: readonly TerrainPathProfile[]): TerrainField {
+  if (profiles.length === 0) return field;
+  const sampleHeight = withPathProfiles((x, z) => field.sampleHeight(x, z), profiles);
+  return {
+    sampleHeight,
+    sampleNormal: withNormal(sampleHeight),
+    ...(field.bounds === undefined ? {} : { bounds: field.bounds }),
+    ...(field.waterLevel === undefined ? {} : { waterLevel: field.waterLevel }),
+  };
 }
 
 /** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.

@@ -5,6 +5,7 @@ import {
   placeAuthoredObjectsFromDocument,
   resolveAuthoredObjects,
 } from "@jgengine/core/world/authoredObjects";
+import type { TerrainPathProfile } from "@jgengine/core/world/pathTerrain";
 import sceneJson from "../../editor.scene.json";
 import { zoneById } from "./zones";
 
@@ -90,51 +91,35 @@ export const ROUTES: readonly Route[] = roadRoutes.filter((route) => !POI_IDS.ha
 /** Spurs peeling off a campaign zone toward a side POI. */
 export const SPUR_ROUTES: readonly Route[] = roadRoutes.filter((route) => POI_IDS.has(route.to));
 
-export function roadFlattenMasks(
-  heightAt: (x: number, z: number) => number,
+type HeightSampler = (x: number, z: number) => number;
+
+interface RouteEnd {
+  center: { x: number; z: number };
+  radius: number;
+}
+
+/**
+ * The far end of a route: a campaign route ends at its destination zone; a spur ends at its side POI,
+ * whose grade height comes from the anchor-zone apron {@link poiFlattenMasks} levels.
+ */
+function routeEnd(route: Route): { end: RouteEnd; height: (heightAt: HeightSampler) => number } {
+  const toZone = zoneById(route.to);
+  if (toZone !== undefined) {
+    return { end: { center: toZone.center, radius: toZone.flattenRadius }, height: (h) => h(toZone.center.x, toZone.center.z) };
+  }
+  const poi = SIDE_POIS.find((candidate) => candidate.id === route.to)!;
+  const anchor = zoneById(poi.anchorZoneId)!;
+  return { end: { center: { x: poi.x, z: poi.z }, radius: poi.radius }, height: (h) => h(anchor.center.x, anchor.center.z) };
+}
+
+/**
+ * Circular flatten pads leveling each side POI onto its anchor zone's height — the arrival apron the
+ * spur road grades into. Kept as radial `flatten` masks because a POI is a round clearing, not a corridor.
+ */
+export function poiFlattenMasks(
+  heightAt: HeightSampler,
 ): readonly { center: readonly [number, number]; radius: number; height: number; falloff: number }[] {
-  const corridorMasks = (
-    points: readonly RoutePoint[],
-    fromCenter: { x: number; z: number },
-    fromRadius: number,
-    toCenter: { x: number; z: number },
-    toRadius: number,
-  ) => {
-    const fromHeight = heightAt(fromCenter.x, fromCenter.z);
-    const toHeight = heightAt(toCenter.x, toCenter.z);
-    const length = Math.hypot(toCenter.x - fromCenter.x, toCenter.z - fromCenter.z);
-    const rampStart = fromRadius;
-    const rampSpan = Math.max(1, length - fromRadius - toRadius);
-    return points
-      .filter((point) => {
-        const fromDistance = Math.hypot(point.x - fromCenter.x, point.z - fromCenter.z);
-        const toDistance = Math.hypot(point.x - toCenter.x, point.z - toCenter.z);
-        return fromDistance > fromRadius - 14 && toDistance > toRadius - 14;
-      })
-      .map((point) => {
-        const rampT = Math.min(1, Math.max(0, (point.t * length - rampStart) / rampSpan));
-        return {
-          center: [point.x, point.z] as const,
-          radius: 14,
-          height: fromHeight + (toHeight - fromHeight) * rampT,
-          falloff: 8,
-        };
-      });
-  };
-
-  const mainMasks = ROUTES.flatMap((route) => {
-    const from = zoneById(route.from)!;
-    const to = zoneById(route.to)!;
-    return corridorMasks(route.points, from.center, from.flattenRadius, to.center, to.flattenRadius);
-  });
-
-  const spurMasks = SPUR_ROUTES.flatMap((route) => {
-    const from = zoneById(route.from)!;
-    const poi = SIDE_POIS.find((candidate) => candidate.id === route.to)!;
-    return corridorMasks(route.points, from.center, from.flattenRadius, { x: poi.x, z: poi.z }, poi.radius);
-  });
-
-  const poiMasks = SIDE_POIS.map((poi) => {
+  return SIDE_POIS.map((poi) => {
     const anchor = zoneById(poi.anchorZoneId)!;
     return {
       center: [poi.x, poi.z] as const,
@@ -143,42 +128,37 @@ export function roadFlattenMasks(
       falloff: 12,
     };
   });
+}
 
-  const wallMasks = [...ROUTES, ...SPUR_ROUTES].flatMap((route) => {
+/**
+ * Every campaign road and spur as a shared {@link TerrainPathProfile}: the authored path grades from its
+ * origin zone height to its destination height across a flattened corridor, and retaining walls rise on
+ * the shoulders to herd the player onto the route. Replaces the game-local flatten-mask generator with the
+ * engine's path-driven terrain modifier — same drivable roads and canyon walls, no hand-rolled masks.
+ */
+export function roadPathProfiles(heightAt: HeightSampler): readonly TerrainPathProfile[] {
+  return [...ROUTES, ...SPUR_ROUTES].flatMap((route): TerrainPathProfile[] => {
     const from = zoneById(route.from)!;
-    const toZone = zoneById(route.to);
-    const poi = SIDE_POIS.find((candidate) => candidate.id === route.to);
-    const toCenter = toZone?.center ?? { x: poi!.x, z: poi!.z };
-    const toRadius = toZone?.flattenRadius ?? poi!.radius;
-    const fromHeight = heightAt(from.center.x, from.center.z);
-    const toHeight = heightAt(toCenter.x, toCenter.z);
-    const length = Math.hypot(toCenter.x - from.center.x, toCenter.z - from.center.z);
-    const rampSpan = Math.max(1, length - from.flattenRadius - toRadius);
-    const walls: { center: readonly [number, number]; radius: number; height: number; falloff: number }[] = [];
-    for (let index = 0; index < route.points.length - 1; index += 2) {
-      const point = route.points[index]!;
-      const next = route.points[index + 1]!;
+    const { end, height: endHeight } = routeEnd(route);
+    // Trim the corridor to the open span between the two aprons, so the zone/POI flatten pads own their
+    // interiors and the road never fights them near the endpoints (mirrors the retired mask filter).
+    const corridor = route.points.filter((point) => {
       const fromDistance = Math.hypot(point.x - from.center.x, point.z - from.center.z);
-      const toDistance = Math.hypot(point.x - toCenter.x, point.z - toCenter.z);
-      if (fromDistance < from.flattenRadius + 10 || toDistance < toRadius + 10) continue;
-      const dx = next.x - point.x;
-      const dz = next.z - point.z;
-      const segment = Math.hypot(dx, dz) || 1;
-      const rampT = Math.min(1, Math.max(0, (point.t * length - from.flattenRadius) / rampSpan));
-      const roadHeight = fromHeight + (toHeight - fromHeight) * rampT;
-      for (const side of [-1, 1]) {
-        walls.push({
-          center: [point.x + (-dz / segment) * 40 * side, point.z + (dx / segment) * 40 * side] as const,
-          radius: 26,
-          height: roadHeight + 22,
-          falloff: 14,
-        });
-      }
-    }
-    return walls;
+      const toDistance = Math.hypot(point.x - end.center.x, point.z - end.center.z);
+      return fromDistance > from.flattenRadius && toDistance > end.radius;
+    });
+    if (corridor.length < 2) return [];
+    return [
+      {
+        points: corridor.map((point) => [point.x, point.z] as const),
+        width: 28,
+        shoulder: 60,
+        height: { kind: "grade", start: heightAt(from.center.x, from.center.z), end: endHeight(heightAt) },
+        // Walls rise only where the graded road cuts into open badlands, not across the flattened aprons it links.
+        retaining: { wallHeight: 24, threshold: 5, taper: 4 },
+      },
+    ];
   });
-
-  return [...wallMasks, ...poiMasks, ...mainMasks, ...spurMasks];
 }
 
 export interface PlacedPiece {
