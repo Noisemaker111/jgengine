@@ -988,6 +988,11 @@
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — ⚠ undocumented
 
+## @jgengine/shell/audio/loopParams
+
+- `MAX_LOOP_RATE` (const): const MAX_LOOP_RATE: 4 — Highest live playback-rate multiplier (two octaves above authored pitch).
+- `MIN_LOOP_RATE` (const): const MIN_LOOP_RATE: 0.25 — Pure clamps for retained-loop live control (#1051). Kept dependency-free so the playback-rate/gain windows are one testable source of truth the audio engine reads.
+
 ## @jgengine/shell/audio/musicDirector
 
 - `CrossfadeOptions` (interface): interface CrossfadeOptions — Options for a music crossfade.

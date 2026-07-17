@@ -11,6 +11,7 @@ export const MAX_LOOP_RATE = 4;
 /**
  * Clamp a loop playback-rate multiplier into the safe pitch window `MIN_LOOP_RATE`–`MAX_LOOP_RATE`
  * (1 = authored pitch). Non-finite input (NaN/±Infinity) falls back to the authored `1`.
+ * @internal — the audio engine applies this; game code sets rate through `ctx.game.audio.setLoop`.
  */
 export function clampLoopRate(rate: number): number {
   if (!Number.isFinite(rate)) return 1;
@@ -20,6 +21,7 @@ export function clampLoopRate(rate: number): number {
 /**
  * Clamp a loop gain multiplier into `0`–`1`. Non-finite input falls back to `0` (silence) so a
  * stray NaN never blasts a loop to full volume.
+ * @internal — the audio engine applies this; game code sets gain through `ctx.game.audio.setLoop`.
  */
 export function clampLoopGain(gain: number): number {
   if (!Number.isFinite(gain)) return 0;

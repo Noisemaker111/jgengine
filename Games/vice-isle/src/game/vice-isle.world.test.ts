@@ -79,15 +79,17 @@ describe("vice-isle authored scene parity", () => {
     expect(districts.size).toBeGreaterThanOrEqual(4);
   });
 
-  test("five aircraft spawn from editor-authored vehicle markers", () => {
+  test("aircraft plus the SUV and bus spawn from editor-authored vehicle markers", () => {
     expect(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.catalogId)).toEqual([
       "air_helicopter",
       "air_trainer",
       "air_prop",
       "air_jet",
       "air_vtol",
+      "car_suv",
+      "car_bus",
     ]);
-    expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(5);
+    expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(7);
   });
 });
 
