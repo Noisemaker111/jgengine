@@ -83,6 +83,31 @@ export {
 } from "./document";
 /** One field-level failure surfaced while decoding an untrusted editor document. */
 export type { EditorDocumentDiagnostic } from "./document";
+export {
+  WORLD_BASE_SHARD_ID,
+  WORLD_MANIFEST_KIND,
+  decodeWorldManifest,
+  exportWorldManifestJson,
+  loadWorldDocument,
+  selectWorldShards,
+  shardMatchesQuery,
+  singleShardWorldManifest,
+  splitEditorDocumentIntoShards,
+} from "./world";
+/** A sharded world manifest (`world.json`): grid + shard list + streaming config. */
+export type {
+  DecodeWorldManifestResult,
+  SplitWorldOptions,
+  SplitWorldResult,
+  WorldGrid,
+  WorldManifest,
+  WorldManifestShard,
+  WorldQuery,
+  WorldShardBounds,
+  WorldShardResidency,
+  WorldShardResolver,
+  WorldStreamingConfig,
+} from "./world";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
 /** Creates an editor session with undo/redo history seeded from an initial document. */
