@@ -440,12 +440,28 @@ export interface GameContextRace {
   state(id: string, config?: RaceStateConfig): RaceState;
 }
 
-/** Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. */
+/** Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051). */
 export interface GameAudio {
   play(sound: string, at?: readonly [number, number, number]): void;
   /** Crossfade the procedural soundtrack to `theme` (null fades out); `transpose` shifts the incoming theme's key in semitones. */
   music(theme: string | null, transpose?: number): void;
   resume(): void;
+  /**
+   * Start — or idempotently keep — the retained, id-keyed loop `id` playing catalog `sound`, emitting
+   * `audio.loopStart`. Re-calling with the same `sound` does not restart it (no click); a different `sound`
+   * replaces the source. Pair with {@link GameAudio.setLoop} to track a live signal — an RPM-pitched engine
+   * loop, a slip-scaled tire squeal (#1051) — and {@link GameAudio.stopLoop} to end it.
+   */
+  loop(id: string, sound: string, options?: { at?: readonly [number, number, number] }): void;
+  /**
+   * Live-update retained loop `id` via `audio.loopSet`: `rate` re-pitches it (1 = authored pitch, clamped
+   * 0.25–4 by the shell), `gain` rescales volume (0–1), `at` repositions its emitter. Cheap to call every
+   * tick (~60 Hz) — the shell ramps rate/gain over ~20 ms to avoid zipper noise. A no-op when `id` is not a
+   * live loop (an update may race a stop) (#1051).
+   */
+  setLoop(id: string, params: { rate?: number; gain?: number; at?: readonly [number, number, number] }): void;
+  /** Stop and dispose retained loop `id` (emits `audio.loopStop`); an unknown `id` is ignored (#1051). */
+  stopLoop(id: string): void;
 }
 
 export interface GameContext {
@@ -1372,6 +1388,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         music: (theme, transpose) =>
           events.emit("audio.music", transpose === undefined ? { theme } : { theme, transpose }),
         resume: () => events.emit("audio.resume", {}),
+        loop: (id, sound, options) =>
+          events.emit("audio.loopStart", options?.at === undefined ? { id, sound } : { id, sound, at: options.at }),
+        setLoop: (id, params) => events.emit("audio.loopSet", { id, ...params }),
+        stopLoop: (id) => events.emit("audio.loopStop", { id }),
       },
       feed: {
         bind: (action) => feed.bind(action, events),

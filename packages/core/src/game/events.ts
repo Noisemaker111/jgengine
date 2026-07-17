@@ -221,6 +221,34 @@ export interface AudioMusicEvent {
   transpose?: number;
 }
 
+/**
+ * Start (or idempotently keep) the retained, id-keyed audio loop `id` from catalog `sound`, optionally
+ * anchored at world `at`. Restarting with the same `sound` does not restart the source (no click); a
+ * different `sound` replaces it. Drives RPM-pitched engine loops and slip-scaled tire squeal (#1051).
+ */
+export interface AudioLoopStartEvent {
+  id: string;
+  sound: string;
+  at?: readonly [number, number, number];
+}
+
+/**
+ * Live-update the retained loop `id`: `rate` re-pitches it (1 = authored, the shell clamps to 0.25–4),
+ * `gain` rescales its volume (0–1), and `at` repositions its emitter. Emitted every tick to track a
+ * live signal (RPM, tire slip); the shell smooths rate/gain and ignores an unknown `id` (#1051).
+ */
+export interface AudioLoopSetEvent {
+  id: string;
+  rate?: number;
+  gain?: number;
+  at?: readonly [number, number, number];
+}
+
+/** Stop and dispose the retained loop `id`; an unknown `id` is ignored (#1051). */
+export interface AudioLoopStopEvent {
+  id: string;
+}
+
 export interface GameEventMap {
   "entity.died": EntityDiedEvent;
   "entity.floatText": EntityFloatTextEvent;
@@ -251,6 +279,9 @@ export interface GameEventMap {
   "audio.play": AudioPlayEvent;
   "audio.music": AudioMusicEvent;
   "audio.resume": AudioResumeEvent;
+  "audio.loopStart": AudioLoopStartEvent;
+  "audio.loopSet": AudioLoopSetEvent;
+  "audio.loopStop": AudioLoopStopEvent;
   "entity.animation": EntityAnimationEvent;
 }
 

@@ -88,6 +88,17 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${CITY}/car_taxi`,
     style: { targetHeight: 1.4 },
   },
+  car_suv: {
+    model: `${CITY}/car_stationwagon`,
+    fallbackModel: `${CITY}/car_sedan`,
+    style: { targetHeight: 1.75, material: { color: "#6b7d52" } },
+  },
+  car_bus: {
+    // Large boxy truck body as an island shuttle bus; scaled up to bus height. Never Kenney.
+    model: `${SPACE}/spacetruck_large`,
+    fallbackModel: `${SPACE}/spacetruck`,
+    style: { targetHeight: 3.3, material: { color: "#e0a53c" } },
+  },
   air_helicopter: {
     model: `${SPACE}/lander_B`,
     fallbackModel: `${CITY}/car_sedan`,

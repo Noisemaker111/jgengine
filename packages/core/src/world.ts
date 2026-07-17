@@ -144,7 +144,7 @@ export {
 export { createGlideModel } from "./movement/glideModel";
 export { createGrappleSwing } from "./movement/grappleSwing";
 export { createLeaderTrail } from "./movement/leaderTrail";
-export { MOVEMENT_TUNING } from "./movement/movementModel";
+export { MOVEMENT_TUNING, type CollisionObstacle } from "./movement/movementModel";
 export { resolvePlayerMovementTuning, stepPlayerMovement } from "./movement/playerMovement";
 export { POSE_HITBOX, createPoseState, type MovementPose } from "./movement/poseState";
 export { steerYaw } from "./movement/steering";
@@ -233,6 +233,7 @@ export {
 } from "./physics/gravityField";
 export {
   createKinematicVehicle,
+  type KinematicChassisTuning,
   type KinematicDynamicsTuning,
   type KinematicPowertrainTuning,
   type KinematicSteeringTuning,
@@ -253,6 +254,11 @@ export { SpatialGrid } from "./physics/spatialGrid";
 export { StructureGraph, type CollapseEvent, type StructureMaterial } from "./physics/structure";
 export { Glide, Grapple } from "./physics/traversal";
 export { DEFAULT_GRIP_CURVE, createVehicleBody, sampleGripCurve, type GripCurve } from "./physics/vehicleBody";
+export {
+  createVehicleObstacleClamp,
+  type VehicleImpact,
+  type VehicleObstacleClamp,
+} from "./physics/vehicleObstacles";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
 export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
@@ -532,12 +538,15 @@ export {
   type WeightedRegionEntry,
 } from "./world/spatialSample";
 export {
+  distanceToRoadEdge,
   furnitureSpots,
   laneCenters,
   offsetPath,
   parkingSpots,
+  roadSurfaceSampler,
   sidewalkPoint,
   sidewalkWidthOf,
+  type RoadSurfaceOptions,
 } from "./world/streets";
 export { solveSupport, toDebrisBodies, type SupportResult } from "./world/support";
 export {

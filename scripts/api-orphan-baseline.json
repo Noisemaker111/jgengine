@@ -46,7 +46,6 @@
   "@jgengine/convex/createConvexGameTransport#defaultConvexGameApi",
   "@jgengine/convex/createConvexGameTransport#watchConvexQuery",
   "@jgengine/convex/resolveConvexMultiplayer#randomConvexPlayerId",
-  "@jgengine/core/audio/synth#patchDuration",
   "@jgengine/core/cards/cardPile#countIn",
   "@jgengine/core/cards/cardPile#zoneOf",
   "@jgengine/core/combat/attackTags#hasAnyTag",

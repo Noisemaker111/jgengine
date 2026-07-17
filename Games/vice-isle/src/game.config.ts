@@ -1,6 +1,7 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 import { offline } from "@jgengine/core/runtime/adapter";
 import { assets } from "./game/assets";
+import { audio } from "./game/audio/catalog";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
@@ -15,6 +16,7 @@ export const game = defineGame({
   name: "Vice Isle",
   features: { quest: true, trade: true, dialogue: true },
   assets,
+  audio,
   world,
   physics,
   inventories,
@@ -61,7 +63,8 @@ export const game = defineGame({
       height: 3,
       lookHeight: 1.15,
       springDamping: 7.5,
-      fov: { base: 62, max: 84, speedForMax: 55 },
+      fov: { base: 60, max: 86, speedForMax: 40 },
+      velocityYaw: { blend: 0.6, minSpeed: 6, response: 5 },
       shakePerSpeed: 0.0015,
       lead: { time: 0.22, max: 8 },
       bank: { perYawRate: 0.09, max: 0.16, damping: 7 },

@@ -20,7 +20,9 @@
     { "id": "placed_air_trainer_mro5rtmk_2", "kind": "vehicle_spawn", "position": { "x": -92, "y": 0, "z": 205 }, "rotationY": 0, "label": "Pelican Trainer", "color": "#f4d35e", "meta": { "assetId": "air_trainer" } },
     { "id": "placed_air_prop_mro5rtmk_3", "kind": "vehicle_spawn", "position": { "x": -64, "y": 0, "z": 205 }, "rotationY": 0, "label": "Marlin Prop", "color": "#e85d4a", "meta": { "assetId": "air_prop" } },
     { "id": "placed_air_jet_mro5rtml_4", "kind": "vehicle_spawn", "position": { "x": -34, "y": 0, "z": 205 }, "rotationY": 0, "label": "Barracuda XR", "color": "#697582", "meta": { "assetId": "air_jet" } },
-    { "id": "placed_air_vtol_mro5rtml_5", "kind": "vehicle_spawn", "position": { "x": -4, "y": 0, "z": 205 }, "rotationY": 0, "label": "Harrier V", "color": "#3d5a45", "meta": { "assetId": "air_vtol" } }
+    { "id": "placed_air_vtol_mro5rtml_5", "kind": "vehicle_spawn", "position": { "x": -4, "y": 0, "z": 205 }, "rotationY": 0, "label": "Harrier V", "color": "#3d5a45", "meta": { "assetId": "air_vtol" } },
+    { "id": "placed_car_suv_heights_6", "kind": "vehicle_spawn", "position": { "x": 90, "y": 0, "z": -236 }, "rotationY": 1.5708, "label": "Vagabond", "color": "#6b7d52", "meta": { "assetId": "car_suv" } },
+    { "id": "placed_car_bus_docks_7", "kind": "vehicle_spawn", "position": { "x": 176, "y": 0, "z": 180 }, "rotationY": 0, "label": "Islander", "color": "#e0a53c", "meta": { "assetId": "car_bus" } }
   ],
   "volumes": [
     { "id": "ocean_drive", "kind": "district", "shape": "cylinder", "center": { "x": -170, "y": 0, "z": 0 }, "radius": 110, "label": "Ocean Drive" },

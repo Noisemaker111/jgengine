@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import { NEUTRAL_AXIS, type AxisInput } from "../input/axisInput";
-import { createKinematicVehicle, type KinematicVehicleTuning } from "./kinematicVehicle";
+import {
+  createKinematicVehicle,
+  type KinematicChassisTuning,
+  type KinematicVehicleTuning,
+} from "./kinematicVehicle";
 
 const DT = 1 / 60;
 
@@ -255,5 +259,145 @@ describe("createKinematicVehicle advanced dynamics", () => {
     const braking = vehicle.tick(DT, axis({ brake: 1 }));
     expect(braking.absActive).toBe(true);
     expect(braking.longitudinalAcceleration).toBeLessThan(0);
+  });
+});
+
+describe("createKinematicVehicle — chassis mass/force layer (#1051)", () => {
+  const G = 9.81;
+  const chassis = (over: Partial<KinematicChassisTuning> = {}): KinematicChassisTuning => ({
+    massKg: 1500,
+    engineForce: 9000,
+    brakeForce: 9000,
+    engineBrakeForce: 1500,
+    tireGrip: 1.2,
+    comHeight: 0.5,
+    trackWidth: 1.8,
+    ...over,
+  });
+  type Vehicle = ReturnType<typeof createKinematicVehicle>;
+  const ticksToReach = (v: Vehicle, target: number): number => {
+    for (let i = 1; i <= 4000; i += 1) if (v.tick(DT, axis({ throttle: 1 })).forwardSpeed >= target) return i;
+    return Number.POSITIVE_INFINITY;
+  };
+
+  test("doubling mass with identical forces slows 0→15 and lengthens 20→0 braking distance", () => {
+    const light = createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis() });
+    const heavy = createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis({ massKg: 3000 }) });
+    expect(ticksToReach(heavy, 15)).toBeGreaterThan(ticksToReach(light, 15));
+
+    const brakingDistance = (v: Vehicle): number => {
+      let step = v.tick(DT, axis({ throttle: 1 }));
+      while (step.forwardSpeed < 20) step = v.tick(DT, axis({ throttle: 1 }));
+      const startZ = step.position[2];
+      while (step.forwardSpeed > 0) step = v.tick(DT, axis({ brake: 1 }));
+      return step.position[2] - startZ;
+    };
+    const lightDist = brakingDistance(createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis() }));
+    const heavyDist = brakingDistance(createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis({ massKg: 3000 }) }));
+    expect(heavyDist).toBeGreaterThan(lightDist);
+  });
+
+  test("friction circle caps a low-grip launch near μg with wheelspin; huge grip is unlimited", () => {
+    const launch = (tireGrip: number): ReturnType<Vehicle["tick"]> =>
+      createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis({ engineForce: 30000, tireGrip }) }).tick(
+        DT,
+        axis({ throttle: 1 }),
+      );
+    const low = launch(0.5);
+    expect(low.wheelspin).toBe(true);
+    expect(low.longitudinalAcceleration).toBeGreaterThan(0.5 * G - 0.6);
+    expect(low.longitudinalAcceleration).toBeLessThan(0.5 * G + 0.6);
+
+    const huge = launch(5);
+    expect(huge.wheelspin).toBe(false);
+    // Demand 30000 N / 1500 kg = 20 m/s² sits well under the 5·g cap, so it lands unclipped.
+    expect(huge.longitudinalAcceleration).toBeGreaterThan(20 - 0.6);
+  });
+
+  test("cornering consumes the tire budget, so mid-corner drive accel is below straight-line", () => {
+    const tune = { ...TUNING, topSpeed: 60, chassis: chassis({ engineForce: 12000, tireGrip: 1 }) };
+    const straight = createKinematicVehicle(tune);
+    const cornering = createKinematicVehicle(tune);
+    for (let i = 0; i < 120; i += 1) {
+      straight.tick(DT, axis({ throttle: 1 }));
+      cornering.tick(DT, axis({ throttle: 1 }));
+    }
+    const straightAccel = straight.tick(DT, axis({ throttle: 1 })).longitudinalAcceleration;
+    let corner = cornering.tick(DT, axis({ throttle: 1, steer: 1 }));
+    for (let i = 0; i < 10; i += 1) corner = cornering.tick(DT, axis({ throttle: 1, steer: 1 }));
+    expect(straightAccel).toBeGreaterThan(6);
+    expect(corner.longitudinalAcceleration).toBeLessThan(straightAccel);
+  });
+
+  test("coasting decelerates near engineBrakeForce/mass and reaches half speed in bounded time", () => {
+    const car = createKinematicVehicle({
+      ...TUNING,
+      topSpeed: 60,
+      chassis: chassis({ engineForce: 12000, engineBrakeForce: 3000 }),
+    });
+    let step = car.tick(DT, axis({ throttle: 1 }));
+    while (step.forwardSpeed < 15) step = car.tick(DT, axis({ throttle: 1 }));
+    const startSpeed = step.forwardSpeed;
+    const coast = car.tick(DT, NEUTRAL_AXIS);
+    expect(coast.longitudinalAcceleration).toBeGreaterThan(-(3000 / 1500) - 0.6);
+    expect(coast.longitudinalAcceleration).toBeLessThan(-(3000 / 1500) + 0.6);
+    let latest = coast;
+    for (let i = 0; i < 800 && latest.forwardSpeed > startSpeed / 2; i += 1) latest = car.tick(DT, NEUTRAL_AXIS);
+    expect(latest.forwardSpeed).toBeLessThan(startSpeed / 2);
+  });
+
+  test("legacy (no chassis) coasting is unchanged — it holds speed without engine braking", () => {
+    const car = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 60; i += 1) car.tick(DT, axis({ throttle: 1 }));
+    const before = car.tick(DT, NEUTRAL_AXIS).forwardSpeed;
+    const after = car.tick(DT, NEUTRAL_AXIS).forwardSpeed;
+    expect(after).toBeCloseTo(before, 5);
+  });
+
+  test("top-heavy narrow chassis washes out more and rolls harder than a low/wide one", () => {
+    const dynamics = { bodyRollFactor: 0.02, maxBodyRoll: 1.5 };
+    const drive = axis({ throttle: 1, steer: 1 });
+    const topHeavy = createKinematicVehicle({
+      ...TUNING,
+      topSpeed: 60,
+      dynamics,
+      chassis: chassis({ tireGrip: 1, comHeight: 1.5, trackWidth: 1.3 }),
+    });
+    const lowWide = createKinematicVehicle({
+      ...TUNING,
+      topSpeed: 60,
+      dynamics,
+      chassis: chassis({ tireGrip: 1, comHeight: 0.4, trackWidth: 2 }),
+    });
+    for (let i = 0; i < 120; i += 1) {
+      topHeavy.tick(DT, axis({ throttle: 1 }));
+      lowWide.tick(DT, axis({ throttle: 1 }));
+    }
+    let th = topHeavy.tick(DT, drive);
+    let lw = lowWide.tick(DT, drive);
+    for (let i = 0; i < 12; i += 1) {
+      th = topHeavy.tick(DT, drive);
+      lw = lowWide.tick(DT, drive);
+    }
+    expect(Math.abs(th.lateralSpeed)).toBeGreaterThan(Math.abs(lw.lateralSpeed));
+    expect(Math.abs(th.bodyRoll)).toBeGreaterThan(Math.abs(lw.bodyRoll));
+  });
+
+  test("rest snap: a tiny residual velocity with no input collapses to exactly zero", () => {
+    const car = createKinematicVehicle({ ...TUNING, chassis: chassis() });
+    for (let i = 0; i < 12; i += 1) car.tick(DT, axis({ throttle: 1 }));
+    car.scaleVelocity(0.02);
+    const [vx, vz] = car.velocity();
+    const residual = Math.hypot(vx, vz);
+    expect(residual).toBeGreaterThan(0);
+    expect(residual).toBeLessThan(0.2);
+    car.tick(DT, NEUTRAL_AXIS);
+    expect(car.velocity()).toEqual([0, 0]);
+  });
+
+  test("without a chassis block wheelspin is always false", () => {
+    const car = createKinematicVehicle(TUNING);
+    const step = car.tick(DT, axis({ throttle: 1 }));
+    expect(step.wheelspin).toBe(false);
   });
 });

@@ -317,6 +317,12 @@ export interface ResolvedChase {
   bankPerYawRate: number;
   bankMax: number;
   bankDamping: number;
+  /** Max fraction of the slip angle the anchor yaw follows toward velocity; 0 = drift-lag off (#1051). */
+  velocityYawBlend: number;
+  /** Below this planar speed the drift-lag feature is fully off. */
+  velocityYawMinSpeed: number;
+  /** Exponential smoothing rate toward the blended anchor yaw (1-exp(-response*dt)). */
+  velocityYawResponse: number;
 }
 
 /** @internal */
@@ -332,6 +338,9 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
     bankPerYawRate: config?.bank?.perYawRate ?? 0,
     bankMax: config?.bank?.max ?? 0.35,
     bankDamping: config?.bank?.damping ?? 8,
+    velocityYawBlend: config?.velocityYaw === undefined ? 0 : config.velocityYaw.blend ?? 0.65,
+    velocityYawMinSpeed: config?.velocityYaw?.minSpeed ?? 4,
+    velocityYawResponse: config?.velocityYaw?.response ?? 6,
   };
 }
 
@@ -422,6 +431,30 @@ export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase):
     y: follow.y + resolved.lookHeight,
     z: follow.z + forward.z * 2,
   };
+}
+
+/**
+ * Drift-lag (#1051): the yaw the chase anchor should aim before temporal
+ * smoothing. When the target slides, its planar `velocity` diverges from its
+ * `heading`; this rotates the anchor from heading partway toward the velocity
+ * direction so the camera reveals the car's side while travel stays framed. The
+ * traversed fraction is `velocityYawBlend` scaled by how far the slip angle has
+ * opened (0 at straight-line travel, full at a 90° slide), so ordinary driving
+ * is untouched. Returns the raw heading — no swing — when the feature is off,
+ * when planar speed is below `velocityYawMinSpeed`, or when the target is
+ * reversing (velocity opposed to heading forward). Blending is shortest-arc, so
+ * it stays correct across the ±PI wrap seam.
+ * @internal
+ */
+export function velocityYawTarget(heading: number, velocity: Vec3, resolved: ResolvedChase): number {
+  if (resolved.velocityYawBlend <= 0) return heading;
+  const speed = Math.hypot(velocity.x, velocity.z);
+  if (speed < resolved.velocityYawMinSpeed) return heading;
+  const forward = forwardVector(heading);
+  if (forward.x * velocity.x + forward.z * velocity.z < 0) return heading;
+  const slip = angleDelta(heading, Math.atan2(velocity.x, velocity.z));
+  const slipFraction = clamp(Math.abs(slip) / (Math.PI / 2), 0, 1);
+  return heading + slip * resolved.velocityYawBlend * slipFraction;
 }
 
 /** World-space seat pose (cockpit/hood/rear) rigidly attached to the vehicle.

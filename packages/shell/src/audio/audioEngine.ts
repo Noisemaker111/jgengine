@@ -1,9 +1,14 @@
 import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "@jgengine/core/audio/audioFalloff";
 import type { MusicTheme } from "@jgengine/core/audio/music";
+import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createDisposer } from "@jgengine/core/game/defineGame";
 
+import { clampLoopGain, clampLoopRate } from "./loopParams";
 import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
 import { createNoiseBuffer, realizeSynthPatch } from "./synthEngine";
+
+/** setTargetAtTime time constant (~20 ms) for zipper-free live rate/gain ramps on retained loops (#1051). */
+const LOOP_PARAM_SMOOTH_TC = 0.02;
 
 export interface Vec3 {
   x: number;
@@ -22,6 +27,10 @@ export interface AudioSceneConfig {
 
 export interface AudioEmitterHandle {
   setPosition(position: Vec3): void;
+  /** Live pitch of a retained loop: `rate` multiplies the authored playback rate (1 = authored), clamped to 0.25–4 and ramped ~20 ms to avoid zipper noise (#1051). */
+  setRate(rate: number): void;
+  /** Live volume of a retained loop: `gain` scales the source (0–1), clamped and ramped ~20 ms (#1051). */
+  setGain(gain: number): void;
   stop(): void;
 }
 
@@ -55,6 +64,14 @@ function resolveAudioContextCtor(): typeof AudioContext | undefined {
   return (
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  );
+}
+
+function resolveOfflineAudioContextCtor(): typeof OfflineAudioContext | undefined {
+  if (typeof window === "undefined") return undefined;
+  return (
+    window.OfflineAudioContext ??
+    (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext
   );
 }
 
@@ -114,66 +131,143 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return pending;
   }
 
+  // Retained synth loops render the procedural patch to one cached buffer, then loop it as a plain
+  // BufferSource — so live pitch is `playbackRate` and live gain is a gain node, exactly like sample loops (#1051).
+  const synthBufferCache = new Map<string, Promise<AudioBuffer | null>>();
+  function renderSynthBuffer(soundId: string, patch: SynthPatch): Promise<AudioBuffer | null> {
+    let pending = synthBufferCache.get(soundId);
+    if (pending === undefined) {
+      const OfflineCtor = resolveOfflineAudioContextCtor();
+      if (OfflineCtor === undefined) {
+        pending = Promise.resolve(null);
+      } else {
+        try {
+          const seconds = Math.max(patchDuration(patch), 0.05);
+          const frames = Math.max(1, Math.ceil(seconds * context.sampleRate));
+          const offline = new OfflineCtor(1, frames, context.sampleRate);
+          realizeSynthPatch(offline, offline.destination, createNoiseBuffer(offline), patch);
+          pending = offline.startRendering().catch(() => null);
+        } catch {
+          pending = Promise.resolve(null);
+        }
+      }
+      synthBufferCache.set(soundId, pending);
+    }
+    return pending;
+  }
+
   let listenerPosition: Vec3 = { x: 0, y: 0, z: 0 };
   const activeSpatialUpdaters = new Set<() => void>();
+  const activeLoops = new Set<AudioEmitterHandle>();
+
+  const NOOP_HANDLE: AudioEmitterHandle = {
+    setPosition: () => undefined,
+    setRate: () => undefined,
+    setGain: () => undefined,
+    stop: () => undefined,
+  };
 
   function playInternal(soundId: string, position: Vec3 | undefined, loop: boolean): AudioEmitterHandle | null {
     const sound = sounds[soundId];
     if (sound === undefined) return null;
     const bus = busGainNode(sound.bus);
-    let currentPosition = position ?? listenerPosition;
+    const currentPosition = position ?? listenerPosition;
 
-    if (sound.synth !== undefined) {
+    // A one-shot synth cue realises its decaying voices live and is fire-and-forget.
+    if (sound.synth !== undefined && !loop) {
       const cueGain = context.createGain();
       cueGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       cueGain.connect(bus);
       realizeSynthPatch(context, cueGain, sharedNoiseBuffer(), sound.synth);
-      return { setPosition: () => undefined, stop: () => undefined };
+      return NOOP_HANDLE;
     }
-    if (sound.url === undefined) return null;
 
+    // Everything else resolves to one AudioBuffer we loop/play: sample URL, or a synth patch rendered once.
+    let bufferPromise: Promise<AudioBuffer | null>;
+    if (sound.synth !== undefined) bufferPromise = renderSynthBuffer(soundId, sound.synth);
+    else if (sound.url !== undefined) bufferPromise = loadBuffer(sound.url);
+    else return null;
+
+    return playBufferSource(sound, bus, bufferPromise, currentPosition, loop);
+  }
+
+  function playBufferSource(
+    sound: SoundDef,
+    bus: GainNode,
+    bufferPromise: Promise<AudioBuffer | null>,
+    initialPosition: Vec3,
+    loop: boolean,
+  ): AudioEmitterHandle {
     const disposer = createDisposer();
-    let liveGain: GainNode | null = null;
-    function updateGain(): void {
-      if (liveGain !== null) {
-        liveGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+    let currentPosition = initialPosition;
+    // Live control state, applied on source creation so updates that race the async buffer load stick.
+    let currentRate = 1;
+    let currentUserGain = 1;
+    let sourceNode: AudioBufferSourceNode | null = null;
+    let userGainNode: GainNode | null = null;
+    let falloffGain: GainNode | null = null;
+
+    function updateFalloff(): void {
+      if (falloffGain !== null) {
+        falloffGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       }
     }
 
-    void loadBuffer(sound.url).then((buffer) => {
+    void bufferPromise.then((buffer) => {
       if (buffer === null) return;
-      const sourceNode = context.createBufferSource();
-      sourceNode.buffer = buffer;
-      sourceNode.loop = loop || (sound.loop ?? false);
-      const gainNode = context.createGain();
-      gainNode.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
-      sourceNode.connect(gainNode);
-      gainNode.connect(bus);
-      sourceNode.start();
-      liveGain = gainNode;
+      const src = context.createBufferSource();
+      src.buffer = buffer;
+      src.loop = loop || (sound.loop ?? false);
+      src.playbackRate.value = currentRate;
+      // source → per-loop user gain (setGain) → distance falloff → bus
+      const uGain = context.createGain();
+      uGain.gain.value = currentUserGain;
+      const fGain = context.createGain();
+      fGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
+      src.connect(uGain);
+      uGain.connect(fGain);
+      fGain.connect(bus);
+      src.start();
+      sourceNode = src;
+      userGainNode = uGain;
+      falloffGain = fGain;
       disposer.onDispose(() => {
         try {
-          sourceNode.stop();
+          src.stop();
         } catch {
         }
-        sourceNode.disconnect();
-        gainNode.disconnect();
-        liveGain = null;
+        src.disconnect();
+        uGain.disconnect();
+        fGain.disconnect();
+        sourceNode = null;
+        userGainNode = null;
+        falloffGain = null;
       });
     });
 
-    if (loop) activeSpatialUpdaters.add(updateGain);
+    if (loop) activeSpatialUpdaters.add(updateFalloff);
 
-    return {
+    const handle: AudioEmitterHandle = {
       setPosition(next) {
         currentPosition = next;
-        updateGain();
+        updateFalloff();
+      },
+      setRate(rate) {
+        currentRate = clampLoopRate(rate);
+        if (sourceNode !== null) sourceNode.playbackRate.setTargetAtTime(currentRate, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+      },
+      setGain(gain) {
+        currentUserGain = clampLoopGain(gain);
+        if (userGainNode !== null) userGainNode.gain.setTargetAtTime(currentUserGain, context.currentTime, LOOP_PARAM_SMOOTH_TC);
       },
       stop() {
-        activeSpatialUpdaters.delete(updateGain);
+        activeSpatialUpdaters.delete(updateFalloff);
+        activeLoops.delete(handle);
         disposer.dispose();
       },
     };
+    if (loop) activeLoops.add(handle);
+    return handle;
   }
 
   return {
@@ -202,6 +296,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       void context.resume().catch(() => undefined);
     },
     dispose() {
+      for (const handle of [...activeLoops]) handle.stop();
       activeSpatialUpdaters.clear();
       director?.dispose();
       void context.close().catch(() => undefined);

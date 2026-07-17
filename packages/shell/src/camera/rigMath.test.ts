@@ -34,6 +34,7 @@ import {
   stepTrauma,
   topDownPose,
   traumaShake,
+  velocityYawTarget,
   yawTo,
 } from "./rigMath";
 
@@ -491,6 +492,97 @@ describe("bankRollStep", () => {
     }
     for (let i = 0; i < 295; i += 1) roll = bankRollStep(roll, 1, 0, dt, resolved);
     expect(roll).toBeCloseTo(-10, 1);
+  });
+});
+
+describe("resolveChase velocityYaw defaults", () => {
+  test("absent block leaves drift-lag off (blend 0)", () => {
+    expect(resolveChase(undefined).velocityYawBlend).toBe(0);
+    expect(resolveChase({ distance: 6 }).velocityYawBlend).toBe(0);
+  });
+
+  test("present block defaults blend 0.65, minSpeed 4, response 6", () => {
+    const r = resolveChase({ velocityYaw: {} });
+    expect(r.velocityYawBlend).toBe(0.65);
+    expect(r.velocityYawMinSpeed).toBe(4);
+    expect(r.velocityYawResponse).toBe(6);
+  });
+
+  test("present block honors overrides", () => {
+    const r = resolveChase({ velocityYaw: { blend: 0.3, minSpeed: 8, response: 10 } });
+    expect(r.velocityYawBlend).toBe(0.3);
+    expect(r.velocityYawMinSpeed).toBe(8);
+    expect(r.velocityYawResponse).toBe(10);
+  });
+});
+
+describe("velocityYawTarget", () => {
+  // 30° slip: velocity direction is `slip` radians off the heading, at `speed` planar u/s.
+  const drift = (heading: number, slip: number, speed: number): { x: number; y: number; z: number } => {
+    const dir = heading + slip;
+    return { x: speed * Math.sin(dir), y: 0, z: speed * Math.cos(dir) };
+  };
+
+  test("feature off (no config) returns the raw heading, so the chase pose is unchanged", () => {
+    const resolved = resolveChase(undefined);
+    const velocity = drift(0.7, Math.PI / 6, 12);
+    expect(velocityYawTarget(0.7, velocity, resolved)).toBe(0.7);
+    // and threading that anchor through the chase pose equals the pure-heading pose byte-for-byte
+    const follow = { x: 1, y: 2, z: 3 };
+    const anchor = velocityYawTarget(0.7, velocity, resolved);
+    expect(chaseDesiredPosition(follow, anchor, resolved)).toEqual(chaseDesiredPosition(follow, 0.7, resolved));
+  });
+
+  test("straight driving (velocity aligned with heading) leaves the anchor on the heading", () => {
+    const resolved = resolveChase({ velocityYaw: {} });
+    const velocity = drift(1.0, 0, 20);
+    expect(near(velocityYawTarget(1.0, velocity, resolved), 1.0, 1e-9)).toBe(true);
+  });
+
+  test("30° slip rotates the anchor toward velocity by blend × slip-fraction of the slip", () => {
+    const resolved = resolveChase({ velocityYaw: {} });
+    const heading = 0;
+    const slip = Math.PI / 6;
+    const velocity = drift(heading, slip, 10);
+    const result = velocityYawTarget(heading, velocity, resolved);
+    const slipFraction = Math.abs(slip) / (Math.PI / 2);
+    const expected = heading + slip * 0.65 * slipFraction;
+    expect(near(result, expected, 1e-9)).toBe(true);
+    // rotated toward velocity (camera reveals the car's side) but not all the way there
+    expect(result).toBeGreaterThan(heading);
+    expect(result).toBeLessThan(slip);
+  });
+
+  test("reverse gear (velocity opposed to heading) never swings the camera around", () => {
+    const resolved = resolveChase({ velocityYaw: {} });
+    expect(velocityYawTarget(0, { x: 0, y: 0, z: -10 }, resolved)).toBe(0);
+    // even a reversing slide (some lateral component) stays on the heading
+    expect(velocityYawTarget(0, { x: 3, y: 0, z: -10 }, resolved)).toBe(0);
+  });
+
+  test("below minSpeed the feature is fully off (parking-lot stability)", () => {
+    const resolved = resolveChase({ velocityYaw: {} });
+    const velocity = drift(0, Math.PI / 6, 2); // speed 2 < default minSpeed 4
+    expect(velocityYawTarget(0, velocity, resolved)).toBe(0);
+  });
+
+  test("blends across the ±PI wrap seam by the shortest arc", () => {
+    const resolved = resolveChase({ velocityYaw: {} });
+    const heading = Math.PI - 0.05;
+    const velYaw = -(Math.PI - 0.05); // ~0.1 rad away, the short way, over the seam
+    const speed = 10;
+    const velocity = { x: speed * Math.sin(velYaw), y: 0, z: speed * Math.cos(velYaw) };
+    const result = velocityYawTarget(heading, velocity, resolved);
+    const slip = angleDelta(heading, velYaw);
+    const slipFraction = Math.abs(slip) / (Math.PI / 2);
+    const expected = heading + slip * 0.65 * slipFraction;
+    expect(near(result, expected, 1e-9)).toBe(true);
+    // moved a short amount off the heading, not the long way around the circle
+    const moved = angleDelta(heading, result);
+    expect(moved).toBeGreaterThan(0);
+    expect(moved).toBeLessThan(Math.abs(slip));
+    expect(result).toBeGreaterThan(heading);
+    expect(result).toBeLessThan(heading + Math.abs(slip));
   });
 });
 
