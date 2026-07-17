@@ -8,9 +8,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
 
-## build — a serializable directed/undirected pair key that resists delimiter collisions
+## cancel-work — remove a job and compute its refund from reservation and progress
 
-- `createPairKeyCodec` (function) · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
+- `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
 
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
@@ -27,20 +27,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`
-- `decayMeterMoodles` (function) · `import { decayMeterMoodles } from "@jgengine/core/gameplay"`
-- `decayMeterSnapshot` (function) · `import { decayMeterSnapshot } from "@jgengine/core/gameplay"`
-- `decayMeterState` (function) · `import { decayMeterState } from "@jgengine/core/gameplay"`
-- `decayMeters` (function) · `import { decayMeters } from "@jgengine/core/gameplay"`
-- `initDecayMeters` (function) · `import { initDecayMeters } from "@jgengine/core/gameplay"`
-- `refillMeter` (function) · `import { refillMeter } from "@jgengine/core/gameplay"`
 
 ## define-game — single public game-authoring path — compose systems, world, and loop in one definition
 
 - `defineGame` (function) · `import { defineGame } from "@jgengine/core/gameplay"`
-
-## detect — fire-once threshold/milestone/tier crossings when a value moves
-
-- `crossThresholds` (function) · `import { crossThresholds } from "@jgengine/core/gameplay"`
 
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
@@ -49,6 +39,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## durability — track item wear, breakage, and repair
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
+
+## enqueue-work — reserve inputs and add a timed job, honoring capacity and validation policy
+
+- `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
 
 ## event-bus — typed publish/subscribe bus for gameplay events
 
@@ -118,18 +112,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/gameplay"`
 
-## move — a keyed value toward a target by a bounded step
-
-- `towardValue` (function) · `import { towardValue } from "@jgengine/core/gameplay"`
-
 ## name-generator — generate procedural names from templates and word banks
 
 - `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/gameplay"`
-
-## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
-
-- `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
-- `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
 ## objectives — check progress of a threshold objective against a live metric
 
@@ -160,17 +145,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
 
-## resolve — the current tier/band label for a keyed or scalar value
-
-- `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`
-
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
-
-## set — a bounded keyed value in a caller-owned serializable record
-
-- `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
 
 ## social-emotes — emotes and social interactions between nearby players
 
@@ -180,17 +157,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
 
-## stat-graph — derive game-defined stats from named inputs with provenance and preview
-
-- `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
-
-## stat-graph-bridge — feed an existing StatModifierSet into a stat-graph source
-
-- `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
-
 ## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
+
+## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
+
+- `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
 
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 
@@ -200,6 +173,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
+
+## unit-training — compose a timed work queue that trains catalog units into spawn orders
+
+- `unitTrainingConfig` (function) · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 
@@ -216,3 +193,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weighted-pick — pick one item from a set with an injected random source
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
+
+## work-queue — a serializable timed job queue with reservation, cancellation, completion, and output routing
+
+- `createWorkQueue` (function) · `import { createWorkQueue } from "@jgengine/core/gameplay"`
