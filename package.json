@@ -46,7 +46,7 @@
     "dev:runner": "bun run --cwd apps/dev dev",
     "shoot": "bun scripts/guard.ts 300 'bun scripts/shoot-dev.ts'",
     "drive": "bun scripts/guard.ts 300 'bun scripts/drive-dev.ts'",
-    "new:game": "bun scripts/new-game.ts",
+    "new:game": "bun packages/jgengine/src/cli/index.ts create",
     "pr-shots": "bun scripts/pr-shots.ts",
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",

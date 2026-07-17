@@ -23,7 +23,7 @@ Every editor-visible object has an explicit provenance — `authored`, `generate
 4. Make gameplay reference stable authored ids, path kinds, markers, or zones rather than copying coordinates (player spawns read the document's `player_spawn` marker via `authoredSpawnPosition` from `@jgengine/core/world/authoredSpawn`).
 5. Render through shared authored-scene primitives and verify with `jgengine-verify`.
 
-Scaffolded games start editor-wired: `npx jgengine create` and `bun run new:game` share one template that ships `src/editor.scene.json` + `editorLayers.ts`, passes the document to play mode and F2+E through `defineGame({ editorLayers })` (auto-mounted `AuthoredScene`), and spawns at the authored marker — extend the shipped document instead of re-wiring or hardcoding.
+Scaffolded games start editor-wired: `npx jgengine create` (also what `bun run new:game` runs in-repo) uses one template that ships `src/editor.scene.json` + `editorLayers.ts`, passes the document to play mode and F2+E through `defineGame({ editorLayers })` (auto-mounted `AuthoredScene`), and spawns at the authored marker — extend the shipped document instead of re-wiring or hardcoding.
 
 Use `capabilities.md` to discover editor/runtime imports and `api.md` for signatures. Open [reference.md](reference.md) for RPC/CLI operations, embedded-agent behavior, scene schema details, and troubleshooting.
 

@@ -17,11 +17,9 @@ export interface ShellCommand {
 export function buildShellCommand(action: ProjectAction): ShellCommand {
   switch (action.kind) {
     case "new-game": {
-      const argv = ["bun", "run", "new:game", action.id];
-      if (action.name !== undefined && action.name.trim().length > 0) {
-        argv.push("--name", action.name.trim());
-      }
-      return { label: `new:game ${action.id}`, argv, cwd: "repo", stream: true };
+      const name = action.name !== undefined && action.name.trim().length > 0 ? action.name.trim() : action.id;
+      const argv = ["bun", "packages/jgengine/src/cli/index.ts", "create", name];
+      return { label: `create ${name}`, argv, cwd: "repo", stream: true };
     }
     case "start-game": {
       if (action.mount === "standalone") {
