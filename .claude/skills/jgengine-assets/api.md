@@ -124,8 +124,9 @@
 - `DownloadPackOptions` (interface): interface DownloadPackOptions — ⚠ undocumented
 - `DownloadPackResult` (interface): interface DownloadPackResult — ⚠ undocumented
 - `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
+- `ExtractedPack` (interface): interface ExtractedPack — What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference.
+- `ExtractedPackImage` (interface): interface ExtractedPackImage — An image a pack's models reference, shipped flat beside the `.glb` files.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
-- `ExtractedTexture` (interface): interface ExtractedTexture — ⚠ undocumented
 - `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
 - `MAX_ARCHIVE_COMPRESSION_RATIO` (const): const MAX_ARCHIVE_COMPRESSION_RATIO: 100 — Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb.
 - `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
