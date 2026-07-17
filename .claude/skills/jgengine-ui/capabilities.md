@@ -69,6 +69,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
 
+## hud-icons — painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
+
+- `IconSchool` (type) · `import { IconSchool } from "@jgengine/react"`
+
 ## hud-theme — one token object + genre presets driving bars, frames, slots, and minimap ring
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`

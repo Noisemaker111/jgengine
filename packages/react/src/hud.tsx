@@ -2,7 +2,9 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
+import { iconForItemId } from "./gameIcons";
 import { hudFrameStyle } from "./hudFrame";
+import { IconTreatment, schoolForItem } from "./iconTreatment";
 import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
 
 /**
@@ -93,14 +95,17 @@ export function StatBar({
 }
 
 /**
- * A numbered hotbar bound to an inventory — glassy slots, an active-slot highlight, item id + count,
- * and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one.
+ * A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a
+ * school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot.
+ * Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to
+ * map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
  */
 export function Hotbar({
   inventoryId,
   activeSlot,
   keys,
   slotSize = 46,
+  itemIcon,
   style,
   className,
 }: {
@@ -108,6 +113,8 @@ export function Hotbar({
   activeSlot?: number;
   keys?: readonly string[];
   slotSize?: number;
+  /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */
+  itemIcon?: (itemId: string) => ReactNode;
   style?: CSSProperties;
   className?: string;
 }) {
@@ -116,29 +123,44 @@ export function Hotbar({
     <div className={className} style={{ display: "flex", gap: 6, ...style }} data-inventory={inventoryId}>
       {slots.map((slot, index) => {
         const active = index === activeSlot;
+        const keycap = keys?.[index] ?? String(index + 1);
+        const custom = slot !== null ? itemIcon?.(slot.itemId) : undefined;
         return (
           <div
             key={index}
             data-slot={index}
             style={{
-              ...PANEL,
               width: slotSize,
               height: slotSize,
               position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderColor: active ? "rgba(56,189,248,0.9)" : "rgba(255,255,255,0.10)",
-              boxShadow: active ? "0 0 0 1px rgba(56,189,248,0.7), 0 4px 16px rgba(0,0,0,0.35)" : PANEL.boxShadow,
             }}
           >
-            <span style={{ position: "absolute", top: 2, left: 4, fontSize: 9, fontWeight: 700, opacity: 0.55 }}>{keys?.[index] ?? index + 1}</span>
             {slot !== null ? (
-              <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1, padding: "0 2px", wordBreak: "break-word" }}>
-                {slot.itemId}
-                {slot.count > 1 ? <span style={{ display: "block", opacity: 0.6 }}>×{slot.count}</span> : null}
-              </span>
-            ) : null}
+              custom !== undefined && custom !== null ? (
+                <IconTreatment glyph={custom} size={slotSize} count={slot.count} keycap={keycap} active={active} />
+              ) : (
+                <IconTreatment
+                  {...(iconForItemId(slot.itemId) === null ? {} : { icon: iconForItemId(slot.itemId)! })}
+                  school={schoolForItem(slot.itemId)}
+                  size={slotSize}
+                  count={slot.count}
+                  keycap={keycap}
+                  active={active}
+                />
+              )
+            ) : (
+              <div
+                style={{
+                  ...PANEL,
+                  width: slotSize,
+                  height: slotSize,
+                  position: "relative",
+                  borderColor: active ? "rgba(56,189,248,0.9)" : "rgba(255,255,255,0.10)",
+                }}
+              >
+                <span style={{ position: "absolute", top: 2, left: 4, fontSize: 9, fontWeight: 700, opacity: 0.55 }}>{keycap}</span>
+              </div>
+            )}
           </div>
         );
       })}

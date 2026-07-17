@@ -12,6 +12,8 @@ export * from "./components";
 export * from "./hud";
 export * from "./bars";
 export * from "./barsPreview";
+export * from "./iconTreatment";
+export * from "./iconsPreview";
 export * from "./hudTheme";
 export * from "./hudThemePreview";
 export * from "./hudFrame";
