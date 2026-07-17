@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## attack-move-order — advance-and-engage order that pursues hostiles en route and completes at its destination
+
+- `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
+
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
@@ -60,6 +64,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
+## hold-order — stand-ground order that holds position until preempted or canceled
+
+- `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
@@ -71,6 +79,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
+
+## move-order — go-to-point order that completes on arrival, composed over a motion adapter
+
+- `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
+
+## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
+
+- `createOrderQueue` (function) · `import { createOrderQueue } from "@jgengine/core/world"`
+
+## order-registry — register order verbs (move/attack/custom) as data so engine code never branches on a verb
+
+- `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
+
+## patrol-order — waypoint-route order that cycles a path, looping or completing at the end
+
+- `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
@@ -105,6 +129,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
+
+## stop-order — halt-and-complete order that brings a unit to an immediate standstill
+
+- `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
+
+## targeted-order — pursue-a-target order with leash/standoff that ends when the target is gone
+
+- `defineTargetedOrder` (function) · `import { defineTargetedOrder } from "@jgengine/core/world"`
 
 ## touch-controls — default on-screen button silhouette for a touch action
 
