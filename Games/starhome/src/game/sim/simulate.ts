@@ -14,7 +14,8 @@ import {
   USE_FULL,
   type RoleAvailability,
 } from "./ai";
-import { clampRel, crossedMilestone } from "./social";
+import { addValue, driftValue, getValue } from "@jgengine/core/relation/keyedValues";
+import { crossedMilestones, REL_BOUNDS } from "./social";
 
 const EVENT_TTL = 7;
 const LOW_CREDITS = 200;
@@ -247,11 +248,10 @@ function findIdleCompanion(ctx: GameContext, state: HouseholdState, member: Memb
 
 function bumpRelationship(state: HouseholdState, a: string, b: string, delta: number, now: number): void {
   const key = pairKey(a, b);
-  const before = state.relationships[key] ?? 0;
-  const after = clampRel(before + delta);
-  state.relationships[key] = after;
-  const milestone = crossedMilestone(before, after);
-  if (milestone !== null && state.milestones[key] !== milestone.key) {
+  const before = getValue(state.relationships, key);
+  const after = addValue(state.relationships, key, delta, REL_BOUNDS);
+  for (const milestone of crossedMilestones(before, after)) {
+    if (state.milestones[key] === milestone.key) continue;
     state.milestones[key] = milestone.key;
     const nameA = state.members[a]?.name ?? "?";
     const nameB = state.members[b]?.name ?? "?";
@@ -260,10 +260,9 @@ function bumpRelationship(state: HouseholdState, a: string, b: string, delta: nu
 }
 
 function driftRelationships(state: HouseholdState, dt: number): void {
-  const drift = (REL_DRIFT_PER_DAY / DAY_LENGTH) * dt;
+  const rate = (REL_DRIFT_PER_DAY / DAY_LENGTH) * dt * 0.4;
   for (const key of Object.keys(state.relationships)) {
-    const value = state.relationships[key]!;
-    if (value > 0) state.relationships[key] = Math.max(0, value - drift * 0.4);
+    if (getValue(state.relationships, key) > 0) driftValue(state.relationships, key, rate, 0, REL_BOUNDS);
   }
 }
 

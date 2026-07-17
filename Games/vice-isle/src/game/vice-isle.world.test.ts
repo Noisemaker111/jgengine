@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { world } from "../world";
 import {
+  BOUNTY_SPOTS,
   BRIEFCASE_POS,
+  CICADA_STAGE_POS,
   DISTRICTS,
   DOCK_FIGHT_CENTER,
   districtAt,
@@ -14,6 +16,8 @@ import {
   RACE_CHECKPOINTS,
   roadPoints,
   ROADS,
+  SAFEHOUSE_POS,
+  VCPD_POS,
 } from "./world/districts";
 
 describe("vice-isle authored scene parity", () => {
@@ -56,6 +60,22 @@ describe("vice-isle authored scene parity", () => {
     expect(GARAGE_POS).toEqual([-68, 0, 116]);
     expect(DOCK_FIGHT_CENTER).toEqual([130, 0, 196]);
     expect(BRIEFCASE_POS).toEqual([142, 0, 208]);
+    expect(VCPD_POS).toEqual([54, 0, -40]);
+    expect(SAFEHOUSE_POS).toEqual([48, 0, -222]);
+    expect(CICADA_STAGE_POS).toEqual([74, 0, -236]);
+  });
+
+  test("the loop's authored spots sit inside their districts", () => {
+    expect(districtAt(VCPD_POS[0], VCPD_POS[2])?.id).toBe("downtown");
+    expect(districtAt(SAFEHOUSE_POS[0], SAFEHOUSE_POS[2])?.id).toBe("palm_heights");
+    expect(districtAt(CICADA_STAGE_POS[0], CICADA_STAGE_POS[2])?.id).toBe("palm_heights");
+  });
+
+  test("five bounty spots rotate across the isle", () => {
+    expect(BOUNTY_SPOTS).toHaveLength(5);
+    expect(new Set(BOUNTY_SPOTS.map((s) => s.id)).size).toBe(5);
+    const districts = new Set(BOUNTY_SPOTS.map((s) => districtAt(s.position[0], s.position[2])?.id ?? "streets"));
+    expect(districts.size).toBeGreaterThanOrEqual(4);
   });
 });
 

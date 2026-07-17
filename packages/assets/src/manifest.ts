@@ -1,6 +1,8 @@
 import type { ModelDims } from "@jgengine/core/scene/assetCatalog";
+import type { AssetSpace } from "@jgengine/core/scene/assetSpace";
 
 export type { ModelDims };
+export type { AssetSpace };
 
 export type AssetProvider =
   | "quaternius"
@@ -54,6 +56,8 @@ export interface IndexEntry {
   file: string;
   /** Footprint/center/minY measured from the GLB at reindex; absent when the model could not be read. */
   dims?: ModelDims;
+  /** Authored asset-space metadata (canonical facing, unit scale, footprint, anchor, bounds, rotation policy); absent unless a curator overrides the measured defaults. */
+  space?: AssetSpace;
 }
 
 export interface AssetAlias {

@@ -6,6 +6,7 @@
 import { createEditorHost, type EditorBridgeRequest, type EditorHostApi, type EditorRunMode } from "../session";
 import { loadGameCatalogs } from "./loadGameCatalogs.ts";
 import { loadGameLayers } from "./loadGameLayers.ts";
+import { decodeEditorBridgeRequest } from "./rpcRequest.ts";
 import { EDITOR_MCP_TOOLS } from "./tools";
 
 type JsonRpcId = string | number | null;
@@ -288,7 +289,13 @@ export async function runEditorMcpStdio(options: {
           const name = String(params.name ?? "");
           const args = (params.arguments ?? {}) as Record<string, unknown>;
           const bridge = toolToBridge(name, args);
-          const result = host.handle(bridge);
+          // Re-validate the assembled request at the same boundary the HTTP/CLI paths use, so the
+          // complex nested fields (`patch`, `entities`, `entity`) that toolToBridge passes through
+          // untyped are type-checked before they reach a live session instead of cast blind.
+          const decoded = decodeEditorBridgeRequest(bridge);
+          const result = decoded.ok
+            ? host.handle(decoded.request)
+            : { ok: false as const, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") };
           respond(id, {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
             isError: !result.ok,

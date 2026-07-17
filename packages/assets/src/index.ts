@@ -64,3 +64,14 @@ export {
   type ModelSnippetOptions,
 } from "./snippet";
 export { verifyManifest, type VerifyResult } from "./verify";
+export {
+  resolveProvenance,
+  validateAssetReferences,
+  type AssetProvenance,
+  type AssetProvenanceKind,
+  type AssetReference,
+  type ReferenceValidation,
+  type ResolveProvenanceOptions,
+  type ValidateAssetReferencesOptions,
+  type ValidateAssetReferencesResult,
+} from "./provisioning";

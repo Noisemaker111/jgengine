@@ -5,7 +5,7 @@ import { makeNamer } from "../creatures/names";
 import { ALIEN_KIND, JOBS } from "../entities/aliens/catalog";
 import { emptyNeeds } from "../needs/needs";
 import { householdStore } from "../session/store";
-import { createHousehold, type HouseholdState, type MemberState } from "../session/types";
+import { createHousehold, pairKey, type HouseholdState, type MemberState } from "../session/types";
 import { SCENE_PLACEMENTS } from "../../editorLayers";
 
 const MEMBER_COUNT = 4;
@@ -62,7 +62,7 @@ export function setupWorld(ctx: GameContext): void {
 function seedRelationships(state: HouseholdState): void {
   for (let i = 0; i < state.order.length; i++) {
     for (let j = i + 1; j < state.order.length; j++) {
-      const key = `${state.order[i]}|${state.order[j]}`;
+      const key = pairKey(state.order[i]!, state.order[j]!);
       state.relationships[key] = 8;
     }
   }

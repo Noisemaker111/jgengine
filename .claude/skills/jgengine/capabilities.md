@@ -19,3 +19,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## runtime-save — save/load the whole game world through a pluggable backend, autosave or save points
 
 - `createRuntimeSave` (function) · `import { createRuntimeSave } from "@jgengine/core/runtime/runtimeSave"`
+
+## scene-ownership — audit a whole ownership manifest for boundary violations
+
+- `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/authoring"`
+- `classifyOwnership` (function) · `import { classifyOwnership } from "@jgengine/core/authoring"`
+- `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/authoring"`
+- `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/authoring"`
+- `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/authoring"`

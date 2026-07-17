@@ -4,17 +4,86 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
+
+- `createAreaEffectField` (function) · `import { createAreaEffectField } from "@jgengine/core/world"`
+
+## area-stack-additive — sum a magnitude across overlapping area memberships
+
+- `sumMagnitude` (function) · `import { sumMagnitude } from "@jgengine/core/world"`
+
+## area-stack-capped — cap area memberships per stack key at a maximum count
+
+- `cappedStacks` (function) · `import { cappedStacks } from "@jgengine/core/world"`
+
+## area-stack-extremum — keep only the strongest or weakest overlapping area membership
+
+- `extremumStack` (function) · `import { extremumStack } from "@jgengine/core/world"`
+
+## area-stack-independent — apply every overlapping area membership independently
+
+- `independentStacks` (function) · `import { independentStacks } from "@jgengine/core/world"`
+
+## area-stack-unique — keep one area membership per stack key, strongest wins
+
+- `uniqueByStackKey` (function) · `import { uniqueByStackKey } from "@jgengine/core/world"`
+
+## asset-anchor — resolve a model's pivot offset from its footprint center
+
+- `resolveAnchorOffset` (function) · `import { resolveAnchorOffset } from "@jgengine/core/world"`
+
+## asset-facing — resolve a placement heading into a Three.js Y-rotation using canonical forward
+
+- `resolveFacingRotationY` (function) · `import { resolveFacingRotationY } from "@jgengine/core/world"`
+
+## asset-footprint — rotate a rectangular footprint into its axis-aligned extent
+
+- `rotatedFootprint` (function) · `import { rotatedFootprint } from "@jgengine/core/world"`
+
+## asset-heading — turn a north-relative degree heading into a Three.js Y-rotation
+
+- `headingToRotationY` (function) · `import { headingToRotationY } from "@jgengine/core/world"`
+- `normalizeDegrees` (function) · `import { normalizeDegrees } from "@jgengine/core/world"`
+- `rotationYToHeading` (function) · `import { rotationYToHeading } from "@jgengine/core/world"`
+
+## asset-load-diagnostics — classify a model fetch (missing / HTML fallback / corrupt / unsupported) before parsing
+
+- `classifyAssetResponse` (function) · `import { classifyAssetResponse } from "@jgengine/core/scene/assetDiagnostics"`
+
+## asset-space — parse serialized asset-space metadata into a validated shape
+
+- `parseAssetSpace` (function) · `import { parseAssetSpace } from "@jgengine/core/world"`
+- `validateAssetSpace` (function) · `import { validateAssetSpace } from "@jgengine/core/world"`
+
+## asset-units — convert a source-space length to engine meters via catalog unit scale
+
+- `toEngineUnits` (function) · `import { toEngineUnits } from "@jgengine/core/world"`
+
+## attack-move-order — advance-and-engage order that pursues hostiles en route and completes at its destination
+
+- `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
+
 ## authored-objects — place catalog mesh props from an editor document
 
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
 
+## authored-spawn — read spawn points and markers from the editor document
+
+- `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn"`
+- `authoredSpawnRotation` (function) · `import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn"`
+- `markersOfKind` (function) · `import { markersOfKind } from "@jgengine/core/world/authoredSpawn"`
+
 ## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
 
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/world"`
 - `createAuthoredTriggerRuntime` (function) · `import { createAuthoredTriggerRuntime } from "@jgengine/core/world"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
+
+## behavior-control — pause/disable/resume/seek/inspect behavior instances per entity
+
+- `behaviorControl` (function) · `import { behaviorControl } from "@jgengine/core/world"`
 
 ## behavior-tick — auto-advance patrol/wander behaviors on spawned entities, no per-game route loop
 
@@ -24,25 +93,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
 
-## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
+## contour-interval — readable auto-spacing for elevation contours
 
-- `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
-
-## build-socket-catalog — data-driven named-socket snap catalog for modular base building
-
-- `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
-
-## catenary — sagging cable curve between two anchors
-
-- `Vec3` (type) · `import { Vec3 } from "@jgengine/core/world/catenary"`
-
-## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
-
-- `resolveCompanionIntent` (function) · `import { resolveCompanionIntent } from "@jgengine/core/scene/companion"`
-
-## companion-roster — manage tamed companions — allegiance, commands, per-companion stats/leveling, and mobBrain-shaped intent
-
-- `createCompanionRoster` (function) · `import { createCompanionRoster } from "@jgengine/core/scene/companion"`
+- `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/world"`
 
 ## crouch-prone — stance/pose transitions that change the hitbox
 
@@ -51,6 +104,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
+
+## elevation-readout — cursor height and delta-from-reference feedback
+
+- `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
+
+## elevation-summary — selection min/max/mean and relief over a region
+
+- `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
@@ -64,6 +125,34 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world"`
 
+## formation-assignment — stable deterministic member-to-slot matching for a group formation
+
+- `assignFormationSlots` (function) · `import { assignFormationSlots } from "@jgengine/core/world"`
+
+## formation-box — box/grid slot generator for group destinations
+
+- `boxFormation` (function) · `import { boxFormation } from "@jgengine/core/world"`
+
+## formation-circle — ring/cordon slot generator for group destinations
+
+- `circleFormation` (function) · `import { circleFormation } from "@jgengine/core/world"`
+
+## formation-facing — group facing yaw from a travel direction on the XZ plane
+
+- `facingYaw` (function) · `import { facingYaw } from "@jgengine/core/world"`
+
+## formation-line — line (abreast) slot generator for group destinations
+
+- `lineFormation` (function) · `import { lineFormation } from "@jgengine/core/world"`
+
+## formation-placement — place a group formation's world slots around a destination
+
+- `placeFormation` (function) · `import { placeFormation } from "@jgengine/core/world"`
+
+## formation-wedge — wedge/arrowhead slot generator for group destinations
+
+- `wedgeFormation` (function) · `import { wedgeFormation } from "@jgengine/core/world"`
+
 ## forward-axis — declared front convention for parametric assets — auto-orient product shots
 
 - `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/world"`
@@ -76,21 +165,78 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
+## hold-order — stand-ground order that holds position until preempted or canceled
+
+- `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
+
+## interest-census — running active/dormant gate tally folded into the caller's tick loop
+
+- `createInterestCensus` (function) · `import { createInterestCensus } from "@jgengine/core/world"`
+
+## interest-gate — per-agent sleep/wake + cadence gate state so far agents skip expensive ticks
+
+- `createInterestGateState` (function) · `import { createInterestGateState } from "@jgengine/core/world"`
+
+## interest-scheduler — advance a sleep/wake gate with hysteresis, cadence tiers, and stagger
+
+- `advanceInterestGate` (function) · `import { advanceInterestGate } from "@jgengine/core/world"`
+
+## interest-stagger — deterministic per-id cadence phase that spreads sibling gate ticks across frames
+
+- `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
+
+## local-avoidance — bounded deterministic local collision avoidance for moving agents
+
+- `resolveLocalAvoidance` (function) · `import { resolveLocalAvoidance } from "@jgengine/core/world"`
 
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## minimap-track — project a world point to a 0..1 fraction along a linear track axis
+
+- `trackFraction` (function) · `import { trackFraction } from "@jgengine/core/world/minimapTrack"`
+
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
-## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
+## move-order — go-to-point order that completes on arrival, composed over a motion adapter
 
-- `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/world/buildSockets"`
+- `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
+
+## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
+
+- `createOrderQueue` (function) · `import { createOrderQueue } from "@jgengine/core/world"`
+
+## order-registry — register order verbs (move/attack/custom) as data so engine code never branches on a verb
+
+- `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
+
+## path-follow-progress — read normalized/distance/segment progress from follow state
+
+- `pathFollowProgress` (function) · `import { pathFollowProgress } from "@jgengine/core/world"`
+
+## path-follow-seek — jump a path-follower to normalized/distance/segment progress
+
+- `pathFollowSeek` (function) · `import { pathFollowSeek } from "@jgengine/core/world"`
+
+## path-length — total polyline distance for progress math and seeding
+
+- `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
+
+## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
+
+- `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
+- `withPathProfiles` (function) · `import { withPathProfiles } from "@jgengine/core/world"`
+
+## patrol-order — waypoint-route order that cycles a path, looping or completing at the end
+
+- `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
@@ -106,9 +252,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validatePlacement` (function) · `import { validatePlacement } from "@jgengine/core/world"`
 
-## population-director — ambient per-region creature population manager with timed weighted respawns and caps
+## placement-rotation — apply a rotation policy to a candidate placement heading
 
-- `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
+- `applyRotationPolicy` (function) · `import { applyRotationPolicy } from "@jgengine/core/world"`
+- `parseRotationPolicy` (function) · `import { parseRotationPolicy } from "@jgengine/core/world"`
+- `snapHeading` (function) · `import { snapHeading } from "@jgengine/core/world"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
@@ -122,9 +270,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
 
-## resource-node — depletable, respawning harvest nodes with tool-dependent yields
+## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 
-- `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
+- `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
+- `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
+
+## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
+
+- `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
+
+## selection-bookmarks — keyed saved-set store (RTS control groups, camera bookmarks, saved squads) with prune + serialize
+
+- `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 
@@ -134,9 +291,89 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
+## spatial-region-box — sample uniformly within an axis-aligned 3D box
+
+- `boxRegion` (function) · `import { boxRegion } from "@jgengine/core/world"`
+
+## spatial-region-custom — wrap a caller-defined sampler and bounds test as a region
+
+- `customRegion` (function) · `import { customRegion } from "@jgengine/core/world"`
+
+## spatial-region-point-set — sample from a fixed, optionally weighted candidate point table
+
+- `pointSetRegion` (function) · `import { pointSetRegion } from "@jgengine/core/world"`
+
+## spatial-region-polygon — sample within an arbitrary closed polygon on the XZ plane
+
+- `polygonRegion` (function) · `import { polygonRegion } from "@jgengine/core/world"`
+
+## spatial-region-shell — sample within a 3D spherical shell, volume- or radius-uniform
+
+- `shellRegion` (function) · `import { shellRegion } from "@jgengine/core/world"`
+
+## spatial-region-sphere — sample within a filled 3D ball, volume- or radius-uniform
+
+- `sphereRegion` (function) · `import { sphereRegion } from "@jgengine/core/world"`
+
+## spatial-region-weighted — compose sub-regions behind a weighted selection policy
+
+- `weightedRegion` (function) · `import { weightedRegion } from "@jgengine/core/world"`
+
+## spatial-sample — draw one deterministic position from a region under include/exclude/distance constraints
+
+- `samplePoint` (function) · `import { samplePoint } from "@jgengine/core/world"`
+
+## spatial-sample-batch — place many deterministic spaced points from a region with minimum separation
+
+- `sampleBatch` (function) · `import { sampleBatch } from "@jgengine/core/world"`
+
+## spatial-sample-stratified — evenly cover an area with one jittered point per grid cell, deterministic
+
+- `sampleStratified` (function) · `import { sampleStratified } from "@jgengine/core/world"`
+
+## stop-order — halt-and-complete order that brings a unit to an immediate standstill
+
+- `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
+
+## surface-drape — lift an XZ polyline onto sculpted terrain
+
+- `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/world"`
+
+## surface-grid — terrain-following reference grid that is not occluded by relief
+
+- `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/world"`
+
+## surface-ring — surface-following placement guide ring
+
+- `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/world"`
+
+## target-acquirer — stateful held-target wrapper over an acquisition policy with retention
+
+- `createTargetAcquirer` (function) · `import { createTargetAcquirer } from "@jgengine/core/world"`
+
+## target-acquisition — composable candidate/eligibility/range/perception/score/tie-break/retention target pick
+
+- `acquireTarget` (function) · `import { acquireTarget } from "@jgengine/core/world"`
+
+## targeted-order — pursue-a-target order with leash/standoff that ends when the target is gone
+
+- `defineTargetedOrder` (function) · `import { defineTargetedOrder } from "@jgengine/core/world"`
+
+## terrain-contours — iso-elevation contour lines that drape on sculpted terrain
+
+- `extractContours` (function) · `import { extractContours } from "@jgengine/core/world"`
+
+## terrain-guides — one-call adaptive contours for a terrain field
+
+- `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/world"`
+
 ## touch-controls — default on-screen button silhouette for a touch action
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+
+## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
+
+- `createVisibilityField` (function) · `import { createVisibilityField } from "@jgengine/core/world"`
 
 ## volumetric-clouds — raymarched cloud layer sky option
 

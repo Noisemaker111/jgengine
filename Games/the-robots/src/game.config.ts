@@ -167,9 +167,11 @@ export const game = defineGame({
       { color: "#d9915c", intensity: 0.45, position: [-30, 30, -25] },
     ],
   },
+  // GTAO was dropped here after perf profiling: it re-renders the whole scene
+  // for depth/normals and doubled the frame's draw calls/triangles for a subtle
+  // contact-shadow gain this bright, fogged desert barely shows.
   postProcessing: {
     toneMapping: "aces",
-    ao: { radius: 1.8, intensity: 1.6, distanceFalloff: 3.6, blend: 0.7 },
     bloom: { strength: 0.28, radius: 0.5, threshold: 0.88 },
     grade: { vignette: 0.22, saturation: 1.08 },
   },

@@ -140,8 +140,8 @@ async function main(argv: string[]): Promise<number> {
     return response.ok ? 0 : 1;
   }
 
-  if (options.serve) {
-    const server = startEditorBridgeServerNode({ host: api, port: options.port });
+  if (serve) {
+    const server = startEditorBridgeServerNode({ host: api, port });
     console.log(`editor bridge for ${gameId} at ${server.url}`);
     console.log(`POST ${server.url}/rpc  body: {"method":"scene_summary"}`);
     console.log("tools:", EDITOR_MCP_TOOLS.map((tool) => tool.name).join(", "));

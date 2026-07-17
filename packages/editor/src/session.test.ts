@@ -281,6 +281,47 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("rejected mutations return ok:false with a reason (#1016)", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [{ id: "m", kind: "mob", position: { x: 0, y: 0, z: 0 } }],
+      },
+    });
+
+    // Collection/prefab verbs targeting a missing object no longer report a phantom success.
+    expect(api.handle({ method: "rename_collection", id: "ghost", name: "x" }).ok).toBe(false);
+    expect(api.handle({ method: "delete_collection", id: "ghost" }).ok).toBe(false);
+    expect(api.handle({ method: "add_to_collection", id: "ghost", ids: ["m"] }).ok).toBe(false);
+    expect(api.handle({ method: "set_collection_flags", id: "ghost", locked: true }).ok).toBe(false);
+    expect(api.handle({ method: "delete_prefab", prefabId: "ghost" }).ok).toBe(false);
+    expect(api.handle({ method: "detach_prefab_instance", instanceId: "ghost" }).ok).toBe(false);
+
+    // Batch verbs that match nothing are honest failures, not silent no-op successes.
+    const batch = api.handle({ method: "batch_set_properties", ids: ["nope"], color: "#111" });
+    expect(batch.ok).toBe(false);
+    expect(api.handle({ method: "assign_material", ids: ["nope"], materialId: "granite" }).ok).toBe(false);
+    dispose();
+  });
+
+  test("push_document_patch snapshot must clear the decode boundary (#1016)", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: { markers: [{ id: "m", kind: "mob", position: { x: 0, y: 0, z: 0 } }] },
+    });
+    const before = api.getSession().exportJson(false);
+    const rev = (api.handle({ method: "document_revision" }).result as { revision: number }).revision;
+    const bad = api.handle({
+      method: "push_document_patch",
+      patch: { type: "snapshot", baseRevision: rev, document: { markers: "not-an-array" } } as never,
+    });
+    expect(bad.ok).toBe(false);
+    expect(bad.error).toContain("invalid snapshot document");
+    // The live session is untouched by a rejected snapshot.
+    expect(api.getSession().exportJson(false)).toBe(before);
+    dispose();
+  });
+
   test("subscribeFocus fires on camera_goto", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

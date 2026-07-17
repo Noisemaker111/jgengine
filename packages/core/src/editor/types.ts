@@ -1,6 +1,7 @@
 import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../ui/hudDocument";
 import type { TerraformSnapshot } from "../world/terraform";
+import type { EditorGridLayer } from "./grid";
 
 export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../ui/hudDocument";
 
@@ -162,6 +163,12 @@ export interface EditorDocument {
   collections: EditorCollection[];
   /** Persisted gameplay catalog values; schemas come from the game's `editorCatalogs` export. */
   catalogs: EditorCatalogData[];
+  /**
+   * Editor-owned grid/tile layers — sparse `col,row` → value-id maps authored in the editor and
+   * read by runtime + rendering through `@jgengine/core/editor/grid`. Absent until a game or the
+   * editor adds a grid layer, so existing documents load unchanged.
+   */
+  grids?: EditorGridLayer[];
   /**
    * HUD layout owned by the scene document — panel id → anchor/offset/size/visibility.
    * Canvas mode (F2+C) and `canvas_move_panel` / `canvas_resize_panel` write here; HudPanel reads it.

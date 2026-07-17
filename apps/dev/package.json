@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "vite build",
     "build:site": "vite build --base /play/ --outDir ../web/public/play --emptyOutDir",
-    "dev:site": "JG_PLAY_HMR_PORT=5199 vite --base /play/ --port 5199 --strictPort",
     "check-types": "tsgo --noEmit -p tsconfig.json"
   },
   "dependencies": {

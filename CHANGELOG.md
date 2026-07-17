@@ -12,7 +12,7 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
-## Unreleased
+## 0.11.0
 
 ### Migrate
 

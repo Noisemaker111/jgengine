@@ -1,7 +1,9 @@
 import type { PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { createSpawnDirectorState, type SpawnDirectorState } from "@jgengine/core/ai/spawnDirector";
 import { createStats, type Stats } from "@jgengine/core/stats/statModifiers";
+import { createWorkQueue, type WorkQueueState } from "@jgengine/core/gameplay";
 
+import type { TowerBuildSpec, TowerReservation } from "./build/construction";
 import { BUILD_PLOTS } from "./world/path";
 import { SPAWN_DIRECTOR_CONFIG } from "./waves/manifest";
 
@@ -21,6 +23,7 @@ export interface TowerRuntime {
 
 export interface SessionState {
   director: SpawnDirectorState;
+  buildQueue: WorkQueueState<TowerBuildSpec, TowerReservation>;
   creeps: Map<string, CreepRuntime>;
   towers: Map<string, TowerRuntime>;
   plotOccupant: Map<string, string | null>;
@@ -36,6 +39,7 @@ function freshState(): SessionState {
   for (const plot of BUILD_PLOTS) plotOccupant.set(plot.id, null);
   return {
     director: createSpawnDirectorState(SPAWN_DIRECTOR_CONFIG),
+    buildQueue: createWorkQueue<TowerBuildSpec, TowerReservation>(),
     creeps: new Map(),
     towers: new Map(),
     plotOccupant,

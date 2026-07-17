@@ -1,6 +1,7 @@
 import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
+import { createStatGraph } from "@jgengine/core/progression/statGraph";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameIconName } from "@jgengine/react/gameIcons";
@@ -281,6 +282,51 @@ export interface HeroSheet {
 
 const FIST = { min: 1, max: 3, speed: 2 };
 
+// Attribute → derived-stat mapping expressed as a core data-driven stat graph (issue #914).
+// Inputs are the already-bonused, talent-adjusted attributes plus level/class scalars; the graph
+// owns the STR/AGI/STA/INT → attackPower/spellPower/maxHp/mana/armor/crit formulas. Talent and
+// external-mod post-processing stays outside the graph so observable numbers are unchanged.
+const HERO_STAT_GRAPH = createStatGraph({
+  inputs: [
+    { id: "str" },
+    { id: "agi" },
+    { id: "sta" },
+    { id: "int" },
+    { id: "bonusAp" },
+    { id: "bonusSp" },
+    { id: "armorBase" },
+    { id: "baseHp" },
+    { id: "hpPerLevel" },
+    { id: "levels" },
+    { id: "baseMana" },
+    { id: "manaPerLevel" },
+  ],
+  derived: [
+    {
+      id: "attackPower",
+      deps: ["str", "agi", "bonusAp"],
+      compute: (c) => c.value("str") * ATTACK_POWER_PER_STR + Math.floor(c.value("agi") / 2) + c.value("bonusAp"),
+    },
+    {
+      id: "spellPower",
+      deps: ["int", "bonusSp"],
+      compute: (c) => c.value("int") * SPELL_POWER_PER_INT + c.value("bonusSp"),
+    },
+    {
+      id: "maxHp",
+      deps: ["baseHp", "hpPerLevel", "levels", "sta"],
+      compute: (c) => c.value("baseHp") + c.value("hpPerLevel") * c.value("levels") + c.value("sta") * HP_PER_STA,
+    },
+    {
+      id: "manaPool",
+      deps: ["baseMana", "manaPerLevel", "levels", "int"],
+      compute: (c) => c.value("baseMana") + c.value("manaPerLevel") * c.value("levels") + c.value("int") * MANA_PER_INT,
+    },
+    { id: "armor", deps: ["armorBase", "agi"], compute: (c) => c.value("armorBase") + c.value("agi") * 2 },
+    { id: "critPct", deps: ["agi"], compute: (c) => BASE_CRIT_PCT + c.value("agi") * 0.05 },
+  ],
+});
+
 export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
   const cls = classOf(ctx, userId);
   if (cls === null) return null;
@@ -343,24 +389,31 @@ export function heroSheet(ctx: GameContext, userId: string): HeroSheet | null {
   for (const stat of Object.keys(attributes) as (keyof typeof attributes)[]) {
     attributes[stat] = Math.round(talented(stat, attributes[stat]));
   }
-  const maxHp = cls.baseHp + cls.hpPerLevel * (level - 1) + attributes.sta * HP_PER_STA;
-  const maxResource =
-    cls.resource === "mana"
-      ? cls.baseResource + cls.resourcePerLevel * (level - 1) + attributes.int * MANA_PER_INT
-      : 100;
+  const derived = HERO_STAT_GRAPH.create({
+    str: attributes.str,
+    agi: attributes.agi,
+    sta: attributes.sta,
+    int: attributes.int,
+    bonusAp,
+    bonusSp,
+    armorBase: armor,
+    baseHp: cls.baseHp,
+    hpPerLevel: cls.hpPerLevel,
+    levels: level - 1,
+    baseMana: cls.baseResource,
+    manaPerLevel: cls.resourcePerLevel,
+  });
+  const maxResource = cls.resource === "mana" ? derived.get("manaPool") : 100;
   const external = externalModsOf(ctx).get(userId);
   return {
     attributes,
-    maxHp: Math.round(talented("maxHp", maxHp) * (1 + (external?.maxHpPct ?? 0))),
+    maxHp: Math.round(talented("maxHp", derived.get("maxHp")) * (1 + (external?.maxHpPct ?? 0))),
     maxResource: Math.round(talented("maxResource", maxResource)),
-    attackPower: talented(
-      "attackPower",
-      attributes.str * ATTACK_POWER_PER_STR + Math.floor(attributes.agi / 2) + bonusAp,
-    ),
-    spellPower: talented("spellPower", attributes.int * SPELL_POWER_PER_INT + bonusSp),
-    armor: talented("armor", armor + attributes.agi * 2) + (external?.armorAdd ?? 0),
+    attackPower: talented("attackPower", derived.get("attackPower")),
+    spellPower: talented("spellPower", derived.get("spellPower")),
+    armor: talented("armor", derived.get("armor")) + (external?.armorAdd ?? 0),
     critPct:
-      talented("critPct", BASE_CRIT_PCT + attributes.agi * 0.05) +
+      talented("critPct", derived.get("critPct")) +
       (external?.critAdd ?? 0) +
       setBonus.critPct +
       enchantBonus.critPct,

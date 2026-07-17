@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+import { patrol } from "@jgengine/core/scene/behaviors";
+import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import { furnitureSpots, laneCenters, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
 import { streets } from "../../world";
-import { handroll } from "../handroll";
 import { buildingsByStyle, type BuildingStyle } from "./buildings";
 import {
   BRIEFCASE_POS,
@@ -10,6 +11,8 @@ import {
   DOCK_FIGHT_CENTER,
   GUNSHOP_POS,
   MARCO_POS,
+  SAFEHOUSE_POS,
+  VCPD_POS,
 } from "./districts";
 
 function ground(ctx: GameContext, x: number, z: number): readonly [number, number, number] {
@@ -34,6 +37,8 @@ const STREET_BLOCKERS: readonly (readonly [number, number])[] = [
   [-68, 116],
   [DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]],
   [-176, 24],
+  [SAFEHOUSE_POS[0], SAFEHOUSE_POS[2]],
+  [VCPD_POS[0], VCPD_POS[2]],
 ];
 
 function styleAt(x: number, z: number, rng: () => number): BuildingStyle {
@@ -77,11 +82,24 @@ export function setupWorld(ctx: GameContext): void {
       if (point === null) continue;
       pedCount += 1;
       const id = `ped_${pedCount}`;
-      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, point[0], point[1]), role: "npc" });
       const walk = sidewalkPoint(street, side, Math.min(1, fraction + 0.25));
-      if (walk !== null) {
-        handroll.registerRoute(id, [point, walk, point], 1.5, rng() * 40);
-      }
+      const behaviors =
+        walk !== null
+          ? [
+              patrol({
+                waypoints: [
+                  [point[0], 0, point[1]],
+                  [walk[0], 0, walk[1]],
+                  [point[0], 0, point[1]],
+                ] as Waypoint[],
+                speed: 1.5,
+                loop: true,
+                groundClamp: true,
+                startProgress: { kind: "distance", value: 1.5 * rng() * 40 },
+              }),
+            ]
+          : [];
+      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, point[0], point[1]), role: "npc", behaviors });
     }
   });
 
@@ -114,8 +132,20 @@ export function setupWorld(ctx: GameContext): void {
       const id = `traffic_${i}_${lap}`;
       const kind = (i + lap) % 3 === 2 ? "car_muscle" : "car_compact";
       const start = loop[0]!;
-      ctx.scene.entity.spawn(kind, { id, position: ground(ctx, start[0], start[1]), role: "prop" });
-      handroll.registerRoute(id, loop, 8, rng() * 200 + lap * 90);
+      ctx.scene.entity.spawn(kind, {
+        id,
+        position: ground(ctx, start[0], start[1]),
+        role: "prop",
+        behaviors: [
+          patrol({
+            waypoints: loop.map(([x, z]) => [x, 0, z] as const),
+            speed: 8,
+            loop: true,
+            groundClamp: true,
+            startProgress: { kind: "distance", value: 8 * (rng() * 200 + lap * 90) },
+          }),
+        ],
+      });
     }
   });
 
@@ -136,6 +166,13 @@ export function setupWorld(ctx: GameContext): void {
   });
 
   ctx.scene.object.place("obj_gunshop_sign", GUNSHOP_POS[0], ctx.world.groundHeightAt(GUNSHOP_POS[0], GUNSHOP_POS[2]), GUNSHOP_POS[2]);
+  ctx.scene.object.place(
+    "obj_safehouse_sign",
+    SAFEHOUSE_POS[0],
+    ctx.world.groundHeightAt(SAFEHOUSE_POS[0], SAFEHOUSE_POS[2]),
+    SAFEHOUSE_POS[2],
+  );
+  ctx.scene.object.place("obj_vcpd_sign", VCPD_POS[0], ctx.world.groundHeightAt(VCPD_POS[0], VCPD_POS[2]), VCPD_POS[2]);
   for (let i = 0; i < 8; i += 1) {
     const x = DOCK_FIGHT_CENTER[0] - 20 + rng() * 40;
     const z = DOCK_FIGHT_CENTER[2] - 20 + rng() * 40;

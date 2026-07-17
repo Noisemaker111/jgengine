@@ -1,4 +1,28 @@
-import { STARTING_CASH } from "./catalog";
+import { appendFeed } from "@jgengine/core/game/feed";
+import {
+  addScheduledRule,
+  createResourceLedger,
+  type ResourceLedger,
+} from "@jgengine/core/economy/resourceLedger";
+
+import { DAY_LENGTH, STARTING_CASH } from "./catalog";
+
+/**
+ * The park's money as a serializable scheduled-transaction ledger. The daily upkeep+restock
+ * charge is a recurring rule settled deterministically by the core `resourceLedger`; the nominal
+ * amount is `0` because the real per-day cost comes from live park metrics via a policy at
+ * settlement time (see `settleDailyUpkeep`).
+ */
+export function createParkLedger(): ResourceLedger {
+  return addScheduledRule(createResourceLedger({ accounts: { park: { cash: STARTING_CASH } } }), {
+    id: "daily-upkeep",
+    currency: "cash",
+    amount: 0,
+    everySeconds: DAY_LENGTH,
+    startSeconds: DAY_LENGTH,
+    source: "park",
+  });
+}
 
 export interface PlacedObject {
   id: string;
@@ -44,6 +68,7 @@ export interface Session {
   occupied: Map<string, string>;
   guests: Map<string, GuestState>;
   cash: number;
+  ledger: ResourceLedger;
   rating: number;
   happinessAvg: number;
   litter: number;
@@ -72,6 +97,7 @@ function freshSession(): Session {
     occupied: new Map(),
     guests: new Map(),
     cash: STARTING_CASH,
+    ledger: createParkLedger(),
     rating: 0,
     happinessAvg: 55,
     litter: 0,
@@ -111,6 +137,6 @@ export function nextGuestId(): string {
 
 export function pushToast(text: string, tone: Tone, now: number): void {
   session.toastSeq += 1;
-  session.toasts.push({ id: session.toastSeq, text, tone, at: now });
-  if (session.toasts.length > 6) session.toasts.shift();
+  // Count-capped flat feed: the shared primitive keeps the newest 6, same as the old push/shift.
+  session.toasts = appendFeed(session.toasts, { id: session.toastSeq, text, tone, at: now }, { limit: 6 });
 }

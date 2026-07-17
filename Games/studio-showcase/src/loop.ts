@@ -1,5 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { entityMetaOf } from "@jgengine/core/scene/entityStore";
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import { editorLayers } from "./editorLayers";
+import { createControlGroupManager, HOME_BOOKMARK, type ControlGroupManager } from "./game/controlGroups";
 import { player } from "./game/entities/players/catalog";
 import { tickAuthoredTriggers } from "./game/triggers";
 
@@ -9,17 +12,36 @@ function isPlayerMeta(value: unknown): value is PlayerMeta {
   return typeof value === "object" && value !== null && (value as PlayerMeta).kind === "player";
 }
 
+let controlGroups: ControlGroupManager | null = null;
+
+function ensureControlGroups(ctx: GameContext): ControlGroupManager {
+  if (controlGroups === null) {
+    controlGroups = createControlGroupManager({
+      entityExists: (id) => ctx.scene.entity.get(id) !== null,
+      focus: (id) => ctx.camera.follow(id),
+    });
+  }
+  return controlGroups;
+}
+
 function onInit(ctx: GameContext): void {
   void ctx;
 }
 
 function onNewPlayer(ctx: GameContext): void {
+  // Spawn where the scene's player_spawn marker sits — move it in the editor, not here.
   ctx.scene.entity.spawn(player.id, {
     id: ctx.player.userId,
-    position: [0, 0, 0],
+    position: authoredSpawnPosition(editorLayers) ?? [0, 0, 0],
     role: "player",
     meta: { kind: "player" } satisfies PlayerMeta,
   });
+  // Seed the showcase's control groups: the player's own avatar sits in group 1
+  // and in the non-numbered "home" bookmark, so a recall demonstrates both idioms.
+  const groups = ensureControlGroups(ctx);
+  groups.selection.replace([ctx.player.userId]);
+  groups.bindGroup(1);
+  groups.bookmarks.bind(HOME_BOOKMARK, [ctx.player.userId]);
 }
 
 function onTick(ctx: GameContext, dt: number): void {
@@ -27,6 +49,9 @@ function onTick(ctx: GameContext, dt: number): void {
   const entity = ctx.scene.entity.get(ctx.player.userId);
   if (entity === null) return;
   void entityMetaOf(entity, isPlayerMeta);
+  const groups = ensureControlGroups(ctx);
+  if (ctx.input.justPressed("recallGroup1")) groups.recallGroup(1);
+  if (ctx.input.justPressed("recallHome")) groups.recallHome();
   tickAuthoredTriggers(ctx);
 }
 

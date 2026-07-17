@@ -5,8 +5,56 @@ export interface FeedEntry<T = unknown> {
   data: T;
 }
 
+/** Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning. */
+export interface TimedFeedEntry {
+  at: number;
+}
+
+/** Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window. */
+export interface FeedWindow {
+  /** Keep only the newest `limit` entries. Omit for no count cap. */
+  limit?: number;
+  /** Drop entries older than `ttl` game-seconds before the newest `at`. Omit for no age cap. */
+  ttl?: number;
+}
+
 export interface GameFeedOptions {
   limit?: number;
+}
+
+/**
+ * Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the
+ * appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry
+ * shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event
+ * logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
+ *
+ * @capability notice-feed serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
+ */
+export function appendFeed<T extends TimedFeedEntry>(
+  list: readonly T[],
+  entry: T,
+  options?: FeedWindow,
+): T[] {
+  let next: T[] = [...list, entry];
+  if (options?.ttl !== undefined) {
+    const cutoff = entry.at - options.ttl;
+    next = next.filter((item) => item.at > cutoff);
+  }
+  const limit = options?.limit;
+  return limit !== undefined && next.length > limit ? next.slice(next.length - limit) : next;
+}
+
+/**
+ * Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference
+ * when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart
+ * to {@link appendFeed}'s age bound.
+ *
+ * @capability notice-feed serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
+ */
+export function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] {
+  const cutoff = now - ttl;
+  const kept = list.filter((item) => item.at > cutoff);
+  return kept.length === list.length ? (list as T[]) : kept;
 }
 
 export function appendFeedEntry<T>(
@@ -14,8 +62,7 @@ export function appendFeedEntry<T>(
   entry: FeedEntry<T>,
   limit: number,
 ): FeedEntry<T>[] {
-  const next = [...buffer, entry];
-  return next.length > limit ? next.slice(next.length - limit) : next;
+  return appendFeed(buffer, entry, { limit });
 }
 
 export function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] {

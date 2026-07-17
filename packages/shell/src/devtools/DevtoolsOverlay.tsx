@@ -1,4 +1,4 @@
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
@@ -37,20 +37,36 @@ export function withDevtoolsLatency(multiplayer: ShellMultiplayer): ShellMultipl
   };
 }
 
+const RENDER_SAMPLE_MS = 500;
+const RENDER_PROBE_FRAME_PRIORITY = -10;
+
 /** @internal */
 export function DevtoolsRendererProbe() {
-  const frameCounter = useRef(0);
+  const gl = useThree((state) => state.gl);
+  const lastSampleAt = useRef(0);
+  useEffect(() => {
+    // three resets gl.info after every render() call, so with a multi-pass
+    // composer the counters only ever hold the last fullscreen pass. Own the
+    // reset instead: accumulate across the whole frame, reset at frame start.
+    gl.info.autoReset = false;
+    return () => {
+      gl.info.autoReset = true;
+    };
+  }, [gl]);
   useFrame((state) => {
-    frameCounter.current += 1;
-    if (frameCounter.current % 30 !== 0) return;
     const info = state.gl.info;
-    devtools.render.record({
-      drawCalls: info.render.calls,
-      triangles: info.render.triangles,
-      geometries: info.memory.geometries,
-      textures: info.memory.textures,
-    });
-  });
+    const now = performance.now();
+    if (now - lastSampleAt.current >= RENDER_SAMPLE_MS) {
+      lastSampleAt.current = now;
+      devtools.render.record({
+        drawCalls: info.render.calls,
+        triangles: info.render.triangles,
+        geometries: info.memory.geometries,
+        textures: info.memory.textures,
+      });
+    }
+    info.reset();
+  }, RENDER_PROBE_FRAME_PRIORITY);
   return null;
 }
 

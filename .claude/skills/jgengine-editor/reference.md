@@ -30,6 +30,15 @@ Content-Type: application/json
 
 Each `toolCalls[].name` is an editor RPC method (`set_transform`, `select`, …). The panel runs them via `routeToolCall` → `EditorHostApi.handle`.
 
+## Bridge reliability
+
+The bridge is trustworthy so agents author instead of hardcoding — every path is honest about failure:
+
+- **Rejected mutations return `ok:false` with a reason.** A locked/cyclic `set_transform`, a `set_parent` that would form a cycle, a collection/prefab verb targeting a missing id, and a batch verb that matches nothing all fail loudly — never a phantom `{ok:true}`.
+- **One decode/migrate boundary.** `decodeEditorDocument` (`@jgengine/core/editor`) validates every field with a path-specific diagnostic (`$.markers[2].position`) and migrates forward; `import_document` and a `push_document_patch` **snapshot** both clear it, so a malformed or old document fails or migrates loudly rather than corrupting a live session.
+- **Document-global id uniqueness.** Placeable ids (markers/volumes/paths/notes) are one namespace: adds re-id on collision, and a single imported document that reuses an id is rejected with its path — a duplicate-id import is impossible. Combine paths (`mergeEditorDocuments`, duplicate, overlay) re-id instead.
+- **Schema-validated input.** `decodeEditorBridgeRequest` type-checks each field a method understands against the per-method schema before it reaches `handle` — a fuzzed value (string where a number belongs, scalar where an object belongs) is rejected at the `--rpc`/HTTP/stdio/agent-tool boundary, never cast in blind. Missing/unknown fields are left to `handle`'s guards so the boundary stays forward-compatible.
+
 ## Pure API (`@jgengine/editor`)
 
 ```ts
@@ -62,3 +71,29 @@ routeToolCall(api, { id: "1", name: "set_transform", arguments: { id: "boss", x:
 ## Local agent (no URL)
 
 Commands: `/help`, `/status`, `/summary`, `/selection`, `/frame`, `/undo`, `/redo`, `/clear`, `/select <id…>`, `/goto <id>`, `move <id> <x> <y> <z>`.
+
+## Grid / tile layers
+
+Grid-addressed content (rooms, tactics maps, farms, nav/rule layers) lives on the scene document as
+`EditorDocument.grids: EditorGridLayer[]` — a sparse `col,row → value-id` map with `origin`,
+`cellSize`, `axes` (`"xz"` top-down / `"xy"` side view), `cols`/`rows` bounds, an `empty` value, and
+a `palette` carrying each value's glyph/color/typed payload. Only non-empty cells are stored, so a
+large mostly-empty grid stays small. Import from `@jgengine/core/editor/grid` (ops + queries) and
+`@jgengine/core/editor/gridAdapters` (import/export). Do not hardcode tile arrays in game code —
+author the grid and read it at runtime.
+
+- Authoring ops (all immutable, undoable via the session): `setGridCell`/`eraseGridCell`,
+  `paintGridCells` (batch stroke), `fillGridRect` (rectangle), `floodFillGrid` (bucket),
+  `eyedropGridCell` (sample), `resizeGridLayer`, `createGridLayer`.
+- Rendering-independent runtime queries: `getGridCell`, `getGridCellAtWorld`, `gridCellEntries`,
+  `forEachGridCell`, `gridCellsOfValue`, `gridCellToWorld`/`worldToGridCell`. Renderers are adapters
+  over these — never bake tiles into the grid model.
+- Session commands: `addGridLayer`, `removeGridLayer`, `setGridLayer`, `paintGridCells`,
+  `fillGridRect`, `floodFillGrid`, `resizeGridLayer` (snapshot history → undo/redo).
+- RPC/CLI verbs: `list_grids`, `get_grid_cell`, `add_grid_layer`, `remove_grid_layer`,
+  `set_grid_layer`, `paint_grid_cells`, `fill_grid_rect`, `flood_fill_grid`, `resize_grid_layer`,
+  `import_grid` (ASCII or CSV).
+- Import/export adapters: `importAsciiGrid`/`exportAsciiGrid` (glyph maps) and
+  `importCsvGrid`/`exportCsvGrid` (value id per cell). ASCII/CSV are import paths **into** the grid
+  document, never the canonical representation — `migrateGridLayer` normalizes and version-migrates
+  any layer from disk or an adapter.

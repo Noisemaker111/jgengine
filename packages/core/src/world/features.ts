@@ -1,5 +1,6 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
 import type { AvoidZone } from "./geometry";
+import type { TerrainPathProfile } from "./pathTerrain";
 import type { TerraformSnapshot } from "./terraform";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
 
@@ -202,6 +203,8 @@ export interface TerrainEnvironmentConfig {
   waterLevel?: number;
   /** Flat pads carved into the noise field, e.g. for building pads or spawn circles. */
   flatten?: readonly TerrainFlattenMask[];
+  /** Authored path profiles that flatten/grade/carve the heightfield along a centerline (roads, rivers, ramps) with optional retaining walls. Applied after `flatten`. */
+  pathProfiles?: readonly TerrainPathProfile[];
   /** Procedural detail surface (noise-driven rock/sand/snow over the biome base). Omit for the flat vertex-colour ground. */
   detail?: TerrainDetailConfig;
 }
@@ -628,6 +631,7 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.baseHeight === undefined ? {} : { baseHeight: config.baseHeight }),
       ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
       ...(config.flatten === undefined ? {} : { flatten: config.flatten }),
+      ...(config.pathProfiles === undefined ? {} : { pathProfiles: config.pathProfiles }),
       ...(config.detail === undefined ? {} : { detail: config.detail }),
     },
   );

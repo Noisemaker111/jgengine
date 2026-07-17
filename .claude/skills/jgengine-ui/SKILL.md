@@ -15,7 +15,7 @@ Search [capabilities.md](capabilities.md), use [api.md](api.md) for signatures, 
 
 1. Define the real UI states: attract/menu, live play, pause, results, empty/error, and relevant overlays.
 2. Read state through selectors/hooks; keep simulation mutation behind commands.
-3. Compose headless data, renderer, and chrome where a second presentation is plausible.
+3. Compose headless data, renderer, and chrome where a second presentation is plausible. The minimap stack is the canonical example: `useLiveMarkers` (data) → `Minimap`/`MinimapTrack` (renderer) → `HudFrame` (chrome), see reference §6.
 4. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit.
 5. Add preview fixtures using the real components for fast deterministic capture.
 6. Verify desktop and mobile layouts through `jgengine-verify`.

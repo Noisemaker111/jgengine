@@ -6,32 +6,50 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.11.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/authoring
 
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
+- `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems.
 - `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional.
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
+- `GeneratedProvenance` (interface): interface GeneratedProvenance — An object derived from an authored document object — instances scattered from a painted layer, walls extruded from an authored footprint. Edits belong on the source object, not the generated instance.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
+- `OwnershipDecision` (type): type OwnershipDecision = "expose" | "bake" | "reject" — The boundary's resolution for one object.
+- `OwnershipDiagnostic` (interface): interface OwnershipDiagnostic — One boundary problem found while auditing a set of declarations.
+- `OwnershipVerdict` (interface): interface OwnershipVerdict — The full verdict for one object: its decision plus the flags and diagnostic the editor needs to act on it.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
+- `ProviderCapabilities` (interface): interface ProviderCapabilities — What a provider lets the editor do with one of its objects. Absent flags default to `false`.
+- `RuntimeProvenance` (interface): interface RuntimeProvenance — An object owned entirely by runtime or procedural code with no document entry. Not authorable unless its provider can bake it into schema-valid authored data.
+- `SCENE_OWNERSHIP_MANIFEST_VERSION` (const): const SCENE_OWNERSHIP_MANIFEST_VERSION: 1 — Current {@link SceneOwnershipManifest} schema version.
+- `SceneOwnershipDeclaration` (interface): interface SceneOwnershipDeclaration — A provider's explicit ownership declaration for one editor-visible object.
+- `SceneOwnershipManifest` (interface): interface SceneOwnershipManifest — Serializable record of a world's ownership declarations — persisted next to the scene document or shipped by a game.
+- `SceneProvenance` (type): type SceneProvenance = | AuthoredProvenance | GeneratedProvenance | RuntimeProvenance | TransientProvenance — The provenance of one editor-visible object — authored, generated, runtime, or transient.
+- `SceneProvenanceKind` (type): type SceneProvenanceKind = "authored" | "generated" | "runtime" | "transient" — Scene ownership boundary — gives every editor-visible object an explicit provenance and a single verdict (expose / bake / reject) so the editor never presents unauthored content as broken authored content.
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
+- `TransientProvenance` (interface): interface TransientProvenance — An ephemeral simulation object — a spawned agent, projectile, or particle that never persists.
 - `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `auditManifest` (function): function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagnostic[] — Audit every declaration in a manifest, keying diagnostics by each object's provenance id. An empty result means the manifest declares all of its content cleanly — every object is authored, generated, bakeable, or a reasoned runtime/transient object.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `classifyOwnership` (function): function classifyOwnership(declaration: SceneOwnershipDeclaration): OwnershipVerdict — Resolve one declaration into a single boundary verdict.
+- `collectOwnershipDiagnostics` (function): function collectOwnershipDiagnostics(entries: Iterable<readonly [string, SceneOwnershipDeclaration]>): OwnershipDiagnostic[] — Audit a keyed set of declarations and return one diagnostic per object that breaks the boundary contract (a `reject` verdict carrying a `violation`). Deterministic: diagnostics come back in the iteration order of `entries`.
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
+- `isSceneOwnershipManifest` (function): function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest — Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only — verifies the version, the declarations array, and each declaration's provenance shape; it does not judge whether declarations satisfy the boundary (use {@link auditManifest} for that).
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 - `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `ownershipKey` (function): function ownershipKey(provenance: SceneProvenance): string — Stable identity string for a provenance (e.g. `runtime:town/building-3`), suitable for keying an object in an editor tree or a diagnostics table.
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
@@ -136,7 +154,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.10.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.11.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/runtime/adapter
 
