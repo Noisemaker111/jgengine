@@ -394,6 +394,7 @@
     "./world/markers",
     "./world/massing",
     "./world/minimap",
+    "./world/minimapBake",
     "./world/minimapTrack",
     "./world/pathInstances",
     "./world/pathTerrain",
@@ -455,6 +456,8 @@
   "@jgengine/react": [
     ".",
     "./actionHud",
+    "./bars",
+    "./barsPreview",
     "./cards",
     "./chat",
     "./chatBubbles",

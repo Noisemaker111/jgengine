@@ -77,3 +77,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/core/editor"`
 - `terrainBoundsFromDocument` (function) · `import { terrainBoundsFromDocument } from "@jgengine/core/editor"`
+
+## world-directives — apply a sparse overlay over materialized directive instances
+
+- `applyDirectiveOverlay` (function) · `import { applyDirectiveOverlay } from "@jgengine/core/editor"`
+- `materializeDirective` (function) · `import { materializeDirective } from "@jgengine/core/editor"`
+- `materializeDirectives` (function) · `import { materializeDirectives } from "@jgengine/core/editor"`
+- `materializePopulationDirective` (function) · `import { materializePopulationDirective } from "@jgengine/core/editor"`
+- `materializeScatterDirective` (function) · `import { materializeScatterDirective } from "@jgengine/core/editor"`
+- `resolveDirectiveFootprint` (function) · `import { resolveDirectiveFootprint } from "@jgengine/core/editor"`
+
+## world-shards — decode an untrusted world manifest with per-field diagnostics
+
+- `decodeWorldManifest` (function) · `import { decodeWorldManifest } from "@jgengine/core/editor"`
+- `loadWorldDocument` (function) · `import { loadWorldDocument } from "@jgengine/core/editor"`
+- `selectWorldShards` (function) · `import { selectWorldShards } from "@jgengine/core/editor"`
+- `shardMatchesQuery` (function) · `import { shardMatchesQuery } from "@jgengine/core/editor"`
+- `singleShardWorldManifest` (function) · `import { singleShardWorldManifest } from "@jgengine/core/editor"`
+- `splitEditorDocumentIntoShards` (function) · `import { splitEditorDocumentIntoShards } from "@jgengine/core/editor"`
+
+## world-streaming — schedule shard load/unload by camera proximity
+
+- `createWorldStreamer` (function) · `import { createWorldStreamer } from "@jgengine/core/editor"`
+- `shardDistance` (function) · `import { shardDistance } from "@jgengine/core/editor"`
