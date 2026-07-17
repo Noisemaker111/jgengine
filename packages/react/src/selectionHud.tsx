@@ -119,6 +119,9 @@ const VITAL_TONES: Record<string, [string, string]> = {
  * A compact current/max vital meter for an entity summary; tone maps to a colour ramp. Reuse it as
  * the vital row inside {@link EntitySummary} or any custom entity panel.
  *
+ * @deprecated The `tone`/`vital`-API umbrella is retired (#1033). Use the atomic, purpose-named,
+ * token-themed bars from `@jgengine/react/bars` (`HealthBar`, `ShieldBar`, `ManaBar`, …) and compose
+ * your own panel — each does one readout and restyles globally via the shared `--jg-*` tokens.
  * @capability vital-bar compact current/max vital meter for an entity summary
  */
 export function VitalBar({
@@ -242,6 +245,9 @@ export function EntityPortrait({
  * "who is selected" summary a single-selection or the head of a multi-selection shows. Swap the vital
  * rows via `renderVital`.
  *
+ * @deprecated Bundling a whole vitals array in one component is the combo anti-pattern #1033 retires.
+ * Compose your own summary — name/tags plus the atomic `@jgengine/react/bars` (`HealthBar`, …) you
+ * need — so no engine component packages multiple readouts by default. Kept during migration.
  * @capability entity-summary primary selected-entity detail panel (name, tags, vitals)
  */
 export function EntitySummary({
