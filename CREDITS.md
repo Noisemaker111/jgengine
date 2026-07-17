@@ -73,6 +73,19 @@ sci-fi, fantasy props, base characters, animated animals, and monsters
 CC0 — no attribution required, credited here anyway. Broadest low-poly CC0
 library around; go star it.
 
+## game-icons.net (Ironhold HUD)
+
+The **[Ironhold](Games/ironhold)** command-console HUD uses vector glyphs from
+**[game-icons.net](https://game-icons.net)** (CC BY 3.0) for its resource, unit,
+building, research, and ability icons
+([`Games/ironhold/src/game/ui/iconData.ts`](Games/ironhold/src/game/ui/iconData.ts)).
+The individual icons are by **Lorc**, **Delapouite**, and **sbed** — coins,
+wood-pile, meat, despair, miner, broadsword, high-shot, crossed-swords, barracks,
+wheat, watchtower, checkered-flag, palm, pointy-sword, breastplate,
+lightning-branches, shield, boots, medal, stopwatch, and visored-helm. Recoloured
+to gold via `currentColor`, otherwise unmodified. CC BY 3.0 — attribution given
+here as required.
+
 ## Game and level design research
 
 The `game-design` and `level-design` skills synthesize and rephrase design
