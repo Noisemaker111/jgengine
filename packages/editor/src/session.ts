@@ -61,7 +61,7 @@ import {
 import type { EditorMarker } from "@jgengine/core/editor/index";
 
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
-import { getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
+import { getSceneKind, parseParams, validateParams } from "@jgengine/core/scene/sceneKinds";
 
 import { TERRAIN_MATERIALS } from "./uiStore";
 
@@ -144,6 +144,8 @@ export type EditorBridgeRequest =
   | { method: "list_catalogs" }
   | { method: "get_catalog_entry"; catalogId: string; entryId: string }
   | { method: "set_catalog_entry"; catalogId: string; entryId: string; patch: Record<string, unknown>; label?: string }
+  | { method: "add_catalog_entry"; catalogId: string; entryId: string; meta?: Record<string, unknown>; label?: string }
+  | { method: "remove_catalog_entry"; catalogId: string; entryId: string }
   | { method: "list_selection" }
   | { method: "get_marker"; id: string }
   | { method: "get_volume"; id: string }
@@ -624,6 +626,47 @@ export function createEditorHost(options: {
             }
             const entry = findEditorCatalogEntry(state.document, request.catalogId, request.entryId);
             return { ok: true, result: { catalogId: request.catalogId, entry } };
+          }
+          case "add_catalog_entry": {
+            const definition = catalogById.get(request.catalogId);
+            if (definition === undefined) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+            const entryId = request.entryId.trim();
+            if (entryId.length === 0) return { ok: false, error: "add_catalog_entry: entryId is required" };
+            if (findEditorCatalogEntry(session.getState().document, request.catalogId, entryId) !== undefined) {
+              return { ok: false, error: `catalog entry already exists: ${request.catalogId}/${entryId}` };
+            }
+            // Seed a new row's meta from the schema defaults, then overlay any provided values, so the
+            // row is schema-valid the moment it lands — the same contract set_catalog_entry enforces.
+            const seeded = parseParams(definition.schema, request.meta) as Record<string, unknown>;
+            const meta = { ...seeded, ...request.meta };
+            const invalid = validateParams(definition.schema, meta);
+            if (invalid.length > 0) {
+              return {
+                ok: false,
+                error: `invalid ${request.catalogId} params: ${invalid.map((issue) => `${issue.key} (${issue.message})`).join(", ")}`,
+              };
+            }
+            session.dispatch({
+              type: "addCatalogEntry",
+              catalogId: request.catalogId,
+              entry: { id: entryId, ...(request.label === undefined ? {} : { label: request.label }), meta },
+            });
+            const entry = findEditorCatalogEntry(session.getState().document, request.catalogId, entryId);
+            return { ok: true, result: { catalogId: request.catalogId, entry } };
+          }
+          case "remove_catalog_entry": {
+            const definition = catalogById.get(request.catalogId);
+            if (definition === undefined) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+            const before = session.getState();
+            const state = session.dispatch({
+              type: "removeCatalogEntry",
+              catalogId: request.catalogId,
+              entryId: request.entryId,
+            });
+            if (state === before) {
+              return { ok: false, error: `catalog entry not found: ${request.catalogId}/${request.entryId}` };
+            }
+            return { ok: true, result: { catalogId: request.catalogId, entryId: request.entryId } };
           }
           case "list_selection":
             return { ok: true, result: { selection: session.getState().selection } };

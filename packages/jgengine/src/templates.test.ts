@@ -21,6 +21,8 @@ const SKELETON_FILES = new Set([
   "style.css",
   "editorLayers.ts",
   "editorLayers.test.ts",
+  "editorCatalogs.ts",
+  "editorCatalogs.test.ts",
   "editor.scene.json",
 ]);
 
@@ -141,6 +143,24 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(fileOf(files, "src/index.tsx")).toContain("editorLayers");
       expect(fileOf(files, "src/loop.ts")).toContain("authoredSpawnPosition(editorLayers)");
       expect(fileOf(files, "src/index.css")).toContain('@import "./style.css"');
+    });
+
+    test(`${variant}: scaffold authors entity definitions in a starter catalog`, () => {
+      const files = render(variant);
+      // The Data tab is never empty: a starter `entities` catalog ships, wired into the editor.
+      const catalogs = fileOf(files, "src/editorCatalogs.ts");
+      expect(catalogs).toContain("ENTITY_CATALOG_ID");
+      expect(catalogs).toContain("entityDefinitionSchema");
+      expect(fileOf(files, "src/main.tsx")).toContain("catalogs={editorCatalogs}");
+      expect(fileOf(files, "src/index.tsx")).toContain("editorCatalogs");
+      // A mob marker references a catalog row, and content resolves stats from the document.
+      const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
+        markers: { kind: string; catalogId?: string }[];
+      };
+      const mob = scene.markers.find((marker) => marker.kind === "mob");
+      expect(mob?.catalogId).toBe("grunt");
+      expect(fileOf(files, "src/game/content.ts")).toContain("entityEntryFromCatalog");
+      expect(fileOf(files, "src/loop.ts")).toContain("authoredEntitySpawns(editorLayers)");
     });
 
     test(`${variant}: scaffold authors a zero-code "reach the goal to win"`, () => {

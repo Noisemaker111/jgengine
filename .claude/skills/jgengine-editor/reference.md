@@ -72,6 +72,28 @@ routeToolCall(api, { id: "1", name: "set_transform", arguments: { id: "boss", x:
 
 Commands: `/help`, `/status`, `/summary`, `/selection`, `/frame`, `/undo`, `/redo`, `/clear`, `/select <id…>`, `/goto <id>`, `move <id> <x> <y> <z>`.
 
+## Data catalogs & entity definitions
+
+The **Data** tab (`CatalogsPanel`) edits gameplay tuning rows that persist on the scene document
+(`EditorDocument.catalogs`) — schemas come from a game's `editorCatalogs` export
+(`EditorCatalogDefinition[]`: `{ id, label, schema: ParamSchema, entries }`), wired to the editor via
+`defineGame`-sibling module export and passed as the `catalogs` prop (the scaffold's `main.tsx` passes
+`catalogs={editorCatalogs}`). Beyond tuning existing rows, the tab now **authors rows**: the `+ Row`
+control adds a schema-defaulted entry and each row has a remove (`×`). Agents/CLI drive the same edits
+with the `add_catalog_entry` / `remove_catalog_entry` RPC verbs (alongside `list_catalogs`,
+`get_catalog_entry`, `set_catalog_entry`); new-row meta is seeded from the catalog `ParamSchema`
+defaults and validated before it lands. Values save into `editor.scene.json` → `catalogs`.
+
+**Entity definitions** are a data catalog: the well-known `ENTITY_CATALOG_ID` (`"entities"`) catalog,
+whose rows carry role/health/speed/scale per `entityDefinitionSchema`. `entityEntryFromCatalog(document,
+catalogId, definitions?)` (`@jgengine/core/editor`) turns a row into the runtime
+`GameContextEntityEntry` the default `content.ts#entityById` returns — so a `mob`/`boss` marker whose
+`catalogId` names an entities row spawns with the stats/speed tuned in the editor, no game TS.
+`authoredEntitySpawns(document)` (`@jgengine/core/world/authoredEntities`) yields the spawn plan
+(`{ markerId, catalogId, position, rotationY }`) the scaffold `loop.ts` feeds to
+`ctx.scene.entity.spawn`. Author entities in the editor (place a marker → Data tab → tune the row →
+save); never hardcode entity stats where the document should own them.
+
 ## Grid / tile layers
 
 Grid-addressed content (rooms, tactics maps, farms, nav/rule layers) lives on the scene document as
