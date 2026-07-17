@@ -81,3 +81,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `materializePopulationDirective` (function) · `import { materializePopulationDirective } from "@jgengine/core/editor"`
 - `materializeScatterDirective` (function) · `import { materializeScatterDirective } from "@jgengine/core/editor"`
 - `resolveDirectiveFootprint` (function) · `import { resolveDirectiveFootprint } from "@jgengine/core/editor"`
+
+## world-shards — decode an untrusted world manifest with per-field diagnostics
+
+- `decodeWorldManifest` (function) · `import { decodeWorldManifest } from "@jgengine/core/editor"`
+- `loadWorldDocument` (function) · `import { loadWorldDocument } from "@jgengine/core/editor"`
+- `selectWorldShards` (function) · `import { selectWorldShards } from "@jgengine/core/editor"`
+- `shardMatchesQuery` (function) · `import { shardMatchesQuery } from "@jgengine/core/editor"`
+- `singleShardWorldManifest` (function) · `import { singleShardWorldManifest } from "@jgengine/core/editor"`
+- `splitEditorDocumentIntoShards` (function) · `import { splitEditorDocumentIntoShards } from "@jgengine/core/editor"`
