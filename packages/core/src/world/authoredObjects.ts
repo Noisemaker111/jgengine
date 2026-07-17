@@ -77,13 +77,34 @@ function markerVerticalOffset(marker: AuthoredObjectMarkerLike): number {
 }
 
 /**
+ * Marker kinds that are spawnable entities (materialized by `authoredEntitySpawns`), not static
+ * catalog props. {@link resolveAuthoredObjects} skips them by default so a placed `mob`/`boss` is
+ * spawned once as an entity and never also placed as a static mesh.
+ * @capability authored-objects marker kinds resolved as entity spawns, not static props
+ */
+export const ENTITY_MARKER_KINDS: readonly string[] = ["mob", "boss"];
+
+/** Options for {@link resolveAuthoredObjects}. */
+export interface ResolveAuthoredObjectsOptions {
+  /** Marker kinds to skip (they are handled elsewhere). Default {@link ENTITY_MARKER_KINDS}. */
+  excludeKinds?: readonly string[];
+}
+
+/**
  * Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to
  * {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
+ * Entity-spawn kinds (`mob`/`boss`) are skipped by default — they carry a `catalogId` for their
+ * entity definition, but are spawned via `authoredEntitySpawns`, not placed as static meshes.
  * @capability authored-objects place catalog mesh props from an editor document
  */
-export function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] {
+export function resolveAuthoredObjects(
+  document: AuthoredObjectsDocumentLike,
+  options: ResolveAuthoredObjectsOptions = {},
+): AuthoredObject[] {
+  const excluded = new Set(options.excludeKinds ?? ENTITY_MARKER_KINDS);
   const out: AuthoredObject[] = [];
   for (const marker of document.markers) {
+    if (excluded.has(marker.kind)) continue;
     const catalogId = markerCatalogId(marker);
     if (catalogId === null) continue;
     out.push({

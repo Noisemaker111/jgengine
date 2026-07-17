@@ -67,8 +67,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `authoredEntitySpawns` (function) · `import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities"`
 
-## authored-objects — place catalog mesh props from an editor document
+## authored-objects — marker kinds resolved as entity spawns, not static props
 
+- `ENTITY_MARKER_KINDS` (const) · `import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects"`
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
