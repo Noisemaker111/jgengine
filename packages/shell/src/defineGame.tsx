@@ -1,11 +1,13 @@
 import type { ComponentType } from "react";
 
+import type { EditorDocument } from "@jgengine/core/editor/types";
 import {
   defineGame as defineEngineGame,
   type GameDefinitionConfig,
   type GameLoop,
 } from "@jgengine/core/game/defineGame";
 import { syncLifecyclePhase } from "@jgengine/core/game/gamePhase";
+import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
@@ -13,6 +15,7 @@ import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "./environment";
 import type { PlayableGame } from "./registry";
+import { AuthoredScene } from "./scene/AuthoredScene";
 
 type EngineFields<TAssetRef extends ModelAssetRef> = Omit<
   GameDefinitionConfig<TAssetRef>,
@@ -36,6 +39,12 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
   };
 }
 
+function authoredSceneOverlay(document: EditorDocument): ComponentType<WorldOverlayProps> {
+  return function AuthoredSceneOverlay({ ctx }: WorldOverlayProps) {
+    return <AuthoredScene document={document} field={ctx.world.ground} placeObjects />;
+  };
+}
+
 const emptyUi: ComponentType = () => null;
 
 export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
@@ -48,6 +57,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     environment,
     camera,
     multiplayer,
+    editorLayers,
     WorldOverlay,
     viewmodel,
     renderEntity,
@@ -114,7 +124,9 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
       environment ??
       (game.world?.kind === "environment" ? worldBackdrop(game.world) : undefined),
     camera: camera ?? { perspective: "third" },
-    WorldOverlay,
+    editorLayers,
+    WorldOverlay:
+      WorldOverlay ?? (editorLayers === undefined ? undefined : authoredSceneOverlay(editorLayers)),
     viewmodel,
     renderEntity,
     renderObject,

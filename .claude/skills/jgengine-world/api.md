@@ -1944,6 +1944,16 @@
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
 
+## @jgengine/core/world/authoredSpawn
+
+- `AuthoredSpawnDocumentLike` (interface): interface AuthoredSpawnDocumentLike — Minimal document shape spawn queries walk; any `EditorDocument` satisfies it.
+- `AuthoredSpawnMarkerLike` (interface): interface AuthoredSpawnMarkerLike extends SceneMarkerLike — Minimal marker shape spawn queries read; any `EditorMarker` satisfies it.
+- `AuthoredSpawnOptions` (interface): interface AuthoredSpawnOptions — Options for {@link authoredSpawnPosition}: pick a specific marker id or a non-default kind.
+- `PLAYER_SPAWN_KIND` (const): const PLAYER_SPAWN_KIND: "player_spawn" — Marker kind {@link authoredSpawnPosition} resolves by default.
+- `authoredSpawnPosition` (function): function authoredSpawnPosition(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): [number, number, number] | null — Position of the authored spawn marker as a spawn-ready `[x, y, z]` tuple, or null when the document has none. Reads the first `player_spawn` marker by default, so dragging the marker in the editor moves where players spawn — no coordinates copied into game code.
+- `authoredSpawnRotation` (function): function authoredSpawnRotation(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): number — Facing (yaw radians) of the authored spawn marker, or 0 when the document has none — pair with {@link authoredSpawnPosition} to spawn players where and how the editor placed them.
+- `markersOfKind` (function): function markersOfKind<TMarker extends AuthoredSpawnMarkerLike>(document: { markers: readonly TMarker[] }, kind: string): TMarker[] — Every marker of `kind`, in document order — the generic query behind gameplay that references authored markers by kind instead of copying coordinates into code.
+
 ## @jgengine/core/world/buildPermissions
 
 - `BuildActor` (interface): interface BuildActor — ⚠ undocumented

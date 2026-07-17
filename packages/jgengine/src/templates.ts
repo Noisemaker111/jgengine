@@ -104,7 +104,46 @@ const indexHtml = (name: string) => `<!doctype html>
 </html>
 `;
 
-const viteConfig = `import { existsSync } from "node:fs";
+const engineAliases = `[
+          { find: /^@jgengine\\/core\\/(.*)$/, replacement: \`\${engineSrc("core")}/$1\` },
+          { find: /^@jgengine\\/react\\/(.*)$/, replacement: \`\${engineSrc("react")}/$1\` },
+          { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
+          { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
+          { find: /^@jgengine\\/editor$/, replacement: \`\${engineSrc("editor")}/index.ts\` },
+          { find: /^@jgengine\\/editor\\/(.*)$/, replacement: \`\${engineSrc("editor")}/$1\` },
+          { find: /^@jgengine\\/assets$/, replacement: \`\${engineSrc("assets")}/index.ts\` },
+          { find: /^@jgengine\\/assets\\/(.*)$/, replacement: \`\${engineSrc("assets")}/$1\` },
+        ]`;
+
+// The two variants differ only in the save middleware: a standalone project uses the packaged
+// @jgengine/node preset; an in-repo game imports the dev runner's source plugin so a fresh
+// monorepo checkout needs no package build before `bun dev`.
+const viteConfig = (variant: TemplateVariant) =>
+  variant === "in-repo"
+    ? `import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+import { devSavePlugin } from "../../apps/dev/devSavePlugin";
+
+const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
+const gamesDir = fileURLToPath(new URL("..", import.meta.url));
+
+export default defineConfig({
+  plugins: [react(), tailwindcss(), devSavePlugin(gamesDir)],
+  clearScreen: false,
+  build: { target: "es2022" },
+  resolve: {
+    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
+    alias: existsSync(engineSrc("core"))
+      ? ${engineAliases}
+      : [],
+  },
+});
+`
+    : `import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { standaloneSavePlugin } from "@jgengine/node/devSavePlugin";
 import tailwindcss from "@tailwindcss/vite";
@@ -120,14 +159,7 @@ export default defineConfig({
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: existsSync(engineSrc("core"))
-      ? [
-          { find: /^@jgengine\\/core\\/(.*)$/, replacement: \`\${engineSrc("core")}/$1\` },
-          { find: /^@jgengine\\/react\\/(.*)$/, replacement: \`\${engineSrc("react")}/$1\` },
-          { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
-          { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
-          { find: /^@jgengine\\/assets$/, replacement: \`\${engineSrc("assets")}/index.ts\` },
-          { find: /^@jgengine\\/assets\\/(.*)$/, replacement: \`\${engineSrc("assets")}/$1\` },
-        ]
+      ? ${engineAliases}
       : [],
   },
 });
@@ -237,9 +269,12 @@ const sharedCompilerOptions = {
 
 export const IN_REPO_TSCONFIG_PATHS: Record<string, string[]> = {
   "@jgengine/core/*": ["../../packages/core/src/*"],
+  "@jgengine/react": ["../../packages/react/src/index.ts"],
   "@jgengine/react/*": ["../../packages/react/src/*"],
   "@jgengine/ws/*": ["../../packages/ws/src/*"],
   "@jgengine/shell/*": ["../../packages/shell/src/*"],
+  "@jgengine/editor": ["../../packages/editor/src/index.ts"],
+  "@jgengine/editor/*": ["../../packages/editor/src/*"],
   "@jgengine/assets": ["../../packages/assets/src/index.ts"],
   "@jgengine/assets/*": ["../../packages/assets/src/*"],
 };
@@ -257,6 +292,7 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 `;
 
 const indexCss = (variant: TemplateVariant) => `@import "tailwindcss";
+@import "./style.css";
 ${
   variant === "in-repo"
     ? `@source "../../../packages/react/src";
@@ -264,8 +300,9 @@ ${
     : `@source "../node_modules/@jgengine/react/dist";
 @source "../node_modules/@jgengine/shell/dist";`
 }
+`;
 
-html,
+const styleCss = `html,
 body,
 #root {
   height: 100%;
@@ -335,9 +372,60 @@ createRoot(root).render(<App />);
 `;
 
 const indexTsx = `export { game } from "./game.config";
+export { editorLayers } from "./editorLayers";
 `;
 
-const gameAssetsTs = `import { createStarterCatalog } from "@jgengine/assets";
+// Starter scene document: the authored spawn plus a few placed catalog props, so the very first
+// `bun dev` already renders editor-owned content and F2+E opens a non-empty document.
+const editorSceneJson = `{
+  "version": 1,
+  "markers": [
+    {
+      "id": "player_spawn",
+      "kind": "player_spawn",
+      "position": { "x": 0, "y": 0, "z": 8 },
+      "label": "Player spawn",
+      "color": "#22d3ee"
+    },
+    { "id": "crate_1", "kind": "prop", "position": { "x": 3, "y": 0, "z": -4 }, "rotationY": 0.4, "label": "Crate", "catalogId": "crate" },
+    { "id": "crate_2", "kind": "prop", "position": { "x": 4.4, "y": 0, "z": -2.8 }, "rotationY": 1.2, "label": "Crate", "catalogId": "crate" },
+    { "id": "tree_1", "kind": "prop", "position": { "x": -8, "y": 0, "z": -10 }, "label": "Tree", "catalogId": "tree" },
+    { "id": "tree_2", "kind": "prop", "position": { "x": 10, "y": 0, "z": -14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
+    { "id": "tree_3", "kind": "prop", "position": { "x": -12, "y": 0, "z": 4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" }
+  ]
+}
+`;
+
+const editorLayersTs = `import { normalizeEditorLayers, type EditorDocument } from "@jgengine/core/editor/index";
+
+import sceneJson from "./editor.scene.json";
+
+/**
+ * The authored scene for this game — spawn, props, and everything you place later (paths, zones,
+ * terrain, foliage). Edit it in the editor (F2+E; Ctrl+S saves back to editor.scene.json) instead
+ * of hand-editing the JSON or hardcoding coordinates in game code.
+ */
+export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorDocument);
+`;
+
+const editorLayersTest = `import { describe, expect, test } from "bun:test";
+
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+
+import { editorLayers } from "./editorLayers";
+
+describe("authored scene", () => {
+  test("ships a player_spawn marker the runtime honors", () => {
+    expect(authoredSpawnPosition(editorLayers)).not.toBeNull();
+  });
+
+  test("ships placed content", () => {
+    expect(editorLayers.markers.length).toBeGreaterThan(1);
+  });
+});
+`;
+
+const gameAssetsTs = `import { createStarterCatalog } from "@jgengine/assets/catalogs/starter";
 
 /** Curated people/props/nature/urban starter packs — resolve asset:person_casual etc. */
 export const assets = createStarterCatalog({ basePath: "/models" });
@@ -361,6 +449,7 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
 
 const gameConfigTs = (name: string) => `import { defineGame } from "@jgengine/shell/defineGame";
 
+import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { entityById } from "./game/content";
 import { keybinds } from "./game/keybinds";
@@ -380,8 +469,11 @@ export const game = defineGame({
   content: { entityById },
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
+  // The authored scene renders and opens in the editor (F2+E) with zero extra wiring.
+  editorLayers,
   entityModels,
   objectModels,
+  camera: { perspective: "third" },
 });
 `;
 
@@ -398,7 +490,9 @@ export const physics: PhysicsConfig = { gravity: -24 };
 `;
 
 const loopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 
+import { editorLayers } from "./editorLayers";
 import { PLAYER, SPAWN } from "./game/tuning";
 
 /** @internal */
@@ -406,7 +500,11 @@ export function onInit(_ctx: GameContext): void {}
 
 /** @internal */
 export function onNewPlayer(ctx: GameContext): void {
-  ctx.scene.entity.spawn(PLAYER, { id: ctx.player.userId, position: SPAWN });
+  // Spawns at the scene's authored player_spawn marker — move it in the editor (F2+E), not here.
+  ctx.scene.entity.spawn(PLAYER, {
+    id: ctx.player.userId,
+    position: authoredSpawnPosition(editorLayers) ?? SPAWN,
+  });
 }
 
 /** @internal */
@@ -439,31 +537,34 @@ export function entityById(catalogId: string): GameContextEntityEntry | null {
 
 const keybindsTs = `import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
+// Binding any movement action makes the shell drive the walk controller — a fresh game walks.
 export const keybinds: ActionCodesMap = {
+  moveForward: ["KeyW"],
+  moveBack: ["KeyS"],
+  moveLeft: ["KeyA"],
+  moveRight: ["KeyD"],
+  jump: ["Space"],
   interact: ["KeyE"],
 };
 `;
 
-const gameUiTsx = (name: string) => `// ${name} — your HUD starts BLANK. The engine imposes nothing; this is the whole HUD.
-// Opt into drop-in widgets from "@jgengine/react" as you need them (each is self-styled and reads
-// the local player by default), or write your own — anything you return here is your HUD:
+const gameUiTsx = (id: string, name: string) => `import { HudCanvas, useHudLayout } from "@jgengine/react";
+
+// ${name} — your HUD starts as an empty canvas the engine imposes nothing on. Drop widgets from
+// "@jgengine/react" into <HudPanel> slots as you need them (each is self-styled and reads the
+// local player by default), or write your own — panel placement is editable live in canvas mode
+// (F2+C) and persists to the scene document's ui.panels:
 //
-//   import { StatBar, Hotbar, Speedometer, Clock, WaveBanner, Coins, Crosshair } from "@jgengine/react";
-//
-//   export function GameUI() {
-//     return (
-//       <div className="pointer-events-none absolute inset-0 p-4">
-//         <StatBar statId="health" tone="health" style={{ position: "absolute", left: 16, bottom: 16 }} />
-//         <Hotbar inventoryId="hotbar" style={{ position: "absolute", left: "50%", bottom: 16, transform: "translateX(-50%)" }} />
-//         <Clock style={{ position: "absolute", left: 16, top: 16 }} />
-//         <Coins currencyId="gold" style={{ position: "absolute", right: 16, top: 16 }} />
-//       </div>
-//     );
-//   }
+//   import { HudPanel, StatBar, Hotbar, Clock, Coins } from "@jgengine/react";
+//   <HudPanel id="health" anchor="bottom-left"><StatBar statId="health" tone="health" /></HudPanel>
+//   <HudPanel id="hotbar" anchor="bottom-center"><Hotbar inventoryId="hotbar" /></HudPanel>
+//   <HudPanel id="clock"  anchor="top-left"><Clock /></HudPanel>
+//   <HudPanel id="coins"  anchor="top-right"><Coins currencyId="gold" /></HudPanel>
 
 /** @internal */
 export function GameUI() {
-  return null;
+  const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
+  return <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />;
 }
 `;
 
@@ -527,8 +628,9 @@ Prefer these over guessing: tune numbers in debug mode, fix HUD layout in canvas
 
 ## Project rules
 
-- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`index.css\`; everything else under \`src/game/\`.
+- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`, \`index.css\`, \`style.css\`; everything else under \`src/game/\`.
 - Entry: \`defineGame({...})\` from \`@jgengine/shell/defineGame\` in \`game.config.ts\`.
+- World content: the scaffold ships \`src/editor.scene.json\` wired via \`defineGame({ editorLayers })\` — place spawns, props, zones, and paths in editor mode (F2+E, Ctrl+S saves), never as coordinate tables in code. The player spawns at the authored \`player_spawn\` marker (\`authoredSpawnPosition\`).
 - Prove world content with \`summarizeEnvironment\` in \`bun test\` (\`src/game/world.world.test.ts\`), not screenshot loops.
 - Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
@@ -686,7 +788,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   }
   return [
     { path: "index.html", contents: indexHtml(name) },
-    { path: "vite.config.ts", contents: viteConfig },
+    { path: "vite.config.ts", contents: viteConfig(variant) },
     {
       path: "package.json",
       contents: variant === "in-repo" ? inRepoPackageJson(id) : standalonePackageJson(id, engineVersion),
@@ -694,8 +796,12 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "tsconfig.json", contents: tsconfigJson(variant) },
     { path: "AGENTS.md", contents: agentsMd(name, variant) },
     { path: "src/index.css", contents: indexCss(variant) },
+    { path: "src/style.css", contents: styleCss },
     { path: "src/main.tsx", contents: mainTsx(id) },
     { path: "src/index.tsx", contents: indexTsx },
+    { path: "src/editor.scene.json", contents: editorSceneJson },
+    { path: "src/editorLayers.ts", contents: editorLayersTs },
+    { path: "src/editorLayers.test.ts", contents: editorLayersTest },
     { path: "src/game.config.ts", contents: gameConfigTs(name) },
     { path: "src/loop.ts", contents: loopTs },
     { path: "src/world.ts", contents: worldTs(id) },
@@ -704,7 +810,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/game/tuning.ts", contents: tuningTs },
     { path: "src/game/content.ts", contents: contentTs },
     { path: "src/game/keybinds.ts", contents: keybindsTs },
-    { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(name) },
+    { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(id, name) },
     { path: "src/game/world.world.test.ts", contents: worldTest(id) },
   ];
 }

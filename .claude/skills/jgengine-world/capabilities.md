@@ -69,6 +69,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
 
+## authored-spawn — read spawn points and markers from the editor document
+
+- `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn"`
+- `authoredSpawnRotation` (function) · `import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn"`
+- `markersOfKind` (function) · `import { markersOfKind } from "@jgengine/core/world/authoredSpawn"`
+
 ## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
 
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/world"`
