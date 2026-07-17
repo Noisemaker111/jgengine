@@ -141,6 +141,7 @@
     "./item/affix",
     "./item/durability",
     "./item/itemInstanceRegistry",
+    "./item/itemgen",
     "./item/modularItem",
     "./item/use",
     "./item/weapon",

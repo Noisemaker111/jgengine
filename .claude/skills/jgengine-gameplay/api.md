@@ -379,24 +379,6 @@
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 
-## @jgengine/core/game/lootPipeline
-
-- `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
-- `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
-- `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
-- `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
-- `LootPipelineDeps` (interface): interface LootPipelineDeps — Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition.
-- `LootPlanEntry` (interface): interface LootPlanEntry — One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live eligibility and effective weight/chance. Modifiers rewrite these fields; the source `entry` object is never mutated, so table definitions stay shared and reusable.
-- `LootResolution` (interface): interface LootResolution — The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed.
-- `LootResolveContext` (interface): interface LootResolveContext<TCtx = unknown> — The caller-owned context, injected RNG, and optional seed threaded through a single resolution.
-- `LootRollPlan` (interface): interface LootRollPlan — The mutable roll plan a stage derives from its table before rolling. Modifiers transform this — gating entries, reweighting them, or changing the roll count — instead of touching table defs.
-- `LootStage` (interface): interface LootStage<TCtx = unknown> — One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
-- `LootStageKind` (type): type LootStageKind = "contribute" | "fallback" | "replace" — How a stage folds its rolled drops into the accumulating result: `"contribute"` appends, `"fallback"` rolls only when nothing has dropped yet, `"replace"` discards prior drops and overrides with its own (quest/boss overrides).
-- `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
-- `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
-- `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
-- `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
-
 ## @jgengine/core/game/lootTable
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
@@ -704,7 +686,6 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
-- `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
 - `AffixPool` (interface): interface AffixPool — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
@@ -748,12 +729,10 @@
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
 - `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
-- `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
-- `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
 - `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
 - `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
@@ -765,6 +744,20 @@
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GamePhase` (type): type GamePhase = "menu" | "playing" | "paused" | "ended" — Canonical run phase every game moves through. `menu` (title/main menu), `playing` (live), `paused` (mid-run pause), `ended` (win/lose/results). Touch controls are shown only while `playing`; menus and results never paint the touch dock over themselves.
+- `GenChoiceRecord` (interface): interface GenChoiceRecord — Provenance for one resolved step: which option stuck, its effective weight, how many options were eligible after constraints, and how many eligible options backtracking rejected before this one. A skipped optional step is recorded with an empty `optionId`.
+- `GenChoices` (interface): interface GenChoices — Read-only view of the choices resolved so far, threaded into a later step's pool, constraint, weight function, or transform so a decision can depend on earlier picks (dependent choice).
+- `GenDraft` (interface): interface GenDraft — The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their values, and the transformed fields. Returning false from any validator rerolls the whole generation up to the attempt budget.
+- `GenFieldRecord` (interface): interface GenFieldRecord — Provenance for one field mutation a transform made: which transform, field, op, and before/after.
+- `GenOption` (interface): interface GenOption<V = unknown> — One selectable option in a generation step's pool: a stable `id` used in provenance and pinning, the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
+- `GenOutcome` (type): type GenOutcome = | { ok: true; result: GenResult } | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number } — The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept rejecting drafts) and the attempts spent.
+- `GenPool` (type): type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]) — A step's candidate options: a fixed list, or a function of the choices resolved so far so pools can narrow to earlier picks (a slot pool that depends on a chosen category).
+- `GenProvenance` (interface): interface GenProvenance — The full explanation of a generated result: how many whole-pipeline attempts it took, every step choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and regeneration.
+- `GenResult` (interface): interface GenResult — A successful generation: the step-to-option map, step-to-value map, transformed numeric fields, and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through save/load and multiplayer sync unchanged.
+- `GenSchema` (interface): interface GenSchema — A caller-defined generation schema over plain data: ordered choice steps, optional field transforms, optional validators, and bounded reroll/backtracking budgets. Genre-agnostic — it carries no built-in notion of rarity, element, weapon, or name; those are caller step and option ids.
+- `GenStep` (interface): interface GenStep<V = unknown> — One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
+- `GenTransform` (interface): interface GenTransform — A named derivation over the numeric field bag, applied in schema order after all choices resolve (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
+- `GenValidator` (type): type GenValidator = (draft: GenDraft) => boolean — A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll.
+- `GenerateOptions` (interface): interface GenerateOptions — Per-call options for {@link generate}.
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
@@ -786,20 +779,7 @@
 - `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
 - `LoadoutDef` (interface): interface LoadoutDef — ⚠ undocumented
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
-- `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
 - `LootFilterRule` (interface): interface LootFilterRule — ⚠ undocumented
-- `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
-- `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
-- `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
-- `LootPipelineDeps` (interface): interface LootPipelineDeps — Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition.
-- `LootPlanEntry` (interface): interface LootPlanEntry — One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live eligibility and effective weight/chance. Modifiers rewrite these fields; the source `entry` object is never mutated, so table definitions stay shared and reusable.
-- `LootResolution` (interface): interface LootResolution — The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed.
-- `LootResolveContext` (interface): interface LootResolveContext<TCtx = unknown> — The caller-owned context, injected RNG, and optional seed threaded through a single resolution.
-- `LootRollPlan` (interface): interface LootRollPlan — The mutable roll plan a stage derives from its table before rolling. Modifiers transform this — gating entries, reweighting them, or changing the roll count — instead of touching table defs.
-- `LootStage` (interface): interface LootStage<TCtx = unknown> — One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
-- `LootStageKind` (type): type LootStageKind = "contribute" | "fallback" | "replace" — How a stage folds its rolled drops into the accumulating result: `"contribute"` appends, `"fallback"` rolls only when nothing has dropped yet, `"replace"` discards prior drops and overrides with its own (quest/boss overrides).
-- `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
-- `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
@@ -825,17 +805,12 @@
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
 - `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
-- `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
-- `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
-- `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
-- `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
 - `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
 - `QuestDef` (interface): interface QuestDef — ⚠ undocumented
 - `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
 - `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
-- `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
 - `Ring` (interface): interface Ring — ⚠ undocumented
@@ -846,9 +821,6 @@
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
-- `RuleEffectDefinition` (interface): interface RuleEffectDefinition — A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata.
-- `RuleEvent` (interface): interface RuleEvent — A typed event handed to the engine; roles feed target resolution, facts feed the predicate.
-- `RuleFiring` (interface): interface RuleFiring — The outcome of matching one rule against one event. `applied` is the effect the caller should now run through its own effect system; a blocked firing reports why. Provenance (rule, owner, event, timestamp) rides along for auditability.
 - `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
@@ -861,7 +833,6 @@
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `Social` (interface): interface Social — ⚠ undocumented
 - `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
-- `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
 - `SystemDefinition` (interface): interface SystemDefinition — A reusable game capability — lifecycle, timing, events, and optional save / replication / reset / disposal. Pass instances via `defineGame({ systems })`. Prefer one system per meaningful capability (`combat`, `quests`), not per micro-tick.
 - `SystemEventHandlers` (type): type SystemEventHandlers = { readonly [eventName: string]: (ctx: GameContext, event: unknown) => void; } — Event name → handler. Payload is the engine event shape for that name.
@@ -870,8 +841,6 @@
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
-- `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
-- `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
@@ -881,9 +850,7 @@
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
-- `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
-- `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
-- `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
+- `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
 - `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
 - `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
@@ -933,7 +900,6 @@
 - `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
-- `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
 - `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
@@ -953,14 +919,12 @@
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 - `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
-- `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
-- `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
@@ -970,12 +934,11 @@
 - `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
-- `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
 - `feedProduction` (function): function feedProduction(def: ProductionBuildingDef, state: ProductionState, itemId: string, count: number): { state: ProductionState; accepted: number } — ⚠ undocumented
 - `finishRaceSession` (function): function finishRaceSession(session: RaceSessionState): RaceSessionState — Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase.
 - `firstPastPost` (function): function firstPastPost(count = 1): RaceWinCondition — Race ends when `count` racers have crossed the finish; ranking is the current standings order.
 - `gamePhase` (function): function gamePhase(ctx: GameContext): GamePhase — Current phase; defaults to `playing` when unset so always-live games need no wiring.
-- `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
+- `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
@@ -985,7 +948,6 @@
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
 - `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
-- `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `localSaveBackend` (function): function localSaveBackend(storage?: KeyValueStorage | null): SaveBackend — A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the browser's `localStorage` by default (offline, on-device saves), a test stub, or `null` for memory-only. Storage errors (quota exceeded, private mode, no DOM) degrade to no-ops, so a save never throws into a game tick.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
@@ -1009,8 +971,6 @@
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
-- `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
-- `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
 - `remoteSaveBackend` (function): function remoteSaveBackend(backend: SaveBackend): SaveBackend — Adopt any async `read`/`write`/`remove` trio as a {@link SaveBackend} — the seam for cloud saves backed by a database, an HTTP endpoint, or Convex (see `@jgengine/convex/convexSaveBackend`). Reads/writes may reject; the save store surfaces the failure as `"error"` status instead of throwing.
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
@@ -1126,6 +1086,25 @@
 - `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 
+## @jgengine/core/item/itemgen
+
+- `GenChoiceRecord` (interface): interface GenChoiceRecord — Provenance for one resolved step: which option stuck, its effective weight, how many options were eligible after constraints, and how many eligible options backtracking rejected before this one. A skipped optional step is recorded with an empty `optionId`.
+- `GenChoices` (interface): interface GenChoices — Read-only view of the choices resolved so far, threaded into a later step's pool, constraint, weight function, or transform so a decision can depend on earlier picks (dependent choice).
+- `GenDraft` (interface): interface GenDraft — The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their values, and the transformed fields. Returning false from any validator rerolls the whole generation up to the attempt budget.
+- `GenFieldRecord` (interface): interface GenFieldRecord — Provenance for one field mutation a transform made: which transform, field, op, and before/after.
+- `GenOption` (interface): interface GenOption<V = unknown> — One selectable option in a generation step's pool: a stable `id` used in provenance and pinning, the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
+- `GenOutcome` (type): type GenOutcome = | { ok: true; result: GenResult } | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number } — The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept rejecting drafts) and the attempts spent.
+- `GenPool` (type): type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]) — A step's candidate options: a fixed list, or a function of the choices resolved so far so pools can narrow to earlier picks (a slot pool that depends on a chosen category).
+- `GenProvenance` (interface): interface GenProvenance — The full explanation of a generated result: how many whole-pipeline attempts it took, every step choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and regeneration.
+- `GenResult` (interface): interface GenResult — A successful generation: the step-to-option map, step-to-value map, transformed numeric fields, and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through save/load and multiplayer sync unchanged.
+- `GenSchema` (interface): interface GenSchema — A caller-defined generation schema over plain data: ordered choice steps, optional field transforms, optional validators, and bounded reroll/backtracking budgets. Genre-agnostic — it carries no built-in notion of rarity, element, weapon, or name; those are caller step and option ids.
+- `GenStep` (interface): interface GenStep<V = unknown> — One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
+- `GenTransform` (interface): interface GenTransform — A named derivation over the numeric field bag, applied in schema order after all choices resolve (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
+- `GenValidator` (type): type GenValidator = (draft: GenDraft) => boolean — A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll.
+- `GenerateOptions` (interface): interface GenerateOptions — Per-call options for {@link generate}.
+- `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
+- `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
+
 ## @jgengine/core/item/modularItem
 
 - `InstallResult` (type): type InstallResult = | { status: "ok"; installed: readonly InstalledPart[] } | { status: "rejected"; reason: "unknown-slot" | "wrong-category" | "slot-occupied" } — ⚠ undocumented
@@ -1204,38 +1183,6 @@
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
-
-## @jgengine/core/rules/predicate
-
-- `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
-- `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
-- `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
-- `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
-- `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
-- `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
-
-## @jgengine/core/rules/ruleEffects
-
-- `RuleEffectDefinition` (interface): interface RuleEffectDefinition — A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata.
-- `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
-- `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
-- `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
-
-## @jgengine/core/rules/triggeredRules
-
-- `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
-- `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
-- `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
-- `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
-- `RuleEvent` (interface): interface RuleEvent — A typed event handed to the engine; roles feed target resolution, facts feed the predicate.
-- `RuleFiring` (interface): interface RuleFiring — The outcome of matching one rule against one event. `applied` is the effect the caller should now run through its own effect system; a blocked firing reports why. Provenance (rule, owner, event, timestamp) rides along for auditability.
-- `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
-- `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
-- `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
-- `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
-- `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
-- `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
-- `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 
 ## @jgengine/core/session/contestedChannel
 
