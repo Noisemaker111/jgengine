@@ -73,6 +73,21 @@ sci-fi, fantasy props, base characters, animated animals, and monsters
 CC0 — no attribution required, credited here anyway. Broadest low-poly CC0
 library around; go star it.
 
+## Game and level design research
+
+The `game-design` and `level-design` skills synthesize and rephrase design
+methods from the following researchers and practitioners. No source prose,
+diagrams, examples, or assets are copied; the skills adapt the concepts into
+JGengine's editor-owned world and reusable-package workflow.
+
+| Source | Concepts adapted |
+| --- | --- |
+| Hunicke, LeBlanc, and Zubek, [MDA](https://users.cs.northwestern.edu/~hunicke/MDA.pdf); Ryan and collaborators, [PENS](https://selfdeterminationtheory.org/player-experience-of-needs-satisfaction-pens/) | Causal experience framing and autonomy/competence/relatedness as motivation diagnostics |
+| Joris Dormans, [Machinations research](https://ojs.aaai.org/index.php/AIIDE/article/view/12477); Daniel Cook, [The Chemistry of Game Design](https://www.gamedeveloper.com/design/the-chemistry-of-game-design) | Resource-flow, feedback-loop, action-feedback-learning, and skill-chain analysis |
+| Hunicke and Chapman, [dynamic difficulty](https://users.cs.northwestern.edu/~hunicke/pubs/Hamlet.pdf); Valve, [Left 4 Dead AI systems](https://steamcdn-a.akamaihd.net/apps/valve/2009/ai_systems_of_l4d_mike_booth.pdf) | Challenge dimensions, adaptive pressure, intensity waves, and the distinction between pacing frequency and difficulty amplitude |
+| Microsoft Games Studios, [RITE](https://jpattonassociates.com/wp-content/uploads/2015/04/rite_method.pdf); Microsoft, [Xbox Accessibility Guidelines](https://learn.microsoft.com/en-us/xbox/accessibility/guidelines) | Rapid verified playtest iteration and player-informed accessibility checks |
+| GDC talks by [David Shaver and Robert Yang](https://www.gdcvault.com/play/1025360/Level-), [Jane Ng](https://www.gdcvault.com/play/1022409/Designing-for-Exploration-and-Choice), [Matt Thorson](https://www.gdcvault.com/play/1024307/Level-Design-Workshop-Designing-Celeste), [Jolie Menzel](https://www.gdcvault.com/play/1023139/Level-), [Andrew Yoder](https://gdcvault.com/play/1025183/Level-Design-Workshop-The-Holy), [Clemence Maurer](https://gdcvault.com/play/1024305/Level-Design-Workshop-Rewarding-Exploration), [Dave Feltham](https://gdcvault.com/play/1018166/Emotional-Journey-BioWare-s-Methods), [Matthias Worch](https://gdcvault.com/play/1020570/), and [Brendon Chung](https://www.gdcvault.com/play/1022117/level-design-in-a-day) | Graybox testing, spatial wayfinding, exploration, movement stages, puzzle diagnosis, multiplayer maps, narrative pacing, and informed spatial choice |
+
 ## Game concepts
 
 Some of the games in `Games/*` are our own take on someone else's idea. We

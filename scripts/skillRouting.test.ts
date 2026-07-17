@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { GAME_SKILLS } from "../packages/jgengine/src/skills";
+import { DESIGN_SKILL_DIRS, GAME_SKILLS } from "../packages/jgengine/src/skills";
 import {
   INTAKE_ROUTES,
   NORMAL_GAME_INTAKE,
@@ -21,6 +21,12 @@ describe("skill routing contract", () => {
     expect(INTAKE_ROUTES.authoring).toEqual(["jgengine-editor", "jgengine-world"]);
   });
 
+  test("design intake covers game rules and playable space", () => {
+    expect(INTAKE_ROUTES.design).toEqual(["game-design", "level-design"]);
+    expect(NORMAL_GAME_INTAKE).toContain("game-design");
+    expect(NORMAL_GAME_INTAKE).not.toContain("level-design");
+  });
+
   test("normal intake excludes opt-in combat, multiplayer, and asset manuals", () => {
     expect(NORMAL_GAME_INTAKE).not.toContain("jgengine-combat");
     expect(NORMAL_GAME_INTAKE).not.toContain("jgengine-multiplayer");
@@ -28,6 +34,6 @@ describe("skill routing contract", () => {
   });
 
   test("packaged skills use the canonical API domain registry", () => {
-    expect(GAME_SKILLS).toEqual([...SKILL_DIRS, "jgengine-verify"]);
+    expect(GAME_SKILLS).toEqual([...SKILL_DIRS, ...DESIGN_SKILL_DIRS, "jgengine-verify"]);
   });
 });

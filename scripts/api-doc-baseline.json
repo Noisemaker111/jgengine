@@ -36,7 +36,6 @@
   "@jgengine/assets/download#DownloadPackOptions",
   "@jgengine/assets/download#DownloadPackResult",
   "@jgengine/assets/download#ExtractedGlb",
-  "@jgengine/assets/download#ExtractedTexture",
   "@jgengine/assets/download#FetchLike",
   "@jgengine/assets/find#AssetKind",
   "@jgengine/assets/find#AssetMatch",

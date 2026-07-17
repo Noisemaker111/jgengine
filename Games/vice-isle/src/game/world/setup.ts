@@ -11,6 +11,8 @@ import {
   DOCK_FIGHT_CENTER,
   GUNSHOP_POS,
   MARCO_POS,
+  SAFEHOUSE_POS,
+  VCPD_POS,
 } from "./districts";
 
 function ground(ctx: GameContext, x: number, z: number): readonly [number, number, number] {
@@ -35,6 +37,8 @@ const STREET_BLOCKERS: readonly (readonly [number, number])[] = [
   [-68, 116],
   [DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]],
   [-176, 24],
+  [SAFEHOUSE_POS[0], SAFEHOUSE_POS[2]],
+  [VCPD_POS[0], VCPD_POS[2]],
 ];
 
 function styleAt(x: number, z: number, rng: () => number): BuildingStyle {
@@ -162,6 +166,13 @@ export function setupWorld(ctx: GameContext): void {
   });
 
   ctx.scene.object.place("obj_gunshop_sign", GUNSHOP_POS[0], ctx.world.groundHeightAt(GUNSHOP_POS[0], GUNSHOP_POS[2]), GUNSHOP_POS[2]);
+  ctx.scene.object.place(
+    "obj_safehouse_sign",
+    SAFEHOUSE_POS[0],
+    ctx.world.groundHeightAt(SAFEHOUSE_POS[0], SAFEHOUSE_POS[2]),
+    SAFEHOUSE_POS[2],
+  );
+  ctx.scene.object.place("obj_vcpd_sign", VCPD_POS[0], ctx.world.groundHeightAt(VCPD_POS[0], VCPD_POS[2]), VCPD_POS[2]);
   for (let i = 0; i < 8; i += 1) {
     const x = DOCK_FIGHT_CENTER[0] - 20 + rng() * 40;
     const z = DOCK_FIGHT_CENTER[2] - 20 + rng() * 40;

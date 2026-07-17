@@ -69,6 +69,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
 
+## authored-spawn — read spawn points and markers from the editor document
+
+- `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn"`
+- `authoredSpawnRotation` (function) · `import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn"`
+- `markersOfKind` (function) · `import { markersOfKind } from "@jgengine/core/world/authoredSpawn"`
+
 ## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
 
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/world"`
@@ -86,6 +92,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
+
+## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
+
+- `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
+
+## build-socket-catalog — data-driven named-socket snap catalog for modular base building
+
+- `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
+
+## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
+
+- `resolveCompanionIntent` (function) · `import { resolveCompanionIntent } from "@jgengine/core/scene/companion"`
+
+## companion-roster — manage tamed companions — allegiance, commands, per-companion stats/leveling, and mobBrain-shaped intent
+
+- `createCompanionRoster` (function) · `import { createCompanionRoster } from "@jgengine/core/scene/companion"`
 
 ## contour-interval — readable auto-spacing for elevation contours
 
@@ -191,6 +213,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## minimap-track — project a world point to a 0..1 fraction along a linear track axis
+
+- `trackFraction` (function) · `import { trackFraction } from "@jgengine/core/world/minimapTrack"`
+
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
@@ -228,6 +254,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
 
+## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
+
+- `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/world/buildSockets"`
+
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
 - `PlaceAssetResult` (interface) · `import { PlaceAssetResult } from "@jgengine/core/world"`
@@ -248,6 +278,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `parseRotationPolicy` (function) · `import { parseRotationPolicy } from "@jgengine/core/world"`
 - `snapHeading` (function) · `import { snapHeading } from "@jgengine/core/world"`
 
+## population-director — ambient per-region creature population manager with timed weighted respawns and caps
+
+- `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
+
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
@@ -259,6 +293,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## reputation — faction standing that crosses named reputation tiers
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
+
+## resource-node — depletable, respawning harvest nodes with tool-dependent yields
+
+- `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
 
 ## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 

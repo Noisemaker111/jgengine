@@ -9,15 +9,16 @@ shots/
 !apps/dev/public/models/kaykit-adventurers/
 !apps/dev/public/models/kaykit-city-builder/
 !apps/dev/public/models/kaykit-dungeon/
+!apps/dev/public/models/kaykit-furniture/
 !apps/dev/public/models/quaternius-stylized-nature/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 
 # CHANGELOG.md is authored once at the repo root and copied into each package
-# at publish time (see publish.yml) +óGé¼GÇ¥ the per-package copies are build artifacts.
+# at publish time (see publish.yml) +ï¿½Gï¿½GÇ¥ the per-package copies are build artifacts.
 packages/*/CHANGELOG.md
 
-# Compiled output must never sit beside TS source +óGé¼GÇ¥ Vite resolves .js over .ts,
+# Compiled output must never sit beside TS source +ï¿½Gï¿½GÇ¥ Vite resolves .js over .ts,
 # so a stray src/*.js silently shadows its .ts sibling and breaks dev/shoot.
 # Source dirs are pure TypeScript; emit only ever goes to dist/.
 packages/*/src/**/*.js
@@ -27,11 +28,11 @@ packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts.map
 
 # Packaged skills and the API-surface JSON are staged from .claude/skills and
-# packages/*/src by scripts/stage-skills.ts and scripts/gen-api-docs.ts +óGé¼GÇ¥
+# packages/*/src by scripts/stage-skills.ts and scripts/gen-api-docs.ts +ï¿½Gï¿½GÇ¥
 # never author or commit these by hand.
 packages/*/skills/
 apps/web/src/generated/
 
 # Ephemeral git worktrees created by fan-out shipping subagents
-# (Agent({ isolation: "worktree" })) +óGé¼GÇ¥ transient, never committed.
+# (Agent({ isolation: "worktree" })) +ï¿½Gï¿½GÇ¥ transient, never committed.
 .claude/worktrees/

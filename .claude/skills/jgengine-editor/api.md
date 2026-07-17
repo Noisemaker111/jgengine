@@ -455,7 +455,7 @@
 
 - `DecodeRpcRequestResult` (type): type DecodeRpcRequestResult = | { ok: true; request: EditorBridgeRequest } | { ok: false; errors: RpcRequestDiagnostic[] } — Result of {@link decodeEditorBridgeRequest}: a request whose `method` is a real one, or the diagnostic that rejected it.
 - `RpcRequestDiagnostic` (interface): interface RpcRequestDiagnostic — One field-level failure surfaced while decoding an untrusted RPC request.
-- `decodeEditorBridgeRequest` (function): function decodeEditorBridgeRequest(raw: unknown): DecodeRpcRequestResult — Validates an untrusted JSON-decoded RPC payload (from `--rpc` or the HTTP bridge) before it reaches `EditorHostApi.handle`: confirms it is a plain object carrying a known `method` name. Per-method field shape is still enforced by `handle`'s own dispatch, but a garbled or unknown-method payload is rejected here with a path-specific diagnostic instead of flowing through on a blind cast.
+- `decodeEditorBridgeRequest` (function): function decodeEditorBridgeRequest(raw: unknown): DecodeRpcRequestResult — Validates an untrusted JSON-decoded RPC payload (from `--rpc`, the HTTP bridge, or an agent tool call) before it reaches `EditorHostApi.handle`: confirms it is a plain object carrying a known `method`, then type-checks every field the method understands against {@link RPC_FIELD_SCHEMAS}. A garbled method, or a field whose value is the wrong type (a string where a number belongs, a scalar where an object belongs), is rejected here with a path-specific diagnostic instead of flowing into a live session on a blind cast. Missing fields and unknown extra fields are left for `handle` to interpret so the boundary stays forward-compatible.
 
 ## @jgengine/editor/mcp/stdioServer
 

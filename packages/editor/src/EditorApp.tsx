@@ -32,6 +32,7 @@ import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 export interface EditorAppProps {
   gameId: string;
   playable: PlayableGame;
+  /** Layers to open. Defaults to `playable.editorLayers`, so a game shipping its document via `defineGame({ editorLayers })` needs no extra wiring. */
   layers?: EditorLayersInput;
   /** Game-exported gameplay catalog definitions (schemas + defaults) for the Data panel / catalog RPC. */
   catalogs?: readonly EditorCatalogDefinition[];
@@ -312,10 +313,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     }
   }, [playable]);
 
+  const resolvedLayers = layers ?? playable.editorLayers;
   const host = useMemo(() => {
     const created = createEditorHost({
       gameId,
-      layers,
+      layers: resolvedLayers,
       catalogs,
       assets: catalogAssets,
     });
@@ -324,7 +326,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       baselineJson: created.session.exportJson(true),
       baselineDocument: created.session.getState().document,
     };
-  }, [gameId, layers, catalogs, catalogAssets]);
+  }, [gameId, resolvedLayers, catalogs, catalogAssets]);
 
   useEffect(() => host.dispose, [host]);
 

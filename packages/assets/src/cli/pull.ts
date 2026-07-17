@@ -4,7 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { downloadPackArchive, extractGlbs, extractSpriteFiles, extractTextures } from "../download";
+import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
 import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
 import { generatedSpriteIndex } from "../generated-sprites";
@@ -239,17 +239,12 @@ async function fetchPackInto(
     for (const file of files) writeFileSync(join(outDir, file.file), file.bytes);
     return { outDir, models: files.length, textures: 0, url };
   }
-  const glbs = extractGlbs(archive);
-  if (glbs.length === 0) fail(`no .glb files found in ${source.id} archive`);
+  const { models, images } = extractGlbs(archive);
+  if (models.length === 0) fail(`no .glb files found in ${source.id} archive`);
   mkdirSync(outDir, { recursive: true });
-  for (const glb of glbs) writeFileSync(join(outDir, glb.file), glb.bytes);
-  const textures = extractTextures(archive);
-  for (const texture of textures) {
-    const dest = join(outDir, texture.file);
-    mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, texture.bytes);
-  }
-  return { outDir, models: glbs.length, textures: textures.length, url };
+  for (const glb of models) writeFileSync(join(outDir, glb.file), glb.bytes);
+  for (const image of images) writeFileSync(join(outDir, image.file), image.bytes);
+  return { outDir, models: models.length, textures: images.length, url };
 }
 
 function readSingles(): SingleAsset[] {

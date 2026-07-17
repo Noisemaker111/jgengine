@@ -16,6 +16,7 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 ## Change governance
 
 - Preserve user work. Never discard or overwrite unrelated changes. Start a new task branch from current `origin/main`; do not stack new work on a parked or merged task branch.
+- Move in slices; bound recon. Read only what the smallest end-to-end change needs, then act — recon must terminate in a commit or an approved plan, never in open-ended narration. Prefer a working vertical slice over broad discovery, and reserve fan-out for work whose shape is already known.
 - Claim a tracked issue before implementation. A fixed issue is closed by the PR with `Closes #N` (or explicitly when auto-close cannot work).
 - A PR is one coherent, independently reviewable and revertible change. Combine work sharing a root cause, API migration, files, acceptance criteria, and verification story. Split work that is independently releasable, reviewable, revertible, or likely to conflict. Issue count never determines PR count.
 - Follow the `workflow` skill for issue → change → verify → ship. Push with a standalone `git push` command. Never merge, enable auto-merge, or bump versions/releases unless the user explicitly asks; the user owns merge and release timing.

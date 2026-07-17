@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
+import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
@@ -411,6 +412,46 @@ export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOpt
   const view = { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
   previous.current = view;
   return view;
+}
+
+/**
+ * A self-ticking {@link MarkerSet} kept in sync with the live scene: on a
+ * heartbeat (default 100ms, and once immediately) it clears the set and calls
+ * `rebuild(markers, ctx)` to repopulate it from the current scene, so a HUD map
+ * never hand-rolls a `setInterval` + `markers.clear()` + rescan. Each heartbeat
+ * also re-renders the calling component, so player-centered props derived from
+ * the live scene each tick (`center`, `facingYaw`, zone name) stay fresh — this
+ * fully subsumes the hand-rolled ticker, not just the marker rebuild. The set is
+ * stable across renders and re-seeded whenever `ctx`, `intervalMs`, or the
+ * supplied `deps` change. SSR-safe: the heartbeat only arms when `window` is
+ * available.
+ *
+ * @capability live-markers a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
+ */
+export function useLiveMarkers(
+  rebuild: (markers: MarkerSet, ctx: GameContext) => void,
+  options?: { intervalMs?: number; deps?: DependencyList },
+): MarkerSet {
+  const ctx = useGameContext();
+  const markers = useMemo(() => createMarkerSet(() => ctx.time.now()), [ctx]);
+  const rebuildRef = useRef(rebuild);
+  rebuildRef.current = rebuild;
+  const intervalMs = options?.intervalMs ?? 100;
+  const deps = options?.deps ?? [];
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const run = (): void => {
+      markers.clear();
+      rebuildRef.current(markers, ctx);
+      forceTick((value) => (value + 1) % 1_000_000);
+    };
+    run();
+    if (intervalMs <= 0 || typeof window === "undefined") return undefined;
+    const id = window.setInterval(run, intervalMs);
+    return () => window.clearInterval(id);
+    // deps is spread so callers can re-seed on their own inputs.
+  }, [markers, ctx, intervalMs, ...deps]);
+  return markers;
 }
 
 type HeldKeyEventTarget = Pick<Window, "addEventListener" | "removeEventListener">;

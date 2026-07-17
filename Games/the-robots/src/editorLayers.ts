@@ -6,10 +6,8 @@ import { ROUTES, SIDE_POIS, SPUR_ROUTES } from "./game/world/level";
 const LEASH_RADIUS = 46;
 import {
   BLACK_MARKET_POS,
-  BOLT_POS,
   RIGG_VENDOR_POS,
   NEW_U_STATION,
-  PLAYER_SPAWN,
   TRAVEL_STATIONS,
   SPARX_VENDOR_POS,
 } from "./game/world/sites";
@@ -178,20 +176,6 @@ function bossRangeVolumes(): EditorVolume[] {
 
 function siteMarkers(): EditorMarker[] {
   return [
-    {
-      id: "player_spawn",
-      kind: "player_spawn",
-      position: xz(PLAYER_SPAWN[0], PLAYER_SPAWN[2]),
-      label: "Player spawn",
-      color: "#22d3ee",
-    },
-    {
-      id: "bolt",
-      kind: "npc",
-      position: xz(BOLT_POS[0], BOLT_POS[2]),
-      label: "Bolt",
-      color: "#60a5fa",
-    },
     {
       id: "vendor_rigg",
       kind: "vendor",

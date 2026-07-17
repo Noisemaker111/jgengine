@@ -26,8 +26,12 @@ function PromptHint() {
       : active.id.startsWith("garage:")
         ? "Browse Sunset Motors"
         : active.id.startsWith("race:")
-          ? "Start the Ocean Loop"
-          : "Talk";
+          ? "Start the Ocean Loop ($200 entry)"
+          : active.id === "safehouse:buy"
+            ? "Buy Palmview Bungalow ($5,000)"
+            : active.id === "safehouse:rest"
+              ? "Rest at the bungalow"
+              : "Talk";
   return (
     <div className="-skew-x-6 border-2 border-black bg-[#ffb020] px-3 py-1 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000]">
       [E] {label}

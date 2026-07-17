@@ -1,0 +1,4 @@
+interface:
+  display_name: "Level Design"
+  short_description: "Design readable, paced, playable spaces"
+  default_prompt: "Use $level-design to observe this world live, brief and drive the editor agent through an authoritative scene change, then replay the same journey and prove the result."

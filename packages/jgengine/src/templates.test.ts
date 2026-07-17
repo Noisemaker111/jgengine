@@ -11,7 +11,18 @@ import {
   type TemplateFile,
 } from "./templates";
 
-const SKELETON_FILES = new Set(["game.config.ts", "index.tsx", "main.tsx", "loop.ts", "world.ts", "index.css"]);
+const SKELETON_FILES = new Set([
+  "game.config.ts",
+  "index.tsx",
+  "main.tsx",
+  "loop.ts",
+  "world.ts",
+  "index.css",
+  "style.css",
+  "editorLayers.ts",
+  "editorLayers.test.ts",
+  "editor.scene.json",
+]);
 
 function render(variant: "standalone" | "in-repo"): TemplateFile[] {
   return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0" });
@@ -109,6 +120,29 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const pkg = JSON.parse(fileOf(files, "package.json")) as { dependencies: Record<string, string> };
     expect(pkg.dependencies["@jgengine/shell"]).toBe("^1.2.3");
   });
+
+  for (const variant of ["standalone", "in-repo"] as const) {
+    test(`${variant}: scaffold walks out of the box (movement actions bound)`, () => {
+      const keybinds = fileOf(render(variant), "src/game/keybinds.ts");
+      for (const action of ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "interact"]) {
+        expect(keybinds).toContain(`${action}:`);
+      }
+    });
+
+    test(`${variant}: scaffold ships a wired editor scene document`, () => {
+      const files = render(variant);
+      const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
+        markers: { kind: string; catalogId?: string }[];
+      };
+      expect(scene.markers.some((marker) => marker.kind === "player_spawn")).toBe(true);
+      expect(scene.markers.some((marker) => marker.catalogId !== undefined)).toBe(true);
+      expect(fileOf(files, "src/editorLayers.ts")).toContain("normalizeEditorLayers");
+      expect(fileOf(files, "src/game.config.ts")).toContain("editorLayers,");
+      expect(fileOf(files, "src/index.tsx")).toContain("editorLayers");
+      expect(fileOf(files, "src/loop.ts")).toContain("authoredSpawnPosition(editorLayers)");
+      expect(fileOf(files, "src/index.css")).toContain('@import "./style.css"');
+    });
+  }
 
   test("templates carry the verify gate and agent onboarding", () => {
     const files = render("standalone");

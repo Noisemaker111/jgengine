@@ -7,7 +7,15 @@
     { "id": "gunshop", "kind": "poi", "position": { "x": -52, "y": 0, "z": 8 }, "label": "Gun shop" },
     { "id": "garage", "kind": "poi", "position": { "x": -68, "y": 0, "z": 116 }, "label": "Garage" },
     { "id": "dock_fight", "kind": "poi", "position": { "x": 130, "y": 0, "z": 196 }, "label": "Dock fight" },
-    { "id": "briefcase", "kind": "chest", "position": { "x": 142, "y": 0, "z": 208 }, "label": "Ledger briefcase" }
+    { "id": "briefcase", "kind": "chest", "position": { "x": 142, "y": 0, "z": 208 }, "label": "Ledger briefcase" },
+    { "id": "vcpd_station", "kind": "poi", "position": { "x": 54, "y": 0, "z": -40 }, "label": "VCPD station" },
+    { "id": "safehouse", "kind": "poi", "position": { "x": 48, "y": 0, "z": -222 }, "label": "Palmview Bungalow" },
+    { "id": "cicada_stage", "kind": "poi", "position": { "x": 74, "y": 0, "z": -236 }, "label": "Cicada stage" },
+    { "id": "bounty_beach", "kind": "bounty", "position": { "x": -166, "y": 0, "z": -76 }, "label": "The boardwalk" },
+    { "id": "bounty_downtown", "kind": "bounty", "position": { "x": 66, "y": 0, "z": -66 }, "label": "Neon alley" },
+    { "id": "bounty_port", "kind": "bounty", "position": { "x": 126, "y": 0, "z": 178 }, "label": "Pier three" },
+    { "id": "bounty_heights", "kind": "bounty", "position": { "x": 96, "y": 0, "z": -216 }, "label": "Villa row" },
+    { "id": "bounty_strip", "kind": "bounty", "position": { "x": -54, "y": 0, "z": 118 }, "label": "Midtown strip" }
   ],
   "volumes": [
     { "id": "ocean_drive", "kind": "district", "shape": "cylinder", "center": { "x": -170, "y": 0, "z": 0 }, "radius": 110, "label": "Ocean Drive" },
