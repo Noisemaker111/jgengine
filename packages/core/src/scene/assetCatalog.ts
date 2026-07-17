@@ -1,3 +1,5 @@
+import type { AssetSpace } from "./assetSpace";
+
 /** Measured horizontal footprint, footprint center, and lowest Y of a model in model space. */
 export interface ModelDims {
   footprint: { w: number; d: number };
@@ -9,6 +11,8 @@ export interface ModelAssetRef {
   url: string;
   /** Measured at asset reindex: horizontal footprint, footprint center, and lowest Y in model space (pre-scale). Lets the shell auto-center and ground-snap corner-pivot kit models. */
   dims?: ModelDims;
+  /** Authored asset-space metadata — canonical facing (degrees), source-unit scale, footprint, anchor, bounds, and rotation policy. The upstream owner of placement corrections; see {@link "scene/assetSpace".AssetSpace}. */
+  space?: AssetSpace;
 }
 
 /**
@@ -22,6 +26,8 @@ export interface GeneratorAssetRef {
   generatorId: string;
   /** Default params stamped onto a fresh placement's meta. */
   defaults?: Record<string, unknown>;
+  /** Authored asset-space metadata — canonical facing (degrees), footprint, anchor, bounds, and rotation policy; see {@link "scene/assetSpace".AssetSpace}. */
+  space?: AssetSpace;
 }
 
 /** A catalog entry: a static GLB model, or a parametric generator. */
