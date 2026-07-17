@@ -117,6 +117,9 @@ export type { DecodeEditorDocumentResult } from "./document";
 export { environmentContentFromDocument, terrainBoundsFromDocument } from "./environment";
 /** Coordinate/placement content of an `environment()` world derived from the scene document. */
 export type { EnvironmentContent, EnvironmentContentOptions } from "./environment";
+export { bakeMinimapFromDocument, documentBakeZones } from "./minimap";
+/** Editor-side minimap bake from the scene document (footprint + biome-tint zones). */
+export type { DocumentBakeOptions } from "./minimap";
 export { createWorldStreamer, shardDistance } from "./streamer";
 /** A stateful proximity streamer that schedules shard load/unload as the camera moves. */
 export type { StreamUpdate, StreamerShard, WorldStreamer, WorldStreamerConfig } from "./streamer";

@@ -70,6 +70,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
 - `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
 
+## minimap-bake — bake a minimap PNG + bounds from the authored scene document
+
+- `bakeMinimapFromDocument` (function) · `import { bakeMinimapFromDocument } from "@jgengine/core/editor"`
+- `documentBakeZones` (function) · `import { documentBakeZones } from "@jgengine/core/editor"`
+
 ## scene-ownership — audit a whole ownership manifest for boundary violations
 
 - `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/scene/sceneOwnership"`

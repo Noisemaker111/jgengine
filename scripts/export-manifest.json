@@ -88,6 +88,7 @@
     "./editor/gridAdapters",
     "./editor/index",
     "./editor/liveSync",
+    "./editor/minimap",
     "./editor/runtimeInspector",
     "./editor/streamer",
     "./editor/types",
