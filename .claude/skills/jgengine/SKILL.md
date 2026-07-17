@@ -9,7 +9,7 @@ Read the repository [README](../../../README.md) for package truth, commands, la
 
 ## 1. Establish the target
 
-Capture only decisions that change architecture:
+Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 
 - player point of view and controls
 - world shape and authored content
@@ -26,6 +26,8 @@ Load only rows the target needs. Do not preload every domain.
 
 | Need | Skill | Owner |
 | --- | --- | --- |
+| player promise, pillars, verbs, loops, economy, progression, balance | `game-design` | experience and rule intent |
+| metrics, topology, encounters, navigation, spatial pacing | `level-design` | playable space intent |
 | scene placement, terrain painting, paths, asset authoring | `jgengine-editor` | editor document and authoring tools |
 | runtime world, movement, input, interaction, AI, navigation, audio | `jgengine-world` | spatial simulation and world runtime |
 | game state, systems, inventory, crafting, quests, economy, turns | `jgengine-gameplay` | non-combat rules and state |
