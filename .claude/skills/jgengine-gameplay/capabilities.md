@@ -158,6 +158,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/gameplay"`
 
+## leveling-track — grant XP, resolve level-ups against a curve, and write level+xp stats back through a stat adapter
+
+- `leveling` (function) · `import { leveling } from "@jgengine/core/gameplay"`
+
 ## lifecycle — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
 
 - `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/gameplay"`
@@ -269,6 +273,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## production-building — a factory building converting inputs to outputs over time
 
 - `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/gameplay"`
+
+## progression-curve — evaluate a level/rank curve (const, linear, power, geometric, steps, piecewise) at a point
+
+- `evalCurve` (function) · `import { evalCurve } from "@jgengine/core/gameplay"`
 
 ## quest-log — track accepted quests and their per-objective progress
 

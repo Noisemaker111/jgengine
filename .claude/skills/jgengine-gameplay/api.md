@@ -572,16 +572,16 @@
 
 ## @jgengine/core/game/progression
 
-- `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
-- `CurveDef` (type): type CurveDef = | { kind: "const"; value: number } | { kind: "linear"; base: number; per: number } | { kind: "power"; base: number; exponent: number } | { kind: "geometric"; base: number; ratio: number } | { kind: "steps"; values: number[] } | { kind: "piecewise"; points: [number, number][] } — ⚠ undocumented
-- `CurveShape` (interface): interface CurveShape — ⚠ undocumented
-- `LevelProgress` (interface): interface LevelProgress — ⚠ undocumented
-- `LevelingConfig` (interface): interface LevelingConfig — ⚠ undocumented
-- `LevelingStatAccess` (interface): interface LevelingStatAccess — ⚠ undocumented
-- `LevelingTrack` (interface): interface LevelingTrack — ⚠ undocumented
-- `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
-- `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
-- `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
+- `Curve` (type): type Curve = CurveDef & CurveShape — A fully specified progression curve — a {@link CurveDef} growth shape plus optional {@link CurveShape} rounding/clamp.
+- `CurveDef` (type): type CurveDef = | { kind: "const"; value: number } | { kind: "linear"; base: number; per: number } | { kind: "power"; base: number; exponent: number } | { kind: "geometric"; base: number; ratio: number } | { kind: "steps"; values: number[] } | { kind: "piecewise"; points: [number, number][] } — The shape of a progression curve before rounding/clamping: a constant, a linear ramp, a `power` or `geometric` growth, discrete `steps`, or a `piecewise` interpolation between explicit points. Feed it to {@link evalCurve}.
+- `CurveShape` (interface): interface CurveShape — Post-evaluation adjustments applied to a curve's raw output: rounding mode and min/max clamp.
+- `LevelProgress` (interface): interface LevelProgress — Result of resolving a level+xp pair: the settled `level`, leftover `xp` into the current level, the `xpMax` threshold for the next level, and how many `levelsGained` this resolution produced.
+- `LevelingConfig` (interface): interface LevelingConfig — Configuration for a {@link leveling} track: the `xpForLevel` {@link Curve}, the `maxLevel` cap, and optional `startLevel`, stat ids (`xpStat`/`levelStat`, default `"xp"`/`"level"`), and `thresholdMode` — `"perLevel"` (each level costs its own curve value) or `"cumulative"` (curve gives the total xp to reach a level).
+- `LevelingStatAccess` (interface): interface LevelingStatAccess — Adapter a {@link LevelingTrack} uses to read and write a user's level/xp stats, so the track stays decoupled from any concrete stats store.
+- `LevelingTrack` (interface): interface LevelingTrack — A resolved leveling track: the immutable `maxLevel`/`startLevel`, the `xpForLevel` threshold lookup, a pure `resolve`, and `grantXp` which writes back through a {@link LevelingStatAccess} and fires an `onLevelUp` callback.
+- `curve` (function): function curve(spec: Curve): (x: number) => number — Bind a {@link Curve} into a reusable `(x) => value` evaluator — a partial application of {@link evalCurve}.
+- `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — Evaluate a progression {@link Curve} at position `x`, applying its rounding mode and min/max clamp. This is the shared numeric backbone for XP-per-level, cost ramps, difficulty scaling, and any other level/rank → value mapping — use it instead of hand-rolling growth formulas.
+- `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — Build a leveling track from an xp-per-level {@link Curve} and a max level. The returned {@link LevelingTrack} resolves how many levels a given xp total earns (rolling over surplus xp, capping at `maxLevel`) and, via `grantXp`, writes the new level/xp back through a {@link LevelingStatAccess} and fires `onLevelUp` for each level gained. Reach for this instead of hand-tracking xp thresholds; pair it with `resource-pool` (mana/stamina) and `ability-bar` (cooldowns) for a hero.
 
 ## @jgengine/core/game/quest
 
@@ -872,7 +872,7 @@
 - `CropDef` (interface): interface CropDef — ⚠ undocumented
 - `CropTileState` (interface): interface CropTileState — ⚠ undocumented
 - `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
-- `Curve` (type): type Curve = CurveDef & CurveShape — ⚠ undocumented
+- `Curve` (type): type Curve = CurveDef & CurveShape — A fully specified progression curve — a {@link CurveDef} growth shape plus optional {@link CurveShape} rounding/clamp.
 - `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 500 — ⚠ undocumented
 - `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
 - `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
@@ -951,10 +951,10 @@
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
 - `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
 - `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
-- `LevelProgress` (interface): interface LevelProgress — ⚠ undocumented
+- `LevelProgress` (interface): interface LevelProgress — Result of resolving a level+xp pair: the settled `level`, leftover `xp` into the current level, the `xpMax` threshold for the next level, and how many `levelsGained` this resolution produced.
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
-- `LevelingConfig` (interface): interface LevelingConfig — ⚠ undocumented
-- `LevelingTrack` (interface): interface LevelingTrack — ⚠ undocumented
+- `LevelingConfig` (interface): interface LevelingConfig — Configuration for a {@link leveling} track: the `xpForLevel` {@link Curve}, the `maxLevel` cap, and optional `startLevel`, stat ids (`xpStat`/`levelStat`, default `"xp"`/`"level"`), and `thresholdMode` — `"perLevel"` (each level costs its own curve value) or `"cumulative"` (curve gives the total xp to reach a level).
+- `LevelingTrack` (interface): interface LevelingTrack — A resolved leveling track: the immutable `maxLevel`/`startLevel`, the `xpForLevel` threshold lookup, a pure `resolve`, and `grantXp` which writes back through a {@link LevelingStatAccess} and fires an `onLevelUp` callback.
 - `LifecycleConfig` (interface): interface LifecycleConfig<TState = unknown> — Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats (title screen → live run → live run → title screen again), expressed as pure functions over one typed {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`, never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct phase-sync for free.
 - `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
 - `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
@@ -1222,7 +1222,7 @@
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
 - `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
-- `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
+- `curve` (function): function curve(spec: Curve): (x: number) => number — Bind a {@link Curve} into a reusable `(x) => value` evaluator — a partial application of {@link evalCurve}.
 - `curveScale` (function): function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy — Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier (population upkeep, depletion falloff, difficulty income) over caller-provided context.
 - `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
@@ -1239,7 +1239,7 @@
 - `driftValue` (function): function driftValue(record: Record<string, number>, key: string, rate: number, rest = 0, bounds?: NumericBounds): number — Decay `key` toward a `rest` value (default `0`) by `rate` per call — the common "relationships cool off" / "heat fades" drift. Thin wrapper over {@link towardValue}.
 - `durabilityFraction` (function): function durabilityFraction(state: DurabilityState): number — ⚠ undocumented
 - `enqueue` (function): function enqueue<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, spec: TSpec, options?: EnqueueOptions): EnqueueResult<TSpec, TReserve> — Enqueue a new job. Validates capacity and the injected `validate` policy, then computes and stores the reservation. Charging the reservation (now or later) is the caller's responsibility using {@link EnqueueResult.job}'s `reservation`.
-- `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — ⚠ undocumented
+- `evalCurve` (function): function evalCurve(spec: Curve, x: number): number — Evaluate a progression {@link Curve} at position `x`, applying its rounding mode and min/max clamp. This is the shared numeric backbone for XP-per-level, cost ramps, difficulty scaling, and any other level/rank → value mapping — use it instead of hand-rolling growth formulas.
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
 - `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
@@ -1264,7 +1264,7 @@
 - `jobById` (function): function jobById<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): Job<TSpec, TReserve> | null — Look up a job by id, or `null` if absent/terminal.
 - `jobProgress` (function): function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number — Fractional progress of a job (0…1); a zero-duration job reads as complete.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
-- `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — ⚠ undocumented
+- `leveling` (function): function leveling(config: LevelingConfig): LevelingTrack — Build a leveling track from an xp-per-level {@link Curve} and a max level. The returned {@link LevelingTrack} resolves how many levels a given xp total earns (rolling over surplus xp, capping at `maxLevel`) and, via `grantXp`, writes the new level/xp back through a {@link LevelingStatAccess} and fires `onLevelUp` for each level gained. Reach for this instead of hand-tracking xp thresholds; pair it with `resource-pool` (mana/stamina) and `ability-bar` (cooldowns) for a hero.
 - `listRuleEffects` (function): function listRuleEffects(): RuleEffectDefinition[] — Every declared rule effect, for populating inspector dropdowns and validating a content set.
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `localSaveBackend` (function): function localSaveBackend(storage?: KeyValueStorage | null): SaveBackend — A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the browser's `localStorage` by default (offline, on-device saves), a test stub, or `null` for memory-only. Storage errors (quota exceeded, private mode, no DOM) degrade to no-ops, so a save never throws into a game tick.
