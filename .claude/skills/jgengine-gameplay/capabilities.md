@@ -52,10 +52,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
+## item-identity — resolve which match/set bonuses an item qualifies for
+
+- `activeSetBonuses` (function) · `import { activeSetBonuses } from "@jgengine/core/gameplay"`
+- `applySetBonuses` (function) · `import { applySetBonuses } from "@jgengine/core/gameplay"`
+- `candidateViolatesForbid` (function) · `import { candidateViolatesForbid } from "@jgengine/core/gameplay"`
+- `captureProvenance` (function) · `import { captureProvenance } from "@jgengine/core/gameplay"`
+- `countSetMembers` (function) · `import { countSetMembers } from "@jgengine/core/gameplay"`
+- `identityOf` (function) · `import { identityOf } from "@jgengine/core/gameplay"`
+- `isIdentityValid` (function) · `import { isIdentityValid } from "@jgengine/core/gameplay"`
+- `matchesQuery` (function) · `import { matchesQuery } from "@jgengine/core/gameplay"`
+- `validateIdentity` (function) · `import { validateIdentity } from "@jgengine/core/gameplay"`
+
 ## item-instance-registry — a runtime store for procedurally generated item instances
 
 - `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
 - `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/gameplay"`
+
+## item-use-composition — compose pluggable, ordered item use-behaviors from serializable references
+
+- `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
 
 ## lap-splits — per-lap durations from a cumulative split book
 

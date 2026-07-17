@@ -236,6 +236,26 @@ export {
   type DurabilitySpec,
   type DurabilityState,
 } from "./item/durability";
+export {
+  activeSetBonuses,
+  applySetBonuses,
+  candidateViolatesForbid,
+  captureProvenance,
+  countSetMembers,
+  identityOf,
+  isIdentityValid,
+  matchesQuery,
+  validateIdentity,
+  type CandidatePlacement,
+  type CompatibilityRule,
+  type ConstraintViolation,
+  type ForbidRule,
+  type IdentityQuery,
+  type ItemIdentity,
+  type ItemProvenance,
+  type RequireRule,
+  type SetBonus,
+} from "./item/itemIdentity";
 export { createItemInstanceRegistry, proceduralLootEntry } from "./item/itemInstanceRegistry";
 export {
   computeEffectiveStats,
@@ -252,6 +272,20 @@ export {
   type PartDef,
 } from "./item/modularItem";
 export { createItemUse, type ItemUseHandler, type ItemUseInput } from "./item/use";
+export {
+  createUseBehaviorRegistry,
+  type BehaviorConfig,
+  type BehaviorState,
+  type ComposedUse,
+  type CompositionResult,
+  type SerializedBehaviorState,
+  type UseBehaviorContext,
+  type UseBehaviorDef,
+  type UseBehaviorOutcome,
+  type UseBehaviorRef,
+  type UseBehaviorRegistry,
+  type UseBehaviorRejection,
+} from "./item/useBehavior";
 export { createWeaponStats } from "./item/weapon";
 export { type CellGrid } from "./puzzle/cellGrid";
 export { type ShapeTable } from "./puzzle/fallingPiece";
