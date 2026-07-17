@@ -3,6 +3,7 @@ import { command } from "@jgengine/core/interaction/proximityPrompt";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
+import { discRegion, rectRegion, samplePoint } from "@jgengine/core/world";
 
 import { GATHER_NODES, PROFESSIONS } from "./catalog";
 import type { GatherNodeDef, ProfessionId } from "../model";
@@ -23,14 +24,19 @@ export function professionsOf(ctx: GameContext, userId: string): Record<Professi
 
 function nodePlacement(def: GatherNodeDef, roll: () => number): readonly [number, number] {
   const zone = zoneById(def.zone);
-  for (let attempt = 0; attempt < 30; attempt += 1) {
-    const x = -160 + roll() * 320;
-    const z = zone.zMin + 18 + roll() * (zone.zMax - zone.zMin - 36);
-    const hubDist = Math.hypot(x - zone.hub.x, z - zone.hub.z);
-    const cryptDist = Math.hypot(x - CRYPT.x, z - CRYPT.z);
-    if (hubDist > zone.hub.radius + 10 && cryptDist > CRYPT.radius + 6) return [x, z];
-  }
-  return [zone.hub.x + 30, (zone.zMin + zone.zMax) / 2];
+  const result = samplePoint<readonly [number, number]>({
+    region: rectRegion({ minX: -160, maxX: 160, minZ: zone.zMin + 18, maxZ: zone.zMax - 18 }),
+    rng: roll,
+    constraints: {
+      exclude: [
+        discRegion([zone.hub.x, zone.hub.z], zone.hub.radius + 10),
+        discRegion([CRYPT.x, CRYPT.z], CRYPT.radius + 6),
+      ],
+    },
+    maxAttempts: 30,
+    fallback: { point: [zone.hub.x + 30, (zone.zMin + zone.zMax) / 2] },
+  });
+  return result.point ?? [zone.hub.x + 30, (zone.zMin + zone.zMax) / 2];
 }
 
 function placeNode(ctx: GameContext, def: GatherNodeDef, position: readonly [number, number]): void {

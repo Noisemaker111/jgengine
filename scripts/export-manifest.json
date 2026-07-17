@@ -352,6 +352,7 @@
     "./world/sceneShapes",
     "./world/segment",
     "./world/soilKind",
+    "./world/spatialSample",
     "./world/streets",
     "./world/support",
     "./world/terraform",
