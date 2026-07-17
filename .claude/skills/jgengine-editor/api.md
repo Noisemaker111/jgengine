@@ -5,6 +5,12 @@
 ## @jgengine/core/editor
 
 - `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string } — Result of applying a {@link DocumentPatch} to a document + revision pair.
+- `AsciiGridExportOptions` (interface): interface AsciiGridExportOptions — Options for rendering a grid layer back out as an ASCII/glyph map.
+- `AsciiGridImportOptions` (interface): interface AsciiGridImportOptions — Options for importing an ASCII/glyph map into a grid layer. Provide `glyphMap` (char → value id) or a `palette` whose entries carry `glyph`s (or both — `glyphMap` wins on conflict). Any glyph not mapped, and any short-row padding, resolves to `empty`.
+- `CURRENT_GRID_SCHEMA_VERSION` (const): const CURRENT_GRID_SCHEMA_VERSION: 1 — The grid-layer cell-schema version this build writes and migrates toward.
+- `CreateGridLayerInit` (interface): interface CreateGridLayerInit — Fields accepted when constructing a grid layer; sensible defaults fill the rest.
+- `CsvGridExportOptions` (interface): interface CsvGridExportOptions — Options for exporting a grid layer as CSV.
+- `CsvGridImportOptions` (interface): interface CsvGridImportOptions — Options for importing a CSV grid (one value id per cell).
 - `DocumentLiveEvent` (interface): interface DocumentLiveEvent — Event emitted when the authoritative document changes on a {@link DocumentLiveSync}.
 - `DocumentLiveSync` (interface): interface DocumentLiveSync — Two-way live-sync bus: document patches out, runtime state deltas back.
 - `DocumentPatch` (type): type DocumentPatch = | { type: "snapshot"; revision?: number; baseRevision: number; document: EditorDocument; } | { type: "commands"; revision?: number; baseRevision: number; commands: readonly EditorCommand[]; } — One versioned document mutation on the live-sync stream. `snapshot` replaces the whole document; `commands` replays structural editor commands onto the current document. `baseRevision` must match the receiver's current revision unless `force` is set (document authority from the editor).
@@ -17,6 +23,11 @@
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
 - `EditorFragmentContent` (interface): interface EditorFragmentContent — The four placeable-object collections a prefab fragment or clipboard fragment carries.
+- `EditorGridAxes` (type): type EditorGridAxes = "xz" | "xy" — How a grid layer's columns and rows map onto world axes. - `"xz"` (default): columns advance +X, rows advance +Z — a top-down floor plan / board. - `"xy"`: columns advance +X, rows advance +Y — a vertical slice / side-view board.
+- `EditorGridCell` (interface): interface EditorGridCell — One resolved cell of a grid layer — its column, row, and value id.
+- `EditorGridCellEdit` (interface): interface EditorGridCellEdit — A single paint/erase edit: set cell `col,row` to `value` (the layer's empty value erases it).
+- `EditorGridLayer` (interface): interface EditorGridLayer — A sparse, editor-owned tile grid serialized on the scene document. Only non-empty cells are stored (a `col,row` → value-id map), so a mostly empty grid stays small no matter how large its declared `cols`/`rows` bounds are. `kind` names the game schema the cells belong to (`room`, `tactics`, `nav`, `farm`, …); `palette` carries the typed cell payloads by value id; `empty` is the value id treated as background (cells holding it are dropped from `cells`). Runtime and rendering both read the same layer through the query helpers in this module — renderers are registered adapters over this data, never baked into it.
+- `EditorGridPaletteEntry` (interface): interface EditorGridPaletteEntry — One selectable value in a grid layer's palette: the cell value id plus how it reads (label, color) and how ASCII import/export maps it (`glyph`). Games register these so the editor and the import adapters share one legend. `meta` carries the typed payload (cost, damage, tags, …) a runtime attaches to every cell holding this value.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
@@ -45,20 +56,47 @@
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
 - `applyDocumentPatch` (function): function applyDocumentPatch(document: EditorDocument, revision: number, patch: DocumentPatch, options?: { force?: boolean }): ApplyDocumentPatchResult — Applies a versioned document patch. Rejects base-revision mismatches unless `force` (document is authoritative — the editor forces when publishing its own session state).
 - `applyRuntimeStateDelta` (function): function applyRuntimeStateDelta(snapshot: RuntimeStateSnapshot, delta: Omit<RuntimeStateDelta, "seq"> & { seq?: number }): { snapshot: RuntimeStateSnapshot; delta: RuntimeStateDelta } — Merges a runtime delta into a snapshot without touching the scene document — runtime overrides stay ephemeral until an explicit write-back produces a document patch.
+- `cloneGridLayer` (function): function cloneGridLayer(layer: EditorGridLayer): EditorGridLayer — Deep-clones a grid layer so authoring edits and history snapshots never alias source cells.
 - `consumeRuntimePlayStep` (function): function consumeRuntimePlayStep(play: RuntimePlayControl): { runFrame: boolean; next: RuntimePlayControl; } — Advances the play-control step counter: when paused with pending steps, consumes one and reports whether the sim should run this frame. When not paused, always runs.
 - `createDocumentLiveSync` (function): function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSync — Creates an in-memory two-way live-sync bus seeded from an initial document. Document is authoritative; runtime overrides are ephemeral until {@link DocumentLiveSync.writeBackOverride}.
+- `createGridLayer` (function): function createGridLayer(init: CreateGridLayerInit): EditorGridLayer — Creates a grid layer from a partial init, defaulting cell size to `1`, origin to the world origin, and axes to `"xz"`. Runs the result through {@link migrateGridLayer} so it is normalized and bounds-clean.
 - `createRuntimePlayControl` (function): function createRuntimePlayControl(paused = false): RuntimePlayControl — Default play-control state when entering play mode (running).
+- `eraseGridCell` (function): function eraseGridCell(layer: EditorGridLayer, col: number, row: number): EditorGridLayer — Erases `col,row` back to the layer's empty value — {@link setGridCell} with the empty value.
+- `exportAsciiGrid` (function): function exportAsciiGrid(layer: EditorGridLayer, options: AsciiGridExportOptions = {}): string — Renders a grid layer back to an ASCII/glyph map (rows top to bottom). Value ids map to chars via the layer palette (or an override map); empty cells become `emptyGlyph`. Round-trips with {@link importAsciiGrid} when the glyph legend matches.
+- `exportCsvGrid` (function): function exportCsvGrid(layer: EditorGridLayer, options: CsvGridExportOptions = {}): string — Renders a grid layer as CSV — one row per line, each cell's value id as a field, empty cells as `emptyField`. Round-trips with {@link importCsvGrid}.
+- `eyedropGridCell` (function): function eyedropGridCell(layer: EditorGridLayer, col: number, row: number): string — Samples the value id at `col,row` — the eyedropper. Identical to {@link getGridCell}, named for the authoring op that picks up a cell's value to paint with.
+- `fillGridRect` (function): function fillGridRect(layer: EditorGridLayer, col0: number, row0: number, col1: number, row1: number, value: string): EditorGridLayer — Fills the inclusive rectangle spanning the two corners with `value` (the rectangle tool). Corners may be given in any order; the clamped in-bounds portion is painted.
 - `findEditorCatalog` (function): function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined — Looks up a gameplay data catalog by id on the scene document.
 - `findEditorCatalogEntry` (function): function findEditorCatalogEntry(doc: EditorDocument, catalogId: string, entryId: string): EditorCatalogEntry | undefined — Looks up one entry inside a gameplay data catalog.
+- `findGridPaletteEntry` (function): function findGridPaletteEntry(layer: EditorGridLayer, value: string): EditorGridPaletteEntry | undefined — Looks up a palette entry by value id.
+- `floodFillGrid` (function): function floodFillGrid(layer: EditorGridLayer, col: number, row: number, value: string): EditorGridLayer — Flood-fills the 4-connected region of cells sharing the seed cell's value, replacing it with `value` (the bucket tool). Bounded by the layer's declared bounds, so it never scans the world.
+- `forEachGridCell` (function): function forEachGridCell(layer: EditorGridLayer, visit: (cell: EditorGridCell) => void): void — Visits every non-empty cell of a layer row-major. Allocation-light convenience over {@link gridCellEntries} for runtime scans that only need a callback.
 - `getDocumentLiveSync` (function): function getDocumentLiveSync(): DocumentLiveSync | null — Returns the globally installed live-sync bus, or null when none is mounted.
+- `getGridCell` (function): function getGridCell(layer: EditorGridLayer, col: number, row: number): string — Reads the value id at `col,row`, returning the layer's empty value for any unset or out-of-bounds cell. The one read path both gameplay and rendering share.
+- `getGridCellAtWorld` (function): function getGridCellAtWorld(layer: EditorGridLayer, x: number, y: number, z: number): string — The value id at the grid cell nearest a world point — {@link worldToGridCell} then {@link getGridCell}. Answers "what tile is here" straight from a world position.
 - `getRuntimeInspectorValue` (function): function getRuntimeInspectorValue(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, id: string, path?: string): RuntimeInspectorGetResult — Resolves one entity, entity field, or tunable from the reverse-channel snapshot (with overrides layered on top for entity rows).
+- `gridCellCount` (function): function gridCellCount(layer: EditorGridLayer): number — Counts the non-empty, in-bounds cells of a layer.
+- `gridCellEntries` (function): function gridCellEntries(layer: EditorGridLayer): EditorGridCell[] — Every non-empty, in-bounds cell of a layer, sorted row-major (rendering-independent iteration).
+- `gridCellToWorld` (function): function gridCellToWorld(layer: EditorGridLayer, col: number, row: number): EditorVec3 — World-space center of cell `col,row`, honoring the layer's origin, cell size, and axis mapping. The shared cell→world map for both placement and rendering.
+- `gridCellsOfValue` (function): function gridCellsOfValue(layer: EditorGridLayer, value: string): EditorGridCell[] — Every in-bounds cell holding `value`, sorted row-major — the query gameplay uses to find all spawns, hazards, gates, etc. of one kind without touching a renderer.
+- `gridEmptyValue` (function): function gridEmptyValue(layer: EditorGridLayer): string — The value id a layer treats as empty/background (default `""`). Cells holding this value are never stored, so it is what {@link getGridCell} returns for any unset cell.
+- `gridGlyphMap` (function): function gridGlyphMap(layer: EditorGridLayer): Record<string, string> — Builds the value-id → glyph map from a layer's palette, for ASCII/glyph export.
+- `importAsciiGrid` (function): function importAsciiGrid(text: string, options: AsciiGridImportOptions): EditorGridLayer — Parses an ASCII/glyph map — one row per text line, one char per cell — into a grid layer. Each glyph is resolved to a value id via the palette/`glyphMap`; unmapped glyphs and padding become the empty value, so a mostly-open room stays sparse. The canonical representation is the returned {@link EditorGridLayer}; ASCII is just this import path into it, never the source of truth. Bounds are the row count × longest row.
+- `importCsvGrid` (function): function importCsvGrid(text: string, options: CsvGridImportOptions): EditorGridLayer — Parses a CSV grid — one row per line, one value id per comma-separated field — into a grid layer. Blank fields become the empty value. Unlike ASCII this carries multi-character value ids directly, so it suits grids whose cell values are names rather than single glyphs.
+- `inGridBounds` (function): function inGridBounds(layer: EditorGridLayer, col: number, row: number): boolean — True when `col,row` falls inside the layer's declared bounds.
 - `installDocumentLiveSync` (function): function installDocumentLiveSync(sync: DocumentLiveSync): () => void — Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling.
+- `migrateGridLayer` (function): function migrateGridLayer(layer: EditorGridLayer): EditorGridLayer — Normalizes a grid layer forward to the current cell-schema version: clamps `cols`/`rows` to non-negative integers, drops out-of-bounds and empty-valued cells, and stamps `schemaVersion`. The single migration seam every loader and authoring op funnels new/old layers through, so a layer from an older document or an import adapter always lands in a valid, minimal shape.
+- `paintGridCells` (function): function paintGridCells(layer: EditorGridLayer, edits: readonly EditorGridCellEdit[]): EditorGridLayer — Applies a batch of cell edits in one pass, returning the same layer when nothing changed. The op the editor uses for a drag stroke, a paste, or any multi-cell paint/erase.
+- `parseGridCellKey` (function): function parseGridCellKey(key: string): { col: number; row: number } | null — Parses a `"col,row"` sparse-map key back into integer coordinates, or `null` when malformed.
 - `planRuntimeInspectorSet` (function): function planRuntimeInspectorSet(document: EditorDocument, input: { id: string; path?: string; value?: unknown; position?: { x: number; y: number; z: number }; rotationY?: number; values?: Record<string, unknown>; writeBack?: boolean; }): RuntimeInspectorSetPlan — Plans a play-mode poke: builds the ephemeral entity/tunable override and, when `writeBack` is true, the undoable document commands that promote it into the scene document.
+- `resizeGridLayer` (function): function resizeGridLayer(layer: EditorGridLayer, cols: number, rows: number): EditorGridLayer — Resizes the layer's bounds to `cols`×`rows`, dropping any cells that fall outside the new extent (values are anchored at the origin corner). Negative or fractional sizes are floored to `≥ 0`.
 - `runtimeEntityMetaWriteBackCommand` (function): function runtimeEntityMetaWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Promotes ephemeral runtime `values` into an undoable meta patch on a document-linked object. Returns null when the id is not in the document or there are no values.
 - `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
 - `seedEditorCatalogs` (function): function seedEditorCatalogs(doc: EditorDocument, definitions: readonly EditorCatalogDefinition[]): EditorDocument — Seeds default catalog rows from game-exported definitions into a document: missing catalogs and missing entries are filled from the definition; existing document values win (overlay already applied).
+- `setGridCell` (function): function setGridCell(layer: EditorGridLayer, col: number, row: number, value: string): EditorGridLayer — Returns a copy of the layer with `col,row` set to `value`, dropping the cell when `value` is the empty value (that is the erase op). Out-of-bounds writes and no-op writes return the layer unchanged, so callers can diff by identity.
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 - `summarizeRuntimeInspector` (function): function summarizeRuntimeInspector(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, play: RuntimePlayControl): RuntimeInspectorSummary — Builds the compact reverse-channel summary used by the play-mode inspector panel and the `runtime_summary` bridge RPC.
+- `worldToGridCell` (function): function worldToGridCell(layer: EditorGridLayer, x: number, y: number, z: number): { col: number; row: number } — Inverse of {@link gridCellToWorld}: the nearest cell to a world point (may be out of bounds). The shared world→cell map runtime uses to answer "which cell is the player standing on".
 
 ## @jgengine/core/editor/commands
 
@@ -72,6 +110,50 @@
 - `findEditorCatalog` (function): function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined — Looks up a gameplay data catalog by id on the scene document.
 - `findEditorCatalogEntry` (function): function findEditorCatalogEntry(doc: EditorDocument, catalogId: string, entryId: string): EditorCatalogEntry | undefined — Looks up one entry inside a gameplay data catalog.
 - `seedEditorCatalogs` (function): function seedEditorCatalogs(doc: EditorDocument, definitions: readonly EditorCatalogDefinition[]): EditorDocument — Seeds default catalog rows from game-exported definitions into a document: missing catalogs and missing entries are filled from the definition; existing document values win (overlay already applied).
+
+## @jgengine/core/editor/grid
+
+- `CURRENT_GRID_SCHEMA_VERSION` (const): const CURRENT_GRID_SCHEMA_VERSION: 1 — The grid-layer cell-schema version this build writes and migrates toward.
+- `CreateGridLayerInit` (interface): interface CreateGridLayerInit — Fields accepted when constructing a grid layer; sensible defaults fill the rest.
+- `EditorGridAxes` (type): type EditorGridAxes = "xz" | "xy" — How a grid layer's columns and rows map onto world axes. - `"xz"` (default): columns advance +X, rows advance +Z — a top-down floor plan / board. - `"xy"`: columns advance +X, rows advance +Y — a vertical slice / side-view board.
+- `EditorGridCell` (interface): interface EditorGridCell — One resolved cell of a grid layer — its column, row, and value id.
+- `EditorGridCellEdit` (interface): interface EditorGridCellEdit — A single paint/erase edit: set cell `col,row` to `value` (the layer's empty value erases it).
+- `EditorGridLayer` (interface): interface EditorGridLayer — A sparse, editor-owned tile grid serialized on the scene document. Only non-empty cells are stored (a `col,row` → value-id map), so a mostly empty grid stays small no matter how large its declared `cols`/`rows` bounds are. `kind` names the game schema the cells belong to (`room`, `tactics`, `nav`, `farm`, …); `palette` carries the typed cell payloads by value id; `empty` is the value id treated as background (cells holding it are dropped from `cells`). Runtime and rendering both read the same layer through the query helpers in this module — renderers are registered adapters over this data, never baked into it.
+- `EditorGridPaletteEntry` (interface): interface EditorGridPaletteEntry — One selectable value in a grid layer's palette: the cell value id plus how it reads (label, color) and how ASCII import/export maps it (`glyph`). Games register these so the editor and the import adapters share one legend. `meta` carries the typed payload (cost, damage, tags, …) a runtime attaches to every cell holding this value.
+- `cloneGridLayer` (function): function cloneGridLayer(layer: EditorGridLayer): EditorGridLayer — Deep-clones a grid layer so authoring edits and history snapshots never alias source cells.
+- `createGridLayer` (function): function createGridLayer(init: CreateGridLayerInit): EditorGridLayer — Creates a grid layer from a partial init, defaulting cell size to `1`, origin to the world origin, and axes to `"xz"`. Runs the result through {@link migrateGridLayer} so it is normalized and bounds-clean.
+- `eraseGridCell` (function): function eraseGridCell(layer: EditorGridLayer, col: number, row: number): EditorGridLayer — Erases `col,row` back to the layer's empty value — {@link setGridCell} with the empty value.
+- `eyedropGridCell` (function): function eyedropGridCell(layer: EditorGridLayer, col: number, row: number): string — Samples the value id at `col,row` — the eyedropper. Identical to {@link getGridCell}, named for the authoring op that picks up a cell's value to paint with.
+- `fillGridRect` (function): function fillGridRect(layer: EditorGridLayer, col0: number, row0: number, col1: number, row1: number, value: string): EditorGridLayer — Fills the inclusive rectangle spanning the two corners with `value` (the rectangle tool). Corners may be given in any order; the clamped in-bounds portion is painted.
+- `findGridPaletteEntry` (function): function findGridPaletteEntry(layer: EditorGridLayer, value: string): EditorGridPaletteEntry | undefined — Looks up a palette entry by value id.
+- `floodFillGrid` (function): function floodFillGrid(layer: EditorGridLayer, col: number, row: number, value: string): EditorGridLayer — Flood-fills the 4-connected region of cells sharing the seed cell's value, replacing it with `value` (the bucket tool). Bounded by the layer's declared bounds, so it never scans the world.
+- `forEachGridCell` (function): function forEachGridCell(layer: EditorGridLayer, visit: (cell: EditorGridCell) => void): void — Visits every non-empty cell of a layer row-major. Allocation-light convenience over {@link gridCellEntries} for runtime scans that only need a callback.
+- `getGridCell` (function): function getGridCell(layer: EditorGridLayer, col: number, row: number): string — Reads the value id at `col,row`, returning the layer's empty value for any unset or out-of-bounds cell. The one read path both gameplay and rendering share.
+- `getGridCellAtWorld` (function): function getGridCellAtWorld(layer: EditorGridLayer, x: number, y: number, z: number): string — The value id at the grid cell nearest a world point — {@link worldToGridCell} then {@link getGridCell}. Answers "what tile is here" straight from a world position.
+- `gridCellCount` (function): function gridCellCount(layer: EditorGridLayer): number — Counts the non-empty, in-bounds cells of a layer.
+- `gridCellEntries` (function): function gridCellEntries(layer: EditorGridLayer): EditorGridCell[] — Every non-empty, in-bounds cell of a layer, sorted row-major (rendering-independent iteration).
+- `gridCellToWorld` (function): function gridCellToWorld(layer: EditorGridLayer, col: number, row: number): EditorVec3 — World-space center of cell `col,row`, honoring the layer's origin, cell size, and axis mapping. The shared cell→world map for both placement and rendering.
+- `gridCellsOfValue` (function): function gridCellsOfValue(layer: EditorGridLayer, value: string): EditorGridCell[] — Every in-bounds cell holding `value`, sorted row-major — the query gameplay uses to find all spawns, hazards, gates, etc. of one kind without touching a renderer.
+- `gridEmptyValue` (function): function gridEmptyValue(layer: EditorGridLayer): string — The value id a layer treats as empty/background (default `""`). Cells holding this value are never stored, so it is what {@link getGridCell} returns for any unset cell.
+- `gridGlyphMap` (function): function gridGlyphMap(layer: EditorGridLayer): Record<string, string> — Builds the value-id → glyph map from a layer's palette, for ASCII/glyph export.
+- `inGridBounds` (function): function inGridBounds(layer: EditorGridLayer, col: number, row: number): boolean — True when `col,row` falls inside the layer's declared bounds.
+- `migrateGridLayer` (function): function migrateGridLayer(layer: EditorGridLayer): EditorGridLayer — Normalizes a grid layer forward to the current cell-schema version: clamps `cols`/`rows` to non-negative integers, drops out-of-bounds and empty-valued cells, and stamps `schemaVersion`. The single migration seam every loader and authoring op funnels new/old layers through, so a layer from an older document or an import adapter always lands in a valid, minimal shape.
+- `paintGridCells` (function): function paintGridCells(layer: EditorGridLayer, edits: readonly EditorGridCellEdit[]): EditorGridLayer — Applies a batch of cell edits in one pass, returning the same layer when nothing changed. The op the editor uses for a drag stroke, a paste, or any multi-cell paint/erase.
+- `parseGridCellKey` (function): function parseGridCellKey(key: string): { col: number; row: number } | null — Parses a `"col,row"` sparse-map key back into integer coordinates, or `null` when malformed.
+- `resizeGridLayer` (function): function resizeGridLayer(layer: EditorGridLayer, cols: number, rows: number): EditorGridLayer — Resizes the layer's bounds to `cols`×`rows`, dropping any cells that fall outside the new extent (values are anchored at the origin corner). Negative or fractional sizes are floored to `≥ 0`.
+- `setGridCell` (function): function setGridCell(layer: EditorGridLayer, col: number, row: number, value: string): EditorGridLayer — Returns a copy of the layer with `col,row` set to `value`, dropping the cell when `value` is the empty value (that is the erase op). Out-of-bounds writes and no-op writes return the layer unchanged, so callers can diff by identity.
+- `worldToGridCell` (function): function worldToGridCell(layer: EditorGridLayer, x: number, y: number, z: number): { col: number; row: number } — Inverse of {@link gridCellToWorld}: the nearest cell to a world point (may be out of bounds). The shared world→cell map runtime uses to answer "which cell is the player standing on".
+
+## @jgengine/core/editor/gridAdapters
+
+- `AsciiGridExportOptions` (interface): interface AsciiGridExportOptions — Options for rendering a grid layer back out as an ASCII/glyph map.
+- `AsciiGridImportOptions` (interface): interface AsciiGridImportOptions — Options for importing an ASCII/glyph map into a grid layer. Provide `glyphMap` (char → value id) or a `palette` whose entries carry `glyph`s (or both — `glyphMap` wins on conflict). Any glyph not mapped, and any short-row padding, resolves to `empty`.
+- `CsvGridExportOptions` (interface): interface CsvGridExportOptions — Options for exporting a grid layer as CSV.
+- `CsvGridImportOptions` (interface): interface CsvGridImportOptions — Options for importing a CSV grid (one value id per cell).
+- `exportAsciiGrid` (function): function exportAsciiGrid(layer: EditorGridLayer, options: AsciiGridExportOptions = {}): string — Renders a grid layer back to an ASCII/glyph map (rows top to bottom). Value ids map to chars via the layer palette (or an override map); empty cells become `emptyGlyph`. Round-trips with {@link importAsciiGrid} when the glyph legend matches.
+- `exportCsvGrid` (function): function exportCsvGrid(layer: EditorGridLayer, options: CsvGridExportOptions = {}): string — Renders a grid layer as CSV — one row per line, each cell's value id as a field, empty cells as `emptyField`. Round-trips with {@link importCsvGrid}.
+- `importAsciiGrid` (function): function importAsciiGrid(text: string, options: AsciiGridImportOptions): EditorGridLayer — Parses an ASCII/glyph map — one row per text line, one char per cell — into a grid layer. Each glyph is resolved to a value id via the palette/`glyphMap`; unmapped glyphs and padding become the empty value, so a mostly-open room stays sparse. The canonical representation is the returned {@link EditorGridLayer}; ASCII is just this import path into it, never the source of truth. Bounds are the row count × longest row.
+- `importCsvGrid` (function): function importCsvGrid(text: string, options: CsvGridImportOptions): EditorGridLayer — Parses a CSV grid — one row per line, one value id per comma-separated field — into a grid layer. Blank fields become the empty value. Unlike ASCII this carries multi-character value ids directly, so it suits grids whose cell values are names rather than single glyphs.
 
 ## @jgengine/core/editor/liveSync
 
@@ -129,6 +211,27 @@
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
+
+## @jgengine/core/scene/sceneOwnership
+
+- `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
+- `GeneratedProvenance` (interface): interface GeneratedProvenance — An object derived from an authored document object — instances scattered from a painted layer, walls extruded from an authored footprint. Edits belong on the source object, not the generated instance.
+- `OwnershipDecision` (type): type OwnershipDecision = "expose" | "bake" | "reject" — The boundary's resolution for one object.
+- `OwnershipDiagnostic` (interface): interface OwnershipDiagnostic — One boundary problem found while auditing a set of declarations.
+- `OwnershipVerdict` (interface): interface OwnershipVerdict — The full verdict for one object: its decision plus the flags and diagnostic the editor needs to act on it.
+- `ProviderCapabilities` (interface): interface ProviderCapabilities — What a provider lets the editor do with one of its objects. Absent flags default to `false`.
+- `RuntimeProvenance` (interface): interface RuntimeProvenance — An object owned entirely by runtime or procedural code with no document entry. Not authorable unless its provider can bake it into schema-valid authored data.
+- `SCENE_OWNERSHIP_MANIFEST_VERSION` (const): const SCENE_OWNERSHIP_MANIFEST_VERSION: 1 — Current {@link SceneOwnershipManifest} schema version.
+- `SceneOwnershipDeclaration` (interface): interface SceneOwnershipDeclaration — A provider's explicit ownership declaration for one editor-visible object.
+- `SceneOwnershipManifest` (interface): interface SceneOwnershipManifest — Serializable record of a world's ownership declarations — persisted next to the scene document or shipped by a game.
+- `SceneProvenance` (type): type SceneProvenance = | AuthoredProvenance | GeneratedProvenance | RuntimeProvenance | TransientProvenance — The provenance of one editor-visible object — authored, generated, runtime, or transient.
+- `SceneProvenanceKind` (type): type SceneProvenanceKind = "authored" | "generated" | "runtime" | "transient" — Scene ownership boundary — gives every editor-visible object an explicit provenance and a single verdict (expose / bake / reject) so the editor never presents unauthored content as broken authored content.
+- `TransientProvenance` (interface): interface TransientProvenance — An ephemeral simulation object — a spawned agent, projectile, or particle that never persists.
+- `auditManifest` (function): function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagnostic[] — Audit every declaration in a manifest, keying diagnostics by each object's provenance id. An empty result means the manifest declares all of its content cleanly — every object is authored, generated, bakeable, or a reasoned runtime/transient object.
+- `classifyOwnership` (function): function classifyOwnership(declaration: SceneOwnershipDeclaration): OwnershipVerdict — Resolve one declaration into a single boundary verdict.
+- `collectOwnershipDiagnostics` (function): function collectOwnershipDiagnostics(entries: Iterable<readonly [string, SceneOwnershipDeclaration]>): OwnershipDiagnostic[] — Audit a keyed set of declarations and return one diagnostic per object that breaks the boundary contract (a `reject` verdict carrying a `violation`). Deterministic: diagnostics come back in the iteration order of `entries`.
+- `isSceneOwnershipManifest` (function): function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest — Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only — verifies the version, the declarations array, and each declaration's provenance shape; it does not judge whether declarations satisfy the boundary (use {@link auditManifest} for that).
+- `ownershipKey` (function): function ownershipKey(provenance: SceneProvenance): string — Stable identity string for a provenance (e.g. `runtime:town/building-3`), suitable for keying an object in an editor tree or a diagnostics table.
 
 ## @jgengine/editor
 
@@ -263,6 +366,14 @@
 
 - `TerrainPanel` (function): function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
 
+## @jgengine/editor/TerrainReadout
+
+- `TerrainReadout` (function): function TerrainReadout({ groundHeightAt, region, showContours, showSurfaceGrid, version, readout, }: { groundHeightAt: (x: number, z: number) => number; region: GuideRegion; showContours: boolean; showSurfaceGrid: boolean; /** Bumped by the host when the terrain changes, so the overlay rebuilds off… — Surface-following terrain-readability overlay: draws iso-elevation contour lines and an optional terrain-draped reference grid from the live ground field, and tracks the cursor's elevation. All geometry comes from headless `@jgengine/core/world/terrainGuides` math; this component only turns it into three.js lines and publishes the measured feedback to the readout store.
+
+## @jgengine/editor/TerrainReadoutHud
+
+- `TerrainReadoutHud` (function): function TerrainReadoutHud({ readout }: { readout: TerrainReadoutStore }): React.JSX.Element — The measurable terrain-readability legend: cursor elevation and delta from the `y = 0` reference, plus the region's min/max/mean relief and the active contour interval. Reads live measurements from the readout store the {@link TerrainReadout} overlay publishes; renders nothing until shown.
+
 ## @jgengine/editor/agent/AgentPanel
 
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
@@ -369,6 +480,11 @@
 - `PerfMarkSummary` (interface): interface PerfMarkSummary — Rolling averages (ms) of the authoring marks recorded since the last flush.
 - `editorPerfMarks` (const): const editorPerfMarks: PerfAccumulator — Shared accumulator the sculpt/paint layer records into and the perf probe flushes each window.
 
+## @jgengine/editor/perfPill
+
+- `EDITOR_PERF_LOW_FPS` (const): const EDITOR_PERF_LOW_FPS: 30 — FPS at or below which an *actively rendering* editor frame is treated as struggling. Only applied when the loop is active — an idle / browser-throttled loop never trips it.
+- `EditorPerfTone` (type): type EditorPerfTone = "idle" | "healthy" | "busy" — Toolbar perf-pill health, separating an idle render-on-demand loop from a genuinely slow frame.
+
 ## @jgengine/editor/session
 
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -382,6 +498,12 @@
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
+
+## @jgengine/editor/terrainReadoutStore
+
+- `TerrainReadoutState` (interface): interface TerrainReadoutState — Live, transient terrain-readability feedback shared by the viewport overlay and the HUD legend.
+- `TerrainReadoutStore` (interface): interface TerrainReadoutStore — Subscribable store for transient terrain-readout feedback (not persisted — it is live measurement).
+- `createTerrainReadoutStore` (function): function createTerrainReadoutStore(): TerrainReadoutStore — Creates the readout store the terrain overlay writes and the HUD reads.
 
 ## @jgengine/editor/uiStore
 

@@ -5,6 +5,7 @@ export const MAIN = "jgengine";
 export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   ai: "jgengine-world",
   anim: "jgengine-world",
+  area: "jgengine-world",
   audio: "jgengine-world",
   behaviour: "jgengine-gameplay",
   board: "jgengine-gameplay",
@@ -30,11 +31,15 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   movement: "jgengine-world",
   multiplayer: "jgengine-multiplayer",
   nav: "jgengine-world",
+  orders: "jgengine-world",
   physics: "jgengine-world",
   procedural: "jgengine-world",
+  progression: "jgengine-gameplay",
   puzzle: "jgengine-gameplay",
   random: "jgengine-gameplay",
+  relation: "jgengine-gameplay",
   render: "jgengine-ui",
+  rules: "jgengine-gameplay",
   runtime: MAIN,
   scene: "jgengine-world",
   sensor: "jgengine-world",
@@ -47,6 +52,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   turn: "jgengine-gameplay",
   ui: "jgengine-ui",
   visibility: "jgengine-world",
+  work: "jgengine-gameplay",
   world: "jgengine-world",
 };
 
@@ -72,6 +78,9 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
   "runtime/worldProjection": "jgengine-multiplayer",
+  // The scene-ownership boundary is how the editor decides whether runtime world
+  // content is authorable — an editor-authoring concern, not world runtime.
+  "scene/sceneOwnership": "jgengine-editor",
 };
 
 /**

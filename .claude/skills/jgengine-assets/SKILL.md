@@ -20,6 +20,12 @@ Search [capabilities.md](capabilities.md) before adding a resolver or catalog pa
 5. Preview through the same resolver runtime will use.
 6. Add required credit in the same PR.
 
+## Reference integrity
+
+Every logical asset id has a declared owner: `committed` (a single's shipped URL, resolves on a clean clone), `provisioned` (a pack index entry whose GLB is fetched by `assets pull <source>`), or `dangling` (nothing owns it — a broken contract). Resolve one id with `resolveProvenance(id)`; gate a set of references with `validateAssetReferences(refs)`, which fails on any dangling reference and reports the exact `assets pull <source>` steps a clean checkout still needs. `assets provenance <id>...` exposes the same contract on the CLI and exits non-zero on a dangling id. This resolves references structurally against the catalog — never grep source text as the long-term contract.
+
+At load time the shell classifies a model fetch before parsing via `classifyAssetResponse` (`@jgengine/core/scene/assetDiagnostics`), so a missing file, a dev-server HTML fallback, corrupt bytes, or a non-model format surface as an actionable diagnostic naming the URL — not an opaque GLTF parse error.
+
 ## Source rules
 
 - Never use or reference Kenney.nl assets.

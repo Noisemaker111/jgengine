@@ -1,34 +1,61 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-jsx",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "paths": {
-      "@/components/ui/*": ["../../registry/jgengine/*"],
-      "@jgengine/shell/*": ["../../packages/shell/src/*"],
-      "@jgengine/editor": ["../../packages/editor/src/index.ts"],
-      "@jgengine/editor/*": ["../../packages/editor/src/*"],
-      "@jgengine/assets": ["../../packages/assets/src/index.ts"],
-      "@jgengine/assets/*": ["../../packages/assets/src/*"],
-      "@jgengine/github": ["../../packages/github/src/index.ts"],
-      "@jgengine/github/*": ["../../packages/github/src/*"],
-      "@jgengine/core/*": ["../../packages/core/src/*"],
-      "@jgengine/react/*": ["../../packages/react/src/*"],
-      "@jgengine/ws/*": ["../../packages/ws/src/*"],
-      "@jgengine/convex/*": ["../../packages/convex/src/*"]
+      "@/components/ui/*": [
+        "../../registry/jgengine/*"
+      ],
+      "@jgengine/shell/*": [
+        "../../packages/shell/src/*"
+      ],
+      "@jgengine/editor": [
+        "../../packages/editor/src/index.ts"
+      ],
+      "@jgengine/editor/*": [
+        "../../packages/editor/src/*"
+      ],
+      "@jgengine/assets": [
+        "../../packages/assets/src/index.ts"
+      ],
+      "@jgengine/assets/*": [
+        "../../packages/assets/src/*"
+      ],
+      "@jgengine/github": [
+        "../../packages/github/src/index.ts"
+      ],
+      "@jgengine/github/*": [
+        "../../packages/github/src/*"
+      ],
+      "@jgengine/core/*": [
+        "../../packages/core/src/*"
+      ],
+      "@jgengine/react/*": [
+        "../../packages/react/src/*"
+      ],
+      "@jgengine/ws/*": [
+        "../../packages/ws/src/*"
+      ],
+      "@jgengine/convex/*": [
+        "../../packages/convex/src/*"
+      ]
     }
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
 }

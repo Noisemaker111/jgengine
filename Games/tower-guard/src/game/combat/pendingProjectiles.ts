@@ -1,4 +1,5 @@
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
+import { distance as vec3Distance } from "@jgengine/core/world/vec3";
 
 export interface PendingProjectile {
   id: string;
@@ -24,11 +25,10 @@ export function pushProjectile(
   splashRadius: number,
   nowSeconds: number,
 ): void {
-  const dx = to[0] - from[0];
-  const dy = to[1] - from[1];
-  const dz = to[2] - from[2];
-  const distance = Math.hypot(dx, dy, dz);
-  const travelSeconds = Math.min(MAX_TRAVEL_SECONDS, Math.max(MIN_TRAVEL_SECONDS, distance / BOLT_SPEED));
+  const travelSeconds = Math.min(
+    MAX_TRAVEL_SECONDS,
+    Math.max(MIN_TRAVEL_SECONDS, vec3Distance(from, to) / BOLT_SPEED),
+  );
   seq += 1;
   queue.push({ id: `bolt-${seq}`, from, to, color, splashRadius, spawnedAt: nowSeconds, travelSeconds });
 }

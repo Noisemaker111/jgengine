@@ -8,7 +8,7 @@ import {
   SIDE_POIS,
   SPUR_ROUTES,
   authoredScene,
-  roadFlattenMasks,
+  roadPathProfiles,
 } from "./level";
 import { ZONES } from "./zones";
 
@@ -46,10 +46,18 @@ describe("roads", () => {
     for (const zone of ZONES) expect(touched.has(zone.id)).toBe(true);
   });
 
-  test("road flatten masks trace every route with ramped heights", () => {
-    const masks = roadFlattenMasks((x, z) => terrainField.sampleHeight(x, z));
-    expect(masks.length).toBeGreaterThan(60);
-    for (const mask of masks) expect(Number.isFinite(mask.height)).toBe(true);
+  test("every route is a graded path-terrain profile with retaining walls", () => {
+    const profiles = roadPathProfiles((x, z) => terrainField.sampleHeight(x, z));
+    expect(profiles.length).toBe(ROUTES.length + SPUR_ROUTES.length);
+    for (const profile of profiles) {
+      expect(profile.height?.kind).toBe("grade");
+      expect(profile.retaining?.wallHeight).toBeGreaterThan(0);
+      expect(profile.points.length).toBeGreaterThan(1);
+      for (const [x, z] of profile.points) {
+        expect(Number.isFinite(x)).toBe(true);
+        expect(Number.isFinite(z)).toBe(true);
+      }
+    }
   });
 
   test("roads are walkable: on-road slope is gentler than raw terrain amplitude", () => {

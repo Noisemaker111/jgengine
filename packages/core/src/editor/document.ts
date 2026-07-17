@@ -1,5 +1,12 @@
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
 import { migrateTerrainSnapshot } from "../world/terraform";
+import {
+  cloneGridLayer,
+  migrateGridLayer,
+  type EditorGridAxes,
+  type EditorGridLayer,
+  type EditorGridPaletteEntry,
+} from "./grid";
 import type {
   EditorCatalogData,
   EditorCatalogDefinition,
@@ -18,11 +25,27 @@ import type {
   EditorVolumeShape,
 } from "./types";
 
+function migrateGrids(grids: readonly EditorGridLayer[] | undefined): EditorGridLayer[] | undefined {
+  return grids === undefined ? undefined : grids.map(migrateGridLayer);
+}
+
+function upsertGrids(
+  base: readonly EditorGridLayer[] | undefined,
+  overlay: readonly EditorGridLayer[] | undefined,
+): EditorGridLayer[] | undefined {
+  if (base === undefined && overlay === undefined) return undefined;
+  const byId = new Map<string, EditorGridLayer>();
+  for (const layer of base ?? []) byId.set(layer.id, cloneGridLayer(layer));
+  for (const layer of overlay ?? []) byId.set(layer.id, cloneGridLayer(layer));
+  return [...byId.values()];
+}
+
 /** Spread-ready non-placeable fields preserved across document rebuilds. @internal */
 export function editorDocumentExtras(doc: EditorDocument): {
   prefabs: EditorPrefab[];
   collections: EditorCollection[];
   catalogs: EditorCatalogData[];
+  grids?: EditorGridLayer[];
   terrain?: EditorTerrain;
   ui?: EditorDocument["ui"];
 } {
@@ -30,6 +53,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
     prefabs: doc.prefabs,
     collections: doc.collections,
     catalogs: doc.catalogs,
+    ...(doc.grids === undefined ? {} : { grids: doc.grids }),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(doc.ui === undefined ? {} : { ui: doc.ui }),
   };
@@ -108,6 +132,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     })),
     collections: doc.collections.map((collection) => ({ ...collection, memberIds: [...collection.memberIds] })),
     catalogs: cloneCatalogs(doc.catalogs),
+    ...(doc.grids === undefined ? {} : { grids: doc.grids.map(cloneGridLayer) }),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(ui === undefined ? {} : { ui }),
   };
@@ -155,6 +180,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     prefabs: asArray(resolved.prefabs),
     collections: asArray(resolved.collections),
     catalogs: cloneCatalogs(resolved.catalogs),
+    ...(migrateGrids(resolved.grids) === undefined ? {} : { grids: migrateGrids(resolved.grids) }),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
     ...(ui === undefined ? {} : { ui }),
   };
@@ -203,6 +229,8 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     out.prefabs.push(...doc.prefabs);
     out.collections.push(...doc.collections);
     out.catalogs = upsertCatalogs(out.catalogs, doc.catalogs);
+    const mergedGrids = upsertGrids(out.grids, doc.grids);
+    if (mergedGrids !== undefined) out.grids = mergedGrids;
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
     if (doc.ui !== undefined) {
       out.ui = {
@@ -695,6 +723,86 @@ function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagno
   return { id: item.id, entries };
 }
 
+const GRID_AXES: ReadonlySet<string> = new Set(["xz", "xy"]);
+
+function decodeGridPaletteEntry(
+  item: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): EditorGridPaletteEntry | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") {
+    errors.push({ path: `${path}.id`, message: "expected a string" });
+    return null;
+  }
+  const entry: EditorGridPaletteEntry = { id: item.id };
+  if (typeof item.label === "string") entry.label = item.label;
+  if (typeof item.glyph === "string") entry.glyph = item.glyph;
+  if (typeof item.color === "string") entry.color = item.color;
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) entry.meta = meta;
+  return entry;
+}
+
+function decodeGridLayer(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorGridLayer | null {
+  if (!isPlainObject(item)) {
+    errors.push({ path, message: "expected an object" });
+    return null;
+  }
+  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const origin = decodeVec3(item.origin, `${path}.origin`, errors);
+  if (typeof item.cellSize !== "number") errors.push({ path: `${path}.cellSize`, message: "expected a number" });
+  if (typeof item.cols !== "number") errors.push({ path: `${path}.cols`, message: "expected a number" });
+  if (typeof item.rows !== "number") errors.push({ path: `${path}.rows`, message: "expected a number" });
+  const cellsValue = item.cells;
+  const validCells = isPlainObject(cellsValue);
+  if (!validCells) errors.push({ path: `${path}.cells`, message: "expected an object" });
+  if (
+    typeof item.id !== "string" ||
+    typeof item.kind !== "string" ||
+    origin === null ||
+    typeof item.cellSize !== "number" ||
+    typeof item.cols !== "number" ||
+    typeof item.rows !== "number" ||
+    !validCells
+  ) {
+    return null;
+  }
+  const cells: Record<string, string> = {};
+  for (const [key, value] of Object.entries(cellsValue)) {
+    if (typeof value !== "string") {
+      errors.push({ path: `${path}.cells.${key}`, message: "expected a string value id" });
+      continue;
+    }
+    cells[key] = value;
+  }
+  const layer: EditorGridLayer = {
+    id: item.id,
+    kind: item.kind,
+    origin,
+    cellSize: item.cellSize,
+    cols: item.cols,
+    rows: item.rows,
+    cells,
+  };
+  if (typeof item.label === "string") layer.label = item.label;
+  if (typeof item.axes === "string" && GRID_AXES.has(item.axes)) layer.axes = item.axes as EditorGridAxes;
+  if (typeof item.empty === "string") layer.empty = item.empty;
+  if (typeof item.visible === "boolean") layer.visible = item.visible;
+  if (typeof item.parentId === "string") layer.parentId = item.parentId;
+  if (typeof item.schemaVersion === "number") layer.schemaVersion = item.schemaVersion;
+  if (Array.isArray(item.palette)) {
+    layer.palette = decodeArray(item.palette, `${path}.palette`, decodeGridPaletteEntry, errors);
+  }
+  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (meta !== undefined) layer.meta = meta;
+  return migrateGridLayer(layer);
+}
+
 /**
  * The authoritative decoder/migrator for an editor document arriving from outside this process
  * (disk, network, an agent's `import_document` RPC): validates every field with a path-specific
@@ -715,6 +823,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   const prefabs = decodeArray(raw.prefabs, "$.prefabs", decodePrefab, errors);
   const collections = decodeArray(raw.collections, "$.collections", decodeCollection, errors);
   const catalogs = decodeArray(raw.catalogs, "$.catalogs", decodeCatalog, errors);
+  const grids = raw.grids === undefined ? undefined : decodeArray(raw.grids, "$.grids", decodeGridLayer, errors);
   if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
@@ -732,6 +841,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       prefabs,
       collections,
       catalogs,
+      ...(grids === undefined ? {} : { grids }),
       ...(terrain === undefined ? {} : { terrain }),
       ...(ui === undefined ? {} : { ui }),
     },
@@ -785,6 +895,7 @@ export function applyEditorDocumentOverlay(
     prefabs: upsertById(base.prefabs, overlay.prefabs),
     collections: upsertById(base.collections, overlay.collections),
     catalogs: upsertCatalogs(base.catalogs, overlay.catalogs),
+    ...(upsertGrids(base.grids, overlay.grids) === undefined ? {} : { grids: upsertGrids(base.grids, overlay.grids) }),
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),
   };

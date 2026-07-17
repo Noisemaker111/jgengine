@@ -13,6 +13,43 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `findEditorCatalogEntry` (function) · `import { findEditorCatalogEntry } from "@jgengine/core/editor"`
 - `seedEditorCatalogs` (function) · `import { seedEditorCatalogs } from "@jgengine/core/editor"`
 
+## editor-grid-import — Configure an ASCII/glyph → grid-layer import.
+
+- `AsciiGridImportOptions` (interface) · `import { AsciiGridImportOptions } from "@jgengine/core/editor"`
+- `exportAsciiGrid` (function) · `import { exportAsciiGrid } from "@jgengine/core/editor"`
+- `exportCsvGrid` (function) · `import { exportCsvGrid } from "@jgengine/core/editor"`
+- `importAsciiGrid` (function) · `import { importAsciiGrid } from "@jgengine/core/editor"`
+- `importCsvGrid` (function) · `import { importCsvGrid } from "@jgengine/core/editor"`
+
+## editor-grids — Choose how grid columns/rows project onto world axes.
+
+- `EditorGridAxes` (type) · `import { EditorGridAxes } from "@jgengine/core/editor"`
+- `EditorGridLayer` (interface) · `import { EditorGridLayer } from "@jgengine/core/editor"`
+- `EditorGridPaletteEntry` (interface) · `import { EditorGridPaletteEntry } from "@jgengine/core/editor"`
+- `cloneGridLayer` (function) · `import { cloneGridLayer } from "@jgengine/core/editor"`
+- `createGridLayer` (function) · `import { createGridLayer } from "@jgengine/core/editor"`
+- `eraseGridCell` (function) · `import { eraseGridCell } from "@jgengine/core/editor"`
+- `eyedropGridCell` (function) · `import { eyedropGridCell } from "@jgengine/core/editor"`
+- `fillGridRect` (function) · `import { fillGridRect } from "@jgengine/core/editor"`
+- `findGridPaletteEntry` (function) · `import { findGridPaletteEntry } from "@jgengine/core/editor"`
+- `floodFillGrid` (function) · `import { floodFillGrid } from "@jgengine/core/editor"`
+- `forEachGridCell` (function) · `import { forEachGridCell } from "@jgengine/core/editor"`
+- `getGridCell` (function) · `import { getGridCell } from "@jgengine/core/editor"`
+- `getGridCellAtWorld` (function) · `import { getGridCellAtWorld } from "@jgengine/core/editor"`
+- `gridCellCount` (function) · `import { gridCellCount } from "@jgengine/core/editor"`
+- `gridCellEntries` (function) · `import { gridCellEntries } from "@jgengine/core/editor"`
+- `gridCellToWorld` (function) · `import { gridCellToWorld } from "@jgengine/core/editor"`
+- `gridCellsOfValue` (function) · `import { gridCellsOfValue } from "@jgengine/core/editor"`
+- `gridEmptyValue` (function) · `import { gridEmptyValue } from "@jgengine/core/editor"`
+- `gridGlyphMap` (function) · `import { gridGlyphMap } from "@jgengine/core/editor"`
+- `inGridBounds` (function) · `import { inGridBounds } from "@jgengine/core/editor"`
+- `migrateGridLayer` (function) · `import { migrateGridLayer } from "@jgengine/core/editor"`
+- `paintGridCells` (function) · `import { paintGridCells } from "@jgengine/core/editor"`
+- `parseGridCellKey` (function) · `import { parseGridCellKey } from "@jgengine/core/editor"`
+- `resizeGridLayer` (function) · `import { resizeGridLayer } from "@jgengine/core/editor"`
+- `setGridCell` (function) · `import { setGridCell } from "@jgengine/core/editor"`
+- `worldToGridCell` (function) · `import { worldToGridCell } from "@jgengine/core/editor"`
+
 ## editor-live-sync — apply a versioned document patch onto a live scene document
 
 - `applyDocumentPatch` (function) · `import { applyDocumentPatch } from "@jgengine/core/editor"`
@@ -27,3 +64,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `planRuntimeInspectorSet` (function) · `import { planRuntimeInspectorSet } from "@jgengine/core/editor"`
 - `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
 - `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
+
+## scene-ownership — audit a whole ownership manifest for boundary violations
+
+- `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/scene/sceneOwnership"`
+- `classifyOwnership` (function) · `import { classifyOwnership } from "@jgengine/core/scene/sceneOwnership"`
+- `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
+- `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
+- `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`

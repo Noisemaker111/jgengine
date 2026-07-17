@@ -5,6 +5,7 @@ import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/in
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { WorldFeature } from "@jgengine/core/world/features";
+import type { GuideRegion } from "@jgengine/core/world/terrainGuides";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -17,7 +18,10 @@ import { MaterialDropZone } from "./MaterialDropZone";
 import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
 import { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
+import { TerrainReadout } from "./TerrainReadout";
+import { TerrainReadoutHud } from "./TerrainReadoutHud";
 import { TerrainSculpt } from "./TerrainSculpt";
+import { createTerrainReadoutStore, type TerrainReadoutStore } from "./terrainReadoutStore";
 import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
 import { createEditorUiStore, type EditorUiStore, type SnapMode } from "./uiStore";
@@ -61,6 +65,9 @@ interface StoredEditorPrefs {
   snapMode?: SnapMode;
   gridSize?: number;
   showGrid?: boolean;
+  showContours?: boolean;
+  showSurfaceGrid?: boolean;
+  showElevation?: boolean;
 }
 
 function prefsKey(gameId: string): string {
@@ -109,14 +116,41 @@ function savePrefs(gameId: string, prefs: StoredEditorPrefs): void {
   }
 }
 
+/** Default readout region half-extent when a world declares no terrain bounds. */
+const DEFAULT_READOUT_HALF = 64;
+
+/**
+ * Derives the XZ region the terrain-readability overlay samples: the sculpt snapshot's rect if the
+ * world carries one, else the terrain descriptor's centered bounds, else a default square. Guides are
+ * editor visualization, not authored content — the region is inferred, never stored in the scene.
+ */
+function readoutRegionFor(world: WorldFeature | undefined): GuideRegion {
+  if (world !== undefined && world.kind === "environment") {
+    const sculpt = world.sculpt;
+    if (sculpt !== undefined) {
+      return { minX: sculpt.bounds.minX, minZ: sculpt.bounds.minZ, maxX: sculpt.bounds.maxX, maxZ: sculpt.bounds.maxZ };
+    }
+    const bounds = world.terrain?.bounds;
+    if (bounds !== undefined) {
+      return { minX: -bounds.w / 2, minZ: -bounds.d / 2, maxX: bounds.w / 2, maxZ: bounds.d / 2 };
+    }
+  }
+  return { minX: -DEFAULT_READOUT_HALF, minZ: -DEFAULT_READOUT_HALF, maxX: DEFAULT_READOUT_HALF, maxZ: DEFAULT_READOUT_HALF };
+}
+
+/** Idle window before the terrain overlay rebuilds off the edited field — bounds rebuild frequency during sculpting. */
+const READOUT_REBUILD_MS = 250;
+
 function EditorWorldOverlay({
   api,
   ui,
   world,
+  readout,
 }: {
   api: EditorHostApi;
   ui: EditorUiStore;
   world?: WorldFeature;
+  readout: TerrainReadoutStore;
 }) {
   const session = api.getSession();
   const ctx = useGameContext();
@@ -129,9 +163,30 @@ function EditorWorldOverlay({
   const selection = useStoreSelector(session, (s) => s.selection, shallowArrayEqual);
   const visibility = useStoreSelector(visibilityStore, (v) => v);
   const showGrid = useStoreSelector(ui, (s) => s.showGrid);
+  const showContours = useStoreSelector(ui, (s) => s.showContours);
+  const showSurfaceGrid = useStoreSelector(ui, (s) => s.showSurfaceGrid);
+  const showElevation = useStoreSelector(ui, (s) => s.showElevation);
   const pathPoint = useStoreSelector(ui, (s) => s.pathPoint);
   const pathDraft = useStoreSelector(ui, (s) => s.pathDraft);
   const groundHeightAt = useCallback((x: number, z: number) => ctx.world.groundHeightAt(x, z), [ctx.world]);
+
+  const readoutRegion = useMemo(() => readoutRegionFor(world), [world]);
+  const readoutActive = showContours || showSurfaceGrid || showElevation;
+  // Debounced terrain version: rebuilds the overlay after sculpt edits settle, not every stroke frame.
+  const [terrainVersion, setTerrainVersion] = useState(0);
+  useEffect(() => {
+    if (!readoutActive) return;
+    setTerrainVersion((value) => value + 1);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = session.subscribe(() => {
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => setTerrainVersion((value) => value + 1), READOUT_REBUILD_MS);
+    });
+    return () => {
+      if (timer !== null) clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [session, readoutActive]);
 
   return (
     <>
@@ -142,6 +197,16 @@ function EditorWorldOverlay({
       <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
       {showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
+      {readoutActive ? (
+        <TerrainReadout
+          groundHeightAt={groundHeightAt}
+          region={readoutRegion}
+          showContours={showContours}
+          showSurfaceGrid={showSurfaceGrid}
+          version={terrainVersion}
+          readout={readout}
+        />
+      ) : null}
       <EditorLayerOverlays
         document={document}
         visibility={visibility}
@@ -233,6 +298,9 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
   const uiStoreRef = useRef<EditorUiStore | null>(null);
   if (uiStoreRef.current === null) uiStoreRef.current = createEditorUiStore();
   const ui = uiStoreRef.current;
+  const readoutStoreRef = useRef<TerrainReadoutStore | null>(null);
+  if (readoutStoreRef.current === null) readoutStoreRef.current = createTerrainReadoutStore();
+  const readout = readoutStoreRef.current;
   const [mode, setModeState] = useState<EditorRunMode>("edit");
 
   const catalogAssets = useMemo(() => {
@@ -300,6 +368,9 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       ...(prefs.snapMode === undefined ? {} : { snapMode: prefs.snapMode }),
       ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
       ...(prefs.showGrid === undefined ? {} : { showGrid: prefs.showGrid }),
+      ...(prefs.showContours === undefined ? {} : { showContours: prefs.showContours }),
+      ...(prefs.showSurfaceGrid === undefined ? {} : { showSurfaceGrid: prefs.showSurfaceGrid }),
+      ...(prefs.showElevation === undefined ? {} : { showElevation: prefs.showElevation }),
     });
     const persist = () => {
       const state = ui.getState();
@@ -308,6 +379,9 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
         snapMode: state.snapMode,
         gridSize: state.gridSize,
         showGrid: state.showGrid,
+        showContours: state.showContours,
+        showSurfaceGrid: state.showSurfaceGrid,
+        showElevation: state.showElevation,
       });
     };
     const unsubscribeVisibility = host.api.subscribeVisibility(persist);
@@ -412,7 +486,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     }
 
     const WorldOverlay: ComponentType = function EditorOverlay() {
-      return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} />;
+      return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />;
     };
     const GameUI: ComponentType = function EditorUi() {
       return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineJson={host.baselineJson} save={saveFn} />;
@@ -451,11 +525,14 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
         },
       },
     };
-  }, [playable, host, gameId, initialCamera, catalogAssets, ui, mode, saveFn, resolvedModeChip]);
+  }, [playable, host, gameId, initialCamera, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip]);
+
+  const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
       <GamePlayerShell playable={editorPlayable} />
+      {mode === "edit" && showElevation ? <TerrainReadoutHud readout={readout} /> : null}
       {pendingDraft !== null && mode === "edit" ? (
         <div className="absolute left-1/2 top-14 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-950/90 px-4 py-2 text-xs text-amber-100 shadow-2xl shadow-black/50 backdrop-blur-md">
           <span>Unsaved edits from a previous session found.</span>
