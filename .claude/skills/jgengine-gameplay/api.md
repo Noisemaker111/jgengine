@@ -826,7 +826,19 @@
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `Social` (interface): interface Social — ⚠ undocumented
 - `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
+- `StatContributionStep` (interface): interface StatContributionStep extends StatContribution — One line of a provenance trace: a contribution plus the running total after it folds in.
+- `StatDeriveContext` (interface): interface StatDeriveContext — The read-only view a derived formula gets: resolved values of its declared dependencies.
+- `StatDerivedDef` (interface): interface StatDerivedDef — A derived value whose formula and dependencies are caller-owned. `compute` may return a scalar (shorthand for a single `add`) or an ordered list of contributions folded left-to-right, so additive/multiplicative/clamped and conditional modifiers are all expressed as plain data or branches inside the function.
+- `StatExplanation` (interface): interface StatExplanation — A full provenance trace for one stat: the ordered steps that produced its value.
+- `StatGraph` (interface): interface StatGraph — A compiled, immutable stat-graph schema that mints per-entity {@link StatSheet}s from base values or saved state.
+- `StatGraphDef` (interface): interface StatGraphDef — The full schema of a stat graph: its named inputs and caller-authored derived formulas.
+- `StatInputDef` (interface): interface StatInputDef — A game-owned named input value. The engine ships no attribute vocabulary — ids, bounds, defaults, and metadata are entirely caller data, so the same graph can model STR/AGI/INT, SPECIAL scores, skills, difficulty knobs, or anything else.
 - `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
+- `StatModEntry` (type): type StatModEntry = StatContribution | readonly StatContribution[] — A modifier entry targeting one stat: a single contribution or an ordered list.
+- `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
+- `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
+- `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
 - `SystemDefinition` (interface): interface SystemDefinition — A reusable game capability — lifecycle, timing, events, and optional save / replication / reset / disposal. Pass instances via `defineGame({ systems })`. Prefer one system per meaningful capability (`combat`, `quests`), not per micro-tick.
 - `SystemEventHandlers` (type): type SystemEventHandlers = { readonly [eventName: string]: (ctx: GameContext, event: unknown) => void; } — Event name → handler. Payload is the engine event shape for that name.
 - `SystemTick` (type): type SystemTick = | { type: "fixed"; /** Steps per game-second. Default 60. */ rate?: number; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { type: "frame"; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { t… — How a system is scheduled. Omit `tick` (or use only `events`) for event-driven systems. Multiple systems may share the same channel; order within a channel is deterministic by stage then optional `before`/`after` constraints — never import order.
@@ -910,6 +922,7 @@
 - `createSaveStore` (function): function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> — Create a {@link SaveStore}. Same call for offline and cloud — only the `backend` differs (localStorage, memory, or an async DB/Convex endpoint). Turn on `autosave` and every `set`/`patch` persists on a debounce; leave it off and call `save()` at checkpoints. Bump `version` + pass `migrate` when the save shape changes so old players keep their progress.
 - `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
 - `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
+- `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 - `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
@@ -987,6 +1000,7 @@
 - `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 - `startRaceCountdown` (function): function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState — Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length skips straight to `racing` for a standing start with no countdown.
+- `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
@@ -1119,6 +1133,23 @@
 - `WeaponStats` (interface): interface WeaponStats — ⚠ undocumented
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
+
+## @jgengine/core/progression/statGraph
+
+- `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
+- `StatContributionStep` (interface): interface StatContributionStep extends StatContribution — One line of a provenance trace: a contribution plus the running total after it folds in.
+- `StatDeriveContext` (interface): interface StatDeriveContext — The read-only view a derived formula gets: resolved values of its declared dependencies.
+- `StatDerivedDef` (interface): interface StatDerivedDef — A derived value whose formula and dependencies are caller-owned. `compute` may return a scalar (shorthand for a single `add`) or an ordered list of contributions folded left-to-right, so additive/multiplicative/clamped and conditional modifiers are all expressed as plain data or branches inside the function.
+- `StatExplanation` (interface): interface StatExplanation — A full provenance trace for one stat: the ordered steps that produced its value.
+- `StatGraph` (interface): interface StatGraph — A compiled, immutable stat-graph schema that mints per-entity {@link StatSheet}s from base values or saved state.
+- `StatGraphDef` (interface): interface StatGraphDef — The full schema of a stat graph: its named inputs and caller-authored derived formulas.
+- `StatInputDef` (interface): interface StatInputDef — A game-owned named input value. The engine ships no attribute vocabulary — ids, bounds, defaults, and metadata are entirely caller data, so the same graph can model STR/AGI/INT, SPECIAL scores, skills, difficulty knobs, or anything else.
+- `StatModEntry` (type): type StatModEntry = StatContribution | readonly StatContribution[] — A modifier entry targeting one stat: a single contribution or an ordered list.
+- `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
+- `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
+- `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
+- `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
+- `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 
 ## @jgengine/core/puzzle/cellGrid
 

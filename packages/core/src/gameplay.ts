@@ -260,6 +260,22 @@ export {
 } from "./item/modularItem";
 export { createItemUse, type ItemUseHandler, type ItemUseInput } from "./item/use";
 export { createWeaponStats } from "./item/weapon";
+export {
+  createStatGraph,
+  statModifierContributions,
+  type StatContribution,
+  type StatContributionStep,
+  type StatDeriveContext,
+  type StatDerivedDef,
+  type StatExplanation,
+  type StatGraph,
+  type StatGraphDef,
+  type StatInputDef,
+  type StatModEntry,
+  type StatOp,
+  type StatSheet,
+  type StatSheetState,
+} from "./progression/statGraph";
 export { type CellGrid } from "./puzzle/cellGrid";
 export { type ShapeTable } from "./puzzle/fallingPiece";
 export { createNameGenerator } from "./random/nameGen";

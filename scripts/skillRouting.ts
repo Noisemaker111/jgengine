@@ -32,6 +32,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   nav: "jgengine-world",
   physics: "jgengine-world",
   procedural: "jgengine-world",
+  progression: "jgengine-gameplay",
   puzzle: "jgengine-gameplay",
   random: "jgengine-gameplay",
   relation: "jgengine-gameplay",

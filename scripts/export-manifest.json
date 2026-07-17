@@ -186,6 +186,7 @@
     "./physics/traversal",
     "./physics/vehicleBody",
     "./procedural",
+    "./progression/statGraph",
     "./puzzle/cellGrid",
     "./puzzle/fallingPiece",
     "./puzzle/nonogram",
