@@ -32,6 +32,37 @@ export {
   type RecipeItem,
 } from "./crafting/recipe";
 export { createListingBook, type Listing } from "./economy/listingBook";
+export {
+  addScheduledRule,
+  advanceLedger,
+  annotate,
+  balanceOf,
+  cancelRule,
+  capAmount,
+  createResourceLedger,
+  curveScale,
+  pauseRule,
+  redirect,
+  rejectWhen,
+  resumeRule,
+  taxFraction,
+  thresholdScale,
+  type AdvanceOptions,
+  type AdvanceResult,
+  type AppliedTransaction,
+  type CatchUpPolicy,
+  type LedgerEvent,
+  type LedgerEventKind,
+  type PolicyContext,
+  type PolicyRead,
+  type Precision,
+  type ResourceLedger,
+  type ResourcePolicy,
+  type ResourceTransaction,
+  type RuleCursor,
+  type ScheduledRule,
+  type ThresholdBand,
+} from "./economy/resourceLedger";
 export { type TechNodeDef } from "./economy/techTree";
 export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
 export {

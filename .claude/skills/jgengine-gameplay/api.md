@@ -171,6 +171,38 @@
 - `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 
+## @jgengine/core/economy/resourceLedger
+
+- `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
+- `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
+- `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
+- `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
+- `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
+- `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
+- `PolicyContext` (interface): interface PolicyContext — Read-only context handed to every {@link ResourcePolicy} for a transaction.
+- `PolicyRead` (type): type PolicyRead = string | ((ctx: PolicyContext) => number) — Reader over policy context: a `vars` key or a function of the context.
+- `Precision` (interface): interface Precision — Deterministic rounding applied to every transaction amount before it touches balances.
+- `ResourceLedger` (interface): interface ResourceLedger — Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors.
+- `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
+- `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
+- `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
+- `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
+- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
+- `addScheduledRule` (function): function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): ResourceLedger — Register a recurring rule and seed its cursor. Returns a new ledger; the rule's first cycle is due at `rule.startSeconds` (defaulting to the current clock).
+- `advanceLedger` (function): function advanceLedger(ledger: ResourceLedger, toSeconds: number, options: AdvanceOptions = {}): AdvanceResult — Advance the ledger clock to `toSeconds`, settling every due cycle deterministically. Rules are processed in sorted-id order; cycle counts are integer math; large deltas are bounded by `catchUp`, `maxCatchUpCycles`, and `maxCyclesPerRule`. Every produced transaction flows through the policy pipeline (transform, cap, reject, split, redirect, annotate) before it is quantised and applied to balances.
+- `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
+- `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
+- `cancelRule` (function): function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Remove a rule and its cursor entirely (hard cancellation).
+- `capAmount` (function): function capAmount(max: number | ((ctx: PolicyContext) => number)): ResourcePolicy — Clamp a transaction's amount to at most `max` (a fixed number or a function of context).
+- `createResourceLedger` (function): function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLedger — Create an empty scheduled-transaction ledger, or hydrate one from a saved snapshot. State is plain data: production, depletion, tax, and upkeep are all expressed as {@link ScheduledRule}s settled deterministically by {@link advanceLedger}.
+- `curveScale` (function): function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy — Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier (population upkeep, depletion falloff, difficulty income) over caller-provided context.
+- `pauseRule` (function): function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
+- `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
+- `rejectWhen` (function): function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyContext) => boolean): ResourcePolicy — Drop a transaction when `predicate` holds — the reject arm of the pipeline.
+- `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
+- `taxFraction` (function): function taxFraction(fraction: number, to?: string): ResourcePolicy — Take a fraction of the amount. With `to`, the taxed portion is split off into a second transaction toward that recipient (a transfer/tax); without it, the fraction is simply removed.
+- `thresholdScale` (function): function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy — Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in currencies or brackets.
+
 ## @jgengine/core/economy/sharedWallet
 
 - `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
@@ -686,7 +718,10 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
+- `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
+- `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
 - `AffixPool` (interface): interface AffixPool — ⚠ undocumented
+- `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
 - `AxisInput` (interface): interface AxisInput — ⚠ undocumented
@@ -700,6 +735,7 @@
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
 - `CardPile` (interface): interface CardPile — ⚠ undocumented
 - `CardPileState` (interface): interface CardPileState — ⚠ undocumented
+- `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
 - `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
@@ -756,6 +792,8 @@
 - `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
 - `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
+- `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
+- `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
 - `LevelProgress` (interface): interface LevelProgress — ⚠ undocumented
 - `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
 - `LevelingConfig` (interface): interface LevelingConfig — ⚠ undocumented
@@ -791,6 +829,9 @@
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
 - `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `PolicyContext` (interface): interface PolicyContext — Read-only context handed to every {@link ResourcePolicy} for a transaction.
+- `PolicyRead` (type): type PolicyRead = string | ((ctx: PolicyContext) => number) — Reader over policy context: a `vars` key or a function of the context.
+- `Precision` (interface): interface Precision — Deterministic rounding applied to every transaction amount before it touches balances.
 - `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
 - `QuestDef` (interface): interface QuestDef — ⚠ undocumented
 - `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
@@ -799,6 +840,9 @@
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `ResourceLedger` (interface): interface ResourceLedger — Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors.
+- `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
+- `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
 - `Ring` (interface): interface Ring — ⚠ undocumented
 - `RingConfig` (interface): interface RingConfig — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase — ⚠ undocumented
@@ -807,12 +851,14 @@
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
+- `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
 - `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
 - `SaveStatus` (type): type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error" — Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write.
 - `SaveStore` (interface): interface SaveStore<T> — A pluggable-backend game save with autosave, named slots, and versioned migration. `value()`/`patch()` hold the live state; `load()` hydrates it from the backend; `save()` (or autosave) writes it back. Backend failures surface as `"error"` status and through `onError` — a save never throws into a tick.
 - `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
+- `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
@@ -828,6 +874,7 @@
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
+- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
@@ -845,13 +892,19 @@
 - `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
+- `addScheduledRule` (function): function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): ResourceLedger — Register a recurring rule and seed its cursor. Returns a new ledger; the rule's first cycle is due at `rule.startSeconds` (defaulting to the current clock).
+- `advanceLedger` (function): function advanceLedger(ledger: ResourceLedger, toSeconds: number, options: AdvanceOptions = {}): AdvanceResult — Advance the ledger clock to `toSeconds`, settling every due cycle deterministically. Rules are processed in sorted-id order; cycle counts are integer math; large deltas are bounded by `catchUp`, `maxCatchUpCycles`, and `maxCyclesPerRule`. Every produced transaction flows through the policy pipeline (transform, cap, reject, split, redirect, annotate) before it is quantised and applied to balances.
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
 - `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
+- `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
+- `cancelRule` (function): function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Remove a rule and its cursor entirely (hard cancellation).
+- `capAmount` (function): function capAmount(max: number | ((ctx: PolicyContext) => number)): ResourcePolicy — Clamp a transaction's amount to at most `max` (a fixed number or a function of context).
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -896,6 +949,7 @@
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
 - `createRecipeGraph` (function): function createRecipeGraph(defs: readonly RecipeDef[] = []): RecipeGraph — ⚠ undocumented
 - `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
+- `createResourceLedger` (function): function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLedger — Create an empty scheduled-transaction ledger, or hydrate one from a saved snapshot. State is plain data: production, depletion, tax, and upkeep are all expressed as {@link ScheduledRule}s settled deterministically by {@link advanceLedger}.
 - `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createSaveStore` (function): function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> — Create a {@link SaveStore}. Same call for offline and cloud — only the `backend` differs (localStorage, memory, or an async DB/Convex endpoint). Turn on `autosave` and every `set`/`patch` persists on a debounce; leave it off and call `save()` at checkpoints. Bump `version` + pass `migrate` when the save shape changes so old players keep their progress.
@@ -909,6 +963,7 @@
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `curve` (function): function curve(spec: Curve): (x: number) => number — ⚠ undocumented
+- `curveScale` (function): function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy — Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier (population upkeep, depletion falloff, difficulty income) over caller-provided context.
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
@@ -943,6 +998,7 @@
 - `parDelta` (function): function parDelta(splits: readonly number[], reference: readonly number[]): number[] — Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap): positive means behind the reference at that checkpoint. Compared up to the shorter length — the `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
 - `partInSlot` (function): function partInSlot(installed: readonly InstalledPart[], slotId: string): PartDef | null — ⚠ undocumented
 - `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
+- `pauseRule` (function): function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
 - `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
@@ -955,11 +1011,14 @@
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
+- `rejectWhen` (function): function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyContext) => boolean): ResourcePolicy — Drop a transaction when `predicate` holds — the reject arm of the pipeline.
 - `remoteSaveBackend` (function): function remoteSaveBackend(backend: SaveBackend): SaveBackend — Adopt any async `read`/`write`/`remove` trio as a {@link SaveBackend} — the seam for cloud saves backed by a database, an HTTP endpoint, or Convex (see `@jgengine/convex/convexSaveBackend`). Reads/writes may reject; the save store surfaces the failure as `"error"` status instead of throwing.
 - `repairQuote` (function): function repairQuote(spec: DurabilitySpec, state: DurabilityState, options?: { to?: number; station?: string }): RepairQuote | null — ⚠ undocumented
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 - `resolvePowerGrid` (function): function resolvePowerGrid(supply: number, consumers: readonly PowerConsumer[]): PowerGridResult — ⚠ undocumented
+- `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -972,6 +1031,8 @@
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 - `startRaceCountdown` (function): function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState — Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length skips straight to `racing` for a standing start with no countdown.
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
+- `taxFraction` (function): function taxFraction(fraction: number, to?: string): ResourcePolicy — Take a fraction of the amount. With `to`, the taxed portion is split off into a second transaction toward that recipient (a transfer/tax); without it, the fraction is simply removed.
+- `thresholdScale` (function): function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy — Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in currencies or brackets.
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
