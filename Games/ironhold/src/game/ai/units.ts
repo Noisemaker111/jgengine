@@ -2,8 +2,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
 import { combatantDef, isHostile } from "../catalog";
-import { ARRIVE_RADIUS } from "../tuning";
-import { session, type UnitRuntime } from "../session";
+import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
+import { playerDepot, session, type UnitRuntime } from "../session";
 
 /** Extra reach against a building's broad footprint so attackers stop at the wall, not the centre. */
 const BUILDING_REACH_BONUS = 3.5;
@@ -53,12 +53,70 @@ function hostileTarget(ctx: GameContext, u: UnitRuntime, targetId: string): Unit
   return t;
 }
 
+/** The gold-miner / lumberjack loop: walk to the node, work, haul the load to the Town Hall, deposit,
+ * repeat. Composed from move steps + a resource-node harvest; the carried load rides the command. */
+function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPosition, walkSpeed: number): void {
+  if (u.command.kind !== "gather") return;
+  const cmd = u.command;
+  const node = session.nodes.get(cmd.nodeId);
+
+  if (cmd.phase === "toNode") {
+    if (node === undefined) {
+      u.command = { kind: "idle" };
+      return;
+    }
+    if (distToPoint(self, node.x, node.z) <= HARVEST_RANGE) {
+      cmd.phase = "harvest";
+      cmd.timer = HARVEST_SECONDS;
+      faceToward(ctx, u.id, self, node.x, node.z);
+    } else {
+      stepTo(ctx, dt, u, walkSpeed, node.x, node.z);
+    }
+    return;
+  }
+
+  if (cmd.phase === "harvest") {
+    cmd.timer -= dt;
+    if (cmd.timer > 0) return;
+    const field = session.resourceField;
+    const result = field !== null && node !== undefined ? field.harvest(cmd.nodeId, { power: 1, defaultBias: 1 }) : null;
+    const got = result === null ? 0 : result.granted.reduce((sum, g) => sum + g.amount, 0);
+    if (got > 0) {
+      cmd.carried = got;
+      cmd.phase = "toDepot";
+    } else {
+      u.command = { kind: "idle" }; // node depleted, nothing to haul
+    }
+    return;
+  }
+
+  // toDepot
+  const depot = playerDepot({ x: self[0], z: self[2] });
+  if (depot === null) {
+    u.command = { kind: "idle" };
+    return;
+  }
+  if (distToPoint(self, depot.x, depot.z) <= DEPOT_RANGE) {
+    if (cmd.carried > 0) ctx.game.economy.grant(ctx.player.userId, cmd.resource, cmd.carried);
+    cmd.carried = 0;
+    if (node !== undefined) cmd.phase = "toNode";
+    else u.command = { kind: "idle" };
+  } else {
+    stepTo(ctx, dt, u, walkSpeed, depot.x, depot.z);
+  }
+}
+
 function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
   if (u.kind === "building") return;
   const self = ctx.scene.entity.get(u.id);
   if (self === null) return; // death handler prunes it from the session
   const def = combatantDef(u.catalogId);
   if (def === null) return;
+
+  if (u.command.kind === "gather") {
+    tickGather(ctx, dt, u, self.position, def.walkSpeed);
+    return;
+  }
 
   // 1) Resolve an engagement target.
   let target: UnitRuntime | null = null;

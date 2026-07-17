@@ -1,12 +1,17 @@
-import type { CombatantKind } from "./catalog";
-import type { Faction } from "./tuning";
+import { createResourceNodeField, type ResourceNodeField } from "@jgengine/core/world/resourceNode";
+import { createWorkQueue, type WorkQueueState } from "@jgengine/core/gameplay";
+import type { UnitReservation, UnitTrainingSpec } from "@jgengine/core/work/unitTraining";
+
+import { combatantDef, type CombatantKind } from "./catalog";
+import { TOWN_HALL_FOOD, type Faction } from "./tuning";
 
 /** A commanded intent for one unit. Serializable plain data — no closures, no entity refs. */
 export type UnitCommand =
   | { kind: "idle" }
   | { kind: "move"; x: number; z: number }
   | { kind: "attackMove"; x: number; z: number }
-  | { kind: "attack"; targetId: string };
+  | { kind: "attack"; targetId: string }
+  | { kind: "gather"; nodeId: string; resource: string; phase: "toNode" | "harvest" | "toDepot"; carried: number; timer: number };
 
 export interface UnitRuntime {
   id: string;
@@ -21,8 +26,23 @@ export interface UnitRuntime {
   attackCooldown: number;
 }
 
+export interface NodeInfo {
+  id: string;
+  resource: string;
+  x: number;
+  z: number;
+}
+
 export interface SessionState {
   units: Map<string, UnitRuntime>;
+  /** World positions of the harvestable resource nodes, keyed by instance id. */
+  nodes: Map<string, NodeInfo>;
+  /** Depletion/respawn bookkeeping for those nodes; built once the scene is read. */
+  resourceField: ResourceNodeField | null;
+  /** The Town Hall's timed unit-training queue. */
+  production: WorkQueueState<UnitTrainingSpec, UnitReservation>;
+  /** Supply cap the player's buildings provide (Town Hall + farms). */
+  supplyCap: number;
   /** Set by the Attack-Move verb; consumed by the next right-click order. */
   attackMoveArmed: boolean;
   over: boolean;
@@ -31,7 +51,17 @@ export interface SessionState {
 }
 
 function fresh(): SessionState {
-  return { units: new Map(), attackMoveArmed: false, over: false, victory: false, trainSeq: 0 };
+  return {
+    units: new Map(),
+    nodes: new Map(),
+    resourceField: null,
+    production: createWorkQueue<UnitTrainingSpec, UnitReservation>(),
+    supplyCap: TOWN_HALL_FOOD,
+    attackMoveArmed: false,
+    over: false,
+    victory: false,
+    trainSeq: 0,
+  };
 }
 
 /** Module-level singleton (single-player skirmish). `selectFilter` and the AI both read it, so it
@@ -40,6 +70,17 @@ export let session: SessionState = fresh();
 
 export function resetSession(): void {
   session = fresh();
+}
+
+/** Build the depletion field from the resource nodes discovered in the scene. */
+export function initResourceField(): void {
+  session.resourceField = createResourceNodeField({
+    nodes: Array.from(session.nodes.values()).map((n) => ({
+      id: n.id,
+      budget: n.resource === "gold" ? 600 : 500,
+      resources: [{ kind: n.resource, amount: n.resource === "gold" ? 12 : 8 }],
+    })),
+  });
 }
 
 /** True when the shell should let the pointer select this entity (own living units + keep). */
@@ -56,4 +97,32 @@ export function livingUnits(faction: Faction, kind?: CombatantKind): UnitRuntime
     out.push(unit);
   }
   return out;
+}
+
+/** Supply currently consumed by the player's living units. */
+export function usedSupply(): number {
+  let used = 0;
+  for (const unit of session.units.values()) {
+    if (unit.faction !== "player") continue;
+    used += combatantDef(unit.catalogId)?.food ?? 0;
+  }
+  return used;
+}
+
+/** The nearest living player Town Hall an entity should haul resources to. */
+export function playerDepot(from: { x: number; z: number }): { id: string; x: number; z: number } | null {
+  // Only one keep in this build, but written for the general case.
+  let best: { id: string; x: number; z: number } | null = null;
+  let bestDist = Infinity;
+  for (const u of session.units.values()) {
+    if (u.faction !== "player" || u.kind !== "building") continue;
+    const point = u.guardPoint;
+    if (point === undefined) continue;
+    const d = Math.hypot(point.x - from.x, point.z - from.z);
+    if (d < bestDist) {
+      bestDist = d;
+      best = { id: u.id, x: point.x, z: point.z };
+    }
+  }
+  return best;
 }

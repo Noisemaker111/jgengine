@@ -56,4 +56,22 @@ describe("right-click order routing", () => {
     orderSelection(ctx, { selection: ["e1"], point: [10, 0, 10] });
     expect(session.units.get("e1")!.command.kind).toBe("idle");
   });
+
+  test("right-clicking a resource node sends a peasant to gather it", () => {
+    session.units.set("w1", { id: "w1", catalogId: "peasant", faction: "player", kind: "unit", command: { kind: "idle" }, leash: 0, attackCooldown: 0 });
+    session.nodes.set("mine", { id: "mine", resource: "gold", x: 10, z: 10 });
+    const ctx = ctxWith(new Map<string, EntityPosition>([["w1", [0, 0, 0]]]));
+    orderSelection(ctx, { selection: ["w1"], point: [10, 0, 10] });
+    const command = session.units.get("w1")!.command;
+    expect(command.kind).toBe("gather");
+    expect(command.kind === "gather" && command.resource).toBe("gold");
+  });
+
+  test("a footman right-clicking a node just moves (cannot gather)", () => {
+    addPlayerUnit("f1");
+    session.nodes.set("mine", { id: "mine", resource: "gold", x: 10, z: 10 });
+    const ctx = ctxWith(new Map<string, EntityPosition>([["f1", [0, 0, 0]]]));
+    orderSelection(ctx, { selection: ["f1"], point: [10, 0, 10] });
+    expect(session.units.get("f1")!.command.kind).toBe("move");
+  });
 });

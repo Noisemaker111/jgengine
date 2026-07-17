@@ -15,5 +15,6 @@ export function onNewPlayer(_ctx: GameContext): void {}
 export function onTick(ctx: GameContext, _dt: number): void {
   if (session.over) return;
   if (ctx.input.justPressed("attackMove")) session.attackMoveArmed = true;
+  if (ctx.input.justPressed("trainPeasant")) ctx.game.commands.run("train.peasant", {});
   if (ctx.input.justPressed("trainFootman")) ctx.game.commands.run("train.footman", {});
 }

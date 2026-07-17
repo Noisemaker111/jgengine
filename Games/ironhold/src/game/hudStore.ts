@@ -7,6 +7,9 @@ export type MatchPhase = "playing" | "won" | "lost";
 export interface HudSnapshot {
   phase: MatchPhase;
   gold: number;
+  lumber: number;
+  foodUsed: number;
+  foodCap: number;
   playerUnits: number;
   enemyUnits: number;
   enemyKeepHp: number;
@@ -14,11 +17,17 @@ export interface HudSnapshot {
   playerKeepHp: number;
   playerKeepMax: number;
   attackMoveArmed: boolean;
+  /** Units currently queued/training at the Town Hall, and the active job's 0..1 progress. */
+  producing: number;
+  trainProgress: number;
 }
 
 const initial: HudSnapshot = {
   phase: "playing",
   gold: 0,
+  lumber: 0,
+  foodUsed: 0,
+  foodCap: 0,
   playerUnits: 0,
   enemyUnits: 0,
   enemyKeepHp: 0,
@@ -26,6 +35,8 @@ const initial: HudSnapshot = {
   playerKeepHp: 0,
   playerKeepMax: 1,
   attackMoveArmed: false,
+  producing: 0,
+  trainProgress: 0,
 };
 
 let snapshot: HudSnapshot = initial;
@@ -36,11 +47,16 @@ function changed(next: HudSnapshot): boolean {
   return (
     p.phase !== next.phase ||
     p.gold !== next.gold ||
+    p.lumber !== next.lumber ||
+    p.foodUsed !== next.foodUsed ||
+    p.foodCap !== next.foodCap ||
     p.playerUnits !== next.playerUnits ||
     p.enemyUnits !== next.enemyUnits ||
     p.enemyKeepHp !== next.enemyKeepHp ||
     p.playerKeepHp !== next.playerKeepHp ||
-    p.attackMoveArmed !== next.attackMoveArmed
+    p.attackMoveArmed !== next.attackMoveArmed ||
+    p.producing !== next.producing ||
+    Math.abs(p.trainProgress - next.trainProgress) > 0.02
   );
 }
 

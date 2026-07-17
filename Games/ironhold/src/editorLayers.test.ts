@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { editorLayers } from "./editorLayers";
-import { combatantDef, DECOR } from "./game/catalog";
+import { combatantDef, DECOR, isNode } from "./game/catalog";
 
 function catalogId(marker: { catalogId?: string }): string {
   return marker.catalogId ?? "";
@@ -24,11 +24,18 @@ describe("authored skirmish scene", () => {
     expect(enemies.length).toBeGreaterThanOrEqual(4);
   });
 
-  test("every authored marker resolves to a known combatant or decor", () => {
+  test("every authored marker resolves to a known combatant, node, or decor", () => {
     for (const marker of editorLayers.markers) {
       const id = catalogId(marker);
-      expect(combatantDef(id) !== null || DECOR.has(id)).toBe(true);
+      expect(combatantDef(id) !== null || isNode(id) || DECOR.has(id)).toBe(true);
     }
+  });
+
+  test("places gatherable gold and lumber nodes plus starting peasants", () => {
+    const nodes = editorLayers.markers.filter((m) => isNode(catalogId(m)));
+    const peasants = editorLayers.markers.filter((m) => catalogId(m) === "peasant");
+    expect(nodes.length).toBeGreaterThanOrEqual(3);
+    expect(peasants.length).toBeGreaterThanOrEqual(2);
   });
 
   test("enemy units carry a guard or assault stance", () => {

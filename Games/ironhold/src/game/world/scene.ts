@@ -3,11 +3,11 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 
 import { editorLayers } from "../../editorLayers";
-import { combatantDef, DECOR } from "../catalog";
+import { combatantDef, DECOR, isNode, NODES } from "../catalog";
 import { registerCommands } from "../commands";
 import { hudStore } from "../hudStore";
-import { GOLD, STARTING_GOLD } from "../tuning";
-import { resetSession, session, type UnitRuntime } from "../session";
+import { GOLD, LUMBER, STARTING_GOLD, STARTING_LUMBER } from "../tuning";
+import { initResourceField, resetSession, session, type UnitRuntime } from "../session";
 
 const GUARD_LEASH = 16;
 
@@ -47,11 +47,12 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
   }
 }
 
-/** Spawn the authored roster, wire economy + win/lose, and register the RTS commands. */
+/** Spawn the authored roster + resource nodes, wire economy + win/lose, and register the RTS commands. */
 export function setupSkirmish(ctx: GameContext): void {
   resetSession();
   hudStore.reset();
   ctx.game.economy.grant(ctx.player.userId, GOLD, STARTING_GOLD);
+  ctx.game.economy.grant(ctx.player.userId, LUMBER, STARTING_LUMBER);
 
   const rallyOnPlayer = playerKeepPoint();
 
@@ -73,6 +74,10 @@ export function setupSkirmish(ctx: GameContext): void {
         leash: 0,
         attackCooldown: 0,
       };
+      if (def.kind === "building" && def.faction === "player") {
+        // Depot anchor for peasant hauling.
+        unit.guardPoint = { x: pos[0], z: pos[2] };
+      }
       if (def.kind === "unit" && def.faction === "enemy") {
         const stance = (marker.meta as { stance?: string } | undefined)?.stance;
         if (stance === "assault") {
@@ -86,16 +91,18 @@ export function setupSkirmish(ctx: GameContext): void {
       continue;
     }
 
+    if (isNode(catalogId)) {
+      ctx.scene.entity.spawn(catalogId, { id: marker.id, position: pos, role: "npc", rotationY: marker.rotationY ?? 0 });
+      session.nodes.set(marker.id, { id: marker.id, resource: NODES[catalogId]!.resource, x: pos[0], z: pos[2] });
+      continue;
+    }
+
     if (DECOR.has(catalogId)) {
-      ctx.scene.entity.spawn(catalogId, {
-        id: marker.id,
-        position: pos,
-        role: "npc",
-        rotationY: marker.rotationY ?? 0,
-      });
+      ctx.scene.entity.spawn(catalogId, { id: marker.id, position: pos, role: "npc", rotationY: marker.rotationY ?? 0 });
     }
   }
 
+  initResourceField();
   registerCommands(ctx);
   ctx.game.events.on("entity.died", (event) => onDied(ctx, event));
 }

@@ -1,6 +1,6 @@
 import type { GameContextContent, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 
-import { combatantDef, DECOR } from "./catalog";
+import { combatantDef, DECOR, isNode } from "./catalog";
 
 /**
  * Resolves an entity's runtime definition from the Ironhold roster. Combatants carry a `health`
@@ -20,7 +20,7 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
     if (def.walkSpeed > 0) entry.movement = { walkSpeed: def.walkSpeed };
     return entry;
   }
-  if (DECOR.has(catalogId)) return { role: "npc" };
+  if (DECOR.has(catalogId) || isNode(catalogId)) return { role: "npc" };
   return null;
 }
 

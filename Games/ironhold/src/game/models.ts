@@ -16,6 +16,11 @@ const VANGUARD = "#4c8dff";
 const MARAUDER = "#e0553b";
 
 const PLAN: Record<string, ModelPick> = {
+  peasant: {
+    model: `${ADV}/Rogue`,
+    fallbackModel: `${ADV}/Rogue_Hooded`,
+    style: { targetHeight: 2, material: { color: "#c9a06a" }, animation: WARRIOR_ANIM },
+  },
   footman: {
     model: `${ADV}/Knight`,
     fallbackModel: `${ADV}/Rogue`,
@@ -54,7 +59,12 @@ const PLAN: Record<string, ModelPick> = {
   goldmine: {
     model: `${NATURE}/Rock_Medium_2`,
     fallbackModel: `${NATURE}/Rock_Medium_3`,
-    style: { targetHeight: 2.2, material: { color: "#e8c14a", emissive: "#6b5210", emissiveIntensity: 0.4 } },
+    style: { targetHeight: 2.6, material: { color: "#e8c14a", emissive: "#6b5210", emissiveIntensity: 0.45 } },
+  },
+  woods: {
+    model: `${NATURE}/CommonTree_2`,
+    fallbackModel: `${NATURE}/Pine_4`,
+    style: { targetHeight: 4.6, material: { color: "#3a5a2a" } },
   },
 };
 

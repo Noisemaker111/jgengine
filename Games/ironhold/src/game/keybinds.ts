@@ -4,5 +4,6 @@ import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
  * camera rig owns WASD/arrow panning, edge-scroll, and zoom. `attackMove` arms the next order. */
 export const keybinds: ActionCodesMap = {
   attackMove: ["KeyA"],
+  trainPeasant: ["KeyE"],
   trainFootman: ["KeyF"],
 };

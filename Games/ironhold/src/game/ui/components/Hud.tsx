@@ -4,7 +4,7 @@ import { useEntityStat } from "@jgengine/react/hooks";
 import { useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type HudSnapshot } from "../../hudStore";
-import { FOOTMAN_COST } from "../../tuning";
+import { COMBATANTS, TRAINABLE } from "../../catalog";
 import { Minimap } from "./Minimap";
 
 function useHud(): HudSnapshot {
@@ -22,22 +22,31 @@ function Meter({ value, max, tone }: { value: number; max: number; tone: string 
   );
 }
 
-/** Slim top strip: gold, both keeps' vitals, and the live head-count — the resource readout. */
+function Resource({ icon, value, tone }: { icon: string; value: string; tone: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-base">{icon}</span>
+      <span className={"min-w-[2.5ch] text-base font-bold tabular-nums " + tone}>{value}</span>
+    </div>
+  );
+}
+
+/** Slim top strip: gold · lumber · food, both keeps' vitals, and the live head-count. */
 function TopStrip() {
   const hud = useHud();
+  const foodTone = hud.foodUsed >= hud.foodCap ? "text-rose-300" : "text-emerald-200";
   return (
     <div className={"pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-4 rounded-lg px-4 py-2 font-sans text-slate-100 " + PANEL}>
-      <div className="flex items-center gap-2">
-        <span className="text-base">🪙</span>
-        <span className="min-w-[3ch] text-lg font-bold tabular-nums text-amber-300">{hud.gold}</span>
-      </div>
+      <Resource icon="🪙" value={String(hud.gold)} tone="text-amber-300" />
+      <Resource icon="🪵" value={String(hud.lumber)} tone="text-orange-200" />
+      <Resource icon="🍖" value={`${hud.foodUsed}/${hud.foodCap}`} tone={foodTone} />
       <div className="h-7 w-px bg-amber-800/40" />
-      <div className="flex w-40 flex-col gap-0.5">
-        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-rose-300"><span>Marauder Warcamp</span><span>{hud.enemyKeepHp}</span></div>
+      <div className="flex w-36 flex-col gap-0.5">
+        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-rose-300"><span>Warcamp</span><span>{hud.enemyKeepHp}</span></div>
         <Meter value={hud.enemyKeepHp} max={hud.enemyKeepMax} tone="#ef5a3d" />
       </div>
-      <div className="flex w-40 flex-col gap-0.5">
-        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-sky-300"><span>Ironhold Keep</span><span>{hud.playerKeepHp}</span></div>
+      <div className="flex w-36 flex-col gap-0.5">
+        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wide text-sky-300"><span>Ironhold</span><span>{hud.playerKeepHp}</span></div>
         <Meter value={hud.playerKeepHp} max={hud.playerKeepMax} tone="#4c8dff" />
       </div>
       <div className="h-7 w-px bg-amber-800/40" />
@@ -77,15 +86,37 @@ function HeroPortrait() {
   );
 }
 
+function affordable(hud: HudSnapshot, unitId: string): boolean {
+  const t = TRAINABLE[unitId];
+  if (t === undefined || hud.phase !== "playing") return false;
+  if ((t.cost.gold ?? 0) > hud.gold) return false;
+  if ((t.cost.lumber ?? 0) > hud.lumber) return false;
+  return hud.foodUsed + (COMBATANTS[unitId]?.food ?? 0) <= hud.foodCap;
+}
+
+function costLabel(unitId: string): string {
+  const c = TRAINABLE[unitId]?.cost ?? {};
+  return [c.gold ? `🪙${c.gold}` : "", c.lumber ? `🪵${c.lumber}` : ""].filter(Boolean).join(" ");
+}
+
 /** WC3-style bottom console: framed minimap · commander portrait · command card. */
 function CommandConsole() {
   const hud = useHud();
   const { commands } = useGame();
-  const canTrain = hud.phase === "playing" && hud.gold >= FOOTMAN_COST;
   return (
     <div className={"pointer-events-auto absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 items-stretch gap-3 rounded-t-xl border-x-2 border-t-2 px-4 py-3 font-sans " + PANEL}>
-      <div className="rounded-md border border-amber-800/50 bg-black/40 p-1">
-        <Minimap />
+      <div className="flex flex-col gap-1">
+        <div className="rounded-md border border-amber-800/50 bg-black/40 p-1">
+          <Minimap />
+        </div>
+        {hud.producing > 0 ? (
+          <div className="flex items-center gap-2 px-1 text-[10px] text-amber-200">
+            <span>Training ×{hud.producing}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/50">
+              <div className="h-full bg-amber-400" style={{ width: `${Math.round(hud.trainProgress * 100)}%` }} />
+            </div>
+          </div>
+        ) : null}
       </div>
       <div className="w-px bg-amber-800/40" />
       <div className="flex flex-col justify-center">
@@ -95,7 +126,8 @@ function CommandConsole() {
       <div className="flex flex-col justify-center">
         <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">Command</div>
         <div className="flex gap-2">
-          <ConsoleButton label="Train Footman" sub={`🪙${FOOTMAN_COST} · F`} disabled={!canTrain} onClick={() => commands.run("train.footman", {})} />
+          <ConsoleButton label="Train Peasant" sub={`${costLabel("peasant")} · gather`} disabled={!affordable(hud, "peasant")} onClick={() => commands.run("train.peasant", {})} />
+          <ConsoleButton label="Train Footman" sub={costLabel("footman")} disabled={!affordable(hud, "footman")} onClick={() => commands.run("train.footman", {})} />
           <ConsoleButton label="Attack-Move" sub={hud.attackMoveArmed ? "armed · RMB" : "arm · A"} active={hud.attackMoveArmed} disabled={hud.phase !== "playing"} onClick={() => commands.run("unit.attackMove", {})} />
         </div>
       </div>

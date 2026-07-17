@@ -31,8 +31,14 @@
     { "id": "grunt_raid_2", "kind": "unit", "position": { "x": 11, "y": 0, "z": -22 }, "catalogId": "grunt", "meta": { "stance": "assault" } },
     { "id": "reaver_raid_1", "kind": "unit", "position": { "x": 0, "y": 0, "z": -20 }, "catalogId": "reaver", "meta": { "stance": "assault" } },
 
-    { "id": "goldmine_w", "kind": "prop", "position": { "x": -32, "y": 0, "z": 5 }, "label": "Gold seam", "catalogId": "goldmine" },
-    { "id": "goldmine_e", "kind": "prop", "position": { "x": 32, "y": 0, "z": -5 }, "label": "Gold seam", "catalogId": "goldmine" }
+    { "id": "peasant_1", "kind": "unit", "position": { "x": -5, "y": 0, "z": 24 }, "catalogId": "peasant" },
+    { "id": "peasant_2", "kind": "unit", "position": { "x": 0, "y": 0, "z": 24 }, "catalogId": "peasant" },
+    { "id": "peasant_3", "kind": "unit", "position": { "x": 5, "y": 0, "z": 24 }, "catalogId": "peasant" },
+
+    { "id": "goldmine_home", "kind": "prop", "position": { "x": -15, "y": 0, "z": 30 }, "label": "Gold seam", "catalogId": "goldmine" },
+    { "id": "goldmine_mid", "kind": "prop", "position": { "x": 22, "y": 0, "z": 4 }, "label": "Gold seam", "catalogId": "goldmine" },
+    { "id": "woods_w", "kind": "prop", "position": { "x": -22, "y": 0, "z": 26 }, "label": "Logging camp", "catalogId": "woods" },
+    { "id": "woods_e", "kind": "prop", "position": { "x": 15, "y": 0, "z": 30 }, "label": "Logging camp", "catalogId": "woods" }
   ],
   "paths": [
     {
