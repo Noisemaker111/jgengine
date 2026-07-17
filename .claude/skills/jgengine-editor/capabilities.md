@@ -73,6 +73,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
 - `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
 
+## world-convergence — derive environment coordinate content from the scene document
+
+- `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/core/editor"`
+- `terrainBoundsFromDocument` (function) · `import { terrainBoundsFromDocument } from "@jgengine/core/editor"`
+
 ## world-directives — apply a sparse overlay over materialized directive instances
 
 - `applyDirectiveOverlay` (function) · `import { applyDirectiveOverlay } from "@jgengine/core/editor"`
