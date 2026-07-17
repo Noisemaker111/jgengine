@@ -122,9 +122,9 @@
       "id": "rustflat_spire_c",
       "kind": "prop",
       "position": {
-        "x": -510,
+        "x": -470,
         "y": 0,
-        "z": 576
+        "z": 574
       },
       "rotationY": 0,
       "meta": {
@@ -161,9 +161,9 @@
       "id": "rustflat_banner_spawn",
       "kind": "prop",
       "position": {
-        "x": -492,
+        "x": -470,
         "y": 0,
-        "z": 586
+        "z": 580
       },
       "rotationY": 0,
       "meta": {
@@ -2566,9 +2566,9 @@
       "id": "roadside_0_2",
       "kind": "prop",
       "position": {
-        "x": -494.0575730391113,
+        "x": -503.4,
         "y": 0,
-        "z": 566.006043774381
+        "z": 562.3
       },
       "rotationY": 3.1186681157879197,
       "meta": {
@@ -5135,6 +5135,38 @@
       "meta": {
         "catalogId": "bandit_barrel"
       }
+    },
+    {
+      "id": "player_spawn",
+      "kind": "player_spawn",
+      "position": {
+        "x": -502,
+        "y": 0,
+        "z": 594
+      },
+      "rotationY": 2.7589680735783437,
+      "color": "#22d3ee",
+      "label": "Player spawn",
+      "meta": {
+        "role": "player_spawn",
+        "routeId": "road_windshear_waste_southern_shelf",
+        "routePointIndex": 3
+      }
+    },
+    {
+      "id": "bolt",
+      "kind": "npc",
+      "position": {
+        "x": -478,
+        "y": 0,
+        "z": 566
+      },
+      "rotationY": -0.7086262721276703,
+      "color": "#60a5fa",
+      "label": "Bolt",
+      "meta": {
+        "role": "guide"
+      }
     }
   ],
   "volumes": [],
@@ -6643,5 +6675,6 @@
   ],
   "annotations": [],
   "prefabs": [],
-  "collections": []
+  "collections": [],
+  "catalogs": []
 }

@@ -7,13 +7,14 @@ import { placeLevel, SIDE_POIS } from "./level";
 import {
   BLACK_MARKET_POS,
   BOLT_POS,
+  BOLT_YAW,
   RIGG_VENDOR_POS,
   TRAVEL_STATIONS,
   SPARX_VENDOR_POS,
   ZONES,
 } from "./sites";
 
-export { PLAYER_SPAWN } from "./sites";
+export { PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
 
 function grounded(ctx: GameContext, x: number, z: number): EntityPosition {
   return [x, ctx.world.groundHeightAt(x, z), z];
@@ -138,7 +139,11 @@ export function setupWorld(ctx: GameContext): void {
   RED_CHESTS.forEach((chest, index) => place("red_chest", chest.x, chest.z, `red_chest_${index}`));
   AMMO_CHESTS.forEach((chest, index) => place("ammo_chest", chest.x, chest.z, `ammo_chest_${index}`));
 
-  ctx.scene.entity.spawn("bolt", { id: "bolt_1", position: grounded(ctx, BOLT_POS[0], BOLT_POS[2]) });
+  ctx.scene.entity.spawn("bolt", {
+    id: "bolt_1",
+    position: grounded(ctx, BOLT_POS[0], BOLT_POS[2]),
+    rotationY: BOLT_YAW,
+  });
   placeLevel(ctx);
 
   planClusters(ctx);
