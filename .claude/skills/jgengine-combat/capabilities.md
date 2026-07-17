@@ -12,6 +12,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAntiOneShotPolicy` (function) · `import { createAntiOneShotPolicy } from "@jgengine/core/combat"`
 
+## capture-bonus-levels — convert wild level and capture effectiveness into bonus levels
+
+- `captureBonusLevels` (function) · `import { captureBonusLevels } from "@jgengine/core/stats/spawnLevelStats"`
+
+## capture-effectiveness-tame — apply capture effectiveness to grant and distribute bonus levels
+
+- `applyCaptureEffectiveness` (function) · `import { applyCaptureEffectiveness } from "@jgengine/core/stats/spawnLevelStats"`
+
 ## cast-bar — run a channeled cast timer that movement or damage can interrupt
 
 - `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat"`
@@ -55,6 +63,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## dice-check — resolve a pass/fail roll against a target number with modifiers and crits
 
 - `rollCheck` (function) · `import { rollCheck } from "@jgengine/core/combat"`
+
+## domestic-level-spend — spend an earned post-capture level into a chosen stat under a cap
+
+- `spendDomesticLevel` (function) · `import { spendDomesticLevel } from "@jgengine/core/stats/spawnLevelStats"`
 
 ## dot-field — track stacking damage-over-time effects and drain damage each frame
 
@@ -146,6 +158,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `allocateRewards` (function) · `import { allocateRewards } from "@jgengine/core/combat"`
 - `filterOutcomeFor` (function) · `import { filterOutcomeFor } from "@jgengine/core/combat"`
 - `resolveClaim` (function) · `import { resolveClaim } from "@jgengine/core/combat"`
+
+## spawn-instance-restore — rehydrate a creature stat instance from decoded snapshot data
+
+- `restoreSpawnInstance` (function) · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
+
+## spawn-instance-snapshot — deep-copy a creature stat instance into a serializable record
+
+- `snapshotSpawnInstance` (function) · `import { snapshotSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
+
+## spawn-level-roll — distribute a wild creature's spawn level into random per-stat points
+
+- `rollSpawnInstance` (function) · `import { rollSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
+
+## spawn-stat-values — resolve a creature's per-stat values from its distributed points
+
+- `resolveSpawnStats` (function) · `import { resolveSpawnStats } from "@jgengine/core/stats/spawnLevelStats"`
 
 ## stagger-meter — accumulate an ailment buildup (bleed, freeze) until it procs
 

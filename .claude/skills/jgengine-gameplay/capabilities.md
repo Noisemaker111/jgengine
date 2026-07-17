@@ -24,6 +24,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
 
+## carry-encumbrance — carried mass vs capacity into movement penalty tiers and a speed multiplier
+
+- `resolveEncumbrance` (function) · `import { resolveEncumbrance } from "@jgengine/core/inventory/encumbrance"`
+
+## carry-load — sum carried mass from item stacks via an injected mass resolver
+
+- `totalLoad` (function) · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
+
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
 - `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
@@ -35,6 +43,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## cosmetics — equip cosmetic skins and customizations by slot
 
 - `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/gameplay"`
+
+## creature-breeding — deterministic stat inheritance, mutation, and lineage genetics for taming games
+
+- `breedOffspring` (function) · `import { breedOffspring } from "@jgengine/core/game/breeding"`
 
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
@@ -67,6 +79,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
 
+## encumbrance-move-curve — progressive move-speed multiplier from a carry-load fraction
+
+- `encumbranceMoveMultiplier` (function) · `import { encumbranceMoveMultiplier } from "@jgengine/core/inventory/encumbrance"`
+
 ## enqueue-work — reserve inputs and add a timed job, honoring capacity and validation policy
 
 - `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
@@ -86,6 +102,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
+
+## imprint-bonus — apply imprint stat and handler bonuses at an imprint fraction
+
+- `applyImprintBonus` (function) · `import { applyImprintBonus } from "@jgengine/core/game/breeding"`
+
+## imprint-increment — per-care-request imprint gain across a maturation schedule
+
+- `imprintIncrementPerRequest` (function) · `import { imprintIncrementPerRequest } from "@jgengine/core/game/breeding"`
+
+## incubation-tick — advance egg incubation health inside/outside its temperature range
+
+- `tickIncubation` (function) · `import { tickIncubation } from "@jgengine/core/game/breeding"`
+
+## incubation-viability — test whether an egg incubation still has health to hatch
+
+- `incubationViable` (function) · `import { incubationViable } from "@jgengine/core/game/breeding"`
 
 ## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
 
@@ -159,6 +191,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/gameplay"`
+
+## maturation-stage — resolve the baby/juvenile/adolescent/adult stage from elapsed maturation
+
+- `maturationStage` (function) · `import { maturationStage } from "@jgengine/core/game/breeding"`
 
 ## modular-item — attach parts into item mount slots to compute combined stats
 
@@ -318,6 +354,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
 
+## tribe-group — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log
+
+- `createTribe` (function) · `import { createTribe } from "@jgengine/core/game/tribe"`
+
+## tribe-registry — registry of tribes with mutual alliances and cross-tribe relation lookup
+
+- `createTribeRegistry` (function) · `import { createTribeRegistry } from "@jgengine/core/game/tribe"`
+
 ## triggered-rules — event-conditioned effects with declarative predicates, lifetimes, and stacking
 
 - `createTriggeredRuleEngine` (function) · `import { createTriggeredRuleEngine } from "@jgengine/core/gameplay"`
@@ -328,6 +372,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## unit-training — compose a timed work queue that trains catalog units into spawn orders
 
 - `unitTrainingConfig` (function) · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
+
+## unlock-points — spendable point pool earned per level and spent to unlock nodes, with refund and respec
+
+- `createUnlockPoints` (function) · `import { createUnlockPoints } from "@jgengine/core/economy/unlockPoints"`
 
 ## unlockables — gate content behind unlock conditions the player earns
 
