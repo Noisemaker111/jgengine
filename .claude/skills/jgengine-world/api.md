@@ -330,6 +330,12 @@
 - `gaitBobOffset` (function): function gaitBobOffset(phase: number, speedUnitsPerSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — Vertical hop per footfall — two peaks per stride cycle.
 - `gaitSwayAngle` (function): function gaitSwayAngle(phase: number, speedUnitsPerSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — Signed side-to-side lean alternating with each footfall.
 
+## @jgengine/core/movement/avoidance
+
+- `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
+- `LocalAvoidanceOptions` (interface): interface LocalAvoidanceOptions — Tuning for {@link resolveLocalAvoidance}.
+- `resolveLocalAvoidance` (function): function resolveLocalAvoidance(agents: AvoidanceAgent[], options: LocalAvoidanceOptions = {}): number — Resolve overlaps in `agents` in place and return how many overlapping pairs remained on the final pass (`0` = fully separated). Uses a bounded uniform hash grid sized to the largest agent, so only nearby agents are ever compared. Deterministic: corrections are accumulated then applied per pass, independent of agent order. Pass `weights` to pin or differentially push agents.
+
 ## @jgengine/core/movement/cameraRig
 
 - `CAMERA_PITCH_LIMIT` (const): const CAMERA_PITCH_LIMIT: 1.45 — ⚠ undocumented
@@ -341,6 +347,23 @@
 - `DashDirection` (interface): interface DashDirection — ⚠ undocumented
 - `DashRejection` (type): type DashRejection = { reason: "no-stamina" | "cooldown" | "dashing" } — ⚠ undocumented
 - `DashState` (interface): interface DashState — ⚠ undocumented
+
+## @jgengine/core/movement/formation
+
+- `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
+- `CircleFormationOptions` (interface): interface CircleFormationOptions — Options for {@link circleFormation}.
+- `FormationSlotGenerator` (type): type FormationSlotGenerator = (count: number) => Vec2[] — Produces `count` slot offsets in the group's local frame — `[right, forward]` where `+forward` points where the group faces. Index order is the slot order; a generator must be pure (same `count` → same offsets) so placement stays deterministic. Sample generators below cover common shapes; games pass their own for anything else (crowds, convoys, sports positions) with no engine edit.
+- `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
+- `SlotAssignmentOptions` (interface): interface SlotAssignmentOptions — Tuning for {@link assignFormationSlots}' stable, low-churn matching.
+- `Vec2` (type): type Vec2 = readonly [number, number] — A point or offset on the XZ ground plane: `[x, z]`.
+- `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
+- `assignFormationSlots` (function): function assignFormationSlots(members: readonly Vec2[], slots: readonly Vec2[], options: SlotAssignmentOptions = {}): number[] — Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (minus a stickiness bonus for a member's previous slot) and assigned in order while both ends are free. Returns `assignment[member] = slot`, or `-1` for members left unmatched when there are fewer slots than members. Ties break by member then slot index, so the result is stable across runs and independent of input ordering — the property replay and lockstep multiplayer rely on. Groups are bounded, so the `O(members·slots·log)` sort is fine; this is not a per-frame whole-world pass.
+- `boxFormation` (function): function boxFormation(options: BoxFormationOptions): FormationSlotGenerator — A rectangular grid centered on the destination, front row toward `+forward` — a marching block or a phalanx. Rows fill front-to-back, left-to-right.
+- `circleFormation` (function): function circleFormation(options: CircleFormationOptions): FormationSlotGenerator — An evenly spaced ring around the destination — a guard cordon, a huddle, or a surround. Slot 0 sits `startAngle` from forward; slots advance evenly around the circle.
+- `facingYaw` (function): function facingYaw(from: Vec2, to: Vec2): number — Engine yaw (`rotationY`, radians) that faces from `from` toward `to` on the XZ plane, matching the `forward = (sin yaw, cos yaw)` convention. Feed the result as the `facing` of {@link placeFormation} to orient a formation along its travel direction. Returns `0` when the points coincide.
+- `lineFormation` (function): function lineFormation(options: LineFormationOptions): FormationSlotGenerator — A single rank abreast, centered on the destination and facing forward — a skirmish line or a chorus row. Slots run left→right along the group's right axis.
+- `placeFormation` (function): function placeFormation(destination: Vec2, facing: number, count: number, generator: FormationSlotGenerator): Vec2[] — Transform a generator's local slot offsets into world XZ positions around a `destination`, rotated by `facing` (engine yaw). Slot `i` in the returned array is `generator(count)[i]` mapped through the group frame, so it stays aligned with {@link assignFormationSlots}' slot indices. Pure and allocation- light: one array of `count` points, no per-call closures retained.
+- `wedgeFormation` (function): function wedgeFormation(options: WedgeFormationOptions): FormationSlotGenerator — A "V"/arrowhead with the apex at the destination and arms trailing back — a flying-wedge charge or a goose skein. Slot 0 is the tip; later slots alternate right then left, each rank stepping one `spacing` outward and backward.
 
 ## @jgengine/core/movement/glideModel
 
@@ -1153,11 +1176,13 @@
 - `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
+- `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
 - `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
+- `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
 - `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
 - `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
@@ -1168,6 +1193,7 @@
 - `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
 - `Carryable` (class): class Carryable — A grabbed physics object following a moving hold point through a spring constraint (the pick — a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner carry (the follow point is the average of owners' hold points), an encumbrance read, and drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
 - `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
+- `CircleFormationOptions` (interface): interface CircleFormationOptions — Options for {@link circleFormation}.
 - `ClockSnapshot` (interface): interface ClockSnapshot — ⚠ undocumented
 - `CollapseEvent` (interface): interface CollapseEvent — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
@@ -1190,6 +1216,7 @@
 - `FogCells` (interface): interface FogCells — ⚠ undocumented
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
+- `FormationSlotGenerator` (type): type FormationSlotGenerator = (count: number) => Vec2[] — Produces `count` slot offsets in the group's local frame — `[right, forward]` where `+forward` points where the group faces. Index order is the slot order; a generator must be pure (same `count` → same offsets) so placement stays deterministic. Sample generators below cover common shapes; games pass their own for anything else (crowds, convoys, sports positions) with no engine edit.
 - `FramingConfig` (interface): interface FramingConfig — ⚠ undocumented
 - `FreezeMonitor` (interface): interface FreezeMonitor — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation — ⚠ undocumented
@@ -1218,6 +1245,8 @@
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
 - `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
+- `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
+- `LocalAvoidanceOptions` (interface): interface LocalAvoidanceOptions — Tuning for {@link resolveLocalAvoidance}.
 - `LockAction` (type): type LockAction = "hardSet" | "set" | "steady" | "ease" | "drop" — One discrete pick move: how far the pick drives into the lock this step.
 - `LockCell` (interface): interface LockCell — One cell inside the fogged {@link visibleCells} window: its board position and kind.
 - `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
@@ -1301,6 +1330,7 @@
 - `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
 - `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
+- `SlotAssignmentOptions` (interface): interface SlotAssignmentOptions — Tuning for {@link assignFormationSlots}' stable, low-churn matching.
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
@@ -1365,6 +1395,7 @@
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
 - `WeatherState` (interface): interface WeatherState — ⚠ undocumented
+- `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
 - `WindField` (interface): interface WindField — ⚠ undocumented
 - `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
@@ -1377,11 +1408,13 @@
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
 - `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
 - `applySurfaceDeltaToSnapshot` (function): function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write).
+- `assignFormationSlots` (function): function assignFormationSlots(members: readonly Vec2[], slots: readonly Vec2[], options: SlotAssignmentOptions = {}): number[] — Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (minus a stickiness bonus for a member's previous slot) and assigned in order while both ends are free. Returns `assignment[member] = slot`, or `-1` for members left unmatched when there are fewer slots than members. Ties break by member then slot index, so the result is stable across runs and independent of input ordering — the property replay and lockstep multiplayer rely on. Groups are bounded, so the `O(members·slots·log)` sort is fine; this is not a per-frame whole-world pass.
 - `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
 - `beginSurfaceStroke` (function): function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke — Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
 - `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
+- `boxFormation` (function): function boxFormation(options: BoxFormationOptions): FormationSlotGenerator — A rectangular grid centered on the destination, front row toward `+forward` — a marching block or a phalanx. Rows fill front-to-back, left-to-right.
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
@@ -1389,6 +1422,7 @@
 - `carrySpeedMultiplier` (function): function carrySpeedMultiplier(mass: number, carryCapacity: number, owners: number): number — Movement multiplier (1 = unhindered, →0 = crushed) for a body of `mass` carried by `owners`. Pure — the HUD/movement kit reads it to slow a laden hauler (Lethal Company) and to gate items that need 2+ people (R.E.P.O.).
 - `carvableTerrain` (function): function carvableTerrain(base: TerrainField): CarvableField — ⚠ undocumented
 - `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
+- `circleFormation` (function): function circleFormation(options: CircleFormationOptions): FormationSlotGenerator — An evenly spaced ring around the destination — a guard cordon, a huddle, or a surround. Slot 0 sits `startAngle` from forward; slots advance evenly around the circle.
 - `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
@@ -1449,6 +1483,7 @@
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
+- `facingYaw` (function): function facingYaw(from: Vec2, to: Vec2): number — Engine yaw (`rotationY`, radians) that faces from `from` toward `to` on the XZ plane, matching the `forward = (sin yaw, cos yaw)` convention. Feed the result as the `facing` of {@link placeFormation} to orient a formation along its travel direction. Returns `0` when the points coincide.
 - `findPath` (function): function findPath(grid: NavGrid, from: NavPoint, to: NavPoint, options: FindPathOptions = {}): NavPoint[] | null — A* over the walkable grid. Returns a polyline of world-space `[x, z]` waypoints from `from` to `to`, or `null` when no route exists. Blocked start/goal snap to the nearest walkable cell so a click on an obstacle still routes to its edge.
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
@@ -1469,6 +1504,7 @@
 - `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
 - `label` (function): function label(text: string): LabelPromptDisplay — ⚠ undocumented
 - `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
+- `lineFormation` (function): function lineFormation(options: LineFormationOptions): FormationSlotGenerator — A single rank abreast, centered on the destination and facing forward — a skirmish line or a chorus row. Slots run left→right along the group's right axis.
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
@@ -1492,6 +1528,7 @@
 - `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
+- `placeFormation` (function): function placeFormation(destination: Vec2, facing: number, count: number, generator: FormationSlotGenerator): Vec2[] — Transform a generator's local slot offsets into world XZ positions around a `destination`, rotated by `facing` (engine yaw). Slot `i` in the returned array is `generator(count)[i]` mapped through the group frame, so it stays aligned with {@link assignFormationSlots}' slot indices. Pure and allocation- light: one array of `count` points, no per-call closures retained.
 - `player` (function): function player(): PlayerBehavior — ⚠ undocumented
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
@@ -1515,6 +1552,7 @@
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
+- `resolveLocalAvoidance` (function): function resolveLocalAvoidance(agents: AvoidanceAgent[], options: LocalAvoidanceOptions = {}): number — Resolve overlaps in `agents` in place and return how many overlapping pairs remained on the final pass (`0` = fully separated). Uses a bounded uniform hash grid sized to the largest agent, so only nearby agents are ever compared. Deterministic: corrections are accumulated then applied per pass, independent of agent order. Pass `weights` to pin or differentially push agents.
 - `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
@@ -1566,6 +1604,7 @@
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
+- `wedgeFormation` (function): function wedgeFormation(options: WedgeFormationOptions): FormationSlotGenerator — A "V"/arrowhead with the apex at the destination and arms trailing back — a flying-wedge charge or a goose skein. Slot 0 is the tip; later slots alternate right then left, each rank stepping one `spacing` outward and backward.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 

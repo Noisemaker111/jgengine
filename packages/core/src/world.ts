@@ -74,6 +74,22 @@ export {
   type SkillCheckConfig,
   type SkillCheckResult,
 } from "./interaction/skillCheck";
+export { resolveLocalAvoidance, type AvoidanceAgent, type LocalAvoidanceOptions } from "./movement/avoidance";
+export {
+  assignFormationSlots,
+  boxFormation,
+  circleFormation,
+  facingYaw,
+  lineFormation,
+  placeFormation,
+  wedgeFormation,
+  type BoxFormationOptions,
+  type CircleFormationOptions,
+  type FormationSlotGenerator,
+  type LineFormationOptions,
+  type SlotAssignmentOptions,
+  type WedgeFormationOptions,
+} from "./movement/formation";
 export { createGlideModel } from "./movement/glideModel";
 export { createGrappleSwing } from "./movement/grappleSwing";
 export { createLeaderTrail } from "./movement/leaderTrail";
