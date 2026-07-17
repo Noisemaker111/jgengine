@@ -14,6 +14,27 @@ export {
 } from "./ai/spawnDirector";
 export { createThreatTable, type ThreatTable } from "./ai/threat";
 export {
+  createAreaEffectField,
+  type AreaEffectEvent,
+  type AreaEffectField,
+  type AreaEventKind,
+  type AreaFieldState,
+  type AreaLeaveReason,
+  type AreaMembership,
+  type AreaShape,
+  type AreaSourceSpec,
+  type AreaStepInput,
+} from "./area/areaEffectField";
+export {
+  cappedStacks,
+  extremumStack,
+  independentStacks,
+  sumMagnitude,
+  uniqueByStackKey,
+  type AreaStackPolicy,
+  type MagnitudeOf,
+} from "./area/stackPolicy";
+export {
   computeFalloffGain,
   distance3,
   resolveEmitterGain,

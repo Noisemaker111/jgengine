@@ -160,6 +160,29 @@ runtime.step({
 
 Multi-triggers: `meta.triggers: [{ on, action, ...params }]`. Editor inspector renders action params from the declared schema when the game has registered actions.
 
+### Continuous area effects (source-following membership)
+
+The dynamic counterpart to authored triggers: moving sources emit an area that **follows them** each tick, receivers get `enter`/`refresh`/`leave` edges, and membership is cleaned up on source removal/disable/clear. Genre-agnostic and pure — it never applies damage/heals/stats itself; you route each edge through your own pipeline (auras, hazard/heal fields, capture zones, silence/music areas). `@jgengine/core/area/areaEffectField`:
+
+```ts
+const field = createAreaEffectField<{ dps: number }>();
+// each tick, per live source (so the shape follows its emitter):
+field.setSource({ id: bossId, shape: { kind: "sphere", center: bossPos, radius: 3 }, payload: { dps: 6 }, refreshMs: 700 });
+field.removeSource(deadBossId); // -> leave edges (reason "source-removed"); auto cleanup
+const events = field.step({
+  dtMs: dt * 1000,
+  candidates: (shape) => index.querySphere(shape.center[0], shape.center[1], shape.center[2], shape.radius, out), // bounded broad phase
+  positionOf: (id) => positions.get(id),         // undefined => receiver gone -> leave
+  eligible: (sourceId, receiverId) => isEnemy(receiverId), // optional team/immunity gate
+});
+for (const e of events) if (e.kind === "refresh") applyDamage(e.receiverId, e.payload.dps * (e.ticks ?? 1));
+```
+
+- Bounded by design (caller supplies the candidate query) and serializable (`serialize()` keeps membership + refresh phase across save/load; re-`setSource` live shapes before the next `step`).
+- `custom` shape leaves a seam for authored volumes / non-sphere shapes while still exposing a bounding sphere for the broad phase.
+- Overlap aggregation is a policy over `field.membershipsOf(receiverId)` — `@jgengine/core/area/stackPolicy`: `independentStacks` · `uniqueByStackKey` · `cappedStacks` · `extremumStack` (strongest/weakest) · `sumMagnitude` (additive).
+- First adopter: `Games/the-robots` boss overload auras (`game/entities/enemies/hazardAura.ts`).
+
 ### Spawn placement
 
 `spawn(catalogId, { id?, position | anchor, offset?, parentSpace?, group? })` — anchor `{ kind: "entity" | "zone", id }` with offset `{ radius, pattern }` or `{ xyz }`. Catalog supplies movement/model; no behaviors on spawn.
