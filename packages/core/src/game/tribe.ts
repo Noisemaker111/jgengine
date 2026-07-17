@@ -31,6 +31,7 @@ export interface AssetRef {
 /** Who inside the group owns an asset: the group as a whole, or a specific member personally. */
 export type AssetOwnership = { scope: "group" } | { scope: "personal"; memberId: string };
 
+/** The kind of change recorded in a tribe's event log (membership, ownership, or alliance). */
 export type TribeEventType =
   | "member-added"
   | "member-removed"
@@ -58,12 +59,14 @@ export interface TribeEvent {
   assetId?: string;
 }
 
+/** A member of a tribe and the rank id that governs their permissions. */
 export interface TribeMemberRecord {
   id: string;
   rankId: string;
   joinedAt: number;
 }
 
+/** An asset (structure/creature) owned within a tribe — group-shared or held by one member. */
 export interface TribeAssetRecord {
   kind: string;
   id: string;
@@ -86,6 +89,7 @@ export interface TribeSnapshot {
   eventSeq: number;
 }
 
+/** Construction options for {@link createTribe}: id, founder, rank ladder, and log cap. */
 export interface TribeConfig {
   id: string;
   founderId: string;
@@ -470,6 +474,7 @@ export function createTribe(config: TribeConfig): Tribe {
   };
 }
 
+/** Injected dependencies for {@link createTribeRegistry} (e.g. a `now()` clock for event timestamps). */
 export interface TribeRegistryDeps {
   now?: () => number;
   defaultLogCap?: number;

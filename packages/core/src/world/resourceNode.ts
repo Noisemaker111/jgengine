@@ -76,6 +76,7 @@ export interface ResourceNodeState {
   fraction: number;
 }
 
+/** Construction options for {@link createResourceNodeField}: node definitions and an optional RNG/suppression hook. */
 export interface ResourceNodeFieldConfig {
   nodes: readonly ResourceNodeDef[];
   /** Injected [0,1) generator for deterministic yield variance; defaults to `Math.random`. */
