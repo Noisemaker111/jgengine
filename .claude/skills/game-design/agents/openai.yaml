@@ -1,0 +1,4 @@
+interface:
+  display_name: "Game Design"
+  short_description: "Design coherent game loops and systems"
+  default_prompt: "Use $game-design to turn this game idea into a testable design and implementation brief."
