@@ -7,9 +7,12 @@ import {
   createHudLayout,
   isHudAnchor,
   isPanelDraggable,
+  listActiveHudLayouts,
   nearestAnchor,
   placementFromRect,
   rectFromPlacement,
+  registerActiveHudLayout,
+  subscribeActiveHudLayouts,
   type HudRect,
   type HudSize,
 } from "./hudLayout";
@@ -406,5 +409,49 @@ describe("isPanelDraggable", () => {
     const layout = createHudLayout({ locked: false });
     layout.register("a", anchoredPlacement("top-left", { x: 8, y: 8 }));
     expect(isPanelDraggable(layout.getState(), "a")).toBe(true);
+  });
+});
+
+describe("active HUD layout registry", () => {
+  test("subscribeActiveHudLayouts fires on register and unregister; list tracks membership", () => {
+    const events: number[] = [];
+    const unsubscribe = subscribeActiveHudLayouts(() => events.push(listActiveHudLayouts().length));
+
+    const layout = createHudLayout();
+    const remove = registerActiveHudLayout(layout);
+    expect(listActiveHudLayouts()).toContain(layout);
+    expect(events).toEqual([1]);
+
+    remove();
+    expect(listActiveHudLayouts()).not.toContain(layout);
+    expect(events).toEqual([1, 0]);
+
+    // Idempotent removal does not re-notify.
+    remove();
+    expect(events).toEqual([1, 0]);
+
+    unsubscribe();
+    registerActiveHudLayout(createHudLayout())();
+    expect(events).toEqual([1, 0]);
+  });
+
+  test("editor-style host arms editing and observes the author toggling it back off", () => {
+    // Mirrors HudLayoutEditingHost: force editing on, then treat a later editing:false as the exit signal.
+    const layout = createHudLayout();
+    const remove = registerActiveHudLayout(layout);
+    let exited = false;
+    layout.setEditing(true);
+    const unsubscribe = layout.subscribe((state) => {
+      if (!state.editing) exited = true;
+    });
+    expect(layout.getState().editing).toBe(true);
+    expect(exited).toBe(false);
+
+    // Author presses the canvas "Done" button.
+    layout.setEditing(false);
+    expect(exited).toBe(true);
+
+    unsubscribe();
+    remove();
   });
 });

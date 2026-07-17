@@ -77,9 +77,14 @@ describe("editor host RPC", () => {
     const status = api.handle({ method: "editor_status" });
     expect((status.result as { mode: string }).mode).toBe("play");
 
+    const hud = api.handle({ method: "set_mode", mode: "hud" });
+    expect(hud.ok).toBe(true);
+    expect(api.getMode()).toBe("hud");
+    expect(seen).toBe("hud");
+
     const junk = api.handle({ method: "set_mode", mode: "flycam" as never });
     expect(junk.ok).toBe(false);
-    expect(api.getMode()).toBe("play");
+    expect(api.getMode()).toBe("hud");
 
     unsub();
     dispose();

@@ -142,6 +142,8 @@ Design-resolution fit is on by default for every game: each `HudCanvas` auto-sca
 
 **Overflow is an error, not a style note.** `HudCanvas` measures every `HudPanel` against the viewport at runtime; offenders land in a `data-hud-overflow` attribute (and a console warning), and `bun run shoot <game> --device mobile` (or `both`) exits non-zero naming the escaping panels. A game is not mobile-done while shoot reports HUD OVERFLOW.
 
+**Authoring placement lives in the editor.** HUD panel placement is authored from the scene editor's **HUD** mode (F2+E → **HUD** toolbar button), not a separate devtools chord — the button mounts the game's real `HudCanvas` over the frozen world with drag/resize editing on. Dragging a panel writes an undoable `setUiPanel` patch into the scene document's `ui.panels` section (the same document the `canvas_move_panel` / `canvas_resize_panel` RPC verbs still target), so authored layout ships in `editor.scene.json`. The author's canvas **Done** button (or Esc / F2+C / F2+E) leaves HUD mode. Per-panel resize axes come from the panel `type`'s `registerHudPanelType` spec.
+
 ### Phase-gated HUD visibility (`showDuring`)
 
 `HudCanvas` and `HudPanel` take an opt-in `showDuring?: GamePhase[]` — the element renders only while `gamePhase` is one of the listed phases (`"menu" | "playing" | "paused" | "ended"`), so a non-cartridge game hides its HUD under menu/end overlays without hand-rolling a phase check. Omit it for the default always-visible behavior. Gate the whole HUD with `<HudCanvas showDuring={["playing"]}>`, or keep a single results panel up with a per-`HudPanel` value. The read degrades to `"playing"` when the component renders outside a `GameProvider` (component showcases, previews), so it never throws there.

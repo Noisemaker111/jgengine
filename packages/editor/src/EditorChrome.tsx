@@ -108,6 +108,7 @@ const SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: "MMB drag", action: "Pan camera" },
   { keys: "RMB click", action: "Context menu" },
   { keys: "F2+E", action: "Toggle editor ↔ play" },
+  { keys: "HUD", action: "Lay out HUD panels (writes ui.panels)" },
   { keys: "F2+D", action: "Engine devtools" },
   { keys: "?", action: "This help" },
 ];
@@ -689,6 +690,7 @@ export function EditorChrome({
           >
             Agent
           </button>
+          <button type="button" className={BTN} title="Lay out HUD panels over the live game and save placement to the scene" onClick={() => api.setMode("hud")}>HUD</button>
           <button type="button" className={BTN} onClick={() => api.setMode("walk")}>Walk</button>
           <button type="button" className="rounded-md bg-gradient-to-b from-emerald-500 to-emerald-600 px-3 py-1 font-semibold text-white shadow-md shadow-emerald-950/50 transition-colors hover:from-emerald-400 hover:to-emerald-500" onClick={() => api.setMode("play")}>▶ Play</button>
           <button type="button" className={BTN} onClick={() => importInputRef.current?.click()}>Import</button>
