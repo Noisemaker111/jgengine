@@ -186,6 +186,14 @@
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 
+## @jgengine/core/input/controlGroups
+
+- `ControlGroupInput` (interface): interface ControlGroupInput — A decoded control-group key press plus the memory needed to detect a double-tap.
+- `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Digit: recall the set saved under `key` into the active selection. */ | { kind: "recall"; key: string } /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */ | { kind: "focus"; key: string } — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
+- `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
+- `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
+- `resolveControlGroupIntent` (function): function resolveControlGroupIntent(input: ControlGroupInput, options: ControlGroupOptions = {}): ControlGroupIntent — Resolve a control-group key press into a {@link ControlGroupIntent}: Ctrl+digit binds, a bare digit recalls, and a second recall of the same group within `doubleTapMs` focuses. Pure — the caller applies the intent against the store and its own focus hook, and records the returned recall for the next call.
+
 ## @jgengine/core/input/gestureSurface
 
 - `DEFAULT_GESTURE_TUNING` (const): const DEFAULT_GESTURE_TUNING: GestureSurfaceTuning — ⚠ undocumented
@@ -893,6 +901,16 @@
 - `screenRect` (function): function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect — Normalize two drag corners (in any order) into a rectangle.
 - `selectWithinRect` (function): function selectWithinRect(candidates: readonly ScreenPoint[], rect: ScreenRect): string[] — Ids of the projected candidates whose screen point falls inside the marquee.
 
+## @jgengine/core/scene/selectionBookmarks
+
+- `BookmarkRecallMode` (type): type BookmarkRecallMode = "replace" | "merge" — How a recalled bookmark folds into the active selection.
+- `RecallBookmarkOptions` (interface): interface RecallBookmarkOptions — Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned.
+- `SelectionBookmarkSnapshot` (interface): interface SelectionBookmarkSnapshot — The serializable shape of a {@link SelectionBookmarks} store: each key maps to its ordered, deduplicated id list. Plain data — safe to persist in a save file or replicate over the wire, and the exact input {@link createSelectionBookmarks} restores.
+- `SelectionBookmarks` (interface): interface SelectionBookmarks — A generic, keyed store of saved id sets ("bookmarks") over stable string ids — the reusable layer under RTS control groups, camera bookmarks, saved squads, editor selection presets, and accessibility recall. It owns storage only: binding, recall, enumeration, pruning, and serialization. It never touches the active {@link SelectionSet} or the camera — replacement/merge and focus stay caller hooks (see {@link recallSelectionBookmark}) so one store serves any genre, input scheme, or focus policy.
+- `SelectionPruneResult` (interface): interface SelectionPruneResult — Outcome of a {@link SelectionBookmarks.prune} pass — what the validity predicate removed.
+- `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
+- `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
+
 ## @jgengine/core/scene/spatial
 
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
@@ -1146,7 +1164,6 @@
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
-- `AreaDistribution` (type): type AreaDistribution = "uniform" | "edge" — Fill policy for a rect/box: `"uniform"` = even coverage; `"edge"` = biased to a boundary band.
 - `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
 - `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
@@ -1158,6 +1175,7 @@
 - `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
+- `BookmarkRecallMode` (type): type BookmarkRecallMode = "replace" | "merge" — How a recalled bookmark folds into the active selection.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
 - `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
@@ -1176,6 +1194,9 @@
 - `ConcealmentSensor` (interface): interface ConcealmentSensor — ⚠ undocumented
 - `ContextMenu` (interface): interface ContextMenu — ⚠ undocumented
 - `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
+- `ControlGroupInput` (interface): interface ControlGroupInput — A decoded control-group key press plus the memory needed to detect a double-tap.
+- `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Digit: recall the set saved under `key` into the active selection. */ | { kind: "recall"; key: string } /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */ | { kind: "focus"; key: string } — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
+- `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
 - `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — ⚠ undocumented
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
@@ -1187,7 +1208,6 @@
 - `EnvironmentField` (interface): interface EnvironmentField — ⚠ undocumented
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
 - `FactionDef` (interface): interface FactionDef — ⚠ undocumented
-- `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
 - `FireGrid` (interface): interface FireGrid — ⚠ undocumented
 - `FogCells` (interface): interface FogCells — ⚠ undocumented
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
@@ -1265,12 +1285,11 @@
 - `PlacementPreview` (interface): interface PlacementPreview — ⚠ undocumented
 - `PlacementRules` (interface): interface PlacementRules — ⚠ undocumented
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
-- `Point3` (type): type Point3 = readonly [number, number, number] — Deterministic spatial sampling — draw one or many positions from a geometric region under explicit constraints, with an injected RNG, bounded attempts, and a structured pass/fail result.
 - `PositionedPrompt` (interface): interface PositionedPrompt — ⚠ undocumented
 - `ProximityPrompt` (interface): interface ProximityPrompt — ⚠ undocumented
 - `QteStep` (interface): interface QteStep — ⚠ undocumented
-- `RadialDistribution` (type): type RadialDistribution = "area" | "radial" — Fill policy for a circle/ring: `"area"` = area-uniform (even density); `"radial"` = radius-uniform (clumps toward center).
 - `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
+- `RecallBookmarkOptions` (interface): interface RecallBookmarkOptions — Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned.
 - `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
 - `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField — ⚠ undocumented
@@ -1288,14 +1307,6 @@
 - `SHAPE_SPHERE` (const): const SHAPE_SPHERE: 1 — ⚠ undocumented
 - `SOIL_KIND` (const): const SOIL_KIND: "soil" — The editor volume kind marking a box as a soil crack/moss patch.
 - `SOIL_SCHEMA` (const): const SOIL_SCHEMA: ParamSchema — The soil parameter schema — drives the inspector and `meta` parse via the studio seam.
-- `SampleBatchOptions` (interface): interface SampleBatchOptions<P extends SamplePoint = SamplePoint> — Inputs for a {@link sampleBatch} draw of many spaced points.
-- `SampleBatchResult` (interface): interface SampleBatchResult<P extends SamplePoint = SamplePoint> — Structured batch outcome: the placed points plus whether the full count was met.
-- `SampleConstraints` (interface): interface SampleConstraints<P extends SamplePoint = SamplePoint> — Post-draw gates a candidate must clear. All are optional; an empty constraint set accepts every in-region draw. `exclude` discs/spheres are the keep-out distance primitive ("no closer than R to this center"); `accept` is a free-form caller predicate (biome, slope, ownership); `project` snaps a candidate onto a surface/navmesh before validation and may reject by returning `null`.
-- `SamplePoint` (type): type SamplePoint = readonly number[] — A sampled point: 2D `[x, z]` or 3D `[x, y, z]`. Every point in one run shares its dimensionality.
-- `SamplePointOptions` (interface): interface SamplePointOptions<P extends SamplePoint = SamplePoint> — Inputs for a single {@link samplePoint} draw.
-- `SampleReason` (type): type SampleReason = "accepted" | "exhausted" | "empty-region" — Why a sample ended: a clean hit, budget exhausted, or the region was degenerate.
-- `SampleRegion` (interface): interface SampleRegion<P extends SamplePoint = SamplePoint> — A geometric region a sampler can draw from. Built-ins cover point sets, rect/box, circle/sphere, annulus/shell, polygon, and weighted composites; {@link customRegion} wraps a caller-defined sampler + bounds. `sample` draws one raw candidate under the region's own distribution policy; `contains` is the membership test reused for include/exclude constraints and rejection.
-- `SampleResult` (interface): interface SampleResult<P extends SamplePoint = SamplePoint> — Structured single-sample outcome — never a bare point, so failure and fallback are visible.
 - `ScatterInstance` (interface): interface ScatterInstance — ⚠ undocumented
 - `ScatterPoint` (interface): interface ScatterPoint — ⚠ undocumented
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
@@ -1306,6 +1317,9 @@
 - `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
 - `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
 - `ScreenRect` (interface): interface ScreenRect — ⚠ undocumented
+- `SelectionBookmarkSnapshot` (interface): interface SelectionBookmarkSnapshot — The serializable shape of a {@link SelectionBookmarks} store: each key maps to its ordered, deduplicated id list. Plain data — safe to persist in a save file or replicate over the wire, and the exact input {@link createSelectionBookmarks} restores.
+- `SelectionBookmarks` (interface): interface SelectionBookmarks — A generic, keyed store of saved id sets ("bookmarks") over stable string ids — the reusable layer under RTS control groups, camera bookmarks, saved squads, editor selection presets, and accessibility recall. It owns storage only: binding, recall, enumeration, pruning, and serialization. It never touches the active {@link SelectionSet} or the camera — replacement/merge and focus stay caller hooks (see {@link recallSelectionBookmark}) so one store serves any genre, input scheme, or focus policy.
+- `SelectionPruneResult` (interface): interface SelectionPruneResult — Outcome of a {@link SelectionBookmarks.prune} pass — what the validity predicate removed.
 - `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
 - `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
 - `SensorReading` (interface): interface SensorReading — ⚠ undocumented
@@ -1325,7 +1339,6 @@
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
 - `StatValue` (interface): interface StatValue — ⚠ undocumented
 - `Station` (interface): interface Station — ⚠ undocumented
-- `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
 - `StructureMaterial` (interface): interface StructureMaterial — ⚠ undocumented
 - `SupportResult` (interface): interface SupportResult — ⚠ undocumented
@@ -1365,7 +1378,6 @@
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
 - `VisibilityConfig` (interface): interface VisibilityConfig — Per-game visibility configuration, surfaced on `PlayableGame.visibility`. Everything is optional: an existing game that sets nothing gets the conservative engine defaults automatically. This is the scene-level and per-kind override seam (requirement: per-object, per-layer, per-scene, and global controls).
 - `VisibilitySystem` (interface): interface VisibilitySystem — ⚠ undocumented
-- `VolumeDistribution` (type): type VolumeDistribution = "volume" | "radial" — Fill policy for a sphere/shell: `"volume"` = volume-uniform (even density); `"radial"` = radius-uniform.
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 - `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
@@ -1380,7 +1392,6 @@
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
 - `WeatherState` (interface): interface WeatherState — ⚠ undocumented
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
-- `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
 - `WindField` (interface): interface WindField — ⚠ undocumented
 - `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
@@ -1390,7 +1401,6 @@
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
-- `annulusRegion` (function): function annulusRegion(center: Vec2, innerRadius: number, outerRadius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> — A ring (annulus) between `innerRadius` and `outerRadius`. `"area"` fills the band with even density; `"radial"` spreads uniformly in radius. Angle first, then radius.
 - `applyDeltaToSnapshot` (function): function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
 - `applySurfaceDeltaToSnapshot` (function): function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `after` ids applied (copy-on-write).
 - `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
@@ -1398,7 +1408,6 @@
 - `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
-- `boxRegion` (function): function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> — An axis-aligned box `[min..max]` in 3D. Uniform density; draws x, y, z in order.
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
@@ -1416,6 +1425,7 @@
 - `constrainToNavGrid` (function): function constrainToNavGrid(grid: NavGrid, options?: NavConstrainOptions): (proposed: NavConstrainProposed, entity: NavConstrainEntity) => NavConstrainProposed | null — ⚠ undocumented
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
+- `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 - `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
@@ -1446,6 +1456,7 @@
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
@@ -1456,9 +1467,7 @@
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 - `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
-- `customRegion` (function): function customRegion<P extends SamplePoint>(spec: { dimensions: 2 | 3; sample: (rng: () => number) => P; contains: (point: P) => boolean; isEmpty?: boolean; }): SampleRegion<P> — Wrap a caller-defined sampler and bounds test as a {@link SampleRegion} — the escape hatch for regions the built-ins do not cover (a navmesh cell, a heightfield mask, a spline tube).
 - `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
-- `discRegion` (function): function discRegion(center: Vec2, radius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> — A filled circle. `"area"` is area-uniform (√-corrected radius, even density); `"radial"` is radius-uniform (clumps toward the center). Angle is drawn first, then radius — matching the common `angle = rng()·2π; r = rng()·R` idiom so migrations keep their stream.
 - `distance` (function): function distance(a: Vec3, b: Vec3): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `distanceToPolygonEdge` (function): function distanceToPolygonEdge(point: Vec2, polygon: readonly Vec2[]): number — Shortest distance from a point to a polygon's boundary.
@@ -1515,10 +1524,8 @@
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `pointInPolygon` (function): function pointInPolygon(point: Vec2, polygon: readonly Vec2[]): boolean — Ray-casting point-in-polygon test on the XZ plane.
 - `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
-- `pointSetRegion` (function): function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> — A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point table" region. `contains` is exact membership. Empty when the set is empty.
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
-- `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
 - `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
 - `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
 - `proximityPrompt` (function): function proximityPrompt({ radius, display, invoke = null }: ProximityPromptConfig): ProximityPrompt — ⚠ undocumented
@@ -1528,13 +1535,14 @@
 - `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
 - `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
-- `rectRegion` (function): function rectRegion(area: Aabb, options: { distribution?: AreaDistribution; edgeThickness?: number } = {}): SampleRegion<Vec2> — An axis-aligned rectangle on the XZ plane. `"uniform"` spreads evenly (draws x then z); `"edge"` biases onto a boundary band of `edgeThickness` meters (perimeter-weighted side, then inward depth) — the two are never conflated, the caller opts in.
+- `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 - `registerAssetGenerator` (function): function registerAssetGenerator(definition: AssetGeneratorDefinition): void — Register a parametric asset generator. Idempotent per id (last wins); call at module load.
 - `registerSceneKind` (function): function registerSceneKind<TResolved>(definition: SceneKindDefinition<TResolved>): void — Register a scene kind — the plug-in point for a new parametric studio. Idempotent per `kind` (last registration wins), so a game's registration overrides a default. Call at module load; the editor inspector, `+ Add` menu, and `AuthoredScene` renderer lookup all read this registry.
 - `registerTriggerAction` (function): function registerTriggerAction(definition: TriggerActionDefinition): void — Declare a game action the editor can assign to volume/marker triggers. Idempotent per `id` (last registration wins). Call at module load next to catalogs.
 - `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
 - `resolveActivePrompt` (function): function resolveActivePrompt<T extends PositionedPrompt>(playerPosition: PromptPoint, prompts: readonly T[]): T | null — Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal priority and distance keep the earliest prompt in the list.
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
+- `resolveControlGroupIntent` (function): function resolveControlGroupIntent(input: ControlGroupInput, options: ControlGroupOptions = {}): ControlGroupIntent — Resolve a control-group key press into a {@link ControlGroupIntent}: Ctrl+digit binds, a bare digit recalls, and a second recall of the same group within `doubleTapMs` focuses. Pure — the caller applies the intent against the store and its own focus hook, and records the returned recall for the next call.
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
 - `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
@@ -1547,10 +1555,7 @@
 - `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `sagCurve` (function): function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[] — Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span lowest point droops by exactly `sag` meters below the chord. Cheap and stable; the go-to for cables where exact catenary physics don't matter. Returns `segments + 1` points.
-- `sampleBatch` (function): function sampleBatch<P extends SamplePoint>(options: SampleBatchOptions<P>): SampleBatchResult<P> — Place up to `count` points from `region`, each clearing the shared constraints and honoring `minSeparation` against every point already placed in this batch (via a spatial hash, not an O(n²) scan). Order is deterministic for a given `rng` stream. Batches never silently under-fill: the result reports `placed`, `complete`, and the total attempt count.
 - `sampleGripCurve` (function): function sampleGripCurve(curve: GripCurve, slip: number): number — Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1). Grip peaks near the breakaway slip then falls off as the tire slides — the shape that separates a planted corner from a drift. Points are read in ascending slip order; ends clamp.
-- `samplePoint` (function): function samplePoint<P extends SamplePoint>(options: SamplePointOptions<P>): SampleResult<P> — Draw one point from `region` that clears every constraint, retrying up to `maxAttempts` times with the injected `rng`, then apply the `fallback` policy. Returns a structured {@link SampleResult} — a clean hit is `ok: true`; exhaustion or a degenerate region is reported with the attempt count and an explicit fallback flag, never a silently-accepted bad point.
-- `sampleStratified` (function): function sampleStratified(options: StratifiedOptions): Vec2[] — Stratified 2D sampling: one jittered point per grid cell over `area`, in deterministic row-major order. Unlike pure rejection sampling this guarantees even coverage (no clumps, no gaps) — the distinct "stratified" distribution policy, kept separate from area-uniform draws.
 - `sanitizeGameTimeScale` (function): function sanitizeGameTimeScale(timeScale?: number | null): number — ⚠ undocumented
 - `scatter` (function): function scatter(config: ScatterConfig): ScatterPoint[] — ⚠ undocumented
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
@@ -1559,7 +1564,6 @@
 - `screenRect` (function): function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect — Normalize two drag corners (in any order) into a rectangle.
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
 - `selectWithinRect` (function): function selectWithinRect(candidates: readonly ScreenPoint[], rect: ScreenRect): string[] — Ids of the projected candidates whose screen point falls inside the marquee.
-- `shellRegion` (function): function shellRegion(center: Point3, innerRadius: number, outerRadius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even density; `"radial"` spreads uniformly in radius. Direction first, then radius.
 - `sidewalkPoint` (function): function sidewalkPoint(road: RoadEnvironmentDescriptor, side: "left" | "right", fraction: number): RoadPoint | null — A deterministic point on one of a road's sidewalks at a normalized position — `side` picks the band, `fraction` (0..1) picks how far along. The canonical pedestrian spawn helper.
 - `sidewalkWidthOf` (function): function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number — Resolved sidewalk band widths for a road; zero when the road declares no sidewalk.
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
@@ -1572,7 +1576,6 @@
 - `solveLock` (function): function solveLock(spec: LockSpec): boolean — Whether the board has a path from the start row to the bolt seat at all.
 - `solveLockPath` (function): function solveLockPath(spec: LockSpec): number[] | null — Return a concrete row-per-column solution, or null if the board is unsolvable.
 - `solveSupport` (function): function solveSupport(pieces: readonly SupportPiece[], links: readonly SupportLink[], config: SupportConfig = {}): SupportResult — ⚠ undocumented
-- `sphereRegion` (function): function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A filled ball. `"volume"` is volume-uniform (∛-corrected radius); `"radial"` is radius-uniform. Direction is drawn first (two draws), then radius.
 - `steerYaw` (function): function steerYaw(yaw: number, steerRight: number, turnRatePerSecond: number, dt: number): number — Integrate one steering step. `steerRight` is the signed steer input (+1 = turn right, matching `DRIVE_AXIS_BINDINGS`' KeyD/ArrowRight), `turnRatePerSecond` is radians per second at full lock. Steering right decreases yaw in the engine frame; this helper owns that sign so game code never re-derives it.
 - `stepLock` (function): function stepLock(spec: LockSpec, col: number, row: number, action: LockAction): { result: LockStepResult; col: number; row: number } — Authoritative single step. The caller owns the lives economy: a slip/bind/trap does not advance the pick and should cost a life; advanced/success move the pick.
 - `stepPlayerMovement` (function): function stepPlayerMovement(ctx: GameContext, userId: string, input: InputFrame, dt: number, tuning: PlayerMovementTuning, heading?: number): void — Integrate one player's movement for a tick from their held-input frame and commit the pose — the single genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call, so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain, scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions.
@@ -1593,7 +1596,6 @@
 - `wander` (function): function wander({ radius }: { radius: number }): WanderBehavior — ⚠ undocumented
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
-- `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
@@ -1673,7 +1675,7 @@
 
 ## @jgengine/core/world/catenary
 
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — Generic sag/catenary curve → point string, ready to loft into a tube. Genre-agnostic — power lines, suspension-bridge cables, ziplines, ropes, hanging chains, festoon lights all hang the same way. `sagCurve` is a cheap quadratic-Bézier droop; `catenaryCurve` is the true cosh hyperbolic cable.
 - `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
 - `sagCurve` (function): function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[] — Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span lowest point droops by exactly `sag` meters below the chord. Cheap and stable; the go-to for cables where exact catenary physics don't matter. Returns `segments + 1` points.
 
@@ -1828,7 +1830,6 @@
 - `Footprint` (interface): interface Footprint — ⚠ undocumented
 - `MoveOptions` (interface): interface MoveOptions — ⚠ undocumented
 - `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
 
 ## @jgengine/core/world/grassKind
 
@@ -2066,37 +2067,6 @@
 - `SOIL_KIND` (const): const SOIL_KIND: "soil" — The editor volume kind marking a box as a soil crack/moss patch.
 - `SOIL_SCHEMA` (const): const SOIL_SCHEMA: ParamSchema — The soil parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-
-## @jgengine/core/world/spatialSample
-
-- `AreaDistribution` (type): type AreaDistribution = "uniform" | "edge" — Fill policy for a rect/box: `"uniform"` = even coverage; `"edge"` = biased to a boundary band.
-- `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
-- `Point3` (type): type Point3 = readonly [number, number, number] — Deterministic spatial sampling — draw one or many positions from a geometric region under explicit constraints, with an injected RNG, bounded attempts, and a structured pass/fail result.
-- `RadialDistribution` (type): type RadialDistribution = "area" | "radial" — Fill policy for a circle/ring: `"area"` = area-uniform (even density); `"radial"` = radius-uniform (clumps toward center).
-- `SampleBatchOptions` (interface): interface SampleBatchOptions<P extends SamplePoint = SamplePoint> — Inputs for a {@link sampleBatch} draw of many spaced points.
-- `SampleBatchResult` (interface): interface SampleBatchResult<P extends SamplePoint = SamplePoint> — Structured batch outcome: the placed points plus whether the full count was met.
-- `SampleConstraints` (interface): interface SampleConstraints<P extends SamplePoint = SamplePoint> — Post-draw gates a candidate must clear. All are optional; an empty constraint set accepts every in-region draw. `exclude` discs/spheres are the keep-out distance primitive ("no closer than R to this center"); `accept` is a free-form caller predicate (biome, slope, ownership); `project` snaps a candidate onto a surface/navmesh before validation and may reject by returning `null`.
-- `SamplePoint` (type): type SamplePoint = readonly number[] — A sampled point: 2D `[x, z]` or 3D `[x, y, z]`. Every point in one run shares its dimensionality.
-- `SamplePointOptions` (interface): interface SamplePointOptions<P extends SamplePoint = SamplePoint> — Inputs for a single {@link samplePoint} draw.
-- `SampleReason` (type): type SampleReason = "accepted" | "exhausted" | "empty-region" — Why a sample ended: a clean hit, budget exhausted, or the region was degenerate.
-- `SampleRegion` (interface): interface SampleRegion<P extends SamplePoint = SamplePoint> — A geometric region a sampler can draw from. Built-ins cover point sets, rect/box, circle/sphere, annulus/shell, polygon, and weighted composites; {@link customRegion} wraps a caller-defined sampler + bounds. `sample` draws one raw candidate under the region's own distribution policy; `contains` is the membership test reused for include/exclude constraints and rejection.
-- `SampleResult` (interface): interface SampleResult<P extends SamplePoint = SamplePoint> — Structured single-sample outcome — never a bare point, so failure and fallback are visible.
-- `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
-- `VolumeDistribution` (type): type VolumeDistribution = "volume" | "radial" — Fill policy for a sphere/shell: `"volume"` = volume-uniform (even density); `"radial"` = radius-uniform.
-- `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
-- `annulusRegion` (function): function annulusRegion(center: Vec2, innerRadius: number, outerRadius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> — A ring (annulus) between `innerRadius` and `outerRadius`. `"area"` fills the band with even density; `"radial"` spreads uniformly in radius. Angle first, then radius.
-- `boxRegion` (function): function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> — An axis-aligned box `[min..max]` in 3D. Uniform density; draws x, y, z in order.
-- `customRegion` (function): function customRegion<P extends SamplePoint>(spec: { dimensions: 2 | 3; sample: (rng: () => number) => P; contains: (point: P) => boolean; isEmpty?: boolean; }): SampleRegion<P> — Wrap a caller-defined sampler and bounds test as a {@link SampleRegion} — the escape hatch for regions the built-ins do not cover (a navmesh cell, a heightfield mask, a spline tube).
-- `discRegion` (function): function discRegion(center: Vec2, radius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> — A filled circle. `"area"` is area-uniform (√-corrected radius, even density); `"radial"` is radius-uniform (clumps toward the center). Angle is drawn first, then radius — matching the common `angle = rng()·2π; r = rng()·R` idiom so migrations keep their stream.
-- `pointSetRegion` (function): function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> — A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point table" region. `contains` is exact membership. Empty when the set is empty.
-- `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
-- `rectRegion` (function): function rectRegion(area: Aabb, options: { distribution?: AreaDistribution; edgeThickness?: number } = {}): SampleRegion<Vec2> — An axis-aligned rectangle on the XZ plane. `"uniform"` spreads evenly (draws x then z); `"edge"` biases onto a boundary band of `edgeThickness` meters (perimeter-weighted side, then inward depth) — the two are never conflated, the caller opts in.
-- `sampleBatch` (function): function sampleBatch<P extends SamplePoint>(options: SampleBatchOptions<P>): SampleBatchResult<P> — Place up to `count` points from `region`, each clearing the shared constraints and honoring `minSeparation` against every point already placed in this batch (via a spatial hash, not an O(n²) scan). Order is deterministic for a given `rng` stream. Batches never silently under-fill: the result reports `placed`, `complete`, and the total attempt count.
-- `samplePoint` (function): function samplePoint<P extends SamplePoint>(options: SamplePointOptions<P>): SampleResult<P> — Draw one point from `region` that clears every constraint, retrying up to `maxAttempts` times with the injected `rng`, then apply the `fallback` policy. Returns a structured {@link SampleResult} — a clean hit is `ok: true`; exhaustion or a degenerate region is reported with the attempt count and an explicit fallback flag, never a silently-accepted bad point.
-- `sampleStratified` (function): function sampleStratified(options: StratifiedOptions): Vec2[] — Stratified 2D sampling: one jittered point per grid cell over `area`, in deterministic row-major order. Unlike pure rejection sampling this guarantees even coverage (no clumps, no gaps) — the distinct "stratified" distribution policy, kept separate from area-uniform draws.
-- `shellRegion` (function): function shellRegion(center: Point3, innerRadius: number, outerRadius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even density; `"radial"` spreads uniformly in radius. Direction first, then radius.
-- `sphereRegion` (function): function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A filled ball. `"volume"` is volume-uniform (∛-corrected radius); `"radial"` is radius-uniform. Direction is drawn first (two draws), then radius.
-- `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 
 ## @jgengine/core/world/streets
 
