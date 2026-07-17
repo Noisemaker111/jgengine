@@ -95,6 +95,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
 
+## loot-pipeline — compose ordered loot pools with fallbacks, roll modifiers, and provenance
+
+- `createLootPipeline` (function) · `import { createLootPipeline } from "@jgengine/core/gameplay"`
+- `defineLootPipeline` (function) · `import { defineLootPipeline } from "@jgengine/core/gameplay"`
+
 ## loot-table — register loot tables and roll weighted randomized drops
 
 - `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`

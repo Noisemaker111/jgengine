@@ -91,6 +91,7 @@
     "./game/levelSequence",
     "./game/loadout",
     "./game/lootFilter",
+    "./game/lootPipeline",
     "./game/lootTable",
     "./game/modelAnimation",
     "./game/objectives",

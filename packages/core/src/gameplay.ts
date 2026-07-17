@@ -75,6 +75,23 @@ export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from ".
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
 export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./game/lootFilter";
+export {
+  createLootPipeline,
+  defineLootPipeline,
+  type LootDropProvenance,
+  type LootModifier,
+  type LootPipeline,
+  type LootPipelineDef,
+  type LootPipelineDeps,
+  type LootPlanEntry,
+  type LootResolution,
+  type LootResolveContext,
+  type LootRollPlan,
+  type LootStage,
+  type LootStageKind,
+  type LootStageStatus,
+  type LootStageTrace,
+} from "./game/lootPipeline";
 export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./game/lootTable";
 export { resolveOneShotClip } from "./game/modelAnimation";
 export { evaluateObjective } from "./game/objectives";
