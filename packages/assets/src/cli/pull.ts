@@ -11,6 +11,7 @@ import { generatedSpriteIndex } from "../generated-sprites";
 import { reindex } from "../indexGen";
 import { isScrapeDownload, type AssetSource, type SingleAsset } from "../manifest";
 import { extractMaterialMaps } from "../materials";
+import { validateAssetReferences } from "../provisioning";
 import { registryCatalog } from "../registry";
 import {
   componentWiringSnippet,
@@ -476,6 +477,35 @@ function cmdVerify(): void {
   fail(`verify failed with ${result.errors.length} problem(s)`);
 }
 
+/**
+ * Resolve each id against the provisioning contract and print its owner —
+ * `committed`, `provisioned` (with the `assets pull <source>` step), or
+ * `dangling`. Exits non-zero if any id is dangling, so a clean-clone gate can
+ * feed it logical ids and fail on references no source or single owns.
+ */
+function cmdProvenance(argv: string[]): void {
+  const ids = argv.filter((arg) => !arg.startsWith("--"));
+  if (ids.length === 0) fail("usage: assets provenance <id> [<id>...]");
+  const references = ids.map((id) => ({ consumer: "cli", id }));
+  const result = validateAssetReferences(references);
+  for (const row of result.results) {
+    const p = row.provenance;
+    const detail =
+      p.kind === "provisioned"
+        ? `${p.resolvedPath}  (${p.provisioningStep})`
+        : p.kind === "committed"
+          ? `${p.resolvedPath}`
+          : "no owner";
+    const mark = row.ok ? "✓" : "✗";
+    console.log(`  ${mark} ${p.id}: ${p.kind} — ${detail}`);
+  }
+  if (result.provisioning.length > 0) {
+    console.log(`provisioning steps: ${result.provisioning.join(", ")}`);
+  }
+  if (!result.ok) fail(`provenance: ${result.errors.length} dangling reference(s)`);
+  console.log("provenance: ok");
+}
+
 if (import.meta.main) {
   const [command, ...rest] = process.argv.slice(2);
   switch (command) {
@@ -503,8 +533,13 @@ if (import.meta.main) {
     case "verify":
       cmdVerify();
       break;
+    case "provenance":
+      cmdProvenance(rest);
+      break;
     default:
-      console.log("usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify> [...args]");
+      console.log(
+        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify|provenance> [...args]",
+      );
       if (command !== undefined && command !== "help") process.exit(1);
   }
 }

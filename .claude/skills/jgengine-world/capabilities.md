@@ -4,32 +4,9 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## asset-anchor — resolve a model's pivot offset from its footprint center
+## asset-load-diagnostics — classify a model fetch (missing / HTML fallback / corrupt / unsupported) before parsing
 
-- `resolveAnchorOffset` (function) · `import { resolveAnchorOffset } from "@jgengine/core/world"`
-
-## asset-facing — resolve a placement heading into a Three.js Y-rotation using canonical forward
-
-- `resolveFacingRotationY` (function) · `import { resolveFacingRotationY } from "@jgengine/core/world"`
-
-## asset-footprint — rotate a rectangular footprint into its axis-aligned extent
-
-- `rotatedFootprint` (function) · `import { rotatedFootprint } from "@jgengine/core/world"`
-
-## asset-heading — turn a north-relative degree heading into a Three.js Y-rotation
-
-- `headingToRotationY` (function) · `import { headingToRotationY } from "@jgengine/core/world"`
-- `normalizeDegrees` (function) · `import { normalizeDegrees } from "@jgengine/core/world"`
-- `rotationYToHeading` (function) · `import { rotationYToHeading } from "@jgengine/core/world"`
-
-## asset-space — parse serialized asset-space metadata into a validated shape
-
-- `parseAssetSpace` (function) · `import { parseAssetSpace } from "@jgengine/core/world"`
-- `validateAssetSpace` (function) · `import { validateAssetSpace } from "@jgengine/core/world"`
-
-## asset-units — convert a source-space length to engine meters via catalog unit scale
-
-- `toEngineUnits` (function) · `import { toEngineUnits } from "@jgengine/core/world"`
+- `classifyAssetResponse` (function) · `import { classifyAssetResponse } from "@jgengine/core/scene/assetDiagnostics"`
 
 ## authored-objects — place catalog mesh props from an editor document
 
@@ -55,10 +32,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Vec3` (type) · `import { Vec3 } from "@jgengine/core/world/catenary"`
 
-## contour-interval — readable auto-spacing for elevation contours
-
-- `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/world"`
-
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
@@ -66,14 +39,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
-
-## elevation-readout — cursor height and delta-from-reference feedback
-
-- `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
-
-## elevation-summary — selection min/max/mean and relief over a region
-
-- `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
@@ -111,11 +76,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
-## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
-
-- `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
-- `withPathProfiles` (function) · `import { withPathProfiles } from "@jgengine/core/world"`
-
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
 - `PlaceAssetResult` (interface) · `import { PlaceAssetResult } from "@jgengine/core/world"`
@@ -129,12 +89,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## placement-math — grid/surface footprint validity for build mode
 
 - `validatePlacement` (function) · `import { validatePlacement } from "@jgengine/core/world"`
-
-## placement-rotation — apply a rotation policy to a candidate placement heading
-
-- `applyRotationPolicy` (function) · `import { applyRotationPolicy } from "@jgengine/core/world"`
-- `parseRotationPolicy` (function) · `import { parseRotationPolicy } from "@jgengine/core/world"`
-- `snapHeading` (function) · `import { snapHeading } from "@jgengine/core/world"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
@@ -155,26 +109,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
-
-## surface-drape — lift an XZ polyline onto sculpted terrain
-
-- `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/world"`
-
-## surface-grid — terrain-following reference grid that is not occluded by relief
-
-- `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/world"`
-
-## surface-ring — surface-following placement guide ring
-
-- `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/world"`
-
-## terrain-contours — iso-elevation contour lines that drape on sculpted terrain
-
-- `extractContours` (function) · `import { extractContours } from "@jgengine/core/world"`
-
-## terrain-guides — one-call adaptive contours for a terrain field
-
-- `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/world"`
 
 ## touch-controls — default on-screen button silhouette for a touch action
 
