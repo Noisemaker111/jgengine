@@ -44,6 +44,35 @@ export { createDefensiveWindow, resolveDefense } from "./combat/defensiveWindow"
 export { createDotField } from "./combat/dotField";
 export { createDownedState } from "./combat/downed";
 export { createEffectSystem, type ReceiveMap } from "./combat/effects";
+export {
+  BUILTIN_COMPLETION_PREDICATES,
+  BUILTIN_SPAWN_PROVIDERS,
+  activePhaseId,
+  createEncounterState,
+  encounterProgress,
+  forceCompletePhase,
+  injectPhase,
+  phaseStatus,
+  startEncounter,
+  updateEncounter,
+  type CompletionPredicate,
+  type EncounterConfig,
+  type EncounterContext,
+  type EncounterEvent,
+  type EncounterPhase,
+  type EncounterSignals,
+  type EncounterSpawnRequest,
+  type EncounterState,
+  type EncounterStep,
+  type PhaseCompletionRef,
+  type PhaseInjectAt,
+  type PhaseRuntime,
+  type PhaseSpawnRef,
+  type PhaseStatus,
+  type PredicateContext,
+  type SpawnProvider,
+  type SpawnProviderContext,
+} from "./combat/encounterSequence";
 export { impactPresets, resolveHitReaction, type HitReactionConfig } from "./combat/hitReaction";
 export { createMagazine, type Magazine, type MagazineReserve } from "./combat/magazine";
 export {
