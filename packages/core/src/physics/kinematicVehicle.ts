@@ -20,6 +20,38 @@ export interface KinematicVehicleTuning {
   steering?: KinematicSteeringTuning;
   /** Optional aerodynamic drag/downforce and electronic driver assists. */
   dynamics?: KinematicDynamicsTuning;
+  /**
+   * Optional mass-and-force chassis layer (#1051). When present it supersedes `engineAccel`/`brakeAccel`
+   * with force/mass dynamics — a tire friction budget, lateral weight transfer, and engine braking — so
+   * vehicles of different mass, drive/brake force, and center-of-gravity drive measurably differently.
+   * Omit to preserve the direct arcade acceleration model exactly.
+   */
+  chassis?: KinematicChassisTuning;
+}
+
+/**
+ * Mass-and-force chassis layer (#1051); when present it supersedes `engineAccel`/`brakeAccel` with
+ * force/mass dynamics. Drive/brake become forces divided by `massKg`, a per-tick tire friction budget
+ * (`tireGrip` * grip curve * surface * downforce * m * g) is split lateral-first then longitudinal so
+ * hard slides and launches saturate, `comHeight`/`trackWidth` set weight-transfer washout and body
+ * lean, and `engineBrakeForce` decelerates a coasting car. All fields are required; omit the whole
+ * block for the legacy model.
+ */
+export interface KinematicChassisTuning {
+  /** Total vehicle mass, kg (1200 compact … 11000 bus); divides every drive/brake force into accel. */
+  massKg: number;
+  /** Peak drive force at the wheels, N — scaled by the powertrain torque curve and throttle. */
+  engineForce: number;
+  /** Peak service-brake force, N; still modulated by the existing ABS logic. */
+  brakeForce: number;
+  /** Coast drag force at throttle 0, N (engine braking); applied against motion, no throttle held. */
+  engineBrakeForce: number;
+  /** Peak tire friction coefficient μ on an ideal surface (~0.9 street, 1.1 sport, 0.7 bus). */
+  tireGrip: number;
+  /** Center-of-mass height, m (0.45 sports car … 1.4 bus); drives weight transfer and body lean. */
+  comHeight: number;
+  /** Lateral wheel spacing (track width), m; larger resists lateral weight transfer. */
+  trackWidth: number;
 }
 
 /** Data-first gearbox and torque-curve tuning for a kinematic ground vehicle. */
@@ -110,6 +142,12 @@ export interface KinematicVehicleStep {
   longitudinalAcceleration: number;
   tractionLimited: boolean;
   absActive: boolean;
+  /**
+   * Demanded drive force exceeded the tire friction budget left after cornering this tick — a
+   * traction-limited launch (#1051). Always `false` without a `chassis` block; distinct from
+   * `tractionLimited`, which stays owned by the traction-control assist.
+   */
+  wheelspin: boolean;
   bodyPitch: number;
   bodyRoll: number;
 }
@@ -134,6 +172,7 @@ export function createKinematicVehicle(
   options: KinematicVehicleOptions = {},
 ): KinematicVehicle {
   const grip = tuning.grip ?? DEFAULT_GRIP_CURVE;
+  const chassis = tuning.chassis;
   const rollingResistance = tuning.rollingResistance ?? 0;
   const surfaceFriction = options.surfaceFriction ?? (() => 1);
   const dragAt = options.dragAt ?? (() => 0);
@@ -189,10 +228,11 @@ export function createKinematicVehicle(
       let accel = 0;
       let tractionLimited = false;
       let absActive = false;
+      let wheelspin = false;
       if (axis.throttle > 0 && speed < topSpeed) {
-        if (tuning.powertrain === undefined) {
-          accel += axis.throttle * engineAccel;
-        } else {
+        // Powertrain torque factor (`torque * shift-cut`), or `1` when no gearbox is configured.
+        let torqueFactor = 1;
+        if (tuning.powertrain !== undefined) {
           const powertrain = tuning.powertrain;
           shiftRemaining = Math.max(0, shiftRemaining - dt);
           const ratio = powertrain.gears[Math.min(gearIndex, powertrain.gears.length - 1)] ?? 1;
@@ -208,17 +248,26 @@ export function createKinematicVehicle(
           const normalizedRpm = (rpm - powertrain.idleRpm) / Math.max(1, powertrain.redlineRpm - powertrain.idleRpm);
           const torque = sampleGripCurve(powertrain.torqueCurve, normalizedRpm);
           const drive = shiftRemaining > 0 ? 0.32 : 1;
-          accel += axis.throttle * engineAccel * torque * drive;
+          torqueFactor = torque * drive;
         }
+        accel += chassis === undefined
+          ? axis.throttle * engineAccel * torqueFactor
+          : (axis.throttle * chassis.engineForce * (modifiers?.accelScale ?? 1) * torqueFactor) / chassis.massKg;
       }
       if (axis.brake > 0) {
         if (speed > 0.2) {
           const abs = tuning.dynamics?.abs ?? 0;
           const brakeScale = Math.max(0.15, 1 - abs * Math.max(0, Math.abs(speed) / Math.max(1, topSpeed) - 0.72));
           absActive = brakeScale < 0.999;
-          accel -= axis.brake * tuning.brakeAccel * brakeScale;
+          accel -= chassis === undefined
+            ? axis.brake * tuning.brakeAccel * brakeScale
+            : (axis.brake * chassis.brakeForce * brakeScale) / chassis.massKg;
         }
-        else if (speed > -tuning.reverseSpeed) accel -= axis.brake * engineAccel;
+        else if (speed > -tuning.reverseSpeed) {
+          accel -= chassis === undefined
+            ? axis.brake * engineAccel
+            : (axis.brake * chassis.engineForce * (modifiers?.accelScale ?? 1)) / chassis.massKg;
+        }
       }
       const traction = tuning.dynamics?.tractionControl ?? 0;
       if (traction > 0 && Math.abs(speed) > 0.5) {
@@ -228,6 +277,11 @@ export function createKinematicVehicle(
           accel *= Math.max(0.2, 1 - excess * traction * 3);
           tractionLimited = true;
         }
+      }
+      // Engine braking (#1051): throttle released and rolling → coast drag force opposing motion, on top
+      // of rollingResistance/aero; clamped so it cannot reverse the car within a tick. None while throttle held.
+      if (chassis !== undefined && axis.throttle <= 0 && dt > 0 && Math.abs(speed) > 1e-4) {
+        accel -= Math.sign(speed) * Math.min(chassis.engineBrakeForce / chassis.massKg, Math.abs(speed) / dt);
       }
       vx += fx * accel * dt;
       vz += fz * accel * dt;
@@ -241,7 +295,33 @@ export function createKinematicVehicle(
       const gripValue = sampleGripCurve(grip, slip) * surface * handbrakeFactor * downforce;
       const keep = Math.max(0, 1 - gripValue * tuning.gripStrength * dt);
       const stability = tuning.dynamics?.stabilityControl ?? 0;
-      const keptLateral = lateralSpeed * keep * Math.max(0, 1 - stability * Math.abs(axis.steer) * dt);
+      let keptLateral = lateralSpeed * keep * Math.max(0, 1 - stability * Math.abs(axis.steer) * dt);
+      if (chassis !== undefined) {
+        // Friction budget (#1051): total tire force F = μeff * m * g, with μeff = tireGrip * gripValue
+        // (grip curve * surface * handbrake * downforce). Lateral load transfer (|centripetal accel| *
+        // comHeight / (trackWidth * g), capped ~0.6) shrinks the lateral share so tall/narrow chassis wash
+        // out earlier. Lateral consumes its capped share first; only the remainder feeds drive/brake.
+        const capacity = chassis.tireGrip * gripValue * chassis.massKg * GRAVITY;
+        const transfer = Math.min(
+          0.6,
+          (Math.abs(yawRate * forwardSpeed) * chassis.comHeight) / (Math.max(0.1, chassis.trackWidth) * GRAVITY),
+        );
+        const lateralCapacity = capacity * (1 - 0.5 * transfer);
+        const reductionWanted = lateralSpeed - keptLateral;
+        const maxReduction = dt > 0 ? (lateralCapacity * dt) / chassis.massKg : 0;
+        let reductionActual = reductionWanted;
+        if (Math.abs(reductionWanted) > maxReduction) {
+          reductionActual = Math.sign(reductionWanted) * maxReduction;
+          keptLateral = lateralSpeed - reductionActual;
+        }
+        const lateralForceUsed = dt > 0 ? (chassis.massKg * Math.abs(reductionActual)) / dt : 0;
+        const remainingLong = Math.max(0, capacity - lateralForceUsed);
+        if (chassis.massKg * Math.abs(accel) > remainingLong) {
+          const actualAccel = (Math.sign(accel) * remainingLong) / chassis.massKg;
+          forwardSpeed -= (accel - actualAccel) * dt;
+          if (accel > 0 && axis.throttle > 0) wheelspin = true;
+        }
+      }
       if (rollingResistance > 0) forwardSpeed *= Math.max(0, 1 - rollingResistance * dt);
       const aerodynamicDrag = tuning.dynamics?.aerodynamicDrag ?? 0;
       if (aerodynamicDrag > 0) {
@@ -272,15 +352,33 @@ export function createKinematicVehicle(
         z = toZ;
       }
 
+      // Rest snap (#1051): parked with no throttle/brake/handbrake and sub-threshold motion → exact zero,
+      // killing residual creep and jitter. Zeroing previousForwardSpeed keeps the stop free of a pitch spike.
+      if (
+        chassis !== undefined &&
+        axis.throttle <= 0 &&
+        axis.brake <= 0 &&
+        axis.handbrake <= 0 &&
+        Math.abs(vx * fx + vz * fz) < 0.2 &&
+        Math.abs(-vx * fz + vz * fx) < 0.2
+      ) {
+        vx = 0;
+        vz = 0;
+        forwardSpeed = 0;
+        previousForwardSpeed = 0;
+      }
+
       const longitudinalAcceleration = dt > 0 ? (forwardSpeed - previousForwardSpeed) / dt : 0;
       previousForwardSpeed = forwardSpeed;
       const attitudeResponse = 1 - Math.exp(-Math.max(0, tuning.dynamics?.attitudeResponse ?? 7) * Math.max(0, dt));
+      // comHeight scales brake dive / throttle squat and cornering lean (#1051); `1` without a chassis.
+      const comScale = chassis !== undefined ? chassis.comHeight : 1;
       const targetPitch = clampSigned(
-        -longitudinalAcceleration * (tuning.dynamics?.bodyPitchFactor ?? 0),
+        -longitudinalAcceleration * (tuning.dynamics?.bodyPitchFactor ?? 0) * comScale,
         tuning.dynamics?.maxBodyPitch ?? 0.12,
       );
       const targetRoll = clampSigned(
-        -yawRate * forwardSpeed * (tuning.dynamics?.bodyRollFactor ?? 0),
+        -yawRate * forwardSpeed * (tuning.dynamics?.bodyRollFactor ?? 0) * comScale,
         tuning.dynamics?.maxBodyRoll ?? 0.16,
       );
       bodyPitch += (targetPitch - bodyPitch) * attitudeResponse;
@@ -299,6 +397,7 @@ export function createKinematicVehicle(
         longitudinalAcceleration,
         tractionLimited,
         absActive,
+        wheelspin,
         bodyPitch,
         bodyRoll,
       };
@@ -327,6 +426,9 @@ export function createKinematicVehicle(
     },
   };
 }
+
+/** Gravitational acceleration, m/s², for the chassis friction budget and weight-transfer ratio (#1051). */
+const GRAVITY = 9.81;
 
 function clampSigned(value: number, magnitude: number): number {
   return Math.max(-Math.abs(magnitude), Math.min(Math.abs(magnitude), value));

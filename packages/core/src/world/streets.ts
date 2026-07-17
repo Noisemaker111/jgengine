@@ -191,6 +191,76 @@ export function parkingSpots(
 }
 
 /**
+ * Signed planar distance from `(x, z)` to the nearest road *surface edge* across every segment of
+ * every road (#1051): negative inside the asphalt (magnitude = how far in from the closest edge, so
+ * `-width/2` on the centerline), `~0` right at the curb, and positive off the road (the gap to the
+ * nearest edge). Point-to-segment distance minus the road's half width, minimised over all segments —
+ * the "am I on the road, and by how much" seam driving grip, tyre audio, and off-road penalties.
+ *
+ * Allocation-free per call (only scalars — no arrays or objects) so a per-tick car sim can sample it
+ * on the hot path; degenerate roads (fewer than two path points) contribute nothing, and with no road
+ * surface at all it returns {@link Number.POSITIVE_INFINITY} (everywhere is off-road).
+ */
+export function distanceToRoadEdge(
+  roads: readonly RoadEnvironmentDescriptor[],
+  x: number,
+  z: number,
+): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (let r = 0; r < roads.length; r += 1) {
+    const road = roads[r]!;
+    const path = road.path;
+    if (path.length < 2) continue;
+    const half = road.width / 2;
+    for (let i = 0; i < path.length - 1; i += 1) {
+      const a = path[i]!;
+      const b = path[i + 1]!;
+      const abx = b[0] - a[0];
+      const abz = b[1] - a[1];
+      const lengthSq = abx * abx + abz * abz;
+      const t = lengthSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * abx + (z - a[1]) * abz) / lengthSq));
+      const px = a[0] + abx * t;
+      const pz = a[1] + abz * t;
+      const edge = Math.hypot(x - px, z - pz) - half;
+      if (edge < best) best = edge;
+    }
+  }
+  return best;
+}
+
+/** Grip levels and blend width for {@link roadSurfaceSampler}; each field is optional and defaulted. */
+export interface RoadSurfaceOptions {
+  /** Grip multiplier on the asphalt. Default 1. */
+  onRoad?: number;
+  /** Grip multiplier once fully off the road past the shoulder. Default 0.72. */
+  offRoad?: number;
+  /** Width (world units) of the blend band outside the curb from full to off-road grip. Default 3. */
+  shoulder?: number;
+}
+
+/**
+ * A `surfaceFriction`-compatible sampler (the `(x, z) => grip` hook a kinematic car reads each tick)
+ * that turns road geometry into grip (#1051): full `onRoad` grip on the asphalt, a monotonic linear ramp
+ * down across a `shoulder`-wide band at the curb, and flat `offRoad` grip beyond it — so a car that
+ * clips onto the grass loses bite progressively instead of snapping. Closes over {@link
+ * distanceToRoadEdge}, so the returned sampler is itself allocation-free per call.
+ */
+export function roadSurfaceSampler(
+  roads: readonly RoadEnvironmentDescriptor[],
+  options: RoadSurfaceOptions = {},
+): (x: number, z: number) => number {
+  const onRoad = options.onRoad ?? 1;
+  const offRoad = options.offRoad ?? 0.72;
+  const shoulder = options.shoulder ?? 3;
+  return (x, z) => {
+    const edge = distanceToRoadEdge(roads, x, z);
+    if (edge <= 0) return onRoad;
+    if (shoulder <= 0 || edge >= shoulder) return offRoad;
+    return onRoad + (offRoad - onRoad) * (edge / shoulder);
+  };
+}
+
+/**
  * A deterministic point on one of a road's sidewalks at a normalized position — `side` picks the
  * band, `fraction` (0..1) picks how far along. The canonical pedestrian spawn helper.
  */
