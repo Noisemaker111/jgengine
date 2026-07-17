@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import type { AudioEmitterHandle } from "./audioEngine";
 import { attachAudioEventWire, type AudioEventBus } from "./audioWire";
 
 function busStub() {
@@ -23,6 +24,24 @@ function busStub() {
   };
 }
 
+function fakeHandle() {
+  const calls = {
+    rate: [] as number[],
+    gain: [] as number[],
+    pos: [] as { x: number; y: number; z: number }[],
+    stopped: 0,
+  };
+  const handle: AudioEmitterHandle = {
+    setPosition: (p) => calls.pos.push(p),
+    setRate: (r) => calls.rate.push(r),
+    setGain: (g) => calls.gain.push(g),
+    stop: () => {
+      calls.stopped += 1;
+    },
+  };
+  return { handle, calls };
+}
+
 describe("attachAudioEventWire", () => {
   test("routes audio.play / audio.music / audio.resume to the engine", () => {
     const played: { sound: string; pos?: { x: number; y: number; z: number } }[] = [];
@@ -39,6 +58,7 @@ describe("attachAudioEventWire", () => {
       resume: () => {
         resumes += 1;
       },
+      playLoop: () => null,
     });
 
     bus.emit("audio.play", { sound: "hit", at: [1, 2, 3] as const });
@@ -66,6 +86,7 @@ describe("attachAudioEventWire", () => {
       playOneShot: (sound, position) => played.push({ sound, position }),
       playMusic: (theme, options) => music.push({ theme, options }),
       resume: () => undefined,
+      playLoop: () => null,
     });
     bus.emit("audio.play", { sound: "click" });
     bus.emit("audio.music", { theme: null });

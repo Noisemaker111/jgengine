@@ -172,6 +172,34 @@ describe("createGameContext", () => {
     expect(resumed).toBe(1);
   });
 
+  test("game.audio routes retained loop start/set/stop through the audio.loop events", () => {
+    const ctx = makeContext();
+    const starts: unknown[] = [];
+    const sets: unknown[] = [];
+    const stops: unknown[] = [];
+    ctx.game.events.on("audio.loopStart", (event) => starts.push(event));
+    ctx.game.events.on("audio.loopSet", (event) => sets.push(event));
+    ctx.game.events.on("audio.loopStop", (event) => stops.push(event));
+
+    ctx.game.audio.loop("engine", "engine_hum");
+    ctx.game.audio.loop("squeal", "tire_squeal", { at: [4, 0, -2] });
+    ctx.game.audio.setLoop("engine", { rate: 1.8, gain: 0.7 });
+    ctx.game.audio.setLoop("engine", { rate: 2.4 });
+    ctx.game.audio.setLoop("squeal", { gain: 0.3, at: [5, 0, -1] });
+    ctx.game.audio.stopLoop("engine");
+
+    expect(starts).toEqual([
+      { id: "engine", sound: "engine_hum" },
+      { id: "squeal", sound: "tire_squeal", at: [4, 0, -2] },
+    ]);
+    expect(sets).toEqual([
+      { id: "engine", rate: 1.8, gain: 0.7 },
+      { id: "engine", rate: 2.4 },
+      { id: "squeal", gain: 0.3, at: [5, 0, -1] },
+    ]);
+    expect(stops).toEqual([{ id: "engine" }]);
+  });
+
   test("telegraph cancel removes the visual even with no bound effect", () => {
     const ctx = makeContext();
     const cancelled: number[] = [];
