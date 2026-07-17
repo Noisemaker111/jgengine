@@ -75,6 +75,21 @@ export {
 export { resistanceScale, resolveResistance } from "./combat/resistance";
 export { createResourcePool, type ResourcePool } from "./combat/resourcePool";
 export {
+  allocateRewards,
+  filterOutcomeFor,
+  resolveClaim,
+  type AllocationOutcome,
+  type AllocationRequest,
+  type ClaimOutcome,
+  type ClaimablePool,
+  type RewardClaimSpec,
+  type RewardGrant,
+  type RewardPolicyKind,
+  type RewardRecipient,
+  type RewardResult,
+  type RewardShare,
+} from "./combat/rewardAllocation";
+export {
   DEFAULT_EYE_HEIGHT,
   convergeShot,
   eyeHeightFromColliders,

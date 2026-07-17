@@ -7,57 +7,48 @@
 - `AbilityKit` (interface): interface AbilityKit — ⚠ undocumented
 - `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
 - `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
+- `AllocationOutcome` (interface): interface AllocationOutcome — The serializable result of an allocation pass — immediate `grants` plus any deferred `pools`.
+- `AllocationRequest` (interface): interface AllocationRequest — The inputs one allocation pass consumes. `allocationSeed` governs distribution decisions (ordering, round-robin rotation, remainder splits, reservation) while the separate optional `generationSeed` seeds per-recipient `instanced` generation — keeping join order from perturbing other players' rolls. Provide `results` for pre-rolled policies, `generate` for `instanced`, `assignment` for `assigned`, and `claim` for `claimed`.
 - `AnimationClip` (interface): interface AnimationClip — ⚠ undocumented
-- `AntiOneShotConfig` (interface): interface AntiOneShotConfig — Caller data for the anti-one-shot composition: "cannot cross lethal while above X, leave Y, then recover for Z".
-- `AntiOneShotPolicy` (interface): interface AntiOneShotPolicy — The anti-one-shot policy: an interceptor plus its serializable recovery-immunity state.
 - `BuildupProc` (interface): interface BuildupProc — ⚠ undocumented
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
+- `ClaimOutcome` (interface): interface ClaimOutcome — The outcome of a claim attempt — the updated pool and the grants owed (empty when the claim is refused).
+- `ClaimablePool` (interface): interface ClaimablePool — A serializable pool of results left open for later claiming — first-come contested drops or a `reservedFor` personal reward. Tracks `eligible` claimants, optional `expiresAtMs`, and the authoritative `claimedBy` winner so reconnect and duplicate-claim attempts resolve idempotently.
 - `ComboStep` (interface): interface ComboStep — ⚠ undocumented
-- `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
-- `CrossingPolicy` (type): type CrossingPolicy = "once" | "repeat" — Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`).
-- `CrossingTrigger` (type): type CrossingTrigger = "falling" | "rising" | "both" — Which directions should emit crossings.
 - `DEFAULT_EYE_HEIGHT` (const): const DEFAULT_EYE_HEIGHT: number — Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top.
 - `DEFAULT_FIRE_PULSE_SECONDS` (const): const DEFAULT_FIRE_PULSE_SECONDS: 0.12 — Default `RenderCueTuning.firePulseSeconds`.
 - `DEFAULT_HIT_PULSE_SECONDS` (const): const DEFAULT_HIT_PULSE_SECONDS: 0.2 — Default `RenderCueTuning.hitPulseSeconds`.
 - `DEFAULT_RENDER_CUES` (const): const DEFAULT_RENDER_CUES: Readonly<EntityRenderCues> — Neutral starting cue set: idle, unarmed, undamaged.
-- `DamageClampConfig` (interface): interface DamageClampConfig — Caller data for a flat per-hit damage cap.
-- `DamageInterceptor` (interface): interface DamageInterceptor — A named stage in the interception pipeline. The `id` is stable so it can be installed, removed, and cited in provenance.
-- `DamagePipeline` (interface): interface DamagePipeline — A mutable ordered interceptor chain that transitions can install into and remove from at runtime.
-- `DamageResolution` (interface): interface DamageResolution — The outcome of running a pending application through the pipeline: what to apply, what was deferred, and why each value changed.
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
 - `EntityRenderCues` (interface): interface EntityRenderCues — Per-entity render cues: the motion/animation signal a custom `renderEntity` or first-person viewmodel component needs to drive gait, muzzle flash, reload poses, and hit reactions — without diffing the parent group's position itself or reading a game-side module map for attack timing.
 - `EventMeter` (interface): interface EventMeter — ⚠ undocumented
 - `EventMeterFeedResult` (interface): interface EventMeterFeedResult — ⚠ undocumented
 - `FrameRange` (interface): interface FrameRange — ⚠ undocumented
 - `HitReactionConfig` (interface): interface HitReactionConfig — ⚠ undocumented
-- `ImmunityWindow` (interface): interface ImmunityWindow — A per-target timed immunity policy: an interceptor plus grant/query/serialize controls, toggled by transitions.
-- `InterceptContext` (interface): interface InterceptContext — Read-only context an interceptor may consult — deterministic clock and optional health lookup for HP-relative policies.
-- `InterceptDecision` (type): type InterceptDecision = | { kind: "pass" } | { kind: "transform"; amount: number; note?: string } | { kind: "clamp"; max: number; note?: string } | { kind: "redirect"; target: string; note?: string } | { kind: "split"; parts: readonly PendingDamage[]; note?: string } | { kind: "defer"; note?: strin… — What an interceptor decides to do with the pending application it was handed. `split` parts continue at the NEXT interceptor (never re-entering the splitter), which is what keeps the pipeline bounded and recursion-free.
-- `InterceptRecord` (interface): interface InterceptRecord — One row of provenance: which interceptor acted, what it decided, and the amount before/after it acted.
-- `MAX_INTERCEPT_STEPS` (const): const MAX_INTERCEPT_STEPS: 256 — Upper bound on interceptor evaluations for a single resolution; guards against runaway `split`/`redirect` loops.
 - `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
 - `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
 - `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
 - `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
-- `PendingDamage` (interface): interface PendingDamage — Ordered, inspectable damage-resolution interception (#931).
 - `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps — ⚠ undocumented
 - `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
 - `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
+- `RewardClaimSpec` (interface): interface RewardClaimSpec — How a `claimed` allocation exposes its pool: open first-come (`first`) or `reserved` to one recipient.
+- `RewardGrant` (interface): interface RewardGrant — An authoritative, serializable award of one result stack to one recipient — carries `via` (the policy that produced it) and `private` (replication scope) so provenance and visibility survive save/load and viewer projection. Applying a grant twice with the same identity is the caller's idempotency contract; this seam only decides who is owed what.
+- `RewardPolicyKind` (type): type RewardPolicyKind = "instanced" | "shared" | "copy" | "roundRobin" | "assigned" | "claimed" — The distribution policies allocation ships — each a distinct answer to "who gets this result".
+- `RewardRecipient` (interface): interface RewardRecipient — A participant that may receive rewards — an opaque recipient id (player, team, party slot) with an optional split `weight` (shared policy), eligibility `tags`, and an `eligible` gate. Ineligible recipients are excluded before any allocation decision so they never perturb others' streams.
+- `RewardResult` (interface): interface RewardResult — One indivisible reward to distribute among participants — an opaque result id (a rolled drop, a currency bundle, a quest token) with an optional stack `count` and free-form `tags` for eligibility and provenance. Allocation never interprets the id; generation (loot tables, roll formulas) owns what it means, keeping the seam genre-agnostic.
+- `RewardShare` (interface): interface RewardShare — A `{ result, count }` slice of a reward — the unit shared pools and grants are expressed in.
 - `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "converge"; muzzle?: EntityPosition; height?: number } | { kind: "eye"; height?: number } | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `converge` — the shot leaves the gun `muzzle` yet still passes through whatever the shooter's sightline (crosshair) covers: origin is the muzzle offset, direction is bent from the muzzle to the eye ray's aim point. The projectile system's default for a free `{ yaw, pitch }` aim, so a bullet visibly comes from the barrel without missing the reticle. Needs a scene raycast to find the aim point (`convergeShot`); a bare `resolveShot` degrades to a straight muzzle ray. Passes an explicit `{ origin, direction }` aim through untouched. - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the shot traces the shooter's sightline, so what the crosshair covers is what gets hit. - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
 - `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
 - `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
-- `ThresholdCrossing` (interface): interface ThresholdCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
-- `ThresholdCrossingConfig` (interface): interface ThresholdCrossingConfig — Caller configuration for a threshold tracker.
-- `ThresholdMark` (interface): interface ThresholdMark — Generic numeric threshold-crossing tracker (#931).
-- `ThresholdTracker` (interface): interface ThresholdTracker — A stateful crossing tracker over one numeric source.
-- `ThresholdTrackerSnapshot` (interface): interface ThresholdTrackerSnapshot — Serializable tracker state for save/load.
 - `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
 - `advanceMotionCues` (function): function advanceMotionCues(cues: EntityRenderCues, speed: number, dt: number, tuning?: RenderCueTuning): EntityRenderCues — Advances `bobPhase` and decays `recoil` from a live `speed` sample (e.g. `groundSpeed(entity)`); leaves event-driven fields untouched.
+- `allocateRewards` (function): function allocateRewards(kind: RewardPolicyKind, request: AllocationRequest): AllocationOutcome — Allocate reward results among participants under a named policy, returning immediate grants and/or claimable pools. Distribution is deterministic and serializable: the same seeds, recipients, and results yield an identical outcome on host and every peer regardless of join order, so allocation replicates as data without re-rolling. Reward *generation* stays upstream (loot tables, roll formulas); this seam only decides who is owed what.
 - `applyRenderAnimationEvent` (function): function applyRenderAnimationEvent(cues: EntityRenderCues, event: string): EntityRenderCues — Applies a `entity.animation` event (`"fire"` / `"reload"` / `"reloadEnd"`, or any game-defined name) to the cue set. Unknown event names are a no-op.
 - `applyRenderDeathEvent` (function): function applyRenderDeathEvent(cues: EntityRenderCues): EntityRenderCues — Marks the cue set dead after `entity.died`; sticky for the lifetime of the render component.
 - `applyRenderHitEvent` (function): function applyRenderHitEvent(cues: EntityRenderCues): EntityRenderCues — Marks a `combat.hitReaction` pulse; the caller clears `hit` again after its own pulse window.
@@ -66,34 +57,30 @@
 - `counters` (function): function counters(meta: AttackMeta, move: CounterMove): boolean — ⚠ undocumented
 - `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
-- `createAntiOneShotPolicy` (function): function createAntiOneShotPolicy(config: AntiOneShotConfig): AntiOneShotPolicy — Compose a reusable anti-one-shot / chip-guard clamp from caller data: while above `guardAboveFraction` a hit cannot drop the target below `leaveFraction`, and after such a save the target gets `recoverMs` of immunity. Below the guard fraction, lethal hits pass unchanged.
 - `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
 - `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 - `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
-- `createDamageClamp` (function): function createDamageClamp(config: DamageClampConfig): DamageInterceptor — A stateless interceptor that caps any single application at `maxPerHit`.
-- `createDamagePipeline` (function): function createDamagePipeline(initial?: readonly DamageInterceptor[]): DamagePipeline — Create a mutable damage interception chain that state transitions install into and remove from — e.g. add an invulnerability interceptor on phase enter and drop it on phase exit. Evaluation order is install order.
 - `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
 - `createDotField` (function): function createDotField(): DotField — Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
 - `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
 - `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
 - `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
-- `createImmunityWindow` (function): function createImmunityWindow(id = "immunity"): ImmunityWindow — A per-target immunity/invulnerability window as an ordinary damage policy — granted and cleared by state transitions (i-frames, phase invuln), rejecting damage while active. Deterministic (time is passed in) and serializable.
 - `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
 - `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 - `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
 - `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 - `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 - `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
-- `createThresholdTracker` (function): function createThresholdTracker(config: ThresholdCrossingConfig): ThresholdTracker — Track a numeric source against named thresholds and emit ordered crossing events with direction, hysteresis, once/repeat policy, and skipped-threshold handling. Deterministic and serializable; drives phase transitions, armor breaks, resource warnings, and any other threshold consumer.
 - `eyeHeightFromColliders` (function): function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number — Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
+- `filterOutcomeFor` (function): function filterOutcomeFor(outcome: AllocationOutcome, viewerId: string): AllocationOutcome — Project an allocation outcome for one viewer, enforcing replication authoritatively: private grants belonging to other recipients are dropped, and pools the viewer cannot claim (not eligible, or reserved for someone else) are hidden — so private rewards never leak across the wire while provenance on the viewer's own grants is preserved.
 - `impactPresets` (const): const impactPresets: { readonly pickup: { readonly hitstopMs: 0; readonly trauma: 0.15; }; readonly jumpLand: { readonly hitstopMs: 0; readonly trauma: 0.2; }; readonly enemyKilled: { readonly hitstopMs: 40; readonly trauma: 0.3; }; readonly playerHit: { readonly hitstopMs: 70; readonly trauma: 0.4;… — Calibrated per-event impact feel — hitstop and trauma numbers harvested from a shipped game-feel reference, not hand-invented per game. `explosion` and `playerHit` are "heavy hit" events (60–90ms hitstop @ 0.05 timescale); `pickup`/`jumpLand` are light events with no hitstop. Trauma is later clamped to 1.0 by `resolveHitReaction`.
 - `isBlockable` (function): function isBlockable(meta: AttackMeta): boolean — ⚠ undocumented
 - `isDodgeable` (function): function isDodgeable(meta: AttackMeta): boolean — ⚠ undocumented
 - `isParryable` (function): function isParryable(meta: AttackMeta): boolean — ⚠ undocumented
 - `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
-- `resolveDamage` (function): function resolveDamage(interceptors: readonly DamageInterceptor[], pending: PendingDamage, ctx: InterceptContext): DamageResolution — Run one pending damage application through an ordered interceptor list before lethality resolves, returning the final applications, any deferred ones, and full provenance. Pure and deterministic; bounded by `MAX_INTERCEPT_STEPS`.
+- `resolveClaim` (function): function resolveClaim(pool: ClaimablePool, claimantId: string, options?: { nowMs?: number; private?: boolean }): ClaimOutcome — Resolve an authoritative claim against a pool. Idempotent: re-claiming an already-owned pool returns the same grants without re-awarding, a losing claimant gets no grants, and eligibility, reservation, and expiry are all enforced here — the authority, not UI hiding, decides ownership. Returns the updated (serializable) pool plus the grants owed.
 - `resolveDefense` (function): function resolveDefense(input: ResolveDefenseInput): DefenseResolution — ⚠ undocumented
 - `resolveHitReaction` (function): function resolveHitReaction(config: HitReactionConfig | ImpactPresetName, input: HitReactionInput): HitReaction — Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", input)`) or a raw `HitReactionConfig` override.
 - `resolveResistance` (function): function resolveResistance<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): ResistanceResult — ⚠ undocumented
@@ -174,26 +161,6 @@
 - `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
 - `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
 - `stepById` (function): function stepById(combo: ComboString, stepId: string): ComboStep | null — ⚠ undocumented
-
-## @jgengine/core/combat/damageInterceptors
-
-- `AntiOneShotConfig` (interface): interface AntiOneShotConfig — Caller data for the anti-one-shot composition: "cannot cross lethal while above X, leave Y, then recover for Z".
-- `AntiOneShotPolicy` (interface): interface AntiOneShotPolicy — The anti-one-shot policy: an interceptor plus its serializable recovery-immunity state.
-- `DamageClampConfig` (interface): interface DamageClampConfig — Caller data for a flat per-hit damage cap.
-- `DamageInterceptor` (interface): interface DamageInterceptor — A named stage in the interception pipeline. The `id` is stable so it can be installed, removed, and cited in provenance.
-- `DamagePipeline` (interface): interface DamagePipeline — A mutable ordered interceptor chain that transitions can install into and remove from at runtime.
-- `DamageResolution` (interface): interface DamageResolution — The outcome of running a pending application through the pipeline: what to apply, what was deferred, and why each value changed.
-- `ImmunityWindow` (interface): interface ImmunityWindow — A per-target timed immunity policy: an interceptor plus grant/query/serialize controls, toggled by transitions.
-- `InterceptContext` (interface): interface InterceptContext — Read-only context an interceptor may consult — deterministic clock and optional health lookup for HP-relative policies.
-- `InterceptDecision` (type): type InterceptDecision = | { kind: "pass" } | { kind: "transform"; amount: number; note?: string } | { kind: "clamp"; max: number; note?: string } | { kind: "redirect"; target: string; note?: string } | { kind: "split"; parts: readonly PendingDamage[]; note?: string } | { kind: "defer"; note?: strin… — What an interceptor decides to do with the pending application it was handed. `split` parts continue at the NEXT interceptor (never re-entering the splitter), which is what keeps the pipeline bounded and recursion-free.
-- `InterceptRecord` (interface): interface InterceptRecord — One row of provenance: which interceptor acted, what it decided, and the amount before/after it acted.
-- `MAX_INTERCEPT_STEPS` (const): const MAX_INTERCEPT_STEPS: 256 — Upper bound on interceptor evaluations for a single resolution; guards against runaway `split`/`redirect` loops.
-- `PendingDamage` (interface): interface PendingDamage — Ordered, inspectable damage-resolution interception (#931).
-- `createAntiOneShotPolicy` (function): function createAntiOneShotPolicy(config: AntiOneShotConfig): AntiOneShotPolicy — Compose a reusable anti-one-shot / chip-guard clamp from caller data: while above `guardAboveFraction` a hit cannot drop the target below `leaveFraction`, and after such a save the target gets `recoverMs` of immunity. Below the guard fraction, lethal hits pass unchanged.
-- `createDamageClamp` (function): function createDamageClamp(config: DamageClampConfig): DamageInterceptor — A stateless interceptor that caps any single application at `maxPerHit`.
-- `createDamagePipeline` (function): function createDamagePipeline(initial?: readonly DamageInterceptor[]): DamagePipeline — Create a mutable damage interception chain that state transitions install into and remove from — e.g. add an invulnerability interceptor on phase enter and drop it on phase exit. Evaluation order is install order.
-- `createImmunityWindow` (function): function createImmunityWindow(id = "immunity"): ImmunityWindow — A per-target immunity/invulnerability window as an ordinary damage policy — granted and cleared by state transitions (i-frames, phase invuln), rejecting damage while active. Deterministic (time is passed in) and serializable.
-- `resolveDamage` (function): function resolveDamage(interceptors: readonly DamageInterceptor[], pending: PendingDamage, ctx: InterceptContext): DamageResolution — Run one pending damage application through an ordered interceptor list before lethality resolves, returning the final applications, any deferred ones, and full provenance. Pure and deterministic; bounded by `MAX_INTERCEPT_STEPS`.
 
 ## @jgengine/core/combat/death
 
@@ -337,6 +304,22 @@
 - `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
 - `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 
+## @jgengine/core/combat/rewardAllocation
+
+- `AllocationOutcome` (interface): interface AllocationOutcome — The serializable result of an allocation pass — immediate `grants` plus any deferred `pools`.
+- `AllocationRequest` (interface): interface AllocationRequest — The inputs one allocation pass consumes. `allocationSeed` governs distribution decisions (ordering, round-robin rotation, remainder splits, reservation) while the separate optional `generationSeed` seeds per-recipient `instanced` generation — keeping join order from perturbing other players' rolls. Provide `results` for pre-rolled policies, `generate` for `instanced`, `assignment` for `assigned`, and `claim` for `claimed`.
+- `ClaimOutcome` (interface): interface ClaimOutcome — The outcome of a claim attempt — the updated pool and the grants owed (empty when the claim is refused).
+- `ClaimablePool` (interface): interface ClaimablePool — A serializable pool of results left open for later claiming — first-come contested drops or a `reservedFor` personal reward. Tracks `eligible` claimants, optional `expiresAtMs`, and the authoritative `claimedBy` winner so reconnect and duplicate-claim attempts resolve idempotently.
+- `RewardClaimSpec` (interface): interface RewardClaimSpec — How a `claimed` allocation exposes its pool: open first-come (`first`) or `reserved` to one recipient.
+- `RewardGrant` (interface): interface RewardGrant — An authoritative, serializable award of one result stack to one recipient — carries `via` (the policy that produced it) and `private` (replication scope) so provenance and visibility survive save/load and viewer projection. Applying a grant twice with the same identity is the caller's idempotency contract; this seam only decides who is owed what.
+- `RewardPolicyKind` (type): type RewardPolicyKind = "instanced" | "shared" | "copy" | "roundRobin" | "assigned" | "claimed" — The distribution policies allocation ships — each a distinct answer to "who gets this result".
+- `RewardRecipient` (interface): interface RewardRecipient — A participant that may receive rewards — an opaque recipient id (player, team, party slot) with an optional split `weight` (shared policy), eligibility `tags`, and an `eligible` gate. Ineligible recipients are excluded before any allocation decision so they never perturb others' streams.
+- `RewardResult` (interface): interface RewardResult — One indivisible reward to distribute among participants — an opaque result id (a rolled drop, a currency bundle, a quest token) with an optional stack `count` and free-form `tags` for eligibility and provenance. Allocation never interprets the id; generation (loot tables, roll formulas) owns what it means, keeping the seam genre-agnostic.
+- `RewardShare` (interface): interface RewardShare — A `{ result, count }` slice of a reward — the unit shared pools and grants are expressed in.
+- `allocateRewards` (function): function allocateRewards(kind: RewardPolicyKind, request: AllocationRequest): AllocationOutcome — Allocate reward results among participants under a named policy, returning immediate grants and/or claimable pools. Distribution is deterministic and serializable: the same seeds, recipients, and results yield an identical outcome on host and every peer regardless of join order, so allocation replicates as data without re-rolling. Reward *generation* stays upstream (loot tables, roll formulas); this seam only decides who is owed what.
+- `filterOutcomeFor` (function): function filterOutcomeFor(outcome: AllocationOutcome, viewerId: string): AllocationOutcome — Project an allocation outcome for one viewer, enforcing replication authoritatively: private grants belonging to other recipients are dropped, and pools the viewer cannot claim (not eligible, or reserved for someone else) are hidden — so private rewards never leak across the wire while provenance on the viewer's own grants is preserved.
+- `resolveClaim` (function): function resolveClaim(pool: ClaimablePool, claimantId: string, options?: { nowMs?: number; private?: boolean }): ClaimOutcome — Resolve an authoritative claim against a pool. Idempotent: re-claiming an already-owned pool returns the same grants without re-awarding, a losing claimant gets no grants, and eligibility, reservation, and expiry are all enforced here — the authority, not UI hiding, decides ownership. Returns the updated (serializable) pool plus the grants owed.
+
 ## @jgengine/core/combat/shotOrigin
 
 - `DEFAULT_EYE_HEIGHT` (const): const DEFAULT_EYE_HEIGHT: number — Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top.
@@ -356,18 +339,6 @@
 - `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
 - `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
-
-## @jgengine/core/combat/thresholdCrossings
-
-- `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
-- `CrossingPolicy` (type): type CrossingPolicy = "once" | "repeat" — Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`).
-- `CrossingTrigger` (type): type CrossingTrigger = "falling" | "rising" | "both" — Which directions should emit crossings.
-- `ThresholdCrossing` (interface): interface ThresholdCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
-- `ThresholdCrossingConfig` (interface): interface ThresholdCrossingConfig — Caller configuration for a threshold tracker.
-- `ThresholdMark` (interface): interface ThresholdMark — Generic numeric threshold-crossing tracker (#931).
-- `ThresholdTracker` (interface): interface ThresholdTracker — A stateful crossing tracker over one numeric source.
-- `ThresholdTrackerSnapshot` (interface): interface ThresholdTrackerSnapshot — Serializable tracker state for save/load.
-- `createThresholdTracker` (function): function createThresholdTracker(config: ThresholdCrossingConfig): ThresholdTracker — Track a numeric source against named thresholds and emit ordered crossing events with direction, hysteresis, once/repeat policy, and skipped-threshold handling. Deterministic and serializable; drives phase transitions, armor breaks, resource warnings, and any other threshold consumer.
 
 ## @jgengine/core/stats/accumulatorMeter
 

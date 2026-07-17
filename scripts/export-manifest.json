@@ -47,6 +47,7 @@
     "./combat/renderCues",
     "./combat/resistance",
     "./combat/resourcePool",
+    "./combat/rewardAllocation",
     "./combat/shotOrigin",
     "./combat/telegraph",
     "./combat/thresholdCrossings",

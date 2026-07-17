@@ -89,6 +89,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createResourcePool` (function) · `import { createResourcePool } from "@jgengine/core/combat"`
 
+## reward-allocation — distribute reward results among multiplayer participants deterministically
+
+- `allocateRewards` (function) · `import { allocateRewards } from "@jgengine/core/combat"`
+- `filterOutcomeFor` (function) · `import { filterOutcomeFor } from "@jgengine/core/combat"`
+- `resolveClaim` (function) · `import { resolveClaim } from "@jgengine/core/combat"`
+
 ## stagger-meter — accumulate an ailment buildup (bleed, freeze) until it procs
 
 - `createBuildupMeter` (function) · `import { createBuildupMeter } from "@jgengine/core/combat"`
