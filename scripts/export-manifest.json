@@ -578,6 +578,7 @@
     "./render/EnvironmentLighting",
     "./render/SceneLighting",
     "./render/SceneModels",
+    "./render/assetBase",
     "./render/defaultSurface",
     "./render/modelLoad",
     "./render/modelRender",

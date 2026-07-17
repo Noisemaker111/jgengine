@@ -11,15 +11,17 @@ The marketing pages ([`src/routes/why.tsx`](src/routes/why.tsx), [`capabilities.
 
 Because the site ships with the engine, **any push to `main` that touches `.claude/skills/` or `packages/` rebuilds and redeploys** (the paths are listed in [`vercel.json`](vercel.json)'s `ignoreCommand`). Shipping an engine change *is* a website update — there is no separate content step.
 
-### The game runner still builds (`/play`)
+### Games are playable on the site (`/games`, `/play`)
 
-`vite build` builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script into `public/play`, and the `/api/github-*` server routes back games that render real GitHub data. Individual game pages are not currently surfaced in the site nav.
+`vite build` builds the game player: the `games-player` plugin in [`vite.config.ts`](vite.config.ts) shells out to `apps/dev`'s `build:site` script into `public/play`, and the `/api/github-*` server routes back games that render real GitHub data. The games page (`/games`) and the per-game pages (`/games/<id>`) list every `Games/*` game — ids come from the `virtual:jgengine-games` module resolved in `vite.config.ts` — and embed the runner; both are linked from the site header.
+
+In dev there is no second server and no proxy: the `games-player-dev` plugin serves the same static build from `public/play`, restored instantly from the content-hash cache ([`scripts/games-player-cache.ts`](../../scripts/games-player-cache.ts)) when game and engine sources are unchanged, rebuilt in the background otherwise while `/play` shows a self-refreshing "building" page. Iterating on a game itself wants HMR — use `bun run games:<id>` for that.
 
 ## Develop
 
 ```sh
 bun install                        # from repo root
-bun dev                            # from repo root — http://localhost:3000, games at /play
+bun dev                            # from repo root — http://localhost:3000, games at /games
 bun run --cwd apps/web dev         # same thing, explicit
 ```
 

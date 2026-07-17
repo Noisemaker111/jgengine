@@ -8,6 +8,8 @@ import {
   type AssetResponseProbe,
 } from "@jgengine/core/scene/assetDiagnostics";
 
+import { resolveAssetBaseUrl } from "./assetBase";
+
 /**
  * Dedicated LoadingManager for every GLB load instead of THREE.DefaultLoadingManager.
  * The shared default manager is process-wide; under repeated dev-server navigations its
@@ -16,6 +18,7 @@ import {
  * @internal
  */
 const modelLoadingManager = new THREE.LoadingManager();
+modelLoadingManager.setURLModifier(resolveAssetBaseUrl);
 
 /** How many leading bytes to read when probing a failed model URL for its signature. @internal */
 const PROBE_BYTE_LIMIT = 64;
@@ -72,7 +75,8 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
       onProgress,
       (event: unknown) => {
         if (onError === undefined) return;
-        void probeModelUrl(url)
+        // Probe the URL the loader actually fetched (base-resolved), not the raw input.
+        void probeModelUrl(this.manager.resolveURL(url))
           .then((diagnosis) => {
             if (diagnosis.ok) {
               // The bytes look fine on re-fetch — surface the original parse error unchanged.
