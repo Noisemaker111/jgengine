@@ -25,6 +25,7 @@ import {
 } from "./viewportContextMenu";
 import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi, EditorPerfSample } from "./session";
+import { classifyEditorPerf } from "./perfPill";
 import { newPlacementId, type EditorUiStore, type PlacementTool, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { BTN, MICRO } from "./chromeStyles";
@@ -66,6 +67,23 @@ function formatTriangles(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(0)}k`;
   return String(count);
+}
+
+const PERF_TONE_CLASS = {
+  idle: "text-neutral-500",
+  healthy: "text-emerald-400",
+  busy: "text-rose-400",
+} as const;
+
+/** Toolbar perf pill: neutral "idle" when the loop is throttled/at rest, red only for active low fps. */
+function PerfPill({ perf }: { perf: EditorPerfSample }) {
+  const tone = classifyEditorPerf(perf);
+  const rate = tone === "idle" ? "idle" : `${perf.fps.toFixed(0)} fps`;
+  return (
+    <span className={`ml-3 ${PERF_TONE_CLASS[tone]}`}>
+      {rate} · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris
+    </span>
+  );
 }
 
 let clipboardFragment: EditorDocument | null = null;
@@ -789,7 +807,7 @@ export function EditorChrome({
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[0.08] bg-black/70 px-4 py-1.5 text-[11px] text-neutral-400 shadow-lg shadow-black/40 backdrop-blur-md">
             <span>RMB orbit · MMB pan · click select · RMB menu · W/E/R · Ctrl+C/V · F frame · ? help</span>
             <span className="ml-3 text-neutral-500">{sceneStats.objects} objs{sceneStats.foliage > 0 ? ` · ≈${formatTriangles(sceneStats.foliage)} foliage` : ""}</span>
-            {perf !== null ? <span className={`ml-3 ${perf.fps < 30 ? "text-rose-400" : "text-emerald-400"}`}>{perf.fps.toFixed(0)} fps · {perf.drawCalls} draws · {formatTriangles(perf.triangles)} tris</span> : null}
+            {perf !== null ? <PerfPill perf={perf} /> : null}
           </div>
         </main>
 

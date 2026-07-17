@@ -313,6 +313,12 @@ export interface EditorPerfSample {
   drawCalls: number;
   triangles: number;
   sampledAt: number;
+  /**
+   * Whether the sampled window saw camera or edit activity. `false` means the render-on-demand /
+   * browser-throttled loop is idle, so a low `fps` is expected pacing rather than lag — the pill
+   * shows a neutral "idle" instead of the red danger cue.
+   */
+  active: boolean;
   /** Avg viewport raycast (pick) time this window — editor-authoring cost, not sim cost. */
   raycastMs?: number;
   /** Avg preview-mesh rebuild (displace) time this window — editor-authoring cost, not sim cost. */

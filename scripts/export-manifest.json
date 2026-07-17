@@ -690,6 +690,7 @@
     "./mcp/tools",
     "./outlinerModel",
     "./perfMarks",
+    "./perfPill",
     "./session",
     "./terrainReadoutStore",
     "./uiStore",
