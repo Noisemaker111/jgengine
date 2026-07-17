@@ -1,4 +1,4 @@
 interface:
   display_name: "Level Design"
   short_description: "Design readable, paced, playable spaces"
-  default_prompt: "Use $level-design to turn this gameplay goal into an editor-authored level plan."
+  default_prompt: "Use $level-design to audit or design this world, author its highest-leverage spatial slice, and prove the changed player journey."

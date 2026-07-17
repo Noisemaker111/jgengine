@@ -1,51 +1,52 @@
 ---
 name: level-design
-description: Design, author, critique, and validate readable levels, worlds, encounters, navigation, and pacing.
+description: Design, audit, author, implement, and validate readable levels, worlds, encounters, navigation, and pacing.
 ---
 
 # Level design
 
 ## Ownership
 
-Own the spatial realization of game design: player metrics, topology, routes, landmarks, gates, encounter geometry, challenge sequencing, exploration, pacing, recovery, and spatial storytelling. Use `game-design` for the player promise and loops, `jgengine-editor` to author the space, and `jgengine-world` to consume it at runtime.
+Own the spatial realization of game design: player metrics, topology, routes, landmarks, gates, encounter geometry, challenge sequencing, exploration, pacing, recovery, and spatial storytelling. Use `game-design` for the player promise and loops, `jgengine-editor` to author space, and `jgengine-world` to consume it.
 
-All authorable world content belongs in `editor.scene.json`, changed through the editor GUI or RPC/CLI. Never hand-edit the document or hardcode geometry, paths, spawns, zones, terrain, foliage, or coordinate arrays. If the editor cannot express the design, file a `[FEATURE]` issue before any code fallback.
+All authorable world content belongs in `editor.scene.json`, changed through the editor GUI or RPC/CLI. Never hand-edit the document or keep geometry, paths, spawns, zones, objectives, terrain, foliage, encounters, or coordinate arrays in code. File an editor `[FEATURE]` issue before any fallback.
 
-## Level contract
+Read [references/application-playbook.md](references/application-playbook.md) whenever creating, auditing, or improving spatial play. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
 
-Before authoring, state:
+## Choose the mode
 
-- player verbs, camera, controller metrics, encounter rules, and target skill assumptions
-- the level's purpose, fantasy, entry state, exit state, and one-sentence experiential arc
-- critical path, optional paths, gates, returns, landmarks, and expected traversal times
-- beat sequence across navigational, cognitive, motor, threat, social, and emotional intensity
-- teach/test/combine or other learning progression for every required mechanic
-- failure/reset behavior, checkpoints, accessibility options, and multiplayer constraints
-- observable completion scenario plus wayfinding, pacing, and exploit failure signals
+### Greenfield
 
-Measure values from the real controller and camera; do not import genre folklore as universal dimensions. Use [references/field-guide.md](references/field-guide.md) for metric families, topology and beat methods, genre lenses, evaluation rubrics, and research sources.
+Measure the real controller, camera, interaction, combat, AI, and network constraints in an authored metric gym. Produce a topology graph, critical/optional route model, beat sheet, learning sequence, encounter cards, authoring plan, and falsifiable completion scenario before art production.
 
-## Workflow
+### Existing game
 
-1. **Prove mechanics first.** Measure speed, acceleration, stopping, turn radius, jump/reach, camera, interaction, weapon, AI, and network constraints in a small authored test space.
-2. **Graph before geometry.** Sketch nodes and edges for goals, choices, loops, gates, one-way transitions, safe spaces, returns, and optional rewards. Give each branch a distinct decision or experience.
-3. **Write the beat sheet.** Sequence orientation, anticipation, action, aftermath, choice, reward, and recovery. Vary intensity; constant maximum pressure erases contrast.
-4. **Graybox in the editor.** Author semantic paths, markers, zones, terrain, and objects with stable ids. Establish scale, flow, sightlines, traversal, combat/interaction space, and reset paths before decoration.
-5. **Teach through space.** Present information before commitment, permit safe experimentation, test the learned rule, then combine or transform it. Never demand a mechanic before the player could form the right model.
-6. **Guide redundantly.** Align composition, landmarks, lighting/value, color, motion, audio, affordances, and path shape. HUD guidance may assist but cannot repair contradictory space.
-7. **Compose encounters.** Define purpose, entry information, actors, geometry, resources, escalation, exits, and recovery. Check every viable player verb, not only the designer's route.
-8. **Art and populate.** Add environmental story, rewards, foliage, materials, and assets only after the graybox survives fresh-player tests. Preserve gameplay silhouettes and authored semantics.
-9. **Playtest and instrument.** Observe first-look orientation, route choice, hesitation, deaths, retries, missed affordances, objective recall, dwell time, spawn safety, and exploits. Test novice, experienced, accessibility, and multiplayer cohorts as applicable.
-10. **Revise causally.** Diagnose whether the cause is information, geometry, timing, rule knowledge, execution load, tuning, or technical behavior. Change the smallest upstream cause and retest.
+Start with a spatial-truth audit. Inventory every source of coordinates and semantics; report any gameplay placement outside `editor.scene.json` as a blocking ownership defect. Reconstruct the critical path and representative optional path from scene data and live play. Measure travel, decision, encounter, retry, and recovery time. Inspect first-look orientation, reverse navigation, affordances, spawn safety, combat positions, pacing contrast, and visual hierarchy.
 
-## Decision rules
+“Improve with level design” is an authoring and implementation request. Do not stop at a map critique: select the highest-leverage route/zone/encounter slice, author the change through editor operations, connect runtime semantics, and prove it in play.
 
-- Offer choices at informed decision points, not indistinguishable corridors or branches with one dominant payoff.
-- Preserve readable foreground, traversal boundaries, goals, threats, interactables, and safe footing across art passes.
-- Separate pacing frequency from challenge amplitude; adaptive systems still need authored peaks, rests, and recovery guarantees.
-- In multiplayer, validate route timing, objective access, spawn exposure, sightlines, team readability, comeback paths, and exploits across skill bands and player counts.
-- Reward exploration with information, advantage, expression, story, or changed routes—not filler scattered uniformly across empty space.
+## Required output contract
+
+Make every level-design pass yield:
+
+1. **Spatial truth audit:** scene counts and semantic kinds plus every code-owned coordinate table, generated placement, or duplicated position that must migrate.
+2. **Metric sheet:** measured movement, camera, interaction, weapon/AI, readability, density, performance, multiplayer, and retry constraints with units.
+3. **Topology and journey:** nodes/edges, critical and optional routes, gates, returns, landmarks, expected traversal times, and first-minute/mission/campaign beats.
+4. **Zone/encounter diagnosis:** purpose, entry knowledge/state, choices, geometry, actors, escalation, resources, exits, failure/reset, reward, and downstream change.
+5. **Bottleneck ranking:** observed symptom, player consequence, root cause, evidence, reach, confidence, effort, dependencies, and ownership.
+6. **Editor change set:** exact semantic ids/kinds and operations to add/move/remove for paths, markers, zones, spawns, objectives, checkpoints, props, and terrain—without putting coordinates in code.
+7. **Acceptance evidence:** document assertions, route/encounter tests, fresh-player play scenario, pacing/wayfinding thresholds, inspected screenshots, and before/after comparison.
+
+## Execution rules
+
+- Graph before geometry; graybox before art; gameplay and wayfinding before decoration.
+- Present decision-relevant information before commitment. Make alternate routes differ in risk, cost, verbs, information, reward, or experience.
+- Sequence teaching through cue, safe use, feedback, independent test, combination, transformation, and mastery as the audience requires.
+- Align composition, landmark, value/color, motion, audio, affordance, path shape, and optional UI guidance. No marker can repair contradictory space.
+- Design pacing across separate threat, motor, cognitive, navigation, emotional, resource, and social axes. Constant pressure or empty traversal is not pacing.
+- Make every encounter support intended verbs, counterplay, retreat, fair spawns, recovery, and bounded performance.
+- Populate only after the graybox survives play. Preserve silhouettes, safe footing, goals, threats, interactables, teams, and traversal boundaries through art passes.
 
 ## Completion
 
-Finish only when a fresh player can orient, act, recover, and complete the target scenario without designer coaching; alternate routes and multiplayer states remain fair enough for their intent; the scene document owns the spatial truth; and `jgengine-verify` captures inspected visual and play evidence.
+An audit or prettier screenshot is not completion for a build/improve request. Finish when the scene document owns spatial truth; a fresh target player can orient, choose, act, recover, and complete the scenario without coaching; the route has intentional decisions and pacing; encounter exploits and alternate states are tested; and `jgengine-verify` records document, gameplay, and inspected visual evidence.
