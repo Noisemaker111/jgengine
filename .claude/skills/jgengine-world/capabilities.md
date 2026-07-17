@@ -55,6 +55,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Vec3` (type) · `import { Vec3 } from "@jgengine/core/world/catenary"`
 
+## contour-interval — readable auto-spacing for elevation contours
+
+- `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/world"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
@@ -62,6 +66,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
+
+## elevation-readout — cursor height and delta-from-reference feedback
+
+- `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
+
+## elevation-summary — selection min/max/mean and relief over a region
+
+- `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
@@ -143,6 +155,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
+
+## surface-drape — lift an XZ polyline onto sculpted terrain
+
+- `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/world"`
+
+## surface-grid — terrain-following reference grid that is not occluded by relief
+
+- `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/world"`
+
+## surface-ring — surface-following placement guide ring
+
+- `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/world"`
+
+## terrain-contours — iso-elevation contour lines that drape on sculpted terrain
+
+- `extractContours` (function) · `import { extractContours } from "@jgengine/core/world"`
+
+## terrain-guides — one-call adaptive contours for a terrain field
+
+- `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/world"`
 
 ## touch-controls — default on-screen button silhouette for a touch action
 
