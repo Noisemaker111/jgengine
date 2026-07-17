@@ -8,7 +8,7 @@ import { gameTemplate } from "../packages/jgengine/src/templates";
 import { shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
 
 /**
- * From-scratch loop, browserless: what `npx jgengine create` / `bun run new:game` scaffolds must be
+ * From-scratch loop, browserless: what `npx jgengine create` (also `bun run new:game` in-repo) scaffolds must be
  * walkable and editor-wired with zero hand-written code. Guards the create → walk → F2+E → play
  * chain the same way editor-mvp.test.ts guards authoring → AuthoredScene parity: the starter scene
  * document normalizes, carries a player_spawn the runtime honors (`authoredSpawnPosition`), resolves

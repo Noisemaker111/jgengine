@@ -43,7 +43,14 @@ export function SlotGrid({
   );
 }
 
-export function HealthBar({
+/**
+ * A headless, unstyled stat meter — an accessible `role="progressbar"` you paint entirely through
+ * `className`/`fillClassName`. This is the class-hook primitive for teams supplying their own CSS;
+ * for a batteries-included themed bar use the atomic, token-styled components in
+ * `@jgengine/react/bars` (`HealthBar`, `ShieldBar`, …). Renamed from `HealthBar` in #1033 so the
+ * purpose-named atomic bar owns that name and no two components share it.
+ */
+export function StatMeter({
   instanceId,
   statId,
   className,

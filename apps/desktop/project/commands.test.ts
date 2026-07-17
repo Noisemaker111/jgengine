@@ -8,16 +8,16 @@ import {
 } from "../src/project/commands";
 
 describe("project commands", () => {
-  test("new:game wires bun run new:game with optional name", () => {
+  test("new-game shells out to the jgengine create CLI directly", () => {
     expect(buildShellCommand({ kind: "new-game", id: "my-game" }).argv).toEqual([
       "bun",
-      "run",
-      "new:game",
+      "packages/jgengine/src/cli/index.ts",
+      "create",
       "my-game",
     ]);
     expect(
       buildShellCommand({ kind: "new-game", id: "my-game", name: "My Game" }).argv,
-    ).toEqual(["bun", "run", "new:game", "my-game", "--name", "My Game"]);
+    ).toEqual(["bun", "packages/jgengine/src/cli/index.ts", "create", "My Game"]);
   });
 
   test("start-game maps mount modes onto existing root scripts", () => {

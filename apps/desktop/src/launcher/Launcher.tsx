@@ -190,7 +190,7 @@ export function Launcher() {
         <div>
           <div className="text-sm font-semibold tracking-wide text-white">JGengine Project</div>
           <div className="text-xs text-neutral-400">
-            Launcher over new:game · games:&lt;id&gt; · gate · in-app runner/editor
+            Launcher over jgengine create · games:&lt;id&gt; · gate · in-app runner/editor
           </div>
         </div>
         <div className="flex items-center gap-2">

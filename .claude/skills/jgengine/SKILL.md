@@ -18,7 +18,7 @@ Use `game-design` to turn the pitch into a testable player promise, verbs, loops
 - HUD/menu states and art direction
 - one observable completion scenario
 
-For a new in-repo game, scaffold with `bun run new:game <id> --name "Title"`. Outside this monorepo, start with `npx jgengine create`; never copy `Games/*`.
+For a new in-repo game, scaffold with `bun run new:game "<id-or-title>"` (thin script alias for `jgengine create`, auto-detects the in-repo variant). Outside this monorepo, start with `npx jgengine create`; never copy `Games/*`.
 
 ## 2. Select domains
 
