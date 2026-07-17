@@ -2513,6 +2513,9 @@
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GroundSnapEntityStore` (interface): interface GroundSnapEntityStore — ⚠ undocumented
 - `GroundSnapTarget` (interface): interface GroundSnapTarget — ⚠ undocumented
+- `HeightFieldRayBounds` (interface): interface HeightFieldRayBounds — XZ region a {@link raycastHeightField} march is clipped to.
+- `HeightFieldRayHit` (interface): interface HeightFieldRayHit — Where a {@link raycastHeightField} march crossed the surface.
+- `HeightFieldRaycastOptions` (interface): interface HeightFieldRaycastOptions — Tuning for {@link raycastHeightField}: march resolution and refinement depth.
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
@@ -2525,6 +2528,7 @@
 - `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
 - `TerrainSlopeSample` (interface): interface TerrainSlopeSample — ⚠ undocumented
 - `applyPathProfiles` (function): function applyPathProfiles(field: TerrainField, profiles: readonly TerrainPathProfile[]): TerrainField — Composes authored path profiles onto a field — the shared seam that turns a scene road/river/ramp path into flattened, graded, carved, or retained ground. Applies after `flatten` masks in `resolveTerrainField` so a corridor grades over already-leveled pads; call it directly to layer profiles onto any field a game builds by hand. Returns the field unchanged when no profile is given.
+- `raycastHeightField` (function): function raycastHeightField(sampleHeight: (x: number, z: number) => number, origin: readonly [number, number, number], direction: readonly [number, number, number], options: HeightFieldRaycastOptions): HeightFieldRayHit | null — Intersects a ray with a `sampleHeight` field by fixed-step raymarching plus bisection — the O(steps) editor/gameplay picking seam that replaces brute-force triangle raycasts against a tessellated ground mesh (tens of thousands of triangle tests per pick on a sculpt-sized grid). The ray is clipped to `bounds` on XZ first, marched at `step`, and the first above→below crossing is bisected. An origin already under the surface hits immediately at entry. Returns null when the clipped ray never crosses the surface.
 
 ## @jgengine/core/world/terrainGuides
 

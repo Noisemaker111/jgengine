@@ -2,6 +2,12 @@ export { CarvedTerrain, type CarvedTerrainProps } from "./CarvedTerrain";
 export { GrassField, type GrassFieldProps } from "./GrassField";
 export { ProceduralGround, type ProceduralGroundProps } from "./ProceduralGround";
 export { EditableGround, type EditableGroundProps } from "./EditableGround";
+export {
+  displaceHeightfieldGeometry,
+  type HeightfieldColorFn,
+  type HeightfieldDisplaceOptions,
+  type HeightfieldRect,
+} from "./heightfieldGeometry";
 export { TerraformBrushCursor, type TerraformBrushCursorProps } from "./TerraformBrushCursor";
 export {
   createGrassBladeGeometry,

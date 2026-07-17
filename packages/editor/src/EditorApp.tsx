@@ -319,7 +319,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       catalogs,
       assets: catalogAssets,
     });
-    return { ...created, baselineJson: created.session.exportJson(true) };
+    return {
+      ...created,
+      baselineJson: created.session.exportJson(true),
+      baselineDocument: created.session.getState().document,
+    };
   }, [gameId, layers, catalogs, catalogAssets]);
 
   useEffect(() => host.dispose, [host]);
@@ -489,7 +493,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />;
     };
     const GameUI: ComponentType = function EditorUi() {
-      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineJson={host.baselineJson} save={saveFn} />;
+      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineDocument={host.baselineDocument} save={saveFn} />;
     };
     const { target, span, far } = initialCamera;
     return {

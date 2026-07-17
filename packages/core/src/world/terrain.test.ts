@@ -15,6 +15,7 @@ import {
   heightMapField,
   ISLAND_VOID_HEIGHT,
   noiseField,
+  raycastHeightField,
   resolveEnvironmentField,
   resolveGroundStep,
   resolveTerrainDetail,
@@ -536,5 +537,96 @@ describe("terrain field", () => {
     };
     const detail = resolveTerrainDetail({ material: { maps, repeat: 12, strength: 0.4 } });
     expect(detail.material).toEqual({ maps, repeat: 12, strength: 0.4 });
+  });
+});
+
+describe("raycastHeightField", () => {
+  const bounds = { minX: -50, minZ: -50, maxX: 50, maxZ: 50 };
+
+  test("hits a flat field where the ray meets y=0", () => {
+    const hit = raycastHeightField(() => 0, [0, 10, 0], [1, -1, 0], { bounds, step: 0.5 });
+    expect(hit).not.toBeNull();
+    expect(hit!.x).toBeCloseTo(10, 1);
+    expect(hit!.y).toBeCloseTo(0, 2);
+    expect(hit!.z).toBeCloseTo(0, 2);
+    expect(hit!.distance).toBeCloseTo(Math.hypot(10, 10), 1);
+  });
+
+  test("lands on a raised plateau instead of the ground plane behind it", () => {
+    // 4-unit plateau for x >= 0: a downward ray from x<0 aimed across it must stop on top.
+    const plateau = (x: number): number => (x >= 0 ? 4 : 0);
+    const hit = raycastHeightField(plateau, [-10, 8, 0], [1, -0.25, 0], { bounds, step: 0.5 });
+    expect(hit).not.toBeNull();
+    expect(hit!.y).toBeCloseTo(4, 1);
+    expect(hit!.x).toBeGreaterThanOrEqual(0);
+    // The straight ray would only reach y=4 at x=6; the surface stops it at the plateau edge first.
+    expect(hit!.x).toBeLessThanOrEqual(6.1);
+  });
+
+  test("bisection converges: the hit's ray point sits on the surface within step/2^refine", () => {
+    const rolling = (x: number, z: number): number => Math.sin(x * 0.2) * 3 + Math.cos(z * 0.15) * 2;
+    const direction: [number, number, number] = [0.6, -0.5, 0.4];
+    const origin: [number, number, number] = [-30, 25, -20];
+    const hit = raycastHeightField(rolling, origin, direction, { bounds, step: 1 });
+    expect(hit).not.toBeNull();
+    // Reported y is the exact surface height under the crossing point.
+    expect(hit!.y).toBeCloseTo(rolling(hit!.x, hit!.z), 6);
+    // And the ray's own y at that distance agrees with the surface to bisection precision.
+    const len = Math.hypot(...direction);
+    const rayY = origin[1] + (direction[1] / len) * hit!.distance;
+    expect(Math.abs(rayY - hit!.y)).toBeLessThan(0.05);
+  });
+
+  test("misses when the ray passes above the field inside bounds", () => {
+    const hit = raycastHeightField(() => 0, [0, 10, 0], [1, 0.1, 0], { bounds, step: 0.5 });
+    expect(hit).toBeNull();
+  });
+
+  test("misses when the ray never enters the XZ bounds", () => {
+    const hit = raycastHeightField(() => 0, [200, 10, 200], [1, -1, 0], { bounds, step: 0.5 });
+    expect(hit).toBeNull();
+  });
+
+  test("an origin below the surface hits immediately at the clip entry", () => {
+    const hit = raycastHeightField(() => 5, [0, 0, 0], [1, 0, 0], { bounds, step: 0.5 });
+    expect(hit).not.toBeNull();
+    expect(hit!.distance).toBe(0);
+  });
+
+  test("clips to bounds entry before sampling — origin outside, hit inside", () => {
+    const hit = raycastHeightField(() => 1, [-100, 30, 0], [1, -0.25, 0], { bounds, step: 0.5 });
+    expect(hit).not.toBeNull();
+    expect(hit!.x).toBeGreaterThanOrEqual(bounds.minX);
+    expect(hit!.y).toBeCloseTo(1, 2);
+  });
+
+  test("respects maxDistance", () => {
+    const hit = raycastHeightField(() => 0, [0, 10, 0], [1, -1, 0], { bounds, step: 0.5, maxDistance: 5 });
+    expect(hit).toBeNull();
+  });
+
+  test("an upward ray inside bounds misses promptly instead of marching forever", () => {
+    // Vertical-up: the XZ slab cannot clip it (t1 is unbounded); the step cap must end the march.
+    const started = performance.now();
+    const hit = raycastHeightField(() => 0, [0, 5, 0], [0, 1, 0], { bounds, step: 0.5 });
+    expect(hit).toBeNull();
+    expect(performance.now() - started).toBeLessThan(250);
+  });
+
+  test("a near-vertical miss is bounded by maxSteps instead of the enormous slab crossing", () => {
+    // dx is tiny but nonzero: the slab crossing is ~1e12 units long; without a cap this stalls.
+    const started = performance.now();
+    const hit = raycastHeightField(() => -1000, [0, 5, 0], [1e-11, 1, 0], { bounds, step: 0.5 });
+    expect(hit).toBeNull();
+    expect(performance.now() - started).toBeLessThan(250);
+  });
+
+  test("a vertical ray straight down hits the field under it", () => {
+    const rolling = (x: number, z: number): number => Math.sin(x) + Math.cos(z);
+    const hit = raycastHeightField(rolling, [3, 20, -4], [0, -1, 0], { bounds, step: 0.5 });
+    expect(hit).not.toBeNull();
+    expect(hit!.x).toBeCloseTo(3, 6);
+    expect(hit!.z).toBeCloseTo(-4, 6);
+    expect(hit!.y).toBeCloseTo(rolling(3, -4), 3);
   });
 });

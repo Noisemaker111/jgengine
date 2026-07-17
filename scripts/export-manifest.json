@@ -621,6 +621,7 @@
     "./terrain/grassBudget",
     "./terrain/grassGeometry",
     "./terrain/grassMaterial",
+    "./terrain/heightfieldGeometry",
     "./terrain/index",
     "./terrain/random",
     "./terrain/soilPatchMaterial",
