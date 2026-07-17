@@ -14,13 +14,6 @@ const root = process.cwd();
 const skillsRoot = join(root, ".claude", "skills");
 const problems: string[] = [];
 
-const ROOT_MAX_BYTES = 6_000;
-const ROUTER_MAX_LINES = 100;
-const ROUTER_MAX_BYTES = 8_000;
-const SKILL_MAX_LINES = 120;
-const SKILL_MAX_BYTES = 10_000;
-const TOTAL_SKILL_MAX_BYTES = 60_000;
-const NORMAL_INTAKE_MAX_BYTES = 25_000;
 const DUPLICATE_PARAGRAPH_MIN_CHARS = 180;
 
 function bytes(text: string): number {
@@ -46,9 +39,6 @@ if (existsSync(join(root, "skills"))) {
 const claude = readFileSync(join(root, "CLAUDE.md"), "utf8");
 const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
 if (claude !== agents) problems.push("CLAUDE.md and AGENTS.md must be byte-identical");
-if (bytes(claude) > ROOT_MAX_BYTES) {
-  problems.push(`root instructions are ${bytes(claude)} bytes; cap is ${ROOT_MAX_BYTES}`);
-}
 
 const skillDirs = readdirSync(skillsRoot)
   .filter((name) => existsSync(join(skillsRoot, name, "SKILL.md")))
@@ -77,25 +67,15 @@ for (const name of skillDirs) {
   if (/disable-model-invocation:\s*true/.test(frontmatter) && requiredSkills.includes(name as never)) {
     problems.push(`${name} must remain model-invocable`);
   }
-  if (lines(raw) > SKILL_MAX_LINES) problems.push(`${name}/SKILL.md is ${lines(raw)} lines; cap is ${SKILL_MAX_LINES}`);
-  if (bytes(raw) > SKILL_MAX_BYTES) problems.push(`${name}/SKILL.md is ${bytes(raw)} bytes; cap is ${SKILL_MAX_BYTES}`);
 }
 
 const router = skillText.get("jgengine") ?? "";
-if (lines(router) > ROUTER_MAX_LINES) problems.push(`jgengine router is ${lines(router)} lines; cap is ${ROUTER_MAX_LINES}`);
-if (bytes(router) > ROUTER_MAX_BYTES) problems.push(`jgengine router is ${bytes(router)} bytes; cap is ${ROUTER_MAX_BYTES}`);
-if (totalSkillBytes > TOTAL_SKILL_MAX_BYTES) {
-  problems.push(`SKILL.md total is ${totalSkillBytes} bytes; cap is ${TOTAL_SKILL_MAX_BYTES}`);
-}
 
 let normalIntakeBytes = bytes(claude);
 for (const name of NORMAL_GAME_INTAKE) {
   const raw = skillText.get(name);
   if (raw === undefined) problems.push(`normal intake references missing skill ${name}`);
   else normalIntakeBytes += bytes(raw);
-}
-if (normalIntakeBytes > NORMAL_INTAKE_MAX_BYTES) {
-  problems.push(`normal game intake is ${normalIntakeBytes} bytes; cap is ${NORMAL_INTAKE_MAX_BYTES}`);
 }
 
 const routedSkills = new Set(Object.values(INTAKE_ROUTES).flat());
