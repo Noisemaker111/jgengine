@@ -244,6 +244,9 @@ export class PhysicsWorld {
   private jFreeCount = 0;
   private jointHigh = 0;
   private jointActiveCount = 0;
+  // Reused scratch for a joint's two world anchor points [ax,ay,az,bx,by,bz]; filled by anchorWorld
+  // so the gather is defined once and no per-call array is allocated on the joint hot path.
+  private readonly anchorScratch = new Float64Array(6);
 
   // Removed bodies tombstone (FLAG_DEAD) rather than compact: `id` is the SoA slot itself, handed
   // out to callers and stored raw in joints/game state, so a slot can never move once allocated.
@@ -487,18 +490,30 @@ export class PhysicsWorld {
     this.jRest[id] = restLength;
   }
 
-  private jointDistance(id: number): number {
+  /**
+   * Gather joint `id`'s two world anchor points into {@link anchorScratch} as [ax,ay,az,bx,by,bz]
+   * (A's local offset added to body A's centre, or world-origin when A is unset; B likewise, treating
+   * `anchorB` as a world point when B is unset). The single definition shared by {@link jointDistance},
+   * {@link readJointSegments}, and {@link solveJoints}.
+   */
+  private anchorWorld(id: number): void {
+    const s = this.anchorScratch;
     const bA = this.jBodyA[id]!;
     const bB = this.jBodyB[id]!;
-    const ax = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
-    const ay = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
-    const az = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
-    const bx = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
-    const by = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
-    const bz = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
-    const dx = bx - ax;
-    const dy = by - ay;
-    const dz = bz - az;
+    s[0] = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
+    s[1] = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
+    s[2] = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
+    s[3] = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
+    s[4] = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
+    s[5] = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
+  }
+
+  private jointDistance(id: number): number {
+    this.anchorWorld(id);
+    const s = this.anchorScratch;
+    const dx = s[3]! - s[0]!;
+    const dy = s[4]! - s[1]!;
+    const dz = s[5]! - s[2]!;
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
@@ -507,15 +522,15 @@ export class PhysicsWorld {
     let n = 0;
     for (let id = 0; id < this.jointHigh; id += 1) {
       if (this.jActive[id] !== 1) continue;
-      const bA = this.jBodyA[id]!;
-      const bB = this.jBodyB[id]!;
+      this.anchorWorld(id);
+      const s = this.anchorScratch;
       const o = n * 6;
-      out[o] = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
-      out[o + 1] = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
-      out[o + 2] = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
-      out[o + 3] = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
-      out[o + 4] = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
-      out[o + 5] = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
+      out[o] = s[0]!;
+      out[o + 1] = s[1]!;
+      out[o + 2] = s[2]!;
+      out[o + 3] = s[3]!;
+      out[o + 4] = s[4]!;
+      out[o + 5] = s[5]!;
       n += 1;
     }
     return n;
@@ -770,6 +785,29 @@ export class PhysicsWorld {
     }
   }
 
+  /**
+   * Walk every broadphase cell body `i`'s AABB overlaps, invoking `visit(cell)` once per cell. The
+   * cell-range math (six `cellCoord` calls plus the row-major triple loop) lives here so the count
+   * and scatter passes of {@link buildGrid} share one definition. `visit` is a caller-hoisted closure
+   * (created once per `buildGrid`, not per body) so the hot loop stays allocation-free.
+   */
+  private forEachBodyCell(i: number, visit: (cell: number) => void): void {
+    const nx = this.nx;
+    const ny = this.ny;
+    const x0 = cellCoord(this.posX[i]! - this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+    const x1 = cellCoord(this.posX[i]! + this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
+    const y0 = cellCoord(this.posY[i]! - this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+    const y1 = cellCoord(this.posY[i]! + this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
+    const z0 = cellCoord(this.posZ[i]! - this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+    const z1 = cellCoord(this.posZ[i]! + this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
+    for (let z = z0; z <= z1; z += 1) {
+      for (let y = y0; y <= y1; y += 1) {
+        const rowBase = (z * ny + y) * nx;
+        for (let x = x0; x <= x1; x += 1) visit(rowBase + x);
+      }
+    }
+  }
+
   private buildGrid(): void {
     const n = this.bodyHigh;
     const start = this.cellStart;
@@ -779,22 +817,12 @@ export class PhysicsWorld {
       const i = this.awakeList[a]!;
       this.bodyCell[i] = this.cellOf(i);
     }
-    const nx = this.nx;
-    const ny = this.ny;
+    const countCell = (cell: number): void => {
+      start[cell + 1]! += 1;
+    };
     for (let i = 0; i < n; i += 1) {
       if ((this.flags[i]! & FLAG_DEAD) !== 0) continue;
-      const x0 = cellCoord(this.posX[i]! - this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
-      const x1 = cellCoord(this.posX[i]! + this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
-      const y0 = cellCoord(this.posY[i]! - this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
-      const y1 = cellCoord(this.posY[i]! + this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
-      const z0 = cellCoord(this.posZ[i]! - this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
-      const z1 = cellCoord(this.posZ[i]! + this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
-      for (let z = z0; z <= z1; z += 1) {
-        for (let y = y0; y <= y1; y += 1) {
-          const rowBase = (z * ny + y) * nx;
-          for (let x = x0; x <= x1; x += 1) start[rowBase + x + 1]! += 1;
-        }
-      }
+      this.forEachBodyCell(i, countCell);
     }
     for (let c = 0; c < this.numCells; c += 1) {
       start[c + 1]! += start[c]!;
@@ -804,23 +832,14 @@ export class PhysicsWorld {
     if (total > this.sorted.length) {
       this.sorted = new Int32Array(Math.max(total, this.sorted.length * 2));
     }
+    let scatterBody = 0;
+    const scatterCell = (cell: number): void => {
+      this.sorted[this.cursor[cell]!++] = scatterBody;
+    };
     for (let i = 0; i < n; i += 1) {
       if ((this.flags[i]! & FLAG_DEAD) !== 0) continue;
-      const x0 = cellCoord(this.posX[i]! - this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
-      const x1 = cellCoord(this.posX[i]! + this.halfX[i]!, this.bounds.min[0], this.cellSize, this.nx);
-      const y0 = cellCoord(this.posY[i]! - this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
-      const y1 = cellCoord(this.posY[i]! + this.halfY[i]!, this.bounds.min[1], this.cellSize, this.ny);
-      const z0 = cellCoord(this.posZ[i]! - this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
-      const z1 = cellCoord(this.posZ[i]! + this.halfZ[i]!, this.bounds.min[2], this.cellSize, this.nz);
-      for (let z = z0; z <= z1; z += 1) {
-        for (let y = y0; y <= y1; y += 1) {
-          const rowBase = (z * ny + y) * nx;
-          for (let x = x0; x <= x1; x += 1) {
-            const c = rowBase + x;
-            this.sorted[this.cursor[c]!++] = i;
-          }
-        }
-      }
+      scatterBody = i;
+      this.forEachBodyCell(i, scatterCell);
     }
   }
 
@@ -1018,6 +1037,59 @@ export class PhysicsWorld {
     this.posZ[j]! += corr * imJ * nZ;
   }
 
+  /**
+   * Apply an axial velocity impulse `jn` along unit axis (nX,nY,nZ) to a joint's two bodies: body A
+   * recoils (−) and body B advances (+), each scaled by its inverse mass. A world anchor (body index
+   * < 0) is skipped. Scalar args only — no allocation on the joint hot path.
+   */
+  private applyAxialImpulse(
+    bA: number,
+    bB: number,
+    imA: number,
+    imB: number,
+    jn: number,
+    nX: number,
+    nY: number,
+    nZ: number,
+  ): void {
+    if (bA >= 0) {
+      this.velX[bA]! -= jn * imA * nX;
+      this.velY[bA]! -= jn * imA * nY;
+      this.velZ[bA]! -= jn * imA * nZ;
+    }
+    if (bB >= 0) {
+      this.velX[bB]! += jn * imB * nX;
+      this.velY[bB]! += jn * imB * nY;
+      this.velZ[bB]! += jn * imB * nZ;
+    }
+  }
+
+  /**
+   * Positional (Baumgarte) twin of {@link applyAxialImpulse}: nudge the joint's two bodies along
+   * (nX,nY,nZ) by `corr` — body A advances (+), body B recoils (−), each scaled by its inverse mass.
+   */
+  private applyAxialCorrection(
+    bA: number,
+    bB: number,
+    imA: number,
+    imB: number,
+    corr: number,
+    nX: number,
+    nY: number,
+    nZ: number,
+  ): void {
+    if (bA >= 0) {
+      this.posX[bA]! += corr * imA * nX;
+      this.posY[bA]! += corr * imA * nY;
+      this.posZ[bA]! += corr * imA * nZ;
+    }
+    if (bB >= 0) {
+      this.posX[bB]! -= corr * imB * nX;
+      this.posY[bB]! -= corr * imB * nY;
+      this.posZ[bB]! -= corr * imB * nZ;
+    }
+  }
+
   private solveJoints(dt: number): void {
     const beta = this.jointCorrection;
     const slop = this.slop;
@@ -1026,15 +1098,11 @@ export class PhysicsWorld {
       const kind = this.jKind[id]!;
       const bA = this.jBodyA[id]!;
       const bB = this.jBodyB[id]!;
-      const ax = (bA >= 0 ? this.posX[bA]! : 0) + this.jAnchorAX[id]!;
-      const ay = (bA >= 0 ? this.posY[bA]! : 0) + this.jAnchorAY[id]!;
-      const az = (bA >= 0 ? this.posZ[bA]! : 0) + this.jAnchorAZ[id]!;
-      const bx = bB >= 0 ? this.posX[bB]! + this.jAnchorBX[id]! : this.jAnchorBX[id]!;
-      const by = bB >= 0 ? this.posY[bB]! + this.jAnchorBY[id]! : this.jAnchorBY[id]!;
-      const bz = bB >= 0 ? this.posZ[bB]! + this.jAnchorBZ[id]! : this.jAnchorBZ[id]!;
-      let dx = bx - ax;
-      let dy = by - ay;
-      let dz = bz - az;
+      this.anchorWorld(id);
+      const s = this.anchorScratch;
+      let dx = s[3]! - s[0]!;
+      let dy = s[4]! - s[1]!;
+      let dz = s[5]! - s[2]!;
       const imA = bA >= 0 ? this.invMass[bA]! : 0;
       const imB = bB >= 0 ? this.invMass[bB]! : 0;
       const imSum = imA + imB;
@@ -1072,27 +1140,9 @@ export class PhysicsWorld {
           }
           const rvn = rvx * nX + rvy * nY + rvz * nZ;
           const jn = -rvn / imSum;
-          if (bA >= 0) {
-            this.velX[bA]! -= jn * imA * nX;
-            this.velY[bA]! -= jn * imA * nY;
-            this.velZ[bA]! -= jn * imA * nZ;
-          }
-          if (bB >= 0) {
-            this.velX[bB]! += jn * imB * nX;
-            this.velY[bB]! += jn * imB * nY;
-            this.velZ[bB]! += jn * imB * nZ;
-          }
+          this.applyAxialImpulse(bA, bB, imA, imB, jn, nX, nY, nZ);
           const corr = (dist * beta) / imSum;
-          if (bA >= 0) {
-            this.posX[bA]! += corr * imA * nX;
-            this.posY[bA]! += corr * imA * nY;
-            this.posZ[bA]! += corr * imA * nZ;
-          }
-          if (bB >= 0) {
-            this.posX[bB]! -= corr * imB * nX;
-            this.posY[bB]! -= corr * imB * nY;
-            this.posZ[bB]! -= corr * imB * nZ;
-          }
+          this.applyAxialCorrection(bA, bB, imA, imB, corr, nX, nY, nZ);
         } else {
           const rvl = Math.sqrt(rvx * rvx + rvy * rvy + rvz * rvz);
           if (rvl > 1e-9) {
@@ -1100,16 +1150,7 @@ export class PhysicsWorld {
             const nY = rvy / rvl;
             const nZ = rvz / rvl;
             const jn = -rvl / imSum;
-            if (bA >= 0) {
-              this.velX[bA]! -= jn * imA * nX;
-              this.velY[bA]! -= jn * imA * nY;
-              this.velZ[bA]! -= jn * imA * nZ;
-            }
-            if (bB >= 0) {
-              this.velX[bB]! += jn * imB * nX;
-              this.velY[bB]! += jn * imB * nY;
-              this.velZ[bB]! += jn * imB * nZ;
-            }
+            this.applyAxialImpulse(bA, bB, imA, imB, jn, nX, nY, nZ);
           }
         }
         continue;
@@ -1138,16 +1179,7 @@ export class PhysicsWorld {
         const maxJ = this.jMaxImpulse[id]!;
         if (jn > maxJ) jn = maxJ;
         else if (jn < -maxJ) jn = -maxJ;
-        if (bA >= 0) {
-          this.velX[bA]! -= jn * imA * nX;
-          this.velY[bA]! -= jn * imA * nY;
-          this.velZ[bA]! -= jn * imA * nZ;
-        }
-        if (bB >= 0) {
-          this.velX[bB]! += jn * imB * nX;
-          this.velY[bB]! += jn * imB * nY;
-          this.velZ[bB]! += jn * imB * nZ;
-        }
+        this.applyAxialImpulse(bA, bB, imA, imB, jn, nX, nY, nZ);
         continue;
       }
 
@@ -1160,27 +1192,9 @@ export class PhysicsWorld {
         if (bB >= 0) this.wake(bB);
       }
       const jn = -rvn / imSum;
-      if (bA >= 0) {
-        this.velX[bA]! -= jn * imA * nX;
-        this.velY[bA]! -= jn * imA * nY;
-        this.velZ[bA]! -= jn * imA * nZ;
-      }
-      if (bB >= 0) {
-        this.velX[bB]! += jn * imB * nX;
-        this.velY[bB]! += jn * imB * nY;
-        this.velZ[bB]! += jn * imB * nZ;
-      }
+      this.applyAxialImpulse(bA, bB, imA, imB, jn, nX, nY, nZ);
       const corr = (c * beta) / imSum;
-      if (bA >= 0) {
-        this.posX[bA]! += corr * imA * nX;
-        this.posY[bA]! += corr * imA * nY;
-        this.posZ[bA]! += corr * imA * nZ;
-      }
-      if (bB >= 0) {
-        this.posX[bB]! -= corr * imB * nX;
-        this.posY[bB]! -= corr * imB * nY;
-        this.posZ[bB]! -= corr * imB * nZ;
-      }
+      this.applyAxialCorrection(bA, bB, imA, imB, corr, nX, nY, nZ);
     }
   }
 

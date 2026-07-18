@@ -163,6 +163,9 @@ export interface GameContextItemEntry {
 
 export type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle";
 
+/** Feature keys surfaced on `ctx.game` (every {@link GameFeatures} key except `cosmetics`, which lives on `ctx.player`). */
+type GameFeatureKey = Exclude<keyof GameFeatures, "cosmetics">;
+
 export interface GameContextEntityEntry {
   stats?: StatCatalog;
   receive?: ReceiveMap;
@@ -1071,30 +1074,21 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
 
   const projectileObstacles = definition.physics?.projectileObstacles === true;
+  // A projectile sees entities (and, when `projectileObstacles`, static geometry) but never terrain,
+  // with any per-call `input.filter` overriding these defaults. Computed once for both entry points.
+  const projectileFilterFor = (filter: SceneRaycastInput["filter"]): SceneRaycastInput["filter"] => ({
+    entities: true,
+    objects: projectileObstacles,
+    terrain: false,
+    walls: projectileObstacles,
+    ...filter,
+  });
   const projectileSceneRaycast: SceneRaycastApi = {
     raycast(input) {
-      return sceneRaycast.raycast({
-        ...input,
-        filter: {
-          entities: true,
-          objects: projectileObstacles,
-          terrain: false,
-          walls: projectileObstacles,
-          ...input.filter,
-        },
-      });
+      return sceneRaycast.raycast({ ...input, filter: projectileFilterFor(input.filter) });
     },
     raycastAll(input) {
-      return sceneRaycast.raycastAll({
-        ...input,
-        filter: {
-          entities: true,
-          objects: projectileObstacles,
-          terrain: false,
-          walls: projectileObstacles,
-          ...input.filter,
-        },
-      });
+      return sceneRaycast.raycastAll({ ...input, filter: projectileFilterFor(input.filter) });
     },
   };
 
@@ -1209,6 +1203,16 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     if (build.save !== undefined) featureSaveModules.push(build.save);
   }
 
+  // The optional-feature block on `ctx.game` is single-sourced from the descriptor registry rather
+  // than hand-listing a `featureValue<T>("x")` cast per feature: every feature key equals its
+  // `ctx.game` property name, save for `cosmetics` (which lives on `ctx.player`). Disabled features
+  // read back `undefined`, exactly as the per-line casts did.
+  const gameFeatureBlock = {} as Pick<GameContext["game"], GameFeatureKey>;
+  for (const descriptor of featureDescriptors) {
+    if (descriptor.key === "cosmetics") continue;
+    (gameFeatureBlock as Record<string, unknown>)[descriptor.key] = featureRegistry.get(descriptor.key);
+  }
+
   const baselineDeps: BaselineDeps = {
     signalNotify: signal.notify,
     entities,
@@ -1234,20 +1238,33 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const replication = options.replication;
   const projectsViewers = policyProjectsViewers(replication);
   const aoiRadius = replication?.aoiRadius;
+  // A module's snapshot value is typed `unknown` (modules are keyed heterogeneously), so each per-key
+  // projector narrows it to the shape that key carries. `typedProject` isolates that one erasure cast
+  // so the individual projector bodies below stay fully typed and cast-free.
+  const typedProject =
+    <T>(
+      project: (data: T, viewer: SnapshotViewer, world: WorldSnapshot) => unknown,
+    ): SnapshotModule["project"] =>
+    (data, viewer, world) =>
+      project(data as T, viewer, world);
   const projectorFor = (key: string): SnapshotModule["project"] | undefined => {
     if (aoiRadius !== undefined && key === "entities") {
-      return (data, viewer) =>
-        projectEntitiesForViewer(data as readonly SceneEntity[], viewer, aoiRadius) as unknown;
+      return typedProject<readonly SceneEntity[]>((data, viewer) =>
+        projectEntitiesForViewer(data, viewer, aoiRadius),
+      );
     }
     if (aoiRadius !== undefined && key === "stats") {
-      return (data, viewer, world) =>
+      return typedProject<Record<string, StatValueMap>>((data, viewer, world) =>
         projectByVisibleIds(
-          data as Record<string, StatValueMap>,
+          data,
           visibleEntityIds((world["entities"] ?? []) as readonly SceneEntity[], viewer, aoiRadius),
-        );
+        ),
+      );
     }
     if (replication?.privatePerUser === true && key === "inventory") {
-      return (data, viewer) => projectPerUserForViewer(data as Record<string, unknown>, viewer);
+      return typedProject<Record<string, unknown>>((data, viewer) =>
+        projectPerUserForViewer(data, viewer),
+      );
     }
     return undefined;
   };
@@ -1408,20 +1425,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         },
       },
       loot,
-      trade: featureValue<TradeSystem>("trade"),
-      quest: featureValue<QuestJournal>("quest"),
-      social: featureValue<Social>("social"),
-      chat: featureValue<Chat>("chat"),
-      unlocks: featureValue<Unlocks>("unlocks"),
       economy,
-      leaderboard: featureValue<Leaderboard>("leaderboard"),
-      roster: featureValue<Roster>("roster"),
       store,
-      dialogue: featureValue<GameDialogue>("dialogue"),
-      cards: featureValue<GameContextCards>("cards"),
-      turn: featureValue<GameContextTurn>("turn"),
-      race: featureValue<GameContextRace>("race"),
-      players: featureValue<ConnectedPlayers>("players"),
+      ...gameFeatureBlock,
       registerSave,
       registerReplicate,
     },

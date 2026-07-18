@@ -406,26 +406,45 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return true;
   }
 
-  function paintSurface(edit: TerraformEdit, record: SurfaceDeltaRecorder | null): number {
-    const surface = edit.surface ?? null;
+  /**
+   * Visits every cell in a brush footprint on the CELL grid, yielding each cell's flat `index`, its
+   * {@link brushWeight} `weight`, world center (`wx`,`wz`), and raw `dist` from the brush center.
+   * Shared by the cell-grid brushes ({@link paintSurface}, {@link blendPaint}); each applies its own
+   * inclusion test on the yielded values (paint uses `dist <= radius`, blend uses `weight > 0`).
+   */
+  function forEachBrushCell(
+    edit: TerraformEdit,
+    visit: (index: number, weight: number, wx: number, wz: number, dist: number) => void,
+  ): void {
+    const falloff = edit.falloff ?? "smooth";
     const shape = edit.shape ?? "circle";
     const rCells = Math.ceil(edit.radius / cellSize) + 1;
     const cx = gridX(edit.center[0]);
     const cz = gridZ(edit.center[1]);
-    let painted = 0;
     for (let iz = -rCells; iz <= rCells; iz += 1) {
       const gz = Math.floor(cz) + iz;
       if (gz < 0 || gz >= rows) continue;
       for (let ix = -rCells; ix <= rCells; ix += 1) {
         const gx = Math.floor(cx) + ix;
         if (gx < 0 || gx >= cols) continue;
-        const dx = cellWorldX(gx) - edit.center[0];
-        const dz = cellWorldZ(gz) - edit.center[1];
+        const wx = cellWorldX(gx);
+        const wz = cellWorldZ(gz);
+        const dx = wx - edit.center[0];
+        const dz = wz - edit.center[1];
         const dist = shape === "square" ? Math.max(Math.abs(dx), Math.abs(dz)) : Math.hypot(dx, dz);
-        if (dist > edit.radius) continue;
-        if (writeSurface(gz * cols + gx, surface, record)) painted += 1;
+        visit(gz * cols + gx, brushWeight(dist, edit.radius, falloff), wx, wz, dist);
       }
     }
+  }
+
+  function paintSurface(edit: TerraformEdit, record: SurfaceDeltaRecorder | null): number {
+    const surface = edit.surface ?? null;
+    let painted = 0;
+    // Binary inclusion by raw distance (includes dist == radius), independent of falloff shaping.
+    forEachBrushCell(edit, (index, _weight, _wx, _wz, dist) => {
+      if (dist > edit.radius) return;
+      if (writeSurface(index, surface, record)) painted += 1;
+    });
     return painted;
   }
 
@@ -547,27 +566,12 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     if (surface === undefined || layers.length === 0) return 0;
     const target = layers.findIndex((entry) => entry.surface === surface);
     if (target < 0) return 0;
-    const falloff = edit.falloff ?? "smooth";
-    const shape = edit.shape ?? "circle";
     const strength = edit.strength ?? 1;
-    const rCells = Math.ceil(edit.radius / cellSize) + 1;
-    const cx = gridX(edit.center[0]);
-    const cz = gridZ(edit.center[1]);
     let painted = 0;
-    for (let iz = -rCells; iz <= rCells; iz += 1) {
-      const gz = Math.floor(cz) + iz;
-      if (gz < 0 || gz >= rows) continue;
-      for (let ix = -rCells; ix <= rCells; ix += 1) {
-        const gx = Math.floor(cx) + ix;
-        if (gx < 0 || gx >= cols) continue;
-        const dx = cellWorldX(gx) - edit.center[0];
-        const dz = cellWorldZ(gz) - edit.center[1];
-        const dist = shape === "square" ? Math.max(Math.abs(dx), Math.abs(dz)) : Math.hypot(dx, dz);
-        const weight = brushWeight(dist, edit.radius, falloff);
-        if (weight <= 0) continue;
-        if (blendCell(gz * cols + gx, target, weight * strength, record)) painted += 1;
-      }
-    }
+    forEachBrushCell(edit, (index, weight) => {
+      if (weight <= 0) return;
+      if (blendCell(index, target, weight * strength, record)) painted += 1;
+    });
     return painted;
   }
 
@@ -719,23 +723,38 @@ export interface TerraformStroke {
   isEmpty(): boolean;
 }
 
-/** Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta. */
-export function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke {
-  const first = new Map<number, number>();
-  const latest = new Map<number, number>();
+/** The changed-entry arrays a stroke accumulated: parallel `indices`/`before`/`after` over one type. */
+interface StrokeChanges<T> {
+  indices: number[];
+  before: T[];
+  after: T[];
+}
+
+/**
+ * The shared first/latest Map accumulator behind every `begin*Stroke`. Records each key's first
+ * `before` and latest `after` across many stamps, then assembles the net changed entries (skipping
+ * keys whose latest equals their first). Each stroke supplies its own recording call via `recordStamp`
+ * and wraps {@link StrokeChanges} into its concrete delta shape.
+ */
+function createStroke<T>(
+  recordStamp: (edit: TerraformEdit, record: (index: number, before: T, after: T) => void) => number,
+) {
+  const first = new Map<number, T>();
+  const latest = new Map<number, T>();
   return {
-    stamp(edit) {
-      return terrain.applyRecording(edit, (index, before, after) => {
+    stamp(edit: TerraformEdit): number {
+      return recordStamp(edit, (index, before, after) => {
         if (!first.has(index)) first.set(index, before);
         latest.set(index, after);
       });
     },
-    delta() {
+    changes(): StrokeChanges<T> {
       const indices: number[] = [];
-      const before: number[] = [];
-      const after: number[] = [];
+      const before: T[] = [];
+      const after: T[] = [];
       for (const [index, next] of latest) {
-        const prev = first.get(index)!;
+        // Every latest key was set in `first` on the same callback, so this is always present.
+        const prev = first.get(index) as T;
         if (next === prev) continue;
         indices.push(index);
         before.push(prev);
@@ -743,9 +762,19 @@ export function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecord
       }
       return { indices, before, after };
     },
-    isEmpty() {
+    isEmpty(): boolean {
       return latest.size === 0;
     },
+  };
+}
+
+/** Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta. */
+export function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke {
+  const stroke = createStroke<number>((edit, record) => terrain.applyRecording(edit, record));
+  return {
+    stamp: stroke.stamp,
+    delta: () => stroke.changes(),
+    isEmpty: stroke.isEmpty,
   };
 }
 
@@ -761,31 +790,11 @@ export interface SurfaceStroke {
 
 /** Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta. */
 export function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording">): SurfaceStroke {
-  const first = new Map<number, string | null>();
-  const latest = new Map<number, string | null>();
+  const stroke = createStroke<string | null>((edit, record) => terrain.paintRecording(edit, record));
   return {
-    stamp(edit) {
-      return terrain.paintRecording(edit, (index, before, after) => {
-        if (!first.has(index)) first.set(index, before);
-        latest.set(index, after);
-      });
-    },
-    delta() {
-      const indices: number[] = [];
-      const before: (string | null)[] = [];
-      const after: (string | null)[] = [];
-      for (const [index, next] of latest) {
-        const prev = first.get(index) ?? null;
-        if (next === prev) continue;
-        indices.push(index);
-        before.push(prev);
-        after.push(next);
-      }
-      return { indices, before, after };
-    },
-    isEmpty() {
-      return latest.size === 0;
-    },
+    stamp: stroke.stamp,
+    delta: () => stroke.changes(),
+    isEmpty: stroke.isEmpty,
   };
 }
 
@@ -890,31 +899,12 @@ export interface BlendStroke {
  * @internal — the stroke recorder behind the blend brush and the `blendTerrain` command.
  */
 export function beginBlendStroke(terrain: Pick<EditableTerrain, "blendRecording" | "layers">): BlendStroke {
-  const first = new Map<number, number>();
-  const latest = new Map<number, number>();
+  const stroke = createStroke<number>((edit, record) => terrain.blendRecording(edit, record));
   return {
-    stamp(edit) {
-      return terrain.blendRecording(edit, (index, before, after) => {
-        if (!first.has(index)) first.set(index, before);
-        latest.set(index, after);
-      });
-    },
-    delta() {
-      const indices: number[] = [];
-      const before: number[] = [];
-      const after: number[] = [];
-      for (const [index, next] of latest) {
-        const prev = first.get(index)!;
-        if (next === prev) continue;
-        indices.push(index);
-        before.push(prev);
-        after.push(next);
-      }
-      return { layerCount: terrain.layers.length, indices, before, after };
-    },
-    isEmpty() {
-      return latest.size === 0;
-    },
+    stamp: stroke.stamp,
+    // layerCount is read at delta() time, guarding replay after the layer stack changed shape.
+    delta: () => ({ layerCount: terrain.layers.length, ...stroke.changes() }),
+    isEmpty: stroke.isEmpty,
   };
 }
 
