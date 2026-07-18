@@ -124,3 +124,7 @@ rerunning scripts/tarballInstall.test.ts after one timeout adjustment -> repeate
 2026-07-18T21:23:09.992Z — gpt-5.6-sol — NoisemakerJon
 
 staging the reviewed worktree diff -> git could not create the linked-worktree index.lock under the main checkout's .git directory without escalation, despite the worktree itself being the authorized writable root
+
+2026-07-18T22:23:17.244Z — claude — Claude
+
+ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md

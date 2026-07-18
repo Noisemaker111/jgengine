@@ -18,13 +18,12 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 
 Cold checkouts and git worktrees are not ready until bootstrapped. Do this before recon thrash, issue storms, or package typechecks:
 
-1. **Bootstrap** — `bun run agent:bootstrap` (installs if needed, then full package build so `@jgengine/*` dist exists). Check only: `bun run agent:bootstrap --check`.
+1. **Bootstrap** — `bun run agent:bootstrap` (installs if needed, then full package build so `@jgengine/*` dist exists; ~2–3 min cold). Start it in a background task and recon while it runs. NEVER kill a slow install — a killed `bun install` leaves half-hardlinked `node_modules` and forces a wipe-and-reinstall loop. Bootstrap is lock-guarded (re-invoking joins the running one) and self-heals partial trees. Check only: `bun run agent:bootstrap --check`.
 2. **Package scripts** — prefer `bun --cwd packages/<pkg> run <script>`. Avoid `bun run --cwd packages/<pkg> <script>` (can hit the wrong root script).
-3. **Worktrees** — create with `bun run agent:worktree -- <name> [branch]` or Claude `claude --worktree <name>` (both land under `.claude/worktrees/`). Then bootstrap that path. Never use `C:\tmp\...` on Windows Codex elevated sandbox. Never nest a worktree under another agent worktree or edit the user's main checkout from an isolated tree.
-4. **Cloud Claude** — the container is already isolation; do not add a nested worktree. Run bootstrap if `node_modules` is missing.
-5. **Process order** — bootstrap first; then claim **one** issue (or the slice the user named); implement; focused tests; `bun run gate` / `bun run ship:preflight` when shipping. Do not open a multi-issue program before the tree can run Bun.
-6. **Papercuts** — log only after bootstrap works (`bun run papercut -m <model> "..."`). Do not thrash on papercut path while install/build is broken.
-7. **Evidence** — deterministic tests first. Screenshots only for pixel claims (`jgengine-verify`); use `bun run shoot` / `drive`, not a hand-rolled Vite app. Arbitrary `--url` pages must set `document.documentElement.dataset.jgCapture = "ready"`. Capture fails twice → stop and report lower-rung evidence.
+3. **Worktrees are for local parallelism only** — multiple agents sharing one machine's checkout: `bun run agent:worktree -- <name>` or Claude `claude --worktree <name>` (both land under `.claude/worktrees/` and bootstrap themselves; never nest one under another, never `C:\tmp\...` on Windows Codex). Cloud/container sessions (Claude web, Codex cloud, Grok) are already isolated — never create a worktree there; just branch from `origin/main`. Cloud environments should set their setup script to `bash scripts/cloud-setup.sh` so sessions start from a warm snapshot instead of a cold install.
+4. **Process order** — bootstrap first; then claim **one** issue (or the slice the user named); implement; focused tests; `bun run gate` / `bun run ship:preflight` when shipping. Do not open a multi-issue program before the tree can run Bun.
+5. **Papercuts** — log only after bootstrap works (`bun run papercut -m <model> "..."`). Do not thrash on papercut path while install/build is broken.
+6. **Evidence** — deterministic tests first. Screenshots only for pixel claims (`jgengine-verify`); use `bun run shoot` / `drive`, not a hand-rolled Vite app. Arbitrary `--url` pages must set `document.documentElement.dataset.jgCapture = "ready"`. Capture fails twice → stop and report lower-rung evidence.
 
 ## Change governance
 

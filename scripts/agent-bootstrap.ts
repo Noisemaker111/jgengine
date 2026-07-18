@@ -8,11 +8,12 @@
  *   bun run agent:bootstrap
  *   bun run agent:bootstrap --check   # report only; exit 1 if not ready
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
+const lockPath = join(root, ".agent-bootstrap.lock");
 
 function hasTsgo(): boolean {
   return existsSync(join(root, "node_modules", ".bin", "tsgo"))
@@ -41,6 +42,41 @@ function run(label: string, cmd: string[], timeoutMs: number): void {
   }
 }
 
+function lockAlive(): boolean {
+  try {
+    const ageMs = Date.now() - statSync(lockPath).mtimeMs;
+    if (ageMs > 25 * 60_000) return false; // stale — a bootstrap never takes this long
+    const pid = Number(readFileSync(lockPath, "utf8").trim());
+    if (!Number.isFinite(pid) || pid <= 0) return false;
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Never race two installs — a second bootstrap waits for the running one. */
+function joinOrAcquireLock(): void {
+  while (lockAlive()) {
+    console.log("agent-bootstrap: another bootstrap is running — waiting for it (do NOT kill it)");
+    Bun.sleepSync(5_000);
+    if (!lockAlive() && hasTsgo() && hasCoreDist()) {
+      console.log("agent-bootstrap: the other bootstrap finished — tree is ready");
+      process.exit(0);
+    }
+  }
+  try {
+    rmSync(lockPath, { force: true });
+  } catch {}
+  writeFileSync(lockPath, String(process.pid));
+}
+
+function releaseLock(): void {
+  try {
+    unlinkSync(lockPath);
+  } catch {}
+}
+
 function printContract(): void {
   console.log(`
 agent-bootstrap: ready
@@ -50,10 +86,9 @@ Package scripts (preferred):
 Avoid:
   bun run --cwd packages/<pkg> <script>   # can resolve the wrong root script
 
-Worktrees:
-  Claude: claude --worktree <name>  →  .claude/worktrees/<name>/  then re-run agent:bootstrap there
-  Never: C:\\tmp\\... on Windows Codex elevated sandbox
-  Never: nest a worktree under another agent worktree
+Worktrees (local machines only):
+  bun run agent:worktree -- <name>  →  .claude/worktrees/<name>/ (bootstraps itself)
+  Cloud/container sessions are already isolated — never create a worktree there; just branch.
 
 Verify:
   focused package tests while iterating
@@ -78,7 +113,16 @@ if (checkOnly) {
   process.exit(1);
 }
 
+joinOrAcquireLock();
+process.on("exit", releaseLock);
+
 if (!hasTsgo()) {
+  // node_modules present but unusable means a previous install was killed mid-flight
+  // (SIGKILL leaves half-hardlinked packages that corrupt the next install). Wipe first.
+  if (existsSync(join(root, "node_modules"))) {
+    console.log("agent-bootstrap: partial node_modules detected (killed install) — wiping before reinstall");
+    rmSync(join(root, "node_modules"), { recursive: true, force: true });
+  }
   run("bun install --frozen-lockfile", ["bun", "install", "--frozen-lockfile"], 600_000);
 } else {
   console.log("agent-bootstrap: node_modules present (tsgo found)");
