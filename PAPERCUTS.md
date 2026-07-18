@@ -158,3 +158,11 @@ retrying the full gate after the isolated editor build passed -> 6337 tests pass
 
 ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
 >>>>>>> origin/main
+
+2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
+
+Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstall.test.ts fails 3 tests because GNU tar treats C:\... as a remote host (Cannot connect to C: resolve failed); needs --force-local or forward-slash paths on win32
+
+2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
+
+bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows

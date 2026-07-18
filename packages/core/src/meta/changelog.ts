@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.11.0";
+export const VERSION = "0.12.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,29 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.12.0": {
+    migrate: [
+      "Bump lockstep SDK packages to ^0.12.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine is 0.9.0; @jgengine/github is unchanged.",
+      "Author games through defineGame from @jgengine/shell — the single public authoring entry. Core's constructor was renamed defineGame → defineGameDefinition (@jgengine/core/game/defineGame); only hosts and tooling call it. GamePlayer/GamePlayerShell are @internal; GameHost is the documented mount and owns the editor summon (?mode=editor, F2+E, dev save endpoint) — delete per-game editor bootstraps.",
+      "Declare worlds with world({ id, ground: { mode, size, surface? }, physics? }) from @jgengine/core/world/place (flat/round/voxel/board). environment() still works as the legacy consumption path for editor-written scene data — nothing required for existing games; author dressing in the editor.",
+    ],
+    added: [
+      "world() place API (#1178) — @jgengine/core/world/place: ground mode/size discriminated at type and runtime (flat {x,z} with Infinity, round {radius}, voxel generator domain, board {x,y} cells); ground.surface matter/feel laws; per-place physics over the game default; multiple worlds per game; shell PlaceScene substrate rendering; seeds via seedForPlace.",
+      "@jgengine/shell/gameKit — happy-path authoring surface: authoring, mount, stores, systems, authored-scene helpers, HUD primitives, seeded rng.",
+      "Portable generic stat pools — @jgengine/core/stats/statPool (bounded named pools: health, energy, heat, ammo…); entity stats rebuilt on them; recipe in skill jgengine-combat.",
+      "Auction-house economy primitives (#1086) — @jgengine/core/economy/auctionBook: timed bid auctions, escrowed bids, outbid refunds, optional buyout, anti-snipe extension, settlement with house cut; plus market price history.",
+      "Portable minimap marker sources — core world seam for game minimaps; recipe in skill jgengine-ui.",
+      "Unified seed-driven path network + city generation v2 (#1103, #1106) — street/block/building dials, zone bands, presets, junction geometry, road-derived parcels; shell renders real intersections, curbs, lane lines, tunnels, bridge decks.",
+      "Mesh-accurate hitboxes (#1075), auto-fit colliders from model bounds (#1072), movement obstruction from fitted boxes + compound-box openings (#1077).",
+      "Editor overhaul (#1110) — materials/lighting/scripting/animation/multiplayer workspaces, command palette, minimap bake (#1036), GLB thumbnails, hierarchy DnD/keys/context/visibility-lock, multi-select inspector, console RPC, asset drag-place, ortho projection, pivot modes, play chrome.",
+      "Editor authoring pipeline — entity definitions and starter catalogs (#1012), Data-tab catalogs/schema fields (#1043), promote authored scene folder to runnable game (#1011), shared trigger primitive with goal/win rules (#1013), asset import rewrites game/assets.ts (#1042).",
+    ],
+    changed: [
+      "npx jgengine create scaffolds a thin infinite flat world() place (no more 96m meadow); editor blankWorld drops pre-baked seeded grass — dressing belongs in editor.scene.json.",
+      "Environment studio visual-quality pass; grass fields no longer rebuild geometry per frame (#1090).",
+    ],
+    removed: [],
+  },
   "0.11.0": {
     migrate: [
       "Bump lockstep SDK packages to ^0.11.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine and @jgengine/github may lag on their own version lines.",
