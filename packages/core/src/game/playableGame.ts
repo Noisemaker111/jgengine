@@ -325,7 +325,19 @@ export interface PresentationEffectsConfig {
 
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */
 export interface GameCaptureConfig {
-  /** Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the play screen — the same commands the start-menu buttons dispatch. A bare string runs with a default input; the object form carries the input a command needs (e.g. `[{ name: "class.select", input: { classId: "siren" } }, "startRun"]`). A name the game never registers fails the capture loudly instead of shipping a menu screenshot. */
+  /**
+   * Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the
+   * play screen — the same commands the start-menu buttons dispatch. A bare string runs with a default input;
+   * the object form carries the input a command needs (e.g. `[{ name: "class.select", input: { classId: "siren" } }, "startRun"]`).
+   * A name the game never registers fails the capture loudly instead of shipping a menu screenshot.
+   *
+   * Timing contract: these dispatch **once**, synchronously, at `onContextReady` — after `onNewPlayer` but
+   * before any async boot work it kicked off has settled. If the game restores state asynchronously (a
+   * whole-world save load, network hydration) and that restore resets the same "started" gate these commands
+   * flip, the restore lands *after* the play commands and re-shows the menu — the capture then fails with a
+   * start menu still on screen even though `play` is declared. Make such a restore preserve an already-live
+   * session (skip the reset when the start gate is already set) so it does not bounce capture back to the title.
+   */
   play?: readonly (string | { name: string; input?: unknown })[];
   /** Named capture states beyond live gameplay — any screen worth screenshotting on demand (`lobby`, `store`, `game_over`), each mapping to the command sequence that reaches it from boot. `shoot <game> --state <name>` runs that sequence and captures whatever is on screen — menus included, no live-play guard. An unknown state name fails the capture with the declared list. */
   states?: Record<string, readonly (string | { name: string; input?: unknown })[]>;
