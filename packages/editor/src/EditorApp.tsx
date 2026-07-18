@@ -572,7 +572,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
             <>
               {BaseUI !== undefined ? <BaseUI /> : null}
               {useBuiltinPlayChrome ? (
-                <RuntimePlayInspectorChrome api={host.api} onExit={onExit} />
+                <RuntimePlayInspectorChrome gameId={gameId} api={host.api} onExit={onExit} />
               ) : (
                 <EditorModeChipHost api={host.api} mode="play" chip={resolvedModeChip} />
               )}
