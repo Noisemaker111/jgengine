@@ -972,12 +972,12 @@
 
 ## @jgengine/core/scene/entityStats
 
-- `EntityStatsApi` (interface): interface EntityStatsApi — ⚠ undocumented
+- `EntityStatsApi` (interface): interface EntityStatsApi extends StatPoolAccess — Native entity-stat adapter over the portable {@link StatPoolAccess} contract.
 - `PoolDeltaResult` (type): type PoolDeltaResult = | { status: "ok"; map: StatValueMap; stat: StatValue; hitMin: boolean; hitMax: boolean } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
-- `StatValue` (interface): interface StatValue — ⚠ undocumented
+- `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `StatValueMap` (type): type StatValueMap = Record<string, StatValue> — ⚠ undocumented
-- `StatValuePatch` (interface): interface StatValuePatch — ⚠ undocumented
+- `StatValuePatch` (interface): interface StatValuePatch extends StatPoolPatch — Native entity-stat patch retained as a compatibility bridge.
 
 ## @jgengine/core/scene/entityStore
 
@@ -1724,7 +1724,7 @@
 - `SpawnEntry` (interface): interface SpawnEntry — ⚠ undocumented
 - `SpawnRequest` (interface): interface SpawnRequest — ⚠ undocumented
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
-- `StatValue` (interface): interface StatValue — ⚠ undocumented
+- `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `Station` (interface): interface Station — ⚠ undocumented
 - `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.

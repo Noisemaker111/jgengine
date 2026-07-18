@@ -2,6 +2,17 @@
 
 Reference module for the [`jgengine-combat` API](SKILL.md) skill. Load this when you need the combat surface — effects, projectiles, death, feel, and abilities.
 
+## Portable named resources
+
+`StatPool` (`@jgengine/core/stats/statPool`) is the plain
+`{ current, max, min }` model for any caller-named bounded resource. Existing
+projects implement the two-method `StatPoolAccess` over their own ECS, reducer,
+or save model, then use `applyStatPoolDelta`; reducer-style integrations use
+the pure `createStatPool` / `patchStatPool` / `changeStatPool` transitions.
+Native scene entity stats are a compatibility bridge over the same model. See
+the [portable stat-pool recipe](recipes/portable-stat-pools.md) for complete
+imports, adapter code, ownership, and JSON save/restore.
+
 ## Effects and projectiles
 
 Effect ids are **game-defined strings**. Magnitudes **drain** stats: positive subtracts down `receive.<effect>.order` (spilling to the next stat in the order), negative restores. Heals pass a negative amount (`via: { amount: -flashHeal }`, typically read from a `weapon.heal` stat).
@@ -94,5 +105,4 @@ Genre systems layered over the same effects/projectiles/targeting/loot primitive
 - **Completion predicates** — `completion: { kind, params }` names a registered evaluator; `BUILTIN_COMPLETION_PREDICATES` ships `immediate`, `manual`/`flag`, `timer` (phase seconds), `cleared` (tagged count drained), `metric` (live threshold), `event` (cumulative count), and `quorum` (N of nested predicates). Signals (`counts`/`metrics`/`events`/`flags`) come in through `ctx.signals`; evaluation is deterministic. Register your own via `config.predicates`.
 - **Spawn providers** — spawning is one optional node adapter: `spawn: { kind, params }` invoked on enter. `BUILTIN_SPAWN_PROVIDERS.points` reads a named authored scene point list from `ctx.spawnPoints` (coordinates stay in the scene, referenced by key — never embedded in the sequence); `list` echoes inline requests. Register catalog/director-backed providers via `config.spawnProviders`.
 - **Injection & scripted control** — `injectPhase(state, phase, { after | before | childOf })` inserts a phase or branch at runtime (e.g. a boss after the final wave) into the serializable tree without disturbing active/completed nodes; `forceCompletePhase` completes the active phase regardless of its predicate for scripted skips and failure/retry, restoring the authored predicate afterward.
-
 

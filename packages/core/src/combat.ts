@@ -149,3 +149,15 @@ export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/acc
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";
 export { createStats, type Stats } from "./stats/statModifiers";
+export {
+  applyStatPoolDelta,
+  changeStatPool,
+  createStatPool,
+  patchStatPool,
+  type StatPool,
+  type StatPoolAccess,
+  type StatPoolAccessResult,
+  type StatPoolChange,
+  type StatPoolInput,
+  type StatPoolPatch,
+} from "./stats/statPool";

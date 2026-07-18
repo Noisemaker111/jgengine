@@ -68,3 +68,23 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
+
+2026-07-18T21:45:58.260Z — gpt-5.6-sol — NoisemakerJon
+
+running a focused core typecheck with bun --cwd packages/core run check-types -> Bun exited 0 after printing help instead of executing the script; invalid command ordering should not report success
+
+2026-07-18T21:57:19.685Z — gpt-5.6-sol — NoisemakerJon
+
+regenerating scripts/export-manifest.json for the new core/stats/statPool subpath -> current origin/main also injects six unrelated stale editor subpaths, so the scoped change had to remove those generated rows and the baseline manifest gate remains red
+
+2026-07-18T21:58:37.034Z — gpt-5.6-sol — NoisemakerJon
+
+running the isolated packed-core stat-pool import smoke test -> Windows tar extraction was killed at the explicit 30s test budget after a dangling process warning; real-tarball tests need a Windows-safe extractor or a larger filesystem budget
+
+2026-07-18T22:08:50.506Z — gpt-5.6-sol — NoisemakerJon
+
+running bun run gate for the stat-pool slice -> the build phase exited 255 immediately after launching the editor package build with no compiler diagnostic, so the full gate did not identify a failing source or check
+
+2026-07-18T22:13:40.362Z — gpt-5.6-sol — NoisemakerJon
+
+retrying the full gate after the isolated editor build passed -> 6337 tests passed, but five unchanged tarball-content cases and installPackagedSkills exceeded Bun's default 5s timeout under Windows filesystem contention, alongside the known six-subpath editor export-manifest drift

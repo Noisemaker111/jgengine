@@ -75,7 +75,12 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     try {
       const script = [
         "import { VERSION } from '@jgengine/core';",
+        "import { applyStatPoolDelta, createStatPool } from '@jgengine/core/stats/statPool';",
         "if (typeof VERSION !== 'string') throw new Error('VERSION not exported');",
+        "const resources = { rover: { energy: createStatPool({ current: 8, max: 10 }) } };",
+        "const access = { get: (owner, stat) => resources[owner]?.[stat] ?? null, set: (owner, stat, next) => { resources[owner][stat] = next; } };",
+        "const changed = applyStatPoolDelta(access, 'rover', 'energy', -3);",
+        "if (changed.status !== 'ok' || resources.rover.energy.current !== 5) throw new Error('portable stat pool failed');",
         "let blocked = false;",
         "try { await import('@jgengine/core/testFixtures'); } catch { blocked = true; }",
         "if (!blocked) throw new Error('testFixtures was importable from the tarball');",
@@ -89,7 +94,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     } finally {
       rmSync(join(consumer, ".."), { recursive: true, force: true });
     }
-  });
+  }, 180_000);
 
   test("@jgengine/github resolves its public entry, wildcard rejects unknown subpaths", () => {
     const { consumer } = installTarball("github");
