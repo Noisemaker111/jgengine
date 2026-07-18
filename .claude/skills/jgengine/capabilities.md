@@ -16,6 +16,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HeadlessRunner` (interface) · `import { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner"`
 
+## host-join-code-gate — membership-or-code gate for private hosted servers
+
+- `canJoinPrivateServer` (function) · `import { canJoinPrivateServer } from "@jgengine/core/runtime/hostPolicy"`
+
+## host-listing-filter — exclude private sessions from public browse results
+
+- `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/core/runtime/hostPolicy"`
+
 ## loot-table — validate a loot table definition for use with the registry
 
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`

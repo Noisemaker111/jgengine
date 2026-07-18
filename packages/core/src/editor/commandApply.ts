@@ -476,7 +476,7 @@ const mutationHandlers: MutationHandlers = {
   setCatalogSchema: (state, command) => {
     if (!state.document.catalogs.some((catalog) => catalog.id === command.id)) return null;
     // Re-parse every row's meta against the NEW schema so removed keys drop, added keys default in,
-    // and range/number values clamp â€” the whole clamp contract for a schema edit in one step.
+    // and range/number values clamp — the whole clamp contract for a schema edit in one step.
     const catalogs = state.document.catalogs.map((catalog) =>
       catalog.id === command.id
         ? {
