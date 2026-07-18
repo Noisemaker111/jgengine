@@ -178,3 +178,7 @@ Outside-repo user sim: jgengine-multiplayer reference.md (shipped in the skills 
 2026-07-18T23:38:11.857Z — claude-fable-5 — NoisemakerJon
 
 Building a WoW-like on the SDK: on a lethal ctx.scene.entity.effect() hit the engine death system despawns the target before game code can read its identity, so kill credit/XP needs a game-side spawn-time registry; EffectResult could carry the slain entity's catalogId/name
+
+2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
+
+verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <path> run <script>' (space form) mis-parses and prints bun-run help instead of running; only 'bun --cwd=<path> run <script>' (equals form) works. Docs/skills should switch to the = form or bun --filter.

@@ -23,7 +23,8 @@ export interface RaceSnapshot {
 
 export interface VehicleTelemetry {
   mode: "ground" | "aircraft";
-  speedKmh: number;
+  /** Raw ground/air speed in meters per second; the HUD converts to km/h via `formatSpeed` at the edge. */
+  speedMs: number;
   altitude: number;
   verticalSpeed: number;
   gear: number;

@@ -1,3 +1,4 @@
+import { formatSpeed } from "@jgengine/core/format/speed";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { drivingStore, handrollOf } from "../../handroll";
@@ -13,7 +14,7 @@ export function Speedo() {
   const telemetry = useGameStore((ctx) => handrollOf(ctx).telemetry());
   if (drivingId === null) return null;
   const label = vehicleName !== null ? (vehicleById(vehicleName)?.label ?? "Vehicle") : "Vehicle";
-  const kmh = Math.round(telemetry.speedKmh);
+  const kmh = formatSpeed(telemetry.speedMs, { unit: "kmh", decimals: 0, showUnit: false });
   return (
     <div className="flex items-end gap-2">
       <div className="-skew-x-12 border-2 border-black bg-[#12141a]/90 px-3 py-1 shadow-[3px_3px_0_#000]">

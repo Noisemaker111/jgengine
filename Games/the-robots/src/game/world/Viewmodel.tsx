@@ -6,7 +6,7 @@ import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/
 import { useGameContext } from "@jgengine/react/provider";
 import { assets } from "../assets";
 import { equippedGun, gameNow, lastShot } from "../feel";
-import { gunById, magState, type GunDef, type GunFamily } from "../handroll";
+import { gunById, isReloading, type GunDef, type GunFamily } from "../handroll";
 import { ELEMENT_COLORS } from "../palette";
 
 const FAMILY_MUZZLE_Z: Record<GunFamily, number> = {
@@ -157,7 +157,7 @@ export function FerralonViewmodel() {
 
     let reloadDip = 0;
     let reloadSpin = 0;
-    if (gun !== undefined && magState(ctx, gun).reloadingUntilMs > nowMs) {
+    if (gun !== undefined && isReloading(ctx, gun)) {
       reloadDip = 0.16;
       reloadSpin = Math.sin(state.clock.elapsedTime * 9) * 0.35;
     }

@@ -3,9 +3,9 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { content } from "../content";
-import { ENEMY_WAVE_MAX_FIELDED } from "../tuning";
+import { ENEMY_WAVE_FIRST_DELAY, ENEMY_WAVE_INTERVAL, ENEMY_WAVE_MAX_FIELDED } from "../tuning";
 import { livingUnits, resetSession, session } from "../session";
-import { tickEnemyWaves, waveComposition } from "./director";
+import { nextWaveEta, tickEnemyWaves, waveComposition } from "./director";
 
 /** Boot a real headless context, then stand a Warcamp (enemy) and a keep (player) at either end. */
 function boot(): GameContext {
@@ -78,6 +78,32 @@ describe("enemy AI director (real context)", () => {
     seedKeeps(ctx);
     run(ctx, 2000); // many intervals; the test never kills the mustered units
     expect(livingUnits("enemy", "unit").length).toBeLessThanOrEqual(ENEMY_WAVE_MAX_FIELDED + 9);
+  });
+
+  test("HUD countdown reports grace first, then the director beat", () => {
+    const ctx = boot();
+    seedKeeps(ctx);
+    // Before anything runs, the countdown is the full opening grace.
+    expect(nextWaveEta()).toBeCloseTo(ENEMY_WAVE_FIRST_DELAY, 5);
+    run(ctx, 20); // still inside grace
+    expect(nextWaveEta()).toBeCloseTo(ENEMY_WAVE_FIRST_DELAY - 20, 5);
+    // Just after the first wave musters, the countdown resets toward the next beat (< interval).
+    run(ctx, 15); // t = 35, grace elapsed and one wave sent
+    expect(session.enemyWave.sent).toBeGreaterThanOrEqual(1);
+    const eta = nextWaveEta();
+    expect(eta).toBeGreaterThan(0);
+    expect(eta).toBeLessThanOrEqual(ENEMY_WAVE_INTERVAL);
+  });
+
+  test("the director cadence clock stays serializable (no closures)", () => {
+    const ctx = boot();
+    seedKeeps(ctx);
+    run(ctx, 80); // past grace and at least one beat
+    // Round-trips through structuredClone — proves the clock holds only plain data for save/replication.
+    const clone = structuredClone(session.enemyWave);
+    expect(clone.director.wave).toBe(session.enemyWave.director.wave);
+    expect(clone.sent).toBe(session.enemyWave.sent);
+    expect(JSON.parse(JSON.stringify(session.enemyWave.director))).toBeDefined();
   });
 
   test("razing the Warcamp cuts off reinforcements", () => {

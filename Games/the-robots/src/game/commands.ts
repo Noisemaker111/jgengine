@@ -165,7 +165,7 @@ export function registerCommands(ctx: GameContext): void {
       if (itemId === null) return;
       const gun = gunById(itemId);
       if (gun === undefined) return;
-      startReload(state, gun, state.time.now() * 1000);
+      startReload(state, gun);
     },
   });
 
