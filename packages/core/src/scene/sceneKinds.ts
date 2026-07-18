@@ -164,7 +164,7 @@ export interface ParamSchema {
   presets?: readonly ParamPreset[];
 }
 
-/** Look up a schema preset by id, or undefined. @internal */
+/** Look up a schema preset by id, or undefined — the seam `apply_preset` and games resolve bundles through. */
 export function findSchemaPreset(schema: ParamSchema, id: string): ParamPreset | undefined {
   return schema.presets?.find((preset) => preset.id === id);
 }

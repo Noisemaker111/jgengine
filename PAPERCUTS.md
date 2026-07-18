@@ -37,6 +37,10 @@ Rebasing a feature branch via stash/rebase/stash-pop → pop left conflict marke
 
 capturing editor screenshots in the dev runner → 'assets pull' run from repo root provisions public/models at the repo root, but apps/dev serves apps/dev/public — the runtime error's suggested fix leaves the dev runner still 404ing until the pack is copied into apps/dev/public/models
 
+2026-07-18T16:54:13.275Z — claude-fable-5 — NoisemakerJon
+
+gate/test:all in the cloud container → 7 pre-existing failures identical on origin/main: msys tar parses 'C:\...' as a remote host (Cannot connect to C: resolve failed) in tarball clean-consumer tests, plus 3 model-pack texture-URI tests; gate can never pass locally on Windows containers — needs tar --force-local or bsdtar and a look at the pack tests
+
 2026-07-18T16:59:02.348Z — cloud-agent — Claude
 
 Running bun run gate on a fresh cloud container → agent:preflight fails on missing node_modules before build's ensure-ready --install-only can run; had to bun install manually first. Preflight could auto-install or point at ensure-ready.
