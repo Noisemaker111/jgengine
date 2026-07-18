@@ -379,6 +379,7 @@ export { buildingIndex, type BuildingIndex } from "./world/buildingIndex";
 export { type BuildingPaletteOverrides, type BuildingStyle } from "./world/buildings";
 export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from "./world/carve";
 export { catenaryCurve, sagCurve } from "./world/catenary";
+export { type CityBlockKind } from "./world/cityBlocks";
 export {
   CITY_LOT_CLASSES,
   CITY_TREE_SPECIES,
@@ -414,7 +415,6 @@ export {
   type CityTree,
   type ResolvedCity,
 } from "./world/cityKind";
-export { type CityBlockKind } from "./world/cityBlocks";
 export { snapToNearest, socketWorldPosition, socketsCompatible, worldSockets } from "./world/connectors";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";
