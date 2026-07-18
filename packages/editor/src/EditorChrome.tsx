@@ -33,6 +33,7 @@ import { SceneToolbar } from "./shell/SceneToolbar";
 import { StatusBar } from "./shell/StatusBar";
 import { TopAppBar } from "./shell/TopAppBar";
 import { OrientationWidget, PerformanceOverlay, ViewportUtilityPanel } from "./shell/ViewportOverlays";
+import { NetworkWorkspacePanel } from "./shell/NetworkWorkspacePanel";
 import { WorkspaceRail } from "./shell/WorkspaceRail";
 import { buildPaletteCommands } from "./shell/commandRegistry";
 import { createEditorConsoleStore } from "./shell/consoleStore";
@@ -47,6 +48,7 @@ import {
 import { createPerfHistoryStore } from "./shell/perfHistory";
 import { BORDER, FOCUS_RING } from "./shell/theme";
 import { IconButton, Kbd, PanelResizer } from "./shell/ui";
+import type { EditorNetworkSnapshot } from "./networkSnapshot";
 
 let clipboardFragment: EditorDocument | null = null;
 
@@ -140,6 +142,7 @@ export function EditorChrome({
   ui,
   baselineDocument,
   save,
+  networkSnapshot,
 }: {
   gameId: string;
   session: EditorSession;
@@ -149,6 +152,11 @@ export function EditorChrome({
   /** The document as loaded — drives the header unsaved indicator by reference compare. */
   baselineDocument?: EditorDocument;
   save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  /**
+   * Network workspace inspection payload (adapter config + optional host presence).
+   * Built by `EditorApp` from the game definition; live presence rows only when the host injects them.
+   */
+  networkSnapshot: EditorNetworkSnapshot;
 }) {
   const [, setTick] = useState(0);
   const layoutRef = useRef<ReturnType<typeof createShellLayoutStore> | null>(null);
@@ -615,7 +623,7 @@ export function EditorChrome({
     layout.setWorkspace(workspace);
     if (workspace === "materials") layout.patch({ rightOpen: true, inspectorTab: "materials" });
     if (workspace === "terrain") ui.setTool("terrain");
-    else if (workspace === "scene" && ui.getState().tool === "terrain") ui.setTool("select");
+    else if (workspace !== "terrain" && ui.getState().tool === "terrain") ui.setTool("select");
   };
 
   const paletteObjects = useMemo(() => {
@@ -757,35 +765,39 @@ export function EditorChrome({
             <aside
               className={`pointer-events-auto hidden min-h-0 flex-col overflow-hidden border-r ${BORDER} bg-[#111318] sm:flex`}
               style={{ width: layoutState.leftWidth }}
-              aria-label="Scene hierarchy dock"
+              aria-label={layoutState.workspace === "multiplayer" ? "Network workspace dock" : "Scene hierarchy dock"}
             >
               <div className={`flex h-8 shrink-0 items-center gap-1 border-b ${BORDER} px-1.5`}>
-                {LEFT_PAGES.map((page) => {
-                  const badge =
-                    page.id === "collections"
-                      ? state.document.collections.length
-                      : page.id === "prefabs"
-                        ? state.document.prefabs.length
-                        : page.id === "catalogs"
-                          ? api.getCatalogDefinitions().length
-                          : null;
-                  const selected = layoutState.leftPage === page.id;
-                  return (
-                    <button
-                      key={page.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      onClick={() => layout.patch({ leftPage: page.id })}
-                      className={`flex h-6.5 items-center gap-1 rounded-[5px] px-2 text-[11px] transition-colors ${FOCUS_RING} ${
-                        selected ? "bg-white/[0.08] text-neutral-100" : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300"
-                      }`}
-                    >
-                      {page.label}
-                      {badge !== null && badge > 0 ? <span className="text-[9px] tabular-nums text-neutral-500">{badge}</span> : null}
-                    </button>
-                  );
-                })}
+                {layoutState.workspace === "multiplayer" ? (
+                  <span className="px-2 text-[11px] font-medium text-neutral-200">Network</span>
+                ) : (
+                  LEFT_PAGES.map((page) => {
+                    const badge =
+                      page.id === "collections"
+                        ? state.document.collections.length
+                        : page.id === "prefabs"
+                          ? state.document.prefabs.length
+                          : page.id === "catalogs"
+                            ? api.getCatalogDefinitions().length
+                            : null;
+                    const selected = layoutState.leftPage === page.id;
+                    return (
+                      <button
+                        key={page.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => layout.patch({ leftPage: page.id })}
+                        className={`flex h-6.5 items-center gap-1 rounded-[5px] px-2 text-[11px] transition-colors ${FOCUS_RING} ${
+                          selected ? "bg-white/[0.08] text-neutral-100" : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300"
+                        }`}
+                      >
+                        {page.label}
+                        {badge !== null && badge > 0 ? <span className="text-[9px] tabular-nums text-neutral-500">{badge}</span> : null}
+                      </button>
+                    );
+                  })
+                )}
                 <IconButton
                   icon="close"
                   label="Collapse hierarchy panel"
@@ -795,7 +807,9 @@ export function EditorChrome({
                   onClick={() => layout.patch({ leftOpen: false })}
                 />
               </div>
-              {layoutState.leftPage === "collections" ? (
+              {layoutState.workspace === "multiplayer" ? (
+                <NetworkWorkspacePanel snapshot={networkSnapshot} />
+              ) : layoutState.leftPage === "collections" ? (
                 <CollectionsPanel session={session} />
               ) : layoutState.leftPage === "prefabs" ? (
                 <PrefabsPanel session={session} api={api} />
