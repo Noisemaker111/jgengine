@@ -34,8 +34,8 @@ function selectableIds(rows: readonly OutlinerFlatRow[]): string[] {
  * document. Group headers carry real per-kind visibility toggles (the editor's layer system);
  * rows locked through a locked collection show a lock indicator. Tree view supports drag-and-drop
  * reparenting through the existing `set_parent` RPC. Keyboard navigation (arrows / Enter / F2),
- * double-click rename, and row context menus (frame / duplicate / delete / prefab / unparent) are
- * supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
+ * double-click rename, and row context menus (frame / duplicate / delete / prefab / parent to… /
+ * unparent) are supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
  */
 export const HierarchyPanel = memo(function HierarchyPanel({
   session,

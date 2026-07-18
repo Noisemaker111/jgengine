@@ -13,7 +13,9 @@ import { type EditorAssetEntry } from "./AssetBrowser";
 import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
+import { ParentPickerMenu } from "./ParentPickerMenu";
 import { PrefabsPanel } from "./PrefabsPanel";
+import { listParentCandidates } from "./parentCandidates";
 import {
   buildEditorContextMenu,
   type EditorContextAction,
@@ -232,6 +234,12 @@ export function EditorChrome({
     if (ui.getState().contextMenu !== null) ui.patch({ contextMenu: null });
   }, [ui]);
 
+  const [parentPicker, setParentPicker] = useState<{
+    clientX: number;
+    clientY: number;
+    ids: readonly string[];
+  } | null>(null);
+
   const openBottomTab = useCallback(
     (tab: BottomDockTab) => {
       layout.patch({ bottomOpen: true, bottomTab: tab });
@@ -289,6 +297,17 @@ export function EditorChrome({
             notify(`Created prefab “${name}”`);
           }
           return;
+        case "parentTo": {
+          const ids =
+            selection.length > 0
+              ? selection
+              : menu?.hitId !== null && menu?.hitId !== undefined
+                ? [menu.hitId]
+                : [];
+          if (ids.length === 0 || menu === null) return;
+          setParentPicker({ clientX: menu.clientX, clientY: menu.clientY, ids: [...ids] });
+          return;
+        }
         case "unparent": {
           const ids = selection.length > 0 ? selection : menu?.hitId !== null && menu?.hitId !== undefined ? [menu.hitId] : [];
           if (ids.length === 0) return;
@@ -853,6 +872,32 @@ export function EditorChrome({
                 })}
                 onPick={runContextAction}
                 onClose={closeContextMenu}
+              />
+            ) : null}
+            {parentPicker !== null ? (
+              <ParentPickerMenu
+                x={parentPicker.clientX}
+                y={parentPicker.clientY}
+                candidates={listParentCandidates(state.document, parentPicker.ids)}
+                onPick={(parentId) => {
+                  const ids = [...parentPicker.ids];
+                  setParentPicker(null);
+                  const result = api.handle({ method: "set_parent", ids, parentId });
+                  if (!result.ok) {
+                    notify(result.error ?? "Parent to failed", "error");
+                    return;
+                  }
+                  if (parentId === null) {
+                    notify(ids.length === 1 ? "Unparented object" : `Unparented ${ids.length} objects`);
+                  } else {
+                    notify(
+                      ids.length === 1
+                        ? `Parented to ${parentId}`
+                        : `Parented ${ids.length} objects to ${parentId}`,
+                    );
+                  }
+                }}
+                onClose={() => setParentPicker(null)}
               />
             ) : null}
           </main>

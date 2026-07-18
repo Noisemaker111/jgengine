@@ -19,6 +19,7 @@ export type EditorContextActionId =
   | "duplicate"
   | "delete"
   | "createPrefab"
+  | "parentTo"
   | "unparent"
   | "copy"
   | "paste"
@@ -58,8 +59,9 @@ export function buildEditorContextMenu(input: BuildEditorContextMenuInput): read
       { id: "copy", label: "Copy" },
       { id: "delete", label: "Delete", separatorBefore: true },
       { id: "createPrefab", label: "Create prefab…", separatorBefore: true },
+      { id: "parentTo", label: "Parent to…", separatorBefore: true },
       ...(input.canUnparent === true
-        ? ([{ id: "unparent", label: "Unparent", separatorBefore: true }] as const satisfies readonly EditorContextAction[])
+        ? ([{ id: "unparent", label: "Unparent" }] as const satisfies readonly EditorContextAction[])
         : []),
       { id: "paste", label: "Paste", disabled: !input.canPaste, separatorBefore: true },
     ];
