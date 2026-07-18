@@ -39,7 +39,11 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
   for (const entry of generatedIndex) {
     if (sourceFilter !== null && !sourceFilter.has(entry.source)) continue;
     const url = entryUrl(basePath, entry);
-    catalog.register(entry.id, entry.dims === undefined ? { url } : { url, dims: entry.dims });
+    catalog.register(entry.id, {
+      url,
+      ...(entry.dims === undefined ? {} : { dims: entry.dims }),
+      ...(entry.collisionMesh === undefined ? {} : { collisionMesh: entry.collisionMesh }),
+    });
   }
 
   if (includeSingles) {
@@ -52,7 +56,11 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
     for (const alias of aliases) {
       const ref = catalog.resolve(alias.target);
       if (ref === null) continue;
-      catalog.register(alias.key, ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims });
+      catalog.register(alias.key, {
+        url: ref.url,
+        ...(ref.dims === undefined ? {} : { dims: ref.dims }),
+        ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
+      });
     }
   }
 

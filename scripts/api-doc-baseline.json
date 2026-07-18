@@ -1428,7 +1428,6 @@
   "@jgengine/core/scene/captureCheck#rollCapture",
   "@jgengine/core/scene/colliders#ColliderDef",
   "@jgengine/core/scene/colliders#ColliderPurpose",
-  "@jgengine/core/scene/colliders#ColliderShape",
   "@jgengine/core/scene/colliders#DEFAULT_ENTITY_HIT_RADIUS",
   "@jgengine/core/scene/colliders#DEFAULT_OBJECT_HALF_EXTENTS",
   "@jgengine/core/scene/colliders#EntityColliderSet",

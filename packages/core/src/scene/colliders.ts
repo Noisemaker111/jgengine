@@ -1,11 +1,30 @@
 import type { ModelDims } from "./assetCatalog";
+import { prepareCollisionMesh, type CollisionMeshData, type PreparedCollisionMesh } from "./collisionMesh";
 import type { EntityPosition } from "./entityStore";
 
 export type ColliderPurpose = "physical" | "damage";
 
+/**
+ * Collision geometry in entity-local space. `sphere` and `aabb` are analytic; `mesh` carries a
+ * prepared triangle mesh so opted-in concave models raycast their real surface while bounds and
+ * broadphase keep reading the conservative `halfExtents`.
+ * @capability mesh-hitboxes shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
+ */
 export type ColliderShape =
   | { kind: "sphere"; radius: number; offset?: EntityPosition }
-  | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition };
+  | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition }
+  | {
+      kind: "mesh";
+      /** Prepared triangle mesh in model space — engine-derived from an opted-in catalog asset, never hand-authored. */
+      mesh: PreparedCollisionMesh;
+      /** Uniform model→entity-local scale (same composition as the fitted box). */
+      meshScale: number;
+      /** Entity-local translation applied after `meshScale`. */
+      meshTranslate: EntityPosition;
+      /** Conservative entity-local AABB of the placed mesh — bounds/broadphase read this exactly like an `aabb`. */
+      halfExtents: EntityPosition;
+      offset?: EntityPosition;
+    };
 
 export interface ColliderDef {
   name: string;
@@ -134,11 +153,17 @@ export interface ModelBodySource {
   y?: number;
   /** Placement registration. `"center"` (default) centers the footprint and grounds `minY` on the placement point; `"origin"` renders at the raw model origin. */
   anchor?: "center" | "origin";
+  /** Opt-in triangle collision mesh extracted at asset reindex; when present, fitting emits a mesh-accurate shape (rays pass through holes in concave models) instead of the fitted box. */
+  collisionMesh?: CollisionMeshData;
 }
 
 interface FittedBox {
   halfExtents: EntityPosition;
   offset: EntityPosition;
+  /** Composed model→entity-local scale (render scale × normalize) — the mesh shape's `meshScale`. */
+  scale: number;
+  /** Entity-local translation mapping model space onto the fitted placement — the mesh shape's `meshTranslate`. */
+  meshTranslate: EntityPosition;
 }
 
 /**
@@ -164,7 +189,33 @@ function fittedModelBox(model: ModelBodySource): FittedBox | null {
   const offset: EntityPosition = centered
     ? [0, baseY + (height / 2) * scale, 0]
     : [dims.center.x * scale, baseY + (dims.minY + height / 2) * scale, dims.center.z * scale];
-  return { halfExtents, offset };
+  // Maps the model point (center.x, minY, center.z) to the entity-local (0, baseY, 0) the box grounds
+  // on when centered; a raw-origin model keeps its authored pivot and only takes the render offset.
+  const meshTranslate: EntityPosition = centered
+    ? [-dims.center.x * scale, baseY - dims.minY * scale, -dims.center.z * scale]
+    : [0, baseY, 0];
+  return { halfExtents, offset, scale, meshTranslate };
+}
+
+/** The fitted collider shape for a rendered model: a mesh-accurate triangle shape when the model
+ * opts in with a decodable `collisionMesh`, otherwise the conservative fitted box. `null` when the
+ * model is unmeasured or degenerate.
+ */
+function fittedBodyShape(model: ModelBodySource): ColliderShape | null {
+  const box = fittedModelBox(model);
+  if (box === null) return null;
+  const mesh = model.collisionMesh !== undefined ? prepareCollisionMesh(model.collisionMesh) : null;
+  if (mesh !== null) {
+    return {
+      kind: "mesh",
+      mesh,
+      meshScale: box.scale,
+      meshTranslate: box.meshTranslate,
+      halfExtents: box.halfExtents,
+      offset: box.offset,
+    };
+  }
+  return { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset };
 }
 
 /** Damage hitbox fitted to the rendered model's measured bounds — the model-aware replacement for the
@@ -172,14 +223,14 @@ function fittedModelBox(model: ModelBodySource): FittedBox | null {
  * @internal
  */
 export function fittedEntityColliders(model: ModelBodySource): EntityColliderSet | null {
-  const box = fittedModelBox(model);
-  if (box === null) return null;
+  const shape = fittedBodyShape(model);
+  if (shape === null) return null;
   return {
     hitboxes: [
       {
         name: "body",
         purpose: "damage",
-        shape: { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset },
+        shape,
         damageEligible: true,
         blocks: false,
       },
@@ -192,13 +243,13 @@ export function fittedEntityColliders(model: ModelBodySource): EntityColliderSet
  * @internal
  */
 export function fittedObjectColliders(model: ModelBodySource): EntityColliderSet | null {
-  const box = fittedModelBox(model);
-  if (box === null) return null;
+  const shape = fittedBodyShape(model);
+  if (shape === null) return null;
   return {
     body: {
       name: "body",
       purpose: "physical",
-      shape: { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset },
+      shape,
       damageEligible: false,
       blocks: true,
     },

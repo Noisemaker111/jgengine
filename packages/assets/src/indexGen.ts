@@ -1,21 +1,28 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { readGlbDims } from "./dims";
-import type { AssetSource, IndexEntry, ModelDims } from "./manifest";
+import { COLLISION_MESH_ASSET_IDS } from "./collisionMeshAssets";
+import { readGlbCollisionMesh, readGlbDims } from "./dims";
+import type { AssetSource, CollisionMeshData, IndexEntry, ModelDims } from "./manifest";
 import { sourceById } from "./sources";
 
 export function keyFromFile(file: string): string {
   return file.replace(/\.gltf\.glb$/i, "").replace(/\.glb$/i, "");
 }
 
-export function entryForFile(source: AssetSource, file: string, dims?: ModelDims): IndexEntry {
+export function entryForFile(
+  source: AssetSource,
+  file: string,
+  dims?: ModelDims,
+  collisionMesh?: CollisionMeshData,
+): IndexEntry {
   return {
     id: `${source.id}/${keyFromFile(file)}`,
     source: source.id,
     categories: source.categories,
     file,
     ...(dims === undefined ? {} : { dims }),
+    ...(collisionMesh === undefined ? {} : { collisionMesh }),
   };
 }
 
@@ -32,12 +39,32 @@ function collectGlbFiles(dir: string): { file: string; full: string }[] {
   return found;
 }
 
-function measureDims(full: string): ModelDims | undefined {
+function measureDims(bytes: Uint8Array): ModelDims | undefined {
   try {
-    return readGlbDims(readFileSync(full)) ?? undefined;
+    return readGlbDims(bytes) ?? undefined;
   } catch {
     return undefined;
   }
+}
+
+function measureCollisionMesh(bytes: Uint8Array): CollisionMeshData | undefined {
+  try {
+    return readGlbCollisionMesh(bytes) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function entryFromGlb(source: AssetSource, file: string, full: string): IndexEntry {
+  let bytes: Uint8Array;
+  try {
+    bytes = readFileSync(full);
+  } catch {
+    return entryForFile(source, file);
+  }
+  const id = `${source.id}/${keyFromFile(file)}`;
+  const collisionMesh = COLLISION_MESH_ASSET_IDS.has(id) ? measureCollisionMesh(bytes) : undefined;
+  return entryForFile(source, file, measureDims(bytes), collisionMesh);
 }
 
 export function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] {
@@ -46,7 +73,7 @@ export function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] {
   for (const { file, full } of collectGlbFiles(dir).sort((a, b) => a.file.localeCompare(b.file))) {
     if (seen.has(file)) continue;
     seen.add(file);
-    entries.push(entryForFile(source, file, measureDims(full)));
+    entries.push(entryFromGlb(source, file, full));
   }
   return entries;
 }

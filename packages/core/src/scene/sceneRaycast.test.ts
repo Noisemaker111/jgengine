@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import type { EntityColliderSet } from "@jgengine/core/scene/colliders";
+import type { ColliderShape, EntityColliderSet } from "@jgengine/core/scene/colliders";
+import {
+  encodeCollisionMesh,
+  prepareCollisionMesh,
+  type CollisionMeshSource,
+} from "@jgengine/core/scene/collisionMesh";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createSceneRaycast, firstImpact, hitsUntilBlocked } from "@jgengine/core/scene/sceneRaycast";
 
@@ -151,5 +156,86 @@ describe("sceneRaycast", () => {
     });
     const all = api.raycastAll({ origin: [0, 0, 0], direction: [0, 0, 1], maxDistance: 20 });
     expect(all[0]!.instanceId <= all[1]!.instanceId).toBe(true);
+  });
+});
+
+describe("sceneRaycast mesh colliders", () => {
+  // Torus (major radius 1, tube radius 0.3, hole axis +Z) as an index-shared triangle soup.
+  function torusSource(major = 32, tube = 16, ringRadius = 1, tubeRadius = 0.3): CollisionMeshSource {
+    const positions: number[] = [];
+    for (let i = 0; i < major; i += 1) {
+      const a = (i / major) * Math.PI * 2;
+      for (let j = 0; j < tube; j += 1) {
+        const b = (j / tube) * Math.PI * 2;
+        positions.push(
+          Math.cos(a) * (ringRadius + Math.cos(b) * tubeRadius),
+          Math.sin(a) * (ringRadius + Math.cos(b) * tubeRadius),
+          Math.sin(b) * tubeRadius,
+        );
+      }
+    }
+    const vertexAt = (i: number, j: number): number => (i % major) * tube + (j % tube);
+    const indices: number[] = [];
+    for (let i = 0; i < major; i += 1) {
+      for (let j = 0; j < tube; j += 1) {
+        indices.push(
+          vertexAt(i, j),
+          vertexAt(i + 1, j),
+          vertexAt(i + 1, j + 1),
+          vertexAt(i, j),
+          vertexAt(i + 1, j + 1),
+          vertexAt(i, j + 1),
+        );
+      }
+    }
+    return { positions, indices };
+  }
+
+  function torusHitboxSet(): EntityColliderSet {
+    const data = encodeCollisionMesh(torusSource());
+    const mesh = data === null ? null : prepareCollisionMesh(data);
+    if (mesh === null) throw new Error("torus mesh failed to prepare");
+    // meshTranslate [0,0,0] pins the hole center on the entity position; halfExtents is the fitted box.
+    const shape: ColliderShape = {
+      kind: "mesh",
+      mesh,
+      meshScale: 1,
+      meshTranslate: [0, 0, 0],
+      halfExtents: [1.3, 1.3, 0.3],
+    };
+    return { hitboxes: [{ name: "body", purpose: "damage", shape }] };
+  }
+
+  test("a mesh damage hitbox lets a shot through the hole but stops at the ring", () => {
+    const set = torusHitboxSet();
+    const api = createSceneRaycast({
+      entities: {
+        list: () => [{ id: "donut", position: [0, 0, 4], rotationY: 0 }],
+        collidersOf: () => set,
+      },
+    });
+    // Straight through the hole center — only the fitted box would (wrongly) block here.
+    const through = api.raycast({ origin: [0, 0, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(through).toBeNull();
+    // Offset onto the tube ring — hits the actual triangles.
+    const ring = api.raycast({ origin: [1, 0, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(ring?.instanceId).toBe("donut");
+    expect(ring?.colliderName).toBe("body");
+    expect(ring?.damageEligible).toBe(true);
+    expect(ring?.distance).toBeCloseTo(3.7, 1);
+  });
+
+  test("a mesh collider respects entity rotationY", () => {
+    const set = torusHitboxSet();
+    const api = createSceneRaycast({
+      entities: {
+        // Yaw pi/2 turns the hole axis to +X, so the straight Z-ray now strikes the ring.
+        list: () => [{ id: "donut", position: [0, 0, 4], rotationY: Math.PI / 2 }],
+        collidersOf: () => set,
+      },
+    });
+    const zRay = api.raycast({ origin: [0, 0, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(zRay?.instanceId).toBe("donut");
+    expect(zRay?.distance).toBeCloseTo(2.7, 1);
   });
 });
