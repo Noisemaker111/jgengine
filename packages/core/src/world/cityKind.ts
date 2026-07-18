@@ -73,6 +73,8 @@ export interface CityRules {
   boulevards: number;
   /** Branch lanes render as gravel instead of asphalt (rural roads, alleys). */
   gravelLanes: boolean;
+  /** District-wide surface: `auto` keeps asphalt mains (+ gravel lanes per `gravelLanes`); `gravel` unpaves everything. */
+  surface: "auto" | "gravel";
   /** Zone banding: radial core-out, inverted (wealth at the rim), or spatially uniform mixing. */
   profile: CityZoneProfile;
   /** Fraction of the district radius covered by the core band. */
@@ -135,6 +137,7 @@ export const CITY_DEFAULTS: CityRules = {
   streetWidth: 7,
   boulevards: 0.35,
   gravelLanes: false,
+  surface: "auto",
   profile: "core-out",
   coreExtent: 0.35,
   midExtent: 0.7,
@@ -193,6 +196,14 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "streetWidth", label: "street width", group: "layout", min: 3, max: 16, step: 0.5, default: CITY_DEFAULTS.streetWidth, unit: "m" },
     { type: "range", key: "boulevards", label: "boulevards", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.boulevards },
     { type: "bool", key: "gravelLanes", label: "gravel lanes", group: "layout", default: CITY_DEFAULTS.gravelLanes },
+    {
+      type: "select",
+      key: "surface",
+      label: "surface",
+      group: "layout",
+      default: CITY_DEFAULTS.surface,
+      options: [{ value: "auto" }, { value: "gravel" }],
+    },
     { type: "bool", key: "bridges", label: "bridges over water", group: "layout", default: CITY_DEFAULTS.bridges },
     {
       type: "select",
@@ -486,6 +497,7 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     streetWidth: params["streetWidth"] as number,
     boulevards: params["boulevards"] as number,
     gravelLanes: params["gravelLanes"] as boolean,
+    surface: params["surface"] as CityRules["surface"],
     profile: params["profile"] as CityZoneProfile,
     coreExtent: params["coreExtent"] as number,
     midExtent: params["midExtent"] as number,
@@ -893,7 +905,8 @@ function buildMainStreets(
       else if (bases.length >= 5 && i % 4 === 0) level = "avenue";
       if (level === "avenue" && levelRng() < rules.boulevards) level = "boulevard";
       const width = level === "boulevard" ? rules.streetWidth * 2.2 : level === "avenue" ? rules.streetWidth * 1.5 : rules.streetWidth;
-      streets.push({ axis, points, width, level, surface: "asphalt", sidewalk: rules.sidewalks });
+      const surface: CityStreet["surface"] = rules.surface === "gravel" ? "gravel" : "asphalt";
+      streets.push({ axis, points, width, level, surface, sidewalk: rules.sidewalks && surface === "asphalt" });
     }
   };
   build("x", xs, zs, hz);
@@ -947,8 +960,8 @@ function buildBranches(
       points,
       width: rules.streetWidth * 0.65,
       level: "lane",
-      surface: rules.gravelLanes ? "gravel" : "asphalt",
-      sidewalk: rules.sidewalks && !rules.gravelLanes,
+      surface: rules.surface === "gravel" || rules.gravelLanes ? "gravel" : "asphalt",
+      sidewalk: rules.sidewalks && rules.surface !== "gravel" && !rules.gravelLanes,
     };
     if (!connected) lane.bulb = points[points.length - 1]!;
     branches.push(lane);
