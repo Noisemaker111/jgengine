@@ -149,3 +149,32 @@ export function assetsFromCatalog(ids: readonly string[], resolve?: (id: string)
     };
   });
 }
+
+/**
+ * Converts a durable/ephemeral standalone import into a Content Browser entry.
+ * Imported models are always kind `"model"` so place_asset stamps a catalogId for mesh resolution.
+ * @internal
+ */
+export function editorAssetFromImport(asset: { id: string; url: string; label?: string }): EditorAssetEntry {
+  return {
+    id: asset.id,
+    label: asset.label ?? asset.id,
+    kind: "model",
+    url: asset.url,
+  };
+}
+
+/**
+ * Merges imported model entries into the live browser list, replacing any prior entry that shares
+ * an id (re-import stays a single catalog row).
+ * @internal
+ */
+export function mergeEditorAssets(
+  current: readonly EditorAssetEntry[],
+  next: readonly EditorAssetEntry[],
+): EditorAssetEntry[] {
+  if (next.length === 0) return [...current];
+  const byId = new Map(current.map((asset) => [asset.id, asset]));
+  for (const asset of next) byId.set(asset.id, asset);
+  return Array.from(byId.values());
+}
