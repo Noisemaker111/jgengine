@@ -12,9 +12,10 @@ function formatValue(value: number, precision: number): string {
 }
 
 /**
- * Polished numeric field with an axis-colored label chip. The chip is a drag-scrub handle
- * (pointer-drag adjusts by `step` per few pixels); the input commits finite values on change and
- * re-normalizes its text on blur. Invalid text never commits.
+ * Polished numeric field with an axis-colored label chip. The whole field is a drag-scrub
+ * surface (not just the chip): horizontal pointer-drag adjusts by `step` per few pixels while
+ * Alt/Option or double-click focuses the input for precise typing. The input commits finite
+ * values on change and re-normalizes its text on blur. Invalid text never commits.
  */
 export function AxisNumberField({
   axis,
@@ -36,6 +37,7 @@ export function AxisNumberField({
 }) {
   const [text, setText] = useState(() => formatValue(value, precision));
   const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{ pointerId: number; startX: number; startValue: number; moved: boolean } | null>(null);
 
   useEffect(() => {
@@ -47,13 +49,19 @@ export function AxisNumberField({
     if (Number.isFinite(next) && next !== value) onCommit(next);
   };
 
-  const onChipPointerDown = (event: PointerEvent<HTMLSpanElement>) => {
-    if (disabled) return;
+  const onScrubPointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (disabled || editing) return;
+    // Alt/Option starts text edit instead of scrubbing.
+    if (event.altKey) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+      return;
+    }
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startValue: value, moved: false };
   };
-  const onChipPointerMove = (event: PointerEvent<HTMLSpanElement>) => {
+  const onScrubPointerMove = (event: PointerEvent<HTMLElement>) => {
     const drag = dragRef.current;
     if (drag === null || drag.pointerId !== event.pointerId) return;
     const deltaSteps = Math.round((event.clientX - drag.startX) / DRAG_PX_PER_STEP);
@@ -63,20 +71,31 @@ export function AxisNumberField({
     const rounded = Number(next.toFixed(precision));
     if (rounded !== value) onCommit(rounded);
   };
-  const onChipPointerUp = (event: PointerEvent<HTMLSpanElement>) => {
-    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  const onScrubPointerUp = (event: PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current;
+    if (drag === null || drag.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    // Click without drag focuses the input for precise typing (whole-field scrub UX).
+    if (!drag.moved) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
   };
 
   const colors = axis !== undefined ? AXIS_COLORS[axis] : null;
 
   return (
-    <label className="flex min-w-0 flex-1 items-center overflow-hidden rounded-[5px] border border-white/[0.08] bg-black/30 focus-within:border-cyan-400/50">
+    <label
+      title={`Drag to adjust ${label} · Alt-click or focus input to type`}
+      onPointerDown={onScrubPointerDown}
+      onPointerMove={onScrubPointerMove}
+      onPointerUp={onScrubPointerUp}
+      className={`flex min-w-0 flex-1 cursor-ew-resize items-center overflow-hidden rounded-[5px] border border-white/[0.08] bg-black/30 focus-within:border-cyan-400/50 ${
+        editing ? "cursor-text" : ""
+      }`}
+    >
       <span
-        title={`Drag to adjust ${label}`}
-        onPointerDown={onChipPointerDown}
-        onPointerMove={onChipPointerMove}
-        onPointerUp={onChipPointerUp}
-        className={`relative flex h-6.5 w-6 shrink-0 cursor-ew-resize select-none items-center justify-center border-r border-white/[0.06] bg-white/[0.03] text-[10px] font-semibold uppercase ${
+        className={`relative flex h-6.5 w-6 shrink-0 select-none items-center justify-center border-r border-white/[0.06] bg-white/[0.03] text-[10px] font-semibold uppercase ${
           colors !== null ? colors.text : "text-neutral-500"
         }`}
       >
@@ -84,12 +103,17 @@ export function AxisNumberField({
         {label}
       </span>
       <input
+        ref={inputRef}
         type="text"
         inputMode="decimal"
         value={text}
         disabled={disabled}
         aria-label={label}
         onFocus={() => setEditing(true)}
+        onDoubleClick={(event) => {
+          event.stopPropagation();
+          event.currentTarget.select();
+        }}
         onChange={(event) => {
           setText(event.target.value);
           commitText(event.target.value);
@@ -108,7 +132,7 @@ export function AxisNumberField({
             onCommit(next);
           }
         }}
-        className={`h-6.5 w-full min-w-0 bg-transparent px-1.5 text-right text-[11px] text-neutral-200 outline-none ${NUMERIC} disabled:opacity-40`}
+        className={`h-6.5 w-full min-w-0 cursor-text bg-transparent px-1.5 text-right text-[11px] text-neutral-200 outline-none ${NUMERIC} disabled:opacity-40`}
       />
     </label>
   );
