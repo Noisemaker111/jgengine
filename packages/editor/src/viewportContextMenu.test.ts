@@ -86,4 +86,14 @@ describe("buildEditorContextMenu", () => {
     });
     expect(without.map((a) => a.id)).not.toContain("unparent");
   });
+
+  test("always offers Parent to… for object verbs", () => {
+    const actions = buildEditorContextMenu({
+      hitId: "spawn_1",
+      selection: ["spawn_1"],
+      canPaste: false,
+    });
+    expect(actions.map((a) => a.id)).toContain("parentTo");
+    expect(actions.find((a) => a.id === "parentTo")?.label).toBe("Parent to…");
+  });
 });

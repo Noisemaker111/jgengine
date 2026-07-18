@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import {
-  collectDescendants,
   editorParentOf,
   findEditorNote,
   findEditorPath,
@@ -21,6 +20,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 import { TriggerInspector } from "./TriggerInspector";
+import { listParentCandidates } from "./parentCandidates";
 import type { EditorHostApi } from "./session";
 import type { EditorUiStore } from "./uiStore";
 import { TERRAIN_MATERIALS } from "./uiStore";
@@ -158,15 +158,7 @@ function ClearanceField({
 function ParentField({ session, id }: { session: EditorSession; id: string }) {
   const document = session.getState().document;
   const current = editorParentOf(document, id) ?? "";
-  const banned = collectDescendants(document, [id]);
-  banned.add(id);
-  const labelOf = (node: { id: string; label?: string }) => node.label ?? node.id;
-  const candidates = [
-    ...document.markers.map((m) => ({ id: m.id, label: labelOf(m) })),
-    ...document.volumes.map((v) => ({ id: v.id, label: labelOf(v) })),
-    ...document.paths.map((p) => ({ id: p.id, label: labelOf(p) })),
-    ...document.annotations.map((n) => ({ id: n.id, label: n.text.slice(0, 30) || n.id })),
-  ].filter((entry) => !banned.has(entry.id));
+  const candidates = listParentCandidates(document, [id]);
   return (
     <FieldRow label="Parent">
       <select
