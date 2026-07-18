@@ -2,6 +2,8 @@
 export type { EditorDocument } from "./types";
 /** A sculpted heightfield overlay stored on a document ΓÇö the terraform snapshot of offset deltas. */
 export type { EditorTerrain } from "./types";
+/** A baked top-down minimap (PNG data URI + world bounds) persisted on the scene document. */
+export type { EditorMinimapBake } from "./types";
 /** Per-kind show/hide flags for the editor's layer panel. */
 export type { EditorKindVisibility } from "./types";
 /** The four placeable-object collections a prefab fragment or clipboard fragment carries. */

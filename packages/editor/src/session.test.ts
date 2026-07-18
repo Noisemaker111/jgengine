@@ -477,4 +477,42 @@ describe("editor host RPC", () => {
 
     dispose();
   });
+
+  test("bake_minimap needs the live viewport sampler, then stores a deterministic PNG (#1036)", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [
+          { id: "a", kind: "poi", position: { x: -30, y: 0, z: -30 } },
+          { id: "b", kind: "poi", position: { x: 30, y: 0, z: 30 } },
+        ],
+      },
+    });
+
+    // No viewport mounted → the sampler is null and the bake fails cleanly.
+    const noSampler = api.handle({ method: "bake_minimap" });
+    expect(noSampler.ok).toBe(false);
+    expect(noSampler.error).toContain("viewport");
+    expect(api.getSession().getState().document.minimap).toBeUndefined();
+
+    // A deterministic stub sampler stands in for the mounted world's composed ground field.
+    const sampler = {
+      sampleHeight: (x: number, z: number) => Math.sin(x * 0.1) + Math.cos(z * 0.1),
+      sampleNormal: (_x: number, _z: number) => [0, 1, 0] as const,
+    };
+    api.setTerrainSampler(sampler);
+
+    const baked = api.handle({ method: "bake_minimap", resolution: 48 });
+    expect(baked.ok).toBe(true);
+    const stored = api.getSession().getState().document.minimap;
+    expect(stored?.background.startsWith("data:image/png")).toBe(true);
+    expect((baked.result as { bytes: number }).bytes).toBeGreaterThan(0);
+
+    // Deterministic: same sampler + document bakes byte-identical output.
+    const again = api.handle({ method: "bake_minimap", resolution: 48 });
+    expect(again.ok).toBe(true);
+    expect(api.getSession().getState().document.minimap?.background).toBe(stored?.background);
+
+    dispose();
+  });
 });

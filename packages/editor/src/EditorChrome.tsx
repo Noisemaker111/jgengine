@@ -772,7 +772,7 @@ export function EditorChrome({
         ) : null}
 
         <main className="pointer-events-none relative min-w-0 flex-1">
-          {uiState.tool === "terrain" ? <TerrainPanel session={session} ui={ui} /> : null}
+          {uiState.tool === "terrain" ? <TerrainPanel session={session} ui={ui} api={api} /> : null}
           {placementHint !== null ? (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 whitespace-nowrap rounded-full border border-cyan-400/30 bg-cyan-950/85 px-4 py-1.5 text-[11px] text-cyan-100 shadow-lg shadow-cyan-950/40 backdrop-blur-md">{placementHint}</div>
           ) : null}

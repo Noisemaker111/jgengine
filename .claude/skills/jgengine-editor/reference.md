@@ -144,3 +144,24 @@ author the grid and read it at runtime.
   `importCsvGrid`/`exportCsvGrid` (value id per cell). ASCII/CSV are import paths **into** the grid
   document, never the canonical representation — `migrateGridLayer` normalizes and version-migrates
   any layer from disk or an adapter.
+
+## Minimap bake (#1036)
+
+`bake_minimap` rasterizes the authored terrain into a top-down PNG stored on the document as
+`EditorDocument.minimap: EditorMinimapBake` (`{ background: "data:image/png;…", bounds }`). The pure,
+deterministic core rasterizer is `bakeMinimapFromDocument` (`@jgengine/core/editor/index`); the RPC
+handler composes the live viewport's base ground field with `document.terrain` and dispatches the
+undoable `setMinimapBake` command. Runtime feeds the stored `background`/`bounds` straight into the
+`Minimap`/`WorldMap` props — **no re-rasterization at runtime** (see `jgengine-ui`).
+
+- **Live-viewport only.** The bake needs the mounted editor world's composed height/normal sampler
+  (`EditorHostApi.getTerrainSampler`, registered by `EditorWorldOverlay` while the viewport is
+  mounted). It is **not** a headless CLI/MCP verb: with no viewport the sampler is null and
+  `bake_minimap` returns `{ ok:false, error:"bake_minimap needs the live editor viewport" }`. To bake
+  a committed scene offline, run a deterministic node script that rebuilds the base field with
+  `groundFieldFor(world)` and calls `bakeMinimapFromDocument` (see
+  `scripts/bake-claudecraft-minimap.ts`).
+- GUI: the Terrain panel's **Bake minimap** button calls `bake_minimap` and surfaces any `ok:false`
+  error inline.
+- RPC/CLI verb: `bake_minimap` (optional `padding`, `resolution`, `waterLevel`). The bake path uses
+  no `Date`/`Math.random`, so the same scene + sampler always bakes byte-identical output.

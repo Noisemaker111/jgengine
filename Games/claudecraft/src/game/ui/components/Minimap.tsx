@@ -2,6 +2,7 @@ import { MinimapPanel } from "@jgengine/react/map";
 import { useGameClock, useLiveMarkers } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
+import { editorLayers } from "../../../editorLayers";
 import { isMobInstance } from "../../ai/mobs";
 import { NPCS } from "../../entities/npcs/catalog";
 import { useZoneName } from "./Overlays";
@@ -58,6 +59,8 @@ export function Minimap() {
       title={zoneName ?? "Map"}
       clock={<ClockReadout />}
       compassProps={{ width: 168 }}
+      background={editorLayers.minimap?.background}
+      mapBounds={editorLayers.minimap?.bounds}
     />
   );
 }

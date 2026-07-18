@@ -1,5 +1,6 @@
 import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../ui/hudDocument";
+import type { MinimapBakeBounds } from "../world/minimapBake";
 import type { TerraformSnapshot } from "../world/terraform";
 import type { EditorGridLayer } from "./grid";
 
@@ -156,6 +157,19 @@ export type EditorCatalogsInput =
   | readonly EditorCatalogDefinition[]
   | (() => readonly EditorCatalogDefinition[]);
 
+/**
+ * A baked top-down minimap stored on the scene document (#1036): the PNG the editor rasterized from
+ * the authored terrain (a `data:image/png;base64,…` URI) plus the world bounds it spans. Runtime
+ * feeds these straight into the `Minimap`/`WorldMap` `background`/`mapBounds` props — no re-raster.
+ * @capability minimap-bake persist a baked minimap PNG + bounds on the scene document
+ */
+export interface EditorMinimapBake {
+  /** `data:image/png;base64,…` background produced by `bakeMinimapFromDocument`. */
+  background: string;
+  /** World-space rectangle the baked image spans. */
+  bounds: MinimapBakeBounds;
+}
+
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   version: 1;
@@ -189,6 +203,12 @@ export interface EditorDocument {
    * content (rocks, trees, mob populations) stays one diffable row. Absent until a game authors one.
    */
   directives?: EditorDirective[];
+  /**
+   * Baked top-down minimap (#1036) — the editor's `bake_minimap` action rasterizes the authored
+   * terrain into this PNG + bounds; runtime hands them to the `Minimap`/`WorldMap` props. Absent
+   * until baked, so old docs and unbaked games load unchanged.
+   */
+  minimap?: EditorMinimapBake;
 }
 
 /** XZ world-space bounds, `[minX, minZ]`..`[maxX, maxZ]`, for a directive that names no region. */

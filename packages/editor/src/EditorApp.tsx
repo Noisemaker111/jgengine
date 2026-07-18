@@ -172,6 +172,13 @@ function EditorWorldOverlay({
   const pathDraft = useStoreSelector(ui, (s) => s.pathDraft);
   const groundHeightAt = useCallback((x: number, z: number) => ctx.world.groundHeightAt(x, z), [ctx.world]);
 
+  // Publish the live composed ground field so the `bake_minimap` RPC can rasterize authored terrain.
+  // Only available while the viewport is mounted; the cleanup nulls it so headless callers get null.
+  useEffect(() => {
+    api.setTerrainSampler(ctx.world.ground);
+    return () => api.setTerrainSampler(null);
+  }, [api, ctx.world]);
+
   const readoutRegion = useMemo(() => readoutRegionFor(world), [world]);
   const readoutActive = showContours || showSurfaceGrid || showElevation;
   // Debounced terrain version: rebuilds the overlay after sculpt edits settle, not every stroke frame.
