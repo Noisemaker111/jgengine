@@ -1,8 +1,10 @@
 import type { ModelDims } from "@jgengine/core/scene/assetCatalog";
 import type { AssetSpace } from "@jgengine/core/scene/assetSpace";
+import type { CollisionMeshData } from "@jgengine/core/scene/collisionMesh";
 
 export type { ModelDims };
 export type { AssetSpace };
+export type { CollisionMeshData };
 
 export type AssetProvider =
   | "quaternius"
@@ -56,6 +58,8 @@ export interface IndexEntry {
   file: string;
   /** Footprint/center/minY measured from the GLB at reindex; absent when the model could not be read. */
   dims?: ModelDims;
+  /** Opt-in compact triangle mesh extracted at reindex (see {@link "@jgengine/core/scene/collisionMesh".CollisionMeshData}); present only for ids in `COLLISION_MESH_ASSET_IDS` whose geometry extracted. */
+  collisionMesh?: CollisionMeshData;
   /** Authored asset-space metadata (canonical facing, unit scale, footprint, anchor, bounds, rotation policy); absent unless a curator overrides the measured defaults. */
   space?: AssetSpace;
 }

@@ -49,6 +49,22 @@ describe("resolveModel", () => {
   test("includes dims when the catalog entry has them", () => {
     expect(resolveModel("crate", assets)?.dims?.footprint).toEqual({ w: 1, d: 1 });
   });
+
+  test("passes the catalog collisionMesh through by identity, and absent stays absent", () => {
+    const collisionMesh = {
+      min: [-1, 0, -1] as const,
+      max: [1, 2, 1] as const,
+      vertexCount: 3,
+      triangleCount: 1,
+      positions: "AAAA",
+      indices: "AAAA",
+    };
+    const meshAssets = createAssetCatalog();
+    meshAssets.register("arch", { url: "/models/arch.glb", collisionMesh });
+    meshAssets.register("plain", { url: "/models/plain.glb" });
+    expect(resolveModel("arch", meshAssets)?.collisionMesh).toBe(collisionMesh);
+    expect(resolveModel("plain", meshAssets)).not.toHaveProperty("collisionMesh");
+  });
 });
 
 describe("tryResolveCatalogModel", () => {

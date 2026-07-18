@@ -28,7 +28,11 @@ export function resolveModel(
       `[jgengine] missing ${where} — not in the asset catalog. Fix the id, register it, or omit the mapping to keep the deliberate primitive/sprite fallback.`,
     );
   }
-  return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
+  return {
+    url: ref.url,
+    ...(ref.dims === undefined ? {} : { dims: ref.dims }),
+    ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
+  };
 }
 
 /** Soft lookup used when an object catalog id may double as a model asset id.
@@ -37,7 +41,11 @@ export function resolveModel(
 export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined {
   const ref = assets.resolve(id);
   if (ref === null) return undefined;
-  return ref.dims === undefined ? { url: ref.url } : { url: ref.url, dims: ref.dims };
+  return {
+    url: ref.url,
+    ...(ref.dims === undefined ? {} : { dims: ref.dims }),
+    ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
+  };
 }
 
 /**
