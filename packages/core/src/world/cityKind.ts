@@ -1021,7 +1021,9 @@ function findIntersections(
     const dedupe = `${Math.round(x / 6)}:${Math.round(z / 6)}`;
     if (taken.has(dedupe)) continue;
     taken.set(dedupe, true);
-    const radius = Math.max(sa.width, sb.width) * 0.72 + 0.6;
+    // Just big enough to cover the two ribbons' overlap (plus rounded curb corners) — an oversized
+    // patch reads as a black blob at every crossing from the air.
+    const radius = Math.max(sa.width, sb.width) / 2 + 0.8;
     const level = LEVEL_RANK[sa.level] >= LEVEL_RANK[sb.level] ? sa.level : sb.level;
     const arms = [
       { angle: Math.atan2(a.tangent[0], a.tangent[1]), width: sa.width },
@@ -1054,19 +1056,28 @@ function buildParks(
 ): LocalPark[] {
   const rng = streams("parks");
   const parks: LocalPark[] = [];
-  for (let i = 0; i + 1 < xs.length; i += 1) {
-    for (let j = 0; j + 1 < zs.length; j += 1) {
+  // Paved plazas only make sense as POCKET parks in a commercial core — a farm town or estate
+  // district never pours a concrete block, and neither does a 100 m superblock.
+  const commercialCore = rules.coreMix.some(
+    (entry) => (entry.item === "tower" || entry.item === "slab" || entry.item === "shop") && entry.weight > 0,
+  );
+  // Farmland districts quilt to the volume edge: include the rim bands outside the outermost
+  // streets so fields run to the horizon instead of stopping at the last road.
+  const xCoords = rules.fields ? [-hx + 2, ...xs, hx - 2] : xs;
+  const zCoords = rules.fields ? [-hz + 2, ...zs, hz - 2] : zs;
+  for (let i = 0; i + 1 < xCoords.length; i += 1) {
+    for (let j = 0; j + 1 < zCoords.length; j += 1) {
       const keep = rng() < rules.openSpace;
       const bandRoll = rng();
       if (!keep) continue;
-      const width = xs[i + 1]! - xs[i]! - rules.streetWidth - 4;
-      const depth = zs[j + 1]! - zs[j]! - rules.streetWidth - 4;
+      const width = xCoords[i + 1]! - xCoords[i]! - rules.streetWidth - 4;
+      const depth = zCoords[j + 1]! - zCoords[j]! - rules.streetWidth - 4;
       if (width < 6 || depth < 6) continue;
-      const cx = (xs[i]! + xs[i + 1]!) / 2;
-      const cz = (zs[j]! + zs[j + 1]!) / 2;
+      const cx = (xCoords[i]! + xCoords[i + 1]!) / 2;
+      const cz = (zCoords[j]! + zCoords[j + 1]!) / 2;
       const band = zoneBand(zoneMetric(cx, cz, hx, hz), rules.profile, rules.coreExtent, rules.midExtent, bandRoll);
-      const type: CityPark["type"] =
-        rules.fields && band !== "core" ? "field" : band === "core" ? "plaza" : band === "mid" ? "green" : "meadow";
+      const pocket = band === "core" && commercialCore && Math.max(width, depth) <= 48;
+      const type: CityPark["type"] = rules.fields && !pocket ? "field" : pocket ? "plaza" : band === "edge" ? "meadow" : "green";
       parks.push({ id: `park:${i}:${j}`, center: [cx, cz], size: [width, depth], type, jitter: rng() });
     }
   }
@@ -1371,6 +1382,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   const built = buildMainStreets(rules, streams, hx, hz);
   const xs = built.xs;
   const zs = built.zs;
+  const bridgeRng = streams("bridges");
   // Streets stop at the water's edge instead of running on under a lake/canyon river: split each
   // polyline into the runs whose ground stays above the district's minimum elevation. A short
   // underwater run bounded by land on both sides becomes a BRIDGE deck (bank point to bank point)
@@ -1395,7 +1407,11 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
             const deck: [number, number][] = bank === null ? [...wet] : [bank, ...wet];
             deck.push(point);
             for (let i = 1; i < deck.length; i += 1) span += Math.hypot(deck[i]![0] - deck[i - 1]![0], deck[i]![1] - deck[i - 1]![1]);
-            if (rules.bridges && bank !== null && street.level !== "lane" && span <= maxBridgeSpan) {
+            // Hierarchy decides who crosses: boulevards/avenues always bridge, plain streets roll
+            // for it (a river should be crossed every few blocks, not at every single street), and
+            // lanes never do. The roll is drawn per candidate in deterministic order.
+            const wants = street.level === "boulevard" || street.level === "avenue" || (street.level === "street" && bridgeRng() < 0.45);
+            if (rules.bridges && bank !== null && wants && span <= maxBridgeSpan) {
               // Record the deck, then split the land street at the banks so the draped road ends
               // at the shore instead of sagging underwater beneath the deck.
               localBridges.push({ points: deck, width: street.width });

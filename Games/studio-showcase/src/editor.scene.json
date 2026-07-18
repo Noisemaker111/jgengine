@@ -398,7 +398,8 @@
         "driveways": true,
         "parking": true,
         "fields": false,
-        "sidewalks": true
+        "sidewalks": true,
+        "minElevation": -3.2
       }
     },
     {
