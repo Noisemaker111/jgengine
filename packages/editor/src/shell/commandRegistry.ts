@@ -14,6 +14,13 @@ export interface PaletteCommand {
   run: () => void;
 }
 
+/** A scene object the palette can jump to by name/id. */
+export interface PaletteObjectTarget {
+  id: string;
+  label: string;
+  kind: string;
+}
+
 /** Everything the palette can drive — thin callbacks over existing editor systems. */
 export interface PaletteContext {
   setGizmoMode(mode: GizmoMode): void;
@@ -38,6 +45,10 @@ export interface PaletteContext {
   toggleRightDock(): void;
   toggleHelp(): void;
   resetLayout(): void;
+  /** Select + frame a document object by id (jump-to-object). */
+  gotoObject?(id: string): void;
+  /** Live scene objects for object-search rows. */
+  objects?: readonly PaletteObjectTarget[];
 }
 
 /** Builds the full palette command list from live editor capabilities — no dead entries. */
@@ -108,16 +119,73 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
     { id: "add.zone", title: "Add zone volume", group: "Add", keywords: "place create volume", run: () => ctx.startPlacement({ tool: "volume", kind: "zone", shape: "sphere" }) },
     { id: "add.note", title: "Add note", group: "Add", keywords: "place create annotation", run: () => ctx.startPlacement({ tool: "note" }) },
   );
+
+  if (ctx.gotoObject !== undefined && ctx.objects !== undefined) {
+    for (const object of ctx.objects) {
+      commands.push({
+        id: `goto.object.${object.id}`,
+        title: object.label,
+        group: "Objects",
+        keywords: `jump goto select frame ${object.kind} ${object.id}`,
+        run: () => ctx.gotoObject!(object.id),
+      });
+    }
+  }
+
   return commands;
 }
 
-/** Case-insensitive subsequence-friendly filter over title, group, and keywords. */
+const RECENT_KEY = "jgeditor:palette-recent";
+const RECENT_LIMIT = 8;
+
+/** Loads recent command ids from localStorage (session-shared across games). */
+export function loadRecentCommandIds(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (raw === null) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry): entry is string => typeof entry === "string").slice(0, RECENT_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+/** Records a command id at the front of the recent list (deduped, capped). */
+export function pushRecentCommandId(id: string): string[] {
+  // Object jump rows are scene-specific and flood the recent list — skip them.
+  if (id.startsWith("goto.object.")) return loadRecentCommandIds();
+  const next = [id, ...loadRecentCommandIds().filter((entry) => entry !== id)].slice(0, RECENT_LIMIT);
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    // ignore quota / private mode
+  }
+  return next;
+}
+
+/**
+ * Case-insensitive filter over title, group, and keywords.
+ * With an empty query, recent commands (that still exist) float to the top under a virtual order
+ * — the caller groups them visually.
+ */
 export function filterPaletteCommands(
   commands: readonly PaletteCommand[],
   query: string,
+  recentIds: readonly string[] = [],
 ): PaletteCommand[] {
   const needle = query.trim().toLowerCase();
-  if (needle.length === 0) return [...commands];
+  if (needle.length === 0) {
+    if (recentIds.length === 0) return [...commands];
+    const byId = new Map(commands.map((command) => [command.id, command]));
+    const recent: PaletteCommand[] = [];
+    for (const id of recentIds) {
+      const command = byId.get(id);
+      if (command !== undefined) recent.push({ ...command, group: "Recent" });
+    }
+    const recentSet = new Set(recent.map((command) => command.id));
+    return [...recent, ...commands.filter((command) => !recentSet.has(command.id))];
+  }
   const terms = needle.split(/\s+/);
   return commands.filter((command) => {
     const haystack = `${command.title} ${command.group} ${command.keywords ?? ""}`.toLowerCase();

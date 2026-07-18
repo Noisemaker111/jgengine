@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "./icons";
-import { filterPaletteCommands, type PaletteCommand } from "./commandRegistry";
+import {
+  filterPaletteCommands,
+  loadRecentCommandIds,
+  pushRecentCommandId,
+  type PaletteCommand,
+} from "./commandRegistry";
 import { FOCUS_RING } from "./theme";
 import { Kbd } from "./ui";
 
 /**
- * Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command and runs the
- * highlighted one on Enter. Esc or backdrop click cancels without side effects.
+ * Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command (plus scene
+ * object jump rows), surfaces recent commands when the query is empty, and runs the highlighted
+ * entry on Enter. Esc or backdrop click cancels without side effects.
  */
 export function CommandPalette({
   commands,
@@ -21,10 +27,14 @@ export function CommandPalette({
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [cursor, setCursor] = useState(0);
+  const [recentIds, setRecentIds] = useState<string[]>(() => loadRecentCommandIds());
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useMemo(() => filterPaletteCommands(commands, query).slice(0, 40), [commands, query]);
+  const filtered = useMemo(
+    () => filterPaletteCommands(commands, query, recentIds).slice(0, 40),
+    [commands, query, recentIds],
+  );
   const clampedCursor = Math.min(cursor, Math.max(0, filtered.length - 1));
 
   useEffect(() => {
@@ -38,6 +48,7 @@ export function CommandPalette({
 
   const run = (command: PaletteCommand | undefined) => {
     if (command === undefined) return;
+    setRecentIds(pushRecentCommandId(command.id));
     onClose();
     command.run();
   };
@@ -77,8 +88,8 @@ export function CommandPalette({
                 run(filtered[clampedCursor]);
               }
             }}
-            placeholder="Search commands, tools, panels…"
-            aria-label="Search commands"
+            placeholder="Search commands, tools, or objects…"
+            aria-label="Search commands and objects"
             className="h-10 w-full bg-transparent text-[13px] text-neutral-100 outline-none placeholder:text-neutral-600"
           />
           <Kbd>Esc</Kbd>

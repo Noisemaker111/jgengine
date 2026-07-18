@@ -573,6 +573,16 @@ export function EditorChrome({
     else if (workspace === "scene" && ui.getState().tool === "terrain") ui.setTool("select");
   };
 
+  const paletteObjects = useMemo(() => {
+    const doc = state.document;
+    const objects: { id: string; label: string; kind: string }[] = [];
+    for (const marker of doc.markers) objects.push({ id: marker.id, label: marker.label ?? marker.id, kind: marker.kind });
+    for (const volume of doc.volumes) objects.push({ id: volume.id, label: volume.label ?? volume.id, kind: volume.kind });
+    for (const path of doc.paths) objects.push({ id: path.id, label: path.label ?? path.id, kind: path.kind });
+    for (const note of doc.annotations) objects.push({ id: note.id, label: note.text.slice(0, 48) || note.id, kind: "note" });
+    return objects;
+  }, [state.document]);
+
   const paletteCommands = useMemo(
     () =>
       buildPaletteCommands({
@@ -602,8 +612,13 @@ export function EditorChrome({
         toggleRightDock: () => layout.patch({ rightOpen: !layout.getState().rightOpen }),
         toggleHelp: () => setHelpOpen((value) => !value),
         resetLayout: () => layout.reset(),
+        objects: paletteObjects,
+        gotoObject: (id) => {
+          session.dispatch({ type: "select", ids: [id] });
+          api.handle({ method: "camera_goto", id });
+        },
       }),
-    [api, layout, openBottomTab, session, ui],
+    [api, layout, openBottomTab, paletteObjects, session, ui],
   );
 
   const placement = uiState.placement;
