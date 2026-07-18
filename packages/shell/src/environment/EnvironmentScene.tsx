@@ -180,7 +180,7 @@ function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field
     <group position={[cx, 0, cz]}>
       <GrassField
         area={area}
-        count={Math.max(1500, Math.min(60000, Math.ceil(grass.density * grass.area.w * grass.area.d)))}
+        count={Math.max(1500, Math.min(150000, Math.ceil(grass.density * grass.area.w * grass.area.d)))}
         density={grass.density}
         seed={grass.seed}
         bladeHeight={grass.bladeHeight}

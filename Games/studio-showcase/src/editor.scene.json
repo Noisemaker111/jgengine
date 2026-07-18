@@ -5,9 +5,9 @@
       "id": "player_spawn",
       "kind": "player_spawn",
       "position": {
-        "x": 0,
+        "x": 6,
         "y": 0,
-        "z": 0
+        "z": 6
       },
       "label": "Player spawn",
       "color": "#22d3ee"
@@ -43,7 +43,7 @@
       "shape": "box",
       "center": {
         "x": -26,
-        "y": -0.15,
+        "y": -0.45,
         "z": 8
       },
       "halfExtents": {
@@ -53,14 +53,14 @@
       },
       "label": "Lake (water studio)",
       "meta": {
-        "color": "#155e78",
-        "shallowColor": "#4bb6bf",
+        "color": "#0f4a63",
+        "shallowColor": "#2e8fa0",
         "waveHeight": 0.18,
         "waveSpeed": 0.8,
         "waveScale": 0.35,
         "foam": 1.0,
         "opacity": 0.92,
-        "reflectivity": 0.55
+        "reflectivity": 0.35
       }
     },
     {
@@ -79,8 +79,8 @@
       },
       "label": "Meadow (grass studio)",
       "meta": {
-        "density": 10,
-        "bladeHeight": 0.8,
+        "density": 60,
+        "bladeHeight": 0.75,
         "colorBase": "#3f6f37",
         "colorTip": "#9ac25a",
         "colorVariation": 0.45,

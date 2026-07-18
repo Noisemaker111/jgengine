@@ -93,22 +93,29 @@ function ProxyPoles({
 }) {
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const armRef = useRef<THREE.InstancedMesh>(null);
+  const braceRef = useRef<THREE.InstancedMesh>(null);
   const insulatorRef = useRef<THREE.InstancedMesh>(null);
-  const armLength = wireCount > 1 ? (wireCount - 1) * wireSpacing + 0.5 : 0.6;
-  const trunkGeometry = useMemo(() => new THREE.CylinderGeometry(0.07, 0.13, height, 8), [height]);
-  const armGeometry = useMemo(() => new THREE.BoxGeometry(armLength, 0.09, 0.09), [armLength]);
-  const insulatorGeometry = useMemo(() => new THREE.CylinderGeometry(0.045, 0.06, 0.16, 6), []);
+  const armLength = wireCount > 1 ? (wireCount - 1) * wireSpacing + 0.6 : 0.8;
+  const trunkGeometry = useMemo(() => new THREE.CylinderGeometry(0.1, 0.17, height, 8), [height]);
+  const armGeometry = useMemo(() => new THREE.BoxGeometry(armLength, 0.14, 0.12), [armLength]);
+  const braceGeometry = useMemo(() => {
+    const braceSpan = Math.hypot(armLength * 0.32, 0.7);
+    return new THREE.BoxGeometry(0.06, braceSpan, 0.05);
+  }, [armLength]);
+  const insulatorGeometry = useMemo(() => new THREE.CylinderGeometry(0.055, 0.075, 0.22, 6), []);
   useEffect(
     () => () => {
       trunkGeometry.dispose();
       armGeometry.dispose();
+      braceGeometry.dispose();
       insulatorGeometry.dispose();
     },
-    [trunkGeometry, armGeometry, insulatorGeometry],
+    [trunkGeometry, armGeometry, braceGeometry, insulatorGeometry],
   );
   useEffect(() => {
     const trunk = trunkRef.current;
     const arm = armRef.current;
+    const brace = braceRef.current;
     const insulator = insulatorRef.current;
     if (trunk === null) return;
     const matrix = new THREE.Matrix4();
@@ -118,6 +125,7 @@ function ProxyPoles({
     const scale = new THREE.Vector3(1, 1, 1);
     const armY = height - 0.22;
     const half = (wireCount - 1) / 2;
+    const braceAngle = Math.atan2(armLength * 0.32, 0.7);
     poles.forEach((pole, index) => {
       euler.set(0, pole.yaw, 0);
       quaternion.setFromEuler(euler);
@@ -128,6 +136,22 @@ function ProxyPoles({
         position.set(pole.position[0], pole.position[1] + armY, pole.position[2]);
         matrix.compose(position, quaternion, scale);
         arm.setMatrixAt(index, matrix);
+      }
+      if (brace !== null) {
+        // Two diagonal braces from the trunk up to the crossarm — the classic A-frame silhouette.
+        const cos = Math.cos(pole.yaw);
+        const sin = Math.sin(pole.yaw);
+        for (let side = 0; side < 2; side += 1) {
+          const direction = side === 0 ? 1 : -1;
+          const lateral = direction * armLength * 0.16;
+          position.set(pole.position[0] + cos * lateral, pole.position[1] + armY - 0.38, pole.position[2] - sin * lateral);
+          euler.set(0, pole.yaw, direction * braceAngle);
+          quaternion.setFromEuler(euler);
+          matrix.compose(position, quaternion, scale);
+          brace.setMatrixAt(index * 2 + side, matrix);
+        }
+        euler.set(0, pole.yaw, 0);
+        quaternion.setFromEuler(euler);
       }
       if (insulator !== null) {
         // Insulator pegs sit on the crossarm at each wire's lateral offset (the pole's local X axis
@@ -154,6 +178,11 @@ function ProxyPoles({
       arm.instanceMatrix.needsUpdate = true;
       arm.computeBoundingSphere();
     }
+    if (brace !== null) {
+      brace.count = poles.length * 2;
+      brace.instanceMatrix.needsUpdate = true;
+      brace.computeBoundingSphere();
+    }
     if (insulator !== null) {
       insulator.count = poles.length * wireCount;
       insulator.instanceMatrix.needsUpdate = true;
@@ -168,6 +197,9 @@ function ProxyPoles({
       {wireCount > 0 ? (
         <>
           <instancedMesh ref={armRef} args={[armGeometry, undefined, Math.max(1, poles.length)]} castShadow receiveShadow>
+            <meshStandardMaterial color="#4e3d27" roughness={0.9} metalness={0} />
+          </instancedMesh>
+          <instancedMesh ref={braceRef} args={[braceGeometry, undefined, Math.max(1, poles.length * 2)]} castShadow>
             <meshStandardMaterial color="#4e3d27" roughness={0.9} metalness={0} />
           </instancedMesh>
           <instancedMesh

@@ -38,8 +38,8 @@ export const world: EnvironmentWorldFeature = environment({
   // A sparse base grass layer over the whole map so the ground reads alive, with the authored
   // grass_field volume as the dense hero meadow on top of it.
   vegetation: grass({
-    area: { w: 150, d: 150 },
-    density: 0.9,
+    area: { w: 120, d: 120 },
+    density: 8,
     colors: ["#4a7a38", "#77a94e"],
     seed: "showcase-ground",
   }),

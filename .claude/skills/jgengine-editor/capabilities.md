@@ -88,6 +88,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-convergence — derive environment coordinate content from the scene document
 
 - `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/core/editor"`
+- `lakebedFromWaterVolumes` (function) · `import { lakebedFromWaterVolumes } from "@jgengine/core/editor/environment"`
 - `terrainBoundsFromDocument` (function) · `import { terrainBoundsFromDocument } from "@jgengine/core/editor"`
 
 ## world-directives — apply a sparse overlay over materialized directive instances

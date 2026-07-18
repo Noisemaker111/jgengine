@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { createEmptyEditorDocument } from "./document";
-import { environmentContentFromDocument, terrainBoundsFromDocument } from "./environment";
+import { environmentContentFromDocument, lakebedFromWaterVolumes, terrainBoundsFromDocument } from "./environment";
 import type { EditorDocument, EditorMarker } from "./types";
 
 function marker(id: string, kind: string, x: number, z: number): EditorMarker {
@@ -63,5 +63,47 @@ describe("environmentContentFromDocument", () => {
     // origin-centered terrain of this size spans ±w/2, ±d/2 — must reach the farthest object.
     expect(content.bounds.w / 2).toBeGreaterThanOrEqual(90);
     expect(content.bounds.d / 2).toBeGreaterThanOrEqual(70);
+  });
+});
+
+describe("lakebedFromWaterVolumes", () => {
+  const waterDoc = (): EditorDocument => ({
+    ...createEmptyEditorDocument(),
+    volumes: [
+      {
+        id: "lake",
+        kind: "water",
+        shape: "box",
+        center: { x: 10, y: -0.2, z: 0 },
+        halfExtents: { x: 8, y: 0.5, z: 6 },
+      },
+    ],
+  });
+
+  it("returns undefined without water volumes", () => {
+    expect(lakebedFromWaterVolumes(createEmptyEditorDocument())).toBeUndefined();
+  });
+
+  it("carves a basin: full depth at the middle, zero past the shore, monotonic ramp between", () => {
+    const snapshot = lakebedFromWaterVolumes(waterDoc())!;
+    expect(snapshot).toBeDefined();
+    const sample = (x: number, z: number) => {
+      const fx = ((x - snapshot.bounds.minX) / (snapshot.bounds.maxX - snapshot.bounds.minX)) * snapshot.cols;
+      const fz = ((z - snapshot.bounds.minZ) / (snapshot.bounds.maxZ - snapshot.bounds.minZ)) * snapshot.rows;
+      return snapshot.offsets[Math.round(fz) * (snapshot.cols + 1) + Math.round(fx)]!;
+    };
+    // Center reaches full depth: box height (1) + undercut.
+    expect(sample(10, 0)).toBeLessThan(-1);
+    // Outside the footprint the ground is untouched.
+    expect(sample(10 + 8 + 3, 0)).toBe(0);
+    // The shore ramp is shallower than the middle.
+    expect(sample(10 + 8 - 1, 0)).toBeGreaterThan(sample(10, 0));
+    expect(sample(10 + 8 - 1, 0)).toBeLessThan(0);
+  });
+
+  it("feeds environmentContentFromDocument's sculpt when the document has no authored terrain", () => {
+    const content = environmentContentFromDocument(waterDoc());
+    expect(content.sculpt).toBeDefined();
+    expect(content.sculpt!.offsets.some((offset) => offset < -1)).toBe(true);
   });
 });
