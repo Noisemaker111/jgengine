@@ -161,13 +161,6 @@ export function isPetAbility(abilityId: string): boolean {
   return (Object.values(PET_ABILITY_IDS) as string[]).includes(abilityId);
 }
 
-export function isPetInstance(ctx: GameContext, instanceId: string): boolean {
-  for (const runtime of petsOf(ctx).values()) {
-    if (runtime.instanceId === instanceId) return true;
-  }
-  return false;
-}
-
 export function tickPets(ctx: GameContext, userId: string, dt: number): void {
   const runtime = petsOf(ctx).get(userId);
   if (runtime === undefined || runtime.instanceId === null || runtime.dead) return;
@@ -246,12 +239,4 @@ export function tickPets(ctx: GameContext, userId: string, dt: number): void {
     }
   }
   syncPet(ctx, userId);
-}
-
-export function resetPets(ctx: GameContext, userId?: string): void {
-  if (userId !== undefined) {
-    petsOf(ctx).delete(userId);
-    return;
-  }
-  petsOf(ctx).clear();
 }

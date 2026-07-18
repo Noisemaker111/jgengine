@@ -22,8 +22,6 @@ export const RESOURCE_COLORS: Record<string, string> = {
   energy: "bg-[#e4c531]",
 };
 
-export const HP_COLOR = "bg-[#1eb838]";
-
 export function copperLabel(copper: number): string {
   const gold = Math.floor(copper / 10000);
   const silver = Math.floor((copper % 10000) / 100);

@@ -1,4 +1,4 @@
-import { clampValue, type NumericBounds } from "@jgengine/core/relation/keyedValues";
+import type { NumericBounds } from "@jgengine/core/relation/keyedValues";
 import { crossThresholds, type ThresholdBoundary } from "@jgengine/core/relation/thresholds";
 
 export interface RelMilestone {
@@ -20,10 +20,6 @@ export const REL_BOUNDS: NumericBounds = { min: -100, max: 100 };
 export const REL_MILESTONE_BOUNDARIES: readonly ThresholdBoundary<RelMilestone>[] = REL_MILESTONES.map(
   (milestone) => ({ id: milestone, at: milestone.at }),
 );
-
-export function clampRel(value: number): number {
-  return clampValue(value, REL_BOUNDS);
-}
 
 export function relationLabel(value: number): string {
   if (value >= 95) return "Bonded";

@@ -105,9 +105,3 @@ export function worldBossLockedOut(ctx: GameContext, userId: string): boolean {
   const expiry = (ctx.game.store.get(lockKey(userId)) as number | undefined) ?? 0;
   return ctx.time.now() < expiry;
 }
-
-export function resetWorldBoss(ctx: GameContext): void {
-  const state = worldBossOf(ctx);
-  state.currentBossId = null;
-  state.nextSpawnAt = 0;
-}
