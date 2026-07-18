@@ -104,10 +104,12 @@ JGengine's editor-owned world and reusable-package workflow.
 ## Game concepts
 
 Some of the games in `Games/*` are our own take on someone else's idea. We
-credit the originators here and in the game's on-screen HUD, which each game
+credit the originators here, in the game's on-screen HUD (which each game
 renders itself — for example, the World of ClaudeCraft port ships a `CreditLine`
-in its HUD. The jgengine.com game pages embed the runner and no longer render a
-separate per-game credit line.
+in its HUD), and on the game's jgengine.com page. Each game declares its own
+attribution via `export const credit` in its `game.config.ts`; the game page
+(`apps/web/src/routes/games.$id.tsx`) renders that credit beneath the runner,
+sourced from the game's config rather than a hand-maintained web registry.
 
 ### Levy Street — *World of ClaudeCraft*
 

@@ -1,5 +1,5 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,7 +18,33 @@ const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta
 
 const GAMES_INDEX_ID = "virtual:jgengine-games";
 
-/** Exposes the Games/* ids to routes as `virtual:jgengine-games`, resolved at build time. */
+/**
+ * Parses a game's `export const credit = …` from its game.config.ts source.
+ * Mirrors the `GameCredit` shape and the desktop project surface
+ * (apps/desktop/src/project/gameMeta.ts) — the game's config is the single
+ * source of truth for its attribution, not a hand-maintained web registry.
+ */
+const CREDIT_EXPORT_RE =
+  /export\s+const\s+credit\s*=\s*(\{[\s\S]*?\n\}|\{[^}]*\}|["'`][^"'`]+["'`])\s*;?/;
+
+const parseGameCredit = (
+  configSource: string,
+): { text: string; url?: string; handle?: string } | null => {
+  const match = configSource.match(CREDIT_EXPORT_RE);
+  const raw = match?.[1]?.trim();
+  if (raw === undefined) return null;
+  if (/^["'`]/.test(raw)) {
+    const text = raw.slice(1, -1).trim();
+    return text.length > 0 ? { text } : null;
+  }
+  const text = raw.match(/(?:text|label|name)\s*:\s*["'`]([^"'`]+)["'`]/)?.[1]?.trim();
+  if (text === undefined || text.length === 0) return null;
+  const url = raw.match(/url\s*:\s*["'`]([^"'`]+)["'`]/)?.[1];
+  const handle = raw.match(/handle\s*:\s*["'`]([^"'`]+)["'`]/)?.[1];
+  return { text, ...(url !== undefined ? { url } : {}), ...(handle !== undefined ? { handle } : {}) };
+};
+
+/** Exposes the Games/* ids and per-game credit to routes as `virtual:jgengine-games`, resolved at build time. */
 const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
   resolveId(id) {
@@ -30,7 +56,15 @@ const gamesIndexPlugin = (): Plugin => ({
       .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
       .map((entry) => entry.name)
       .sort();
-    return `export const GAME_IDS = ${JSON.stringify(ids)};`;
+    const credits: Record<string, { text: string; url?: string; handle?: string }> = {};
+    for (const gameId of ids) {
+      const configPath = join(gamesDir, gameId, "src/game.config.ts");
+      if (!existsSync(configPath)) continue;
+      const credit = parseGameCredit(readFileSync(configPath, "utf8"));
+      if (credit !== null) credits[gameId] = credit;
+    }
+    return `export const GAME_IDS = ${JSON.stringify(ids)};
+export const GAME_CREDITS = ${JSON.stringify(credits)};`;
   },
 });
 
