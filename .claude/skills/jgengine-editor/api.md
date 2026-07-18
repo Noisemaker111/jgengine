@@ -709,7 +709,7 @@
 ## @jgengine/editor/shell/SceneToolbar
 
 - `ADD_VOLUME_ENTRIES` (const): const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] — Volume placement entries offered by the Add menu.
-- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, gizmoSpace, snapMode, gridSize, rotationSnapDeg, scaleSnap, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetGizmoSpace, onSetSnapMode, onSetGridSize, onSetRotationSnapDeg, onSetScaleSnap, onToggleGrid, … — Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping, viewport overlays, framing, and the Add menu. Unsupported controls (pivot modes, ortho projection) render disabled rather than pretending to work.
+- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, gizmoSpace, snapMode, gridSize, rotationSnapDeg, scaleSnap, cameraProjection, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetGizmoSpace, onSetSnapMode, onSetGridSize, onSetRotationSnapDeg, onSetScaleSn… — Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping, viewport overlays, framing, projection, and the Add menu. Unsupported controls (pivot modes) render disabled rather than pretending to work.
 
 ## @jgengine/editor/shell/StatusBar
 
@@ -828,6 +828,7 @@
 
 ## @jgengine/editor/uiStore
 
+- `CameraProjectionMode` (type): type CameraProjectionMode = "perspective" | "orthographic" — Editor viewport camera projection — perspective (default) or orthographic top-down-friendly view.
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EditorTool` (type): type EditorTool = "select" | "terrain" — Which top-level editor tool is active: object placement/selection, or terrain sculpting.

@@ -656,6 +656,7 @@ export function EditorChrome({
         gridSize={uiState.gridSize}
         rotationSnapDeg={uiState.rotationSnapDeg}
         scaleSnap={uiState.scaleSnap}
+        cameraProjection={uiState.cameraProjection}
         showGrid={uiState.showGrid}
         showContours={uiState.showContours}
         showSurfaceGrid={uiState.showSurfaceGrid}
@@ -668,6 +669,7 @@ export function EditorChrome({
         onSetGridSize={(size) => ui.patch({ gridSize: size })}
         onSetRotationSnapDeg={(deg) => ui.patch({ rotationSnapDeg: deg })}
         onSetScaleSnap={(snap) => ui.patch({ scaleSnap: snap })}
+        onSetCameraProjection={(projection) => ui.patch({ cameraProjection: projection })}
         onToggleGrid={() => ui.patch({ showGrid: !uiState.showGrid })}
         onToggleContours={() => ui.patch({ showContours: !uiState.showContours })}
         onToggleSurfaceGrid={() => ui.patch({ showSurfaceGrid: !uiState.showSurfaceGrid })}

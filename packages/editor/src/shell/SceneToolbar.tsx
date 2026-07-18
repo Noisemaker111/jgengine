@@ -7,6 +7,7 @@ import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 import {
   ROTATION_SNAP_CHOICES_DEG,
   SCALE_SNAP_CHOICES,
+  type CameraProjectionMode,
   type EditorTool,
   type GizmoMode,
   type GizmoSpace,
@@ -103,8 +104,8 @@ function SnapChip({ label, active, onClick }: { label: string; active: boolean; 
 
 /**
  * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping,
- * viewport overlays, framing, and the Add menu. Unsupported controls (pivot modes, ortho
- * projection) render disabled rather than pretending to work.
+ * viewport overlays, framing, projection, and the Add menu. Unsupported controls (pivot modes)
+ * render disabled rather than pretending to work.
  */
 export function SceneToolbar({
   tool,
@@ -114,6 +115,7 @@ export function SceneToolbar({
   gridSize,
   rotationSnapDeg,
   scaleSnap,
+  cameraProjection,
   showGrid,
   showContours,
   showSurfaceGrid,
@@ -126,6 +128,7 @@ export function SceneToolbar({
   onSetGridSize,
   onSetRotationSnapDeg,
   onSetScaleSnap,
+  onSetCameraProjection,
   onToggleGrid,
   onToggleContours,
   onToggleSurfaceGrid,
@@ -142,6 +145,7 @@ export function SceneToolbar({
   gridSize: number;
   rotationSnapDeg: number | null;
   scaleSnap: number | null;
+  cameraProjection: CameraProjectionMode;
   showGrid: boolean;
   showContours: boolean;
   showSurfaceGrid: boolean;
@@ -154,6 +158,7 @@ export function SceneToolbar({
   onSetGridSize: (size: number) => void;
   onSetRotationSnapDeg: (deg: number | null) => void;
   onSetScaleSnap: (snap: number | null) => void;
+  onSetCameraProjection: (projection: CameraProjectionMode) => void;
   onToggleGrid: () => void;
   onToggleContours: () => void;
   onToggleSurfaceGrid: () => void;
@@ -305,14 +310,31 @@ export function SceneToolbar({
       <IconButton icon="gauge" label="Elevation readout" active={showElevation} onClick={onToggleElevation} />
       <ToolbarDivider />
       <IconButton icon="frame" label="Frame selection / scene (F)" onClick={onFrame} />
-      <div
-        className="flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.06] bg-black/20 px-2 text-[11px] text-neutral-600"
-        title="Perspective projection (orthographic view is planned)"
-        aria-disabled="true"
+      <button
+        type="button"
+        onClick={() =>
+          onSetCameraProjection(cameraProjection === "perspective" ? "orthographic" : "perspective")
+        }
+        title={
+          cameraProjection === "perspective"
+            ? "Perspective projection — click for orthographic"
+            : "Orthographic projection — click for perspective"
+        }
+        aria-label={
+          cameraProjection === "perspective"
+            ? "Camera projection: perspective (switch to orthographic)"
+            : "Camera projection: orthographic (switch to perspective)"
+        }
+        aria-pressed={cameraProjection === "orthographic"}
+        className={`flex h-6 items-center gap-1 rounded-[5px] border px-2 text-[11px] transition-colors ${FOCUS_RING} ${
+          cameraProjection === "orthographic"
+            ? "border-cyan-400/30 bg-cyan-500/15 text-cyan-100"
+            : "border-white/[0.07] bg-[#191d24] text-neutral-300 hover:bg-[#1f242d]"
+        }`}
       >
         <Icon name="camera" size={12} />
-        Persp
-      </div>
+        {cameraProjection === "perspective" ? "Persp" : "Ortho"}
+      </button>
       <ToolbarDivider />
       <div className="relative">
         <button
