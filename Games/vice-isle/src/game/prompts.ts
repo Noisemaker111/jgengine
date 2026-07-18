@@ -3,7 +3,7 @@ import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPromp
 import { safehouseStore } from "./commands";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { handrollOf } from "./handroll";
-import { GARAGE_POS, GUNSHOP_POS, MARCO_POS, SAFEHOUSE_POS } from "./world/districts";
+import { GARAGE_POS, GUNSHOP_POS, MARCO_POS, RACE_ROUTES, SAFEHOUSE_POS } from "./world/districts";
 
 const staticPrompts: readonly PositionedPrompt[] = [
   {
@@ -36,15 +36,20 @@ const garagePrompt: PositionedPrompt = {
   },
 };
 
-const racePrompt: PositionedPrompt = {
-  id: "race:oceanloop",
-  position: { x: GARAGE_POS[0] - 8, z: GARAGE_POS[2] },
-  prompt: {
-    radius: 7,
-    display: { kind: "keybind", actionId: "interact" },
-    invoke: { name: "race.start", input: undefined },
-  },
-};
+// One start-line prompt per authored race route, anchored at the route's start (last checkpoint).
+const racePrompts: readonly PositionedPrompt[] = RACE_ROUTES.flatMap((route) => {
+  const start = route.checkpoints[route.checkpoints.length - 1];
+  if (start === undefined) return [];
+  return [{
+    id: `race:${route.id}`,
+    position: { x: start[0], z: start[1] },
+    prompt: {
+      radius: 9,
+      display: { kind: "keybind", actionId: "interact" },
+      invoke: { name: "race.start", input: undefined },
+    },
+  }];
+});
 
 function safehousePrompt(ctx: GameContext): PositionedPrompt {
   const owned = safehouseStore.read(ctx) === true;
@@ -62,7 +67,7 @@ function safehousePrompt(ctx: GameContext): PositionedPrompt {
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   if (handrollOf(ctx).drivingVehicleId() !== null) {
     if (handrollOf(ctx).raceActive()) return [];
-    return [racePrompt];
+    return racePrompts;
   }
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return staticPrompts;

@@ -12,6 +12,8 @@ export const PURSUIT_STARS = 3;
 export const RIVAL_RACER_ID = "race_rival";
 
 export interface RaceSnapshot {
+  routeId: string;
+  label: string;
   active: boolean;
   checkpoint: number;
   total: number;

@@ -152,3 +152,19 @@ retrying the full gate after the isolated editor build passed -> 6337 tests pass
 2026-07-18T22:23:17.244Z — claude — Claude
 
 ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
+
+2026-07-18T23:02:42.440Z — fable — Claude
+
+drive --shot <value>: passing an absolute path breaks (script builds shots/<game>-<path>.png → ENOENT); only bare names work, flag docs don't say so
+
+2026-07-18T23:02:42.473Z — fable — Claude
+
+editor CLI: export_document returns result.json but import_document with a wrong param key fails with 'JSON Parse error: Unexpected identifier undefined' instead of naming the expected 'json' param
+
+2026-07-18T23:02:42.508Z — fable — Claude
+
+editor CLI has no add_path verb — authoring a new route path headlessly requires a full export_document/import_document roundtrip
+
+2026-07-18T23:02:42.541Z — fable — Claude
+
+shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
