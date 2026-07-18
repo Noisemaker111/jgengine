@@ -150,10 +150,6 @@
 - `shardDistance` (function): function shardDistance(shard: StreamerShard, center: { x: number; z: number }): number — Distance from a point to a shard's XZ footprint (0 when inside), or 0 for an always-resident shard.
 - `shardMatchesQuery` (function): function shardMatchesQuery(shard: WorldManifestShard, query: WorldQuery): boolean — True when a shard should be resident for a query: always-resident shards always, bounded shards only when the query disc (`center` ± `radius`) overlaps their footprint.
 - `singleShardWorldManifest` (function): function singleShardWorldManifest(file: string, shardId = WORLD_BASE_SHARD_ID): WorldManifest — The backward-compatible degenerate manifest: one always-resident shard pointing at a single scene document file. `loadWorldDocument(singleShardWorldManifest(file), resolve)` returns exactly that document — the migration path for a game that has one `editor.scene.json` and wants the world API without sharding yet.
-<<<<<<< HEAD
-- `skyConfigFromEnvironment` (function): function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironmentConfig — Projects a validated {@link EditorEnvironment} bag onto {@link SkyEnvironmentConfig}.
-=======
->>>>>>> origin/main
 - `skyFromDocument` (function): function skyFromDocument(doc: EditorDocument): SkyEnvironmentConfig | undefined — Maps the scene document's serializable environment bag onto the runtime sky config consumed by `sky()` / `environment({ sky })`. Returns `undefined` when the document has no environment field so callers can fall back to a world.ts default without inventing values.
 - `splitEditorDocumentIntoShards` (function): function splitEditorDocumentIntoShards(doc: EditorDocument, options: SplitWorldOptions = {}): SplitWorldResult — Splits a monolithic document into a sharded world: placeable objects (markers, volumes, paths, notes) are bucketed into `cellSize`-meter grid cells by a representative point and extracted into per-cell shard documents; the non-placeable extras (terrain, catalogs, prefabs, collections, grids, HUD layout) go into one always-resident `base` shard. Round-trips through {@link loadWorldDocument} to the same object set — the reverse of monolith authoring, so a large scene can be sharded once and streamed thereafter. Cell shards carry their exact object footprint as bounds; empty cells are omitted; order is deterministic (row-major by grid coordinate).
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
@@ -201,10 +197,6 @@
 - `EnvironmentContentOptions` (interface): interface EnvironmentContentOptions extends ClearanceOptions — World-authoring convergence (#1018, epic #1006 Phase 4): derive the **coordinate/placement** content of an `environment()` world from the scene document, so a game with an authored document needs no coordinate arrays in `world.ts` — the remaining `world.ts` surface is engine tuning (noise, materials, sky preset, physics). Terrain footprint follows the authored objects, ground clearings come from authored spawns/POIs (`clearanceZonesFrom`), and the sculpt snapshot is the document's own terrain overlay. Pure and serializable; consumers pass the result straight to `environment({ terrain: terrain({ bounds }), clearings, sculpt })`.
 - `environmentContentFromDocument` (function): function environmentContentFromDocument(doc: EditorDocument, options: EnvironmentContentOptions = {}): EnvironmentContent — Derives the coordinate/placement content of an `environment()` world from its scene document: terrain footprint (via {@link terrainBoundsFromDocument}), ground clearings under authored spawns/POIs (via `clearanceZonesFrom`), and the document's sculpt snapshot. This is the seam that lets a game author its world footprint and flatten regions in the editor instead of hardcoding them — the `world.ts` that consumes it carries only engine tuning.
 - `lakebedFromWaterVolumes` (function): function lakebedFromWaterVolumes(doc: EditorDocument): TerraformSnapshot | undefined — Derives a terrain-depression sculpt snapshot from the document's authored `water` volumes: each water box carves a lake bed that ramps from the shoreline down to below the box's bottom face, so an editor-authored pond/lake sits *in* the ground instead of floating as a sheet on top of it (and ground-sampled vegetation sinks below the surface rather than growing through it). Returns `undefined` when the document has no water volumes.
-<<<<<<< HEAD
-- `skyConfigFromEnvironment` (function): function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironmentConfig — Projects a validated {@link EditorEnvironment} bag onto {@link SkyEnvironmentConfig}.
-=======
->>>>>>> origin/main
 - `skyFromDocument` (function): function skyFromDocument(doc: EditorDocument): SkyEnvironmentConfig | undefined — Maps the scene document's serializable environment bag onto the runtime sky config consumed by `sky()` / `environment({ sky })`. Returns `undefined` when the document has no environment field so callers can fall back to a world.ts default without inventing values.
 - `terrainBoundsFromDocument` (function): function terrainBoundsFromDocument(doc: EditorDocument, options: EnvironmentContentOptions = {}): WorldBounds — The origin-centered terrain footprint that covers every authored object in a document, padded and floored to `minBounds`. An empty document yields exactly `minBounds`. Because `environment()` terrain is centered on the origin, the footprint is sized symmetrically to the farthest object on each axis, so no authored object falls off the ground.
 
@@ -446,14 +438,12 @@
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `blankWorld` (function): function blankWorld(_seed = "standalone"): EnvironmentWorldFeature — The default flat-ground authoring canvas the standalone editor opens on when the host supplies none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look, foliage scatter, props) is what the author adds here, written into the scene document; it is never pre-baked into the canvas. The `seed` parameter is legacy and unused.
-- `buildEditorNetworkSnapshot` (function): function buildEditorNetworkSnapshot(args: { gameId: string; multiplayer: unknown; presence?: EditorNetworkPresenceInput; }): EditorNetworkSnapshot — Builds a Network workspace snapshot from the game's multiplayer config plus optional live presence rows. Adapter fields always reflect declared config; presence is only included when the host passes it.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
 - `downloadSaver` (function): function downloadSaver(filename = "editor.scene.json"): EditorSaveFn — A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
-- `isNetworkMultiplayerConfigured` (function): function isNetworkMultiplayerConfigured(snapshot: EditorNetworkSnapshot): boolean — True when the snapshot represents a multiplayer-capable game (not offline/unknown-null).
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
 - `packAgentContext` (function): function packAgentContext(api: EditorHostApi): AgentEditorContext — Packs the live host's selection, mode, focus, and document counts for agent prompts. Injected into every embedded-panel turn so the agent shares the human's current view.
 - `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = readProcessEnv()): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
@@ -491,13 +481,6 @@
 ## @jgengine/editor/EditorChrome
 
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — d… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
-<<<<<<< HEAD
-
-## @jgengine/editor/LightingPanel
-
-- `LightingPanel` (function): function LightingPanel({ session }: { session: EditorSession }): React.JSX.Element — Lighting workspace panel — edits `document.environment` (sky preset, time-of-day, intensities, fog, optional horizon/zenith colors) through the session undo stack. No fabricated runtime data: empty document shows defaults as display placeholders; the first edit writes a real bag.
-=======
->>>>>>> origin/main
 
 ## @jgengine/editor/PerfProbe
 
@@ -639,10 +622,6 @@
 - `DocumentTriggerBinding` (interface): interface DocumentTriggerBinding — One on/action binding shown on a document trigger row.
 - `DocumentTriggerEntry` (interface): interface DocumentTriggerEntry — A marker or volume that owns one or more authored triggers, with a display label for the scripting workspace list.
 - `DocumentTriggersSource` (interface): interface DocumentTriggersSource — Document slice the list helper needs — `EditorDocument` satisfies this structurally.
-<<<<<<< HEAD
-- `listDocumentTriggers` (function): function listDocumentTriggers(document: DocumentTriggersSource | SceneDocumentLike): DocumentTriggerEntry[] — List every marker and volume on `document` that has at least one valid authored trigger. Pure — no session, registry, or runtime state. Markers are listed before volumes; order within each collection matches the document. Prefer this over {@link collectAuthoredTriggers} when the UI wants one row per object rather than one row per binding.
-=======
->>>>>>> origin/main
 
 ## @jgengine/editor/materialAssignments
 
@@ -650,12 +629,6 @@
 - `MaterialAssignmentRow` (interface): interface MaterialAssignmentRow — One object row in the materials workspace browser.
 - `MaterialDocumentSlice` (interface): interface MaterialDocumentSlice — Minimal document slice the materials inventory needs.
 - `MaterialObjectKind` (type): type MaterialObjectKind = "marker" | "volume" | "path" — Document-wide material assignment inventory for the Materials workspace. Reads real `meta.materialId` stamps from placeables — no thumbnails or faked previews.
-<<<<<<< HEAD
-- `filterMaterialAssignments` (function): function filterMaterialAssignments(rows: readonly MaterialAssignmentRow[], query: string, filter: MaterialAssignmentFilter = "all"): MaterialAssignmentRow[] — Filters material rows by text query (id/label/kind/materialId) and optional assignment filter. Case-insensitive; empty query is a no-op on text.
-- `listMaterialAssignments` (function): function listMaterialAssignments(document: MaterialDocumentSlice): MaterialAssignmentRow[] — Lists every marker/volume/path with its current material assignment (or null). Order is document order: markers, then volumes, then paths.
-- `summarizeMaterialUsage` (function): function summarizeMaterialUsage(rows: readonly MaterialAssignmentRow[]): readonly { materialId: string; count: number }[] — Aggregates how many placeables use each material id (assigned only). Sorted by count desc, then id.
-=======
->>>>>>> origin/main
 
 ## @jgengine/editor/mcp/bridgeServer
 
@@ -715,11 +688,6 @@
 - `EditorNetworkPresenceInput` (interface): interface EditorNetworkPresenceInput — Optional live presence/session injection from the editor host.
 - `EditorNetworkSession` (interface): interface EditorNetworkSession — Optional live session identity when a multiplayer backend is attached. Omit entirely when the host has no session — the panel reports offline honestly.
 - `EditorNetworkSnapshot` (interface): interface EditorNetworkSnapshot — Host-facing network inspection payload for the editor Network workspace.
-<<<<<<< HEAD
-- `buildEditorNetworkSnapshot` (function): function buildEditorNetworkSnapshot(args: { gameId: string; multiplayer: unknown; presence?: EditorNetworkPresenceInput; }): EditorNetworkSnapshot — Builds a Network workspace snapshot from the game's multiplayer config plus optional live presence rows. Adapter fields always reflect declared config; presence is only included when the host passes it.
-- `isNetworkMultiplayerConfigured` (function): function isNetworkMultiplayerConfigured(snapshot: EditorNetworkSnapshot): boolean — True when the snapshot represents a multiplayer-capable game (not offline/unknown-null).
-=======
->>>>>>> origin/main
 
 ## @jgengine/editor/outlinerModel
 
@@ -754,10 +722,6 @@
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 
-## @jgengine/editor/shell/AnimationPanel
-
-- `AnimationPanel` (function): function AnimationPanel({ session, api }: { session: EditorSession; api: EditorHostApi }): React.JSX.Element — Animation dock: path flythrough scrubber over authored scene polylines.
-
 ## @jgengine/editor/shell/BottomDock
 
 - `BottomDock` (function): function BottomDock({ tab, onSelectTab, onClose, assets, session, api, consoleStore, perfHistory, browserView, onSetBrowserView, onPlaceAsset, onImportModels, importBusy, }: { tab: BottomDockTab; onSelectTab: (tab: BottomDockTab) => void; onClose: () => void; assets: readonly EditorAssetEntry[]; ses… — Tabbed bottom dock: Content Browser, Console, Profiler, Animation (path flythrough scrub), and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
@@ -778,9 +742,6 @@
 
 - `HierarchyPanel` (const): const HierarchyPanel: React.MemoExoticComponent<({ session, api, onAdd, onRowContextMenu, }: { session: EditorSession; api: EditorHostApi; onAdd: () => void; onRowContextMenu?: ((event: { clientX: number; clientY: number; }, id: string) => void) | undefined; }) => React.JSX.Element> — Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live document. Group headers carry real per-kind visibility toggles (the editor's layer system); rows expose per-object eye/lock toggles (`setObjectFlags` → document `hidden`/`locked`) and show a lock affordance when a locked collection also owns the id. Tree view supports drag-and-drop reparenting through the existing `set_parent` RPC. Keyboard navigation uses a single tab stop on the list (roving active row via `aria-activedescendant`; arrows / Home / End / Enter / F2), double-click rename, and row context menus (frame / duplicate / delete / prefab / parent to… / unparent) are supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
 - `OBJECT_DRAG_MIME` (const): const OBJECT_DRAG_MIME: "application/x-jgengine-editor-object" — HTML5 drag payload for hierarchy reparenting via `set_parent`.
-- `hierarchyActiveDescendantId` (function): function hierarchyActiveDescendantId(activeId: string | null, navigableIds: readonly string[]): string | undefined — Resolve `aria-activedescendant` for the hierarchy tree. Pure helper so tests can lock the contract without mounting the virtualized panel.
-- `hierarchyRowDomId` (function): function hierarchyRowDomId(objectId: string): string — Stable DOM id for a hierarchy treeitem so the virtualized list can expose `aria-activedescendant` while keyboard focus stays on the tree container.
-- `selectableIds` (function): function selectableIds(rows: readonly OutlinerFlatRow[]): string[] — Object ids that arrow-key navigation can land on (skips kind group headers).
 
 ## @jgengine/editor/shell/ProfilerPanel
 
@@ -844,19 +805,8 @@
 
 ## @jgengine/editor/shell/glbThumbnailCache
 
-<<<<<<< HEAD
-- `ThumbnailState` (interface): interface ThumbnailState — Snapshot consumers poll/subscribe for: render status plus the PNG data URL once ready.
-- `ThumbnailStatus` (type): type ThumbnailStatus = "idle" | "loading" | "ready" | "error" — Lifecycle of one URL's thumbnail render: untouched → rendering → data URL or honest failure.
-
-## @jgengine/editor/shell/hierarchyA11y
-
-- `hierarchyActiveDescendantId` (function): function hierarchyActiveDescendantId(activeId: string | null, navigableIds: readonly string[]): string | undefined — Resolve `aria-activedescendant` for the hierarchy tree. Pure helper so tests can lock the contract without mounting the virtualized panel.
-- `hierarchyRowDomId` (function): function hierarchyRowDomId(objectId: string): string — Stable DOM id for a hierarchy treeitem so the virtualized list can expose `aria-activedescendant` while keyboard focus stays on the tree container.
-- `selectableIds` (function): function selectableIds(rows: readonly OutlinerFlatRow[]): string[] — Object ids that arrow-key navigation can land on (skips kind group headers).
-=======
 - `ThumbnailState` (interface): interface ThumbnailState — Cache entry for one asset's thumbnail: status plus the data URL when ready.
 - `ThumbnailStatus` (type): type ThumbnailStatus = "idle" | "loading" | "ready" | "error" — Lifecycle of one GLB thumbnail render: idle → loading → ready, or error.
->>>>>>> origin/main
 
 ## @jgengine/editor/shell/icons
 
@@ -882,12 +832,6 @@
 ## @jgengine/editor/shell/pathFlythrough
 
 - `ScrubbablePath` (interface): interface ScrubbablePath — A scrubbable scene path — real document polylines with enough points to sample.
-<<<<<<< HEAD
-- `listScrubbablePaths` (function): function listScrubbablePaths(paths: readonly EditorPath[]): ScrubbablePath[] — Lists document paths that can be scrubbed, with length metadata for the dock UI.
-- `pathFollowConfigFromEditorPath` (function): function pathFollowConfigFromEditorPath(path: EditorPath): PathFollowConfig | null — Builds the path-follow config used by the flythrough scrubber. Pure; no document mutation. Returns null when the path cannot be sampled (fewer than two points).
-- `samplePathAt` (function): function samplePathAt(path: EditorPath, t: number): { x: number; y: number; z: number; distance: number; length: number } | null — Samples a world position along an authored path at normalized progress `t` in `[0, 1]`. Clamps `t`. Returns null when the path has fewer than two points.
-=======
->>>>>>> origin/main
 
 ## @jgengine/editor/shell/perfHistory
 
@@ -896,11 +840,7 @@
 - `PERF_HISTORY_CAPACITY` (const): const PERF_HISTORY_CAPACITY: 240 — Samples retained (~2 minutes at the 500ms poll).
 - `PerfHistoryStore` (interface): interface PerfHistoryStore — Rolling history of real {@link EditorPerfSample}s for the Profiler dock tab's frame-time graph. Fed by the same 500ms host poll the toolbar pill uses; never fabricates values. Kept outside React state so recording continues while the profiler tab is closed without rerendering anything.
 - `createPerfHistoryStore` (function): function createPerfHistoryStore(): PerfHistoryStore — Creates the rolling perf-sample history store.
-- `frameBudgetFromStats` (function): function frameBudgetFromStats(stats: FrameBudgetStatsInput | null): FrameBudgetFields | null — Map core `devtools.frame.stats()` into optional editor sample fields. Returns `null` when the frame tracker has no samples yet — callers must omit the series entirely.
-- `latestPhases` (function): function latestPhases(samples: readonly EditorPerfSample[]): readonly { name: string; avgMs: number }[] — Latest non-empty phase list from the history (newest sample that reported phases). Empty when no named `measure()` marks have been recorded.
-- `samplesHaveFrameBudget` (function): function samplesHaveFrameBudget(samples: readonly EditorPerfSample[]): boolean — True when any sample carries real sim/outside budget fields from the frame tracker.
 - `seriesAverage` (function): function seriesAverage(values: readonly number[]): number — Mean of a numeric series, 0 for empty input.
-- `seriesAverageDefined` (function): function seriesAverageDefined(values: readonly (number | undefined)[]): number — Mean of defined values only — used for optional series (`simMs` / `outsideMs` / `memoryMb`) so zeros from absent samples do not drag the average down.
 - `sparklinePoints` (function): function sparklinePoints(values: readonly number[], width: number, height: number, maxValue: number): string — Builds an SVG polyline `points` string for a series scaled into a width×height box.
 
 ## @jgengine/editor/shell/theme
