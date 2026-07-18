@@ -51,16 +51,57 @@ function expandedReactError(message: string): string | null {
     : null;
 }
 
+const ISSUES_NEW_URL = "https://github.com/Noisemaker111/jgengine/issues/new";
+
+/** Standalone error footer text (page, browser, engine) shared by every error surface. */
+export function errorReportContext(): string {
+  return [
+    `Engine: ${VERSION}`,
+    `Page: ${window.location.origin}${window.location.pathname}`,
+    `Browser: ${navigator.userAgent}`,
+  ].join("\n");
+}
+
+/** "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill. */
+export function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }) {
+  const [copied, setCopied] = useState(false);
+  const issueBody =
+    report.length > 8000 ? `${report.slice(0, 8000)}\n\n[Report truncated; use Copy error for the full report.]` : report;
+  const issueUrl = `${ISSUES_NEW_URL}?title=${encodeURIComponent(`[BUG] ${issueTitle.slice(0, 120)}`)}&body=${encodeURIComponent(issueBody)}`;
+  return (
+    <div className="flex gap-2">
+      <button
+        className="rounded border border-red-300/50 bg-red-900 px-2 py-1 text-xs font-semibold text-red-50 hover:bg-red-800"
+        type="button"
+        onClick={() => {
+          void navigator.clipboard.writeText(report).then(() => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2000);
+          });
+        }}
+      >
+        {copied ? "Copied" : "Copy error"}
+      </button>
+      <a
+        className="rounded border border-red-300/50 bg-red-900 px-2 py-1 text-xs font-semibold text-red-50 hover:bg-red-800"
+        href={issueUrl}
+        rel="noreferrer"
+        target="_blank"
+      >
+        File issue
+      </a>
+    </div>
+  );
+}
+
 function diagnosticReport(diagnostic: RuntimeDiagnostic, gameName: string): string {
   const explanation = expandedReactError(diagnostic.message);
   return [
     "JGengine runtime error",
     `Game: ${gameName}`,
-    `Engine: ${VERSION}`,
     `Phase: ${diagnostic.phase}`,
     `Time: ${diagnostic.capturedAt}`,
-    `Page: ${window.location.origin}${window.location.pathname}`,
-    `Browser: ${navigator.userAgent}`,
+    errorReportContext(),
     explanation === null ? null : `Explanation: ${explanation}`,
     "",
     `Message: ${diagnostic.message}`,
@@ -72,15 +113,12 @@ function diagnosticReport(diagnostic: RuntimeDiagnostic, gameName: string): stri
 }
 
 export function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }) {
-  const [copied, setCopied] = useState(false);
   if (diagnostics.length === 0) return null;
   const latest = diagnostics[diagnostics.length - 1]!;
   const explanation = expandedReactError(latest.message);
   const report = diagnosticReport(latest, gameName);
-  const issueBody = report.length > 8000 ? `${report.slice(0, 8000)}\n\n[Report truncated; use Copy error for the full report.]` : report;
-  const issueUrl = `https://github.com/Noisemaker111/jgengine/issues/new?title=${encodeURIComponent(`[BUG] ${latest.phase}: ${latest.message.slice(0, 100)}`)}&body=${encodeURIComponent(issueBody)}`;
   return (
-    <div className="pointer-events-auto absolute right-4 top-4 z-50 max-w-lg rounded border border-red-400/60 bg-red-950/95 p-3 text-xs text-red-50 shadow-2xl">
+    <div className="pointer-events-auto absolute right-4 top-4 z-50 max-w-lg select-text rounded border border-red-400/60 bg-red-950/95 p-3 text-xs text-red-50 shadow-2xl">
       <div className="mb-1 font-semibold uppercase tracking-wide text-red-200">JG engine error</div>
       <div className="font-mono text-[11px] text-red-100">
         [{latest.phase}] {latest.message}
@@ -96,27 +134,8 @@ export function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: Runt
           {latest.componentStack}
         </pre>
       ) : null}
-      <div className="mt-3 flex gap-2">
-        <button
-          className="rounded border border-red-300/50 bg-red-900 px-2 py-1 font-semibold hover:bg-red-800"
-          type="button"
-          onClick={() => {
-            void navigator.clipboard.writeText(report).then(() => {
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 2000);
-            });
-          }}
-        >
-          {copied ? "Copied" : "Copy error"}
-        </button>
-        <a
-          className="rounded border border-red-300/50 bg-red-900 px-2 py-1 font-semibold hover:bg-red-800"
-          href={issueUrl}
-          rel="noreferrer"
-          target="_blank"
-        >
-          File issue
-        </a>
+      <div className="mt-3">
+        <ErrorReportActions report={report} issueTitle={`${latest.phase}: ${latest.message.slice(0, 100)}`} />
       </div>
     </div>
   );

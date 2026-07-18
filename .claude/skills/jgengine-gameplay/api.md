@@ -151,6 +151,21 @@
 - `JsonDataSourceOptions` (type): type JsonDataSourceOptions = DataSourceOptions & Omit<FetchJsonOptions, "signal"> — ⚠ undocumented
 - `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
+## @jgengine/core/economy/auctionBook
+
+- `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
+- `AuctionBook` (interface): interface AuctionBook — A timed-bid auction marketplace plus the per-player collection boxes behind it. See {@link createAuctionBook}.
+- `AuctionBookConfig` (interface): interface AuctionBookConfig — Tunables for {@link createAuctionBook} — per-seller auction cap, run length, house cut, and the anti-snipe window: a bid landing within `antiSnipeWindowSeconds` of the close pushes the close out so it ends at least `antiSnipeExtensionSeconds` after that bid.
+- `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
+- `BidReason` (type): type BidReason = | "not-found" | "ended" | "own-auction" | "already-leading" | "bid-too-low" | "invalid-amount" | "no-buyout" — Why {@link AuctionBook.bid} refused a bid.
+- `BidResult` (type): type BidResult = | { status: "ok"; auction: Auction; escrowed: number; won: boolean } | { status: "rejected"; reason: BidReason } — Result of {@link AuctionBook.bid}. On `ok` the caller must escrow `escrowed` from the bidder's wallet; any previously escrowed leading bid has already been refunded to that bidder's collection box. `won` is true when the bid met the buyout price and settled the auction immediately.
+- `CancelAuctionResult` (type): type CancelAuctionResult = | { status: "ok"; auction: Auction } | { status: "rejected"; reason: "not-found" | "not-owner" | "has-bids" } — Result of {@link AuctionBook.cancel}: a bid-on auction can no longer be withdrawn.
+- `HighBid` (interface): interface HighBid — The current leading bid on an {@link Auction}.
+- `PostAuctionInput` (interface): interface PostAuctionInput — Input to {@link AuctionBook.post} — the goods, opening terms, and current game-time.
+- `PostAuctionReason` (type): type PostAuctionReason = | "invalid-count" | "invalid-price" | "invalid-increment" | "invalid-buyout" | "auction-cap-reached" — Why {@link AuctionBook.post} refused an auction.
+- `PostAuctionResult` (type): type PostAuctionResult = | { status: "ok"; auction: Auction } | { status: "rejected"; reason: PostAuctionReason } — Result of {@link AuctionBook.post}.
+- `createAuctionBook` (function): function createAuctionBook(config: AuctionBookConfig): AuctionBook — Timed-bid auctions in the WoW/BDO auction-house mold: post an item with a start price, minimum increment, and optional buyout; bids escrow currency, outbid players are refunded into their collection box, bids near the close extend it (anti-snipe), and settlement pays the seller minus the house cut while the item lands in the winner's collection box. Unsold auctions return the goods to the seller's box. Wallet and inventory movement is the caller's job (mirrors `economy/listingBook`) — this primitive owns the auction lifecycle and the escrowed collection-box bookkeeping behind it.
+
 ## @jgengine/core/economy/currency
 
 - `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
@@ -170,6 +185,14 @@
 - `PostListingReason` (type): type PostListingReason = | "invalid-count" | "invalid-price" | "price-too-low" | "price-too-high" | "listing-cap-reached" — Why {@link ListingBook.post} refused a listing.
 - `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
+
+## @jgengine/core/economy/priceHistory
+
+- `PriceHistory` (interface): interface PriceHistory — A bounded rolling record of completed sales per item. See {@link createPriceHistory}.
+- `PriceHistoryConfig` (interface): interface PriceHistoryConfig — Tunables for {@link createPriceHistory} — the per-item sample cap bounds memory; the optional window drops samples older than `windowSeconds` whenever the history is written or read with a newer timestamp.
+- `PriceStats` (interface): interface PriceStats — Aggregated market stats for one item over the retained samples.
+- `SaleRecord` (interface): interface SaleRecord — One completed sale recorded into a {@link PriceHistory}.
+- `createPriceHistory` (function): function createPriceHistory(config: PriceHistoryConfig): PriceHistory — The "market price" readout behind every auction house: a bounded rolling record of completed sales per item, aggregated into min/max/volume-weighted-average/latest unit-price stats so games can show current value and recent trends. Memory is bounded by `maxSamplesPerItem` (oldest samples drop first) and optionally by a sliding time window; timestamps are injected by the caller so the history stays deterministic.
 
 ## @jgengine/core/economy/resourceLedger
 
@@ -838,6 +861,8 @@
 - `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
 - `AffixPool` (interface): interface AffixPool — ⚠ undocumented
 - `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
+- `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
+- `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
 - `AxisInput` (interface): interface AxisInput — ⚠ undocumented
@@ -1018,6 +1043,7 @@
 - `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
 - `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
 - `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
+- `PriceStats` (interface): interface PriceStats — Aggregated market stats for one item over the retained samples.
 - `QuestDef` (interface): interface QuestDef — ⚠ undocumented
 - `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
 - `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
@@ -1050,6 +1076,7 @@
 - `RuleSelectionConfig` (interface): interface RuleSelectionConfig — Deterministic selection inputs — plain serializable data a host can persist and replay.
 - `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
+- `SaleRecord` (interface): interface SaleRecord — One completed sale recorded into a {@link PriceHistory}.
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
 - `SaveStatus` (type): type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error" — Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write.
 - `SaveStore` (interface): interface SaveStore<T> — A pluggable-backend game save with autosave, named slots, and versioned migration. `value()`/`patch()` hold the live state; `load()` hydrates it from the backend; `save()` (or autosave) writes it back. Backend failures surface as `"error"` status and through `onError` — a save never throws into a tick.
@@ -1167,6 +1194,7 @@
 - `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
 - `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
+- `createAuctionBook` (function): function createAuctionBook(config: AuctionBookConfig): AuctionBook — Timed-bid auctions in the WoW/BDO auction-house mold: post an item with a start price, minimum increment, and optional buyout; bids escrow currency, outbid players are refunded into their collection box, bids near the close extend it (anti-snipe), and settlement pays the seller minus the house cut while the item lands in the winner's collection box. Unsold auctions return the goods to the seller's box. Wallet and inventory movement is the caller's job (mirrors `economy/listingBook`) — this primitive owns the auction lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
 - `createCardPile` (function): function createCardPile(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPile — ⚠ undocumented
 - `createCardPileState` (function): function createCardPileState(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPileState — ⚠ undocumented
@@ -1200,6 +1228,7 @@
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
 - `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
+- `createPriceHistory` (function): function createPriceHistory(config: PriceHistoryConfig): PriceHistory — The "market price" readout behind every auction house: a bounded rolling record of completed sales per item, aggregated into min/max/volume-weighted-average/latest unit-price stats so games can show current value and recent trends. Memory is bounded by `maxSamplesPerItem` (oldest samples drop first) and optionally by a sliding time window; timestamps are injected by the caller so the history stays deterministic.
 - `createProductionState` (function): function createProductionState(): ProductionState — A production building that converts input items into outputs over time — factory/crafting station.
 - `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — Track accepted quests and their per-objective progress, granting rewards on completion.
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.

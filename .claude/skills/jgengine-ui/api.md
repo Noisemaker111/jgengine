@@ -1246,8 +1246,10 @@
 ## @jgengine/shell/diagnostics/RuntimeDiagnostics
 
 - `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
+- `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): React.JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
 - `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
 - `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic — ⚠ undocumented
+- `errorReportContext` (function): function errorReportContext(): string — Standalone error footer text (page, browser, engine) shared by every error surface.
 - `logRuntimeError` (function): function logRuntimeError(error: unknown, phase: string, componentStack?: string): Omit<RuntimeDiagnostic, "id"> — ⚠ undocumented
 
 ## @jgengine/shell/drivers/FrameDriver

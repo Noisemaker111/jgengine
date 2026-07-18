@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceLedger` (function) · `import { advanceLedger } from "@jgengine/core/gameplay"`
 
+## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
+
+- `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
+
 ## best-record — persist personal-best times/scores with safe storage fallback
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
@@ -269,6 +273,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## policy-threshold — scale a transaction by a context threshold band
 
 - `thresholdScale` (function) · `import { thresholdScale } from "@jgengine/core/gameplay"`
+
+## price-history — rolling per-item sale records aggregated into market price stats
+
+- `createPriceHistory` (function) · `import { createPriceHistory } from "@jgengine/core/gameplay"`
 
 ## production-building — a factory building converting inputs to outputs over time
 
