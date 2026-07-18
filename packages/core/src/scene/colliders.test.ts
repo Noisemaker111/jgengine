@@ -10,6 +10,18 @@ import {
   scaledObjectColliders,
   worldOffset,
 } from "@jgengine/core/scene/colliders";
+import { encodeCollisionMesh, type CollisionMeshData } from "@jgengine/core/scene/collisionMesh";
+
+/** A valid decodable collision mesh (a real unit tetrahedron) with a known `boxes` array grafted on, so
+ * the fitting math has something to scale/translate without depending on the voxelizer's exact output. */
+function meshWithBoxes(boxes: CollisionMeshData["boxes"]): CollisionMeshData {
+  const data = encodeCollisionMesh({
+    positions: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+    indices: [0, 1, 2, 0, 1, 3, 0, 2, 3, 1, 2, 3],
+  });
+  if (data === null) throw new Error("tetra failed to encode");
+  return { ...data, boxes };
+}
 
 describe("colliders", () => {
   test("default entity set is a non-blocking body-covering damage box", () => {
@@ -138,6 +150,44 @@ describe("colliders", () => {
     const bounds = colliderBounds(resolved[0]!, [0, 0, 0], 0);
     expect(bounds.min[1]).toBeCloseTo(0.1);
     expect(bounds.max[1]).toBeCloseTo(0.4);
+  });
+
+  test("fitted mesh collider carries boxes scaled + translated exactly like the mesh", () => {
+    // Height-2 model (minY 1, maxY 3), centered → scale 1, meshTranslate [0, -1, 0]; a model box at
+    // y[1,3] grounds to entity-local y[0,2].
+    const dims = { footprint: { w: 2, d: 2 }, center: { x: 0, z: 0 }, minY: 1, maxY: 3 };
+    const collisionMesh = meshWithBoxes([{ min: [0, 1, 0], max: [1, 3, 1] }]);
+    const set = fittedObjectColliders({ dims, collisionMesh });
+    expect(set).not.toBeNull();
+    const shape = set!.body!.shape;
+    if (shape.kind !== "mesh") throw new Error("expected mesh shape");
+    expect(shape.meshScale).toBeCloseTo(1, 6);
+    expect(shape.meshTranslate[0]).toBeCloseTo(0, 6);
+    expect(shape.meshTranslate[1]).toBeCloseTo(-1, 6);
+    expect(shape.meshTranslate[2]).toBeCloseTo(0, 6);
+    expect(shape.boxes).toBeDefined();
+    expect(shape.boxes![0]!.min).toEqual([0, 0, 0]);
+    expect(shape.boxes![0]!.max).toEqual([1, 2, 1]);
+  });
+
+  test("fitted mesh boxes compose scale and targetHeight like the renderer", () => {
+    // targetHeight 4 over a height-2 model normalizes by 2; scale 1.5 → composed scale 3.
+    const dims = { footprint: { w: 2, d: 2 }, center: { x: 0, z: 0 }, minY: 0, maxY: 2 };
+    const collisionMesh = meshWithBoxes([{ min: [0, 0, 0], max: [1, 1, 1] }]);
+    const set = fittedObjectColliders({ dims, collisionMesh, targetHeight: 4, scale: 1.5 });
+    const shape = set!.body!.shape;
+    if (shape.kind !== "mesh") throw new Error("expected mesh shape");
+    expect(shape.meshScale).toBeCloseTo(3, 6);
+    expect(shape.boxes![0]!.min).toEqual([0, 0, 0]);
+    expect(shape.boxes![0]!.max).toEqual([3, 3, 3]);
+  });
+
+  test("a box-less mesh model fits a mesh shape without boxes", () => {
+    const dims = { footprint: { w: 2, d: 2 }, center: { x: 0, z: 0 }, minY: 0, maxY: 2 };
+    const collisionMesh = meshWithBoxes(undefined);
+    const shape = fittedObjectColliders({ dims, collisionMesh })!.body!.shape;
+    if (shape.kind !== "mesh") throw new Error("expected mesh shape");
+    expect(shape.boxes).toBeUndefined();
   });
 
   test("fitting declines unmeasured or degenerate models", () => {

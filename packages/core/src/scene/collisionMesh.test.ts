@@ -3,10 +3,51 @@ import {
   encodeCollisionMesh,
   prepareCollisionMesh,
   raycastCollisionMesh,
+  voxelizeToBoxes,
   type CollisionMeshData,
   type CollisionMeshSource,
   type PreparedCollisionMesh,
 } from "@jgengine/core/scene/collisionMesh";
+
+/** Append an axis-aligned box's 8 corners + 12 surface triangles (both windings) to a growing soup. */
+function pushBox(
+  soup: { positions: number[]; indices: number[] },
+  min: readonly [number, number, number],
+  max: readonly [number, number, number],
+): void {
+  const base = soup.positions.length / 3;
+  for (let corner = 0; corner < 8; corner += 1) {
+    soup.positions.push(
+      (corner & 1) === 0 ? min[0] : max[0],
+      (corner & 2) === 0 ? min[1] : max[1],
+      (corner & 4) === 0 ? min[2] : max[2],
+    );
+  }
+  // 6 faces, each a quad split into two triangles (corner bit order: x=1, y=2, z=4).
+  const quads: readonly [number, number, number, number][] = [
+    [0, 2, 3, 1], [4, 5, 7, 6], // z-min / z-max
+    [0, 1, 5, 4], [2, 6, 7, 3], // y-min / y-max
+    [0, 4, 6, 2], [1, 3, 7, 5], // x-min / x-max
+  ];
+  for (const [a, b, c, d] of quads) {
+    soup.indices.push(base + a, base + b, base + c, base + a, base + c, base + d);
+  }
+}
+
+/** Two pillars + a top lintel with an empty central gap — the canonical concave-arch decomposition case. */
+function archSoup(): CollisionMeshSource {
+  const soup = { positions: [] as number[], indices: [] as number[] };
+  pushBox(soup, [0, 0, 0], [1, 4, 1]); // left pillar
+  pushBox(soup, [3, 0, 0], [4, 4, 1]); // right pillar
+  pushBox(soup, [0, 3, 0], [4, 4, 1]); // lintel spanning both, above the gap
+  return soup;
+}
+
+function cubeSoup(): CollisionMeshSource {
+  const soup = { positions: [] as number[], indices: [] as number[] };
+  pushBox(soup, [0, 0, 0], [1, 1, 1]);
+  return soup;
+}
 
 const MAJOR_SEGMENTS = 32;
 const TUBE_SEGMENTS = 16;
@@ -91,6 +132,13 @@ describe("collisionMesh encode", () => {
     expect(data!.triangleCount).toBe(2);
   });
 
+  test("attaches a voxelized box decomposition alongside the triangles", () => {
+    const data = encodeCollisionMesh(cubeSoup());
+    expect(data).not.toBeNull();
+    expect(data!.boxes).toBeDefined();
+    expect(data!.boxes!.length).toBe(1);
+  });
+
   test("empty and all-degenerate soups encode to null", () => {
     expect(encodeCollisionMesh({ positions: [], indices: [] })).toBeNull();
     // Three coincident vertices collapse to one, dropping the only triangle.
@@ -101,6 +149,61 @@ describe("collisionMesh encode", () => {
     expect(
       encodeCollisionMesh({ positions: [0, 0, 0, 1, 1, 1, 0, 0, 0], indices: [0, 1, 2] }),
     ).toBeNull();
+  });
+});
+
+function contains(
+  box: { min: readonly [number, number, number]; max: readonly [number, number, number] },
+  p: readonly [number, number, number],
+): boolean {
+  return (
+    p[0] >= box.min[0] && p[0] <= box.max[0] &&
+    p[1] >= box.min[1] && p[1] <= box.max[1] &&
+    p[2] >= box.min[2] && p[2] <= box.max[2]
+  );
+}
+
+describe("voxelizeToBoxes", () => {
+  test("a solid unit cube collapses to a single enclosing box", () => {
+    const boxes = voxelizeToBoxes(cubeSoup());
+    expect(boxes).toHaveLength(1);
+    expect(boxes[0]!.min[0]).toBeCloseTo(0, 6);
+    expect(boxes[0]!.min[1]).toBeCloseTo(0, 6);
+    expect(boxes[0]!.min[2]).toBeCloseTo(0, 6);
+    expect(boxes[0]!.max[0]).toBeCloseTo(1, 6);
+    expect(boxes[0]!.max[1]).toBeCloseTo(1, 6);
+    expect(boxes[0]!.max[2]).toBeCloseTo(1, 6);
+  });
+
+  test("an arch keeps its central gap empty while filling pillars + lintel", () => {
+    const boxes = voxelizeToBoxes(archSoup());
+    // Pillars, lintel, and the sill-less gap decompose into several boxes.
+    expect(boxes.length).toBeGreaterThanOrEqual(3);
+    expect(boxes.length).toBeLessThanOrEqual(32);
+    // The middle of the opening (x=2, well below the lintel) is inside NO box — a capsule walks through it.
+    const gapMidpoint: readonly [number, number, number] = [2, 1.5, 0.5];
+    expect(boxes.some((box) => contains(box, gapMidpoint))).toBe(false);
+    // A pillar interior and the lintel are solid.
+    expect(boxes.some((box) => contains(box, [0.5, 2, 0.5]))).toBe(true);
+    expect(boxes.some((box) => contains(box, [2, 3.5, 0.5]))).toBe(true);
+  });
+
+  test("is deterministic — re-running yields identical boxes", () => {
+    expect(voxelizeToBoxes(archSoup())).toEqual(voxelizeToBoxes(archSoup()));
+  });
+
+  test("respects a small maxBoxes cap, folding the remainder into one enclosing AABB", () => {
+    const boxes = voxelizeToBoxes(archSoup(), 0.25, 2);
+    expect(boxes.length).toBeLessThanOrEqual(2);
+    expect(boxes.length).toBeGreaterThan(0);
+  });
+
+  test("degenerate and empty input yield no boxes", () => {
+    expect(voxelizeToBoxes({ positions: [], indices: [] })).toEqual([]);
+    // A single collapsed point has zero span on every axis.
+    expect(voxelizeToBoxes({ positions: [1, 1, 1, 1, 1, 1, 1, 1, 1], indices: [0, 1, 2] })).toEqual([]);
+    // Non-positive cell size bails.
+    expect(voxelizeToBoxes(cubeSoup(), 0)).toEqual([]);
   });
 });
 

@@ -9,6 +9,7 @@ export type ColliderPurpose = "physical" | "damage";
  * prepared triangle mesh so opted-in concave models raycast their real surface while bounds and
  * broadphase keep reading the conservative `halfExtents`.
  * @capability mesh-hitboxes shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
+ * @capability mesh-movement the walking player slides against a mesh collider's compound `boxes` — a capsule walks THROUGH an opted-in archway opening and is stopped by its pillars/lintel instead of one outer box.
  */
 export type ColliderShape =
   | { kind: "sphere"; radius: number; offset?: EntityPosition }
@@ -23,6 +24,13 @@ export type ColliderShape =
       meshTranslate: EntityPosition;
       /** Conservative entity-local AABB of the placed mesh — bounds/broadphase read this exactly like an `aabb`. */
       halfExtents: EntityPosition;
+      /**
+       * Optional compact entity-local solid decomposition (from the model's `collisionMesh.boxes`, scaled
+       * and translated onto the placement exactly like `mesh`). Movement obstruction slides against these
+       * sub-boxes so a capsule walks THROUGH a concave opening; raycasts still use `mesh`. Absent when the
+       * model shipped no `boxes`.
+       */
+      boxes?: readonly { min: EntityPosition; max: EntityPosition }[];
       offset?: EntityPosition;
     };
 
@@ -197,6 +205,17 @@ function fittedModelBox(model: ModelBodySource): FittedBox | null {
   return { halfExtents, offset, scale, meshTranslate };
 }
 
+/** Map a model-space point onto entity-local space with the mesh shape's uniform `scale` and per-axis
+ * `translate` (`coord * scale + translate`) — the same composition applied to `meshScale`/`meshTranslate`,
+ * so a model-space AABB corner lands exactly where the placed mesh puts it. `scale > 0` keeps min<max. */
+function scaleTranslatePoint(
+  point: readonly [number, number, number],
+  scale: number,
+  translate: EntityPosition,
+): EntityPosition {
+  return [point[0] * scale + translate[0], point[1] * scale + translate[1], point[2] * scale + translate[2]];
+}
+
 /** The fitted collider shape for a rendered model: a mesh-accurate triangle shape when the model
  * opts in with a decodable `collisionMesh`, otherwise the conservative fitted box. `null` when the
  * model is unmeasured or degenerate.
@@ -206,12 +225,21 @@ function fittedBodyShape(model: ModelBodySource): ColliderShape | null {
   if (box === null) return null;
   const mesh = model.collisionMesh !== undefined ? prepareCollisionMesh(model.collisionMesh) : null;
   if (mesh !== null) {
+    const sourceBoxes = model.collisionMesh?.boxes;
+    const boxes =
+      sourceBoxes !== undefined && sourceBoxes.length > 0
+        ? sourceBoxes.map((b) => ({
+            min: scaleTranslatePoint(b.min, box.scale, box.meshTranslate),
+            max: scaleTranslatePoint(b.max, box.scale, box.meshTranslate),
+          }))
+        : undefined;
     return {
       kind: "mesh",
       mesh,
       meshScale: box.scale,
       meshTranslate: box.meshTranslate,
       halfExtents: box.halfExtents,
+      ...(boxes !== undefined ? { boxes } : {}),
       offset: box.offset,
     };
   }
