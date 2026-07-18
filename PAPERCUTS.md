@@ -166,3 +166,15 @@ Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstal
 2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
 
 bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
+
+2026-07-18T23:38:11.226Z — claude-fable-5 — NoisemakerJon
+
+Outside-repo user sim: the staged jgengine intake skill installed into a scaffolded game says 'Read the repository README (../../../README.md)' and mentions bun run new:game — both are monorepo-only; in a standalone project the link is dead and the command wrong. Stage a consumer variant or reword.
+
+2026-07-18T23:38:11.716Z — claude-fable-5 — NoisemakerJon
+
+Outside-repo user sim: jgengine-multiplayer reference.md (shipped in the skills tarball) points to examples/convex-host, examples/HOSTED.md, and apps/dev/src/main.tsx — none exist in a consumer project; the inline factory docs saved the day but the pointers should be repo-relative-free
+
+2026-07-18T23:38:11.857Z — claude-fable-5 — NoisemakerJon
+
+Building a WoW-like on the SDK: on a lethal ctx.scene.entity.effect() hit the engine death system despawns the target before game code can read its identity, so kill credit/XP needs a game-side spawn-time registry; EffectResult could carry the slain entity's catalogId/name
