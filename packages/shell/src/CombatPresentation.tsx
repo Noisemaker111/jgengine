@@ -8,7 +8,7 @@ import { WorldSpellVfx } from "./world/WorldVfx";
 import { RetainedVfx } from "./world/RetainedVfx";
 import type { ResolvedPresentationEffects } from "./presentationResolve";
 
-/** Mounts the opt-in combat VFX stack inside the 3D canvas. */
+/** Mounts the opt-in combat VFX stack inside the 3D canvas. @internal */
 export function CombatPresentation({ effects }: { effects: ResolvedPresentationEffects }) {
   return (
     <>

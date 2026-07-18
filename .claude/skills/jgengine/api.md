@@ -319,6 +319,18 @@
 - `ToServerListingOptions` (type): type ToServerListingOptions = { includeJoinCode?: boolean; } — ⚠ undocumented
 - `WorldChunkRecord` (type): type WorldChunkRecord = { serverId: string; chunkKey: string; snapshot: RuntimeChunkRow; updatedAt: number; } — ⚠ undocumented
 
+## @jgengine/core/runtime/hostPolicy
+
+- `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
+- `isAutoJoinCandidate` (function): function isAutoJoinCandidate(args: { memberUserIds: readonly string[]; slotsPerServer: number; visibility: SessionVisibility | undefined; userId: string; }): boolean — Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity. Private rooms are never auto-picked (join-by-code / direct id only).
+- `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
+- `isPrivateJoinBlocked` (function): function isPrivateJoinBlocked(args: { visibility: SessionVisibility | undefined; memberUserIds: readonly string[]; userId: string; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Whether a private-visibility server blocks this join (non-member without a matching code). Public / undefined visibility never blocks.
+- `isServerFull` (function): function isServerFull(memberUserIds: readonly string[], slotsPerServer: number, userId: string): boolean — True when the server has no free slots for a non-member. Existing members never count as "full" so rejoin/leave cycles keep working.
+- `isServerMember` (function): function isServerMember(memberUserIds: readonly string[], userId: string): boolean — Whether `userId` is already on the server's member roster.
+- `statusAfterLeave` (function): function statusAfterLeave(remainingMemberCount: number, currentStatus: GameServerStatus): GameServerStatus — Status after a leave: empty rooms reopen; non-empty rooms keep their current status.
+- `withJoinedMember` (function): function withJoinedMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a successful join: unchanged when already a member, else appended.
+- `withoutMember` (function): function withoutMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a leave: `userId` removed; order of remaining members preserved.
+
 ## @jgengine/core/runtime/hostedGameRunner
 
 - `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.

@@ -586,6 +586,7 @@
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
+- `PresentationEffectsConfig` (interface): interface PresentationEffectsConfig — Per-channel combat presentation toggles for the 3D shell canvas. Missing keys default to enabled when the parent `presentationEffects` is an object.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.

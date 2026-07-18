@@ -795,6 +795,7 @@ const mutationHandlers: MutationHandlers = {
   redo: () => null,
 };
 
+/** Apply a mutating editor command; returns null when the command type has no handler. @internal */
 export function applyMutating(state: EditorSessionState, command: EditorCommand): EditorSessionState | null {
   const handler = mutationHandlers[command.type] as (
     state: EditorSessionState,
@@ -803,6 +804,7 @@ export function applyMutating(state: EditorSessionState, command: EditorCommand)
   return handler(state, command);
 }
 
+/** True when the command changes document structure (not select/undo/redo). @internal */
 export function isStructural(command: EditorCommand): boolean {
   return (
     command.type !== "select" &&
