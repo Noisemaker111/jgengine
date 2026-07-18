@@ -28,7 +28,13 @@ import { TerrainSculpt } from "./TerrainSculpt";
 import { createTerrainReadoutStore, type TerrainReadoutStore } from "./terrainReadoutStore";
 import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
-import { createEditorUiStore, type EditorUiStore, type GizmoSpace, type SnapMode } from "./uiStore";
+import {
+  createEditorUiStore,
+  type CameraProjectionMode,
+  type EditorUiStore,
+  type GizmoSpace,
+  type SnapMode,
+} from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
@@ -72,6 +78,7 @@ interface StoredEditorPrefs {
   gridSize?: number;
   rotationSnapDeg?: number | null;
   scaleSnap?: number | null;
+  cameraProjection?: CameraProjectionMode;
   showGrid?: boolean;
   showContours?: boolean;
   showSurfaceGrid?: boolean;
@@ -450,6 +457,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
       ...(prefs.rotationSnapDeg === undefined ? {} : { rotationSnapDeg: prefs.rotationSnapDeg }),
       ...(prefs.scaleSnap === undefined ? {} : { scaleSnap: prefs.scaleSnap }),
+      ...(prefs.cameraProjection === undefined ? {} : { cameraProjection: prefs.cameraProjection }),
       ...(prefs.showGrid === undefined ? {} : { showGrid: prefs.showGrid }),
       ...(prefs.showContours === undefined ? {} : { showContours: prefs.showContours }),
       ...(prefs.showSurfaceGrid === undefined ? {} : { showSurfaceGrid: prefs.showSurfaceGrid }),
@@ -464,6 +472,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
         gridSize: state.gridSize,
         rotationSnapDeg: state.rotationSnapDeg,
         scaleSnap: state.scaleSnap,
+        cameraProjection: state.cameraProjection,
         showGrid: state.showGrid,
         showContours: state.showContours,
         showSurfaceGrid: state.showSurfaceGrid,
@@ -501,6 +510,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     () => resolveEditorCamera(host.session.getState().document),
     [host],
   );
+  const cameraProjection = useStoreSelector(ui, (state) => state.cameraProjection);
 
   const editorPlayable: PlayableGame = useMemo(() => {
     const frozenLoop = {
@@ -516,10 +526,19 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
 
     const { target, span, far } = initialCamera;
     // Free-orbit inspection camera shared by edit and HUD-layout modes: no pointer lock, so the HUD
-    // panels stay draggable while the authored world renders behind them.
+    // panels stay draggable while the authored world renders behind them. Orthographic projection
+    // remounts the R3F canvas (Canvas.orthographic is mount-time); zoom scales with scene span so
+    // large worlds stay framed without a hand-tuned default.
+    const orthoZoom = Math.max(4, Math.min(80, 420 / Math.max(span, 1)));
     const inspectionCamera = {
       rig: "inspection" as const,
-      frustum: { fov: 55, near: 0.5, far },
+      projection: cameraProjection,
+      frustum: {
+        fov: 55,
+        near: 0.5,
+        far,
+        ...(cameraProjection === "orthographic" ? { zoom: orthoZoom } : {}),
+      },
       inspection: {
         target,
         initialDistance: span,
@@ -632,7 +651,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
       camera: inspectionCamera,
     };
-  }, [playable, host, gameId, initialCamera, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip]);
+  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip]);
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 

@@ -88,6 +88,9 @@ export type GizmoSpace = "world" | "local";
 /** How gizmo drags land: stick to terrain height, quantize to a grid, or free. */
 export type SnapMode = "ground" | "grid" | "off";
 
+/** Editor viewport camera projection — perspective (default) or orthographic top-down-friendly view. */
+export type CameraProjectionMode = "perspective" | "orthographic";
+
 /** Rotation snap increments (degrees) offered by the toolbar snap menu. */
 export const ROTATION_SNAP_CHOICES_DEG: readonly number[] = [5, 15, 45, 90];
 
@@ -120,6 +123,8 @@ export interface EditorUiState {
   rotationSnapDeg: number | null;
   /** Scale snap increment; `null` scales freely. */
   scaleSnap: number | null;
+  /** Viewport camera projection (perspective vs orthographic). */
+  cameraProjection: CameraProjectionMode;
   showGrid: boolean;
   /** Surface-following iso-elevation contour overlay (terrain readability). */
   showContours: boolean;
@@ -165,6 +170,7 @@ export function createEditorUiStore(): EditorUiStore {
     gridSize: 1,
     rotationSnapDeg: 15,
     scaleSnap: null,
+    cameraProjection: "perspective",
     showGrid: true,
     showContours: false,
     showSurfaceGrid: false,
