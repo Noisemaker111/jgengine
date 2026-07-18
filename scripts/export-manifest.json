@@ -10,6 +10,7 @@
     "./ai/laneSelect",
     "./ai/mobBrain",
     "./ai/populationDirector",
+    "./ai/pursuit",
     "./ai/spawnDirector",
     "./ai/spawnPoint",
     "./ai/targetAcquisition",
@@ -798,10 +799,15 @@
     "./create",
     "./desktop",
     "./doctor",
+    "./escapeHtml",
     "./index",
     "./pkg",
     "./prototypeLook",
     "./skills",
-    "./templates"
+    "./templates",
+    "./templates/editorWorkspace",
+    "./templates/gameFiles",
+    "./templates/names",
+    "./templates/types"
   ]
 }

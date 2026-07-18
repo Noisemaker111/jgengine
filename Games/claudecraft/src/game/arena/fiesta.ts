@@ -392,6 +392,41 @@ function addScore(session: FiestaSession, team: Team, amount: number): void {
   else session.scoreB += amount;
 }
 
+interface KillFeedInput {
+  team: Team;
+  playerKill: boolean;
+  firstBlood: boolean;
+  rapid: boolean;
+  streak: number;
+  bonusPoints: number;
+}
+
+interface KillFeedEvent {
+  scoreTeam: Team;
+  points: number;
+  /** Kill-feed pop text, or `""` for no pop. */
+  text: string;
+  color: string;
+  /** The `firstBlood` flag after this kill (unchanged, or `true` once the first takedown lands). */
+  firstBlood: boolean;
+}
+
+/** Pure kill-feed selector: maps a resolved takedown to who scores, how much, and the pop text/color. */
+function killFeedEvent(input: KillFeedInput): KillFeedEvent {
+  if (input.team !== "b") {
+    return { scoreTeam: "b", points: 1, text: "", color: "", firstBlood: input.firstBlood };
+  }
+  if (input.playerKill) {
+    const points = 1 + input.bonusPoints;
+    if (!input.firstBlood) return { scoreTeam: "a", points, text: "FIRST BLOOD!", color: "#ff3df0", firstBlood: true };
+    if (input.rapid) return { scoreTeam: "a", points, text: "DOUBLE KILL!", color: "#ffae00", firstBlood: true };
+    if (input.streak >= 3) return { scoreTeam: "a", points, text: `${input.streak}× SPREE!`, color: "#ff7a1a", firstBlood: true };
+    return { scoreTeam: "a", points, text: "TAKEDOWN!", color: "#ffd24a", firstBlood: true };
+  }
+  if (!input.firstBlood) return { scoreTeam: "a", points: 1, text: "FIRST BLOOD!", color: "#ff3df0", firstBlood: true };
+  return { scoreTeam: "a", points: 1, text: "TAKEDOWN!", color: "#ffd24a", firstBlood: true };
+}
+
 export function onFiestaEntityDied(
   ctx: GameContext,
   evt: { instanceId: string; reason: { kind: string } },
@@ -426,33 +461,26 @@ export function onFiestaEntityDied(
   fighter.deaths += 1;
   fighter.respawnAt = now + fiestaRespawnTime(fighter.deaths, elapsed);
   clearAuras(ctx, evt.instanceId);
-  if (fighter.team === "b") {
-    let points = 1;
-    if (evt.reason.kind === "player_kill") {
-      for (const id of session.augments) points += augmentById(id)?.scorePerKill ?? 0;
-      const rapid = now - session.playerLastKillAt <= 4;
-      session.playerLastKillAt = now;
-      session.playerStreak += 1;
-      if (!session.firstBlood) {
-        session.firstBlood = true;
-        pop(ctx, session, userId, "FIRST BLOOD!", "#ff3df0");
-      } else if (rapid) {
-        pop(ctx, session, userId, "DOUBLE KILL!", "#ffae00");
-      } else if (session.playerStreak >= 3) {
-        pop(ctx, session, userId, `${session.playerStreak}× SPREE!`, "#ff7a1a");
-      } else {
-        pop(ctx, session, userId, "TAKEDOWN!", "#ffd24a");
-      }
-    } else if (!session.firstBlood) {
-      session.firstBlood = true;
-      pop(ctx, session, userId, "FIRST BLOOD!", "#ff3df0");
-    } else {
-      pop(ctx, session, userId, "TAKEDOWN!", "#ffd24a");
-    }
-    addScore(session, "a", points);
-  } else {
-    addScore(session, "b", 1);
+  const playerKill = evt.reason.kind === "player_kill";
+  let bonusPoints = 0;
+  let rapid = false;
+  if (fighter.team === "b" && playerKill) {
+    for (const id of session.augments) bonusPoints += augmentById(id)?.scorePerKill ?? 0;
+    rapid = now - session.playerLastKillAt <= 4;
+    session.playerLastKillAt = now;
+    session.playerStreak += 1;
   }
+  const feed = killFeedEvent({
+    team: fighter.team,
+    playerKill,
+    firstBlood: session.firstBlood,
+    rapid,
+    streak: session.playerStreak,
+    bonusPoints,
+  });
+  session.firstBlood = feed.firstBlood;
+  if (feed.text !== "") pop(ctx, session, userId, feed.text, feed.color);
+  addScore(session, feed.scoreTeam, feed.points);
   checkWin(ctx, userId, session);
   sync(ctx, userId);
   return true;

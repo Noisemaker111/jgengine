@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { selectAutoTarget, type AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
+import { advancePursuit, armPursuit, type PursuitState } from "@jgengine/core/ai/pursuit";
 import { distance } from "@jgengine/core/world/vec3";
 
 import { editorLayers } from "../../editorLayers";
@@ -65,16 +66,20 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     candidates.push({ id: creep.instanceId, position: entity.position, progress: creep.path.distanceTravelled });
   }
 
+  // A stationary turret is the degenerate pursuit case: no chase, no leash — just the shared
+  // cooldown-gated attack. `stopDistance` is infinite so an acquired target is always "in reach";
+  // `scratch` mirrors each tower's serializable `cooldownSeconds` so the loop allocates nothing.
+  const scratch: PursuitState = { attackCooldown: 0 };
   for (const tower of session.towers.values()) {
     const def = towerDef(tower.catalogId, editorLayers);
-    tower.cooldownSeconds = Math.max(0, tower.cooldownSeconds - dt);
-    if (tower.cooldownSeconds > 0) continue;
-
     const entity = ctx.scene.entity.get(tower.instanceId);
-    if (entity === null) continue;
+    const targetId =
+      entity === null ? null : chooseTarget(def.targeting, entity.position, def.range, candidates);
 
-    const targetId = chooseTarget(def.targeting, entity.position, def.range, candidates);
-    if (targetId === null) continue;
+    scratch.attackCooldown = tower.cooldownSeconds;
+    const action = advancePursuit(scratch, dt, targetId === null ? null : 0, Number.POSITIVE_INFINITY, "always");
+    tower.cooldownSeconds = scratch.attackCooldown;
+    if (action !== "attack" || entity === null || targetId === null) continue;
 
     const target = ctx.scene.entity.get(targetId);
     if (target === null) continue;
@@ -82,6 +87,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     applyDamage(ctx, def, tower.instanceId, targetId);
     applySlow(ctx, def, targetId, now);
     pushProjectile(entity.position, target.position, def.boltColor, def.splashRadius, now);
-    tower.cooldownSeconds = 1 / def.fireRateHz;
+    armPursuit(scratch, 1 / def.fireRateHz);
+    tower.cooldownSeconds = scratch.attackCooldown;
   }
 }
