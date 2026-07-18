@@ -1,4 +1,5 @@
 import {
+  editorMarkerXZ,
   normalizeEditorLayers,
   seedEditorCatalogs,
   type EditorDocument,
@@ -65,4 +66,4 @@ export const PATH_WAYPOINTS_XZ: readonly Vec2[] = (
 /** Build-plot centers (XZ), read from the authored plot markers — the single source for tower placement. */
 export const BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = editorLayers.markers
   .filter((marker) => marker.id.startsWith("plot-"))
-  .map((marker) => ({ id: marker.id, xz: [marker.position.x, marker.position.z] as const }));
+  .map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker) }));

@@ -410,6 +410,32 @@ export function findEditorMarker(doc: EditorDocument, id: string): EditorMarker 
   return doc.markers.find((marker) => marker.id === id);
 }
 
+/** Looks up a marker by id and throws when it is absent — for scene contracts where a
+ * missing marker is an authoring error to surface loudly, not a runtime branch to handle.
+ * @internal
+ */
+export function requireEditorMarker(doc: EditorDocument, id: string): EditorMarker {
+  const marker = findEditorMarker(doc, id);
+  if (marker === undefined) {
+    throw new Error(`editor document has no marker with id "${id}"`);
+  }
+  return marker;
+}
+
+/** A marker's world position as an `[x, y, z]` tuple — the shared shape gameplay tables read.
+ * @internal
+ */
+export function editorMarkerPosition(marker: EditorMarker): readonly [x: number, y: number, z: number] {
+  return [marker.position.x, marker.position.y, marker.position.z];
+}
+
+/** A marker's ground position as an `[x, z]` tuple, dropping the vertical axis.
+ * @internal
+ */
+export function editorMarkerXZ(marker: EditorMarker): readonly [x: number, z: number] {
+  return [marker.position.x, marker.position.z];
+}
+
 /** Looks up a volume by id in an editor document.
  * @internal
  */

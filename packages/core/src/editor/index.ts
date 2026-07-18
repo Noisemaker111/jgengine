@@ -65,6 +65,8 @@ export {
   editorDocumentBounds,
   editorDocumentExtras,
   editorDocumentSize,
+  editorMarkerPosition,
+  editorMarkerXZ,
   editorParentOf,
   editorRoots,
   exportEditorDocumentJson,
@@ -82,6 +84,7 @@ export {
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
+  requireEditorMarker,
   seedEditorCatalogs,
   wouldCreateCycle,
 } from "./document";
