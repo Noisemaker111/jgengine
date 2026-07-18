@@ -435,6 +435,37 @@ export function InspectorPanel({
   if (activeTab === "materials") {
     body = <MaterialsTab api={api} selection={selection} meta={selectedMeta} />;
   } else if (selection.length > 1) {
+    const positions = selection
+      .map((id) => {
+        const marker = document.markers.find((entry) => entry.id === id);
+        if (marker !== undefined) return { id, position: marker.position };
+        const volume = document.volumes.find((entry) => entry.id === id);
+        if (volume !== undefined) return { id, position: volume.center };
+        const note = document.annotations.find((entry) => entry.id === id);
+        if (note !== undefined) return { id, position: note.position };
+        return null;
+      })
+      .filter((entry): entry is { id: string; position: { x: number; y: number; z: number } } => entry !== null);
+
+    const axisValues = (axis: "x" | "y" | "z") => {
+      if (positions.length === 0) return { value: 0, mixed: true };
+      const first = positions[0]!.position[axis];
+      const mixed = positions.some((entry) => entry.position[axis] !== first);
+      return { value: first, mixed };
+    };
+    const commitAxis = (axis: "x" | "y" | "z", value: number) => {
+      for (const entry of positions) {
+        session.dispatch(
+          {
+            type: "setTransform",
+            id: entry.id,
+            position: { ...entry.position, [axis]: value },
+          },
+          { coalesce: `multi-pos:${axis}:${entry.id}` },
+        );
+      }
+    };
+
     body = (
       <div className="space-y-2.5 p-2.5">
         <div className="flex items-center gap-2.5">
@@ -443,14 +474,37 @@ export function InspectorPanel({
           </div>
           <div>
             <div className="text-[12px] font-medium text-neutral-100">{selection.length} objects selected</div>
-            <div className="text-[10px] text-neutral-500">Shared actions apply to the whole selection</div>
+            <div className="text-[10px] text-neutral-500">
+              Shared fields show “—” when mixed; writing applies to every selected object
+            </div>
           </div>
         </div>
-        <div className="max-h-36 space-y-0.5 overflow-auto rounded-[6px] border border-white/[0.06] bg-black/20 p-1.5 text-[10px] text-neutral-500">
+        <div className="max-h-28 space-y-0.5 overflow-auto rounded-[6px] border border-white/[0.06] bg-black/20 p-1.5 text-[10px] text-neutral-500">
           {selection.map((id) => (
             <div key={id} className="truncate">{id}</div>
           ))}
         </div>
+        {positions.length > 0 ? (
+          <div className="space-y-1.5 rounded-[6px] border border-white/[0.06] bg-white/[0.02] p-2">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Position</div>
+            <FieldRow label="Position">
+              {(["x", "y", "z"] as const).map((axis) => {
+                const { value, mixed } = axisValues(axis);
+                return (
+                  <AxisNumberField
+                    key={axis}
+                    axis={axis}
+                    label={axis}
+                    step={0.5}
+                    value={value}
+                    mixed={mixed}
+                    onCommit={(next) => commitAxis(axis, next)}
+                  />
+                );
+              })}
+            </FieldRow>
+          </div>
+        ) : null}
         <div className="flex gap-1.5">
           <button
             type="button"

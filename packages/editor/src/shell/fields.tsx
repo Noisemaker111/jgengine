@@ -25,6 +25,7 @@ export function AxisNumberField({
   step = 0.1,
   precision = 3,
   disabled = false,
+  mixed = false,
 }: {
   /** Axis coloring; omit for a neutral field. */
   axis?: "x" | "y" | "z";
@@ -34,19 +35,22 @@ export function AxisNumberField({
   step?: number;
   precision?: number;
   disabled?: boolean;
+  /** Multi-select mixed values: show an em dash until the user commits a concrete number. */
+  mixed?: boolean;
 }) {
-  const [text, setText] = useState(() => formatValue(value, precision));
+  const [text, setText] = useState(() => (mixed ? "—" : formatValue(value, precision)));
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{ pointerId: number; startX: number; startValue: number; moved: boolean } | null>(null);
 
   useEffect(() => {
-    if (!editing) setText(formatValue(value, precision));
-  }, [value, precision, editing]);
+    if (!editing) setText(mixed ? "—" : formatValue(value, precision));
+  }, [value, precision, editing, mixed]);
 
   const commitText = (raw: string) => {
+    if (raw === "—" || raw.trim().length === 0) return;
     const next = Number(raw);
-    if (Number.isFinite(next) && next !== value) onCommit(next);
+    if (Number.isFinite(next) && (mixed || next !== value)) onCommit(next);
   };
 
   const onScrubPointerDown = (event: PointerEvent<HTMLElement>) => {
@@ -59,6 +63,7 @@ export function AxisNumberField({
     }
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    // Scrub from the first selected value when mixed — committing absolute values to all.
     dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startValue: value, moved: false };
   };
   const onScrubPointerMove = (event: PointerEvent<HTMLElement>) => {
