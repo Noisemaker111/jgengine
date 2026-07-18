@@ -27,6 +27,16 @@ export interface EditorMarker {
   catalogId?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /**
+   * Per-object edit lock — blocks transform/remove the same way a locked collection does.
+   * Combined with collection locks in `isEditorObjectLocked`.
+   */
+  locked?: boolean;
+  /**
+   * Per-object viewport hide — object stays in the hierarchy/document but is omitted from
+   * editor overlays and picking when true. Independent of per-kind layer visibility.
+   */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -43,6 +53,10 @@ export interface EditorVolume {
   label?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /** Per-object edit lock — see {@link EditorMarker.locked}. */
+  locked?: boolean;
+  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -56,6 +70,10 @@ export interface EditorPath {
   label?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /** Per-object edit lock — see {@link EditorMarker.locked}. */
+  locked?: boolean;
+  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -67,6 +85,10 @@ export interface EditorNote {
   color?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /** Per-object edit lock — see {@link EditorMarker.locked}. */
+  locked?: boolean;
+  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 

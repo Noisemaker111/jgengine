@@ -229,16 +229,22 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
       const state = session().getState();
       const visibility = api.getVisibility();
       const candidates: { id: string; distance: number }[] = [];
-      const consider = (id: string, kind: string, point: EditorVec3, lift: number) => {
-        if (visibility[kind] === false) return;
+      const consider = (id: string, kind: string, point: EditorVec3, lift: number, hidden?: boolean) => {
+        if (visibility[kind] === false || hidden === true) return;
         const distance = screenDistance(point, lift, clickX, clickY, rect);
         if (distance !== null && distance < SCREEN_PICK_RADIUS_PX) candidates.push({ id, distance });
       };
-      for (const marker of state.document.markers) consider(marker.id, marker.kind, marker.position, MARKER_LIFT);
-      for (const volume of state.document.volumes) consider(volume.id, volume.kind, volume.center, 0);
-      for (const note of state.document.annotations) consider(note.id, "note", note.position, NOTE_LIFT);
+      for (const marker of state.document.markers) {
+        consider(marker.id, marker.kind, marker.position, MARKER_LIFT, marker.hidden);
+      }
+      for (const volume of state.document.volumes) {
+        consider(volume.id, volume.kind, volume.center, 0, volume.hidden);
+      }
+      for (const note of state.document.annotations) {
+        consider(note.id, "note", note.position, NOTE_LIFT, note.hidden);
+      }
       for (const path of state.document.paths) {
-        if (visibility[path.kind] === false) continue;
+        if (visibility[path.kind] === false || path.hidden === true) continue;
         let best: number | null = null;
         for (const point of path.points) {
           const distance = screenDistance(point, 0.8, clickX, clickY, rect);

@@ -79,6 +79,7 @@ export const documentHandlers: Pick<
   | "place_asset"
   | "batch_set_properties"
   | "assign_material"
+  | "set_object_flags"
 > = {
   editor_status: (ctx) => ({
     ok: true,
@@ -339,6 +340,23 @@ export const documentHandlers: Pick<
         ...(request.color === undefined ? {} : { color: request.color }),
         ...(request.label === undefined ? {} : { label: request.label }),
         ...(request.meta === undefined ? {} : { meta: request.meta }),
+      },
+    });
+    return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
+  },
+  set_object_flags: (ctx, request) => {
+    if (!documentHasAnyId(ctx.session.getState().document, request.ids)) {
+      return { ok: false, error: "set_object_flags matched no objects" };
+    }
+    if (request.locked === undefined && request.hidden === undefined) {
+      return { ok: false, error: "set_object_flags requires locked and/or hidden" };
+    }
+    ctx.session.dispatch({
+      type: "setObjectFlags",
+      ids: request.ids,
+      patch: {
+        ...(request.locked === undefined ? {} : { locked: request.locked }),
+        ...(request.hidden === undefined ? {} : { hidden: request.hidden }),
       },
     });
     return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
