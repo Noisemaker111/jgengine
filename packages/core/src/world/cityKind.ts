@@ -63,10 +63,19 @@ export interface CityRules {
   blockSize: number;
   /** Cross-axis spacing multiplier — 2+ gives long skinny Manhattan blocks with avenue/street rhythm. */
   blockAspect: number;
-  /** Fraction of blocks left unbuilt as parks/plazas, 0..1. */
+  /** Fraction of blocks left unbuilt as intentional open space (parks/plazas/fields), 0..1. */
   openSpace: number;
-  /** How full built frontage is with buildings, 0..1. */
-  buildingDensity: number;
+  /** Fraction of every street's frontage that carries a building, 0..1 — the compactness dial. */
+  roadsideOccupancy: number;
+  /** Chance deep blocks fill their interior with a second row of buildings, 0..1. */
+  blockDensity: number;
+  /** Base gap from the sidewalk edge to a lot's front, in meters (class factors scale it). */
+  buildingRoadSetback: number;
+  /** Base side gap between neighboring lots, in meters (rowhouses nearly touch, farms spread). */
+  buildingSpacing: number;
+  /** How strongly development clumps: junctions grow denser, density drifts in smooth waves, and
+   * same-class runs form — 0 is uniform, 1 is strongly clustered. */
+  clusterStrength: number;
   /** Main street width in meters (boulevards/avenues render wider, lanes narrower). */
   streetWidth: number;
   /** Share of avenues upgraded to median-divided boulevards, 0..1. */
@@ -133,7 +142,11 @@ export const CITY_DEFAULTS: CityRules = {
   blockSize: 48,
   blockAspect: 1,
   openSpace: 0.12,
-  buildingDensity: 0.8,
+  roadsideOccupancy: 0.88,
+  blockDensity: 0.6,
+  buildingRoadSetback: 2.5,
+  buildingSpacing: 1.4,
+  clusterStrength: 0.5,
   streetWidth: 7,
   boulevards: 0.35,
   gravelLanes: false,
@@ -182,6 +195,7 @@ export const CITY_DEFAULTS: CityRules = {
 export const CITY_SCHEMA: ParamSchema = {
   groups: [
     { id: "layout", label: "Layout" },
+    { id: "placement", label: "Placement" },
     { id: "zoning", label: "Zoning" },
     { id: "buildings", label: "Buildings" },
     { id: "greenery", label: "Greenery & furniture" },
@@ -229,7 +243,11 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "weightedList", key: "midMix", label: "mid mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.midMix },
     { type: "weightedList", key: "edgeMix", label: "edge mix", group: "zoning", itemLabel: "class", default: CITY_DEFAULTS.edgeMix },
     { type: "range", key: "lotScale", label: "lot scale", group: "zoning", min: 0.5, max: 2.5, step: 0.05, default: CITY_DEFAULTS.lotScale },
-    { type: "range", key: "buildingDensity", label: "density", group: "buildings", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.buildingDensity },
+    { type: "range", key: "roadsideOccupancy", label: "roadside occupancy", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.roadsideOccupancy },
+    { type: "range", key: "blockDensity", label: "block density", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.blockDensity },
+    { type: "range", key: "buildingRoadSetback", label: "road setback", group: "placement", min: 0, max: 12, step: 0.1, default: CITY_DEFAULTS.buildingRoadSetback, unit: "m" },
+    { type: "range", key: "buildingSpacing", label: "building spacing", group: "placement", min: 0.2, max: 10, step: 0.1, default: CITY_DEFAULTS.buildingSpacing, unit: "m" },
+    { type: "range", key: "clusterStrength", label: "cluster strength", group: "placement", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.clusterStrength },
     { type: "range", key: "floorsMin", label: "floors min", group: "buildings", min: 1, max: 60, step: 1, default: CITY_DEFAULTS.floorsMin },
     { type: "range", key: "floorsMax", label: "floors max", group: "buildings", min: 1, max: 60, step: 1, default: CITY_DEFAULTS.floorsMax },
     { type: "range", key: "floorHeight", label: "floor height", group: "buildings", min: 2, max: 5, step: 0.1, default: CITY_DEFAULTS.floorHeight, unit: "m" },
@@ -263,7 +281,11 @@ export const CITY_SCHEMA: ParamSchema = {
         blockSize: 32,
         blockAspect: 2.4,
         openSpace: 0.05,
-        buildingDensity: 0.95,
+        roadsideOccupancy: 0.97,
+        blockDensity: 0.85,
+        buildingRoadSetback: 0.8,
+        buildingSpacing: 0.8,
+        clusterStrength: 0.25,
         streetWidth: 9,
         boulevards: 0.5,
         gravelLanes: false,
@@ -306,7 +328,11 @@ export const CITY_SCHEMA: ParamSchema = {
         blockSize: 62,
         blockAspect: 1.2,
         openSpace: 0.08,
-        buildingDensity: 0.8,
+        roadsideOccupancy: 0.9,
+        blockDensity: 0.55,
+        buildingRoadSetback: 3,
+        buildingSpacing: 1.8,
+        clusterStrength: 0.5,
         streetWidth: 8,
         boulevards: 0.45,
         gravelLanes: false,
@@ -355,7 +381,11 @@ export const CITY_SCHEMA: ParamSchema = {
         blockSize: 90,
         blockAspect: 1,
         openSpace: 0.07,
-        buildingDensity: 0.75,
+        roadsideOccupancy: 0.85,
+        blockDensity: 0.3,
+        buildingRoadSetback: 4.5,
+        buildingSpacing: 2.2,
+        clusterStrength: 0.35,
         streetWidth: 6.5,
         boulevards: 0,
         gravelLanes: false,
@@ -402,7 +432,11 @@ export const CITY_SCHEMA: ParamSchema = {
         blockSize: 120,
         blockAspect: 1,
         openSpace: 0.55,
-        buildingDensity: 0.4,
+        roadsideOccupancy: 0.6,
+        blockDensity: 0.25,
+        buildingRoadSetback: 6,
+        buildingSpacing: 5,
+        clusterStrength: 0.8,
         streetWidth: 5.5,
         boulevards: 0,
         gravelLanes: true,
@@ -451,7 +485,11 @@ export const CITY_SCHEMA: ParamSchema = {
         blockSize: 48,
         blockAspect: 1.3,
         openSpace: 0.12,
-        buildingDensity: 0.85,
+        roadsideOccupancy: 0.92,
+        blockDensity: 0.7,
+        buildingRoadSetback: 1.5,
+        buildingSpacing: 1.2,
+        clusterStrength: 0.45,
         streetWidth: 7.5,
         boulevards: 0.4,
         profile: "core-out",
@@ -486,6 +524,10 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
   const params = parseParams(CITY_SCHEMA, meta);
   const floorsMin = params["floorsMin"] as number;
   const floorsMax = params["floorsMax"] as number;
+  // Legacy documents tuned `buildingDensity`; honor it as the occupancy dial when the volume
+  // predates the placement params (and only then — presets/authors that set the new keys win).
+  const legacyDensity = meta?.["buildingDensity"];
+  const hasLegacy = typeof legacyDensity === "number" && Number.isFinite(legacyDensity) && meta?.["roadsideOccupancy"] === undefined;
   return {
     gridness: params["gridness"] as number,
     curviness: params["curviness"] as number,
@@ -493,7 +535,11 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     blockSize: params["blockSize"] as number,
     blockAspect: params["blockAspect"] as number,
     openSpace: params["openSpace"] as number,
-    buildingDensity: params["buildingDensity"] as number,
+    roadsideOccupancy: hasLegacy ? Math.max(0, Math.min(1, legacyDensity)) : (params["roadsideOccupancy"] as number),
+    blockDensity: hasLegacy ? Math.max(0, Math.min(1, legacyDensity * 0.8)) : (params["blockDensity"] as number),
+    buildingRoadSetback: params["buildingRoadSetback"] as number,
+    buildingSpacing: params["buildingSpacing"] as number,
+    clusterStrength: params["clusterStrength"] as number,
     streetWidth: params["streetWidth"] as number,
     boulevards: params["boulevards"] as number,
     gravelLanes: params["gravelLanes"] as boolean,
@@ -653,7 +699,7 @@ export interface CityResolveContext extends SceneKindResolveContext {
 /** Bounded-work caps so a huge volume can never generate unbounded content. */
 const MAX_LINES_PER_AXIS = 40;
 const MAX_STREETS = 320;
-const MAX_LOTS = 2200;
+const MAX_LOTS = 2600;
 const MAX_INTERSECTIONS = 600;
 const MAX_TREES = 3200;
 const MAX_LIGHTS = 1200;
@@ -1174,49 +1220,96 @@ function buildLots(
   slopeAt: ((x: number, z: number) => number) | null,
   heightAt: ((x: number, z: number) => number) | null,
   overrideAt: ((x: number, z: number) => { band: CityZoneBand; mix: WeightedParamEntry[] | null } | null) | null,
+  junctions: readonly { x: number; z: number }[],
 ): LotBuildResult {
   const result: LotBuildResult = { lots: [], placed: new LotIndex(), hedges: [], driveways: [] };
   const bandMix: Record<CityZoneBand, WeightedParamEntry[]> = { core: rules.coreMix, mid: rules.midMix, edge: rules.edgeMix };
   const blockMin = Math.min(rules.blockSize, rules.blockSize * rules.blockAspect);
+  const junctionBoost = (x: number, z: number): number => {
+    let best = Infinity;
+    for (const j of junctions) {
+      const d = Math.hypot(j.x - x, j.z - z);
+      if (d < best) best = d;
+    }
+    return best === Infinity ? 0 : Math.max(0, 1 - best / (rules.blockSize * 0.6));
+  };
   for (let s = 0; s < streets.length; s += 1) {
     const street = streets[s]!;
-    const rng = streams(`lots:${s}`);
+    if (street.points.length < 2) continue;
     const sidewalkPad = street.sidewalk ? 1.9 : 0.7;
-    let travelled = 0;
-    let nextLot = 6 + rng() * 8;
+    // Arc-length table so each SIDE can walk its own contiguous frontage cursor.
+    const cum: number[] = [0];
     for (let i = 0; i + 1 < street.points.length; i += 1) {
       const [ax, az] = street.points[i]!;
       const [bx, bz] = street.points[i + 1]!;
-      const segLen = Math.hypot(bx - ax, bz - az);
-      while (travelled + segLen >= nextLot) {
-        const t = (nextLot - travelled) / segLen;
-        const px = ax + (bx - ax) * t;
-        const pz = az + (bz - az) * t;
-        const tangent = Math.atan2(bx - ax, bz - az);
-        let advance = 7;
-        for (const side of [1, -1] as const) {
-          // Every side rolls its own band/class/dims so the two frontages differ.
-          const densityRoll = rng();
-          const bandRoll = rng();
-          const classRoll = rng();
-          const lotRng = streams(`lot:${s}:${Math.round(nextLot * 10)}:${side}`);
-          const nx = Math.cos(tangent);
-          const nz = -Math.sin(tangent);
-          const probeX = px + nx * (street.width / 2 + 8) * side;
-          const probeZ = pz + nz * (street.width / 2 + 8) * side;
-          const override = overrideAt === null ? null : overrideAt(probeX, probeZ);
-          const band =
-            override !== null ? override.band : zoneBand(zoneMetric(probeX, probeZ, hx, hz), rules.profile, rules.coreExtent, rules.midExtent, bandRoll);
-          const mix = override !== null && override.mix !== null && override.mix.length > 0 ? override.mix : bandMix[band];
-          const cls = pickClass(mix, classRoll);
-          const placement = rollClassPlacement(cls, lotRng, rules.lotScale, rules.floorsMin, rules.floorsMax);
-          advance = Math.max(advance, placement.width + placement.gap);
-          if (densityRoll > rules.buildingDensity) continue;
-          const rows = placement.backRow && blockMin > placement.depth * 2.2 + street.width + placement.setback ? 2 : 1;
-          for (let row = 0; row < rows; row += 1) {
-            if (row > 0 && rng() > rules.buildingDensity * 0.7) continue;
+      cum.push(cum[i]! + Math.hypot(bx - ax, bz - az));
+    }
+    const total = cum[cum.length - 1]!;
+    const stationAt = (along: number): { px: number; pz: number; tangent: number } => {
+      let seg = 0;
+      while (seg < cum.length - 2 && cum[seg + 1]! < along) seg += 1;
+      const [ax, az] = street.points[seg]!;
+      const [bx, bz] = street.points[seg + 1]!;
+      const segLen = cum[seg + 1]! - cum[seg]! || 1;
+      const t = (along - cum[seg]!) / segLen;
+      return { px: ax + (bx - ax) * t, pz: az + (bz - az) * t, tangent: Math.atan2(bx - ax, bz - az) };
+    };
+    // Each side owns its cursor: lots pack back-to-back along the frontage, so a skipped lot leaves
+    // a narrow vacant parcel — never a random hole the size of a whole block.
+    for (const side of [1, -1] as const) {
+      const rng = streams(`lots:${s}:${side}`);
+      // Smooth density wave along the street: development swells and thins gradually, and swells
+      // again near junctions — never flips randomly parcel to parcel.
+      const wave = makeWander(rng, 0.5, rules.blockSize * 2.6);
+      let cursor = 3 + rng() * 4;
+      let prevClass: CityLotClass | null = null;
+      while (cursor < total - 3) {
+        const { px, pz, tangent } = stationAt(cursor);
+        const bandRoll = rng();
+        const classRoll = rng();
+        const stickRoll = rng();
+        const occupancyRoll = rng();
+        const lotRng = streams(`lot:${s}:${side}:${Math.round(cursor * 10)}`);
+        const nx = Math.cos(tangent);
+        const nz = -Math.sin(tangent);
+        const probeX = px + nx * (street.width / 2 + 8) * side;
+        const probeZ = pz + nz * (street.width / 2 + 8) * side;
+        const override = overrideAt === null ? null : overrideAt(probeX, probeZ);
+        const band =
+          override !== null ? override.band : zoneBand(zoneMetric(probeX, probeZ, hx, hz), rules.profile, rules.coreExtent, rules.midExtent, bandRoll);
+        const mix = override !== null && override.mix !== null && override.mix.length > 0 ? override.mix : bandMix[band];
+        let cls = pickClass(mix, classRoll);
+        // Sticky class runs: with clustering, a house is followed by more houses — rows form.
+        if (prevClass !== null && stickRoll < 0.45 + rules.clusterStrength * 0.4 && mix.some((entry) => entry.item === prevClass && entry.weight > 0)) {
+          cls = prevClass;
+        }
+        const placement = rollClassPlacement(
+          cls,
+          lotRng,
+          rules.lotScale,
+          rules.floorsMin,
+          rules.floorsMax,
+          rules.buildingRoadSetback,
+          rules.buildingSpacing,
+        );
+        // Local occupancy: the district dial, drifted by the smooth wave and boosted near
+        // junctions so intersections read as centers of development.
+        const local =
+          rules.roadsideOccupancy * (1 - rules.clusterStrength * 0.3) +
+          rules.clusterStrength * (wave(cursor) + 0.5) * 0.22 +
+          rules.clusterStrength * junctionBoost(px, pz) * 0.6;
+        if (occupancyRoll > local) {
+          // Intentional vacant parcel — narrow, so the street wall resumes quickly.
+          cursor += placement.width * 0.55;
+          prevClass = null;
+          continue;
+        }
+        let placedFront = false;
+        const rows = placement.backRow && blockMin > placement.depth * 2.2 + street.width + placement.setback ? 2 : 1;
+        for (let row = 0; row < rows; row += 1) {
+          if (row > 0 && rng() > rules.blockDensity) continue;
             const slopeRoll = rng();
-            const offset = street.width / 2 + sidewalkPad + placement.setback + placement.depth / 2 + row * (placement.depth + 4);
+            const offset = street.width / 2 + sidewalkPad + placement.setback + placement.depth / 2 + row * (placement.depth + rules.buildingSpacing * 2 + 2);
             const cx = px + nx * offset * side;
             const cz = pz + nz * offset * side;
             if (Math.abs(cx) > hx - 3 || Math.abs(cz) > hz - 3) continue;
@@ -1254,6 +1347,7 @@ function buildLots(
             // Exact rotated-rect collision against neighbors — buildings know about each other.
             if (result.placed.overlapsAny(candidate, 1)) continue;
             result.placed.add(candidate);
+            if (row === 0) placedFront = true;
             const pieces = buildLotPieces(cls, placement.width, placement.depth, placement.floors, rules.floorHeight, lotRng);
             result.lots.push({
               id: `lot:${s}:${result.lots.length}`,
@@ -1301,10 +1395,11 @@ function buildLots(
             }
             if (result.lots.length >= MAX_LOTS) return result;
           }
-        }
-        nextLot += advance;
+        // A placed lot advances by its full frontage plus the class spacing; a lot the terrain or
+        // a neighbor rejected retries just past the blockage so the row resumes tight.
+        cursor += placedFront ? placement.width + placement.gap : placement.width * 0.45;
+        prevClass = placedFront ? cls : null;
       }
-      travelled += segLen;
     }
   }
   return result;
@@ -1491,7 +1586,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   const local = [...mains, ...branches].slice(0, MAX_STREETS);
   const intersections = findIntersections(local);
   const parks = buildParks(rules, streams, xs, zs, hx, hz);
-  const lotResult = buildLots(rules, streams, local, index, parks, hx, hz, slopeAt, heightAt, overrideAt);
+  const lotResult = buildLots(rules, streams, local, index, parks, hx, hz, slopeAt, heightAt, overrideAt, intersections);
   buildFieldRows(parks, lotResult.placed, streams);
 
   // --- Street furniture: bounded, seeded, and hooked to the network. ---
