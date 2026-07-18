@@ -27,7 +27,7 @@ Score all ten from one `--mode play` shot plus deterministic world/document evid
 6. **Materials/textures** — terrain and props carry texture and color variation (`environment({ sculpt, materialRegions })`, catalog GLBs via `jgengine-assets`), not flat untextured solids.
 7. **Lighting/render** — a tuned daylight/sun+hemisphere rig and post stack (per `look: "cinematic"`, #773), not the bare untouched three.js default light.
 8. **VFX/motion** — particle/motion feedback tied to actual gameplay events (hits, pickups, weather), not absent, and not one looping default effect standing in everywhere.
-9. **UI/HUD** — a game-specific `HudCanvas`/`HudPanel` composition; fails automatically if it could pass for a generic admin dashboard.
+9. **UI/HUD** — a game-specific `HudCanvas`/`HudPanel` composition with unique art direction; fails automatically if it could pass for a generic admin dashboard **or** for another game shipping stock engine widgets/theme presets unskinned.
 10. **Performance evidence** — the look holds at the scale the game actually runs (`InstancedScatter` density, many entities), not only a hand-posed hero shot with three objects in frame.
 
 ## Measured-evidence row

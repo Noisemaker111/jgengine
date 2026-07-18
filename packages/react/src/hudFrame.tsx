@@ -85,12 +85,12 @@ export interface HudFrameProps {
 }
 
 /**
- * Shared framed HUD chrome — a single `<div data-hud-frame>` with a `glass`,
- * `plate`, or `retro` skin, an optional `title`/`aside` header row, and caller
- * `style` merged last. The one chrome primitive every framed widget reuses
- * instead of hand-rolling a bespoke panel `<div>` per widget.
+ * Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`,
+ * `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller
+ * `style` merged last. Shared building block for demos and token-themed widgets;
+ * games own product chrome and art direction (see AGENTS.md).
  *
- * @capability hud-frame shared framed HUD chrome — glass/plate/retro skins, optional title/aside header, reused across every widget instead of a bespoke panel per widget
+ * @capability hud-frame optional framed panel skins (glass/plate/retro/themed) — games own product chrome
  */
 export function HudFrame({
   variation = "glass",

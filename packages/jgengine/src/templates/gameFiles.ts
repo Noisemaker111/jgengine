@@ -517,14 +517,12 @@ export function onNewPlayer(ctx: GameContext): void {
 const loopTs = (editor: boolean) => (editor ? editorLoopTs : plainLoopTs);
 
 const gameUiTsx = (id: string, name: string, editor: boolean) => {
-  const header = `// ${name} — your HUD starts as an empty canvas the engine imposes nothing on. Drop widgets from
-// "@jgengine/react" into <HudPanel> slots as you need them (each is self-styled and reads the
-// local player by default), or write your own — panel placement is editable live in canvas mode
-// (F2+C) and persists to the scene document's ui.panels:
-//
-//   import { HudPanel, StatBar, Hotbar, Clock, Coins } from "@jgengine/react";
-//   <HudPanel id="health" anchor="bottom-left"><StatBar statId="health" tone="health" /></HudPanel>
-//   <HudPanel id="hotbar" anchor="bottom-center"><Hotbar inventoryId="hotbar" /></HudPanel>`;
+  const header = `// ${name} — GameUI starts empty on purpose. Every game owns its UI: write a short UI art
+// direction, then build custom panels for this pitch. The engine supplies layout (HudCanvas /
+// HudPanel), data hooks, and interaction models — not a finished stock HUD. Do not ship
+// default StatBar/Hotbar/Coins/glass frames as the product face; compose game-owned chrome
+// (see jgengine-ui). Panel placement is editable live in canvas mode (F2+C) and can persist
+// to the scene document's ui.panels.`;
   if (!editor) {
     return `import { HudCanvas, useHudLayout } from "@jgengine/react";
 

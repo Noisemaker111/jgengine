@@ -13,18 +13,20 @@ Search [capabilities.md](capabilities.md), use [api.md](api.md) for signatures, 
 
 ## Canonical workflow
 
-1. Define the real UI states: attract/menu, live play, pause, results, empty/error, and relevant overlays.
-2. Read state through selectors/hooks; keep simulation mutation behind commands.
-3. Compose headless data, renderer, and chrome where a second presentation is plausible. The minimap stack is the canonical example: `useLiveMarkers` (data) → `Minimap`/`MinimapTrack` (renderer) → `HudFrame` (chrome), see reference §6.
-4. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit.
-5. Add preview fixtures using the real components for fast deterministic capture.
-6. Verify desktop and mobile layouts through `jgengine-verify`.
+1. Write the game's UI art direction first (see [reference.md](reference.md) §1) — fantasy, shape/material language, hierarchy, forbidden patterns. Stock glass widgets are not a stand-in for this step.
+2. Define the real UI states: attract/menu, live play, pause, results, empty/error, and relevant overlays.
+3. Read state through selectors/hooks; keep simulation mutation behind commands.
+4. Compose custom markup for this game. Prefer headless data + game-owned chrome. When a second presentation is plausible, split data / renderer / chrome (minimap stack example: `useLiveMarkers` → track/renderer → game frame; see reference §6).
+5. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit.
+6. Add preview fixtures using the real components for fast deterministic capture.
+7. Verify desktop and mobile layouts through `jgengine-verify`. A HUD that could pass for another game's default chrome fails visual review.
 
 ## Product rules
 
-- A game owns exactly one main menu. The website/runner is a bare loader.
-- Engine UI supplies defaults, not mandatory fixed-position overlays.
-- Layout and skin remain caller-controlled; shared primitives own reusable behavior.
+- **Every game owns its UI end-to-end.** Custom composition, skin, placement, terminology, motion, and one main menu. The website/runner is a bare loader.
+- Engine packages do not supply a finished game face. Shared UI is headless or unskinned building blocks: layout (`HudCanvas`/`HudPanel`), data hooks, interaction models, tokens. Optional styled widgets exist for previews and scaffolding only — shipping them unskinned as the product is out of policy (see [AGENTS.md](../../../AGENTS.md)).
+- Never reach for genre HUD kits, theme presets, or "default RPG/FPS chrome" as the game's identity. Build the look this pitch needs.
+- Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
 - SSR-visible output is hydration-stable; round computed SVG values at the boundary.
 
 ## Traps

@@ -419,12 +419,12 @@ const PANEL: CSSProperties = {
 };
 
 /**
- * The batteries-included default: a skinned glass panel composing {@link EntitySummary} for the
- * primary member beside {@link SelectionCollectionChrome} for the rest. Pass `members` (or a prebuilt
- * `model`) and it renders a working RTS-style selection panel; every sub-renderer stays swappable, and
- * a game that wants a different frame composes the hook and chrome directly.
+ * Convenience composition: skinned glass panel with {@link EntitySummary} for the primary member
+ * beside {@link SelectionCollectionChrome} for the rest — demos/scaffold only, not a finished game
+ * face. Pass `members` (or a prebuilt `model`); swap sub-renderers or compose the headless pieces
+ * under game-owned chrome for product UI.
  *
- * @capability selection-panel drop-in selection panel: primary summary beside a portrait strip / group chips
+ * @capability selection-panel optional selection-panel composition: summary + portrait strip / group chips
  */
 export function SelectionPanel({
   members,
