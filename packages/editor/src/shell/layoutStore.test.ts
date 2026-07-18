@@ -75,6 +75,12 @@ test("setWorkspace opens the workspace's home panel", () => {
   store.setWorkspace("multiplayer");
   expect(store.getState().workspace).toBe("multiplayer");
   expect(store.getState().leftOpen).toBe(true);
+  store.patch({ leftOpen: false, rightOpen: false, inspectorTab: "inspector" });
+  store.setWorkspace("materials");
+  expect(store.getState().leftOpen).toBe(true);
+  expect(store.getState().rightOpen).toBe(true);
+  expect(store.getState().inspectorTab).toBe("materials");
+  expect(store.getState().workspace).toBe("materials");
 });
 
 test("toggleSection flips per-section collapse state", () => {

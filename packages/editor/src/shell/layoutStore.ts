@@ -5,7 +5,7 @@
  * throttled so drag-resizing never writes localStorage per pointer move.
  */
 
-/** Left-rail workspace modes. Only some are backed by full panels today; the rest are staged. */
+/** Left-rail workspace modes. Scene/terrain/assets/materials/ai/multiplayer open real home panels; the rest are staged. */
 export type EditorWorkspace =
   | "scene"
   | "terrain"
@@ -187,6 +187,12 @@ export function createShellLayoutStore(gameId: string): ShellLayoutStore {
       if (workspace === "assets") {
         partial.bottomOpen = true;
         partial.bottomTab = "content";
+      }
+      // Materials home: left inventory of real meta.materialId stamps + right materials inspector.
+      if (workspace === "materials") {
+        partial.leftOpen = true;
+        partial.rightOpen = true;
+        partial.inspectorTab = "materials";
       }
       if (workspace === "ai") {
         partial.bottomOpen = true;
