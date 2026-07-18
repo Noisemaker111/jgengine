@@ -319,9 +319,15 @@ function tickWasted(ctx: GameContext): void {
  * Transient session state (menus, wanted HUD, drive/race handles, the started gate) rides along in
  * the whole-world save because it lives in stores — reset it so a restored boot starts clean on foot
  * at the title screen, with everything durable (cash, cred, quests, inventory, world) kept.
+ *
+ * `resumeFromSave` runs async out of `onNewPlayer`, so it resolves *after* the shell has already
+ * fired `onContextReady` and dispatched any `capture.play` command. If the session already went live
+ * that way (a `shoot --mode play` boot dispatches `game.start` before this restore lands), keep it
+ * live instead of bouncing back to the title — otherwise capture re-shows the menu it just dismissed.
  */
-function normalizeAfterRestore(ctx: GameContext): void {
-  startedStore.clear(ctx);
+export function normalizeAfterRestore(ctx: GameContext): void {
+  const alreadyLive = startedStore.read(ctx) === true;
+  if (!alreadyLive) startedStore.clear(ctx);
   shopStore.clear(ctx);
   garageStore.clear(ctx);
   raceStore.clear(ctx);
