@@ -7,7 +7,7 @@ description: Design, audit, implement, and validate player experience, loops, sy
 
 ## Ownership
 
-Own the intended player experience and the rules that produce it: fantasy, pillars, verbs, decisions, feedback, loops, resources, progression, challenge, failure, onboarding, and social dynamics. Treat design claims as hypotheses proved by play, not a feature inventory or genre imitation.
+Own the intended player experience and the rules that produce it: fantasy, pillars, verbs, decisions, feedback, loops, resources, progression, challenge, failure, onboarding, and social dynamics. Treat design claims as hypotheses proved by play, not a feature inventory or genre imitation — no genre kits, presets, or archetypes; every game is a custom composition of needs (see [AGENTS.md](../../../AGENTS.md)).
 
 Use `level-design` for spatial realization; route implementation to `jgengine-gameplay`, `jgengine-world`, `jgengine-combat`, `jgengine-ui`, `jgengine-multiplayer` once intent is coherent.
 

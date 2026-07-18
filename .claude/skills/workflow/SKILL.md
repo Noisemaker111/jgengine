@@ -18,7 +18,7 @@ Choose the PR boundary by cohesion:
 
 ## Change
 
-Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated API/capability/export artifacts as applicable. Do not create freestanding design documents.
+Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated API/capability/export artifacts as applicable. Do not create freestanding design documents. Awkward or handrolled glue a custom game needs (catalog builders, loadout compose, boost meters, and the like) is lifted into `packages/*` or a skill recipe, not built as a game-local mini-framework or copied from `Games/*` (see [AGENTS.md](../../../AGENTS.md)).
 
 ## Verify
 

@@ -9,7 +9,7 @@ Read the repository [README](../../../README.md) for package truth, commands, la
 
 ## 1. Establish the target
 
-For a new game, [recipes/minimal-game.md](recipes/minimal-game.md) is the default end-to-end path — scaffold, authored scene, systems, HUD, win. Load `game-design` only when the pitch needs design work (a design brief, a redesign, "make this fun/better") to turn it into a testable player promise, verbs, loops, progression, failure, and completion scenario; likewise `level-design` only when play depends on deliberately designed spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
+Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 
 - player point of view and controls
 - world shape and authored content
