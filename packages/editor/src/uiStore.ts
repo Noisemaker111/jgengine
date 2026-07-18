@@ -145,6 +145,8 @@ export interface EditorUiState {
   placement: PlacementTool | null;
   pathDraft: readonly EditorVec3[];
   pathPoint: { pathId: string; index: number } | null;
+  /** Viewport pre-selection hover (object under cursor); null when nothing is hovered. */
+  hoverId: string | null;
   tool: EditorTool;
   terrainMode: TerrainMode;
   sculpt: SculptSettings;
@@ -189,6 +191,7 @@ export function createEditorUiStore(): EditorUiStore {
     placement: null,
     pathDraft: [],
     pathPoint: null,
+    hoverId: null,
     tool: "select",
     terrainMode: "sculpt",
     sculpt: { ...DEFAULT_SCULPT_SETTINGS },

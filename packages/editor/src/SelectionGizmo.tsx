@@ -283,6 +283,40 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
       return null;
     };
 
+    // Throttled hover pick for pre-selection affordance — reuses the same document pick path as click.
+    let hoverRaf = 0;
+    let lastHoverClientX = 0;
+    let lastHoverClientY = 0;
+    const flushHover = () => {
+      hoverRaf = 0;
+      if (ui.getState().tool === "terrain" || ui.getState().placement !== null) {
+        if (ui.getState().hoverId !== null) ui.patch({ hoverId: null });
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      const clickX = lastHoverClientX - rect.left;
+      const clickY = lastHoverClientY - rect.top;
+      if (clickX < 0 || clickY < 0 || clickX > rect.width || clickY > rect.height) {
+        if (ui.getState().hoverId !== null) ui.patch({ hoverId: null });
+        return;
+      }
+      const id = pickDocumentId(clickX, clickY, rect) ?? pickTaggedId(clickX, clickY, rect);
+      if (ui.getState().hoverId !== id) ui.patch({ hoverId: id });
+    };
+    const onMove = (event: PointerEvent) => {
+      lastHoverClientX = event.clientX;
+      lastHoverClientY = event.clientY;
+      if (hoverRaf !== 0) return;
+      hoverRaf = requestAnimationFrame(flushHover);
+    };
+    const onLeave = () => {
+      if (hoverRaf !== 0) {
+        cancelAnimationFrame(hoverRaf);
+        hoverRaf = 0;
+      }
+      if (ui.getState().hoverId !== null) ui.patch({ hoverId: null });
+    };
+
     const onDown = (event: PointerEvent) => {
       if (ui.getState().tool === "terrain") return;
       if (event.button === 0 || event.button === 2) down = { x: event.clientX, y: event.clientY, button: event.button };
@@ -389,10 +423,15 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
 
     canvas.addEventListener("pointerdown", onDown);
     canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("pointermove", onMove);
+    canvas.addEventListener("pointerleave", onLeave);
     canvas.addEventListener("contextmenu", onContextMenu);
     return () => {
+      if (hoverRaf !== 0) cancelAnimationFrame(hoverRaf);
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerleave", onLeave);
       canvas.removeEventListener("contextmenu", onContextMenu);
     };
   }, [gl, camera, scene, api, ui]);
