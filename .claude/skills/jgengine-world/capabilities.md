@@ -109,6 +109,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
 
+## building-lots — derive street-facing building lots from road frontage
+
+- `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`
+
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`

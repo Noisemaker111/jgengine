@@ -1,6 +1,7 @@
 import type {
   BiomeBand,
   EnvironmentWorldFeature,
+  RoadEnvironmentDescriptor,
   TerrainColors,
   TerrainDetailConfig,
   TerrainEnvironmentConfig,
@@ -15,7 +16,7 @@ import type {
 } from "./features";
 import type { AvoidZone } from "./geometry";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
-import { nearestOnPath } from "./roads";
+import { isOnRoad, nearestOnPath } from "./roads";
 import type { TerraformSnapshot } from "./terraform";
 
 /** A surface normal vector at a terrain sample point. */
@@ -404,6 +405,41 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
  * through the one seam every consumer already reads.
   * @internal
   */
+/**
+ * Drapes each `road()` ribbon's `elevation` onto the ground so a body standing on a road snaps to the
+ * road *surface* the renderer draws (`sampleHeight + elevation`), not the bare terrain beneath it. Without
+ * this the ground field and {@link RoadRibbons}/{@link CityRenderer} disagree by `elevation` per road, and
+ * anything grounded on a road — the player, NPCs, spawns via `groundHeightAt` — sinks by that offset into
+ * the asphalt. Overlapping ribbons (intersections) take the highest lift. Only `sampleHeight` is draped:
+ * the road ribbons are flat, so `sampleNormal` stays the smooth terrain normal — draping it too would spoof
+ * a near-vertical slope at every curb edge and trip slope-slide.
+ * @internal — reached through `environment({ roads })`; not called directly by games.
+ */
+export function roadDrapedField(base: TerrainField, roads: readonly RoadEnvironmentDescriptor[]): TerrainField {
+  if (roads.length === 0) return base;
+  const sampleHeight = (x: number, z: number): number => {
+    let lift = 0;
+    for (const road of roads) {
+      if (road.elevation > lift && isOnRoad(road.path, road.width, x, z)) lift = road.elevation;
+    }
+    return base.sampleHeight(x, z) + lift;
+  };
+  return {
+    sampleHeight,
+    sampleNormal: base.sampleNormal,
+    ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
+    ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
+  };
+}
+
+/**
+ * The full ground field for an environment world: base `terrain` composed with any `islands`, then
+ * any authored `sculpt` snapshot, then any `clearings`, then any `roads` draped on top — so an
+ * editor-sculpted heightfield drives both the rendered mesh and player collision, gameplay spots
+ * stay level, and anything grounded on a road stands on the drawn asphalt rather than the bare
+ * terrain beneath it, through the one seam every consumer already reads.
+ * @internal
+ */
 export function resolveEnvironmentField(feature: EnvironmentWorldFeature): TerrainField {
   const base = feature.terrain === undefined ? null : resolveTerrainField(feature.terrain);
   const composed =
@@ -411,9 +447,13 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
       ? base ?? flatField()
       : composeIslandFields(base, feature.islands);
   const sculpted = feature.sculpt === undefined ? composed : sculptedField(composed, feature.sculpt);
-  return feature.clearings === undefined || feature.clearings.length === 0
-    ? sculpted
-    : flattenFieldAround(sculpted, feature.clearings);
+  const cleared =
+    feature.clearings === undefined || feature.clearings.length === 0
+      ? sculpted
+      : flattenFieldAround(sculpted, feature.clearings);
+  return feature.roads === undefined || feature.roads.length === 0
+    ? cleared
+    : roadDrapedField(cleared, feature.roads);
 }
 
 export interface TerrainSlopeSample {

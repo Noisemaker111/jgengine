@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import type { TerrainMaterialMaps } from "./features";
-import { environment, island, terrain } from "./features";
+import { environment, island, road, terrain } from "./features";
+import { buildRoadRibbon } from "./roads";
 import {
   arenaField,
   composeIslandFields,
@@ -508,6 +509,37 @@ describe("terrain field", () => {
     }
     expect(resolved.sampleHeight(50, 50)).toBe(7);
     expect(resolved.sampleHeight(0, 0)).toBe(0);
+  });
+
+  test("ground field drapes road elevation so a body on a road stands on the road surface, not sunk terrain", () => {
+    const base = terrain({ heightField: () => 1.2 });
+    const paved = road({ path: [[-40, 0], [40, 0]], width: 9, elevation: 0.16 });
+    const world = environment({ terrain: base, roads: [paved] });
+    const ground = resolveEnvironmentField(world);
+    const bare = resolveEnvironmentField(environment({ terrain: base }));
+
+    // On the road centerline the ground snaps to the drawn road surface (terrain + elevation), not bare terrain.
+    expect(ground.sampleHeight(0, 0)).toBeCloseTo(1.2 + 0.16, 6);
+    // The rendered ribbon and the ground field now agree on the surface height at the same point.
+    const ribbon = buildRoadRibbon(paved.path, paved.width, (x, z) => bare.sampleHeight(x, z), {
+      elevation: paved.elevation,
+    });
+    // Ribbon vertex y-values (index*6 + 1 / + 4) all sit at 1.36 over flat terrain — the value the player must match.
+    expect(ribbon.positions[1]).toBeCloseTo(ground.sampleHeight(0, 0), 6);
+    // Off the road (beyond half-width) the drape is gone: bare terrain, no phantom curb.
+    expect(ground.sampleHeight(0, 20)).toBeCloseTo(1.2, 6);
+    // Normals stay smooth terrain normals — the flat road must not spoof a slope at its curb.
+    expect(ground.sampleNormal(0, 0)).toEqual(bare.sampleNormal(0, 0));
+  });
+
+  test("overlapping roads drape the highest elevation at an intersection", () => {
+    const base = terrain({ heightField: () => 0 });
+    const ns = road({ path: [[0, -40], [0, 40]], width: 9, elevation: 0.08 });
+    const ew = road({ path: [[-40, 0], [40, 0]], width: 9, elevation: 0.16 });
+    const ground = resolveEnvironmentField(environment({ terrain: base, roads: [ns, ew] }));
+    expect(ground.sampleHeight(0, 0)).toBeCloseTo(0.16, 6);
+    expect(ground.sampleHeight(0, 20)).toBeCloseTo(0.08, 6);
+    expect(ground.sampleHeight(20, 0)).toBeCloseTo(0.16, 6);
   });
 
   test("resolveTerrainDetail leaves material undefined when no texture is configured", () => {

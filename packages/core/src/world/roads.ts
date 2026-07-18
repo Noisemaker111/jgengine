@@ -132,15 +132,63 @@ export function buildRoadRibbon(
   return { positions, indices };
 }
 
+/** A circular exclusion zone: dashes whose midpoint falls inside are dropped (e.g. junction patches). */
+export interface DashExclusion {
+  center: RoadPoint;
+  radius: number;
+}
+
+/**
+ * Build a flat, ground-draped disc patch centered on `center` — the welded junction surface that
+ * covers crossing road ribbons so they read as one intersection instead of stacking/z-fighting.
+ * A triangle fan of `segments` sides (default 16), every vertex draped at `sampleHeight + elevation`.
+ * Pure geometry; the shell meshes the result with the asphalt material.
+ */
+export function buildJunctionPatch(
+  center: RoadPoint,
+  radius: number,
+  sampleHeight: (x: number, z: number) => number,
+  options: { elevation?: number; segments?: number } = {},
+): RoadRibbon {
+  const elevation = options.elevation ?? 0.08;
+  const segments = Math.max(3, Math.floor(options.segments ?? 16));
+  if (radius <= 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) };
+  const [cx, cz] = center;
+  // Center vertex + one ring vertex per segment.
+  const positions = new Float32Array((segments + 1) * 3);
+  positions[0] = cx;
+  positions[1] = sampleHeight(cx, cz) + elevation;
+  positions[2] = cz;
+  for (let i = 0; i < segments; i += 1) {
+    const angle = (i / segments) * Math.PI * 2;
+    const x = cx + Math.cos(angle) * radius;
+    const z = cz + Math.sin(angle) * radius;
+    const base = (i + 1) * 3;
+    positions[base] = x;
+    positions[base + 1] = sampleHeight(x, z) + elevation;
+    positions[base + 2] = z;
+  }
+  const indices = new Uint32Array(segments * 3);
+  for (let i = 0; i < segments; i += 1) {
+    indices[i * 3] = 0;
+    indices[i * 3 + 1] = i + 1;
+    indices[i * 3 + 2] = ((i + 1) % segments) + 1;
+  }
+  return { positions, indices };
+}
+
 /**
  * Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line,
  * `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back
- * through {@link buildRoadRibbon} with a thin width to mesh the dashes.
+ * through {@link buildRoadRibbon} with a thin width to mesh the dashes. Pass `exclude` circles
+ * (junction patches) to interrupt the center line through intersections — any dash whose midpoint
+ * lands inside an exclusion is dropped.
  */
 export function dashSegments(
   path: readonly RoadPoint[],
   dashLength = 3,
   gapLength = 3,
+  exclude: readonly DashExclusion[] = [],
 ): readonly (readonly RoadPoint[])[] {
   if (path.length < 2 || dashLength <= 0 || gapLength < 0) return [];
   const cumulative: number[] = [0];
@@ -168,7 +216,27 @@ export function dashSegments(
   for (let start = 0; start < total; start += period) {
     const end = Math.min(total, start + dashLength);
     if (end - start < 1e-6) break;
-    dashes.push([pointAt(start), pointAt(end)]);
+    const a = pointAt(start);
+    const b = pointAt(end);
+    if (exclude.length > 0) {
+      const mx = (a[0] + b[0]) / 2;
+      const mz = (a[1] + b[1]) / 2;
+      let excluded = false;
+      for (let e = 0; e < exclude.length; e += 1) {
+        const zone = exclude[e]!;
+        const dx = mx - zone.center[0];
+        const dz = mz - zone.center[1];
+        if (dx * dx + dz * dz <= zone.radius * zone.radius) {
+          excluded = true;
+          break;
+        }
+      }
+      if (excluded) {
+        if (period <= 0) break;
+        continue;
+      }
+    }
+    dashes.push([a, b]);
     if (period <= 0) break;
   }
   return dashes;
