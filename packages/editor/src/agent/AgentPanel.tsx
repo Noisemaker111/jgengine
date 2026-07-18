@@ -49,9 +49,13 @@ function buildEndpoint(url: string, apiKey: string): AgentEndpoint {
 export function AgentPanel({
   api,
   onClose,
+  embedded = false,
 }: {
   api: EditorHostApi;
-  onClose: () => void;
+  /** Close affordance for the side-dock variant; omit when the host owns dismissal. */
+  onClose?: () => void;
+  /** Fill the parent (bottom-dock tab) instead of rendering the resizable right aside. */
+  embedded?: boolean;
 }) {
   const stored = useMemo(() => readStoredConfig(), []);
   const [url, setUrl] = useState(stored.url);
@@ -140,7 +144,13 @@ export function AgentPanel({
   const envHint = resolveAgentEndpointConfig();
 
   return (
-    <aside className="pointer-events-auto flex w-80 min-w-64 max-w-[48vw] resize-x flex-col overflow-hidden border-l border-white/[0.08] bg-[#0d0f13]/95 backdrop-blur-md">
+    <aside
+      className={
+        embedded
+          ? "pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden"
+          : "pointer-events-auto flex w-80 min-w-64 max-w-[48vw] resize-x flex-col overflow-hidden border-l border-white/[0.08] bg-[#0d0f13]/95 backdrop-blur-md"
+      }
+    >
       <div className="flex items-center gap-2 border-b border-white/[0.08] px-2 py-2">
         <div className={MICRO}>Agent</div>
         <span
@@ -156,9 +166,11 @@ export function AgentPanel({
         <button type="button" className={`${BTN} ml-auto text-[10px]`} onClick={() => setShowConfig((v) => !v)}>
           Config
         </button>
-        <button type="button" className="rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={onClose} aria-label="Close agent panel">
-          ×
-        </button>
+        {onClose !== undefined ? (
+          <button type="button" className="rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={onClose} aria-label="Close agent panel">
+            ×
+          </button>
+        ) : null}
       </div>
 
       {showConfig ? (

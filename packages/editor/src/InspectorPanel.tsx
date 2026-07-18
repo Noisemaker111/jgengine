@@ -1,9 +1,11 @@
+import { useState } from "react";
+
 import {
   collectDescendants,
   editorParentOf,
   findEditorNote,
   findEditorPath,
-  type EditorPath,
+  isEditorObjectLocked,
   type EditorSession,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
@@ -19,10 +21,17 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 import { TriggerInspector } from "./TriggerInspector";
+import type { EditorHostApi } from "./session";
 import type { EditorUiStore } from "./uiStore";
+import { TERRAIN_MATERIALS } from "./uiStore";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
-import { INPUT, MICRO } from "./chromeStyles";
+import { INPUT } from "./chromeStyles";
 import { NumberField } from "./chromeFields";
+import { AxisNumberField, FieldRow, SectionAction } from "./shell/fields";
+import { Icon, kindIcon } from "./shell/icons";
+import type { InspectorTab } from "./shell/layoutStore";
+import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
+import { CollapsibleSection, EmptyState, IconButton, PanelTabs } from "./shell/ui";
 
 function VegetationFields({
   volume,
@@ -38,8 +47,7 @@ function VegetationFields({
   const sliderMax = settings.item === "grass" ? 12 : 1;
   const estimated = Math.floor(areaM2 * settings.density);
   return (
-    <div className="space-y-2 rounded-lg border border-emerald-400/15 bg-emerald-500/[0.06] p-2.5">
-      <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300">Vegetation</div>
+    <div className="space-y-2">
       <label className="flex items-center justify-between gap-2">
         <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">item</span>
         <input
@@ -98,7 +106,7 @@ function volumeObject(volume: EditorVolume): SceneKindObject {
   };
 }
 
-function pathObject(path: EditorPath): SceneKindObject {
+function pathObject(path: NonNullable<ReturnType<typeof findEditorPath>>): SceneKindObject {
   return { id: path.id, kind: path.kind, points: path.points.map((point) => ({ x: point.x, y: point.y, z: point.z })), ...(path.meta === undefined ? {} : { meta: path.meta }) };
 }
 
@@ -140,9 +148,9 @@ function ClearanceField({
 }) {
   const value = typeof meta?.["clearance"] === "number" ? (meta["clearance"] as number) : 0;
   return (
-    <div className="space-y-1" title="Radius (m) foliage stays clear of and terrain flattens under; 0 = no clearance">
-      <NumberField label="clearance m" step={0.5} value={value} onCommit={(next) => onMeta({ clearance: Math.max(0, next) }, "clearance")} />
-    </div>
+    <FieldRow label="Clearance" title="Radius (m) foliage stays clear of and terrain flattens under; 0 = no clearance">
+      <AxisNumberField label="m" step={0.5} value={value} onCommit={(next) => onMeta({ clearance: Math.max(0, next) }, "clearance")} />
+    </FieldRow>
   );
 }
 
@@ -160,11 +168,11 @@ function ParentField({ session, id }: { session: EditorSession; id: string }) {
     ...document.annotations.map((n) => ({ id: n.id, label: n.text.slice(0, 30) || n.id })),
   ].filter((entry) => !banned.has(entry.id));
   return (
-    <label className="flex items-center justify-between gap-2">
-      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">parent</span>
+    <FieldRow label="Parent">
       <select
-        className={`w-40 ${INPUT}`}
+        className={`h-6.5 w-full min-w-0 px-1.5 ${INPUT_CLS}`}
         value={current}
+        aria-label="Parent object"
         onChange={(event) => session.dispatch({ type: "setParent", ids: [id], parentId: event.target.value === "" ? null : event.target.value })}
       >
         <option value="">— none (root) —</option>
@@ -172,7 +180,7 @@ function ParentField({ session, id }: { session: EditorSession; id: string }) {
           <option key={entry.id} value={entry.id}>{entry.label}</option>
         ))}
       </select>
-    </label>
+    </FieldRow>
   );
 }
 
@@ -188,44 +196,223 @@ function KindColorFields({
   onColor: (color: string | undefined) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <label className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">kind</span>
+    <div className="space-y-2">
+      <FieldRow label="Kind">
         <input
-          className={`w-full min-w-0 ${INPUT}`}
+          className={`h-6.5 w-full min-w-0 px-2 ${INPUT_CLS}`}
           value={kind}
+          aria-label="Object kind"
           onChange={(event) => {
             const next = event.target.value.trim();
             if (next.length > 0) onKind(next);
           }}
         />
-      </label>
-      <input
-        type="color"
-        className="h-7 w-9 shrink-0 cursor-pointer rounded-md border border-white/10 bg-black/40"
-        title="Display color"
-        value={color ?? "#ffffff"}
-        onChange={(event) => onColor(event.target.value)}
+      </FieldRow>
+      <FieldRow label="Color">
+        <input
+          type="color"
+          className="h-6.5 w-9 shrink-0 cursor-pointer rounded-[5px] border border-white/10 bg-black/40"
+          title="Display color"
+          aria-label="Display color"
+          value={color ?? "#ffffff"}
+          onChange={(event) => onColor(event.target.value)}
+        />
+        {color !== undefined ? (
+          <SectionAction label="Reset to kind default color" onClick={() => onColor(undefined)}>
+            reset
+          </SectionAction>
+        ) : (
+          <span className="text-[10px] text-neutral-600">kind default</span>
+        )}
+      </FieldRow>
+    </div>
+  );
+}
+
+/** Header card identifying the selected object: type glyph, editable name, kind, id, lock state. */
+function ObjectHeader({
+  kind,
+  id,
+  label,
+  placeholder,
+  locked,
+  onLabel,
+}: {
+  kind: string;
+  id: string;
+  label: string;
+  placeholder: string;
+  locked: boolean;
+  onLabel?: (value: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[7px] border border-white/[0.08] bg-white/[0.03] text-cyan-300">
+        <Icon name={kindIcon(kind)} size={17} />
+      </div>
+      <div className="min-w-0 flex-1">
+        {onLabel !== undefined ? (
+          <input
+            className={`h-6.5 w-full px-2 font-medium text-cyan-100 ${INPUT_CLS}`}
+            value={label}
+            placeholder={placeholder}
+            aria-label="Object name"
+            onChange={(event) => onLabel(event.target.value)}
+          />
+        ) : (
+          <div className="truncate text-[12px] font-medium text-cyan-100">{label.length > 0 ? label : placeholder}</div>
+        )}
+        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-neutral-500">
+          <span>{kind}</span>
+          <span className="text-neutral-700">·</span>
+          <span className="truncate" title={id}>{id}</span>
+          {locked ? <Icon name="lock" size={10} className="shrink-0 text-amber-400/80" aria-label="Locked via collection" /> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface SectionState {
+  collapsed: Record<string, boolean>;
+  toggle: (id: string) => void;
+}
+
+function Section({
+  id,
+  title,
+  icon,
+  sections,
+  children,
+  trailing,
+}: {
+  id: string;
+  title: string;
+  icon?: Parameters<typeof CollapsibleSection>[0]["icon"];
+  sections: SectionState;
+  children: React.ReactNode;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <CollapsibleSection
+      title={title}
+      {...(icon === undefined ? {} : { icon })}
+      open={sections.collapsed[id] !== true}
+      onToggle={() => sections.toggle(id)}
+      {...(trailing === undefined ? {} : { trailing })}
+    >
+      {children}
+    </CollapsibleSection>
+  );
+}
+
+/** Materials tab: assign the terrain material palette to the current selection over the real RPC. */
+function MaterialsTab({
+  api,
+  selection,
+  meta,
+}: {
+  api: EditorHostApi | undefined;
+  selection: readonly string[];
+  meta: Record<string, unknown> | undefined;
+}) {
+  const current = typeof meta?.["materialId"] === "string" ? (meta["materialId"] as string) : null;
+  if (selection.length === 0) {
+    return (
+      <EmptyState
+        icon="sphere"
+        title="No selection"
+        description="Select an object to view or assign its material. Chips can also be dragged onto hierarchy rows or the viewport."
       />
-      {color !== undefined ? (
-        <button type="button" className="shrink-0 rounded-md bg-white/[0.04] px-1.5 py-1 text-neutral-400 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" title="Reset to kind default color" onClick={() => onColor(undefined)}>↺</button>
-      ) : null}
+    );
+  }
+  return (
+    <div className="space-y-2.5 p-2.5">
+      <div className="text-[10px] text-neutral-500">
+        Assigned material
+        <div className="mt-1 flex items-center gap-2 rounded-[6px] border border-white/[0.07] bg-white/[0.02] px-2.5 py-2 text-[12px] text-neutral-200">
+          {current !== null ? (
+            <>
+              <span
+                className="h-3.5 w-3.5 rounded-full ring-1 ring-inset ring-white/20"
+                style={{ backgroundColor: TERRAIN_MATERIALS.find((material) => material.id === current)?.color ?? "#888" }}
+              />
+              {current}
+            </>
+          ) : (
+            <span className="text-neutral-500">none — kind default appearance</span>
+          )}
+        </div>
+      </div>
+      <div className="text-[10px] text-neutral-500">Palette</div>
+      <div className="flex flex-wrap gap-1.5">
+        {TERRAIN_MATERIALS.map((material) => (
+          <button
+            key={material.id}
+            type="button"
+            disabled={api === undefined}
+            onClick={() => api?.handle({ method: "assign_material", ids: [...selection], materialId: material.id })}
+            className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] transition-colors ${FOCUS_RING} ${
+              current === material.id
+                ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-100"
+                : "border-white/[0.08] bg-[#191d24] text-neutral-300 hover:bg-[#1f242d]"
+            }`}
+            title={`Assign ${material.label} to selection`}
+          >
+            <span className="h-3 w-3 rounded-full ring-1 ring-inset ring-white/20" style={{ backgroundColor: material.color }} />
+            {material.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
 /**
- * The right-hand inspector as an isolated, selector-subscribed panel. It reads only the
- * document + selection slices (via `useStoreSelector`) and the ui store's `pathPoint` slice, so
- * UI-only churn (gizmo mode, snapping, active tool) or unrelated document edits outside the
- * selected object's slice no longer rerender it on `EditorChrome`'s own render tick.
- * @internal — mounted by `EditorChrome` as a right-aside panel.
+ * The right-hand inspector as an isolated, selector-subscribed panel: tabbed (Inspector /
+ * Components / Materials), with collapsible component cards over the live selected object.
+ * Reads only the document + selection slices (via `useStoreSelector`) and the ui store's
+ * `pathPoint` slice, so UI-only churn never rerenders it on `EditorChrome`'s render tick.
+ * @internal — mounted by `EditorChrome` inside the right dock.
  */
-export function InspectorPanel({ session, ui, onClose }: { session: EditorSession; ui: EditorUiStore; onClose: () => void }) {
+export function InspectorPanel({
+  session,
+  ui,
+  onClose,
+  api,
+  tab,
+  onSelectTab,
+  collapsed,
+  onToggleSection,
+}: {
+  session: EditorSession;
+  ui: EditorUiStore;
+  onClose?: () => void;
+  /** Host API for RPC-backed actions (material assignment, camera). */
+  api?: EditorHostApi;
+  /** Controlled active tab; omit for local state. */
+  tab?: InspectorTab;
+  onSelectTab?: (tab: InspectorTab) => void;
+  /** Controlled section collapse state (persisted by the shell layout store). */
+  collapsed?: Record<string, boolean>;
+  onToggleSection?: (id: string) => void;
+}) {
   const document = useStoreSelector(session, (state) => state.document);
   const selection = useStoreSelector(session, (state) => state.selection, shallowArrayEqual);
   const pathPoint = useStoreSelector(ui, (state) => state.pathPoint);
   const ctx = useGameContext();
+  const [localTab, setLocalTab] = useState<InspectorTab>("inspector");
+  const [localCollapsed, setLocalCollapsed] = useState<Record<string, boolean>>({});
+  const [linkedExtents, setLinkedExtents] = useState(false);
+
+  const activeTab = tab ?? localTab;
+  const selectTab = onSelectTab ?? setLocalTab;
+  const sections: SectionState = {
+    collapsed: collapsed ?? localCollapsed,
+    toggle:
+      onToggleSection ??
+      ((id: string) => setLocalCollapsed((previous) => ({ ...previous, [id]: !(previous[id] === true) }))),
+  };
 
   const selectedId = selection[0];
   const selectedMarker = document.markers.find((marker) => marker.id === selectedId);
@@ -241,144 +428,448 @@ export function InspectorPanel({ session, ui, onClose }: { session: EditorSessio
   const liveEntity = documentMiss ? ctx.scene.entity.get(selectedId) : null;
   const liveObject = documentMiss && liveEntity === null ? ctx.scene.object.get(selectedId) : null;
 
-  return (
-    <aside className="pointer-events-auto flex w-72 min-w-56 max-w-[42vw] resize-x flex-col overflow-auto border-l border-white/[0.08] bg-[#0d0f13]/95 p-3 backdrop-blur-md" style={{ direction: "rtl" }}>
-      <div className="flex-1" style={{ direction: "ltr" }}>
-        <div className="flex items-center"><div className={MICRO}>Inspector</div><button type="button" className="ml-auto rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={onClose} aria-label="Close inspector panel">×</button></div>
-        {selection.length > 1 ? (
-          <div className="mt-3 space-y-2">
-            <div className="text-cyan-200">{selection.length} objects selected</div>
-            <div className="max-h-32 space-y-0.5 overflow-auto text-neutral-500">
-              {selection.map((id) => <div key={id} className="truncate">{id}</div>)}
-            </div>
-            <div className="flex gap-2">
-              <button type="button" className="rounded-md bg-white/[0.07] px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15" onClick={() => session.dispatch({ type: "duplicate", ids: selection })}>Duplicate</button>
-              <button type="button" className="rounded-md bg-rose-500/15 px-2 py-1 text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25" onClick={() => session.dispatch({ type: "removeMany", ids: selection })}>Delete all</button>
-            </div>
+  const selectedMeta = selectedMarker?.meta ?? selectedVolume?.meta ?? selectedPath?.meta;
+
+  let body: React.ReactNode = null;
+
+  if (activeTab === "materials") {
+    body = <MaterialsTab api={api} selection={selection} meta={selectedMeta} />;
+  } else if (selection.length > 1) {
+    body = (
+      <div className="space-y-2.5 p-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[7px] border border-white/[0.08] bg-white/[0.03] text-cyan-300">
+            <Icon name="layers" size={17} />
           </div>
-        ) : null}
-        {selection.length <= 1 && selectedMarker !== undefined ? (
-          <div className="mt-3 space-y-2">
-            <input className={`w-full ${INPUT} font-medium text-cyan-200`} value={selectedMarker.label ?? ""} placeholder={selectedMarker.id} onChange={(event) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { label: event.target.value } }, { coalesce: `label:${selectedMarker.id}` })} />
-            <div className="text-neutral-500">{selectedMarker.kind} · {selectedMarker.id}</div>
-            <KindColorFields
-              kind={selectedMarker.kind}
-              color={selectedMarker.color}
-              onKind={(kind) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { kind } }, { coalesce: `kind:${selectedMarker.id}` })}
-              onColor={(color) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { color } }, { coalesce: `color:${selectedMarker.id}` })}
-            />
-            {(["x", "y", "z"] as const).map((axis) => (
-              <NumberField key={axis} label={axis} value={selectedMarker.position[axis]} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, position: { ...selectedMarker.position, [axis]: value } }, { coalesce: `pos:${axis}:${selectedMarker.id}` })} />
-            ))}
-            <NumberField label="rot°" step={5} value={Math.round(((selectedMarker.rotationY ?? 0) * 180) / Math.PI)} onCommit={(value) => session.dispatch({ type: "setTransform", id: selectedMarker.id, rotationY: (value * Math.PI) / 180 }, { coalesce: `rot:${selectedMarker.id}` })} />
-            <ClearanceField meta={selectedMarker.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })} />
-            <TriggerInspector
-              target="marker"
-              meta={selectedMarker.meta}
-              onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })}
-            />
-            <ParentField session={session} id={selectedMarker.id} />
-            {isSceneKind(selectedMarker.kind) ? (
-              <KindInspector
-                object={markerObject(selectedMarker)}
-                meta={selectedMarker.meta}
-                onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })}
-              />
-            ) : null}
-            <GeneratorInspector
-              meta={selectedMarker.meta}
-              onMeta={(patch, coalesce) => session.dispatch({ type: "setMarker", id: selectedMarker.id, patch: { meta: { ...selectedMarker.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedMarker.id}` })}
-            />
-            {selectedMarker.meta !== undefined ? <pre className="max-h-48 overflow-auto rounded-md border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">{JSON.stringify(selectedMarker.meta, null, 2)}</pre> : null}
+          <div>
+            <div className="text-[12px] font-medium text-neutral-100">{selection.length} objects selected</div>
+            <div className="text-[10px] text-neutral-500">Shared actions apply to the whole selection</div>
           </div>
-        ) : null}
-        {selection.length <= 1 && selectedVolume !== undefined ? (
-          <div className="mt-3 space-y-2">
-            <input className={`w-full ${INPUT} font-medium text-cyan-200`} value={selectedVolume.label ?? ""} placeholder={selectedVolume.id} onChange={(event) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { label: event.target.value } }, { coalesce: `label:${selectedVolume.id}` })} />
-            <div className="text-neutral-500">{selectedVolume.kind} · {selectedVolume.shape}</div>
-            <KindColorFields
-              kind={selectedVolume.kind}
-              color={selectedVolume.color}
-              onKind={(kind) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { kind } }, { coalesce: `kind:${selectedVolume.id}` })}
-              onColor={(color) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { color } }, { coalesce: `color:${selectedVolume.id}` })}
-            />
-            {(["x", "y", "z"] as const).map((axis) => (
-              <NumberField key={axis} label={axis} value={selectedVolume.center[axis]} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { center: { ...selectedVolume.center, [axis]: value } } }, { coalesce: `center:${axis}:${selectedVolume.id}` })} />
-            ))}
-            {selectedVolume.shape !== "box" ? (
-              <NumberField label="radius" value={selectedVolume.radius ?? 5} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { radius: Math.max(0.5, value) } }, { coalesce: `radius:${selectedVolume.id}` })} />
-            ) : null}
-            {selectedVolume.shape === "cylinder" ? (
-              <NumberField label="height" value={selectedVolume.height ?? 4} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { height: Math.max(0.5, value) } }, { coalesce: `height:${selectedVolume.id}` })} />
-            ) : null}
-            {selectedVolume.shape === "box" ? (
-              (["x", "y", "z"] as const).map((axis) => (
-                <NumberField key={axis} label={`half ${axis}`} value={selectedVolume.halfExtents?.[axis] ?? 5} onCommit={(value) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { halfExtents: { x: selectedVolume.halfExtents?.x ?? 5, y: selectedVolume.halfExtents?.y ?? 5, z: selectedVolume.halfExtents?.z ?? 5, [axis]: Math.max(0.5, value) } } }, { coalesce: `he:${axis}:${selectedVolume.id}` })} />
-              ))
-            ) : null}
-            <ClearanceField meta={selectedVolume.meta} onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })} />
-            <TriggerInspector
-              target="volume"
-              meta={selectedVolume.meta}
-              onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
-            />
-            <ParentField session={session} id={selectedVolume.id} />
-            <VegetationFields
-              volume={selectedVolume}
-              onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
-            />
-            {isSceneKind(selectedVolume.kind) ? (
-              <KindInspector
-                object={volumeObject(selectedVolume)}
-                meta={selectedVolume.meta}
-                onMeta={(patch, coalesce) => session.dispatch({ type: "setVolume", id: selectedVolume.id, patch: { meta: { ...selectedVolume.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedVolume.id}` })}
-              />
-            ) : null}
-          </div>
-        ) : null}
-        {selection.length <= 1 && selectedPath !== undefined ? (
-          <div className="mt-3 space-y-2">
-            <input className={`w-full ${INPUT} font-medium text-cyan-200`} value={selectedPath.label ?? ""} placeholder={selectedPath.id} onChange={(event) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { label: event.target.value } }, { coalesce: `label:${selectedPath.id}` })} />
-            <div className="text-neutral-500">{selectedPath.kind} · {selectedPath.points.length} points</div>
-            <KindColorFields
-              kind={selectedPath.kind}
-              color={selectedPath.color}
-              onKind={(kind) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { kind } }, { coalesce: `kind:${selectedPath.id}` })}
-              onColor={(color) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { color } }, { coalesce: `color:${selectedPath.id}` })}
-            />
-            <NumberField label="width" value={selectedPath.width ?? 4} onCommit={(value) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { width: Math.max(0.5, value) } }, { coalesce: `width:${selectedPath.id}` })} />
-            {pathPoint !== null && pathPoint.pathId === selectedPath.id ? (
-              <div className="space-y-2">
-                <div className="text-neutral-400">Point {pathPoint.index + 1}/{selectedPath.points.length}</div>
-                <div className="flex gap-2">
-                  <button type="button" className="rounded-md bg-white/[0.07] px-2 py-1 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/15" onClick={() => { const at = pathPoint!.index; const points = [...selectedPath.points.slice(0, at + 1), { ...selectedPath.points[at]! }, ...selectedPath.points.slice(at + 1)]; session.dispatch({ type: "setPath", id: selectedPath.id, patch: { points } }); }}>Insert point</button>
-                  <button type="button" className="rounded-md bg-rose-500/15 px-2 py-1 text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25 disabled:opacity-40" disabled={selectedPath.points.length <= 2} onClick={() => { const points = selectedPath.points.filter((_, index) => index !== pathPoint!.index); ui.patch({ pathPoint: null }); session.dispatch({ type: "setPath", id: selectedPath.id, patch: { points } }); }}>Delete point</button>
-                </div>
-              </div>
-            ) : <div className="text-[10px] text-neutral-500">Click a vertex sphere to edit points.</div>}
-            {isSceneKind(selectedPath.kind) ? (
-              <KindInspector
-                object={pathObject(selectedPath)}
-                meta={selectedPath.meta}
-                onMeta={(patch, coalesce) => session.dispatch({ type: "setPath", id: selectedPath.id, patch: { meta: { ...selectedPath.meta, ...patch } } }, { coalesce: `${coalesce}:${selectedPath.id}` })}
-              />
-            ) : null}
-            <ParentField session={session} id={selectedPath.id} />
-          </div>
-        ) : null}
-        {selection.length <= 1 && selectedNote !== undefined ? (
-          <div className="mt-3 space-y-2">
-            <div className="text-neutral-500">note · {selectedNote.id}</div>
-            <textarea className={`h-24 w-full ${INPUT} text-neutral-100`} value={selectedNote.text} onChange={(event) => session.dispatch({ type: "setNote", id: selectedNote.id, patch: { text: event.target.value } }, { coalesce: `text:${selectedNote.id}` })} />
-            {(["x", "y", "z"] as const).map((axis) => (
-              <NumberField key={axis} label={axis} value={selectedNote.position[axis]} onCommit={(value) => session.dispatch({ type: "setNote", id: selectedNote.id, patch: { position: { ...selectedNote.position, [axis]: value } } }, { coalesce: `npos:${axis}:${selectedNote.id}` })} />
-            ))}
-          </div>
-        ) : null}
-        {liveEntity !== null ? <div className="mt-3 space-y-1"><div className="text-cyan-200">{liveEntity.name}</div><div className="text-neutral-500">live entity · {liveEntity.role} · {liveEntity.id}</div><div className="text-neutral-400">x {liveEntity.position[0].toFixed(1)} · y {liveEntity.position[1].toFixed(1)} · z {liveEntity.position[2].toFixed(1)}</div><div className="text-[10px] text-neutral-500">Live world object — edit its source data to move it permanently.</div></div> : null}
-        {liveObject !== null ? <div className="mt-3 space-y-1"><div className="text-cyan-200">{liveObject.catalogId}</div><div className="text-neutral-500">live object · {liveObject.instanceId}</div><div className="text-neutral-400">x {liveObject.position[0].toFixed(1)} · y {liveObject.position[1].toFixed(1)} · z {liveObject.position[2].toFixed(1)}</div><div className="text-[10px] text-neutral-500">Live world object — edit its source data to move it permanently.</div></div> : null}
-        {selection.length === 0 && liveEntity === null && liveObject === null ? <div className="mt-3 text-neutral-500">Select an authored or live world object, or + Add to place new ones.</div> : null}
+        </div>
+        <div className="max-h-36 space-y-0.5 overflow-auto rounded-[6px] border border-white/[0.06] bg-black/20 p-1.5 text-[10px] text-neutral-500">
+          {selection.map((id) => (
+            <div key={id} className="truncate">{id}</div>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            className={`flex-1 rounded-[5px] border border-white/[0.07] bg-[#191d24] px-2 py-1.5 text-[11px] text-neutral-200 transition-colors hover:bg-[#1f242d] ${FOCUS_RING}`}
+            onClick={() => session.dispatch({ type: "duplicate", ids: selection })}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            className={`flex-1 rounded-[5px] border border-rose-400/25 bg-rose-500/15 px-2 py-1.5 text-[11px] text-rose-200 transition-colors hover:bg-rose-500/25 ${FOCUS_RING}`}
+            onClick={() => session.dispatch({ type: "removeMany", ids: selection })}
+          >
+            Delete all
+          </button>
+        </div>
       </div>
-    </aside>
+    );
+  } else if (selectedMarker !== undefined) {
+    const marker = selectedMarker;
+    const onMeta = (patch: Record<string, unknown>, coalesce: string) =>
+      session.dispatch({ type: "setMarker", id: marker.id, patch: { meta: { ...marker.meta, ...patch } } }, { coalesce: `${coalesce}:${marker.id}` });
+    const componentCards = (
+      <>
+        {isSceneKind(marker.kind) ? (
+          <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
+            <KindInspector object={markerObject(marker)} meta={marker.meta} onMeta={onMeta} />
+          </Section>
+        ) : null}
+        <Section id="trigger" title="Trigger" icon="target" sections={sections}>
+          <TriggerInspector target="marker" meta={marker.meta} onMeta={onMeta} />
+        </Section>
+        <Section id="generator" title="Generator" icon="cube" sections={sections}>
+          <GeneratorInspector meta={marker.meta} onMeta={onMeta} />
+          {typeof marker.meta?.["assetId"] !== "string" ? (
+            <div className="text-[10px] text-neutral-600">Not a generated asset.</div>
+          ) : null}
+        </Section>
+      </>
+    );
+    body = (
+      <div className="space-y-2 p-2.5">
+        <ObjectHeader
+          kind={marker.kind}
+          id={marker.id}
+          label={marker.label ?? ""}
+          placeholder={marker.id}
+          locked={isEditorObjectLocked(document, marker.id)}
+          onLabel={(value) => session.dispatch({ type: "setMarker", id: marker.id, patch: { label: value } }, { coalesce: `label:${marker.id}` })}
+        />
+        {activeTab === "inspector" ? (
+          <>
+            <Section
+              id="transform"
+              title="Transform"
+              icon="move"
+              sections={sections}
+              trailing={
+                <SectionAction
+                  label="Reset position to origin"
+                  onClick={() => session.dispatch({ type: "setTransform", id: marker.id, position: { x: 0, y: 0, z: 0 } })}
+                >
+                  reset
+                </SectionAction>
+              }
+            >
+              <div className="space-y-1.5">
+                <FieldRow label="Position">
+                  {(["x", "y", "z"] as const).map((axis) => (
+                    <AxisNumberField
+                      key={axis}
+                      axis={axis}
+                      label={axis}
+                      step={0.5}
+                      value={marker.position[axis]}
+                      onCommit={(value) =>
+                        session.dispatch(
+                          { type: "setTransform", id: marker.id, position: { ...marker.position, [axis]: value } },
+                          { coalesce: `pos:${axis}:${marker.id}` },
+                        )
+                      }
+                    />
+                  ))}
+                </FieldRow>
+                <FieldRow label="Rotation">
+                  <AxisNumberField
+                    axis="y"
+                    label="y°"
+                    step={5}
+                    precision={1}
+                    value={Math.round((((marker.rotationY ?? 0) * 180) / Math.PI) * 10) / 10}
+                    onCommit={(value) =>
+                      session.dispatch(
+                        { type: "setTransform", id: marker.id, rotationY: (value * Math.PI) / 180 },
+                        { coalesce: `rot:${marker.id}` },
+                      )
+                    }
+                  />
+                </FieldRow>
+              </div>
+            </Section>
+            <Section id="appearance" title="Appearance" icon="sphere" sections={sections}>
+              <KindColorFields
+                kind={marker.kind}
+                color={marker.color}
+                onKind={(kind) => session.dispatch({ type: "setMarker", id: marker.id, patch: { kind } }, { coalesce: `kind:${marker.id}` })}
+                onColor={(color) => session.dispatch({ type: "setMarker", id: marker.id, patch: { color } }, { coalesce: `color:${marker.id}` })}
+              />
+            </Section>
+            <Section id="placement" title="Placement" icon="pin" sections={sections}>
+              <div className="space-y-2">
+                <ClearanceField meta={marker.meta} onMeta={onMeta} />
+                <ParentField session={session} id={marker.id} />
+              </div>
+            </Section>
+            {marker.meta !== undefined ? (
+              <Section id="meta" title="Raw metadata" icon="script" sections={sections}>
+                <pre className="max-h-48 overflow-auto rounded-[5px] border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">
+                  {JSON.stringify(marker.meta, null, 2)}
+                </pre>
+              </Section>
+            ) : null}
+          </>
+        ) : (
+          componentCards
+        )}
+      </div>
+    );
+  } else if (selectedVolume !== undefined) {
+    const volume = selectedVolume;
+    const onMeta = (patch: Record<string, unknown>, coalesce: string) =>
+      session.dispatch({ type: "setVolume", id: volume.id, patch: { meta: { ...volume.meta, ...patch } } }, { coalesce: `${coalesce}:${volume.id}` });
+    const setExtent = (axis: "x" | "y" | "z", value: number) => {
+      const current = { x: volume.halfExtents?.x ?? 5, y: volume.halfExtents?.y ?? 5, z: volume.halfExtents?.z ?? 5 };
+      const next = linkedExtents
+        ? { x: Math.max(0.5, value), y: Math.max(0.5, value), z: Math.max(0.5, value) }
+        : { ...current, [axis]: Math.max(0.5, value) };
+      session.dispatch({ type: "setVolume", id: volume.id, patch: { halfExtents: next } }, { coalesce: `he:${linkedExtents ? "all" : axis}:${volume.id}` });
+    };
+    const componentCards = (
+      <>
+        {isSceneKind(volume.kind) ? (
+          <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
+            <KindInspector object={volumeObject(volume)} meta={volume.meta} onMeta={onMeta} />
+          </Section>
+        ) : null}
+        <Section id="trigger" title="Trigger" icon="target" sections={sections}>
+          <TriggerInspector target="volume" meta={volume.meta} onMeta={onMeta} />
+        </Section>
+        {readVegetationSettings(volume) !== null ? (
+          <Section id="vegetation" title="Vegetation" icon="terrain" sections={sections}>
+            <VegetationFields volume={volume} onMeta={onMeta} />
+          </Section>
+        ) : null}
+      </>
+    );
+    body = (
+      <div className="space-y-2 p-2.5">
+        <ObjectHeader
+          kind={volume.kind}
+          id={volume.id}
+          label={volume.label ?? ""}
+          placeholder={volume.id}
+          locked={isEditorObjectLocked(document, volume.id)}
+          onLabel={(value) => session.dispatch({ type: "setVolume", id: volume.id, patch: { label: value } }, { coalesce: `label:${volume.id}` })}
+        />
+        {activeTab === "inspector" ? (
+          <>
+            <Section
+              id="transform"
+              title="Transform"
+              icon="move"
+              sections={sections}
+              trailing={
+                volume.shape === "box" ? (
+                  <SectionAction label={linkedExtents ? "Unlink extents" : "Link extents (uniform)"} active={linkedExtents} onClick={() => setLinkedExtents((value) => !value)}>
+                    link
+                  </SectionAction>
+                ) : undefined
+              }
+            >
+              <div className="space-y-1.5">
+                <FieldRow label="Center">
+                  {(["x", "y", "z"] as const).map((axis) => (
+                    <AxisNumberField
+                      key={axis}
+                      axis={axis}
+                      label={axis}
+                      step={0.5}
+                      value={volume.center[axis]}
+                      onCommit={(value) =>
+                        session.dispatch(
+                          { type: "setVolume", id: volume.id, patch: { center: { ...volume.center, [axis]: value } } },
+                          { coalesce: `center:${axis}:${volume.id}` },
+                        )
+                      }
+                    />
+                  ))}
+                </FieldRow>
+                {volume.shape !== "box" ? (
+                  <FieldRow label="Radius">
+                    <AxisNumberField
+                      label="r"
+                      step={0.5}
+                      value={volume.radius ?? 5}
+                      onCommit={(value) => session.dispatch({ type: "setVolume", id: volume.id, patch: { radius: Math.max(0.5, value) } }, { coalesce: `radius:${volume.id}` })}
+                    />
+                  </FieldRow>
+                ) : null}
+                {volume.shape === "cylinder" ? (
+                  <FieldRow label="Height">
+                    <AxisNumberField
+                      label="h"
+                      step={0.5}
+                      value={volume.height ?? 4}
+                      onCommit={(value) => session.dispatch({ type: "setVolume", id: volume.id, patch: { height: Math.max(0.5, value) } }, { coalesce: `height:${volume.id}` })}
+                    />
+                  </FieldRow>
+                ) : null}
+                {volume.shape === "box" ? (
+                  <FieldRow label="Extents">
+                    {(["x", "y", "z"] as const).map((axis) => (
+                      <AxisNumberField
+                        key={axis}
+                        axis={axis}
+                        label={axis}
+                        step={0.5}
+                        value={volume.halfExtents?.[axis] ?? 5}
+                        onCommit={(value) => setExtent(axis, value)}
+                      />
+                    ))}
+                  </FieldRow>
+                ) : null}
+              </div>
+            </Section>
+            <Section id="appearance" title="Appearance" icon="sphere" sections={sections}>
+              <KindColorFields
+                kind={volume.kind}
+                color={volume.color}
+                onKind={(kind) => session.dispatch({ type: "setVolume", id: volume.id, patch: { kind } }, { coalesce: `kind:${volume.id}` })}
+                onColor={(color) => session.dispatch({ type: "setVolume", id: volume.id, patch: { color } }, { coalesce: `color:${volume.id}` })}
+              />
+            </Section>
+            <Section id="placement" title="Placement" icon="pin" sections={sections}>
+              <div className="space-y-2">
+                <ClearanceField meta={volume.meta} onMeta={onMeta} />
+                <ParentField session={session} id={volume.id} />
+              </div>
+            </Section>
+          </>
+        ) : (
+          componentCards
+        )}
+      </div>
+    );
+  } else if (selectedPath !== undefined) {
+    const path = selectedPath;
+    const onMeta = (patch: Record<string, unknown>, coalesce: string) =>
+      session.dispatch({ type: "setPath", id: path.id, patch: { meta: { ...path.meta, ...patch } } }, { coalesce: `${coalesce}:${path.id}` });
+    body = (
+      <div className="space-y-2 p-2.5">
+        <ObjectHeader
+          kind={path.kind}
+          id={path.id}
+          label={path.label ?? ""}
+          placeholder={path.id}
+          locked={isEditorObjectLocked(document, path.id)}
+          onLabel={(value) => session.dispatch({ type: "setPath", id: path.id, patch: { label: value } }, { coalesce: `label:${path.id}` })}
+        />
+        {activeTab === "inspector" ? (
+          <>
+            <Section id="path" title="Path" icon="spline" sections={sections}>
+              <div className="space-y-1.5">
+                <FieldRow label="Width">
+                  <AxisNumberField
+                    label="w"
+                    step={0.5}
+                    value={path.width ?? 4}
+                    onCommit={(value) => session.dispatch({ type: "setPath", id: path.id, patch: { width: Math.max(0.5, value) } }, { coalesce: `width:${path.id}` })}
+                  />
+                </FieldRow>
+                <div className={`text-[10px] text-neutral-500 ${NUMERIC}`}>{path.points.length} points</div>
+                {pathPoint !== null && pathPoint.pathId === path.id ? (
+                  <div className="space-y-1.5 rounded-[5px] border border-white/[0.06] bg-black/20 p-2">
+                    <div className={`text-[10px] text-neutral-400 ${NUMERIC}`}>Point {pathPoint.index + 1}/{path.points.length}</div>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        className={`flex-1 rounded-[5px] border border-white/[0.07] bg-[#191d24] px-2 py-1 text-[10px] text-neutral-200 transition-colors hover:bg-[#1f242d] ${FOCUS_RING}`}
+                        onClick={() => {
+                          const at = pathPoint.index;
+                          const points = [...path.points.slice(0, at + 1), { ...path.points[at]! }, ...path.points.slice(at + 1)];
+                          session.dispatch({ type: "setPath", id: path.id, patch: { points } });
+                        }}
+                      >
+                        Insert point
+                      </button>
+                      <button
+                        type="button"
+                        className={`flex-1 rounded-[5px] border border-rose-400/25 bg-rose-500/15 px-2 py-1 text-[10px] text-rose-200 transition-colors hover:bg-rose-500/25 disabled:opacity-40 ${FOCUS_RING}`}
+                        disabled={path.points.length <= 2}
+                        onClick={() => {
+                          const points = path.points.filter((_, index) => index !== pathPoint.index);
+                          ui.patch({ pathPoint: null });
+                          session.dispatch({ type: "setPath", id: path.id, patch: { points } });
+                        }}
+                      >
+                        Delete point
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-neutral-600">Click a vertex sphere in the viewport to edit points.</div>
+                )}
+              </div>
+            </Section>
+            <Section id="appearance" title="Appearance" icon="sphere" sections={sections}>
+              <KindColorFields
+                kind={path.kind}
+                color={path.color}
+                onKind={(kind) => session.dispatch({ type: "setPath", id: path.id, patch: { kind } }, { coalesce: `kind:${path.id}` })}
+                onColor={(color) => session.dispatch({ type: "setPath", id: path.id, patch: { color } }, { coalesce: `color:${path.id}` })}
+              />
+            </Section>
+            <Section id="placement" title="Placement" icon="pin" sections={sections}>
+              <ParentField session={session} id={path.id} />
+            </Section>
+          </>
+        ) : isSceneKind(path.kind) ? (
+          <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
+            <KindInspector object={pathObject(path)} meta={path.meta} onMeta={onMeta} />
+          </Section>
+        ) : (
+          <EmptyState icon="settings" title="No components" description="This path's kind registers no parameter schema." />
+        )}
+      </div>
+    );
+  } else if (selectedNote !== undefined) {
+    const note = selectedNote;
+    body = (
+      <div className="space-y-2 p-2.5">
+        <ObjectHeader kind="note" id={note.id} label={note.text.slice(0, 32)} placeholder={note.id} locked={false} />
+        <Section id="note" title="Note" icon="note" sections={sections}>
+          <textarea
+            className={`h-24 w-full p-2 ${INPUT_CLS}`}
+            value={note.text}
+            aria-label="Note text"
+            onChange={(event) => session.dispatch({ type: "setNote", id: note.id, patch: { text: event.target.value } }, { coalesce: `text:${note.id}` })}
+          />
+        </Section>
+        <Section id="transform" title="Transform" icon="move" sections={sections}>
+          <FieldRow label="Position">
+            {(["x", "y", "z"] as const).map((axis) => (
+              <AxisNumberField
+                key={axis}
+                axis={axis}
+                label={axis}
+                step={0.5}
+                value={note.position[axis]}
+                onCommit={(value) =>
+                  session.dispatch(
+                    { type: "setNote", id: note.id, patch: { position: { ...note.position, [axis]: value } } },
+                    { coalesce: `npos:${axis}:${note.id}` },
+                  )
+                }
+              />
+            ))}
+          </FieldRow>
+        </Section>
+      </div>
+    );
+  } else if (liveEntity !== null) {
+    body = (
+      <div className="space-y-2 p-2.5">
+        <ObjectHeader kind={liveEntity.role} id={liveEntity.id} label={liveEntity.name} placeholder={liveEntity.id} locked={false} />
+        <Section id="live" title="Live entity" icon="walk" sections={sections}>
+          <div className={`space-y-1 text-[11px] text-neutral-400 ${NUMERIC}`}>
+            <div>x {liveEntity.position[0].toFixed(1)} · y {liveEntity.position[1].toFixed(1)} · z {liveEntity.position[2].toFixed(1)}</div>
+            <div className="text-[10px] text-neutral-600">Read-only live world object — edit its source data to move it permanently.</div>
+          </div>
+        </Section>
+      </div>
+    );
+  } else if (liveObject !== null) {
+    body = (
+      <div className="space-y-2 p-2.5">
+        <ObjectHeader kind="prop" id={liveObject.instanceId} label={liveObject.catalogId} placeholder={liveObject.instanceId} locked={false} />
+        <Section id="live" title="Live object" icon="cube" sections={sections}>
+          <div className={`space-y-1 text-[11px] text-neutral-400 ${NUMERIC}`}>
+            <div>x {liveObject.position[0].toFixed(1)} · y {liveObject.position[1].toFixed(1)} · z {liveObject.position[2].toFixed(1)}</div>
+            <div className="text-[10px] text-neutral-600">Read-only live world object — edit its source data to move it permanently.</div>
+          </div>
+        </Section>
+      </div>
+    );
+  } else {
+    body = (
+      <EmptyState
+        icon="cursor"
+        title="Nothing selected"
+        description="Click an object in the viewport or hierarchy to inspect it, or use Add to place new content."
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <PanelTabs
+        ariaLabel="Inspector tabs"
+        active={activeTab}
+        onSelect={selectTab}
+        tabs={[
+          { id: "inspector", label: "Inspector" },
+          { id: "components", label: "Components" },
+          { id: "materials", label: "Materials" },
+        ]}
+        trailing={onClose !== undefined ? <IconButton icon="close" label="Close inspector" size={12} tone="ghost" onClick={onClose} /> : undefined}
+      />
+      <div className="min-h-0 flex-1 overflow-auto">{body}</div>
+    </div>
   );
 }
