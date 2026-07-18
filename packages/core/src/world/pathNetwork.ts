@@ -202,6 +202,7 @@ function turnAngle(a: PathVec2, b: PathVec2, c: PathVec2): number {
  * are straightened away (deliberate winding only, no micro-wiggle) and corners sharper than `maxRad`
  * are beveled — the corner vertex is replaced by two points pulled back along each leg, which
  * strictly reduces the angle. Endpoints never move, so a graph node stays welded.
+ * @internal
  */
 export function clampTurns(points: readonly PathVec2[], minRad: number, maxRad: number): PathVec2[] {
   if (points.length < 3) return points.map((p) => [p[0], p[1]] as PathVec2);
@@ -534,7 +535,8 @@ function buildCircuit(
 }
 
 /** Decide which topology family the sliders call for. Circuit wins when loops dominate and both
- *  branching and mesh connectivity are low — exactly the "race track" corner of the slider space. */
+ *  branching and mesh connectivity are low — exactly the "race track" corner of the slider space.
+ *  @internal */
 export function pathNetworkMode(rules: PathNetworkRules): PathNetworkMode {
   const score = rules.loopiness * (1 - rules.branching * 0.7) * (1 - rules.connectivity * 0.7);
   return score >= 0.45 ? "circuit" : "net";
@@ -623,6 +625,19 @@ export function buildPathNetwork(
     loop: boolean;
   }
   const chains: Chain[] = [];
+  // In a street net, a chain ends where the road bends hard, so streets read as straight runs (and a
+  // pure grid stays axis-aligned); a circuit chains its whole ring through every gentle corner.
+  const chainSplit = mode === "circuit" ? Math.PI : (55 * Math.PI) / 180;
+  const chordTurn = (prev: number, mid: number, next: number): number => {
+    const ux = rawNodes[mid]![0] - rawNodes[prev]![0];
+    const uz = rawNodes[mid]![1] - rawNodes[prev]![1];
+    const vx = rawNodes[next]![0] - rawNodes[mid]![0];
+    const vz = rawNodes[next]![1] - rawNodes[mid]![1];
+    const lu = Math.hypot(ux, uz);
+    const lv = Math.hypot(vx, vz);
+    if (lu < 1e-6 || lv < 1e-6) return 0;
+    return Math.acos(Math.max(-1, Math.min(1, (ux * vx + uz * vz) / (lu * lv))));
+  };
   const walkFrom = (startEdge: number): void => {
     if (usedEdge[startEdge]) return;
     const e0 = rawEdges[startEdge]!;
@@ -639,6 +654,8 @@ export function buildPathNetwork(
         const nextConn = adj[tip]!.find((c) => !usedEdge[c.edge]);
         if (nextConn === undefined) break;
         if (rawEdges[nextConn.edge]!.lane !== lane) break;
+        const prevTip = dir === 1 ? nodesSeq[nodesSeq.length - 2]! : nodesSeq[1]!;
+        if (chordTurn(prevTip, tip, nextConn.other) > chainSplit) break; // road bends hard → end street
         usedEdge[nextConn.edge] = true;
         if (dir === 1) {
           // Closing the loop = reaching the far (unchanging) end, which is index 0 going forward.

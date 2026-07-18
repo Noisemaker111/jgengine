@@ -281,6 +281,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
 
+## path-network — build a deterministic road/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
+
+- `buildPathNetwork` (function) · `import { buildPathNetwork } from "@jgengine/core/world/pathNetwork"`
+
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
 - `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`

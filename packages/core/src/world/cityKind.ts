@@ -1,10 +1,14 @@
 /**
  * `city` studio: a procedural district authored as a box volume — drop a volume and sliders tune
  * the whole synthesis, from a rigid Manhattan grid (`gridness` 1, `curviness` 0) to winding
- * hillside estates or a two-road crossroads farm town. Streets are perturbed grid polylines with a
- * visible hierarchy (boulevards with medians, avenues, streets, lanes — optionally gravel), cross
- * intersections and cul-de-sac bulbs are first-class data, and water gaps become styled bridge
- * decks. Generation is BLOCK-FIRST (`cityBlocks`): the street graph's planar faces become closed
+ * hillside estates, a two-road crossroads farm town, or — at the loopiness-high / branching-and-
+ * connectivity-low corner — a closed RACE CIRCUIT. Streets come from the unified seed-driven
+ * {@link buildPathNetwork} engine (city and track are the same generator at opposite slider
+ * extremes), carry a visible hierarchy (boulevards with medians, avenues, streets, lanes —
+ * optionally gravel), and connect or deliberately dead-end into cul-de-sac bulbs; water gaps become
+ * styled bridge decks and ridges become tunnel bores, both path features on continuous streets so a
+ * lap stays closed. The block/parcel/building FABRIC is optional (`fabric` off = bare roads or a
+ * plot-free track). Generation is BLOCK-FIRST (`cityBlocks`): the street graph's planar faces become closed
  * block polygons (a curved street bounds a curved block), each inset to curb and land rings with
  * the sidewalk band between them, then classified and subdivided into polygonal frontage PARCELS
  * whose buildable polygons (after setbacks) place every building. Inside the district a ZONE

@@ -41,6 +41,7 @@ const MEDIAN_COLOR = "#4d7a40";
 const PAVEMENT_COLOR = "#a8a49a";
 const CONCRETE_COLOR = "#b0aba1";
 const STEEL_COLOR = "#4c505a";
+const TUNNEL_COLOR = "#5b5754";
 const HEDGE_COLOR = "#3d6631";
 const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
@@ -514,6 +515,53 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     // per-street widened ribbon.
     const useBlockSidewalks = resolved.blocks.length > 0;
 
+    // Feature-aware height: because streets stay continuous across water and through ridges, the road
+    // must ride UP onto a bridge deck and hold FLAT through a tunnel bore rather than dive under the
+    // river or climb over the hill. Points off any feature fall back to the terrain sampler.
+    const bridgeDecks = resolved.bridges.map((bridge) => {
+      const first = bridge.points[0]!;
+      const last = bridge.points[bridge.points.length - 1]!;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      const len2 = Math.max(1e-6, abx * abx + abz * abz);
+      return {
+        first,
+        abx,
+        abz,
+        len2,
+        span: Math.sqrt(len2),
+        hA: sample(first[0], first[1]) + 0.35,
+        hB: sample(last[0], last[1]) + 0.35,
+        style: bridge.style,
+        half: bridge.width / 2 + 1.2,
+      };
+    });
+    const tunnelFloors = resolved.tunnels.map((tunnel) => {
+      const first = tunnel.points[0]!;
+      const last = tunnel.points[tunnel.points.length - 1]!;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      return { first, abx, abz, len2: Math.max(1e-6, abx * abx + abz * abz), floor: tunnel.bankHeight, half: tunnel.width / 2 + 0.8 };
+    });
+    const deckSampler = (x: number, z: number): number => {
+      for (const d of bridgeDecks) {
+        const raw = ((x - d.first[0]) * d.abx + (z - d.first[1]) * d.abz) / d.len2;
+        if (raw < -0.03 || raw > 1.03) continue;
+        const t = Math.max(0, Math.min(1, raw));
+        if (Math.hypot(x - (d.first[0] + d.abx * t), z - (d.first[1] + d.abz * t)) > d.half) continue;
+        const arch = d.style === "arch" ? Math.sin(t * Math.PI) * Math.min(1.6, d.span * 0.03) : 0.25;
+        return d.hA + (d.hB - d.hA) * t + arch;
+      }
+      for (const tn of tunnelFloors) {
+        const raw = ((x - tn.first[0]) * tn.abx + (z - tn.first[1]) * tn.abz) / tn.len2;
+        if (raw < -0.03 || raw > 1.03) continue;
+        const t = Math.max(0, Math.min(1, raw));
+        if (Math.hypot(x - (tn.first[0] + tn.abx * t), z - (tn.first[1] + tn.abz * t)) > tn.half) continue;
+        return tn.floor;
+      }
+      return sample(x, z);
+    };
+
     const addMarkQuad = (center: RoadPoint, along: readonly [number, number], length: number, width: number) => {
       const perp: readonly [number, number] = [-along[1], along[0]];
       const base = markings.positions.length / 3;
@@ -525,7 +573,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       ] as const) {
         const x = center[0] + along[0] * length * sa + perp[0] * width * sp;
         const z = center[1] + along[1] * length * sa + perp[1] * width * sp;
-        markings.positions.push(x, sample(x, z) + 0.26, z);
+        markings.positions.push(x, deckSampler(x, z) + 0.26, z);
       }
       markings.indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
     };
@@ -534,7 +582,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       if (street.points.length < 2) continue;
       const rounded = roundPathCorners(street.points, Math.max(1.5, street.width * 0.9), 4);
       const surface = street.surface === "gravel" ? gravel : asphalt;
-      surface.addRibbon(rounded, street.width, sample, 0.16);
+      surface.addRibbon(rounded, street.width, deckSampler, 0.16);
       if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, 0.1);
       if (street.bulb !== undefined) {
         (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, 0.16);
@@ -550,9 +598,9 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             for (let i = 0; i + 1 < run.length; i += 1) runLength += Math.hypot(run[i + 1]![0] - run[i]![0], run[i + 1]![1] - run[i]![1]);
             if (runLength < 7) continue;
             const width = Math.max(1.3, street.width * 0.14);
-            medians.addRibbon(run, width, sample, 0.3);
-            medians.addDisc(run[0]!, width / 2, sample, 0.3, null, 8);
-            medians.addDisc(run[run.length - 1]!, width / 2, sample, 0.3, null, 8);
+            medians.addRibbon(run, width, deckSampler, 0.3);
+            medians.addDisc(run[0]!, width / 2, deckSampler, 0.3, null, 8);
+            medians.addDisc(run[run.length - 1]!, width / 2, deckSampler, 0.3, null, 8);
           }
         } else {
           for (const dash of dashSegments(rounded, 2.6, 3.6)) {
@@ -565,7 +613,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
                 break;
               }
             }
-            if (!inCross) markings.addRibbon(dash, 0.18, sample, 0.26);
+            if (!inCross) markings.addRibbon(dash, 0.18, deckSampler, 0.26);
           }
         }
       }
@@ -760,6 +808,53 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   }, [resolved, sample]);
   useEffect(() => () => bridges?.deck?.dispose(), [bridges]);
 
+  // --- Tunnels: a bore roof over the road, side walls, and portal lintels at each mouth. ---
+  const tunnels = useMemo(() => {
+    if (resolved === null || resolved.tunnels.length === 0) return null;
+    const roofs = new MeshAccumulator();
+    const stone: THREE.Matrix4[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const clearance = 5.5;
+    for (const tunnel of resolved.tunnels) {
+      const first = tunnel.points[0]!;
+      const last = tunnel.points[tunnel.points.length - 1]!;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      const span = Math.hypot(abx, abz) || 1;
+      const tangent: readonly [number, number] = [abx / span, abz / span];
+      const normal: readonly [number, number] = [-tangent[1], tangent[0]];
+      const floor = tunnel.bankHeight;
+      const yaw = Math.atan2(tangent[0], tangent[1]);
+      // Roof slab held flat over the road at head clearance.
+      roofs.addRibbon(tunnel.points, tunnel.width + 1.2, () => floor + clearance, 0);
+      // Side walls running the length of the bore.
+      const halfW = tunnel.width / 2 + 0.5;
+      for (const side of [1, -1] as const) {
+        const wx = (first[0] + last[0]) / 2 + normal[0] * halfW * side;
+        const wz = (first[1] + last[1]) / 2 + normal[1] * halfW * side;
+        stone.push(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(wx, floor + clearance / 2, wz),
+            new THREE.Quaternion().setFromAxisAngle(up, yaw),
+            new THREE.Vector3(0.6, clearance, span),
+          ),
+        );
+      }
+      // Portal lintel across each mouth so the entrances read as tunnels from the air and the road.
+      for (const [ex, ez] of [first, last]) {
+        stone.push(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(ex, floor + clearance + 0.5, ez),
+            new THREE.Quaternion().setFromAxisAngle(up, yaw),
+            new THREE.Vector3(tunnel.width + 2.4, 1.2, 1.2),
+          ),
+        );
+      }
+    }
+    return { roof: roofs.build(), stone };
+  }, [resolved, sample]);
+  useEffect(() => () => tunnels?.roof?.dispose(), [tunnels]);
+
   // --- Instanced furniture: trees per species, street lights, hedges. ---
   const furniture = useMemo(() => {
     if (resolved === null) return null;
@@ -933,6 +1028,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         <InstancedBoxes matrices={bridges.concrete} color={CONCRETE_COLOR} />
       ) : null}
       {bridges !== null && bridges.steel.length > 0 ? <InstancedBoxes matrices={bridges.steel} color={STEEL_COLOR} /> : null}
+      {tunnels?.roof != null ? (
+        <mesh geometry={tunnels.roof} castShadow receiveShadow>
+          <meshStandardMaterial color={TUNNEL_COLOR} roughness={0.95} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {tunnels !== null && tunnels.stone.length > 0 ? <InstancedBoxes matrices={tunnels.stone} color={TUNNEL_COLOR} /> : null}
       {massing !== null ? massing.meshes.map((mesh, i) => <primitive key={`massing:${i}`} object={mesh} />) : null}
       {furniture !== null ? furniture.meshes.map((mesh, i) => <primitive key={`furniture:${i}`} object={mesh} />) : null}
       <DetailBuildings buildings={detail.buildings} palette={palette} />

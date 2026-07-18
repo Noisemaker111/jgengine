@@ -2300,6 +2300,7 @@
 - `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
 - `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
 - `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
+- `CityTunnel` (interface): interface CityTunnel — One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
 
@@ -2557,6 +2558,24 @@
 - `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
 - `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
+
+## @jgengine/core/world/pathNetwork
+
+- `PathDeadEnd` (interface): interface PathDeadEnd — One dangling street end kept as a cul-de-sac: node position plus the heading pointing off the road.
+- `PathEdge` (interface): interface PathEdge — One atomic node-to-node edge — the fabric graph consumes these (welds at shared node coords).
+- `PathFeature` (interface): interface PathFeature — A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline.
+- `PathFeatureKind` (type): type PathFeatureKind = "bridge" | "tunnel" — A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge.
+- `PathFeatureSpan` (interface): interface PathFeatureSpan — A feature span carried by a street: a `[from, to]` index window into the street's `points`.
+- `PathJunction` (interface): interface PathJunction — One crossing of three or more streets: patch center/radius plus outgoing arm directions.
+- `PathLevel` (type): type PathLevel = "boulevard" | "avenue" | "street" | "lane" — Road hierarchy, widest to narrowest — shared by the city fabric and the renderer.
+- `PathNetwork` (interface): interface PathNetwork — The fully-resolved network in volume-local coords.
+- `PathNetworkContext` (interface): interface PathNetworkContext — Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network.
+- `PathNetworkMode` (type): type PathNetworkMode = "net" | "circuit" — The generator's chosen topology family: an open street `net`, or a closed `circuit` loop.
+- `PathNetworkRules` (interface): interface PathNetworkRules — Fully-defaulted slider set the generator reads.
+- `PathNode` (interface): interface PathNode — One graph node: a junction, a dead end, or a mid-street bend, with its connection count.
+- `PathStreet` (interface): interface PathStreet — One chained through-street: a maximal run of edges through degree-2 nodes, for rendering + furniture.
+- `PathVec2` (type): type PathVec2 = readonly [number, number] — A path vertex in the volume-local XZ frame.
+- `buildPathNetwork` (function): function buildPathNetwork(rules: PathNetworkRules, hx: number, hz: number, context: PathNetworkContext = {}): PathNetwork — Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic per `(rules.seed, hx, hz, context)`. Pass a {@link PathNetworkContext} with a ground sampler to turn water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to world space.
 
 ## @jgengine/core/world/pathTerrain
 

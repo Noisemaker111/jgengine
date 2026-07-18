@@ -425,6 +425,7 @@
     "./world/minimapBake",
     "./world/minimapTrack",
     "./world/pathInstances",
+    "./world/pathNetwork",
     "./world/pathTerrain",
     "./world/placeAsset",
     "./world/placedStructureStore",
