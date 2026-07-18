@@ -1,10 +1,19 @@
 import { expect, test } from "bun:test";
 
 import type { EditorPerfSample } from "../session";
-import { createPerfHistoryStore, PERF_HISTORY_CAPACITY, seriesAverage, sparklinePoints } from "./perfHistory";
+import {
+  createPerfHistoryStore,
+  frameBudgetFromStats,
+  latestPhases,
+  PERF_HISTORY_CAPACITY,
+  samplesHaveFrameBudget,
+  seriesAverage,
+  seriesAverageDefined,
+  sparklinePoints,
+} from "./perfHistory";
 
-function sample(sampledAt: number, frameMs = 16): EditorPerfSample {
-  return { fps: 60, frameMs, drawCalls: 100, triangles: 1_000, sampledAt, active: true };
+function sample(sampledAt: number, frameMs = 16, extra: Partial<EditorPerfSample> = {}): EditorPerfSample {
+  return { fps: 60, frameMs, drawCalls: 100, triangles: 1_000, sampledAt, active: true, ...extra };
 }
 
 test("push records fresh samples and dedupes repeated poll reads", () => {
@@ -47,4 +56,62 @@ test("seriesAverage and sparklinePoints handle empty and scaled input", () => {
   expect(pairs[0]![1]).toBe(40);
   expect(pairs[2]![1]).toBe(0);
   expect(pairs[1]![0]).toBe(50);
+});
+
+test("seriesAverageDefined ignores missing optional values", () => {
+  expect(seriesAverageDefined([])).toBe(0);
+  expect(seriesAverageDefined([undefined, undefined])).toBe(0);
+  expect(seriesAverageDefined([10, undefined, 30])).toBe(20);
+});
+
+test("frameBudgetFromStats returns null when the tracker has no samples", () => {
+  expect(frameBudgetFromStats(null)).toBeNull();
+});
+
+test("frameBudgetFromStats maps sim/outside and trims empty phases", () => {
+  const budget = frameBudgetFromStats({
+    avgSimMs: 4.567,
+    avgOutsideMs: 11.234,
+    phases: [
+      { name: "physics", avgMs: 2.3456 },
+      { name: "idle", avgMs: 0 },
+      { name: "", avgMs: 1 },
+      { name: "ai", avgMs: 1.111 },
+    ],
+  });
+  expect(budget).toEqual({
+    simMs: 4.57,
+    outsideMs: 11.23,
+    phases: [
+      { name: "physics", avgMs: 2.35 },
+      { name: "ai", avgMs: 1.11 },
+    ],
+  });
+});
+
+test("frameBudgetFromStats omits phases key when none are positive", () => {
+  const budget = frameBudgetFromStats({
+    avgSimMs: 2,
+    avgOutsideMs: 8,
+    phases: [{ name: "x", avgMs: 0 }],
+  });
+  expect(budget).toEqual({ simMs: 2, outsideMs: 8 });
+  expect(budget?.phases).toBeUndefined();
+});
+
+test("samplesHaveFrameBudget and latestPhases only use real fields", () => {
+  expect(samplesHaveFrameBudget([sample(1)])).toBe(false);
+  expect(latestPhases([sample(1)])).toEqual([]);
+
+  const withBudget = [
+    sample(1),
+    sample(2, 16, { simMs: 3, outsideMs: 10, phases: [{ name: "tick", avgMs: 1.5 }] }),
+    sample(3, 16, { simMs: 4, outsideMs: 9 }),
+  ];
+  expect(samplesHaveFrameBudget(withBudget)).toBe(true);
+  // Newest sample with phases wins even if a later sample dropped the list.
+  expect(latestPhases(withBudget)).toEqual([{ name: "tick", avgMs: 1.5 }]);
+  expect(latestPhases([sample(4, 16, { simMs: 1, outsideMs: 2, phases: [{ name: "net", avgMs: 0.4 }] })])).toEqual([
+    { name: "net", avgMs: 0.4 },
+  ]);
 });
