@@ -549,6 +549,46 @@
 - `INPUT` (const): const INPUT: "rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60" — ⚠ undocumented
 - `MICRO` (const): const MICRO: "text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-500" — ⚠ undocumented
 
+## @jgengine/editor/handlers
+
+- `EDITOR_RPC_HANDLERS` (const): const EDITOR_RPC_HANDLERS: HandlerTable — The complete method → handler dispatch table. Spreading the per-domain tables into a value typed `HandlerTable` is the compile-time completeness check: if any union method lacks a handler (or a domain misspells one), this assignment fails to type-check.
+- `HandlerContext` (interface): interface HandlerContext — Everything a per-domain RPC handler needs from the host. Mutable host state (focus, mode, play control, assets, visibility, perf) is reached through `api`'s getters/setters so handlers stay closure-free and independently testable; `dispatchGuarded` and the catalog lookups are threaded in because they are built once when the host is constructed.
+
+## @jgengine/editor/handlers/catalogs
+
+- `catalogHandlers` (const): const catalogHandlers: Pick< HandlerTable, "list_catalogs" | "get_catalog_entry" | "set_catalog_entry" | "add_catalog_entry" | "remove_catalog_entry" > — Gameplay data catalog verbs (list / get / merge-patch / add / remove rows).
+
+## @jgengine/editor/handlers/collections
+
+- `collectionHandlers` (const): const collectionHandlers: Pick< HandlerTable, | "list_collections" | "create_collection" | "rename_collection" | "delete_collection" | "set_collection_members" | "add_to_collection" | "remove_from_collection" | "set_collection_flags" | "select_collection" > — Named collection / selection-set verbs.
+
+## @jgengine/editor/handlers/context
+
+- `DispatchOutcome` (interface): interface DispatchOutcome — Outcome of a guarded dispatch: whether it mutated the session, plus the resulting state.
+- `HandlerContext` (interface): interface HandlerContext — Everything a per-domain RPC handler needs from the host. Mutable host state (focus, mode, play control, assets, visibility, perf) is reached through `api`'s getters/setters so handlers stay closure-free and independently testable; `dispatchGuarded` and the catalog lookups are threaded in because they are built once when the host is constructed.
+- `HandlerFor` (type): type HandlerFor<M extends EditorBridgeRequest["method"]> = ( ctx: HandlerContext, request: Extract<EditorBridgeRequest, { method: M }>, ) => EditorBridgeResponse — One method's handler, with `request` narrowed to that method's union member.
+- `HandlerTable` (type): type HandlerTable = { [M in EditorBridgeRequest["method"]]: HandlerFor<M> } — The full method → handler map. Spreading the per-domain tables into a value of this type is the lockstep guarantee that every union method has exactly one handler: a missing verb fails to compile.
+
+## @jgengine/editor/handlers/document
+
+- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "set_marker" | "set_note" | "set_meta" | "select" | "clear_selection" | "camera_goto" | "camera_… — Document, selection, camera, mode, asset placement, and status verbs.
+
+## @jgengine/editor/handlers/grids
+
+- `gridHandlers` (const): const gridHandlers: Pick< HandlerTable, | "list_grids" | "get_grid_cell" | "add_grid_layer" | "remove_grid_layer" | "set_grid_layer" | "paint_grid_cells" | "fill_grid_rect" | "flood_fill_grid" | "resize_grid_layer" | "import_grid" > — Grid/tile layer verbs — create, edit, paint, fill, and import.
+
+## @jgengine/editor/handlers/hierarchy
+
+- `hierarchyHandlers` (const): const hierarchyHandlers: Pick< HandlerTable, | "set_parent" | "hierarchy" | "list_prefabs" | "create_prefab" | "insert_prefab" | "detach_prefab_instance" | "delete_prefab" > — Parent/child hierarchy and prefab library verbs.
+
+## @jgengine/editor/handlers/runtime
+
+- `runtimeHandlers` (const): const runtimeHandlers: Pick< HandlerTable, | "push_document_patch" | "pull_document_patches" | "document_revision" | "push_runtime_delta" | "pull_runtime_deltas" | "runtime_snapshot" | "runtime_summary" | "runtime_get" | "runtime_set" | "runtime_pause" | "runtime_resume" | "runtime_step" | "set_runt… — Live-sync document patches, the ephemeral runtime reverse channel, and play-mode poke verbs.
+
+## @jgengine/editor/handlers/terrain
+
+- `terrainHandlers` (const): const terrainHandlers: Pick< HandlerTable, | "create_terrain" | "sculpt_terrain" | "terrain_summary" | "paint_terrain" | "fill_terrain" | "auto_paint" | "terrain_materials" | "terrain_layers" | "set_terrain_layers" | "blend_terrain" | "convert_scatter" | "add_foliage" | "scatter_summary" > — Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs.
+
 ## @jgengine/editor/mcp/bridgeServer
 
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
@@ -561,6 +601,13 @@
 ## @jgengine/editor/mcp/cli
 
 - `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSource: RpcPayloadSource | null; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+
+## @jgengine/editor/mcp/fieldSpec
+
+- `RPC_FIELD_SCHEMAS` (const): const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly RpcFieldSpec[]> — Per-method field type table — the single source of truth for the RPC boundary. A field listed here is type-checked when present (see `decodeEditorBridgeRequest`); existence is left to `EditorHostApi.handle` (whose per-method guards return honest `ok:false` diagnostics for missing/unknown targets). Type-checking presented fields is what keeps a fuzzed value — a string where a number belongs, a scalar where an object belongs — from reaching a live session uncoerced. Unknown extra fields are ignored so a superset payload stays forward-compatible.
+- `RpcFieldKind` (type): type RpcFieldKind = "string" | "number" | "boolean" | "string[]" | "object" | "object[]" | "vec3" | "value" — The value type a request field is expected to carry.
+- `RpcFieldSpec` (interface): interface RpcFieldSpec — One field's expected shape in a request; `oneOf`/`nullable`/`required`/`of` refine the check.
+- `buildInputSchema` (function): function buildInputSchema(method: EditorBridgeRequest["method"]): Record<string, unknown> — Generates the MCP tool `inputSchema` for a method from its {@link RPC_FIELD_SCHEMAS} entry.
 
 ## @jgengine/editor/mcp/loadGameCatalogs
 

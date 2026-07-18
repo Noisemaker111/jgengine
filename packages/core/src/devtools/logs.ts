@@ -5,6 +5,7 @@ const LATENCY_CAPACITY = 120;
 const LOG_CAPACITY = 200;
 const LOG_MESSAGE_MAX = 400;
 
+/** @internal */
 export function formatLogArg(arg: unknown): string {
   if (typeof arg === "string") return arg;
   if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
@@ -15,16 +16,19 @@ export function formatLogArg(arg: unknown): string {
   }
 }
 
+/** Format an array of console arguments into a single truncated log message string. */
 export function formatLogMessage(args: readonly unknown[]): string {
   const message = args.map(formatLogArg).join(" ");
   return message.length > LOG_MESSAGE_MAX ? `${message.slice(0, LOG_MESSAGE_MAX)}…` : message;
 }
 
+/** Logs subsystem exposing the log-capture and latency-tracking facades. */
 export interface LogsModule {
   logs: Devtools["logs"];
   latency: Devtools["latency"];
 }
 
+/** Create the logs subsystem that buffers captured console output and records latency samples. */
 export const createLogsModule = (deps: { signal: ChangeSignal }): LogsModule => {
   const { signal } = deps;
 

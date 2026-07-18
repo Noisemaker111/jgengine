@@ -17,6 +17,7 @@ import { formatLogArg } from "./logs";
 import type { ControlRecord } from "./controls";
 import type { Devtools, DiscoveredEntry, Tunable, TunableAccessor } from "./types";
 
+/** Internal record for an auto-discovered field: identity, kind, initial value, source object, and get/set accessors. */
 export interface DiscoveredRecord {
   id: string;
   table: string;
@@ -110,6 +111,7 @@ function collectScanTargets(root: unknown, meta?: ScanMeta): ScanCollection {
   return { targets: out, skipped };
 }
 
+/** Discovery subsystem: the public discover and probes facades plus internal record map and helpers. */
 export interface DiscoverModule {
   discover: Devtools["discover"];
   probes: Devtools["probes"];
@@ -119,6 +121,7 @@ export interface DiscoverModule {
   getDiscoverySkips: () => readonly DiscoverySkip[];
 }
 
+/** Create the discovery subsystem that scans objects/tables for tunable fields and binds them as controls and probes. */
 export const createDiscoverModule = (deps: {
   signal: ChangeSignal;
   register: <T>(name: string, initial: T, options?: TunableOptions<T>) => Tunable<T>;

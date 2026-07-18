@@ -9,12 +9,14 @@ import type {
 
 const FRAME_CAPACITY = 240;
 const RECENT_FRAMES = 60;
+/** Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget). */
 export const LONG_FRAME_MS = 33.4;
 const LONG_FRAME_CAPACITY = 40;
 const MAX_PHASES_PER_FRAME = 24;
 const MAX_LONG_FRAME_PHASES = 8;
 const PHASE_HOT_MS = 2;
 
+/** @internal */
 export function nowMs(): number {
   const perf = (globalThis as { performance?: { now(): number } }).performance;
   return perf !== undefined ? perf.now() : Date.now();
@@ -102,12 +104,14 @@ interface PhaseAccumulator {
   samples: number;
 }
 
+/** Frame subsystem exposing the frame-timing, profiling, and render-sample facades. */
 export interface FrameModule {
   frame: Devtools["frame"];
   profile: Devtools["profile"];
   render: Devtools["render"];
 }
 
+/** Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events. */
 export const createFrameModule = (deps: {
   readProbes: () => Record<string, unknown>;
 }): FrameModule => {

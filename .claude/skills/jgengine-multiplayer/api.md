@@ -218,6 +218,7 @@
 ## @jgengine/core/multiplayer/presenceModel
 
 - `ActivePresenceResolution` (interface): interface ActivePresenceResolution<T> — ⚠ undocumented
+- `DEFAULT_POSE_SYNC_RULES` (const): const DEFAULT_POSE_SYNC_RULES: PoseSyncRules — Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
 - `DEFAULT_SPAWN_ORIGIN` (const): const DEFAULT_SPAWN_ORIGIN: { readonly x: 0; readonly y: 0; readonly z: 0; } — ⚠ undocumented
 - `IncomingPose` (interface): interface IncomingPose — ⚠ undocumented
 - `PoseSyncDecision` (interface): interface PoseSyncDecision — ⚠ undocumented

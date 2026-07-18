@@ -10,10 +10,12 @@ import { isStructuralKind, type ControlRecord } from "./controls";
 import type { DiscoveredRecord } from "./discover";
 import type { Devtools } from "./types";
 
+/** Overrides subsystem exposing the export/apply facade for persisting and restoring control values. */
 export interface OverridesModule {
   overrides: Devtools["overrides"];
 }
 
+/** Create the overrides subsystem that serializes changed control values and re-applies a saved overrides payload. */
 export const createOverridesModule = (deps: {
   signal: ChangeSignal;
   controlRecords: Map<string, ControlRecord>;

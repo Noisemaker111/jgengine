@@ -10,6 +10,7 @@ import type {
   TunableOptions,
 } from "./tunableSchema";
 
+/** Registered tunable control with its resolved schema metadata and read/write/reset accessors. */
 export interface DevtoolsControl {
   readonly name: string;
   readonly kind: DevtoolsControlKind;
@@ -36,6 +37,7 @@ export interface DevtoolsControl {
   reset(): void;
 }
 
+/** Typed handle to a registered control, exposing its live value and subscribe/set/reset operations. */
 export interface Tunable<T> {
   readonly name: string;
   readonly kind: DevtoolsControlKind;
@@ -46,12 +48,14 @@ export interface Tunable<T> {
   subscribe(listener: (value: T) => void): () => void;
 }
 
+/** Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics. */
 export interface OverrideApplyResult {
   applied: number;
   skipped: readonly OverrideApplyDiagnostic[];
   diagnostics: readonly string[];
 }
 
+/** Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown. */
 export interface FrameStats {
   fps: number;
   avgFrameMs: number;
@@ -67,6 +71,7 @@ export interface FrameStats {
   phases: readonly PhaseStats[];
 }
 
+/** Timing summary for a single named profiling phase across the sampling window. */
 export interface PhaseStats {
   name: string;
   avgMs: number;
@@ -76,6 +81,7 @@ export interface PhaseStats {
   pctOfSim: number;
 }
 
+/** Recorded spike event for a frame that exceeded the long-frame threshold, with culprit attribution. */
 export interface LongFrameEvent {
   at: number;
   frameMs: number;
@@ -89,6 +95,7 @@ export interface LongFrameEvent {
   render: RenderSample | null;
 }
 
+/** Snapshot of renderer resource counts (draw calls, triangles, geometries, textures) for a frame. */
 export interface RenderSample {
   drawCalls: number;
   triangles: number;
@@ -96,6 +103,7 @@ export interface RenderSample {
   textures: number;
 }
 
+/** Aggregated latency statistics (last/avg/min/max) over recorded latency samples. */
 export interface LatencyStats {
   lastMs: number;
   avgMs: number;
@@ -104,14 +112,17 @@ export interface LatencyStats {
   samples: number;
 }
 
+/** Severity level for a captured devtools log entry. */
 export type DevtoolsLogLevel = "log" | "info" | "warn" | "error";
 
+/** A single captured log line with timestamp, level, and formatted message. */
 export interface DevtoolsLogEntry {
   at: number;
   level: DevtoolsLogLevel;
   message: string;
 }
 
+/** A control auto-discovered by scanning an object/table, with its binding metadata and current reader. */
 export interface DiscoveredEntry {
   readonly id: string;
   readonly table: string;
@@ -122,12 +133,14 @@ export interface DiscoveredEntry {
   read(): unknown;
 }
 
+/** Get/set accessor pair plus initial value used to bind a discovered field to a control. */
 export interface TunableAccessor {
   initial: unknown;
   get(): unknown;
   set(value: unknown): void;
 }
 
+/** Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields. */
 export interface DevtoolsSnapshot {
   at: number;
   frame: FrameStats | null;
@@ -141,12 +154,14 @@ export interface DevtoolsSnapshot {
   skipped: readonly DiscoverySkip[];
 }
 
+/** Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations. */
 export interface FrameRecordSample {
   frameMs: number;
   simMs: number;
   phases?: Readonly<Record<string, number>>;
 }
 
+/** Top-level devtools facade aggregating frame, profile, render, logs, latency, controls, discover, overrides, and probes. */
 export interface Devtools {
   frame: {
     record(sample: FrameRecordSample): void;
