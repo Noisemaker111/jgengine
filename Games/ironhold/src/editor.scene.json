@@ -1,68 +1,500 @@
 {
   "version": 1,
   "markers": [
-    { "id": "keep_player", "kind": "structure", "position": { "x": 0, "y": 0, "z": 36 }, "label": "Ironhold Keep", "catalogId": "keep_player", "color": "#4c8dff" },
-    { "id": "keep_enemy", "kind": "structure", "position": { "x": 0, "y": 0, "z": -36 }, "label": "Marauder Warcamp", "catalogId": "keep_enemy", "color": "#e0553b" },
-
-    { "id": "banner_p1", "kind": "prop", "position": { "x": -4.5, "y": 0, "z": 37 }, "catalogId": "banner_blue" },
-    { "id": "banner_p2", "kind": "prop", "position": { "x": 4.5, "y": 0, "z": 37 }, "catalogId": "banner_blue" },
-    { "id": "torch_p1", "kind": "prop", "position": { "x": -5, "y": 0, "z": 32 }, "catalogId": "torch" },
-    { "id": "torch_p2", "kind": "prop", "position": { "x": 5, "y": 0, "z": 32 }, "catalogId": "torch" },
-    { "id": "barrel_p1", "kind": "prop", "position": { "x": 6.5, "y": 0, "z": 38 }, "catalogId": "barrel" },
-    { "id": "banner_e1", "kind": "prop", "position": { "x": -4.5, "y": 0, "z": -37 }, "catalogId": "banner_red" },
-    { "id": "banner_e2", "kind": "prop", "position": { "x": 4.5, "y": 0, "z": -37 }, "catalogId": "banner_red" },
-    { "id": "torch_e1", "kind": "prop", "position": { "x": -5, "y": 0, "z": -32 }, "catalogId": "torch" },
-    { "id": "torch_e2", "kind": "prop", "position": { "x": 5, "y": 0, "z": -32 }, "catalogId": "torch" },
-    { "id": "barrel_e1", "kind": "prop", "position": { "x": -6.5, "y": 0, "z": -38 }, "catalogId": "barrel" },
-
-    { "id": "hero", "kind": "unit", "position": { "x": 0, "y": 0, "z": 28 }, "label": "Bram the Bold", "catalogId": "hero" },
-    { "id": "footman_1", "kind": "unit", "position": { "x": -8, "y": 0, "z": 30 }, "catalogId": "footman" },
-    { "id": "footman_2", "kind": "unit", "position": { "x": -4, "y": 0, "z": 31 }, "catalogId": "footman" },
-    { "id": "footman_3", "kind": "unit", "position": { "x": 4, "y": 0, "z": 31 }, "catalogId": "footman" },
-    { "id": "footman_4", "kind": "unit", "position": { "x": 8, "y": 0, "z": 30 }, "catalogId": "footman" },
-    { "id": "footman_5", "kind": "unit", "position": { "x": 0, "y": 0, "z": 32 }, "catalogId": "footman" },
-
-    { "id": "grunt_guard_1", "kind": "unit", "position": { "x": -6, "y": 0, "z": -32 }, "catalogId": "grunt", "meta": { "stance": "guard" } },
-    { "id": "grunt_guard_2", "kind": "unit", "position": { "x": 6, "y": 0, "z": -32 }, "catalogId": "grunt", "meta": { "stance": "guard" } },
-    { "id": "grunt_guard_3", "kind": "unit", "position": { "x": 0, "y": 0, "z": -30 }, "catalogId": "grunt", "meta": { "stance": "guard" } },
-    { "id": "reaver_guard_1", "kind": "unit", "position": { "x": 0, "y": 0, "z": -28 }, "catalogId": "reaver", "meta": { "stance": "guard" } },
-
-    { "id": "grunt_raid_1", "kind": "unit", "position": { "x": -11, "y": 0, "z": -22 }, "catalogId": "grunt", "meta": { "stance": "assault" } },
-    { "id": "grunt_raid_2", "kind": "unit", "position": { "x": 11, "y": 0, "z": -22 }, "catalogId": "grunt", "meta": { "stance": "assault" } },
-    { "id": "reaver_raid_1", "kind": "unit", "position": { "x": 0, "y": 0, "z": -20 }, "catalogId": "reaver", "meta": { "stance": "assault" } },
-
-    { "id": "peasant_1", "kind": "unit", "position": { "x": -5, "y": 0, "z": 24 }, "catalogId": "peasant" },
-    { "id": "peasant_2", "kind": "unit", "position": { "x": 0, "y": 0, "z": 24 }, "catalogId": "peasant" },
-    { "id": "peasant_3", "kind": "unit", "position": { "x": 5, "y": 0, "z": 24 }, "catalogId": "peasant" },
-
-    { "id": "goldmine_home", "kind": "prop", "position": { "x": -15, "y": 0, "z": 30 }, "label": "Gold seam", "catalogId": "goldmine" },
-    { "id": "goldmine_mid", "kind": "prop", "position": { "x": 22, "y": 0, "z": 4 }, "label": "Gold seam", "catalogId": "goldmine" },
-    { "id": "woods_w", "kind": "prop", "position": { "x": -22, "y": 0, "z": 26 }, "label": "Logging camp", "catalogId": "woods" },
-    { "id": "woods_e", "kind": "prop", "position": { "x": 15, "y": 0, "z": 30 }, "label": "Logging camp", "catalogId": "woods" }
+    {
+      "id": "keep_player",
+      "kind": "structure",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 36
+      },
+      "color": "#4c8dff",
+      "label": "Ironhold Keep",
+      "catalogId": "keep_player"
+    },
+    {
+      "id": "keep_enemy",
+      "kind": "structure",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -36
+      },
+      "color": "#e0553b",
+      "label": "Marauder Warcamp",
+      "catalogId": "keep_enemy"
+    },
+    {
+      "id": "banner_p1",
+      "kind": "prop",
+      "position": {
+        "x": -4.5,
+        "y": 0,
+        "z": 37
+      },
+      "catalogId": "banner_blue"
+    },
+    {
+      "id": "banner_p2",
+      "kind": "prop",
+      "position": {
+        "x": 4.5,
+        "y": 0,
+        "z": 37
+      },
+      "catalogId": "banner_blue"
+    },
+    {
+      "id": "torch_p1",
+      "kind": "prop",
+      "position": {
+        "x": -5,
+        "y": 0,
+        "z": 32
+      },
+      "catalogId": "torch"
+    },
+    {
+      "id": "torch_p2",
+      "kind": "prop",
+      "position": {
+        "x": 5,
+        "y": 0,
+        "z": 32
+      },
+      "catalogId": "torch"
+    },
+    {
+      "id": "barrel_p1",
+      "kind": "prop",
+      "position": {
+        "x": 6.5,
+        "y": 0,
+        "z": 38
+      },
+      "catalogId": "barrel"
+    },
+    {
+      "id": "banner_e1",
+      "kind": "prop",
+      "position": {
+        "x": -4.5,
+        "y": 0,
+        "z": -37
+      },
+      "catalogId": "banner_red"
+    },
+    {
+      "id": "banner_e2",
+      "kind": "prop",
+      "position": {
+        "x": 4.5,
+        "y": 0,
+        "z": -37
+      },
+      "catalogId": "banner_red"
+    },
+    {
+      "id": "torch_e1",
+      "kind": "prop",
+      "position": {
+        "x": -5,
+        "y": 0,
+        "z": -32
+      },
+      "catalogId": "torch"
+    },
+    {
+      "id": "torch_e2",
+      "kind": "prop",
+      "position": {
+        "x": 5,
+        "y": 0,
+        "z": -32
+      },
+      "catalogId": "torch"
+    },
+    {
+      "id": "barrel_e1",
+      "kind": "prop",
+      "position": {
+        "x": -6.5,
+        "y": 0,
+        "z": -38
+      },
+      "catalogId": "barrel"
+    },
+    {
+      "id": "hero",
+      "kind": "unit",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 28
+      },
+      "label": "Bram the Bold",
+      "catalogId": "hero"
+    },
+    {
+      "id": "footman_1",
+      "kind": "unit",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": 30
+      },
+      "catalogId": "footman"
+    },
+    {
+      "id": "footman_2",
+      "kind": "unit",
+      "position": {
+        "x": -4,
+        "y": 0,
+        "z": 31
+      },
+      "catalogId": "footman"
+    },
+    {
+      "id": "footman_3",
+      "kind": "unit",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 31
+      },
+      "catalogId": "footman"
+    },
+    {
+      "id": "footman_4",
+      "kind": "unit",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": 30
+      },
+      "catalogId": "footman"
+    },
+    {
+      "id": "footman_5",
+      "kind": "unit",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 32
+      },
+      "catalogId": "footman"
+    },
+    {
+      "id": "grunt_guard_1",
+      "kind": "unit",
+      "position": {
+        "x": -6,
+        "y": 0,
+        "z": -32
+      },
+      "catalogId": "grunt",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "grunt_guard_2",
+      "kind": "unit",
+      "position": {
+        "x": 6,
+        "y": 0,
+        "z": -32
+      },
+      "catalogId": "grunt",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "grunt_guard_3",
+      "kind": "unit",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -30
+      },
+      "catalogId": "grunt",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "reaver_guard_1",
+      "kind": "unit",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -28
+      },
+      "catalogId": "reaver",
+      "meta": {
+        "stance": "guard"
+      }
+    },
+    {
+      "id": "grunt_raid_1",
+      "kind": "unit",
+      "position": {
+        "x": -11,
+        "y": 0,
+        "z": -22
+      },
+      "catalogId": "grunt",
+      "meta": {
+        "stance": "assault"
+      }
+    },
+    {
+      "id": "grunt_raid_2",
+      "kind": "unit",
+      "position": {
+        "x": 11,
+        "y": 0,
+        "z": -22
+      },
+      "catalogId": "grunt",
+      "meta": {
+        "stance": "assault"
+      }
+    },
+    {
+      "id": "reaver_raid_1",
+      "kind": "unit",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -20
+      },
+      "catalogId": "reaver",
+      "meta": {
+        "stance": "assault"
+      }
+    },
+    {
+      "id": "peasant_1",
+      "kind": "unit",
+      "position": {
+        "x": -5,
+        "y": 0,
+        "z": 24
+      },
+      "catalogId": "peasant"
+    },
+    {
+      "id": "peasant_2",
+      "kind": "unit",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 24
+      },
+      "catalogId": "peasant"
+    },
+    {
+      "id": "peasant_3",
+      "kind": "unit",
+      "position": {
+        "x": 5,
+        "y": 0,
+        "z": 24
+      },
+      "catalogId": "peasant"
+    },
+    {
+      "id": "goldmine_home",
+      "kind": "prop",
+      "position": {
+        "x": -15,
+        "y": 0,
+        "z": 30
+      },
+      "label": "Gold seam",
+      "catalogId": "goldmine"
+    },
+    {
+      "id": "goldmine_mid",
+      "kind": "prop",
+      "position": {
+        "x": 22,
+        "y": 0,
+        "z": 4
+      },
+      "label": "Gold seam",
+      "catalogId": "goldmine"
+    },
+    {
+      "id": "woods_w",
+      "kind": "prop",
+      "position": {
+        "x": -22,
+        "y": 0,
+        "z": 26
+      },
+      "label": "Logging camp",
+      "catalogId": "woods"
+    },
+    {
+      "id": "woods_e",
+      "kind": "prop",
+      "position": {
+        "x": 15,
+        "y": 0,
+        "z": 30
+      },
+      "label": "Logging camp",
+      "catalogId": "woods"
+    }
+  ],
+  "volumes": [
+    {
+      "id": "hamlet_1",
+      "kind": "city",
+      "shape": "box",
+      "center": {
+        "x": 28,
+        "y": 0,
+        "z": 0
+      },
+      "halfExtents": {
+        "x": 21,
+        "y": 8,
+        "z": 27
+      },
+      "label": "Ruined hamlet (city studio)",
+      "meta": {
+        "gridness": 0.45,
+        "curviness": 0.5,
+        "branching": 0.6,
+        "blockSize": 24,
+        "blockAspect": 1,
+        "openSpace": 0.15,
+        "buildingDensity": 0.75,
+        "streetWidth": 3.5,
+        "boulevards": 0,
+        "gravelLanes": true,
+        "profile": "uniform",
+        "coreExtent": 0.4,
+        "midExtent": 0.7,
+        "coreMix": [
+          {
+            "item": "shop",
+            "weight": 2
+          },
+          {
+            "item": "rowhouse",
+            "weight": 2
+          }
+        ],
+        "midMix": [
+          {
+            "item": "house",
+            "weight": 3
+          },
+          {
+            "item": "rowhouse",
+            "weight": 1
+          }
+        ],
+        "edgeMix": [
+          {
+            "item": "house",
+            "weight": 2
+          },
+          {
+            "item": "barn",
+            "weight": 1
+          }
+        ],
+        "lotScale": 0.7,
+        "floorsMin": 1,
+        "floorsMax": 2,
+        "floorHeight": 2.6,
+        "treeDensity": 0.45,
+        "treeMix": [
+          {
+            "item": "conifer",
+            "weight": 3
+          },
+          {
+            "item": "broadleaf",
+            "weight": 1
+          }
+        ],
+        "lightDensity": 0,
+        "hedges": false,
+        "driveways": false,
+        "parking": false,
+        "fields": false,
+        "sidewalks": false,
+        "style": "ruin",
+        "seed": "ashfall-3"
+      }
+    }
   ],
   "paths": [
     {
       "id": "war-road",
       "kind": "route",
       "points": [
-        { "x": 0, "y": 0, "z": 34 },
-        { "x": 0, "y": 0, "z": 12 },
-        { "x": 0, "y": 0, "z": -12 },
-        { "x": 0, "y": 0, "z": -34 }
+        {
+          "x": 0,
+          "y": 0,
+          "z": 34
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "z": 12
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "z": -12
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "z": -34
+        }
       ],
       "width": 5,
       "color": "#8a6d42",
       "label": "War-road",
-      "meta": { "clearance": 2.5 }
+      "meta": {
+        "clearance": 2.5
+      }
     },
     {
       "id": "forest-west",
       "kind": "scatter",
       "points": [
-        { "x": -52, "y": 0, "z": -46 },
-        { "x": -28, "y": 0, "z": -46 },
-        { "x": -28, "y": 0, "z": 46 },
-        { "x": -52, "y": 0, "z": 46 }
+        {
+          "x": -52,
+          "y": 0,
+          "z": -46
+        },
+        {
+          "x": -28,
+          "y": 0,
+          "z": -46
+        },
+        {
+          "x": -28,
+          "y": 0,
+          "z": 46
+        },
+        {
+          "x": -52,
+          "y": 0,
+          "z": 46
+        }
       ],
       "label": "West woods",
       "meta": {
@@ -75,11 +507,26 @@
         "maxScale": 1.8,
         "jitter": 1,
         "palette": [
-          { "item": "pine", "weight": 5 },
-          { "item": "tree", "weight": 3 },
-          { "item": "oak", "weight": 2 },
-          { "item": "bush", "weight": 2 },
-          { "item": "rock", "weight": 1 }
+          {
+            "item": "pine",
+            "weight": 5
+          },
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "oak",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 2
+          },
+          {
+            "item": "rock",
+            "weight": 1
+          }
         ]
       }
     },
@@ -87,10 +534,26 @@
       "id": "forest-east",
       "kind": "scatter",
       "points": [
-        { "x": 28, "y": 0, "z": -46 },
-        { "x": 52, "y": 0, "z": -46 },
-        { "x": 52, "y": 0, "z": 46 },
-        { "x": 28, "y": 0, "z": 46 }
+        {
+          "x": 28,
+          "y": 0,
+          "z": -46
+        },
+        {
+          "x": 52,
+          "y": 0,
+          "z": -46
+        },
+        {
+          "x": 52,
+          "y": 0,
+          "z": 46
+        },
+        {
+          "x": 28,
+          "y": 0,
+          "z": 46
+        }
       ],
       "label": "East woods",
       "meta": {
@@ -103,11 +566,26 @@
         "maxScale": 1.8,
         "jitter": 1,
         "palette": [
-          { "item": "pine", "weight": 5 },
-          { "item": "tree", "weight": 3 },
-          { "item": "oak", "weight": 2 },
-          { "item": "bush", "weight": 2 },
-          { "item": "rock", "weight": 1 }
+          {
+            "item": "pine",
+            "weight": 5
+          },
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "oak",
+            "weight": 2
+          },
+          {
+            "item": "bush",
+            "weight": 2
+          },
+          {
+            "item": "rock",
+            "weight": 1
+          }
         ]
       }
     },
@@ -115,10 +593,26 @@
       "id": "grove-south",
       "kind": "scatter",
       "points": [
-        { "x": -26, "y": 0, "z": 40 },
-        { "x": 26, "y": 0, "z": 40 },
-        { "x": 26, "y": 0, "z": 50 },
-        { "x": -26, "y": 0, "z": 50 }
+        {
+          "x": -26,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": 26,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": 26,
+          "y": 0,
+          "z": 50
+        },
+        {
+          "x": -26,
+          "y": 0,
+          "z": 50
+        }
       ],
       "label": "South grove",
       "meta": {
@@ -131,9 +625,18 @@
         "maxScale": 1.7,
         "jitter": 1,
         "palette": [
-          { "item": "tree", "weight": 4 },
-          { "item": "oak", "weight": 3 },
-          { "item": "bush", "weight": 2 }
+          {
+            "item": "tree",
+            "weight": 4
+          },
+          {
+            "item": "oak",
+            "weight": 3
+          },
+          {
+            "item": "bush",
+            "weight": 2
+          }
         ]
       }
     },
@@ -141,10 +644,26 @@
       "id": "grove-north",
       "kind": "scatter",
       "points": [
-        { "x": -26, "y": 0, "z": -50 },
-        { "x": 26, "y": 0, "z": -50 },
-        { "x": 26, "y": 0, "z": -40 },
-        { "x": -26, "y": 0, "z": -40 }
+        {
+          "x": -26,
+          "y": 0,
+          "z": -50
+        },
+        {
+          "x": 26,
+          "y": 0,
+          "z": -50
+        },
+        {
+          "x": 26,
+          "y": 0,
+          "z": -40
+        },
+        {
+          "x": -26,
+          "y": 0,
+          "z": -40
+        }
       ],
       "label": "North grove",
       "meta": {
@@ -157,9 +676,18 @@
         "maxScale": 1.7,
         "jitter": 1,
         "palette": [
-          { "item": "pine", "weight": 4 },
-          { "item": "tree", "weight": 3 },
-          { "item": "rock", "weight": 2 }
+          {
+            "item": "pine",
+            "weight": 4
+          },
+          {
+            "item": "tree",
+            "weight": 3
+          },
+          {
+            "item": "rock",
+            "weight": 2
+          }
         ]
       }
     },
@@ -167,10 +695,26 @@
       "id": "meadow-doodads",
       "kind": "scatter",
       "points": [
-        { "x": -24, "y": 0, "z": -38 },
-        { "x": 24, "y": 0, "z": -38 },
-        { "x": 24, "y": 0, "z": 38 },
-        { "x": -24, "y": 0, "z": 38 }
+        {
+          "x": -24,
+          "y": 0,
+          "z": -38
+        },
+        {
+          "x": 24,
+          "y": 0,
+          "z": -38
+        },
+        {
+          "x": 24,
+          "y": 0,
+          "z": 38
+        },
+        {
+          "x": -24,
+          "y": 0,
+          "z": 38
+        }
       ],
       "label": "Meadow doodads",
       "meta": {
@@ -183,11 +727,140 @@
         "maxScale": 1.4,
         "jitter": 1,
         "palette": [
-          { "item": "bush", "weight": 3 },
-          { "item": "rock", "weight": 2 },
-          { "item": "stone", "weight": 1 }
+          {
+            "item": "bush",
+            "weight": 3
+          },
+          {
+            "item": "rock",
+            "weight": 2
+          },
+          {
+            "item": "stone",
+            "weight": 1
+          }
         ]
       }
+    }
+  ],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": [
+    {
+      "id": "entities",
+      "entries": [
+        {
+          "id": "peasant",
+          "label": "Peasant",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 70,
+            "walkSpeed": 4.6,
+            "scale": 1
+          }
+        },
+        {
+          "id": "footman",
+          "label": "Footman",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 130,
+            "walkSpeed": 4.7,
+            "scale": 1
+          }
+        },
+        {
+          "id": "rifleman",
+          "label": "Rifleman",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 90,
+            "walkSpeed": 4.5,
+            "scale": 1
+          }
+        },
+        {
+          "id": "barracks",
+          "label": "Barracks",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 700,
+            "walkSpeed": 0,
+            "scale": 1
+          }
+        },
+        {
+          "id": "farm",
+          "label": "Farm",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 420,
+            "walkSpeed": 0,
+            "scale": 1
+          }
+        },
+        {
+          "id": "guard_tower",
+          "label": "Guard Tower",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 560,
+            "walkSpeed": 0,
+            "scale": 1
+          }
+        },
+        {
+          "id": "hero",
+          "label": "Bram the Bold",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 380,
+            "walkSpeed": 4.3,
+            "scale": 1.28
+          }
+        },
+        {
+          "id": "keep_player",
+          "label": "Ironhold Keep",
+          "meta": {
+            "role": "npc",
+            "maxHealth": 1600,
+            "walkSpeed": 0,
+            "scale": 1
+          }
+        },
+        {
+          "id": "grunt",
+          "label": "Marauder",
+          "meta": {
+            "role": "enemy",
+            "maxHealth": 110,
+            "walkSpeed": 4.3,
+            "scale": 1
+          }
+        },
+        {
+          "id": "reaver",
+          "label": "Reaver",
+          "meta": {
+            "role": "enemy",
+            "maxHealth": 240,
+            "walkSpeed": 3.9,
+            "scale": 1.22
+          }
+        },
+        {
+          "id": "keep_enemy",
+          "label": "Marauder Warcamp",
+          "meta": {
+            "role": "enemy",
+            "maxHealth": 1300,
+            "walkSpeed": 0,
+            "scale": 1
+          }
+        }
+      ]
     }
   ]
 }
