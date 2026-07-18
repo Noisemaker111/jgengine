@@ -115,7 +115,7 @@ export interface LevelingStatAccess {
   set(userId: string, statId: string, patch: { current?: number; max?: number }): unknown;
 }
 
-/** A resolved leveling track: the immutable `maxLevel`/`startLevel`, the `xpForLevel` threshold lookup, a pure `resolve`, and `grantXp` which writes back through a {@link LevelingStatAccess} and fires an `onLevelUp` callback. */
+/** A resolved leveling track: the immutable `maxLevel`/`startLevel`, the `xpForLevel` threshold lookup, a pure `resolve`, and `grantXp` which writes back through a {@link LevelingStatAccess} and fires `onLevelUp` once for every reached level in ascending order. */
 export interface LevelingTrack {
   readonly maxLevel: number;
   readonly startLevel: number;
@@ -134,7 +134,7 @@ export interface LevelingTrack {
  * returned {@link LevelingTrack} resolves how many levels a given xp total earns
  * (rolling over surplus xp, capping at `maxLevel`) and, via `grantXp`, writes the
  * new level/xp back through a {@link LevelingStatAccess} and fires `onLevelUp` for
- * each level gained. Reach for this instead of hand-tracking xp thresholds; pair
+ * each level gained in ascending order. Reach for this instead of hand-tracking xp thresholds; pair
  * it with `resource-pool` (mana/stamina) and `ability-bar` (cooldowns) for a hero.
  *
  * @capability leveling-track grant XP, resolve level-ups against a curve, and write level+xp stats back through a stat adapter
@@ -201,7 +201,9 @@ export function leveling(config: LevelingConfig): LevelingTrack {
     access.set(userId, xpStat, { current: progress.xp, max: progress.xpMax });
     if (progress.levelsGained > 0) {
       access.set(userId, levelStat, { current: progress.level });
-      onLevelUp?.(progress.level);
+      for (let reached = level.current + 1; reached <= progress.level; reached += 1) {
+        onLevelUp?.(reached);
+      }
     }
     return progress.levelsGained;
   };
