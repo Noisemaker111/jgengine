@@ -235,6 +235,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
 
+## mesh-movement — the walking player slides against a mesh collider's compound `boxes` — a capsule walks THROUGH an opted-in archway opening and is stopped by its pillars/lintel instead of one outer box.
+
+- `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
+
 ## minimap-bake — rasterize authored terrain + zones into a top-down minimap image
 
 - `bakeMinimapImage` (function) · `import { bakeMinimapImage } from "@jgengine/core/world"`

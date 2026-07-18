@@ -5,15 +5,18 @@ import type { InputFrame } from "../runtime/inputSnapshot";
 import { applyHorizontalImpulses, applyMotionImpulses } from "../runtime/motionIntents";
 import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../world/terrain";
 import type { WorldFeature } from "../world/features";
+import { resolveColliders, type ResolvedCollider } from "../scene/colliders";
+import type { EntityPosition } from "../scene/entityStore";
 import {
   advancePlayerMotion,
   constrainStepToAxis,
   createEmptyMovementKeys,
   createPlayerMotionState,
-  nearbyObstacles,
+  DEFAULT_OBSTACLE_PLAYER_RADIUS,
   resolveMovementIntent,
   resolveObstacleStep,
   snapPositionToGrid,
+  type CollisionObstacle,
   type MotionFrameOptions,
   type MovementTuningOverrides,
   type PlayerMotionState,
@@ -280,7 +283,7 @@ export function stepPlayerMovement(
     stepZ = constrained.stepZ;
   }
   if (tuning.movement?.collideObjects === true) {
-    const obstacles = nearbyObstacles(ctx.scene.object.list(), player.position);
+    const obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ);
     const resolved = resolveObstacleStep(player.position, stepX, stepZ, obstacles);
     stepX = resolved.stepX;
     stepZ = resolved.stepZ;
@@ -341,4 +344,119 @@ export function stepPlayerMovement(
     ),
     dt,
   });
+}
+
+/** Feet-to-head span the obstruction test uses; matches `movementModel`'s `OBSTACLE_PLAYER_HEIGHT`. */
+const OBSTACLE_PLAYER_HEIGHT = 1.8;
+/**
+ * Largest collider half-extent the bounded broadphase assumes, so an object whose blocking box reaches
+ * the player still has its center inside the `inBox` query — a ~4m wall (half-extent ~2m) is caught. An
+ * object wider than this on an axis could be missed at its far edge; raise it if a wider blocker exists.
+ */
+const OBSTACLE_MAX_HALF_EXTENT = 4;
+
+/**
+ * Gather the player's nearby blocking obstacles from resolved colliders — the mesh-accurate replacement
+ * for the old `nearbyObstacles(list(), …)` which emitted a default 1×1×1 box per object. Bounded by an
+ * `inBox` broadphase (reach ≥ player radius + max half-extent so wide walls can't be missed), then, per
+ * candidate, keeps only blocking physical colliders and emits their real half-extents/offset (or, for a
+ * mesh collider carrying `boxes`, the compound sub-boxes), conservatively yaw-rotated by the object's
+ * `rotationY`. Objects with no resolved collider fall back to the default box; objects whose colliders
+ * don't block stop obstructing. Runs for both the shell's local player and a host, so parity is automatic.
+ */
+function gatherMovementObstacles(
+  ctx: GameContext,
+  position: EntityPosition,
+  stepX: number,
+  stepZ: number,
+): CollisionObstacle[] {
+  const reachX = Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS + OBSTACLE_MAX_HALF_EXTENT;
+  const reachZ = Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS + OBSTACLE_MAX_HALF_EXTENT;
+  const min: EntityPosition = [
+    position[0] - reachX,
+    position[1] - OBSTACLE_MAX_HALF_EXTENT,
+    position[2] - reachZ,
+  ];
+  const max: EntityPosition = [
+    position[0] + reachX,
+    position[1] + OBSTACLE_PLAYER_HEIGHT + OBSTACLE_MAX_HALF_EXTENT,
+    position[2] + reachZ,
+  ];
+  const obstacles: CollisionObstacle[] = [];
+  for (const object of ctx.scene.object.inBox(min, max)) {
+    const set = ctx.scene.object.collidersOf(object.instanceId);
+    if (set === null) {
+      // No resolved collider: preserve today's default 1×1×1 box.
+      obstacles.push({ position: object.position });
+      continue;
+    }
+    for (const collider of resolveColliders(set)) {
+      if (!collider.blocks || collider.purpose !== "physical") continue;
+      obstacles.push(obstacleFromCollider(collider, object.position, object.rotationY));
+    }
+  }
+  return obstacles;
+}
+
+/** One blocking collider as a {@link CollisionObstacle}: a compound `boxes` obstacle for a mesh collider
+ * carrying sub-boxes, else a single half-extents/offset AABB. Yaw is applied by conservatively expanding
+ * each AABB to its rotated extent (mirroring `worldOffset`), so the obstruction never under-covers. */
+function obstacleFromCollider(
+  collider: ResolvedCollider,
+  position: EntityPosition,
+  rotationY: number,
+): CollisionObstacle {
+  const cos = Math.cos(rotationY);
+  const sin = Math.sin(rotationY);
+  const shape = collider.shape;
+  if (shape.kind === "mesh" && shape.boxes !== undefined && shape.boxes.length > 0) {
+    return {
+      position,
+      boxes: shape.boxes.map((b) => yawExpandLocalBox(b.min, b.max, cos, sin)),
+    };
+  }
+  let hx: number;
+  let hy: number;
+  let hz: number;
+  if (shape.kind === "sphere") {
+    hx = hy = hz = shape.radius;
+  } else {
+    hx = shape.halfExtents[0];
+    hy = shape.halfExtents[1];
+    hz = shape.halfExtents[2];
+  }
+  const offset = shape.offset;
+  const ox = offset !== undefined ? offset[0] : 0;
+  const oy = offset !== undefined ? offset[1] : 0;
+  const oz = offset !== undefined ? offset[2] : 0;
+  return {
+    position,
+    // Rotate the offset by yaw (mirror of colliders.worldOffset), expand the extents to the rotated AABB.
+    offset: [ox * cos + oz * sin, oy, -ox * sin + oz * cos],
+    halfExtents: [Math.abs(hx * cos) + Math.abs(hz * sin), hy, Math.abs(hx * sin) + Math.abs(hz * cos)],
+  };
+}
+
+/** Yaw-rotate an entity-local AABB about the object origin and re-fit it to an axis-aligned box, expressed
+ * as `min`/`max` relative to `position`. Conservative: the rotated box is grown to its enclosing AABB. */
+function yawExpandLocalBox(
+  boxMin: readonly [number, number, number],
+  boxMax: readonly [number, number, number],
+  cos: number,
+  sin: number,
+): { min: [number, number, number]; max: [number, number, number] } {
+  const centerX = (boxMin[0] + boxMax[0]) / 2;
+  const centerY = (boxMin[1] + boxMax[1]) / 2;
+  const centerZ = (boxMin[2] + boxMax[2]) / 2;
+  const halfX = (boxMax[0] - boxMin[0]) / 2;
+  const halfY = (boxMax[1] - boxMin[1]) / 2;
+  const halfZ = (boxMax[2] - boxMin[2]) / 2;
+  const rcX = centerX * cos + centerZ * sin;
+  const rcZ = -centerX * sin + centerZ * cos;
+  const rhX = Math.abs(halfX * cos) + Math.abs(halfZ * sin);
+  const rhZ = Math.abs(halfX * sin) + Math.abs(halfZ * cos);
+  return {
+    min: [rcX - rhX, centerY - halfY, rcZ - rhZ],
+    max: [rcX + rhX, centerY + halfY, rcZ + rhZ],
+  };
 }
