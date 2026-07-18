@@ -16,7 +16,7 @@ export const WORKSPACES: readonly RailEntry[] = [
   { id: "terrain", label: "Terrain", icon: "terrain", supported: true },
   { id: "assets", label: "Assets", icon: "image", supported: true },
   { id: "materials", label: "Materials", icon: "sphere", supported: true },
-  { id: "scripting", label: "Scripting", icon: "script", supported: false },
+  { id: "scripting", label: "Scripting", icon: "script", supported: true },
   { id: "animation", label: "Animation", icon: "film", supported: false },
   { id: "audio", label: "Audio", icon: "audio", supported: false },
   { id: "lighting", label: "Lighting", icon: "bulb", supported: true },

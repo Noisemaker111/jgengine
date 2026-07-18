@@ -60,6 +60,7 @@ import { createPerfHistoryStore } from "./shell/perfHistory";
 import { BORDER, FOCUS_RING } from "./shell/theme";
 import { IconButton, Kbd, PanelResizer } from "./shell/ui";
 import type { EditorNetworkSnapshot } from "./networkSnapshot";
+import { ScriptingPanel } from "./ScriptingPanel";
 
 let clipboardFragment: EditorDocument | null = null;
 
@@ -843,7 +844,9 @@ export function EditorChrome({
                   ? "Network workspace dock"
                   : layoutState.workspace === "materials"
                     ? "Materials workspace dock"
-                    : "Scene hierarchy dock"
+                    : layoutState.workspace === "scripting"
+                      ? "Scripting workspace dock"
+                      : "Scene hierarchy dock"
               }
             >
               <div className={`flex h-8 shrink-0 items-center gap-1 border-b ${BORDER} px-1.5`}>
@@ -851,6 +854,11 @@ export function EditorChrome({
                   <span className="px-2 text-[11px] font-medium text-neutral-200">Network</span>
                 ) : layoutState.workspace === "materials" ? (
                   <span className="px-2 text-[11px] text-neutral-100">Materials</span>
+                ) : layoutState.workspace === "scripting" ? (
+                  <>
+                    <Icon name="script" size={13} className="ml-1 text-amber-300" />
+                    <span className="px-1 text-[11px] text-neutral-200">Scripting</span>
+                  </>
                 ) : (
                   LEFT_PAGES.map((page) => {
                     const badge =
@@ -881,7 +889,7 @@ export function EditorChrome({
                 )}
                 <IconButton
                   icon="close"
-                  label="Collapse hierarchy panel"
+                  label="Collapse left panel"
                   size={11}
                   tone="ghost"
                   className="ml-auto"
@@ -892,6 +900,8 @@ export function EditorChrome({
                 <NetworkWorkspacePanel snapshot={networkSnapshot} />
               ) : layoutState.workspace === "materials" ? (
                 <MaterialsWorkspacePanel session={session} api={api} />
+              ) : layoutState.workspace === "scripting" ? (
+                <ScriptingPanel session={session} api={api} />
               ) : layoutState.leftPage === "collections" ? (
                 <CollectionsPanel session={session} />
               ) : layoutState.leftPage === "prefabs" ? (
@@ -916,6 +926,7 @@ export function EditorChrome({
                     });
                   }}
                 />
+              )}
               )}
             </aside>
             <PanelResizer orientation="vertical" label="Resize hierarchy panel" onResize={(delta) => layout.resize("leftWidth", delta)} />
