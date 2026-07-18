@@ -111,6 +111,17 @@ export type EditorBridgeRequest =
       shape?: "circle" | "square";
     }
   | { method: "convert_scatter"; pathId: string }
+  | {
+      method: "generate_path_network";
+      volumeId?: string;
+      center?: { x: number; y: number; z: number };
+      halfX?: number;
+      halfZ?: number;
+      seed?: string;
+      mode?: "net" | "circuit";
+      kind?: string;
+      params?: Record<string, unknown>;
+    }
   | { method: "bake_minimap"; padding?: number; resolution?: number; waterLevel?: number }
   | {
       method: "add_foliage";
