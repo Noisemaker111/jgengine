@@ -5,6 +5,7 @@ import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } fro
 import { gamePhase } from "../game/gamePhase";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { encodeCollisionMesh, type CollisionMeshData, type CollisionMeshSource } from "../scene/collisionMesh";
 import { defineStore } from "../store/defineStore";
 import { environment, terrain } from "../world/features";
 import { resolveTerrainField } from "../world/terrain";
@@ -1163,5 +1164,138 @@ describe("model-fitted colliders", () => {
     expect(low?.targetKind).toBe("entity");
     const high = ctx.scene.raycast({ origin: [-5, 1.0, 0], direction: [1, 0, 0], maxDistance: 20 });
     expect(high).toBeNull();
+  });
+});
+
+describe("mesh-accurate colliders", () => {
+  // Torus: major radius 1, tube radius 0.3, hole axis +Z, centered at origin — the concave test model.
+  const torusDims = { footprint: { w: 2.6, d: 0.6 }, center: { x: 0, z: 0 }, minY: -1.3, maxY: 1.3 };
+
+  function torusSource(major = 32, tube = 16, ringRadius = 1, tubeRadius = 0.3): CollisionMeshSource {
+    const positions: number[] = [];
+    for (let i = 0; i < major; i += 1) {
+      const a = (i / major) * Math.PI * 2;
+      for (let j = 0; j < tube; j += 1) {
+        const b = (j / tube) * Math.PI * 2;
+        positions.push(
+          Math.cos(a) * (ringRadius + Math.cos(b) * tubeRadius),
+          Math.sin(a) * (ringRadius + Math.cos(b) * tubeRadius),
+          Math.sin(b) * tubeRadius,
+        );
+      }
+    }
+    const vertexAt = (i: number, j: number): number => (i % major) * tube + (j % tube);
+    const indices: number[] = [];
+    for (let i = 0; i < major; i += 1) {
+      for (let j = 0; j < tube; j += 1) {
+        indices.push(
+          vertexAt(i, j),
+          vertexAt(i + 1, j),
+          vertexAt(i + 1, j + 1),
+          vertexAt(i, j),
+          vertexAt(i + 1, j + 1),
+          vertexAt(i, j + 1),
+        );
+      }
+    }
+    return { positions, indices };
+  }
+
+  function torusData(): CollisionMeshData {
+    const data = encodeCollisionMesh(torusSource());
+    if (data === null) throw new Error("torus failed to encode");
+    return data;
+  }
+
+  function makeMeshContext() {
+    return createGameContext({
+      definition: defineGame({ name: "Mesh", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {
+        entityById(catalogId) {
+          if (catalogId === "torus") return { stats: { health: { max: 5 } } };
+          if (catalogId === "armored") {
+            return {
+              colliders: {
+                hitboxes: [{ name: "body", purpose: "damage", shape: { kind: "sphere", radius: 3 } }],
+              },
+            };
+          }
+          return null;
+        },
+        objectById(catalogId) {
+          if (catalogId === "torus") return {};
+          if (catalogId === "boxed") return { halfExtents: [2, 2, 2] as const };
+          return null;
+        },
+      },
+      player: { userId: "user_a", isNew: true },
+      models: {
+        entity: (kind) =>
+          kind === "torus" || kind === "armored" ? { dims: torusDims, collisionMesh: torusData() } : undefined,
+        object: (catalogId) =>
+          catalogId === "torus" || catalogId === "boxed"
+            ? { dims: torusDims, collisionMesh: torusData() }
+            : undefined,
+      },
+    });
+  }
+
+  test("anchor math grounds the mesh: fitted box halfExtents and hole center above placement", () => {
+    const ctx = makeMeshContext();
+    const donut = ctx.scene.object.place("torus", 0, 0, 4);
+    const shape = ctx.scene.object.collidersOf(donut)!.body!.shape;
+    if (shape.kind !== "mesh") throw new Error("expected a mesh shape");
+    // Centered model (scale 1, y 0): box grounds minY=-1.3 at placement, hole center 1.3 above.
+    expect(shape.meshScale).toBe(1);
+    expect(shape.meshTranslate[0]).toBeCloseTo(0, 10);
+    expect(shape.meshTranslate[1]).toBeCloseTo(1.3, 10);
+    expect(shape.meshTranslate[2]).toBeCloseTo(0, 10);
+    expect(shape.halfExtents).toEqual([1.3, 1.3, 0.3]);
+  });
+
+  test("an object mesh body is missed through the hole and blocks at the ring", () => {
+    const ctx = makeMeshContext();
+    ctx.scene.object.place("torus", 0, 0, 4);
+    // Aimed straight through the hole center (placement + [0,1.3,0]) — inside the fitted box footprint,
+    // yet the real triangles let it pass.
+    const through = ctx.scene.raycast({ origin: [0, 1.3, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(through).toBeNull();
+    // Offset onto the tube ring — the conservative box and the mesh agree there.
+    const ring = ctx.scene.raycast({ origin: [1, 1.3, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(ring?.targetKind).toBe("object");
+    expect(ring?.blocks).toBe(true);
+    expect(ring?.distance).toBeCloseTo(3.7, 1);
+  });
+
+  test("an entity mesh hitbox is a non-blocking damage target with the same hole", () => {
+    const ctx = makeMeshContext();
+    ctx.scene.entity.spawn("torus", { position: [0, 0, 4] });
+    const through = ctx.scene.raycast({ origin: [0, 1.3, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(through).toBeNull();
+    const ring = ctx.scene.raycast({ origin: [1, 1.3, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(ring?.targetKind).toBe("entity");
+    expect(ring?.damageEligible).toBe(true);
+    expect(ring?.blocks).toBe(false);
+    expect(ring?.distance).toBeCloseTo(3.7, 1);
+  });
+
+  test("per-instance setColliders still overrides the mesh fit", () => {
+    const ctx = makeMeshContext();
+    const donut = ctx.scene.entity.spawn("torus", { position: [0, 0, 4] });
+    expect(ctx.scene.entity.collidersOf(donut)!.hitboxes![0]!.shape.kind).toBe("mesh");
+    ctx.scene.entity.setColliders(donut, {
+      hitboxes: [{ name: "body", purpose: "damage", shape: { kind: "sphere", radius: 9 } }],
+    });
+    expect(ctx.scene.entity.collidersOf(donut)!.hitboxes![0]!.shape.kind).toBe("sphere");
+  });
+
+  test("authored catalog colliders and halfExtents still beat the mesh fit", () => {
+    const ctx = makeMeshContext();
+    const armored = ctx.scene.entity.spawn("armored", { position: [0, 0, 0] });
+    expect(ctx.scene.entity.collidersOf(armored)!.hitboxes![0]!.shape.kind).toBe("sphere");
+    // A catalog halfExtents entry keeps the authored box: collidersOf falls back (returns null) so the
+    // default box from halfExtentsOf is used, never the mesh.
+    const boxed = ctx.scene.object.place("boxed", 0, 0, 0);
+    expect(ctx.scene.object.collidersOf(boxed)).toBeNull();
   });
 });

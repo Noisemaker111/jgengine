@@ -9,6 +9,7 @@ import {
   type EntityColliderSet,
   type ResolvedCollider,
 } from "./colliders";
+import { raycastCollisionMesh } from "./collisionMesh";
 import { intersectAabb, normalizeDirection } from "./objectQuery";
 import type { SceneObject } from "./objectStore";
 
@@ -136,6 +137,28 @@ function rayHitsCollider(
   if (collider.shape.kind === "sphere") {
     const center = colliderWorldCenter(collider, position, rotationY);
     const hit = rayHitsSphere(origin, direction, center, collider.shape.radius, maxDistance);
+    if (hit === null) return null;
+    return {
+      distance: hit.distance,
+      normal: hit.normal,
+      point: [
+        origin[0] + direction[0] * hit.distance,
+        origin[1] + direction[1] * hit.distance,
+        origin[2] + direction[2] * hit.distance,
+      ],
+    };
+  }
+  if (collider.shape.kind === "mesh") {
+    const hit = raycastCollisionMesh(
+      collider.shape.mesh,
+      origin,
+      direction,
+      maxDistance,
+      position,
+      rotationY,
+      collider.shape.meshScale,
+      collider.shape.meshTranslate,
+    );
     if (hit === null) return null;
     return {
       distance: hit.distance,
