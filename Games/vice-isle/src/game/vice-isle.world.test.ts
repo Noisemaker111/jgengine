@@ -39,7 +39,7 @@ describe("vice-isle authored scene parity", () => {
     expect(ROADS[8]).toEqual({ from: [-180, 240], to: [180, 240] });
   });
 
-  test("the ten race checkpoints match the authored loop", () => {
+  test("the eleven race checkpoints match the authored loop", () => {
     expect(RACE_CHECKPOINTS).toEqual([
       [-60, 120],
       [60, 120],
@@ -47,6 +47,7 @@ describe("vice-isle authored scene parity", () => {
       [180, 0],
       [180, -240],
       [60, -240],
+      [-60, -240],
       [-60, -120],
       [-180, -120],
       [-180, 120],
