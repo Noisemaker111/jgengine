@@ -21,7 +21,9 @@ test("createBlankPlayable registers supplied assets into the catalog", () => {
   expect(playable.game.assets.resolve("tree")?.url).toBe("blob:tree");
 });
 
-test("blankWorld is an environment feature with ground", () => {
-  const world = blankWorld("seed");
+test("blankWorld is a bare authoring canvas: ground, no pre-baked dressing", () => {
+  const world = blankWorld();
   expect(world.kind).toBe("environment");
+  expect(world.terrain).toBeDefined();
+  expect(world.vegetation).toBeUndefined();
 });

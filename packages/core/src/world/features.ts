@@ -1,6 +1,7 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
 import type { AvoidZone } from "./geometry";
 import type { TerrainPathProfile } from "./pathTerrain";
+import type { PlaceWorldFeature } from "./place";
 import type { TerraformSnapshot } from "./terraform";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
 
@@ -505,8 +506,14 @@ export interface TilemapWorldConfig extends WorldGridConfig {
   map: string;
 }
 
-/** A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`. */
+/**
+ * A declared world shape passed to `defineGame`. The preferred model is the place feature from
+ * `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the
+ * editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the
+ * legacy code-declared shapes kept for existing games.
+ */
 export type WorldFeature =
+  | PlaceWorldFeature
   | ({ kind: "biomes" } & BiomesWorldConfig)
   | ({ kind: "voxel" } & VoxelWorldConfig)
   | ({ kind: "plots" } & PlotsWorldConfig)
@@ -570,9 +577,15 @@ function bandWeatherDescriptors(
   return out;
 }
 
-/** Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+/** Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
  *
- * @capability world-environment declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+ * Legacy dressing-in-code path — not how a world is defined. A world is the place you play in
+ * (`world()` from `world/place`: ground + laws); sky look, foliage scatter, props, and sculpt are
+ * scene content authored in the editor. Reach for `environment()` only when consuming
+ * editor/preset-written scene data (`environmentContentFromDocument`) or maintaining an existing
+ * game; never scaffold new worlds from it.
+ *
+ * @capability world-environment compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
  */
 export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature {
   const explicitWeather = list(config.weather);

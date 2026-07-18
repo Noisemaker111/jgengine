@@ -5,7 +5,6 @@ import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import {
   environment,
-  grass,
   sky,
   terrain,
   type EnvironmentWorldFeature,
@@ -32,14 +31,18 @@ export interface BlankPlayableOptions {
   world?: EnvironmentWorldFeature;
 }
 
-/** The default flat-ground world the standalone editor opens on when the host supplies none. */
-export function blankWorld(seed = "standalone"): EnvironmentWorldFeature {
+/**
+ * The default flat-ground authoring canvas the standalone editor opens on when the host supplies
+ * none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look,
+ * foliage scatter, props) is what the author adds here, written into the scene document; it is
+ * never pre-baked into the canvas. The `seed` parameter is legacy and unused.
+ */
+export function blankWorld(_seed = "standalone"): EnvironmentWorldFeature {
   return environment({
     terrain: terrain({ bounds: { w: 128, d: 128 }, height: 0, material: "grass" }),
     // Fog pushed past the world edge: the engine's default (near 70 / far 260) soaks most of a
     // 128 m authoring canvas in haze — the editor should open on a clear world.
     sky: sky({ preset: "day", fog: { near: 220, far: 700 } }),
-    vegetation: grass({ area: { w: 100, d: 100 }, density: 1.5, colors: ["#3f7d2d", "#6bbf4a"], seed }),
   });
 }
 

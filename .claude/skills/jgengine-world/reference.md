@@ -2,9 +2,35 @@
 
 Reference module for the [`jgengine-world` API](SKILL.md) skill. Load this when you need the renderer-free world surface.
 
-## World features
+## World = place (the definition of a world)
 
-Descriptors from `@jgengine/core/world/features` — config data the runner/world layer interprets:
+A world is the place a game happens in — substrate + laws — declared with `world()` from
+`@jgengine/core/world/place`. It is never a coded diorama: sky look, foliage scatter, props, and
+sculpt are scene content authored in the editor (`jgengine-editor`), and the engine renders its
+default sky when the document has none.
+
+```ts
+import { world } from "@jgengine/core/world/place";
+
+export const overworld = world({
+  id: "overworld",                                      // place identity: saves, seeds, switching
+  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
+  physics: { gravity: -24 },                            // laws of THIS place
+});
+```
+
+- `ground.mode` discriminates `size`: `flat` takes `{ x, z }` (or `{ x, y, z }`; `Infinity` = unbounded axis), `round` takes `{ radius }` only, `voxel` takes the generator domain `{ x, y, z }` (axes may be `Infinity`), `board` takes `{ x, y }` in cells/layout units (2D surface you look at — grid games, solitaire, tabletop; `stage` is a `board` alias). TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `ground.surface` is optional matter/feel law (`{ matter?, friction?, restitution?, traits? }`) systems and audio read — metal vs slime vs felt changes the feel of the *same* rule systems, never forks them. Not a theme kit.
+- `ground.generator` (procedural modes) is algorithm params only — never a seed, never a genre/franchise preset.
+- **No `seed` in a world definition, ever.** The engine derives seeds from world `id` + save/run via `seedForPlace(id, runSeed)` and injects them into generators and scatter.
+- Multiple worlds per game are first-class: one `world()` per place, each with its own ground + physics (`defineGameDefinition` resolves the active place's physics over the game default). Pure UI/rules games omit `world` entirely.
+- Thin defaults: `flat` + infinite axes + default physics for 3D, `board` for 2D, or no world at all. Never scaffold a "meadow with sky preset and seeded grass" — that is editor content.
+
+## Legacy world features
+
+Descriptors from `@jgengine/core/world/features` — legacy code-declared world shapes kept for
+existing games. Do not start new worlds here; `environment()` is now the consumption target for
+editor/preset-written scene data (`environmentContentFromDocument`), not a world definition:
 
 | Feature | Use |
 |---------|-----|
