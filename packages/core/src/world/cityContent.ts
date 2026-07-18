@@ -86,7 +86,7 @@ const CLASS_PROFILES: Record<CityLotClass, ClassProfile> = {
   shop: { width: [10, 15], depth: [8, 12], setback: [0.5, 1.5], gap: [1, 2.5], floors: [1, 2], backRow: true },
   rowhouse: { width: [6, 8.5], depth: [9, 12], setback: [1, 2.5], gap: [0.4, 1], floors: [2, 3], backRow: true },
   house: { width: [9, 12], depth: [8, 11], setback: [3.5, 6], gap: [3, 6], floors: [1, 2], backRow: true },
-  mansion: { width: [18, 26], depth: [14, 20], setback: [8, 14], gap: [8, 16], floors: [2, 3], backRow: false },
+  mansion: { width: [18, 26], depth: [14, 20], setback: [7, 12], gap: [4, 9], floors: [2, 3], backRow: false },
   farmhouse: { width: [11, 14], depth: [9, 12], setback: [10, 18], gap: [14, 30], floors: [2, 2], backRow: false },
   barn: { width: [12, 16], depth: [9, 13], setback: [14, 26], gap: [16, 34], floors: [1, 1], backRow: false },
   silo: { width: [5, 6], depth: [5, 6], setback: [16, 28], gap: [10, 24], floors: [1, 1], backRow: false },

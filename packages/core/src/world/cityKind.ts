@@ -257,22 +257,22 @@ export const CITY_SCHEMA: ParamSchema = {
         boulevards: 0.5,
         gravelLanes: false,
         profile: "core-out",
-        coreExtent: 0.45,
-        midExtent: 0.8,
+        coreExtent: 0.6,
+        midExtent: 0.88,
         coreMix: [
-          { item: "tower", weight: 4 },
+          { item: "tower", weight: 5 },
           { item: "slab", weight: 1 },
         ],
         midMix: [
-          { item: "tower", weight: 1 },
-          { item: "slab", weight: 3 },
+          { item: "tower", weight: 2 },
+          { item: "slab", weight: 2 },
         ],
         edgeMix: [
-          { item: "slab", weight: 2 },
+          { item: "slab", weight: 3 },
           { item: "rowhouse", weight: 2 },
         ],
         lotScale: 1,
-        floorsMin: 4,
+        floorsMin: 5,
         floorsMax: 55,
         treeDensity: 0.3,
         treeMix: [{ item: "broadleaf", weight: 1 }],
@@ -344,7 +344,7 @@ export const CITY_SCHEMA: ParamSchema = {
         blockSize: 90,
         blockAspect: 1,
         openSpace: 0.07,
-        buildingDensity: 0.5,
+        buildingDensity: 0.75,
         streetWidth: 6.5,
         boulevards: 0,
         gravelLanes: false,
@@ -363,7 +363,7 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "mansion", weight: 2 },
           { item: "house", weight: 2 },
         ],
-        lotScale: 1.7,
+        lotScale: 1.5,
         floorsMin: 1,
         floorsMax: 3,
         treeDensity: 0.9,
@@ -444,6 +444,8 @@ export const CITY_SCHEMA: ParamSchema = {
         streetWidth: 7.5,
         boulevards: 0.4,
         profile: "core-out",
+        coreExtent: 0.45,
+        midExtent: 0.75,
         floorsMin: 1,
         floorsMax: 34,
         treeDensity: 0.55,
@@ -1446,16 +1448,19 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   });
   if (rules.lightDensity > 0) {
     const lightRng = streams("lights");
-    const spacing = 34 - 22 * rules.lightDensity;
+    // Density drives pole spacing directly (0.1 → a pole every ~120 m; 1 → every 18 m), and at low
+    // densities only the avenue-and-up hierarchy is lit — a farm road keeps its dark sky.
+    const spacing = Math.min(120, Math.max(14, 18 / rules.lightDensity));
     for (const street of local) {
       if (street.level === "lane" || street.surface === "gravel") continue;
+      if (rules.lightDensity < 0.3 && LEVEL_RANK[street.level] < LEVEL_RANK.avenue) continue;
       const spots = furnitureSpots(asDescriptor(street), { spacing, outset: street.sidewalk ? 0.6 : 0.2 });
       for (const spot of spots) {
         if (lights.length >= MAX_LIGHTS) break;
         const [x, z] = spot.position;
         if (!insideBounds(x, z) || nearIntersection(x, z, 1.5)) continue;
-        if (index.clearance(x, z, 0.2) < 0) continue;
-        if (lightRng() > 0.92) continue; // occasional missing pole so rows never read stamped
+        if (index.clearance(x, z, 1.0) < 0) continue;
+        if (lightRng() > 0.95) continue; // occasional missing pole so rows never read stamped
         // Lamp arm faces back over the road: flip the outward-facing spot heading.
         lights.push({ x, z, heading: spot.heading + Math.PI });
       }
@@ -1473,7 +1478,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
         const x = spot.position[0] + (treeRng() - 0.5) * 1.6;
         const z = spot.position[1] + (treeRng() - 0.5) * 1.6;
         if (!insideBounds(x, z) || nearIntersection(x, z, 1)) continue;
-        if (index.clearance(x, z, 0.4) < 0) continue;
+        if (index.clearance(x, z, 1.2) < 0) continue;
         if (lotResult.placed.overlapsAny({ x, z, hw: 0.5, hd: 0.5, angle: 0 }, 0.5)) continue;
         trees.push({ x, z, species: pickSpecies(rules.treeMix, treeRng()), scale: 0.85 + treeRng() * 0.5, jitter: treeRng() });
       }

@@ -261,3 +261,259 @@ describe("bridges", () => {
     expect(readCityRules({}).sidewalks).toBe(true);
   });
 });
+
+describe("zoning", () => {
+  function distToCenter(lot: { center: readonly [number, number] }): number {
+    return Math.max(Math.abs(lot.center[0]), Math.abs(lot.center[1]));
+  }
+
+  test("core-out puts the core band downtown and tall classes with it", () => {
+    const city = resolveCityObject(cityVolume({ seed: "zone1" }))!;
+    const core = city.lots.filter((lot) => lot.zone === "core");
+    const edge = city.lots.filter((lot) => lot.zone === "edge");
+    expect(core.length).toBeGreaterThan(3);
+    expect(edge.length).toBeGreaterThan(3);
+    const avg = (lots: typeof core, f: (lot: (typeof core)[number]) => number) => lots.reduce((sum, lot) => sum + f(lot), 0) / lots.length;
+    expect(avg(core, distToCenter)).toBeLessThan(avg(edge, distToCenter));
+    expect(avg(core, (lot) => lot.floors)).toBeGreaterThan(avg(edge, (lot) => lot.floors));
+  });
+
+  test("inverted profile flips the rings — the core band lands at the rim", () => {
+    const normal = resolveCityObject(cityVolume({ seed: "zone1" }))!;
+    const flipped = resolveCityObject(cityVolume({ seed: "zone1", profile: "inverted" }))!;
+    const avgDist = (city: typeof normal, zone: string) => {
+      const lots = city.lots.filter((lot) => lot.zone === zone);
+      return lots.reduce((sum, lot) => sum + distToCenter(lot), 0) / Math.max(1, lots.length);
+    };
+    expect(avgDist(flipped, "core")).toBeGreaterThan(avgDist(normal, "core"));
+    expect(avgDist(flipped, "edge")).toBeLessThan(avgDist(normal, "edge"));
+  });
+
+  test("cityzone override volumes locally pin band and mix, deterministically", () => {
+    const overrides = [
+      {
+        id: "zone-override",
+        kind: "cityzone",
+        center: { x: 0, y: 0, z: 0 },
+        halfExtents: { x: 400, y: 10, z: 400 },
+        meta: { band: "edge", mix: [{ item: "barn", weight: 1 }] },
+      },
+    ];
+    const a = resolveCityObject(cityVolume({ seed: "ovr" }), { zoneOverrides: overrides })!;
+    const b = resolveCityObject(cityVolume({ seed: "ovr" }), { zoneOverrides: overrides })!;
+    expect(a).toEqual(b);
+    expect(a.lots.length).toBeGreaterThan(10);
+    for (const lot of a.lots) {
+      expect(lot.zone).toBe("edge");
+      expect(lot.class).toBe("barn");
+    }
+    // A half-district override only converts its own side.
+    const half = resolveCityObject(cityVolume({ seed: "ovr" }), {
+      zoneOverrides: [{ ...overrides[0]!, center: { x: 150, y: 0, z: 0 }, halfExtents: { x: 60, y: 10, z: 400 } }],
+    })!;
+    const inside = half.lots.filter((lot) => lot.center[0] > 95 && lot.center[0] < 205);
+    const outside = half.lots.filter((lot) => lot.center[0] < 80);
+    expect(inside.length).toBeGreaterThan(0);
+    for (const lot of inside) expect(lot.class).toBe("barn");
+    expect(outside.some((lot) => lot.class !== "barn")).toBe(true);
+  });
+});
+
+describe("presets", () => {
+  const presetValues = (id: string): Record<string, unknown> => {
+    const preset = CITY_SCHEMA.presets?.find((entry) => entry.id === id);
+    expect(preset).toBeDefined();
+    return { ...preset!.values, seed: "alpha" };
+  };
+
+  test("every preset resolves to a non-trivial deterministic district", () => {
+    for (const preset of CITY_SCHEMA.presets ?? []) {
+      const meta = { ...preset.values, seed: "smoke" };
+      const a = resolveCityObject(cityVolume(meta, { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+      const b = resolveCityObject(cityVolume(meta, { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+      expect(a).toEqual(b);
+      expect(a.streets.length).toBeGreaterThan(4);
+      expect(a.lots.length).toBeGreaterThan(15);
+    }
+  });
+
+  test("manhattan towers over rural ohio", () => {
+    const manhattan = resolveCityObject(cityVolume(presetValues("manhattan")))!;
+    const rural = resolveCityObject(cityVolume(presetValues("ruralohio"), { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+    const avgFloors = (city: typeof manhattan) => city.lots.reduce((sum, lot) => sum + lot.floors, 0) / city.lots.length;
+    expect(avgFloors(manhattan)).toBeGreaterThan(avgFloors(rural) * 3);
+    expect(manhattan.lots.filter((lot) => lot.class === "tower").length).toBeGreaterThan(15);
+    expect(manhattan.streets.some((street) => street.level === "boulevard" || street.level === "avenue")).toBe(true);
+  });
+
+  test("rural ohio is a farm town: gravel lanes, barns, silos, crop fields, no street lights", () => {
+    const rural = resolveCityObject(cityVolume(presetValues("ruralohio"), { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+    expect(rural.streets.some((street) => street.surface === "gravel")).toBe(true);
+    expect(rural.lots.some((lot) => lot.class === "barn")).toBe(true);
+    expect(rural.lots.some((lot) => lot.class === "farmhouse")).toBe(true);
+    const fields = rural.parks.filter((park) => park.type === "field");
+    expect(fields.length).toBeGreaterThan(0);
+    expect(fields.some((park) => (park.rows?.length ?? 0) > 5)).toBe(true);
+    expect(rural.lights.length).toBe(0);
+    expect(rural.driveways.length).toBeGreaterThan(10);
+  });
+
+  test("beverly hills is estates: mansions, hedges, palms and cypress", () => {
+    const hills = resolveCityObject(cityVolume(presetValues("beverlyhills")))!;
+    expect(hills.lots.filter((lot) => lot.class === "mansion").length).toBeGreaterThan(5);
+    expect(hills.hedges.length).toBeGreaterThan(20);
+    expect(hills.trees.some((tree) => tree.species === "palm")).toBe(true);
+    expect(hills.trees.some((tree) => tree.species === "cypress")).toBe(true);
+    expect(hills.trees.length).toBeGreaterThan(hills.lots.length * 3);
+  });
+
+  test("los angeles mixes palms, driveways, parking, and keeps a modest skyline", () => {
+    const la = resolveCityObject(cityVolume(presetValues("losangeles")))!;
+    const palms = la.trees.filter((tree) => tree.species === "palm").length;
+    expect(palms).toBeGreaterThan(la.trees.length / 2);
+    expect(la.driveways.length).toBeGreaterThan(20);
+    expect(la.parkingLots.length).toBeGreaterThan(0);
+    for (const lot of la.lots) expect(lot.floors).toBeLessThanOrEqual(18);
+  });
+});
+
+describe("street hierarchy, intersections, furniture", () => {
+  function distToStreet(street: { points: readonly (readonly [number, number])[] }, x: number, z: number): number {
+    let best = Infinity;
+    for (let i = 0; i + 1 < street.points.length; i += 1) {
+      const [ax, az] = street.points[i]!;
+      const [bx, bz] = street.points[i + 1]!;
+      const vx = bx - ax;
+      const vz = bz - az;
+      const len2 = vx * vx + vz * vz;
+      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / len2));
+      best = Math.min(best, Math.hypot(x - (ax + vx * t), z - (az + vz * t)));
+    }
+    return best;
+  }
+
+  test("gridded districts produce cross intersections sitting on both streets", () => {
+    const city = resolveCityObject(cityVolume({ seed: "grid", gridness: 1, curviness: 0, branching: 0 }))!;
+    expect(city.intersections.length).toBeGreaterThan(10);
+    for (const cross of city.intersections) {
+      expect(cross.arms.length).toBe(4);
+      const touching = city.streets.filter((street) => distToStreet(street, cross.x, cross.z) < street.width).length;
+      expect(touching).toBeGreaterThanOrEqual(2);
+      expect(cross.radius).toBeGreaterThan(2);
+    }
+  });
+
+  test("boulevards widen avenues and carry level metadata", () => {
+    const city = resolveCityObject(cityVolume({ seed: "blvd", boulevards: 1, gridness: 1 }))!;
+    const boulevards = city.streets.filter((street) => street.level === "boulevard");
+    expect(boulevards.length).toBeGreaterThan(0);
+    const streets = city.streets.filter((street) => street.level === "street");
+    for (const boulevard of boulevards) {
+      for (const street of streets) expect(boulevard.width).toBeGreaterThan(street.width);
+    }
+  });
+
+  test("dangling lanes keep a cul-de-sac bulb at their dead end", () => {
+    const la = resolveCityObject(
+      cityVolume({ ...(CITY_SCHEMA.presets!.find((preset) => preset.id === "losangeles")!.values as Record<string, unknown>), seed: "alpha" }),
+    )!;
+    const bulbs = la.streets.filter((street) => street.bulb !== undefined);
+    expect(bulbs.length).toBeGreaterThan(0);
+    for (const street of bulbs) {
+      const end = street.points[street.points.length - 1]!;
+      expect(Math.hypot(street.bulb![0] - end[0], street.bulb![1] - end[1])).toBeLessThan(0.01);
+    }
+  });
+
+  test("street lights and trees keep off the asphalt of every street", () => {
+    const city = resolveCityObject(cityVolume({ seed: "furn", lightDensity: 0.8, treeDensity: 0.8 }))!;
+    expect(city.lights.length).toBeGreaterThan(20);
+    expect(city.trees.length).toBeGreaterThan(50);
+    for (const light of city.lights) {
+      for (const street of city.streets) {
+        expect(distToStreet(street, light.x, light.z)).toBeGreaterThan(street.width / 2 - 0.6);
+      }
+    }
+    for (const tree of city.trees) {
+      for (const street of city.streets) {
+        expect(distToStreet(street, tree.x, tree.z)).toBeGreaterThan(street.width / 2 - 0.6);
+      }
+    }
+  });
+
+  test("driveways start on their street and reach toward their lot", () => {
+    const city = resolveCityObject(cityVolume({ seed: "drive" }))!;
+    expect(city.driveways.length).toBeGreaterThan(10);
+    for (const driveway of city.driveways) {
+      expect(driveway.points.length).toBeGreaterThanOrEqual(2);
+      const [sx, sz] = driveway.points[0]!;
+      const nearest = Math.min(...city.streets.map((street) => distToStreet(street, sx, sz)));
+      expect(nearest).toBeLessThan(8);
+    }
+  });
+
+  test("furniture toggles empty their lists", () => {
+    const bare = resolveCityObject(
+      cityVolume({ seed: "bare", hedges: false, driveways: false, parking: false, treeDensity: 0, lightDensity: 0 }),
+    )!;
+    expect(bare.trees.length).toBe(0);
+    expect(bare.lights.length).toBe(0);
+    expect(bare.hedges.length).toBe(0);
+    expect(bare.driveways.length).toBe(0);
+    expect(bare.parkingLots.length).toBe(0);
+  });
+
+  test("parking pads never overlap building lots", () => {
+    const city = resolveCityObject(cityVolume({ seed: "metro" }))!;
+    expect(city.parkingLots.length).toBeGreaterThan(0);
+    for (const pad of city.parkingLots) {
+      for (const lot of city.lots) {
+        const dx = pad.center[0] - lot.center[0];
+        const dz = pad.center[1] - lot.center[1];
+        if (dx * dx + dz * dz > 45 * 45) continue;
+        // Cheap conservative check: centers further apart than the two half-diagonals minus slack.
+        const padDiag = Math.hypot(pad.size[0], pad.size[1]) / 2;
+        const lotDiag = Math.hypot(lot.size[0], lot.size[1]) / 2;
+        if (Math.hypot(dx, dz) >= padDiag + lotDiag) continue;
+        // Fall back to the exact SAT the generator itself uses via corner projection.
+        const corners = (c: readonly [number, number], size: readonly [number, number], angle: number): [number, number][] => {
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const [hw, hd] = [size[0] / 2, size[1] / 2];
+          return ([[hw, hd], [hw, -hd], [-hw, hd], [-hw, -hd]] as const).map(([ddx, ddz]) => [
+            c[0] + ddx * cos + ddz * sin,
+            c[1] - ddx * sin + ddz * cos,
+          ]);
+        };
+        const a = corners(pad.center, pad.size, pad.rotationY);
+        const b = corners(lot.center, lot.size, lot.rotationY);
+        let separated = false;
+        for (const angle of [pad.rotationY, lot.rotationY]) {
+          for (const [axx, axz] of [
+            [Math.cos(angle), -Math.sin(angle)],
+            [Math.sin(angle), Math.cos(angle)],
+          ] as const) {
+            let minA = Infinity, maxA = -Infinity, minB = Infinity, maxB = -Infinity;
+            for (const [x, z] of a) { const p = x * axx + z * axz; minA = Math.min(minA, p); maxA = Math.max(maxA, p); }
+            for (const [x, z] of b) { const p = x * axx + z * axz; minB = Math.min(minB, p); maxB = Math.max(maxB, p); }
+            if (maxA < minB || maxB < minA) separated = true;
+          }
+        }
+        expect(separated).toBe(true);
+      }
+    }
+  });
+
+  test("massing pieces ride every lot and stay within its footprint envelope", () => {
+    const city = resolveCityObject(cityVolume({ seed: "pieces" }))!;
+    for (const lot of city.lots) {
+      expect(lot.pieces.length).toBeGreaterThan(0);
+      for (const piece of lot.pieces) {
+        // Pieces stay inside a generous envelope around the lot (porches/awnings may overhang a little).
+        expect(Math.abs(piece.offset[0]) - piece.size[0] / 2).toBeLessThan(lot.size[0]);
+        expect(Math.abs(piece.offset[2]) - piece.size[2] / 2).toBeLessThan(lot.size[1]);
+        expect(piece.offset[1]).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+});
