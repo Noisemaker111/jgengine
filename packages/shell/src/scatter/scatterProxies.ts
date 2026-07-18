@@ -21,6 +21,9 @@ const OAK = "#4a7a37";
 const BUSH = "#4d7d3a";
 const ROCK = "#82858c";
 const GRASS = "#5f9a3c";
+const PALM_BARK = "#8a7355";
+const PALM_FROND = "#4c8b3d";
+const CYPRESS = "#31502f";
 
 /** Concatenates part geometries into one vertex-colored buffer (position + normal + color). */
 function mergeParts(parts: ProxyPart[]): THREE.BufferGeometry {
@@ -97,6 +100,27 @@ const BUILDERS: Record<string, () => THREE.BufferGeometry> = {
     { geometry: cone(0.09, 0.7, 0), color: GRASS },
     { geometry: cone(0.08, 0.55, 0).translate(0.12, 0, 0.05), color: GRASS },
     { geometry: cone(0.08, 0.6, 0).translate(-0.1, 0, -0.06), color: GRASS },
+  ]),
+  palm: () => {
+    // Tall bare trunk with a radial crown of drooping fronds — each frond a flattened cone laid
+    // near-horizontal, tips sagging below the crown.
+    const parts: ProxyPart[] = [{ geometry: trunk(2.6, 0.09), color: PALM_BARK }];
+    for (let i = 0; i < 6; i += 1) {
+      const yaw = (i / 6) * Math.PI * 2;
+      const frond = new THREE.ConeGeometry(0.16, 1.35, 4);
+      frond.scale(1, 1, 0.35);
+      frond.rotateX(-Math.PI / 2 - 0.5);
+      frond.rotateY(yaw);
+      frond.translate(Math.sin(yaw) * 0.32, 2.62, Math.cos(yaw) * 0.32);
+      parts.push({ geometry: frond, color: PALM_FROND });
+    }
+    parts.push({ geometry: sphere(0.14, 2.56), color: PALM_BARK });
+    return mergeParts(parts);
+  },
+  cypress: () => mergeParts([
+    { geometry: trunk(0.5, 0.07), color: BARK },
+    { geometry: cone(0.34, 2.5, 0.35, 6), color: CYPRESS },
+    { geometry: cone(0.2, 0.7, 2.75, 5), color: CYPRESS },
   ]),
 };
 

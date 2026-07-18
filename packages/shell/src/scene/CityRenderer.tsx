@@ -1,134 +1,325 @@
 /**
- * Runtime renderer for the `city` volume kind: streets from `resolveCityObject` merge into one
- * ground-draped ribbon geometry per district, building lots render as one instanced massing mesh
- * with per-lot palette-jittered color, and parks render as flat green patches. All geometry derives
- * from the document volume, so the editor sliders (grid-ness, curviness, branching, block size…)
- * re-render the whole district live and games consume the same authored volume unchanged.
+ * Runtime renderer for the `city` volume kind: everything `resolveCityObject` emits becomes a
+ * fixed, bounded set of merged and instanced draws — road ribbons split by surface with lane
+ * dashes, crosswalks, intersection patches and cul-de-sac bulbs; median-divided boulevards;
+ * sidewalks; styled bridges with railings, piers and abutments; massing pieces as five instanced
+ * primitive meshes (plain walls, window-banded walls via `createCityWindowMaterial`, gable roofs,
+ * cylinders, domes) with palette-role coloring and per-lot jitter; species-mixed instanced trees
+ * (shared scatter proxies), street lights, estate hedges, driveways, parking pads, and
+ * vertex-colored parks with crop-row fields. Lots near the camera and flat enough swap their
+ * massing for full `generateBuilding` facade kits (windows, awnings, storefronts) batched per part
+ * kind — a bounded LOD that re-picks only when the camera crosses a coarse cell, never per frame.
+ * All geometry derives from the document volume, so editor sliders re-render the district live and
+ * games consume the same authored volume unchanged.
  */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { roundPathCorners, buildRoadRibbon } from "@jgengine/core/world/roads";
-import { resolveCityObject, CITY_KIND } from "@jgengine/core/world/cityKind";
-import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
+import { roundPathCorners, buildRoadRibbon, dashSegments, type RoadPoint } from "@jgengine/core/world/roads";
+import {
+  resolveCityObject,
+  CITY_KIND,
+  CITY_ZONE_KIND,
+  type CityIntersection,
+  type CityTree,
+} from "@jgengine/core/world/cityKind";
+import type { CityTreeSpecies, CityPieceRole } from "@jgengine/core/world/cityContent";
+import { generateBuilding, resolveBuildingPalette, type BuildingPalette, type BuildingPartKind } from "@jgengine/core/world/buildings";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
+import { buildScatterProxy } from "../scatter/scatterProxies";
+import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
-const STREET_COLOR = "#44454b";
-const SIDEWALK_COLOR = "#8d8c8a";
-const BRIDGE_COLOR = "#5d5f66";
-const PARK_COLOR = "#4d7a40";
-const PARK_THICKNESS = 0.1;
+const ASPHALT_COLOR = "#3d3f45";
+const GRAVEL_COLOR = "#93815f";
+const SIDEWALK_COLOR = "#98948c";
+const MARKING_COLOR = "#e8e4d8";
+const MEDIAN_COLOR = "#4d7a40";
+const PAVEMENT_COLOR = "#a8a49a";
+const CONCRETE_COLOR = "#b0aba1";
+const STEEL_COLOR = "#4c505a";
+const HEDGE_COLOR = "#3d6631";
+const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a" } as const;
+const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 
-/** One authored city volume → merged street ribbons + instanced building massing + park patches. */
+const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
+const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 3.8, conifer: 3.4, palm: 2.9, cypress: 2.7 };
+
+type Sampler = (x: number, z: number) => number;
+
+/** Accumulates draped ribbons, patches, discs, and quads into one merged (optionally colored) buffer. */
+class MeshAccumulator {
+  positions: number[] = [];
+  indices: number[] = [];
+  colors: number[] | null;
+
+  constructor(colored = false) {
+    this.colors = colored ? [] : null;
+  }
+
+  private pushColor(count: number, color: THREE.Color | null): void {
+    if (this.colors === null || color === null) return;
+    for (let i = 0; i < count; i += 1) this.colors.push(color.r, color.g, color.b);
+  }
+
+  addRibbon(points: readonly RoadPoint[], width: number, sample: Sampler, elevation: number, color: THREE.Color | null = null): void {
+    if (points.length < 2) return;
+    const ribbon = buildRoadRibbon(points, width, sample, { elevation, maxSegmentLength: 2 });
+    const offset = this.positions.length / 3;
+    for (let i = 0; i < ribbon.positions.length; i += 1) this.positions.push(ribbon.positions[i]!);
+    for (let i = 0; i < ribbon.indices.length; i += 1) this.indices.push(ribbon.indices[i]! + offset);
+    this.pushColor(ribbon.positions.length / 3, color);
+  }
+
+  /** A ground-draped rotated rectangle, grid-subdivided so large patches follow the relief. */
+  addPatch(
+    center: RoadPoint,
+    size: readonly [number, number],
+    rotationY: number,
+    sample: Sampler,
+    elevation: number,
+    color: THREE.Color | null = null,
+  ): void {
+    const cos = Math.cos(rotationY);
+    const sin = Math.sin(rotationY);
+    const nx = Math.max(1, Math.ceil(size[0] / 8));
+    const nz = Math.max(1, Math.ceil(size[1] / 8));
+    const base = this.positions.length / 3;
+    for (let j = 0; j <= nz; j += 1) {
+      for (let i = 0; i <= nx; i += 1) {
+        const lx = (i / nx - 0.5) * size[0];
+        const lz = (j / nz - 0.5) * size[1];
+        const x = center[0] + lx * cos + lz * sin;
+        const z = center[1] - lx * sin + lz * cos;
+        this.positions.push(x, sample(x, z) + elevation, z);
+      }
+    }
+    for (let j = 0; j < nz; j += 1) {
+      for (let i = 0; i < nx; i += 1) {
+        const a = base + j * (nx + 1) + i;
+        const b = a + 1;
+        const c = a + (nx + 1);
+        const d = c + 1;
+        this.indices.push(a, c, b, b, c, d);
+      }
+    }
+    this.pushColor((nx + 1) * (nz + 1), color);
+  }
+
+  addDisc(center: RoadPoint, radius: number, sample: Sampler, elevation: number, color: THREE.Color | null = null, segments = 14): void {
+    const base = this.positions.length / 3;
+    this.positions.push(center[0], sample(center[0], center[1]) + elevation, center[1]);
+    for (let i = 0; i <= segments; i += 1) {
+      const a = (i / segments) * Math.PI * 2;
+      const x = center[0] + Math.cos(a) * radius;
+      const z = center[1] + Math.sin(a) * radius;
+      this.positions.push(x, sample(x, z) + elevation, z);
+    }
+    for (let i = 0; i < segments; i += 1) this.indices.push(base, base + 1 + i, base + 2 + i);
+    this.pushColor(segments + 2, color);
+  }
+
+  build(): THREE.BufferGeometry | null {
+    if (this.indices.length === 0) return null;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(this.positions), 3));
+    if (this.colors !== null) geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(this.colors), 3));
+    geometry.setIndex(this.indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+}
+
+/** Split a polyline into runs that keep `pad` clearance from every intersection disc. */
+function clipPolylineAtIntersections(
+  points: readonly RoadPoint[],
+  intersections: readonly CityIntersection[],
+  pad: number,
+): RoadPoint[][] {
+  const blocked = (x: number, z: number): boolean => {
+    for (const cross of intersections) {
+      if (Math.hypot(cross.x - x, cross.z - z) < cross.radius + pad) return true;
+    }
+    return false;
+  };
+  const runs: RoadPoint[][] = [];
+  let current: RoadPoint[] = [];
+  for (let i = 0; i + 1 < points.length; i += 1) {
+    const [ax, az] = points[i]!;
+    const [bx, bz] = points[i + 1]!;
+    const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 2));
+    for (let s = 0; s < steps; s += 1) {
+      const t = s / steps;
+      const x = ax + (bx - ax) * t;
+      const z = az + (bz - az) * t;
+      if (blocked(x, z)) {
+        if (current.length >= 2) runs.push(current);
+        current = [];
+      } else {
+        current.push([x, z]);
+      }
+    }
+  }
+  const last = points[points.length - 1];
+  if (last !== undefined && !blocked(last[0], last[1])) current.push(last);
+  if (current.length >= 2) runs.push(current);
+  return runs;
+}
+
+let unitGeometryCache: { box: THREE.BoxGeometry; gable: THREE.BufferGeometry; cylinder: THREE.CylinderGeometry; dome: THREE.SphereGeometry } | null = null;
+
+/** Unit massing primitives shared by every district: box, gable prism (ridge along X), cylinder, dome. */
+function unitGeometries() {
+  if (unitGeometryCache !== null) return unitGeometryCache;
+  const box = new THREE.BoxGeometry(1, 1, 1);
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.5, 0);
+  shape.lineTo(0.5, 0);
+  shape.lineTo(0, 1);
+  shape.closePath();
+  const gable = new THREE.ExtrudeGeometry(shape, { depth: 1, bevelEnabled: false });
+  gable.translate(0, 0, -0.5);
+  gable.rotateY(Math.PI / 2);
+  gable.computeVertexNormals();
+  const cylinder = new THREE.CylinderGeometry(0.5, 0.5, 1, 12);
+  cylinder.translate(0, 0.5, 0);
+  const dome = new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+  dome.scale(1, 2, 1);
+  unitGeometryCache = { box, gable, cylinder, dome };
+  return unitGeometryCache;
+}
+
+const ROLE_JITTER: Record<CityPieceRole, number> = { wall: 1, roof: 0.5, trim: 0.35, accent: 0.6 };
+
+function roleColor(palette: BuildingPalette, role: CityPieceRole): string {
+  if (role === "wall") return palette.wall;
+  if (role === "roof") return palette.roof;
+  if (role === "trim") return palette.corner;
+  return palette.awning;
+}
+
+interface DetailBuilding {
+  lotId: string;
+  matrix: THREE.Matrix4;
+  parts: ReturnType<typeof generateBuilding>["parts"];
+}
+
+const DETAIL_RADIUS = 95;
+const DETAIL_MAX = 12;
+const DETAIL_CLASSES = new Set(["tower", "slab", "shop", "rowhouse"]);
+
+/** Per-part-kind instanced batches for the near-LOD facade buildings (full lot yaw support). */
+function DetailBuildings({ buildings, palette }: { buildings: DetailBuilding[]; palette: BuildingPalette }) {
+  const meshes = useMemo(() => {
+    if (buildings.length === 0) return null;
+    const buckets = new Map<BuildingPartKind, THREE.Matrix4[]>();
+    const partMatrix = new THREE.Matrix4();
+    const compose = new THREE.Matrix4();
+    for (const building of buildings) {
+      for (const part of building.parts) {
+        partMatrix.compose(
+          new THREE.Vector3(part.position[0], part.position[1], part.position[2]),
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), part.rotationY),
+          new THREE.Vector3(Math.max(0.01, part.scale[0]), Math.max(0.01, part.scale[1]), Math.max(0.01, part.scale[2])),
+        );
+        compose.multiplyMatrices(building.matrix, partMatrix);
+        const bucket = buckets.get(part.kind);
+        if (bucket === undefined) buckets.set(part.kind, [compose.clone()]);
+        else bucket.push(compose.clone());
+      }
+    }
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const out: THREE.InstancedMesh[] = [];
+    for (const [kind, matrices] of buckets) {
+      const color = palette[kind];
+      const material =
+        kind === "window" || kind === "storefront"
+          ? new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.56 })
+          : kind === "storeSign"
+            ? new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.5 })
+            : new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
+      const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
+      matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      out.push(mesh);
+    }
+    return out;
+  }, [buildings, palette]);
+  useEffect(
+    () => () => {
+      if (meshes === null) return;
+      for (const mesh of meshes) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+    },
+    [meshes],
+  );
+  if (meshes === null) return null;
+  return (
+    <>
+      {meshes.map((mesh, i) => (
+        <primitive key={`detail:${i}`} object={mesh} />
+      ))}
+    </>
+  );
+}
+
+/** One authored city volume → the full merged/instanced district. */
 function OneCity({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
   const field = context.field;
   const sample = useMemo(() => (x: number, z: number) => field.sampleHeight(x, z), [field]);
-  const resolved = useMemo(() => resolveCityObject(object, { sampleHeight: sample }), [object, sample]);
+  const zoneOverrides = useMemo(
+    () =>
+      context.document.volumes
+        .filter((volume) => volume.kind === CITY_ZONE_KIND)
+        .map((volume) => ({
+          id: volume.id,
+          kind: volume.kind,
+          center: volume.center,
+          ...(volume.halfExtents === undefined ? {} : { halfExtents: volume.halfExtents }),
+          ...(volume.radius === undefined ? {} : { radius: volume.radius }),
+          ...(volume.meta === undefined ? {} : { meta: volume.meta }),
+        })),
+    [context.document.volumes],
+  );
+  const resolved = useMemo(
+    () => resolveCityObject(object, { sampleHeight: sample, zoneOverrides }),
+    [object, sample, zoneOverrides],
+  );
+  const palette = useMemo(() => resolveBuildingPalette(resolved?.rules.style ?? "generic"), [resolved]);
 
-  const streetGeometry = useMemo(() => {
-    if (resolved === null || resolved.streets.length === 0) return null;
-    const positions: number[] = [];
-    const indices: number[] = [];
-    for (const street of resolved.streets) {
-      if (street.points.length < 2) continue;
-      const rounded = roundPathCorners(street.points, Math.max(1.5, street.width * 0.9), 4);
-      const ribbon = buildRoadRibbon(rounded, street.width, (x, z) => sample(x, z), { elevation: 0.16, maxSegmentLength: 2 });
-      const offset = positions.length / 3;
-      for (let i = 0; i < ribbon.positions.length; i += 1) positions.push(ribbon.positions[i]!);
-      for (let i = 0; i < ribbon.indices.length; i += 1) indices.push(ribbon.indices[i]! + offset);
+  // --- Camera-coarse LOD cell: re-pick detail lots only when the camera crosses a 28 m cell. ---
+  const [detailKey, setDetailKey] = useState("");
+  const cameraRef = useRef<[number, number]>([0, 0]);
+  const cellRef = useRef("");
+  useFrame(({ camera }) => {
+    const key = `${Math.round(camera.position.x / 28)}:${Math.round(camera.position.z / 28)}`;
+    if (key !== cellRef.current) {
+      cellRef.current = key;
+      cameraRef.current = [camera.position.x, camera.position.z];
+      setDetailKey(key);
     }
-    if (indices.length === 0) return null;
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    return geometry;
-  }, [resolved, sample]);
-  useEffect(() => () => streetGeometry?.dispose(), [streetGeometry]);
+  });
 
-  // Sidewalks: a slightly wider, lighter ribbon under the road so both curbs read.
-  const sidewalkGeometry = useMemo(() => {
-    if (resolved === null || !resolved.rules.sidewalks || resolved.streets.length === 0) return null;
-    const positions: number[] = [];
-    const indices: number[] = [];
-    for (const street of resolved.streets) {
-      if (street.points.length < 2) continue;
-      const rounded = roundPathCorners(street.points, Math.max(1.5, street.width * 0.9), 4);
-      const ribbon = buildRoadRibbon(rounded, street.width + 3.4, (x, z) => sample(x, z), { elevation: 0.1, maxSegmentLength: 2 });
-      const offset = positions.length / 3;
-      for (let i = 0; i < ribbon.positions.length; i += 1) positions.push(ribbon.positions[i]!);
-      for (let i = 0; i < ribbon.indices.length; i += 1) indices.push(ribbon.indices[i]! + offset);
-    }
-    if (indices.length === 0) return null;
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    return geometry;
-  }, [resolved, sample]);
-  useEffect(() => () => sidewalkGeometry?.dispose(), [sidewalkGeometry]);
-
-  // Bridges: flat-arched decks spanning from bank to bank, plus piers down to the riverbed.
-  const bridgeParts = useMemo(() => {
-    if (resolved === null || resolved.bridges.length === 0) return null;
-    const positions: number[] = [];
-    const indices: number[] = [];
-    const piers: { x: number; z: number; top: number; bottom: number }[] = [];
-    for (const bridge of resolved.bridges) {
-      const first = bridge.points[0]!;
-      const last = bridge.points[bridge.points.length - 1]!;
-      const hA = sample(first[0], first[1]) + 0.35;
-      const hB = sample(last[0], last[1]) + 0.35;
-      const abx = last[0] - first[0];
-      const abz = last[1] - first[1];
-      const len2 = Math.max(1e-6, abx * abx + abz * abz);
-      const span = Math.sqrt(len2);
-      const deckY = (x: number, z: number) => {
-        const t = Math.max(0, Math.min(1, ((x - first[0]) * abx + (z - first[1]) * abz) / len2));
-        return hA + (hB - hA) * t + Math.sin(t * Math.PI) * Math.min(1.6, span * 0.03);
-      };
-      const ribbon = buildRoadRibbon(bridge.points, bridge.width + 0.8, deckY, { elevation: 0.12, maxSegmentLength: 2 });
-      const offset = positions.length / 3;
-      for (let i = 0; i < ribbon.positions.length; i += 1) positions.push(ribbon.positions[i]!);
-      for (let i = 0; i < ribbon.indices.length; i += 1) indices.push(ribbon.indices[i]! + offset);
-      const pierCount = Math.max(0, Math.floor(span / 18));
-      for (let p = 1; p <= pierCount; p += 1) {
-        const t = p / (pierCount + 1);
-        const x = first[0] + abx * t;
-        const z = first[1] + abz * t;
-        piers.push({ x, z, top: deckY(x, z), bottom: sample(x, z) - 1 });
-      }
-    }
-    if (indices.length === 0) return null;
-    const deck = new THREE.BufferGeometry();
-    deck.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
-    deck.setIndex(indices);
-    deck.computeVertexNormals();
-    return { deck, piers };
-  }, [resolved, sample]);
-  useEffect(() => () => bridgeParts?.deck.dispose(), [bridgeParts]);
-
-  const buildings = useMemo(() => {
-    if (resolved === null || resolved.lots.length === 0) return null;
-    const palette = resolveBuildingPalette(resolved.rules.style);
-    const wall = new THREE.Color(palette.wall);
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05 });
-    const mesh = new THREE.InstancedMesh(geometry, material, resolved.lots.length);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    // Instance matrices spread lots across the whole district; the unit-box bounds would cull them.
-    mesh.frustumCulled = false;
-    const matrix = new THREE.Matrix4();
-    const color = new THREE.Color();
-    for (let i = 0; i < resolved.lots.length; i += 1) {
-      const lot = resolved.lots[i]!;
-      const height = Math.max(1, lot.floors) * resolved.rules.floorHeight;
-      // Sample all four footprint corners: on a slope the box grows a foundation down to the lowest
-      // corner and its roof sits above the highest, so hillside houses step down cliffs instead of
-      // floating on one edge and clipping on the other.
+  const detail = useMemo(() => {
+    if (resolved === null || detailKey === "") return { ids: new Set<string>(), buildings: [] as DetailBuilding[] };
+    const [cx, cz] = cameraRef.current;
+    const candidates = resolved.lots
+      .filter((lot) => DETAIL_CLASSES.has(lot.class) && lot.floors <= 9)
+      .map((lot) => ({ lot, dist: Math.hypot(lot.center[0] - cx, lot.center[1] - cz) }))
+      .filter((entry) => entry.dist < DETAIL_RADIUS)
+      .sort((a, b) => a.dist - b.dist);
+    const ids = new Set<string>();
+    const buildings: DetailBuilding[] = [];
+    for (const { lot } of candidates) {
+      if (buildings.length >= DETAIL_MAX) break;
+      // Only flat-enough lots swap in the facade kit — it has no foundation to hide a slope.
       const c = Math.cos(lot.rotationY);
       const s = Math.sin(lot.rotationY);
       const hw = lot.size[0] / 2;
@@ -142,73 +333,579 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         [-hw, -hd],
       ] as const) {
         const y = sample(lot.center[0] + dx * c + dz * s, lot.center[1] - dx * s + dz * c);
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
       }
-      const base = minY - 0.4;
-      const total = maxY - base + height;
-      matrix.compose(
-        new THREE.Vector3(lot.center[0], base + total / 2, lot.center[1]),
+      if (maxY - minY > 1.4) continue;
+      const baysWide = Math.min(8, Math.max(2, Math.round(lot.size[0] / 2.4)));
+      const baysDeep = Math.min(6, Math.max(2, Math.round(lot.size[1] / 2.4)));
+      const building = generateBuilding({
+        id: lot.id,
+        seed: lot.id,
+        center: [0, 0],
+        floors: Math.min(8, lot.floors),
+        baysWide,
+        baysDeep,
+        bayWidth: lot.size[0] / baysWide,
+        floorHeight: resolved.rules.floorHeight,
+      });
+      const matrix = new THREE.Matrix4().compose(
+        new THREE.Vector3(lot.center[0], maxY, lot.center[1]),
         new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), lot.rotationY),
-        new THREE.Vector3(lot.size[0], total, lot.size[1]),
+        new THREE.Vector3(1, 1, 1),
       );
-      mesh.setMatrixAt(i, matrix);
-      const shade = 0.82 + lot.jitter * 0.3;
-      color.copy(wall).multiplyScalar(shade);
-      mesh.setColorAt(i, color);
+      ids.add(lot.id);
+      buildings.push({ lotId: lot.id, matrix, parts: building.parts });
     }
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
-    return mesh;
+    return { ids, buildings };
+  }, [resolved, detailKey, sample]);
+
+  // --- Massing: five instanced primitive draws over every lot's pieces (minus detail-LOD lots). ---
+  const massing = useMemo(() => {
+    if (resolved === null || resolved.lots.length === 0) return null;
+    const units = unitGeometries();
+    interface Bucket {
+      matrices: THREE.Matrix4[];
+      colors: THREE.Color[];
+      groundOffsets?: number[];
+    }
+    const buckets: Record<"box" | "banded" | "gable" | "cylinder" | "dome", Bucket> = {
+      box: { matrices: [], colors: [] },
+      banded: { matrices: [], colors: [], groundOffsets: [] },
+      gable: { matrices: [], colors: [] },
+      cylinder: { matrices: [], colors: [] },
+      dome: { matrices: [], colors: [] },
+    };
+    const color = new THREE.Color();
+    const roleBase: Record<CityPieceRole, THREE.Color> = {
+      wall: new THREE.Color(roleColor(palette, "wall")),
+      roof: new THREE.Color(roleColor(palette, "roof")),
+      trim: new THREE.Color(roleColor(palette, "trim")),
+      accent: new THREE.Color(roleColor(palette, "accent")),
+    };
+    for (const lot of resolved.lots) {
+      if (detail.ids.has(lot.id)) continue;
+      const c = Math.cos(lot.rotationY);
+      const s = Math.sin(lot.rotationY);
+      const hw = lot.size[0] / 2;
+      const hd = lot.size[1] / 2;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const [dx, dz] of [
+        [hw, hd],
+        [hw, -hd],
+        [-hw, hd],
+        [-hw, -hd],
+      ] as const) {
+        const y = sample(lot.center[0] + dx * c + dz * s, lot.center[1] - dx * s + dz * c);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+      const grade = maxY;
+      const foundationBase = minY - 0.5;
+      // Edge-of-town lots vary more; downtown stays composed.
+      const jitterAmp = lot.zone === "edge" ? 0.4 : lot.zone === "mid" ? 0.28 : 0.18;
+      for (const piece of lot.pieces) {
+        const px = lot.center[0] + piece.offset[0] * c + piece.offset[2] * s;
+        const pz = lot.center[1] - piece.offset[0] * s + piece.offset[2] * c;
+        const grounded = piece.grounded;
+        const baseY = grounded ? foundationBase : grade + piece.offset[1];
+        const height = grounded ? piece.size[1] + (grade - foundationBase) : piece.size[1];
+        const groundOffset = grounded ? grade - foundationBase : -piece.offset[1];
+        const matrix = new THREE.Matrix4().compose(
+          new THREE.Vector3(px, piece.shape === "gable" || piece.shape === "cylinder" || piece.shape === "dome" ? baseY : baseY + height / 2, pz),
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), lot.rotationY + piece.rotationY),
+          new THREE.Vector3(Math.max(0.05, piece.size[0]), Math.max(0.05, height), Math.max(0.05, piece.size[2])),
+        );
+        const amp = jitterAmp * ROLE_JITTER[piece.role];
+        color.copy(roleBase[piece.role]);
+        color.multiplyScalar(1 - amp / 2 + lot.jitter * amp);
+        // A whisper of hue shift so rows of houses never read as one paint bucket.
+        color.r *= 1 + (lot.jitter - 0.5) * 0.08;
+        color.b *= 1 + (0.5 - lot.jitter) * 0.08;
+        const bucket = piece.shape === "box" ? (piece.banded ? buckets.banded : buckets.box) : buckets[piece.shape];
+        bucket.matrices.push(matrix);
+        bucket.colors.push(color.clone());
+        bucket.groundOffsets?.push(groundOffset);
+      }
+    }
+    // Cylinders/gables/domes scale from their base (geometry roots at y=0), boxes from center —
+    // the matrices above already position each accordingly.
+    const makeMesh = (
+      key: keyof typeof buckets,
+      geometry: THREE.BufferGeometry,
+      material: THREE.Material,
+    ): THREE.InstancedMesh | null => {
+      const bucket = buckets[key];
+      if (bucket.matrices.length === 0) return null;
+      const mesh = new THREE.InstancedMesh(geometry, material, bucket.matrices.length);
+      bucket.matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
+      bucket.colors.forEach((tint, i) => mesh.setColorAt(i, tint));
+      if (bucket.groundOffsets !== undefined) {
+        mesh.geometry = geometry.clone();
+        mesh.geometry.setAttribute(
+          "instanceGroundOffset",
+          new THREE.InstancedBufferAttribute(new Float32Array(bucket.groundOffsets), 1),
+        );
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      return mesh;
+    };
+    const plain = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.04 });
+    const banded = createCityWindowMaterial({ floorHeight: resolved.rules.floorHeight, windowColor: palette.window });
+    const meshes = [
+      makeMesh("box", units.box, plain),
+      makeMesh("banded", units.box, banded),
+      makeMesh("gable", units.gable, plain),
+      makeMesh("cylinder", units.cylinder, plain),
+      makeMesh("dome", units.dome, plain),
+    ].filter((mesh): mesh is THREE.InstancedMesh => mesh !== null);
+    return { meshes, materials: [plain, banded] };
+  }, [resolved, sample, palette, detail.ids]);
+  useEffect(
+    () => () => {
+      if (massing === null) return;
+      for (const material of massing.materials) material.dispose();
+      for (const mesh of massing.meshes) if (mesh.geometry.getAttribute("instanceGroundOffset") !== undefined) mesh.geometry.dispose();
+    },
+    [massing],
+  );
+
+  // --- Ground network: roads by surface, sidewalks, medians, patches, markings, driveways, parks. ---
+  const ground = useMemo(() => {
+    if (resolved === null || resolved.streets.length === 0) return null;
+    const asphalt = new MeshAccumulator();
+    const gravel = new MeshAccumulator();
+    const sidewalks = new MeshAccumulator();
+    const patches = new MeshAccumulator();
+    const markings = new MeshAccumulator();
+    const medians = new MeshAccumulator();
+    const pavementDrives = new MeshAccumulator();
+    const gravelDrives = new MeshAccumulator();
+    const parks = new MeshAccumulator(true);
+    const crops = new MeshAccumulator(true);
+    const parkColor = new THREE.Color();
+
+    const addMarkQuad = (center: RoadPoint, along: readonly [number, number], length: number, width: number) => {
+      const perp: readonly [number, number] = [-along[1], along[0]];
+      const base = markings.positions.length / 3;
+      for (const [sa, sp] of [
+        [-0.5, -0.5],
+        [0.5, -0.5],
+        [-0.5, 0.5],
+        [0.5, 0.5],
+      ] as const) {
+        const x = center[0] + along[0] * length * sa + perp[0] * width * sp;
+        const z = center[1] + along[1] * length * sa + perp[1] * width * sp;
+        markings.positions.push(x, sample(x, z) + 0.26, z);
+      }
+      markings.indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+    };
+
+    for (const street of resolved.streets) {
+      if (street.points.length < 2) continue;
+      const rounded = roundPathCorners(street.points, Math.max(1.5, street.width * 0.9), 4);
+      const surface = street.surface === "gravel" ? gravel : asphalt;
+      surface.addRibbon(rounded, street.width, sample, 0.16);
+      if (street.sidewalk) sidewalks.addRibbon(rounded, street.width + 3.6, sample, 0.1);
+      if (street.bulb !== undefined) {
+        (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, 0.16);
+        if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, 0.1);
+      }
+      if (street.surface === "asphalt" && street.level !== "lane") {
+        if (street.level === "boulevard") {
+          // Median strip instead of a center line, broken across intersections.
+          for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, 1.6)) {
+            medians.addRibbon(run, Math.max(1.3, street.width * 0.14), sample, 0.3);
+          }
+        } else {
+          for (const dash of dashSegments(rounded, 2.6, 3.6)) {
+            const [a, b] = [dash[0]!, dash[dash.length - 1]!];
+            const mid: RoadPoint = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+            let inCross = false;
+            for (const cross of resolved.intersections) {
+              if (Math.hypot(cross.x - mid[0], cross.z - mid[1]) < cross.radius + 0.8) {
+                inCross = true;
+                break;
+              }
+            }
+            if (!inCross) markings.addRibbon(dash, 0.18, sample, 0.26);
+          }
+        }
+      }
+    }
+    // Intersection patches + crosswalks.
+    for (const cross of resolved.intersections) {
+      patches.addDisc([cross.x, cross.z], cross.radius, sample, 0.2);
+      if (resolved.rules.sidewalks && cross.level !== "lane") {
+        for (const arm of cross.arms) {
+          const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
+          const perp: readonly [number, number] = [-dir[1], dir[0]];
+          for (let stripe = 0; stripe < 4; stripe += 1) {
+            const dist = cross.radius + 0.7 + stripe * 0.8;
+            const center: RoadPoint = [cross.x + dir[0] * dist, cross.z + dir[1] * dist];
+            addMarkQuad(center, perp, arm.width * 0.82, 0.42);
+          }
+        }
+      }
+    }
+    for (const drive of resolved.driveways) {
+      (drive.surface === "gravel" ? gravelDrives : pavementDrives).addRibbon(drive.points, drive.width, sample, 0.12);
+    }
+    for (const pad of resolved.parkingLots) {
+      pavementDrives.addPatch(pad.center, pad.size, pad.rotationY, sample, 0.13);
+      // Stall separators along the pad.
+      const cos = Math.cos(pad.rotationY);
+      const sin = Math.sin(pad.rotationY);
+      const stalls = Math.floor(pad.size[0] / 2.9);
+      for (let i = 1; i < stalls; i += 1) {
+        const lx = (i / stalls - 0.5) * pad.size[0];
+        const cx = pad.center[0] + lx * cos + (pad.size[1] * 0.24) * sin;
+        const cz = pad.center[1] - lx * sin + (pad.size[1] * 0.24) * cos;
+        addMarkQuad([cx, cz], [sin, cos], pad.size[1] * 0.42, 0.12);
+      }
+    }
+    for (const park of resolved.parks) {
+      parkColor.set(PARK_COLORS[park.type]);
+      parkColor.multiplyScalar(0.92 + park.jitter * 0.16);
+      parks.addPatch(park.center, park.size, park.rotationY, sample, park.type === "plaza" ? 0.14 : 0.12, parkColor);
+      if (park.rows !== undefined) {
+        const crop = new THREE.Color(CROP_COLORS[Math.floor(park.jitter * CROP_COLORS.length) % CROP_COLORS.length]);
+        crop.multiplyScalar(0.9 + park.jitter * 0.2);
+        for (const row of park.rows) crops.addRibbon(row, 1.05, sample, 0.2, crop);
+      }
+    }
+    return {
+      asphalt: asphalt.build(),
+      gravel: gravel.build(),
+      sidewalks: sidewalks.build(),
+      patches: patches.build(),
+      markings: markings.build(),
+      medians: medians.build(),
+      pavementDrives: pavementDrives.build(),
+      gravelDrives: gravelDrives.build(),
+      parks: parks.build(),
+      crops: crops.build(),
+    };
   }, [resolved, sample]);
   useEffect(
     () => () => {
-      if (buildings !== null) {
-        buildings.geometry.dispose();
-        (buildings.material as THREE.Material).dispose();
-      }
+      if (ground === null) return;
+      for (const geometry of Object.values(ground)) geometry?.dispose();
     },
-    [buildings],
+    [ground],
+  );
+
+  // --- Bridges: styled decks, railings/trusses, piers and abutments. ---
+  const bridges = useMemo(() => {
+    if (resolved === null || resolved.bridges.length === 0) return null;
+    const decks = new MeshAccumulator();
+    const concrete: THREE.Matrix4[] = [];
+    const steel: THREE.Matrix4[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const xAxis = new THREE.Vector3(1, 0, 0);
+    const segmentBox = (a: THREE.Vector3, b: THREE.Vector3, thickness: number, height: number, into: THREE.Matrix4[]) => {
+      const dir = b.clone().sub(a);
+      const length = dir.length();
+      if (length < 0.05) return;
+      const quat = new THREE.Quaternion().setFromUnitVectors(xAxis, dir.normalize());
+      into.push(
+        new THREE.Matrix4().compose(
+          a.clone().add(b).multiplyScalar(0.5),
+          quat,
+          new THREE.Vector3(length, height, thickness),
+        ),
+      );
+    };
+    for (const bridge of resolved.bridges) {
+      const first = bridge.points[0]!;
+      const last = bridge.points[bridge.points.length - 1]!;
+      const hA = sample(first[0], first[1]) + 0.35;
+      const hB = sample(last[0], last[1]) + 0.35;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      const len2 = Math.max(1e-6, abx * abx + abz * abz);
+      const span = Math.sqrt(len2);
+      const deckY = (x: number, z: number) => {
+        const t = Math.max(0, Math.min(1, ((x - first[0]) * abx + (z - first[1]) * abz) / len2));
+        const arch = bridge.style === "arch" ? Math.sin(t * Math.PI) * Math.min(1.6, span * 0.03) : 0.25;
+        return hA + (hB - hA) * t + arch;
+      };
+      decks.addRibbon(bridge.points, bridge.width + 1.2, deckY, 0.12);
+      // Curb strips give the deck visible thickness from the side.
+      const tangent: readonly [number, number] = [abx / span, abz / span];
+      const normal: readonly [number, number] = [-tangent[1], tangent[0]];
+      const halfW = bridge.width / 2 + 0.55;
+      const postSpacing = 2.6;
+      for (const side of [1, -1] as const) {
+        let prevTop: THREE.Vector3 | null = null;
+        let prevBase: THREE.Vector3 | null = null;
+        for (let dist = 0; dist <= span; dist += postSpacing) {
+          const t = dist / span;
+          const x = first[0] + abx * t + normal[0] * halfW * side;
+          const z = first[1] + abz * t + normal[1] * halfW * side;
+          const y = deckY(x - normal[0] * halfW * side, z - normal[1] * halfW * side) + 0.12;
+          const base = new THREE.Vector3(x, y, z);
+          const postH = bridge.style === "truss" ? 2.7 : 1.05;
+          steel.push(
+            new THREE.Matrix4().compose(
+              new THREE.Vector3(x, y + postH / 2, z),
+              new THREE.Quaternion(),
+              new THREE.Vector3(0.14, postH, 0.14),
+            ),
+          );
+          const top = new THREE.Vector3(x, y + postH, z);
+          if (prevTop !== null && prevBase !== null) {
+            segmentBox(prevTop, top, 0.1, 0.12, steel);
+            if (bridge.style === "truss") {
+              segmentBox(prevBase, top, 0.09, 0.09, steel);
+              segmentBox(prevTop, base, 0.09, 0.09, steel);
+            } else {
+              // Mid rail for arch/beam parapets.
+              const midA = prevBase.clone().lerp(prevTop, 0.55);
+              const midB = base.clone().lerp(top, 0.55);
+              segmentBox(midA, midB, 0.08, 0.08, steel);
+            }
+          }
+          prevTop = top;
+          prevBase = base;
+        }
+      }
+      // Piers + bank abutments.
+      const pierCount = Math.max(0, Math.floor(span / 16));
+      for (let p = 1; p <= pierCount; p += 1) {
+        const t = p / (pierCount + 1);
+        const x = first[0] + abx * t;
+        const z = first[1] + abz * t;
+        const top = deckY(x, z);
+        const bottom = sample(x, z) - 1.5;
+        concrete.push(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(x, (top + bottom) / 2, z),
+            new THREE.Quaternion().setFromAxisAngle(up, Math.atan2(tangent[0], tangent[1])),
+            new THREE.Vector3(1.4, Math.max(0.5, top - bottom), bridge.width * 0.7),
+          ),
+        );
+      }
+      for (const [ex, ez] of [first, last]) {
+        const groundY = sample(ex, ez);
+        concrete.push(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(ex, groundY - 0.6 + 0.9, ez),
+            new THREE.Quaternion().setFromAxisAngle(up, Math.atan2(tangent[0], tangent[1])),
+            new THREE.Vector3(2.4, 1.8, bridge.width + 2),
+          ),
+        );
+      }
+    }
+    return { deck: decks.build(), concrete, steel };
+  }, [resolved, sample]);
+  useEffect(() => () => bridges?.deck?.dispose(), [bridges]);
+
+  // --- Instanced furniture: trees per species, street lights, hedges. ---
+  const furniture = useMemo(() => {
+    if (resolved === null) return null;
+    const meshes: THREE.Object3D[] = [];
+    const disposables: (THREE.BufferGeometry | THREE.Material)[] = [];
+    const bySpecies = new Map<CityTreeSpecies, CityTree[]>();
+    for (const tree of resolved.trees) {
+      const bucket = bySpecies.get(tree.species);
+      if (bucket === undefined) bySpecies.set(tree.species, [tree]);
+      else bucket.push(tree);
+    }
+    const color = new THREE.Color();
+    for (const [species, trees] of bySpecies) {
+      const geometry = buildScatterProxy(SPECIES_PROXY[species]);
+      const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
+      const mesh = new THREE.InstancedMesh(geometry, material, trees.length);
+      const matrix = new THREE.Matrix4();
+      trees.forEach((tree, i) => {
+        const scale = tree.scale * SPECIES_SCALE[species];
+        matrix.compose(
+          new THREE.Vector3(tree.x, sample(tree.x, tree.z) - 0.05, tree.z),
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), tree.jitter * Math.PI * 2),
+          new THREE.Vector3(scale, scale * (0.92 + tree.jitter * 0.16), scale),
+        );
+        mesh.setMatrixAt(i, matrix);
+        color.setScalar(0.82 + tree.jitter * 0.36);
+        mesh.setColorAt(i, color);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      meshes.push(mesh);
+      disposables.push(geometry, material);
+    }
+    if (resolved.lights.length > 0) {
+      const units = unitGeometries();
+      const poleMaterial = new THREE.MeshStandardMaterial({ color: "#3a3d42", roughness: 0.6, metalness: 0.5 });
+      const headMaterial = new THREE.MeshStandardMaterial({ color: "#ffe9b0", emissive: "#ffdf8a", emissiveIntensity: 0.9, roughness: 0.4 });
+      const poles = new THREE.InstancedMesh(units.cylinder, poleMaterial, resolved.lights.length);
+      const arms = new THREE.InstancedMesh(units.box, poleMaterial, resolved.lights.length);
+      const heads = new THREE.InstancedMesh(units.box, headMaterial, resolved.lights.length);
+      const matrix = new THREE.Matrix4();
+      const quat = new THREE.Quaternion();
+      const upAxis = new THREE.Vector3(0, 1, 0);
+      resolved.lights.forEach((light, i) => {
+        const y = sample(light.x, light.z);
+        const dir: readonly [number, number] = [Math.sin(light.heading), Math.cos(light.heading)];
+        quat.setFromAxisAngle(upAxis, light.heading);
+        matrix.compose(new THREE.Vector3(light.x, y, light.z), quat, new THREE.Vector3(0.16, 4.9, 0.16));
+        poles.setMatrixAt(i, matrix);
+        matrix.compose(
+          new THREE.Vector3(light.x + dir[0] * 0.7, y + 4.85, light.z + dir[1] * 0.7),
+          quat,
+          new THREE.Vector3(0.12, 0.12, 1.5),
+        );
+        arms.setMatrixAt(i, matrix);
+        matrix.compose(
+          new THREE.Vector3(light.x + dir[0] * 1.35, y + 4.72, light.z + dir[1] * 1.35),
+          quat,
+          new THREE.Vector3(0.34, 0.18, 0.7),
+        );
+        heads.setMatrixAt(i, matrix);
+      });
+      for (const mesh of [poles, arms, heads]) {
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.castShadow = true;
+        mesh.frustumCulled = false;
+        meshes.push(mesh);
+      }
+      disposables.push(poleMaterial, headMaterial);
+    }
+    if (resolved.hedges.length > 0) {
+      const units = unitGeometries();
+      const hedgeMaterial = new THREE.MeshStandardMaterial({ color: HEDGE_COLOR, roughness: 0.9, metalness: 0 });
+      const hedges = new THREE.InstancedMesh(units.box, hedgeMaterial, resolved.hedges.length);
+      const matrix = new THREE.Matrix4();
+      const quat = new THREE.Quaternion();
+      const upAxis = new THREE.Vector3(0, 1, 0);
+      const color2 = new THREE.Color();
+      resolved.hedges.forEach((hedge, i) => {
+        const y = sample(hedge.center[0], hedge.center[1]);
+        quat.setFromAxisAngle(upAxis, hedge.rotationY);
+        matrix.compose(
+          new THREE.Vector3(hedge.center[0], y + 0.62, hedge.center[1]),
+          quat,
+          new THREE.Vector3(Math.max(0.4, hedge.size[0]), 1.65, hedge.size[1]),
+        );
+        hedges.setMatrixAt(i, matrix);
+        color2.setScalar(0.85 + ((i * 37) % 10) * 0.03);
+        hedges.setColorAt(i, color2);
+      });
+      hedges.instanceMatrix.needsUpdate = true;
+      if (hedges.instanceColor !== null) hedges.instanceColor.needsUpdate = true;
+      hedges.castShadow = true;
+      hedges.receiveShadow = true;
+      hedges.frustumCulled = false;
+      meshes.push(hedges);
+      disposables.push(hedgeMaterial);
+    }
+    return { meshes, disposables };
+  }, [resolved, sample]);
+  useEffect(
+    () => () => {
+      if (furniture === null) return;
+      for (const disposable of furniture.disposables) disposable.dispose();
+    },
+    [furniture],
   );
 
   if (resolved === null) return null;
   return (
     <group>
-      {streetGeometry !== null ? (
-        <mesh geometry={streetGeometry} receiveShadow>
-          <meshStandardMaterial color={STREET_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} />
+      {ground?.asphalt != null ? (
+        <mesh geometry={ground.asphalt} receiveShadow>
+          <meshStandardMaterial color={ASPHALT_COLOR} roughness={0.96} metalness={0} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
-      {sidewalkGeometry !== null ? (
-        <mesh geometry={sidewalkGeometry} receiveShadow>
+      {ground?.gravel != null ? (
+        <mesh geometry={ground.gravel} receiveShadow>
+          <meshStandardMaterial color={GRAVEL_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.sidewalks != null ? (
+        <mesh geometry={ground.sidewalks} receiveShadow>
           <meshStandardMaterial color={SIDEWALK_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
-      {bridgeParts !== null ? (
-        <>
-          <mesh geometry={bridgeParts.deck} castShadow receiveShadow>
-            <meshStandardMaterial color={BRIDGE_COLOR} roughness={0.9} metalness={0.05} side={THREE.DoubleSide} />
-          </mesh>
-          {bridgeParts.piers.map((pier, i) => (
-            <mesh key={`pier:${i}`} position={[pier.x, (pier.top + pier.bottom) / 2, pier.z]} castShadow>
-              <boxGeometry args={[1.6, Math.max(0.5, pier.top - pier.bottom), 1.6]} />
-              <meshStandardMaterial color={BRIDGE_COLOR} roughness={0.95} metalness={0} />
-            </mesh>
-          ))}
-        </>
+      {ground?.patches != null ? (
+        <mesh geometry={ground.patches} receiveShadow>
+          <meshStandardMaterial color={ASPHALT_COLOR} roughness={0.96} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
       ) : null}
-      {buildings !== null ? <primitive object={buildings} /> : null}
-      {resolved.parks.map((park) => {
-        const groundY = sample(park.center[0], park.center[1]);
-        return (
-          <mesh key={park.id} position={[park.center[0], groundY + PARK_THICKNESS / 2 + 0.04, park.center[1]]} rotation={[0, park.rotationY, 0]} receiveShadow>
-            <boxGeometry args={[park.size[0], PARK_THICKNESS, park.size[1]]} />
-            <meshStandardMaterial color={PARK_COLOR} roughness={1} metalness={0} />
-          </mesh>
-        );
-      })}
+      {ground?.markings != null ? (
+        <mesh geometry={ground.markings}>
+          <meshStandardMaterial color={MARKING_COLOR} roughness={0.8} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.medians != null ? (
+        <mesh geometry={ground.medians} receiveShadow>
+          <meshStandardMaterial color={MEDIAN_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.pavementDrives != null ? (
+        <mesh geometry={ground.pavementDrives} receiveShadow>
+          <meshStandardMaterial color={PAVEMENT_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.gravelDrives != null ? (
+        <mesh geometry={ground.gravelDrives} receiveShadow>
+          <meshStandardMaterial color={GRAVEL_COLOR} roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.parks != null ? (
+        <mesh geometry={ground.parks} receiveShadow>
+          <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.crops != null ? (
+        <mesh geometry={ground.crops} receiveShadow>
+          <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {bridges?.deck != null ? (
+        <mesh geometry={bridges.deck} castShadow receiveShadow>
+          <meshStandardMaterial color={CONCRETE_COLOR} roughness={0.85} metalness={0.05} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {bridges !== null && bridges.concrete.length > 0 ? (
+        <InstancedBoxes matrices={bridges.concrete} color={CONCRETE_COLOR} />
+      ) : null}
+      {bridges !== null && bridges.steel.length > 0 ? <InstancedBoxes matrices={bridges.steel} color={STEEL_COLOR} /> : null}
+      {massing !== null ? massing.meshes.map((mesh, i) => <primitive key={`massing:${i}`} object={mesh} />) : null}
+      {furniture !== null ? furniture.meshes.map((mesh, i) => <primitive key={`furniture:${i}`} object={mesh} />) : null}
+      <DetailBuildings buildings={detail.buildings} palette={palette} />
     </group>
   );
+}
+
+/** One instanced unit-box mesh from precomposed matrices (bridge parts). */
+function InstancedBoxes({ matrices, color }: { matrices: THREE.Matrix4[]; color: string }) {
+  const mesh = useMemo(() => {
+    const units = unitGeometries();
+    const material = new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.15 });
+    const instanced = new THREE.InstancedMesh(units.box, material, matrices.length);
+    matrices.forEach((matrix, i) => instanced.setMatrixAt(i, matrix));
+    instanced.instanceMatrix.needsUpdate = true;
+    instanced.castShadow = true;
+    instanced.receiveShadow = true;
+    instanced.frustumCulled = false;
+    return instanced;
+  }, [matrices, color]);
+  useEffect(
+    () => () => {
+      (mesh.material as THREE.Material).dispose();
+    },
+    [mesh],
+  );
+  return <primitive object={mesh} />;
 }
 
 /** Registers the `city` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */

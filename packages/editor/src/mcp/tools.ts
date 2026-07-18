@@ -34,6 +34,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "set_marker", description: "Patch a marker's kind/color/label/rotationY and merge-patch its meta. Validated against the kind schema when registered." },
   { name: "set_note", description: "Patch a note's text and merge-patch its meta." },
   { name: "set_meta", description: "Merge-patch the meta bag of any document object (marker/volume/path/note) by id — the generic studio-slider primitive. Rejected if it violates the kind's param schema." },
+  { name: "apply_preset", description: "Apply a named preset bundle from the object's kind schema (e.g. a city archetype like manhattan/ruralohio) as one meta patch, ready to tweak afterwards." },
   { name: "select", description: "Select editor object ids." },
   { name: "camera_goto", description: "Focus the editor camera on an id or world x/z." },
   { name: "camera_frame", description: "Frame the whole editor document." },

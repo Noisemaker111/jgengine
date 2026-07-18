@@ -9,6 +9,34 @@ import {
   type WeightedParamEntry,
 } from "@jgengine/core/scene/sceneKinds";
 
+/** One-click archetype bundles: picking a preset writes its whole value bag as a single meta patch. */
+function PresetRow({ schema, onMeta }: { schema: ParamSchema; onMeta: MetaPatch }) {
+  const presets = schema.presets ?? [];
+  if (presets.length === 0) return null;
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className={MICRO}>preset</span>
+      <select
+        className={`w-32 ${INPUT}`}
+        value=""
+        onChange={(event) => {
+          const preset = presets.find((entry) => entry.id === event.target.value);
+          if (preset !== undefined) onMeta({ ...preset.values }, `preset:${preset.id}`);
+        }}
+      >
+        <option value="" disabled>
+          apply preset…
+        </option>
+        {presets.map((preset) => (
+          <option key={preset.id} value={preset.id}>
+            {preset.label ?? preset.id}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 const INPUT =
   "rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60";
 const MICRO = "text-[9px] font-semibold uppercase tracking-wider text-neutral-500";
@@ -252,6 +280,7 @@ export function SchemaInspector({
       <div className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
         {label}
       </div>
+      <PresetRow schema={schema} onMeta={onMeta} />
       {ungrouped.map((field) =>
         field.type === "action" ? (
           <ActionButton key={field.key} field={field} schema={schema} onMeta={onMeta} />
