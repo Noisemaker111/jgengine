@@ -85,6 +85,14 @@ export type GizmoMode = "translate" | "rotate" | "scale";
 /** Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes. */
 export type GizmoSpace = "world" | "local";
 
+/**
+ * Where multi-select gizmo handles sit:
+ * - `origin` — primary selection (first selected id)
+ * - `center` — arithmetic mean of selected object positions
+ * - `median` — per-axis median of selected object positions
+ */
+export type GizmoPivot = "origin" | "center" | "median";
+
 /** How gizmo drags land: stick to terrain height, quantize to a grid, or free. */
 export type SnapMode = "ground" | "grid" | "off";
 
@@ -117,6 +125,8 @@ export interface EditorUiState {
   gizmoMode: GizmoMode;
   /** Whether gizmo handles align to world axes or the selection's yaw. */
   gizmoSpace: GizmoSpace;
+  /** Multi-select gizmo pivot policy. */
+  gizmoPivot: GizmoPivot;
   snapMode: SnapMode;
   gridSize: number;
   /** Rotation snap increment in degrees; `null` rotates freely. */
@@ -166,6 +176,7 @@ export function createEditorUiStore(): EditorUiStore {
   let state: EditorUiState = {
     gizmoMode: "translate",
     gizmoSpace: "world",
+    gizmoPivot: "center",
     snapMode: "ground",
     gridSize: 1,
     rotationSnapDeg: 15,

@@ -670,6 +670,7 @@ export function EditorChrome({
         tool={uiState.tool}
         gizmoMode={uiState.gizmoMode}
         gizmoSpace={uiState.gizmoSpace}
+        gizmoPivot={uiState.gizmoPivot}
         snapMode={uiState.snapMode}
         gridSize={uiState.gridSize}
         rotationSnapDeg={uiState.rotationSnapDeg}
@@ -683,6 +684,7 @@ export function EditorChrome({
         onSetTool={(tool) => ui.setTool(tool)}
         onSetGizmoMode={(mode) => ui.patch({ gizmoMode: mode })}
         onSetGizmoSpace={(space) => ui.patch({ gizmoSpace: space })}
+        onSetGizmoPivot={(pivot) => ui.patch({ gizmoPivot: pivot })}
         onSetSnapMode={(mode) => ui.patch({ snapMode: mode })}
         onSetGridSize={(size) => ui.patch({ gridSize: size })}
         onSetRotationSnapDeg={(deg) => ui.patch({ rotationSnapDeg: deg })}

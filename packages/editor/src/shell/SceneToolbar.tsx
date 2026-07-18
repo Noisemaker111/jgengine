@@ -10,6 +10,7 @@ import {
   type CameraProjectionMode,
   type EditorTool,
   type GizmoMode,
+  type GizmoPivot,
   type GizmoSpace,
   type PlacementTool,
   type SnapMode,
@@ -102,15 +103,21 @@ function SnapChip({ label, active, onClick }: { label: string; active: boolean; 
   );
 }
 
+const PIVOT_LABEL: Record<GizmoPivot, string> = {
+  origin: "Origin",
+  center: "Center",
+  median: "Median",
+};
+
 /**
- * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping,
- * viewport overlays, framing, projection, and the Add menu. Unsupported controls (pivot modes)
- * render disabled rather than pretending to work.
+ * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, pivot,
+ * snapping, viewport overlays, framing, projection, and the Add menu.
  */
 export function SceneToolbar({
   tool,
   gizmoMode,
   gizmoSpace,
+  gizmoPivot,
   snapMode,
   gridSize,
   rotationSnapDeg,
@@ -124,6 +131,7 @@ export function SceneToolbar({
   onSetTool,
   onSetGizmoMode,
   onSetGizmoSpace,
+  onSetGizmoPivot,
   onSetSnapMode,
   onSetGridSize,
   onSetRotationSnapDeg,
@@ -141,6 +149,7 @@ export function SceneToolbar({
   tool: EditorTool;
   gizmoMode: GizmoMode;
   gizmoSpace: GizmoSpace;
+  gizmoPivot: GizmoPivot;
   snapMode: SnapMode;
   gridSize: number;
   rotationSnapDeg: number | null;
@@ -154,6 +163,7 @@ export function SceneToolbar({
   onSetTool: (tool: EditorTool) => void;
   onSetGizmoMode: (mode: GizmoMode) => void;
   onSetGizmoSpace: (space: GizmoSpace) => void;
+  onSetGizmoPivot: (pivot: GizmoPivot) => void;
   onSetSnapMode: (mode: SnapMode) => void;
   onSetGridSize: (size: number) => void;
   onSetRotationSnapDeg: (deg: number | null) => void;
@@ -170,6 +180,7 @@ export function SceneToolbar({
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [snapOpen, setSnapOpen] = useState(false);
+  const [pivotOpen, setPivotOpen] = useState(false);
   const lastSnapRef = useRef<Exclude<SnapMode, "off">>("ground");
   if (snapMode !== "off") lastSnapRef.current = snapMode;
 
@@ -219,13 +230,37 @@ export function SceneToolbar({
           { value: "local", label: "Local" },
         ]}
       />
-      <div
-        className="flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.06] bg-black/20 px-2 text-[11px] text-neutral-600"
-        title="Gizmo pivots at the selection center — pivot modes are planned"
-        aria-disabled="true"
-      >
-        <Icon name="target" size={12} />
-        Pivot
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setPivotOpen((value) => !value)}
+          disabled={tool === "terrain"}
+          aria-label={`Gizmo pivot: ${PIVOT_LABEL[gizmoPivot]}`}
+          aria-expanded={pivotOpen}
+          title="Gizmo pivot for multi-select: origin (primary), center (mean), or median"
+          className={`flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.07] bg-[#191d24] px-2 text-[11px] text-neutral-300 transition-colors hover:bg-[#1f242d] disabled:opacity-40 ${FOCUS_RING}`}
+        >
+          <Icon name="target" size={12} />
+          {PIVOT_LABEL[gizmoPivot]}
+          <Icon name="chevronDown" size={10} className="text-neutral-500" />
+        </button>
+        <MenuShell open={pivotOpen} onClose={() => setPivotOpen(false)} width="w-44">
+          <div className={`px-2 pb-1 pt-1.5 ${MICRO_LABEL}`}>Gizmo pivot</div>
+          {(["origin", "center", "median"] as const).map((pivot) => (
+            <button
+              key={pivot}
+              type="button"
+              className={`${MENU_ITEM} ${gizmoPivot === pivot ? "text-cyan-200" : ""}`}
+              onClick={() => {
+                onSetGizmoPivot(pivot);
+                setPivotOpen(false);
+              }}
+            >
+              {PIVOT_LABEL[pivot]}
+              {gizmoPivot === pivot ? " ✓" : ""}
+            </button>
+          ))}
+        </MenuShell>
       </div>
       <ToolbarDivider />
       <div className="relative flex items-center gap-1">
