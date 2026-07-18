@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/node",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Standalone authoritative game host for JGengine: in-memory server snapshots, tick loop, save-cadence flush, WebSocket server, memory/file persistence.",
   "license": "Apache-2.0",
   "type": "module",
@@ -31,8 +31,8 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.11.0",
-    "@jgengine/ws": "^0.11.0",
+    "@jgengine/core": "^0.12.0",
+    "@jgengine/ws": "^0.12.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

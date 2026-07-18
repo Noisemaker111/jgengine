@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/core",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "jgengine core — agent-first game framework SDK (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. https://jgengine.com",
   "keywords": [
     "jgengine",
