@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGameDefinition";
+import { defineGameDefinition } from "../game/defineGame";
 import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { gamePhase } from "../game/gamePhase";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";

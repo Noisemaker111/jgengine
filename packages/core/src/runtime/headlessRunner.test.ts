@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGameDefinition";
+import { defineGameDefinition } from "../game/defineGame";
 import { environment, grass, terrain } from "../world/features";
 import { summarizeEnvironment } from "../world/environmentSummary";
 import { offline } from "./adapter";

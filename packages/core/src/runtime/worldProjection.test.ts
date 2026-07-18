@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGameDefinition";
+import { defineGameDefinition } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import type { SceneEntity } from "../scene/entityStore";
 import { createGameContext, type GameContext } from "./gameContext";

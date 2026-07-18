@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGameDefinition";
+import { defineGameDefinition } from "../game/defineGame";
 import { memorySaveBackend } from "../game/saveStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { defineStore } from "../store/defineStore";
