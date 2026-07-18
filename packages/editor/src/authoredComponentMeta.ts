@@ -12,6 +12,7 @@ import { defaultParamMeta } from "@jgengine/core/scene/sceneKinds";
 /**
  * True when an object's meta carries an authored behavior trigger (flat on/action or a multi-list).
  * Empty `on` / no list means the trigger component is not installed.
+ * @internal
  */
 export function hasAuthoredTrigger(meta: Record<string, unknown> | undefined): boolean {
   if (meta === undefined) return false;
@@ -21,7 +22,7 @@ export function hasAuthoredTrigger(meta: Record<string, unknown> | undefined): b
   return flat.on !== "" && flat.action.length > 0;
 }
 
-/** True when the game has registered at least one trigger action for this target kind. */
+/** True when the game has registered at least one trigger action for this target kind. @internal */
 export function canAuthorTrigger(target: TriggerSourceKind): boolean {
   return listTriggerActions(target).length > 0;
 }
@@ -29,6 +30,7 @@ export function canAuthorTrigger(target: TriggerSourceKind): boolean {
 /**
  * Meta patch that installs a default trigger (first registered action, enter event) without
  * inventing action ids. Returns null when no actions are registered.
+ * @internal
  */
 export function defaultTriggerInstallPatch(
   target: TriggerSourceKind,
@@ -54,6 +56,7 @@ export function defaultTriggerInstallPatch(
 /**
  * Meta patch that clears the trigger vocabulary keys. Action-specific params are left in place so
  * re-adding the same action keeps prior tuning; the component is considered removed once `on`/`action`/list are gone.
+ * @internal
  */
 export function clearTriggerInstallPatch(): Record<string, unknown> {
   return {
@@ -64,12 +67,12 @@ export function clearTriggerInstallPatch(): Record<string, unknown> {
   };
 }
 
-/** True when a material assignment is present on the object. */
+/** True when a material assignment is present on the object. @internal */
 export function hasMaterialAssignment(meta: Record<string, unknown> | undefined): boolean {
   return typeof meta?.["materialId"] === "string" && (meta["materialId"] as string).length > 0;
 }
 
-/** Meta patch that removes material assignment. */
+/** Meta patch that removes material assignment. @internal */
 export function clearMaterialAssignmentPatch(): Record<string, unknown> {
   return { materialId: undefined };
 }

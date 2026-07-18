@@ -31,10 +31,10 @@ try {
   failures.push(`package.json is not strict JSON: ${String(error)}`);
 }
 
-requirePath("bun.lock", "run bun install and commit the lockfile");
-requirePath("node_modules", "run bun install before generators or gates");
-requirePath("node_modules/ts-morph", "dependencies are incomplete; finish bun install before continuing");
-requirePath("node_modules/@typescript/native-preview", "dependencies are incomplete; finish bun install before continuing");
+requirePath("bun.lock", "run bun install and commit the lockfile (or `bun run agent:bootstrap`)");
+requirePath("node_modules", "run `bun run agent:bootstrap` (or bun install) before generators or gates");
+requirePath("node_modules/ts-morph", "dependencies incomplete — run `bun run agent:bootstrap`");
+requirePath("node_modules/@typescript/native-preview", "dependencies incomplete — run `bun run agent:bootstrap`");
 
 function workspacePatterns(): string[] {
   const workspaces = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).workspaces as

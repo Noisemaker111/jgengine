@@ -3,7 +3,7 @@ import {
   type EditorDocument,
 } from "@jgengine/core/editor/index";
 
-/** One option in the Parent-to… picker / inspector parent field. */
+/** One option in the Parent-to… picker / inspector parent field. @internal */
 export interface ParentCandidate {
   id: string;
   label: string;
@@ -12,6 +12,7 @@ export interface ParentCandidate {
 /**
  * Placeable objects that may become parents of every id in `childIds` without creating a cycle:
  * excludes the children themselves and all of their descendants.
+ * @internal
  */
 export function listParentCandidates(
   document: EditorDocument,

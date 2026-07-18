@@ -6,6 +6,7 @@ import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
 /**
  * Searchable parent-target menu for hierarchy / viewport "Parent to…".
  * Parent owns candidate list (cycle-safe) and the set_parent write.
+ * @internal
  */
 export function ParentPickerMenu({
   x,
