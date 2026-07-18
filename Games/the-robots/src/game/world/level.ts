@@ -1,4 +1,4 @@
-import { normalizeEditorLayers } from "@jgengine/core/editor/document";
+import { findEditorMarker, normalizeEditorLayers } from "@jgengine/core/editor/document";
 import type { EditorDocument, EditorLayersInput, EditorPath } from "@jgengine/core/editor/index";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
@@ -32,13 +32,19 @@ export interface SidePoi {
   spawns: readonly { catalogId: string; count: number }[];
 }
 
-export const SIDE_POIS: readonly SidePoi[] = [
+/** Non-spatial side-POI catalog; positions/radii resolve from scene markers. */
+interface SidePoiMeta {
+  id: string;
+  name: string;
+  dressing: SidePoi["dressing"];
+  anchorZoneId: string;
+  spawns: readonly { catalogId: string; count: number }[];
+}
+
+const SIDE_POI_META: readonly SidePoiMeta[] = [
   {
     id: "poi_monglet_den",
     name: "Monglet Den",
-    x: -640,
-    z: 430,
-    radius: 26,
     anchorZoneId: "windshear_waste",
     dressing: "skag_den",
     spawns: [{ catalogId: "bullymong_brat", count: 4 }, { catalogId: "bullymong", count: 2 }],
@@ -46,9 +52,6 @@ export const SIDE_POIS: readonly SidePoi[] = [
   {
     id: "poi_lost_cache",
     name: "Lost Apex Cache",
-    x: 180,
-    z: 210,
-    radius: 22,
     anchorZoneId: "arid_badlands",
     dressing: "cache",
     spawns: [{ catalogId: "loader", count: 3 }],
@@ -56,9 +59,6 @@ export const SIDE_POIS: readonly SidePoi[] = [
   {
     id: "poi_wreck_field",
     name: "Buzzard Wreck Field",
-    x: 640,
-    z: 40,
-    radius: 28,
     anchorZoneId: "the_dust",
     dressing: "wreck_field",
     spawns: [{ catalogId: "marauder", count: 3 }, { catalogId: "psycho", count: 3 }],
@@ -67,6 +67,31 @@ export const SIDE_POIS: readonly SidePoi[] = [
 
 /** The authored scene document: placed level props (markers) and the road/spur network (paths). */
 export const authoredScene: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
+
+function requirePoiMarker(id: string) {
+  const marker = findEditorMarker(authoredScene, id);
+  if (marker === undefined) throw new Error(`editor.scene.json: missing POI marker "${id}"`);
+  return marker;
+}
+
+/** Side POIs — spawn tables in code, placement from `editor.scene.json`. */
+export const SIDE_POIS: readonly SidePoi[] = SIDE_POI_META.map((meta) => {
+  const marker = requirePoiMarker(meta.id);
+  const radius = marker.meta?.radius;
+  if (typeof radius !== "number") {
+    throw new Error(`editor.scene.json: POI "${meta.id}" has no numeric meta.radius`);
+  }
+  return {
+    id: meta.id,
+    name: meta.name,
+    x: marker.position.x,
+    z: marker.position.z,
+    radius,
+    anchorZoneId: meta.anchorZoneId,
+    dressing: meta.dressing,
+    spawns: meta.spawns,
+  };
+});
 
 const POI_IDS = new Set(SIDE_POIS.map((poi) => poi.id));
 
@@ -178,14 +203,20 @@ export const AUTHORED_PIECES: readonly PlacedPiece[] = resolveAuthoredObjects(au
   rotation: object.rotationY,
 }));
 
-export const NPC_PLACEMENTS: readonly { id: string; name: string; x: number; z: number }[] = (() => {
-  const hub = zoneById("arid_badlands")!;
-  return [
-    { id: "npc_zed", name: "dr_sparx", x: hub.center.x + 12, z: hub.center.z - 10 },
-    { id: "npc_rigg", name: "rigg", x: hub.center.x - 10, z: hub.center.z - 8 },
-    { id: "npc_gauge", name: "gauge", x: hub.center.x + 2, z: hub.center.z + 20 },
-  ];
-})();
+const NPC_META: readonly { id: string; name: string }[] = [
+  { id: "npc_zed", name: "dr_sparx" },
+  { id: "npc_rigg", name: "rigg" },
+  { id: "npc_gauge", name: "gauge" },
+];
+
+/** Named hub NPCs — ids/roles in code, positions from scene markers. */
+export const NPC_PLACEMENTS: readonly { id: string; name: string; x: number; z: number }[] = NPC_META.map(
+  (meta) => {
+    const marker = findEditorMarker(authoredScene, meta.id);
+    if (marker === undefined) throw new Error(`editor.scene.json: missing NPC marker "${meta.id}"`);
+    return { id: meta.id, name: meta.name, x: marker.position.x, z: marker.position.z };
+  },
+);
 
 export function placeLevel(ctx: GameContext): void {
   placeAuthoredObjectsFromDocument(

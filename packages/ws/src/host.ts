@@ -20,8 +20,17 @@ import {
   toServerListing,
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
+import {
+  isListablePublicly,
+  isPrivateJoinBlocked,
+  isServerFull,
+  isServerMember,
+  statusAfterLeave,
+  withJoinedMember,
+  withoutMember,
+} from "@jgengine/core/runtime/hostPolicy";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
-import { browseSessions, findByJoinCode, normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
+import { browseSessions, findByJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
   createFeedWriteGate,
   validateFeedWrite,
@@ -345,17 +354,15 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
         if (
           entry !== null &&
-          entry.record.visibility === "private" &&
-          !entry.record.memberUserIds.includes(args.userId)
+          isPrivateJoinBlocked({
+            visibility: entry.record.visibility,
+            memberUserIds: entry.record.memberUserIds,
+            userId: args.userId,
+            joinCode: entry.record.joinCode,
+            suppliedCode: args.code,
+          })
         ) {
-          const requiredCode = entry.record.joinCode;
-          const matches =
-            requiredCode !== undefined &&
-            args.code !== undefined &&
-            normalizeJoinCode(args.code) === normalizeJoinCode(requiredCode);
-          if (!matches) {
-            throw new Error("Server is private");
-          }
+          throw new Error("Server is private");
         }
 
         if (entry === null) {
@@ -383,10 +390,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         }
 
         const { record } = entry;
-        if (
-          record.memberUserIds.length >= record.slotsPerServer &&
-          !record.memberUserIds.includes(args.userId)
-        ) {
+        if (isServerFull(record.memberUserIds, record.slotsPerServer, args.userId)) {
           throw new Error("Server is full");
         }
 
@@ -395,9 +399,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
         entry.record = {
           ...record,
-          memberUserIds: record.memberUserIds.includes(args.userId)
-            ? record.memberUserIds
-            : [...record.memberUserIds, args.userId],
+          memberUserIds: withJoinedMember(record.memberUserIds, args.userId),
           status: "running",
           updatedAt: timestamp,
           dirtyAt: timestamp,
@@ -433,12 +435,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
       enqueueRoom(args.serverId, async () => {
         const entry = await getLive(args.serverId);
         if (entry === null) return;
-        if (!entry.record.memberUserIds.includes(args.userId)) return;
+        if (!isServerMember(entry.record.memberUserIds, args.userId)) return;
 
         await flushServer(entry);
 
         const timestamp = now();
-        const memberUserIds = entry.record.memberUserIds.filter((id) => id !== args.userId);
+        const memberUserIds = withoutMember(entry.record.memberUserIds, args.userId);
         const sessionPlayers = { ...entry.record.sessionPlayers };
         delete sessionPlayers[args.userId];
         const players = { ...entry.snapshot.players };
@@ -449,7 +451,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
           memberUserIds,
           sessionPlayers,
           updatedAt: timestamp,
-          status: memberUserIds.length === 0 ? "open" : entry.record.status,
+          status: statusAfterLeave(memberUserIds.length, entry.record.status),
         };
         entry.snapshot = { ...entry.snapshot, players };
         await persistence.saveServer(entry.record);
@@ -466,7 +468,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         if (entry === null) {
           return { ok: false as const, reason: "Server not found" };
         }
-        if (!entry.record.memberUserIds.includes(args.userId)) {
+        if (!isServerMember(entry.record.memberUserIds, args.userId)) {
           return { ok: false as const, reason: "Not a member of this server" };
         }
 
@@ -499,13 +501,13 @@ export function createGameHost(options: GameHostOptions): GameHost {
     isMember: async (args) => {
       const entry = await getLive(args.serverId);
       if (entry === null) return false;
-      return entry.record.memberUserIds.includes(args.userId);
+      return isServerMember(entry.record.memberUserIds, args.userId);
     },
 
     getServerView: async (args) => {
       const entry = await getLive(args.serverId);
       if (entry === null) return null;
-      if (!entry.record.memberUserIds.includes(args.userId)) return null;
+      if (!isServerMember(entry.record.memberUserIds, args.userId)) return null;
       return {
         serverId: entry.record.serverId,
         gameId: entry.record.gameId,
@@ -519,7 +521,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     getPlayerView: async (args) => {
       const entry = await getLive(args.serverId);
       if (entry === null) return null;
-      if (!entry.record.memberUserIds.includes(args.userId)) return null;
+      if (!isServerMember(entry.record.memberUserIds, args.userId)) return null;
       const player = entry.snapshot.players[args.userId];
       if (player !== undefined) {
         return {
@@ -542,7 +544,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
     getFeed: async (args) => {
       const entry = await getLive(args.serverId);
       if (entry === null) return [];
-      if (!entry.record.memberUserIds.includes(args.userId)) return [];
+      if (!isServerMember(entry.record.memberUserIds, args.userId)) return [];
       return persistence.loadFeed({ serverId: args.serverId, action: args.action });
     },
 
@@ -553,7 +555,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
           throw new Error(allowed.reason);
         }
         const entry = await getLive(args.serverId);
-        if (entry === null || !entry.record.memberUserIds.includes(args.userId)) {
+        if (entry === null || !isServerMember(entry.record.memberUserIds, args.userId)) {
           throw new Error("Not a member of this server");
         }
         await persistence.appendFeed({ serverId: args.serverId, action: args.action, entry: args.entry });
@@ -563,12 +565,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
     listOpenServers: async (args) => {
       const byId = new Map<string, ServerListing>();
       for (const record of await persistence.listServers(args.gameId)) {
-        if ((record.visibility ?? "public") === "private") continue;
+        if (!isListablePublicly(record.visibility)) continue;
         byId.set(record.serverId, toServerListing(record));
       }
       for (const entry of live.values()) {
         if (entry.record.gameId !== args.gameId) continue;
-        if ((entry.record.visibility ?? "public") === "private") continue;
+        if (!isListablePublicly(entry.record.visibility)) continue;
         byId.set(entry.record.serverId, toServerListing(entry.record));
       }
       return toOpenServerListings(byId.values(), args.limit);

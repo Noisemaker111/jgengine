@@ -10,10 +10,10 @@ import sceneJson from "./editor.scene.json";
 
 /**
  * The game's authored scene — `editor.scene.json`, placed in the 3D editor: player spawn, the three
- * zone hubs and their graveyards, the Hollow Crypt, the zone bands (box volumes), and every NPC spawn.
- * Zone/NPC gameplay tables read their coordinates from this one document (see `world/zones`,
- * `entities/npcs/catalog`); metadata (names, level ranges, dialogue) stays in code. The procedural
- * terrain, weather, and structures stay generated in `world.ts`. Open F2+E to edit live.
+ * zone hubs and their graveyards, the Hollow Crypt, dungeon compounds, the zone bands (box volumes),
+ * and every NPC spawn. Zone/NPC/dungeon tables read coordinates from this document (see `world/zones`,
+ * `entities/npcs/catalog`, `dungeons/catalog`); metadata (names, level ranges, dialogue) stays in code.
+ * The procedural terrain, weather, and structures stay generated in `world.ts`. Open F2+E to edit live.
  */
 export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
 

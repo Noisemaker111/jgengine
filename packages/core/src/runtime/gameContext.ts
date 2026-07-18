@@ -1,68 +1,42 @@
 import { type CardPile, type CardPileConfig } from "../cards/cardPile";
-import { createDeathSystem, deathReasonFromEffect, normalizeOnDeath, type OnDeathSpec } from "../combat/death";
 import {
-  createEffectSystem,
-  type CombatSpatialDeps,
   type EffectInput,
   type EffectResult,
-  type EffectSystem,
   type EffectVia,
   type ReceiveMap,
   type SingleTargetEffectInput,
 } from "../combat/effects";
-import { createProjectileSystem, type ProjectileSystem } from "../combat/projectiles";
+import { type ProjectileSystem } from "../combat/projectiles";
 import {
   type HitReaction,
   type HitReactionConfig,
   type ImpactPresetName,
 } from "../combat/hitReaction";
-import {
-  type TelegraphShape,
-} from "../combat/telegraph";
+import { type TelegraphShape } from "../combat/telegraph";
 import {
   createCommandRegistry,
   type CommandDefinition,
   type CommandResult,
 } from "../commands/commandRegistry";
-import {
-  balance as walletBalance,
-  charge as walletCharge,
-  createEmptyWallet,
-  grant as walletGrant,
-  isOverdrawn as walletIsOverdrawn,
-  type ChargeOptions as WalletChargeOptions,
-  type WalletState,
-} from "../economy/wallet";
+import { type ChargeOptions as WalletChargeOptions } from "../economy/wallet";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor, type TerrainField } from "../world/terrain";
 import { createGameEvents, type GameEventMap, type GameEvents, type VfxKind } from "../game/events";
-import { createVfxInstanceStore, type VfxInstanceStore } from "../game/vfxInstance";
+import { type VfxInstanceStore } from "../game/vfxInstance";
 import { createGameFeed, type GameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
 import { type Leaderboard } from "../game/leaderboard";
-import { createLoadouts, type Loadouts } from "../game/loadout";
+import { type Loadouts } from "../game/loadout";
 import { createLootRegistry, grantDrops, type Drop, type LootTableDef } from "../game/lootTable";
 import { type GameDialogue } from "../game/dialogue";
 import { type QuestJournal } from "../game/quest";
-import {
-  resolveDeathDrops,
-  DEFAULT_RARITY,
-  type WorldItemRecord,
-  type WorldItemSpawnInput,
-} from "../game/worldItem";
+import { type WorldItemRecord, type WorldItemSpawnInput } from "../game/worldItem";
 import { type Chat } from "../game/chat";
 import { createSocial, type Social } from "../game/social";
 import { type TradeField, type TradeSystem } from "../game/trade";
 import { type Unlocks } from "../game/unlocks";
-import {
-  createInventorySet,
-  putItem,
-  type InventoryLayout,
-  type InventorySet,
-  type InventoryState,
-  type ItemTraits,
-} from "../inventory/inventoryModel";
+import { type InventoryLayout, type InventorySet } from "../inventory/inventoryModel";
 import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
 import {
@@ -73,20 +47,12 @@ import {
   type ItemUseResult,
 } from "../item/use";
 import { createWeaponStats, type WeaponStats } from "../item/weapon";
-import { createPoseState, type PoseAllowedStates, type PoseState } from "../movement/poseState";
+import { type PoseAllowedStates, type PoseState } from "../movement/poseState";
 import type { ModelAssetRef } from "../scene/assetCatalog";
-import { createBodyBind, type BodyBind } from "../scene/bodyBind";
-import { createPaintLayer, type PaintLayer } from "../scene/paintLayer";
+import { type BodyBind } from "../scene/bodyBind";
+import { type PaintLayer } from "../scene/paintLayer";
+import { type EntityStatsApi, type StatCatalog, type StatValueMap } from "../scene/entityStats";
 import {
-  createEntityStatsApi,
-  seedStatValues,
-  setStatValue,
-  type EntityStatsApi,
-  type StatCatalog,
-  type StatValueMap,
-} from "../scene/entityStats";
-import {
-  createEntityStore,
   type EntityBlackboard,
   type EntityPose,
   type EntityPosition,
@@ -95,30 +61,18 @@ import {
   type SpawnOptions,
   type SpawnPose,
 } from "../scene/entityStore";
-import { createForms, type Forms } from "../scene/form";
-import {
-  fittedEntityColliders,
-  fittedObjectColliders,
-  scaledEntityColliders,
-  scaledObjectColliders,
-  type EntityColliderSet,
-  type ModelBodySource,
-} from "../scene/colliders";
-import { raycastObjects, raycastObjectsAll, type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
-import { createObjectStore, objectVisualScale, type ObjectStore } from "../scene/objectStore";
+import { type Forms } from "../scene/form";
+import { type EntityColliderSet, type ModelBodySource } from "../scene/colliders";
+import { type ObjectRaycastHit, type ObjectRaycastInput } from "../scene/objectQuery";
+import { type ObjectStore } from "../scene/objectStore";
 import { type Roster } from "../scene/roster";
-import { createSelectionSet, type SelectionSet } from "../scene/selection";
+import { type SelectionSet } from "../scene/selection";
 import { type ConnectedPlayers } from "../game/connectedPlayers";
-import { createPossession, type Possession } from "../scene/possession";
-import {
-  createSceneRaycast,
-  type SceneRaycastApi,
-  type SceneRaycastHit,
-  type SceneRaycastInput,
-} from "../scene/sceneRaycast";
-import { createSpatialApi, type MoveTowardOptions, type SpatialApi } from "../scene/spatial";
-import { createTargeting, type CycleTargetOptions } from "../scene/targeting";
-import { createStats, type Stats } from "../stats/statModifiers";
+import { type Possession } from "../scene/possession";
+import { type SceneRaycastHit, type SceneRaycastInput } from "../scene/sceneRaycast";
+import { type MoveTowardOptions, type SpatialApi } from "../scene/spatial";
+import { type CycleTargetOptions } from "../scene/targeting";
+import { type Stats } from "../stats/statModifiers";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
 import { createObservableKeyedStore, type ObservableKeyedStore } from "../store/observableKeyedStore";
 import {
@@ -141,15 +95,18 @@ import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock, type SimClock } from "../time/simClock";
 import { type TurnLoop, type TurnLoopConfig } from "../turn/turnLoop";
-import { RaceState, type RaceStateConfig } from "../game/race";
+import { type RaceState, type RaceStateConfig } from "../game/race";
 import { createCameraDirector, type CameraDirector } from "./cameraDirector";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
-import { createMotionIntents, type MotionIntents } from "./motionIntents";
+import { type MotionIntents } from "./motionIntents";
 import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
 import { featureDescriptors, type FeatureDeps } from "./descriptors/features";
-import { createCombatFx } from "./context/combatFx";
+import { createCombatSubsystem } from "./context/combat";
 import { createContextRegistries } from "./context/registries";
+import { createPlayerSubsystem } from "./context/player";
+import { createSceneSubsystem } from "./context/scene";
 import { createWorldItemContext } from "./context/worldItems";
+import type { OnDeathSpec } from "../combat/death";
 
 export interface GameContextItemEntry {
   use?: string;
@@ -208,14 +165,14 @@ export interface GameContextOptions<
   /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
   save?: RuntimeSaveOptions;
   /**
-   * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
+   * Host-side per-viewer replication policy â€” private-state and area-of-interest projection over the
    * wire. Bound on the authoritative host only. Unset (the default) replicates the whole world to every
    * client, exactly as before; the simulation is identical either way, so a game plays the same.
    */
   replication?: ReplicationPolicy;
   /**
    * Render-model lookup feeding collider auto-fit: what each entity kind / object catalog id renders as
-   * (resolved `entityModels`/`objectModels` — the shell wires this automatically). When set, entities and
+   * (resolved `entityModels`/`objectModels` â€” the shell wires this automatically). When set, entities and
    * objects without authored `colliders` get hitboxes fitted to their model's measured bounds instead of
    * the humanoid/unit-cube defaults. A multiplayer host should receive the same lookup as its clients so
    * both resolve identical colliders.
@@ -224,7 +181,7 @@ export interface GameContextOptions<
 }
 
 /** Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
- * @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
+ * @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically â€” no hand-tuned sizes
  */
 export interface GameContextModels {
   entity?(kind: string): ModelBodySource | null | undefined;
@@ -238,7 +195,7 @@ export interface SceneObjectContext extends ObjectStore {
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
   /**
-   * Per-instance selection/highlight state for placed objects — the reactive counterpart to
+   * Per-instance selection/highlight state for placed objects â€” the reactive counterpart to
    * `worldHealthBars`/`nameplates` (entities), so a build-mode or RTS selection ring reads
    * `ctx.scene.object.selection` instead of hand-rolling one through `WorldOverlay` against external
    * state. Mutations (`add`/`remove`/`toggle`/`replace`/`clear`) bump `ctx.version()`/notify
@@ -318,7 +275,7 @@ export interface SceneEntityContext {
   vfx(input: VfxInput): void;
   /**
    * Retained VFX registry for long-lived, updatable effects (held beams, tethers, zones, target lines) whose
-   * endpoints and params change over time — the persistent complement to the one-shot {@link SceneEntityContext.vfx}
+   * endpoints and params change over time â€” the persistent complement to the one-shot {@link SceneEntityContext.vfx}
    * burst. `upsert` creates/replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional
    * fade; endpoints given as an entity instance id are followed live by the renderer without per-frame commands.
    */
@@ -344,7 +301,7 @@ export interface SceneEntityContext {
    * result, so a per-tick mover no longer pairs `moveToward` with a hand-written `setPose`.
    * `options.face` turns the entity to its direction of travel; omitted preserves the current
    * `rotationY`. Returns the committed position (`null`, committing nothing, when `moveToward` would
-   * — unknown instance/target).
+   * â€” unknown instance/target).
    */
   moveTowardCommit(
     instanceId: string,
@@ -359,11 +316,11 @@ export interface SceneEntityContext {
   form: Forms;
   paint: PaintLayer;
   /**
-   * Lazily creates (on first call) or returns the existing declarative bind for `key` — the sim-snapshot →
+   * Lazily creates (on first call) or returns the existing declarative bind for `key` â€” the sim-snapshot â†’
    * scene-entity pose mirror (#673). Call `bind(key).sync(bodies, dt)` once per tick with every sim body's
    * current snapshot instead of hand-writing `setPose` per body: an id seen for the first time is spawned
    * from its `kind`, an id already bound is posed, and a previously-bound id absent from this tick's
-   * `bodies` is despawned — no per-game spawn/despawn dance.
+   * `bodies` is despawned â€” no per-game spawn/despawn dance.
    */
   bind(key: string): BodyBind;
 }
@@ -390,9 +347,9 @@ export interface GameContextCommands {
   has(name: string): boolean;
   names(): string[];
   run(name: string, input: unknown): CommandResult<GameContext>;
-  /** Run a command attributed to `actorUserId` — a shared-world host routes each client's command through this so the handler can read {@link actor}. */
+  /** Run a command attributed to `actorUserId` â€” a shared-world host routes each client's command through this so the handler can read {@link actor}. */
   runAs(actorUserId: string, name: string, input: unknown): CommandResult<GameContext>;
-  /** The user a command is running on behalf of, or `null` outside a {@link runAs} call — commands default to `ctx.player.userId` when this is `null`. */
+  /** The user a command is running on behalf of, or `null` outside a {@link runAs} call â€” commands default to `ctx.player.userId` when this is `null`. */
   actor(): string | null;
 }
 
@@ -410,7 +367,7 @@ export interface GameContextLoot {
 export interface GameContextEconomy {
   balance(userId: string, currencyId: string): number;
   grant(userId: string, currencyId: string, amount: number): void;
-  /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) — omitted keeps the strict no-debt default. */
+  /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) â€” omitted keeps the strict no-debt default. */
   charge(userId: string, currencyId: string, amount: number, options?: WalletChargeOptions): { reason: string } | null;
   /** True once `balance(userId, currencyId)` has gone negative under an overdraft-enabled charge. */
   isOverdrawn(userId: string, currencyId: string): boolean;
@@ -439,7 +396,7 @@ export interface GameContextTurn {
 }
 
 export interface GameContextRace {
-  /** Lazily creates (on first call, `config` required) or returns the existing reactive race for `id` — discrete mutations and eventful `update` calls bump `ctx.version()`, so HUDs stop hand-managing `store.set` (#286.2). */
+  /** Lazily creates (on first call, `config` required) or returns the existing reactive race for `id` â€” discrete mutations and eventful `update` calls bump `ctx.version()`, so HUDs stop hand-managing `store.set` (#286.2). */
   state(id: string, config?: RaceStateConfig): RaceState;
 }
 
@@ -450,16 +407,16 @@ export interface GameAudio {
   music(theme: string | null, transpose?: number): void;
   resume(): void;
   /**
-   * Start — or idempotently keep — the retained, id-keyed loop `id` playing catalog `sound`, emitting
+   * Start â€” or idempotently keep â€” the retained, id-keyed loop `id` playing catalog `sound`, emitting
    * `audio.loopStart`. Re-calling with the same `sound` does not restart it (no click); a different `sound`
-   * replaces the source. Pair with {@link GameAudio.setLoop} to track a live signal — an RPM-pitched engine
-   * loop, a slip-scaled tire squeal (#1051) — and {@link GameAudio.stopLoop} to end it.
+   * replaces the source. Pair with {@link GameAudio.setLoop} to track a live signal â€” an RPM-pitched engine
+   * loop, a slip-scaled tire squeal (#1051) â€” and {@link GameAudio.stopLoop} to end it.
    */
   loop(id: string, sound: string, options?: { at?: readonly [number, number, number] }): void;
   /**
    * Live-update retained loop `id` via `audio.loopSet`: `rate` re-pitches it (1 = authored pitch, clamped
-   * 0.25–4 by the shell), `gain` rescales volume (0–1), `at` repositions its emitter. Cheap to call every
-   * tick (~60 Hz) — the shell ramps rate/gain over ~20 ms to avoid zipper noise. A no-op when `id` is not a
+   * 0.25â€“4 by the shell), `gain` rescales volume (0â€“1), `at` repositions its emitter. Cheap to call every
+   * tick (~60 Hz) â€” the shell ramps rate/gain over ~20 ms to avoid zipper noise. A no-op when `id` is not a
    * live loop (an update may race a stop) (#1051).
    */
   setLoop(id: string, params: { rate?: number; gain?: number; at?: readonly [number, number, number] }): void;
@@ -480,38 +437,38 @@ export interface GameContext {
     commands: GameContextCommands;
     events: GameEvents;
     audio: GameAudio;
-    /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) — emits `entity.animation` for the shell to pick up. */
+    /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) â€” emits `entity.animation` for the shell to pick up. */
     playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
     loot: GameContextLoot;
-    /** Shop/vendor barter — present only when `features.trade` is set. */
+    /** Shop/vendor barter â€” present only when `features.trade` is set. */
     trade?: TradeSystem;
-    /** Quest/mission journal — present only when `features.quest` is set. */
+    /** Quest/mission journal â€” present only when `features.quest` is set. */
     quest?: QuestJournal;
-    /** Talkable-NPC dialogue open/close bridge — present only when `features.dialogue` is set. */
+    /** Talkable-NPC dialogue open/close bridge â€” present only when `features.dialogue` is set. */
     dialogue?: GameDialogue;
-    /** Friends/party/presence/emotes/world-invites — present only when `features.social` is set. */
+    /** Friends/party/presence/emotes/world-invites â€” present only when `features.social` is set. */
     social?: Social;
-    /** Channels + messages — present only when `features.chat` is set (implies `social`). */
+    /** Channels + messages â€” present only when `features.chat` is set (implies `social`). */
     chat?: Chat;
-    /** Earned unlockable content — present only when `features.unlocks` is set. */
+    /** Earned unlockable content â€” present only when `features.unlocks` is set. */
     unlocks?: Unlocks;
     economy: GameContextEconomy;
-    /** Competitive score tracking — present only when `features.leaderboard` is set. */
+    /** Competitive score tracking â€” present only when `features.leaderboard` is set. */
     leaderboard?: Leaderboard;
-    /** Owned-entity roster — present only when `features.roster` is set. */
+    /** Owned-entity roster â€” present only when `features.roster` is set. */
     roster?: Roster;
     /** Game-defined keyed reactive store slot (#163.1); mutations bump `ctx.version()`/notify `ctx.subscribe`. */
     store: ObservableKeyedStore<unknown>;
-    /** Card pile zones — present only when `features.cards` is set. */
+    /** Card pile zones â€” present only when `features.cards` is set. */
     cards?: GameContextCards;
-    /** Turn/phase loop — present only when `features.turn` is set. */
+    /** Turn/phase loop â€” present only when `features.turn` is set. */
     turn?: GameContextTurn;
-    /** Lap/checkpoint race state — present only when `features.race` is set. */
+    /** Lap/checkpoint race state â€” present only when `features.race` is set. */
     race?: GameContextRace;
-    /** Connected-player set for a shared world — present only when `features.players` is set. */
+    /** Connected-player set for a shared world â€” present only when `features.players` is set. */
     players?: ConnectedPlayers;
-    /** Whole-world save/load bound to a pluggable backend — present only when `defineGame({ save })` is set (offline/single-player). Drive save points and quest/area checkpoints with `checkpoint()`, restore on boot with `load()`. */
+    /** Whole-world save/load bound to a pluggable backend â€” present only when `defineGame({ save })` is set (offline/single-player). Drive save points and quest/area checkpoints with `checkpoint()`, restore on boot with `load()`. */
     save?: RuntimeSave;
     /**
      * Register a save-only snapshot module after boot (system-owned persistence).
@@ -519,32 +476,32 @@ export interface GameContext {
      */
     registerSave?(module: SnapshotModule): void;
     /**
-     * Register a host→client replication module after boot (system-owned replication).
+     * Register a hostâ†’client replication module after boot (system-owned replication).
      * Used by `composeGameLoop` / `installSystems` when a system declares `replicate`.
      */
     registerReplicate?(module: SnapshotModule): void;
   };
   player: {
-    /** The acting player's id — the command actor inside `runAs`, the local player everywhere else. */
+    /** The acting player's id â€” the command actor inside `runAs`, the local player everywhere else. */
     userId: string;
     isNew: boolean;
-    /** The acting player's inventory set — the command actor's bags inside `runAs`, the local player's everywhere else. */
+    /** The acting player's inventory set â€” the command actor's bags inside `runAs`, the local player's everywhere else. */
     inventory: InventorySet<string>;
-    /** A specific player's inventory set — how a host reads or grants into any connected player's bags. */
+    /** A specific player's inventory set â€” how a host reads or grants into any connected player's bags. */
     inventoryFor(userId: string): InventorySet<string>;
-    /** The acting player's stat modifiers — the command actor's inside `runAs`, the local player's everywhere else. */
+    /** The acting player's stat modifiers â€” the command actor's inside `runAs`, the local player's everywhere else. */
     stats: Stats<string>;
-    /** A specific player's stat modifiers — how a host reads or buffs any connected player's stats. */
+    /** A specific player's stat modifiers â€” how a host reads or buffs any connected player's stats. */
     statsFor(userId: string): Stats<string>;
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
     possession: Possession;
-    /** Cosmetic skins/customization — present only when `features.cosmetics` is set. */
+    /** Cosmetic skins/customization â€” present only when `features.cosmetics` is set. */
     cosmetics?: Cosmetics;
     /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
-    /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */
+    /** A specific player's motion queue â€” how the host-side per-player movement integrator drains each connected player's impulses. */
     motionFor(userId: string): MotionIntents;
   };
   item: {
@@ -559,13 +516,13 @@ export interface GameContext {
   subscribe(listener: () => void): () => void;
   version(): number;
   /**
-   * Bump {@link version}/notify {@link subscribe} directly — the escape hatch for a command that only
+   * Bump {@link version}/notify {@link subscribe} directly â€” the escape hatch for a command that only
    * mutates game-owned state outside the entity/object/economy/store layers (an external session map,
    * a plain closure variable) and needs to force a reactive HUD refresh without faking a `ctx.game.store.set`.
    */
   touch(): void;
   /**
-   * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
+   * Gather every opted-in live subsystem into one {@link WorldSnapshot} â€” entities, entity stats, the
    * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
    * baseline a host sends a joining client; {@link hydrate} is its inverse. Pass a `viewer` and the host
    * projects the snapshot to only what that viewer may see (private state, area of interest) when a
@@ -593,171 +550,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
   const ground = groundFieldFor(definition.world);
 
-  const entities = createEntityStore();
-  const objects = createObjectStore();
-  entities.subscribe(signal.notify);
-  objects.subscribe(signal.notify);
-
-  const statsByInstance = new Map<string, StatValueMap>();
-  const entityStats = notifyAfter(
-    createEntityStatsApi((instanceId) => statsByInstance.get(instanceId)),
-    ["set", "delta"],
-    signal.notify,
-  );
-
-  function ensureInstanceStats(instanceId: string): StatValueMap {
-    let map = statsByInstance.get(instanceId);
-    if (map === undefined) {
-      map = {};
-      statsByInstance.set(instanceId, map);
-    }
-    return map;
-  }
-
-  function catalogEntry(instanceId: string): GameContextEntityEntry | null | undefined {
-    const entity = entities.get(instanceId);
-    return entity === null ? undefined : content.entityById?.(entity.name);
-  }
-
-  function catalogObject(instanceId: string): GameContextObjectEntry | null | undefined {
-    const object = objects.get(instanceId);
-    return object === null ? undefined : content.objectById?.(object.catalogId);
-  }
-
-  let spatialGeneration = 0;
-  const candidateIds: string[] = [];
-  let candidateIdsDirty = true;
-
-  function refreshCandidateIds(): readonly string[] {
-    if (!candidateIdsDirty) return candidateIds;
-    candidateIds.length = 0;
-    for (const entity of entities.list()) candidateIds.push(entity.id);
-    candidateIdsDirty = false;
-    return candidateIds;
-  }
-
-  const spatial = createSpatialApi({
-    resolvePosition: (instanceId) => entities.get(instanceId)?.position,
-    candidates: refreshCandidateIds,
-    grid: { cellSize: 8 },
-    getVersion: () => spatialGeneration,
-    ...(occluder !== undefined ? { occluder } : {}),
-  });
-
-  entities.subscribe(() => {
-    candidateIdsDirty = true;
-    spatialGeneration += 1;
-    spatial.invalidate();
-  });
-
-  const entityColliders = new Map<string, EntityColliderSet>();
-  const objectColliders = new Map<string, EntityColliderSet>();
-  // Model-fitted sets are pure functions of static render config — cache per kind/catalog id so the
-  // per-ray collidersOf hot path never re-derives (or re-allocates) them.
-  const fittedEntityByKind = new Map<string, EntityColliderSet | null>();
-  const fittedObjectByCatalogId = new Map<string, EntityColliderSet | null>();
-
-  function fittedEntitySetFor(kind: string): EntityColliderSet | null {
-    const cached = fittedEntityByKind.get(kind);
-    if (cached !== undefined) return cached;
-    const model = options.models?.entity?.(kind);
-    const fitted = model === null || model === undefined ? null : fittedEntityColliders(model);
-    fittedEntityByKind.set(kind, fitted);
-    return fitted;
-  }
-
-  function fittedObjectSetFor(catalogId: string): EntityColliderSet | null {
-    const cached = fittedObjectByCatalogId.get(catalogId);
-    if (cached !== undefined) return cached;
-    const model = options.models?.object?.(catalogId);
-    const fitted = model === null || model === undefined ? null : fittedObjectColliders(model);
-    fittedObjectByCatalogId.set(catalogId, fitted);
-    return fitted;
-  }
-
-  function entityCollidersOf(instanceId: string): EntityColliderSet | null {
-    const override = entityColliders.get(instanceId);
-    if (override !== undefined) return override;
-    const entry = catalogEntry(instanceId);
-    if (entry?.colliders !== undefined) return entry.colliders;
-    const kind = entities.get(instanceId)?.name;
-    if (kind !== undefined) {
-      const fitted = fittedEntitySetFor(kind);
-      if (fitted !== null) return fitted;
-    }
-    const scale = entry?.scale;
-    if (scale !== undefined && scale !== 1) return scaledEntityColliders(scale);
-    return null;
-  }
-
-  function entityVisualScaleOf(instanceId: string): number {
-    return catalogEntry(instanceId)?.scale ?? 1;
-  }
-
-  function objectCollidersOf(instanceId: string): EntityColliderSet | null {
-    const override = objectColliders.get(instanceId);
-    if (override !== undefined) return override;
-    const catalog = catalogObject(instanceId);
-    if (catalog?.colliders !== undefined) return catalog.colliders;
-    if (catalog?.halfExtents !== undefined) return null;
-    const object = objects.get(instanceId);
-    if (object === null) return null;
-    const fitted = fittedObjectSetFor(object.catalogId);
-    if (fitted !== null) return fitted;
-    if (object.visual?.scale === undefined) return null;
-    return scaledObjectColliders(objectVisualScale(object.visual));
-  }
-
-  const targeting = notifyAfter(
-    createTargeting({
-      candidates: () => [...refreshCandidateIds()],
-      classify(_fromId, toId) {
-        const role = catalogEntry(toId)?.role;
-        return role === "enemy" || role === "hostile" ? "hostile" : "friendly";
-      },
-      distance: (fromId, toId) => spatial.distance(fromId, toId),
-    }),
-    ["setTarget", "cycleTarget"],
-    signal.notify,
-  );
-  const combatSpatial: CombatSpatialDeps = {
-    inRadius: (center, radius) => spatial.inRadius(center, radius),
-    hasLineOfSight: (from, to) => {
-      if (typeof from === "string") return spatial.hasLineOfSight(from, to);
-      const toPos = entities.get(to)?.position;
-      if (toPos === undefined) return false;
-      if (occluder === undefined) return true;
-      return !occluder(from, toPos);
-    },
-    positionOf: (instanceId) => entities.get(instanceId)?.position,
-  };
-
-  const sceneRaycast: SceneRaycastApi = createSceneRaycast({
-    entities: {
-      list: () => entities.list().map((entity) => ({
-        id: entity.id,
-        position: entity.position,
-        rotationY: entity.rotationY,
-        name: entity.name,
-      })),
-      collidersOf: entityCollidersOf,
-      inRadius: (center, radius) => spatial.inRadius(center, radius),
-      get: (id) => {
-        const entity = entities.get(id);
-        if (entity === null) return null;
-        return { id: entity.id, position: entity.position, rotationY: entity.rotationY, name: entity.name };
-      },
-    },
-    objects: {
-      list: () => objects.list(),
-      inBox: (min, max) => objects.inBox(min, max),
-      collidersOf: objectCollidersOf,
-      halfExtentsOf: (catalogId) => content.objectById?.(catalogId)?.halfExtents ?? null,
-    },
-    terrain: ground,
-  });
-
-  const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
   const rawEvents = createGameEvents();
   const events: GameEvents = {
     on: rawEvents.on,
@@ -767,8 +559,52 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       signal.notify();
     },
   };
+
+  // --- Scene installer (entities, objects, colliders, spatial, raycast, targeting) ---
+  const scene = createSceneSubsystem({
+    content,
+    signalNotify: signal.notify,
+    ground,
+    events,
+    time,
+    ...(occluder !== undefined ? { occluder } : {}),
+    ...(options.models !== undefined ? { models: options.models } : {}),
+  });
+  const {
+    entities,
+    objects,
+    statsByInstance,
+    entityStats,
+    ensureInstanceStats,
+    catalogEntry,
+    spatial,
+    combatSpatial,
+    sceneRaycast,
+    targeting,
+    entityColliders,
+    entityCollidersOf,
+    objectCollidersOf,
+    entityVisualScaleOf,
+    forms,
+    paintLayer,
+    spawnEntity,
+    despawnEntity,
+    moveEntityTowardCommit,
+    resetAllToSpawn,
+    bind,
+    sceneObjects,
+  } = scene;
+
+  // --- Shared game services (weapon, feed, features bag, commands, item use) ---
+  const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry();
+  /**
+   * Single feature-activation path (G9): `definition.features` is already the final map after
+   * `defineGame` OR-merged explicit boolean sugar (`features: { quest: true }`) with system-implied
+   * flags via `mergeSystemFeatures`. Descriptor install below is the only place that decides
+   * "feature on" â€” never a second enable check against systems.
+   */
   const features = definition.features ?? {};
   const featureRegistry = new Map<keyof GameFeatures, unknown>();
   const featureValue = <T>(key: keyof GameFeatures): T | undefined =>
@@ -787,16 +623,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     }
     return rawSocial;
   };
-  const playerStatsByUser = new Map<string, Stats<string>>();
-  function playerStatsFor(userId: string): Stats<string> {
-    let stats = playerStatsByUser.get(userId);
-    if (stats === undefined) {
-      stats = createStats<string>({});
-      playerStatsByUser.set(userId, stats);
-    }
-    return stats;
-  }
-  const pose = createPoseState((instanceId) => catalogEntry(instanceId)?.movement);
+
   const commandRegistry = createCommandRegistry<GameContext>();
   if (definition.lifecycle !== undefined) {
     const lifecycle = definition.lifecycle;
@@ -816,53 +643,35 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     });
   }
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
-  const possession = notifyAfter(createPossession({ entities, events }), ["possess", "own", "disown"], signal.notify);
-  const forms = notifyAfter(createForms({ entities, time, events }), ["shapeshift", "revert"], signal.notify);
-  const paintLayer = notifyAfter(createPaintLayer(), ["paint", "clear"], signal.notify);
 
-  const inventoryDeclarations = definition.inventories ?? {};
-  const inventoryIds = Object.keys(inventoryDeclarations);
-  const layouts: Record<string, InventoryLayout> = {};
-  for (const [inventoryId, declaration] of Object.entries(inventoryDeclarations)) {
-    layouts[inventoryId] = { slots: declaration.slots, accepts: declaration.accepts };
-  }
-  const traits: ItemTraits = Object.values(inventoryDeclarations).find(
-    (declaration) => declaration.traits !== undefined,
-  )?.traits ?? { stackLimit: () => Number.POSITIVE_INFINITY };
-  const inventoryByUser = new Map<string, InventorySet<string>>();
-  function inventoryFor(userId: string): InventorySet<string> {
-    let set = inventoryByUser.get(userId);
-    if (set === undefined) {
-      set = notifyAfter(createInventorySet(layouts, traits), ["put", "take", "move", "replaceState"], signal.notify);
-      inventoryByUser.set(userId, set);
-    }
-    return set;
-  }
-
-  const wallets = new Map<string, WalletState>();
-  const walletOf = (userId: string) => wallets.get(userId) ?? createEmptyWallet();
-  const economy: GameContextEconomy = {
-    balance: (userId, currencyId) => walletBalance(walletOf(userId), currencyId),
-    grant(userId, currencyId, amount) {
-      wallets.set(userId, walletGrant(walletOf(userId), currencyId, amount));
-      signal.notify();
-    },
-    charge(userId, currencyId, amount, options) {
-      const result = walletCharge(walletOf(userId), currencyId, amount, options);
-      if (result.status === "rejected") return { reason: result.reason };
-      wallets.set(userId, result.state);
-      signal.notify();
-      return null;
-    },
-    isOverdrawn: (userId, currencyId) => walletIsOverdrawn(walletOf(userId), currencyId),
-  };
-
-  function putIntoAnyInventory(userId: string, itemId: string, count: number): void {
-    const inventory = inventoryFor(userId);
-    for (const inventoryId of inventoryIds) {
-      if (inventory.put(inventoryId, itemId, count).status === "ok") return;
-    }
-  }
+  // --- Player installer (inventory, wallets, pose, motion, loadout) ---
+  const playerSys = createPlayerSubsystem({
+    signalNotify: signal.notify,
+    inventoryDeclarations: definition.inventories ?? {},
+    entities,
+    events,
+    catalogEntry,
+    ensureInstanceStats,
+    feature: featureValue,
+  });
+  const {
+    inventoryIds,
+    inventoryByUser,
+    inventoryFor,
+    layouts,
+    wallets,
+    walletOf,
+    economy,
+    putIntoAnyInventory,
+    playerStatsFor,
+    pose,
+    possession,
+    motionByUser,
+    motionFor,
+    loadouts,
+    seedUserPool,
+  } = playerSys;
+  scene.setOnAfterDespawn((instanceId) => pose.clear(instanceId));
 
   const loot: GameContextLoot = {
     register: lootRegistry.register,
@@ -879,111 +688,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  function seedUserPool(
-    userId: string,
-    statId: string,
-    pool: { current: number; max?: number; min?: number },
-  ): void {
-    const map = ensureInstanceStats(userId);
-    const next = setStatValue(map, statId, pool);
-    map[statId] = next[statId]!;
-  }
-
-  const loadouts = notifyAfter(
-    createLoadouts({
-    inventory: {
-      begin(userId) {
-        const inventory = inventoryFor(userId);
-        const staged = new Map<string, InventoryState>();
-        return {
-          put(inventoryId, itemId, count, slot) {
-            const layout = layouts[inventoryId];
-            if (layout === undefined) return { reason: `unknown inventory "${inventoryId}"` };
-            const state = staged.get(inventoryId) ?? inventory.state(inventoryId);
-            const result = putItem(state, layout, traits, itemId, count, slot === undefined ? undefined : { slot });
-            if (result.status === "rejected") return { reason: result.reason };
-            staged.set(inventoryId, result.state);
-            return null;
-          },
-          commit() {
-            for (const [inventoryId, state] of staged) inventory.replaceState(inventoryId, state);
-          },
-        };
-      },
-    },
-      stats: { seed: seedUserPool },
-      economy: { grant: economy.grant },
-      unlocks: { grant: (userId, unlockId) => featureValue<Unlocks>("unlocks")?.grant(userId, unlockId) },
-    }),
-    ["applyLoadout"],
-    signal.notify,
-  );
-
-  function spawnEntity(name: string, spawnOptions?: SpawnOptions): string {
-    const entry = content.entityById?.(name);
-    const walkSpeed = spawnOptions?.movement?.walkSpeed ?? entry?.movement?.walkSpeed;
-    const options =
-      walkSpeed === undefined
-        ? spawnOptions
-        : { ...spawnOptions, movement: { ...spawnOptions?.movement, walkSpeed } };
-    const instanceId = entities.spawn(name, options);
-    death.revive(instanceId);
-    statsByInstance.set(instanceId, entry?.stats === undefined ? {} : seedStatValues(entry.stats));
-    return instanceId;
-  }
-
-  function despawnEntity(instanceId: string): boolean {
-    const existed = entities.despawn(instanceId);
-    statsByInstance.delete(instanceId);
-    targeting.clearAll(instanceId);
-    pose.clear(instanceId);
-    entityColliders.delete(instanceId);
-    return existed;
-  }
-
-  function moveEntityTowardCommit(
-    instanceId: string,
-    target: EntityPosition | string,
-    options: MoveTowardCommitOptions,
-  ): EntityPosition | null {
-    const next = spatial.moveToward(instanceId, target, options);
-    if (next === null) return null;
-    const current = entities.get(instanceId);
-    if (current === null) return null;
-    let rotationY = current.rotationY;
-    if (options.face === true) {
-      const dx = next[0] - current.position[0];
-      const dz = next[2] - current.position[2];
-      if (Math.hypot(dx, dz) > 1e-9) rotationY = Math.atan2(dx, dz);
-    }
-    entities.setPose(instanceId, { position: next, rotationY });
-    return next;
-  }
-
-  function resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number {
-    let count = 0;
-    for (const entity of entities.list()) {
-      if (filter !== undefined && !filter(entity)) continue;
-      if (entities.resetToSpawn(entity.id)) count += 1;
-    }
-    return count;
-  }
-
-  const bodyBinds = new Map<string, BodyBind>();
-  function bind(key: string): BodyBind {
-    const existing = bodyBinds.get(key);
-    if (existing !== undefined) return existing;
-    const created = createBodyBind({
-      has: (id) => entities.get(id) !== null,
-      spawn: spawnEntity,
-      despawn: despawnEntity,
-      setPose: entities.setPose,
-      update: entities.update,
-    });
-    bodyBinds.set(key, created);
-    return created;
-  }
-
   const { worldItems, spawnWorldItem, pickupWorldItem } = createWorldItemContext({
     entities,
     events,
@@ -992,181 +696,44 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signalNotify: signal.notify,
   });
 
-  const death = createDeathSystem({
-    resolveOnDeath: (instanceId) => catalogEntry(instanceId)?.onDeath,
-    resolveIdentity(instanceId) {
-      const entity = entities.get(instanceId);
-      if (entity === null) return null;
-      return {
-        catalogId: entity.name,
-        position: [entity.position[0], entity.position[1], entity.position[2]],
-      };
-    },
-    loot: { roll: (tableId) => (lootRegistry.has(tableId) ? lootRegistry.roll(tableId) : []) },
-    events,
-    runCommand(name, args) {
-      commandRegistry.run(ctx, name, args);
-    },
-    despawn(instanceId) {
-      despawnEntity(instanceId);
-    },
-  });
-
-  const effects = notifyAfter(
-    createEffectSystem({
-    resolveReceive: (instanceId) => catalogEntry(instanceId)?.receive,
-    resolveStats: (instanceId) => statsByInstance.get(instanceId),
-    getStat: weapon.getStat,
-    spatial: combatSpatial,
-      onLethal(instanceId, lethalCtx) {
-        const dyingEntity = entities.get(instanceId);
-        const catalogId = dyingEntity?.name;
-        const position = dyingEntity?.position;
-        const normalizedOnDeath = normalizeOnDeath(catalogEntry(instanceId)?.onDeath);
-        const reason = deathReasonFromEffect({
-          ...lethalCtx,
-          userIdOf: (id) => (id === player.userId ? player.userId : undefined),
-        });
-        const resolution = death.resolveDeath(instanceId, reason);
-        if (
-          resolution.status === "resolved" &&
-          resolution.drops.length > 0 &&
-          reason.kind === "player_kill" &&
-          reason.killerUserId === player.userId
-        ) {
-          if (normalizedOnDeath.dropMode === "world" && position !== undefined) {
-            const resolved = resolveDeathDrops(resolution.drops, {
-              mode: "world",
-              origin: position,
-              resolveRarity: (itemId) => content.itemById?.(itemId)?.rarity ?? DEFAULT_RARITY,
-              resolveBaseType: (itemId) => content.itemById?.(itemId)?.baseType ?? itemId,
-              scatter: normalizedOnDeath.scatter,
-              ...(catalogId !== undefined ? { source: catalogId } : {}),
-            });
-            for (const spawn of resolved.worldSpawns) spawnWorldItem(spawn);
-            if (resolved.grants.length > 0) loot.grantToPlayer(player.userId, resolved.grants, catalogId);
-          } else {
-            loot.grantToPlayer(player.userId, resolution.drops, catalogId);
-          }
-        }
-      },
-    }),
-    ["applyEffect"],
-    signal.notify,
-  );
-
-  const { emitFloatText, emitVfx, fireTelegraph, applyHitReaction, applyEffectAndFloat } = createCombatFx({
-    entities,
+  // --- Combat installer (effects, projectiles, death, combat FX) ---
+  // Command runner closes over `ctx` once assembled (same late-bind pattern as before).
+  let ctxRef: GameContext | null = null;
+  const combat = createCombatSubsystem({
+    content,
+    signalNotify: signal.notify,
+    now,
     events,
     time,
-    applyEffect: (input) => effects.applyEffect(input),
+    entities,
+    objects,
+    combatSpatial,
+    sceneRaycast,
+    entityCollidersOf,
+    objectCollidersOf,
+    catalogEntry,
+    statsByInstance,
+    weapon,
+    loot,
+    lootRegistry,
+    spawnWorldItem,
+    despawnEntity,
+    runCommand(name, args) {
+      if (ctxRef === null) return;
+      commandRegistry.run(ctxRef, name, args);
+    },
+    localUserId: player.userId,
+    ...(definition.physics !== undefined ? { physics: definition.physics } : {}),
   });
-
-  const vfxInstances = createVfxInstanceStore({
-    onOp: (op) => events.emit("combat.vfxInstance", op),
-    now: () => time.now() * 1000,
-  });
-
-  const floatingEffects: EffectSystem = {
-    canReceive: effects.canReceive,
-    preview: effects.preview,
-    applyEffect: applyEffectAndFloat,
-  };
-
-  const projectileObstacles = definition.physics?.projectileObstacles === true;
-  // A projectile sees entities (and, when `projectileObstacles`, static geometry) but never terrain,
-  // with any per-call `input.filter` overriding these defaults. Computed once for both entry points.
-  const projectileFilterFor = (filter: SceneRaycastInput["filter"]): SceneRaycastInput["filter"] => ({
-    entities: true,
-    objects: projectileObstacles,
-    terrain: false,
-    walls: projectileObstacles,
-    ...filter,
-  });
-  const projectileSceneRaycast: SceneRaycastApi = {
-    raycast(input) {
-      return sceneRaycast.raycast({ ...input, filter: projectileFilterFor(input.filter) });
-    },
-    raycastAll(input) {
-      return sceneRaycast.raycastAll({ ...input, filter: projectileFilterFor(input.filter) });
-    },
-  };
-
-  const projectiles = notifyAfter(
-    createProjectileSystem({
-      effects: floatingEffects,
-      spatial: combatSpatial,
-      getStat: weapon.getStat,
-      sceneRaycast: projectileSceneRaycast,
-      objects: projectileObstacles
-        ? {
-            list: () => objects.list(),
-            inBox: (min, max) => objects.inBox(min, max),
-            halfExtents: (catalogId) => {
-              const half = content.objectById?.(catalogId)?.halfExtents;
-              return half === undefined ? null : [half[0], half[1], half[2]];
-            },
-            collidersOf: objectCollidersOf,
-          }
-        : undefined,
-      entityCollidersOf,
-      rotationYOf: (instanceId) => entities.get(instanceId)?.rotationY,
-      now,
-      onSettle(report) {
-        events.emit("projectile.settled", {
-          from: report.from,
-          origin: [report.origin[0], report.origin[1], report.origin[2]],
-          at: [report.at[0], report.at[1], report.at[2]],
-          effect: report.effect,
-          hit: report.hit,
-        });
-      },
-    }),
-    ["fireProjectile", "settleProjectile"],
-    signal.notify,
-  );
-
-  const objectSelection = notifyAfter(
-    createSelectionSet(),
-    ["add", "remove", "toggle", "replace", "clear"],
-    signal.notify,
-  );
-
-  const sceneObjects: SceneObjectContext = {
-    ...objects,
-    remove(instanceId) {
-      const existed = objects.remove(instanceId);
-      if (existed) objectSelection.remove(instanceId);
-      return existed;
-    },
-    catalog: (instanceId) => catalogObject(instanceId) ?? null,
-    raycast: (input) => raycastObjects(objects, input),
-    raycastAll: (input) => raycastObjectsAll(objects, input),
-    setColliders(instanceId, colliders) {
-      if (colliders === null) objectColliders.delete(instanceId);
-      else objectColliders.set(instanceId, colliders);
-      signal.notify();
-    },
-    collidersOf: objectCollidersOf,
-    selection: objectSelection,
-  };
+  scene.setOnAfterSpawn((instanceId) => combat.death.revive(instanceId));
+  const { projectiles, combatFx, vfxInstances, effects } = combat;
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
-
   const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
-
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const input = createInputSnapshot();
-  const motionByUser = new Map<string, MotionIntents>();
-  function motionFor(userId: string): MotionIntents {
-    let queue = motionByUser.get(userId);
-    if (queue === undefined) {
-      queue = createMotionIntents();
-      motionByUser.set(userId, queue);
-    }
-    return queue;
-  }
 
+  // --- Descriptor install (single feature enable path) ---
   const featureDeps: FeatureDeps = {
     features,
     signalNotify: signal.notify,
@@ -1203,10 +770,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     if (build.save !== undefined) featureSaveModules.push(build.save);
   }
 
-  // The optional-feature block on `ctx.game` is single-sourced from the descriptor registry rather
-  // than hand-listing a `featureValue<T>("x")` cast per feature: every feature key equals its
-  // `ctx.game` property name, save for `cosmetics` (which lives on `ctx.player`). Disabled features
-  // read back `undefined`, exactly as the per-line casts did.
   const gameFeatureBlock = {} as Pick<GameContext["game"], GameFeatureKey>;
   for (const descriptor of featureDescriptors) {
     if (descriptor.key === "cosmetics") continue;
@@ -1238,9 +801,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const replication = options.replication;
   const projectsViewers = policyProjectsViewers(replication);
   const aoiRadius = replication?.aoiRadius;
-  // A module's snapshot value is typed `unknown` (modules are keyed heterogeneously), so each per-key
-  // projector narrows it to the shape that key carries. `typedProject` isolates that one erasure cast
-  // so the individual projector bodies below stay fully typed and cast-free.
   const typedProject =
     <T>(
       project: (data: T, viewer: SnapshotViewer, world: WorldSnapshot) => unknown,
@@ -1279,17 +839,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const replicationVersion = (): number =>
     replicationModules.reduce((sum, module) => sum + (module.version?.() ?? 0), 0);
 
-  /**
-   * The whole-world *save* set is a superset of the *replication* set (`snapshotModules`): it adds the
-   * always-on baseline subsystems (economy, time, pose, possession, motion) plus every opted-in
-   * feature's `save` module (unlocks, roster, quest, cosmetics, cards, turn) — the persistent state a
-   * single-player save must restore but a host does not replicate to clients. Coverage is owned per
-   * subsystem, not hand-listed against a drifting feature manifest: each feature descriptor emits its
-   * own `save`, so a new persistent feature can't silently fall out of the save. Keeping the two sets
-   * distinct leaves `ctx.snapshot()`/`ctx.hydrate()` — the host→client payload — byte-identical for
-   * every multiplayer game, while `ctx.game.save` still persists everything.
-   * Mutable so game systems can register save modules at install time via `ctx.game.registerSave`.
-   */
   const saveModules: SnapshotModule[] = [
     ...snapshotModules,
     ...baselineBuilds.flatMap((build) => (build.save === undefined ? [] : [build.save])),
@@ -1310,6 +859,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     saveModules.push(module);
   }
 
+  // --- Assemble public GameContext ---
   const ctx: GameContext = {
     scene: {
       object: sceneObjects,
@@ -1328,17 +878,17 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         resetAllToSpawn,
         blackboard: entities.blackboard,
         stats: entityStats,
-        floatText: emitFloatText,
-        vfx: emitVfx,
+        floatText: combatFx.emitFloatText,
+        vfx: combatFx.emitVfx,
         vfxInstance: vfxInstances,
-        telegraph: fireTelegraph,
-        hitReaction: applyHitReaction,
+        telegraph: combatFx.fireTelegraph,
+        hitReaction: combatFx.applyHitReaction,
         setTarget: targeting.setTarget,
         getTarget: targeting.getTarget,
         cycleTarget: targeting.cycleTarget,
         canReceive: effects.canReceive,
         preview: effects.preview,
-        effect: applyEffectAndFloat,
+        effect: combatFx.applyEffectAndFloat,
         willHitProjectile: projectiles.willHitProjectile,
         fireProjectile: projectiles.fireProjectile,
         settleProjectile: projectiles.settleProjectile,
@@ -1481,6 +1031,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     replicationVersion,
     replicatesPerViewer: () => projectsViewers,
   };
+  ctxRef = ctx;
 
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {

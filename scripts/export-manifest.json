@@ -265,6 +265,7 @@
     "./runtime/gameRuntime",
     "./runtime/headlessRunner",
     "./runtime/hostPersistence",
+    "./runtime/hostPolicy",
     "./runtime/hostedGameRunner",
     "./runtime/hostedWorldSession",
     "./runtime/inputSnapshot",

@@ -52,6 +52,13 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("src/ holds only the skeleton (everything else under src/game/)");
   });
 
+  test("allows optional skeleton files (preview.tsx, scene-ownership.json) at src/ top level", () => {
+    const dir = scaffold();
+    writeFileSync(join(dir, "src", "preview.tsx"), "export default function Preview() { return null; }\n");
+    writeFileSync(join(dir, "src", "scene-ownership.json"), '{"version":1,"objects":[]}\n');
+    expect(failingLabels(dir)).not.toContain("src/ holds only the skeleton (everything else under src/game/)");
+  });
+
   test("passes installSaveEndpoint gating out of the box", () => {
     const dir = scaffold();
     expect(failingLabels(dir)).not.toContain("installSaveEndpoint calls gated behind import.meta.env.DEV");

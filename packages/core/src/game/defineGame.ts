@@ -234,6 +234,9 @@ export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
   if (config.name.trim().length === 0) {
     throw new Error("defineGame: name must be non-empty");
   }
+  // Boolean `features: { quest: true }` is sugar for the same activation map systems produce via
+  // `feature: "quest"`. Both OR-merge here; `createGameContext` only reads this final map through
+  // featureDescriptors.enabled — one enable path, no dual checks at install time.
   const features = mergeSystemFeatures(config.features, config.systems);
   const loop = composeGameLoop(config.systems, config.loop);
   return {

@@ -24,7 +24,6 @@ import {
   validateFeedWrite,
   type FeedWriteGate,
 } from "@jgengine/core/multiplayer/feedWriteGate";
-import { normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
   DEFAULT_POSE_SYNC_RULES,
   decidePoseSync,
@@ -35,12 +34,28 @@ import {
 import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
-import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord, SessionVisibility } from "@jgengine/core/runtime/hostPersistence";
+import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
 import { buildHydratePlayers, planServerPersist, shouldAutoSave, trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
+import {
+  isAutoJoinCandidate,
+  isListablePublicly,
+  isPrivateJoinBlocked,
+  isServerFull,
+  isServerMember,
+  statusAfterLeave,
+  withJoinedMember,
+  withoutMember,
+} from "@jgengine/core/runtime/hostPolicy";
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
 import { clearDirtyFlags, createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
 import { applyCommandWithOcc, commitIfRevisionMatch } from "./occ";
+
+/** @internal Re-export shared host-policy pure helpers so existing convex imports keep working. */
+export {
+  canJoinPrivateServer,
+  isListablePublicly,
+} from "@jgengine/core/runtime/hostPolicy";
 
 const saveConfigValidator = v.union(
   v.literal("none"),
@@ -195,26 +210,6 @@ export async function resolveActor(
   return null;
 }
 
-/** True when a server's `visibility` should surface in public listings/browse results.
- * @internal
- */
-export function isListablePublicly(visibility: SessionVisibility | undefined): boolean {
-  return (visibility ?? "public") !== "private";
-}
-
-/** A non-member may enter a private server only by presenting its `joinCode`; members always pass.
- * @internal
- */
-export function canJoinPrivateServer(args: {
-  isMember: boolean;
-  joinCode: string | undefined;
-  suppliedCode: string | undefined;
-}): boolean {
-  if (args.isMember) return true;
-  if (args.joinCode === undefined || args.suppliedCode === undefined) return false;
-  return normalizeJoinCode(args.suppliedCode) === normalizeJoinCode(args.joinCode);
-}
-
 async function requireServerMember(
   ctx: JGQueryCtx | JGMutationCtx,
   serverId: string,
@@ -222,7 +217,7 @@ async function requireServerMember(
 ): Promise<ServerDoc | null> {
   const server = await ctx.db.get("jgGameServers", serverId as GenericId<"jgGameServers">);
   if (!server) return null;
-  if (!server.memberUserIds.includes(actorUserId)) return null;
+  if (!isServerMember(server.memberUserIds, actorUserId)) return null;
   return server;
 }
 
@@ -538,11 +533,14 @@ export function createGameServerFunctions(options?: {
           joinable.push(...rows);
         }
         server =
-          joinable.find((row) => {
-            if (row.memberUserIds.includes(actorUserId)) return true;
-            if (row.memberUserIds.length >= row.slotsPerServer) return false;
-            return (row.visibility ?? "public") !== "private";
-          }) ?? null;
+          joinable.find((row) =>
+            isAutoJoinCandidate({
+              memberUserIds: row.memberUserIds,
+              slotsPerServer: row.slotsPerServer,
+              visibility: row.visibility,
+              userId: actorUserId,
+            }),
+          ) ?? null;
       }
 
       if (!server) {
@@ -567,17 +565,15 @@ export function createGameServerFunctions(options?: {
         if (!server) throw new ConvexError("Failed to create server");
       }
 
-      if (
-        server.memberUserIds.length >= server.slotsPerServer &&
-        !server.memberUserIds.includes(actorUserId)
-      ) {
+      if (isServerFull(server.memberUserIds, server.slotsPerServer, actorUserId)) {
         throw new ConvexError("Server is full");
       }
 
       if (
-        (server.visibility ?? "public") === "private" &&
-        !canJoinPrivateServer({
-          isMember: server.memberUserIds.includes(actorUserId),
+        isPrivateJoinBlocked({
+          visibility: server.visibility,
+          memberUserIds: server.memberUserIds,
+          userId: actorUserId,
           joinCode: server.joinCode,
           suppliedCode: args.joinCode,
         })
@@ -591,9 +587,7 @@ export function createGameServerFunctions(options?: {
         .unique();
 
       const isNew = profile === null;
-      const memberUserIds = server.memberUserIds.includes(actorUserId)
-        ? server.memberUserIds
-        : [...server.memberUserIds, actorUserId];
+      const memberUserIds = withJoinedMember(server.memberUserIds, actorUserId);
 
       await ctx.db.patch(server._id, {
         memberUserIds,
@@ -630,7 +624,7 @@ export function createGameServerFunctions(options?: {
       const snapshot = await loadServerSnapshot(ctx, server, runtime);
       await persistServerSnapshot(ctx, server, snapshot, server.save as SaveConfig);
 
-      const memberUserIds = server.memberUserIds.filter((id) => id !== actorUserId);
+      const memberUserIds = withoutMember(server.memberUserIds, actorUserId);
       const sessionPlayers = { ...(server.sessionPlayers as Record<string, unknown>) };
       delete sessionPlayers[actorUserId];
 
@@ -639,7 +633,7 @@ export function createGameServerFunctions(options?: {
         sessionPlayers,
         updatedAt: now,
         dirtyAt: now,
-        status: memberUserIds.length === 0 ? "open" : server.status,
+        status: statusAfterLeave(memberUserIds.length, server.status),
       });
 
       const pose = await ctx.db
@@ -672,7 +666,7 @@ export function createGameServerFunctions(options?: {
       if (!server) {
         return { ok: false as const, reason: "Server not found" };
       }
-      if (!server.memberUserIds.includes(actorUserId)) {
+      if (!isServerMember(server.memberUserIds, actorUserId)) {
         return { ok: false as const, reason: "Not a member of this server" };
       }
 
@@ -838,7 +832,7 @@ export function createGameServerFunctions(options?: {
       }
 
       const server = await ctx.db.get("jgGameServers", args.serverId);
-      if (!server || !server.memberUserIds.includes(actorUserId)) {
+      if (!server || !isServerMember(server.memberUserIds, actorUserId)) {
         throw new ConvexError("Not a member of this server");
       }
 
