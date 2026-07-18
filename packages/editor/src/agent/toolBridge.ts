@@ -1,5 +1,6 @@
 import type { EditorBridgeRequest, EditorBridgeResponse, EditorHostApi } from "../session";
 import { decodeEditorBridgeRequest } from "../mcp/rpcRequest";
+import { emitEditorConsole } from "../shell/consoleSink";
 
 /** One tool call from an agent turn — name maps 1:1 onto an editor RPC method. */
 export interface AgentToolCall {
@@ -73,6 +74,7 @@ function summarizeCall(name: string, args: Record<string, unknown>, response: Ed
 export function routeToolCall(api: EditorHostApi, call: AgentToolCall): AgentToolResult {
   const built = toolCallToRequest(call);
   if (!built.ok) {
+    emitEditorConsole("error", "agent", `${call.name} rejected: ${built.error}`);
     return {
       id: call.id,
       name: call.name,
@@ -83,13 +85,16 @@ export function routeToolCall(api: EditorHostApi, call: AgentToolCall): AgentToo
     };
   }
 
+  emitEditorConsole("info", "agent", `tool ${call.name}`);
   const session = api.getSession();
   const before = session.exportJson(false);
   let response: EditorBridgeResponse;
   try {
+    // RPC failures are logged once by the host handle sink; agent layer only records the call.
     response = api.handle(built.request);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    emitEditorConsole("error", "agent", `${call.name} threw: ${message}`);
     return {
       id: call.id,
       name: call.name,

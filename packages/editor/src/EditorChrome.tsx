@@ -34,6 +34,7 @@ import { OrientationWidget, PerformanceOverlay, ViewportUtilityPanel } from "./s
 import { WorkspaceRail } from "./shell/WorkspaceRail";
 import { buildPaletteCommands } from "./shell/commandRegistry";
 import { createEditorConsoleStore } from "./shell/consoleStore";
+import { installEditorConsoleSink } from "./shell/consoleSink";
 import { Icon } from "./shell/icons";
 import {
   createShellLayoutStore,
@@ -157,6 +158,15 @@ export function EditorChrome({
   const perfHistoryRef = useRef<ReturnType<typeof createPerfHistoryStore> | null>(null);
   perfHistoryRef.current ??= createPerfHistoryStore();
   const perfHistory = perfHistoryRef.current;
+
+  // Bridge global RPC/agent console emits into the dock console for this chrome instance.
+  useEffect(
+    () =>
+      installEditorConsoleSink((severity, source, message) => {
+        consoleStore.log(severity, source, message);
+      }),
+    [consoleStore],
+  );
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState<string | null>(null);

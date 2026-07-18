@@ -27,6 +27,7 @@ import type { TerrainField } from "@jgengine/core/world/terrain";
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 
 import { EDITOR_RPC_HANDLERS, type HandlerContext } from "./handlers";
+import { emitEditorConsole } from "./shell/consoleSink";
 
 registerBuiltinSceneKinds();
 
@@ -451,11 +452,17 @@ export function createEditorHost(options: {
         getTerrainSampler: api.getTerrainSampler,
       };
       try {
-        return EDITOR_RPC_HANDLERS[request.method](ctx, request as never);
+        const response = EDITOR_RPC_HANDLERS[request.method](ctx, request as never);
+        if (!response.ok) {
+          emitEditorConsole("error", "rpc", `${request.method}: ${response.error ?? "failed"}`);
+        }
+        return response;
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        emitEditorConsole("error", "rpc", `${request.method} threw: ${message}`);
         return {
           ok: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: message,
         };
       }
     },
