@@ -69,6 +69,10 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
 
+2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
+
+recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
+
 2026-07-18T20:23:57.542Z — gpt-5.6-sol — NoisemakerJon
 
 creating the required isolated worktree under C:\tmp -> Bun returned EPERM/No package.json there, and a nested ignored worktree then resolved scripts against the parent checkout; worktrees need a documented Bun-safe location outside the repository
@@ -124,3 +128,27 @@ rerunning scripts/tarballInstall.test.ts after one timeout adjustment -> repeate
 2026-07-18T21:23:09.992Z — gpt-5.6-sol — NoisemakerJon
 
 staging the reviewed worktree diff -> git could not create the linked-worktree index.lock under the main checkout's .git directory without escalation, despite the worktree itself being the authorized writable root
+
+2026-07-18T21:45:58.260Z — gpt-5.6-sol — NoisemakerJon
+
+running a focused core typecheck with bun --cwd packages/core run check-types -> Bun exited 0 after printing help instead of executing the script; invalid command ordering should not report success
+
+2026-07-18T21:57:19.685Z — gpt-5.6-sol — NoisemakerJon
+
+regenerating scripts/export-manifest.json for the new core/stats/statPool subpath -> current origin/main also injects six unrelated stale editor subpaths, so the scoped change had to remove those generated rows and the baseline manifest gate remains red
+
+2026-07-18T21:58:37.034Z — gpt-5.6-sol — NoisemakerJon
+
+running the isolated packed-core stat-pool import smoke test -> Windows tar extraction was killed at the explicit 30s test budget after a dangling process warning; real-tarball tests need a Windows-safe extractor or a larger filesystem budget
+
+2026-07-18T22:08:50.506Z — gpt-5.6-sol — NoisemakerJon
+
+running bun run gate for the stat-pool slice -> the build phase exited 255 immediately after launching the editor package build with no compiler diagnostic, so the full gate did not identify a failing source or check
+
+2026-07-18T22:13:40.362Z — gpt-5.6-sol — NoisemakerJon
+
+retrying the full gate after the isolated editor build passed -> 6337 tests passed, but five unchanged tarball-content cases and installPackagedSkills exceeded Bun's default 5s timeout under Windows filesystem contention, alongside the known six-subpath editor export-manifest drift
+
+2026-07-18T22:23:17.244Z — claude — Claude
+
+ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md

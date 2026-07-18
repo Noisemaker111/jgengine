@@ -15,7 +15,7 @@ Treat the pitch as a unique composition of needs, not a genre to fill in — nev
 - world shape and authored content
 - core loop, interaction, combat, and progression
 - solo, local, hosted, or persistent multiplayer
-- HUD/menu states and art direction
+- HUD/menu states and **custom** UI art direction (every game owns its presentation — no stock drop-in face)
 - one observable completion scenario
 
 For a new in-repo game, scaffold with `bun run new:game "<id-or-title>"` (thin script alias for `jgengine create`, auto-detects the in-repo variant). Outside this monorepo, start with `npx jgengine create`; never copy `Games/*`.

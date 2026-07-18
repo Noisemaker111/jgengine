@@ -424,12 +424,12 @@ const PANEL: CSSProperties = {
 };
 
 /**
- * The batteries-included default: a skinned glass panel wrapping {@link useActionBar} +
- * {@link ActionBarChrome}. Pass `defs`, choose `grid`/`list`, and hand it `onActivate`. The renderer
- * and item chrome are still swappable via `renderItem`; a game that wants a different frame composes
- * the hook and chrome directly.
+ * Convenience composition of {@link useActionBar} + glass {@link ActionBarChrome} for demos and
+ * scaffolding — not a shipped game face. Pass `defs`, choose `grid`/`list`, and hand it `onActivate`.
+ * Games that own their UI compose the headless hook + custom chrome (or swap `renderItem`) instead
+ * of shipping this default panel.
  *
- * @capability action-bar drop-in cooldown/cost/hotkey action bar over the headless action model
+ * @capability action-bar optional skinned action-bar composition over the headless model — games own chrome
  */
 export function ActionBar({
   defs,

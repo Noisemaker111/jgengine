@@ -37,3 +37,6 @@ packages/*/skills/
 # Ephemeral git worktrees created by parallel shipping subagents
 # (Agent({ isolation: "worktree" })) — transient, never committed.
 .claude/worktrees/
+
+# agent-bootstrap concurrency guard (never race two bun installs)
+.agent-bootstrap.lock

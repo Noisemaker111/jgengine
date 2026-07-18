@@ -345,6 +345,7 @@
     "./stats/rollCheck",
     "./stats/spawnLevelStats",
     "./stats/statModifiers",
+    "./stats/statPool",
     "./store/changeSignal",
     "./store/defineKeyedStore",
     "./store/defineStore",

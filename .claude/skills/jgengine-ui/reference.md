@@ -4,9 +4,11 @@ This reference defines the required visual and interaction quality for JGengine 
 
 ## The rule
 
-A game must visually own its viewport. It must not resemble a dashboard, landing page, documentation page, or ordinary responsive web app.
+A game must visually own its viewport **and its entire interface**. Presentation is game content: each title designs a custom HUD, menus, feedback, and art direction. It must not resemble a dashboard, landing page, documentation page, ordinary responsive web app, **or another JGengine game's default widget stack**.
 
-HTML and React are valid implementation tools. Website visual grammar is not the default.
+The engine does not ship a finished game UI. `@jgengine/react` offers headless data/layout/accessibility seams and optional building blocks. Dropping in stock `StatBar` / `Hotbar` / `Coins` / glass `HudFrame` / theme presets without game-specific composition is incomplete work — not "using the engine correctly."
+
+HTML and React are valid implementation tools. Website visual grammar is not the default. Engine default chrome is not the default either.
 
 ## 1. Start with a concise UI art direction
 
