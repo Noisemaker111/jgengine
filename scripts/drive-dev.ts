@@ -340,7 +340,7 @@ const exitCode = await withBrowserSession(
         console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
       }
     } finally {
-      session.close();
+      await session.close();
     }
     return code;
   },

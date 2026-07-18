@@ -15,6 +15,17 @@ Verification follows risk: cheapest deterministic evidence first, visual/browser
 4. Exercise gameplay progress when the loop can softlock.
 5. Capture and inspect screenshots only for visual/layout/integration claims.
 
+## Choose evidence
+
+Classify each acceptance claim before scheduling proof. A plan that uses screenshots where deterministic evidence suffices is incomplete.
+
+| Claim | Primary proof | Screenshot policy |
+| --- | --- | --- |
+| rules, combat, progression, persistence | focused unit or gameplay tests | do not capture |
+| authored or generated world content exists | scene queries, `summarizeEnvironment`, or serialized-document assertions | do not capture merely to prove existence |
+| performance | `debug_snapshot` simulation and render metrics | do not photograph an fps counter |
+| layout, lighting, framing, or visual fidelity | pixel metrics plus an inspected screenshot | capture only the states and viewports named by the claim |
+
 ## Scene and gameplay proof
 
 - Generated worlds assert resolved counts, finite/non-flat terrain where expected, palettes, bounds, and required features.
@@ -34,7 +45,16 @@ When a game is reported slow, play it and pull the debug menu's perf data instea
 
 ## Visual proof
 
-Screenshots come from the game's own dev server: `bun dev`, open the page in a browser tool, and capture. Read every screenshot adversarially: assume it is broken and hunt for the flaw. A shot is evidence to be prosecuted, not a formality to wave through. Comb the frame region by region at full size — corners, edges, and background included — never sign off on a glance. Optimism here is a defect: "looks good" on a broken frame is worse than no capture, because it launders a bug into a completion claim.
+Start one managed capture session before the first visual shot:
+
+1. Run `bun run shoot daemon start`. The command must report a live Chrome/Vite pair; a non-zero exit means visual capture is unavailable, not permission to repeat cold foreground launches.
+2. Iterate with `bun run shoot <game> --mode play --size half --inspect`. Plain `shoot` auto-attaches to the live daemon; reuse it for every state or viewport in the loop.
+3. Reject blank, sparse, overflow, and collision failures from the metrics pass before opening a PNG. Open only captures whose claim truly needs visual judgment.
+4. Capture the final accepted state at full resolution, then embed final visual evidence with `bun run pr-shots`.
+
+Do not run bare cold `shoot` or `drive` commands repeatedly in a multi-shot loop. If the managed daemon cannot stay live, stop retrying the same browser path and report the capture failure with deterministic evidence from the lower rungs.
+
+Screenshots come from the game's own dev server. Read every screenshot adversarially: assume it is broken and hunt for the flaw. A shot is evidence to be prosecuted, not a formality to wave through. Comb the frame region by region at full size — corners, edges, and background included — never sign off on a glance. Optimism here is a defect: "looks good" on a broken frame is worse than no capture, because it launders a bug into a completion claim.
 
 - Judge against the brief, not against "a working build". When the task names a target — a reference game, a mockup, a design doc, "make it look like X" — that target is the bar. Put the reference beside the shot and compare feature by feature: terrain treatment, unit and building silhouettes, HUD layout and console, resource/economy model, palette, camera angle. A slice that runs but resembles the target in nothing is a **fail**, not a pass. "It is only a vertical slice" narrows the *scope* of what is claimed; it never lowers the bar for what is actually in frame. If the shot shares almost nothing with the named target, say so plainly and score it a fail — do not credit it for booting.
 - Enumerate defects before you judge. Walk the frame and name what is actually wrong: clipping and z-fighting, stretched/low-res/placeholder textures, misaligned, overlapping, or clipped UI, cut-off or overflowing text, wrong anchors and off-screen elements, seams and gaps, flat/black/blank regions (an unrendered corner or blown-out sky is a render bug, not lighting), missing shadows or lighting, jagged or aliased edges, colour banding, default/untextured primitives, repeated identical silhouettes. Only after that itemized pass may you state a verdict, and the verdict must name what you checked.

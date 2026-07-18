@@ -37,6 +37,12 @@ export interface ShootDaemonState {
   startedAt: string;
 }
 
+type DaemonStartWaitOptions = {
+  pid?: number;
+  timeoutMs?: number;
+  pollMs?: number;
+};
+
 export function daemonStatePath(cwd = process.cwd()): string {
   const port = resolveWarmChromePort(cwd);
   return join(tmpdir(), `jgengine-shoot-daemon-${port}.json`);
@@ -95,6 +101,26 @@ export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
 export async function attachDaemon(cwd = process.cwd()): Promise<ShootDaemonState | null> {
   if (!(await isDaemonLive(cwd))) return null;
   return readDaemonState(cwd);
+}
+
+/** Wait for a background daemon to expose both its Chrome and Vite endpoints. */
+export async function waitForDaemonLive(
+  cwd = process.cwd(),
+  options: DaemonStartWaitOptions = {},
+): Promise<ShootDaemonState | null> {
+  const timeoutMs = options.timeoutMs ?? 120_000;
+  const pollMs = options.pollMs ?? 250;
+  const deadline = Date.now() + timeoutMs;
+
+  while (true) {
+    const state = await attachDaemon(cwd);
+    if (state !== null) return state;
+    if (options.pid !== undefined && !pidAlive(options.pid)) return null;
+
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) return null;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(pollMs, remainingMs)));
+  }
 }
 
 export async function startDaemon(options: {
@@ -206,7 +232,7 @@ export async function statusDaemon(cwd = process.cwd()): Promise<number> {
  * On Windows we still spawn the same entrypoint; the child owns the long-lived
  * Chrome + Vite processes.
  */
-export function spawnDaemonBackground(cwd = process.cwd()): void {
+export function spawnDaemonBackground(cwd = process.cwd()): ChildProcess {
   const entry = join(import.meta.dir, "shoot-dev.ts");
   const child = spawn(process.execPath, [entry, "--serve"], {
     cwd,
@@ -216,7 +242,7 @@ export function spawnDaemonBackground(cwd = process.cwd()): void {
   });
   child.unref();
   console.error(`shoot daemon: starting in background (pid ${child.pid ?? "?"})`);
-  console.error(`shoot daemon: check → bun run shoot daemon status`);
+  return child;
 }
 
 export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Promise<number> {
@@ -226,9 +252,24 @@ export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Pro
       await startDaemon({ cwd, foreground: true });
       return 0;
     }
-    spawnDaemonBackground(cwd);
-    // Give the child a moment to write state before status is polled.
-    await new Promise((r) => setTimeout(r, 1_500));
+    const existing = await attachDaemon(cwd);
+    if (existing !== null) {
+      console.error(
+        `shoot daemon: already running — chrome :${existing.chromePort}, dev ${existing.devBase}`,
+      );
+      return 0;
+    }
+
+    const child = spawnDaemonBackground(cwd);
+    const state = await waitForDaemonLive(cwd, { pid: child.pid });
+    if (state === null) {
+      const reason = pidAlive(child.pid)
+        ? "did not become ready within 120 seconds"
+        : "exited before Chrome and Vite became ready";
+      console.error(`shoot daemon: failed — background process ${reason}`);
+      return 1;
+    }
+    console.error(`shoot daemon: ready — chrome :${state.chromePort}, dev ${state.devBase}`);
     return 0;
   }
   if (verb === "stop") {

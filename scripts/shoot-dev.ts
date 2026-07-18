@@ -195,18 +195,19 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   return url.toString();
 }
 
-async function readHudOverflow(session: CdpSession): Promise<string | null> {
-  const value = await session.evaluate<unknown>(
-    `document.querySelector("[data-hud-overflow]")?.getAttribute("data-hud-overflow") ?? null`,
-  );
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-async function readLayoutCollision(session: CdpSession): Promise<string | null> {
-  const value = await session.evaluate<unknown>(
-    `document.querySelector("[data-jg-layout-collision]")?.getAttribute("data-jg-layout-collision") ?? null`,
-  );
-  return typeof value === "string" && value.length > 0 ? value : null;
+async function readLayoutStatus(
+  session: CdpSession,
+): Promise<{ overflow: string | null; collision: string | null }> {
+  const value = await session.evaluate<{ overflow?: unknown; collision?: unknown }>(`({
+    overflow: document.querySelector("[data-hud-overflow]")?.getAttribute("data-hud-overflow") ?? null,
+    collision: document.querySelector("[data-jg-layout-collision]")?.getAttribute("data-jg-layout-collision") ?? null
+  })`);
+  return {
+    overflow:
+      typeof value?.overflow === "string" && value.overflow.length > 0 ? value.overflow : null,
+    collision:
+      typeof value?.collision === "string" && value.collision.length > 0 ? value.collision : null,
+  };
 }
 
 function formatCollisionReport(raw: string): string {
@@ -225,21 +226,35 @@ async function shootOne(
   outPath: string,
   devBase: string,
 ): Promise<boolean> {
+  const startedAt = performance.now();
+  let phaseStartedAt = startedAt;
+  const timings: string[] = [];
+  const mark = (name: string): void => {
+    const now = performance.now();
+    timings.push(`${name}=${((now - phaseStartedAt) / 1_000).toFixed(2)}s`);
+    phaseStartedAt = now;
+  };
   const session = await openPageSession(debugPort);
+  mark("target");
   try {
     await session.send("Page.enable");
     await session.send("Runtime.enable");
     await applyDevice(session, device, args.size);
+    mark("setup");
     const url = targetUrl(args, device, devBase);
     await session.send("Page.navigate", { url });
+    mark("navigate");
     await waitCaptureReady(session, args.timeoutMs);
+    mark("ready");
     await new Promise((r) => setTimeout(r, 600));
-    const overflow = await readHudOverflow(session);
-    const collision = await readLayoutCollision(session);
+    mark("settle");
+    const { overflow, collision } = await readLayoutStatus(session);
+    mark("layout");
     const shot = await session.send("Page.captureScreenshot", {
       format: "png",
       fromSurface: true,
       captureBeyondViewport: false,
+      optimizeForSpeed: true,
     });
     const data = shot.data;
     if (typeof data !== "string" || data.length === 0) {
@@ -248,6 +263,7 @@ async function shootOne(
     const bytes = Buffer.from(data, "base64");
     writePngAtomic(outPath, bytes);
     console.log(outPath);
+    mark("capture");
     const profile = DEVICES[device];
     const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}`;
     let ok = true;
@@ -278,9 +294,13 @@ async function shootOne(
         ok = false;
       }
     }
+    mark("inspect");
+    console.error(
+      `shoot: timing ${device} ${timings.join(" ")} total=${((performance.now() - startedAt) / 1_000).toFixed(2)}s`,
+    );
     return ok;
   } finally {
-    session.close();
+    await session.close();
   }
 }
 

@@ -312,9 +312,11 @@ export class CdpSession {
     { resolve: (value: Record<string, unknown>) => void; reject: (error: Error) => void }
   >();
   private readonly ws: WebSocket;
+  private readonly ownedTarget?: { debugPort: number; targetId: string };
 
-  private constructor(ws: WebSocket) {
+  private constructor(ws: WebSocket, ownedTarget?: { debugPort: number; targetId: string }) {
     this.ws = ws;
+    this.ownedTarget = ownedTarget;
     this.ws.addEventListener("message", (event) => {
       const data = typeof event.data === "string" ? event.data : undefined;
       if (data === undefined) return;
@@ -333,7 +335,11 @@ export class CdpSession {
     });
   }
 
-  static connect(url: string, timeoutMs: number): Promise<CdpSession> {
+  static connect(
+    url: string,
+    timeoutMs: number,
+    ownedTarget?: { debugPort: number; targetId: string },
+  ): Promise<CdpSession> {
     return new Promise((resolvePromise, reject) => {
       const ws = new WebSocket(url);
       const timer = setTimeout(() => {
@@ -342,7 +348,7 @@ export class CdpSession {
       }, timeoutMs);
       ws.addEventListener("open", () => {
         clearTimeout(timer);
-        resolvePromise(new CdpSession(ws));
+        resolvePromise(new CdpSession(ws, ownedTarget));
       });
       ws.addEventListener("error", () => {
         clearTimeout(timer);
@@ -373,15 +379,37 @@ export class CdpSession {
     return (result.result as { value?: T } | undefined)?.value;
   }
 
-  close(): void {
+  async close(): Promise<void> {
+    if (this.ownedTarget !== undefined) {
+      const closed = await closePageTarget(
+        this.ownedTarget.debugPort,
+        this.ownedTarget.targetId,
+      );
+      if (!closed) {
+        console.error(`browser session: failed to close page target ${this.ownedTarget.targetId}`);
+      }
+    }
     for (const [, waiter] of this.pending) waiter.reject(new Error("CDP session closed"));
     this.pending.clear();
     this.ws.close();
   }
 }
 
+/** Close one Chrome page target through the debugger HTTP endpoint. */
+export async function closePageTarget(debugPort: number, targetId: string): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${debugPort}/json/close/${encodeURIComponent(targetId)}`,
+      { signal: AbortSignal.timeout(2_000) },
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function openPageSession(debugPort: number): Promise<CdpSession> {
-  let info: { webSocketDebuggerUrl?: string } | undefined;
+  let info: { id?: string; webSocketDebuggerUrl?: string } | undefined;
   for (const method of ["PUT", "GET"] as const) {
     try {
       const created = await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`, {
@@ -389,7 +417,7 @@ export async function openPageSession(debugPort: number): Promise<CdpSession> {
         signal: AbortSignal.timeout(10_000),
       });
       if (created.ok) {
-        info = (await created.json()) as { webSocketDebuggerUrl?: string };
+        info = (await created.json()) as { id?: string; webSocketDebuggerUrl?: string };
         break;
       }
     } catch {
@@ -403,7 +431,11 @@ export async function openPageSession(debugPort: number): Promise<CdpSession> {
     if (page?.webSocketDebuggerUrl === undefined) throw new Error("No CDP page target available");
     return CdpSession.connect(page.webSocketDebuggerUrl, 15_000);
   }
-  return CdpSession.connect(info.webSocketDebuggerUrl, 15_000);
+  return CdpSession.connect(
+    info.webSocketDebuggerUrl,
+    15_000,
+    info.id === undefined ? undefined : { debugPort, targetId: info.id },
+  );
 }
 
 export function launchChrome(debugPort: number, prefix = "jg-drive-"): ChildProcess {
