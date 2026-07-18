@@ -1,5 +1,7 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { editorCatalogs } from "./editorCatalogs";
+import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
@@ -27,6 +29,11 @@ export const game = defineGame({
   // Selection rings, marquee + click select, and right-click orders are all shell-native: the game
   // supplies who is selectable and the verb that receives { selection, point }.
   pointer: { select: true, selectFilter: isPlayerSelectable, orderCommand: "unit.order" },
+  // Authored map dressing (war-road ribbon + forest ring) renders from the document; units, keeps,
+  // and props spawn as entities in onInit, so object placement stays off — no double render.
+  editorLayers,
+  editorCatalogs,
+  scenePlacement: false,
   // Faction-coloured health bars (green Vanguard / red Marauders) live in the world overlay so
   // friend/foe reads at a glance — the shell's built-in world bars are always red.
   WorldOverlay: IronholdWorldOverlay,

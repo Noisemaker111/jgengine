@@ -1,4 +1,3 @@
-import { offline } from "@jgengine/core/runtime/adapter";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { assets } from "./game/assets";
@@ -19,7 +18,6 @@ export const game = defineGame({
   input: keybinds,
   server: { mode: "solo" },
   save: "none",
-  multiplayer: offline(),
   features: { unlocks: true },
   time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_LENGTH * (9 / 24), speeds: [1, 2, 4] },
   content,

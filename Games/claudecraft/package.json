@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@jgengine/core": "workspace:*",
+    "@jgengine/editor": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "@react-three/fiber": "^9.5.0",

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { tickUnits } from "./ai/units";

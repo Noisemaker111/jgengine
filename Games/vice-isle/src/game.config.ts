@@ -1,5 +1,4 @@
 import { defineGame } from "@jgengine/shell/defineGame";
-import { offline } from "@jgengine/core/runtime/adapter";
 import { assets } from "./game/assets";
 import { audio } from "./game/audio/catalog";
 import { content } from "./game/content";
@@ -24,7 +23,6 @@ export const game = defineGame({
   server: { mode: "openworld" },
   save: "none",
   persist: true,
-  multiplayer: offline(),
   content,
   loop,
   GameUI,

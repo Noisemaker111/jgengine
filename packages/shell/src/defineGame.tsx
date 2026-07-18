@@ -10,7 +10,8 @@ import { syncLifecyclePhase } from "@jgengine/core/game/gamePhase";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
-import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
+import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "./environment";
@@ -28,6 +29,8 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   GameUI?: ComponentType;
   /** Tunes how the auto-mounted `AuthoredScene` places the document's catalog-id markers into the object store. Default `true`; pass `false` when the game spawns its placed content as entities itself (`placeAuthoredObjects`) to avoid a double render. */
   scenePlacement?: boolean | { verticalOffset?: number };
+  /** GLB models for the auto-mounted scene's scatter palette items, keyed by palette item id; string ids resolve through the game's asset catalog. Unmatched items keep the built-in proxy meshes. */
+  sceneScatterModels?: Record<string, string | ModelConfig>;
 };
 
 export type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> &
@@ -44,12 +47,19 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
 function authoredSceneOverlay(
   document: EditorDocument,
   placement: boolean | { verticalOffset?: number },
+  scatterModels: Record<string, string | ModelConfig> | undefined,
+  assets: AssetCatalog,
   Vfx: ComponentType<WorldOverlayProps> | undefined,
 ): ComponentType<WorldOverlayProps> {
   return function AuthoredSceneOverlay(props: WorldOverlayProps) {
     return (
       <>
-        <AuthoredScene document={document} field={props.ctx.world.ground} placeObjects={placement} />
+        <AuthoredScene
+          document={document}
+          field={props.ctx.world.ground}
+          placeObjects={placement}
+          {...(scatterModels === undefined ? {} : { scatterModels, assets })}
+        />
         {Vfx === undefined ? null : <Vfx {...props} />}
       </>
     );
@@ -78,6 +88,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     editorLayers,
     editorCatalogs,
     scenePlacement,
+    sceneScatterModels,
     WorldOverlay,
     viewmodel,
     renderEntity,
@@ -150,7 +161,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     WorldOverlay:
       editorLayers === undefined
         ? WorldOverlay
-        : authoredSceneOverlay(editorLayers, scenePlacement ?? true, WorldOverlay),
+        : authoredSceneOverlay(editorLayers, scenePlacement ?? true, sceneScatterModels, game.assets, WorldOverlay),
     viewmodel,
     renderEntity,
     renderObject,
