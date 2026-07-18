@@ -17,6 +17,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { roundPathCorners, buildRoadRibbon, dashSegments, type RoadPoint } from "@jgengine/core/world/roads";
+import { offsetPath } from "@jgengine/core/world/streets";
 import { triangulatePolygon, triangulateRingBand } from "@jgengine/core/world/cityGeometry";
 import {
   resolveCityObject,
@@ -41,12 +42,14 @@ const MEDIAN_COLOR = "#4d7a40";
 const PAVEMENT_COLOR = "#a8a49a";
 const CONCRETE_COLOR = "#b0aba1";
 const STEEL_COLOR = "#4c505a";
+const TUNNEL_COLOR = "#5b5754";
+const CURB_COLOR = "#c4c0b6";
 const HEDGE_COLOR = "#3d6631";
 const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
-const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 3.8, conifer: 3.4, palm: 3.3, cypress: 3.0 };
+const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 2.7, conifer: 2.5, palm: 2.6, cypress: 2.3 };
 
 type Sampler = (x: number, z: number) => number;
 
@@ -189,6 +192,83 @@ function clipPolylineAtIntersections(
   return runs;
 }
 
+/** Andrew's monotone-chain convex hull of XZ points (CCW), degenerate-safe. */
+function convexHull(points: readonly RoadPoint[]): RoadPoint[] {
+  const pts = points.map((p) => [p[0], p[1]] as RoadPoint).sort((a, b) => (a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]));
+  if (pts.length < 3) return pts;
+  const cross = (o: RoadPoint, a: RoadPoint, b: RoadPoint): number =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower: RoadPoint[] = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper: RoadPoint[] = [];
+  for (let i = pts.length - 1; i >= 0; i -= 1) {
+    const p = pts[i]!;
+    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+/** Round every vertex of a CLOSED ring into a short arc — the curb-return radius that turns a hard
+ *  polygon corner into a real street corner. Radius is clamped to each corner's shorter leg. */
+function roundRing(ring: readonly RoadPoint[], radius: number, segments = 5): RoadPoint[] {
+  if (ring.length < 3 || radius <= 0) return ring.map((p) => [p[0], p[1]] as RoadPoint);
+  const n = ring.length;
+  const out: RoadPoint[] = [];
+  for (let i = 0; i < n; i += 1) {
+    const a = ring[(i - 1 + n) % n]!;
+    const v = ring[i]!;
+    const b = ring[(i + 1) % n]!;
+    const ax = a[0] - v[0];
+    const az = a[1] - v[1];
+    const bx = b[0] - v[0];
+    const bz = b[1] - v[1];
+    const la = Math.hypot(ax, az) || 1;
+    const lb = Math.hypot(bx, bz) || 1;
+    const r = Math.min(radius, la / 2, lb / 2);
+    const p0: RoadPoint = [v[0] + (ax / la) * r, v[1] + (az / la) * r];
+    const p1: RoadPoint = [v[0] + (bx / lb) * r, v[1] + (bz / lb) * r];
+    out.push(p0);
+    for (let s = 1; s < segments; s += 1) {
+      const t = s / segments;
+      const u = 1 - t;
+      out.push([u * u * p0[0] + 2 * u * t * v[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * v[1] + t * t * p1[1]]);
+    }
+    out.push(p1);
+  }
+  return out;
+}
+
+/**
+ * The pavement outline of a junction: each arm's roadway extended to the crossing, hulled into one
+ * convex area, then corner-rounded. This reads as a real intersection (a squared crossing with
+ * rounded curb corners) instead of the old stamped circle. Returns `null` for a degenerate junction.
+ */
+function junctionOutline(cross: CityIntersection, reachScale = 1.15, expand = 0): RoadPoint[] | null {
+  if (cross.arms.length < 2) return null;
+  let maxHalf = 0;
+  for (const arm of cross.arms) maxHalf = Math.max(maxHalf, arm.width / 2);
+  const reach = maxHalf * reachScale + expand;
+  const mouth: RoadPoint[] = [];
+  for (const arm of cross.arms) {
+    const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
+    const perp: readonly [number, number] = [-dir[1], dir[0]];
+    const hw = arm.width / 2 + expand;
+    mouth.push([cross.x + dir[0] * reach + perp[0] * hw, cross.z + dir[1] * reach + perp[1] * hw]);
+    mouth.push([cross.x + dir[0] * reach - perp[0] * hw, cross.z + dir[1] * reach - perp[1] * hw]);
+  }
+  const hull = convexHull(mouth);
+  if (hull.length < 3) return null;
+  // Curb-return radius: a real corner, capped so a tight junction never over-rounds into a blob.
+  const cornerR = Math.min(maxHalf * 0.9 + expand, 5.5);
+  return roundRing(hull, cornerR, 6);
+}
+
 let unitGeometryCache: { box: THREE.BoxGeometry; gable: THREE.BufferGeometry; cylinder: THREE.CylinderGeometry; dome: THREE.SphereGeometry } | null = null;
 
 /** Unit massing primitives shared by every district: box, gable prism (ridge along X), cylinder, dome. */
@@ -253,8 +333,11 @@ function DetailBuildings({ buildings, palette }: { buildings: DetailBuilding[]; 
     }
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const out: THREE.InstancedMesh[] = [];
+    // Rooftop mechanical units read as debug cubes in the district's bright palette accent — force a
+    // muted metal grey so they look like real HVAC/plant, never placeholder geometry.
+    const ROOF_PROP_GREY = "#9a9ea3";
     for (const [kind, matrices] of buckets) {
-      const color = palette[kind];
+      const color = kind === "roofProp" ? ROOF_PROP_GREY : palette[kind];
       const material =
         kind === "window" || kind === "storefront"
           ? new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.56 })
@@ -440,6 +523,9 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         );
         const amp = jitterAmp * ROLE_JITTER[piece.role];
         color.copy(roleBase[piece.role]);
+        // Accent trim (awnings/cornices) is a saturated storefront color that reads as a stray red/pink
+        // strip at district scale — pull it partway to the wall so it stays a tasteful accent.
+        if (piece.role === "accent") color.lerp(roleBase.wall, 0.5);
         color.multiplyScalar(1 - amp / 2 + lot.jitter * amp);
         // A whisper of hue shift so rows of houses never read as one paint bucket.
         color.r *= 1 + (lot.jitter - 0.5) * 0.08;
@@ -504,6 +590,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     const sidewalks = new MeshAccumulator();
     const patches = new MeshAccumulator();
     const markings = new MeshAccumulator();
+    const curbs = new MeshAccumulator();
     const medians = new MeshAccumulator();
     const pavementDrives = new MeshAccumulator();
     const gravelDrives = new MeshAccumulator();
@@ -513,6 +600,53 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     // Sidewalks now come from block curb→land bands; only pre-block documents fall back to the old
     // per-street widened ribbon.
     const useBlockSidewalks = resolved.blocks.length > 0;
+
+    // Feature-aware height: because streets stay continuous across water and through ridges, the road
+    // must ride UP onto a bridge deck and hold FLAT through a tunnel bore rather than dive under the
+    // river or climb over the hill. Points off any feature fall back to the terrain sampler.
+    const bridgeDecks = resolved.bridges.map((bridge) => {
+      const first = bridge.points[0]!;
+      const last = bridge.points[bridge.points.length - 1]!;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      const len2 = Math.max(1e-6, abx * abx + abz * abz);
+      return {
+        first,
+        abx,
+        abz,
+        len2,
+        span: Math.sqrt(len2),
+        hA: sample(first[0], first[1]) + 0.35,
+        hB: sample(last[0], last[1]) + 0.35,
+        style: bridge.style,
+        half: bridge.width / 2 + 1.2,
+      };
+    });
+    const tunnelFloors = resolved.tunnels.map((tunnel) => {
+      const first = tunnel.points[0]!;
+      const last = tunnel.points[tunnel.points.length - 1]!;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      return { first, abx, abz, len2: Math.max(1e-6, abx * abx + abz * abz), floor: tunnel.bankHeight, half: tunnel.width / 2 + 0.8 };
+    });
+    const deckSampler = (x: number, z: number): number => {
+      for (const d of bridgeDecks) {
+        const raw = ((x - d.first[0]) * d.abx + (z - d.first[1]) * d.abz) / d.len2;
+        if (raw < -0.03 || raw > 1.03) continue;
+        const t = Math.max(0, Math.min(1, raw));
+        if (Math.hypot(x - (d.first[0] + d.abx * t), z - (d.first[1] + d.abz * t)) > d.half) continue;
+        const arch = d.style === "arch" ? Math.sin(t * Math.PI) * Math.min(1.6, d.span * 0.03) : 0.25;
+        return d.hA + (d.hB - d.hA) * t + arch;
+      }
+      for (const tn of tunnelFloors) {
+        const raw = ((x - tn.first[0]) * tn.abx + (z - tn.first[1]) * tn.abz) / tn.len2;
+        if (raw < -0.03 || raw > 1.03) continue;
+        const t = Math.max(0, Math.min(1, raw));
+        if (Math.hypot(x - (tn.first[0] + tn.abx * t), z - (tn.first[1] + tn.abz * t)) > tn.half) continue;
+        return tn.floor;
+      }
+      return sample(x, z);
+    };
 
     const addMarkQuad = (center: RoadPoint, along: readonly [number, number], length: number, width: number) => {
       const perp: readonly [number, number] = [-along[1], along[0]];
@@ -525,17 +659,39 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       ] as const) {
         const x = center[0] + along[0] * length * sa + perp[0] * width * sp;
         const z = center[1] + along[1] * length * sa + perp[1] * width * sp;
-        markings.positions.push(x, sample(x, z) + 0.26, z);
+        markings.positions.push(x, deckSampler(x, z) + 0.26, z);
       }
       markings.indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
     };
 
     for (const street of resolved.streets) {
       if (street.points.length < 2) continue;
-      const rounded = roundPathCorners(street.points, Math.max(1.5, street.width * 0.9), 4);
+      const rounded = roundPathCorners(street.points, Math.max(2.5, street.width * 1.15), 9);
       const surface = street.surface === "gravel" ? gravel : asphalt;
-      surface.addRibbon(rounded, street.width, sample, 0.16);
+      surface.addRibbon(rounded, street.width, deckSampler, 0.16);
       if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, 0.1);
+      // Curbs + painted edge/lane lines make a flat ribbon read as a real carriageway. Both break at
+      // junctions (the crossing owns its own pavement), so clip the centerline first.
+      if (street.surface === "asphalt") {
+        const half = street.width / 2;
+        for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, half + 0.5)) {
+          if (run.length < 2) continue;
+          const left = offsetPath(run, half);
+          const right = offsetPath(run, -half);
+          curbs.addRibbon(left, 0.55, deckSampler, 0.24);
+          curbs.addRibbon(right, 0.55, deckSampler, 0.24);
+          if (street.level !== "lane") {
+            // White edge (fog) lines just inside the curb.
+            markings.addRibbon(offsetPath(run, half - 0.75), 0.16, deckSampler, 0.26);
+            markings.addRibbon(offsetPath(run, -(half - 0.75)), 0.16, deckSampler, 0.26);
+            // Avenue+ get dashed lane dividers either side of the centerline.
+            if (street.level === "avenue") {
+              for (const dash of dashSegments(offsetPath(run, half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, 0.26);
+              for (const dash of dashSegments(offsetPath(run, -half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, 0.26);
+            }
+          }
+        }
+      }
       if (street.bulb !== undefined) {
         (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, 0.16);
         if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, 0.1);
@@ -550,9 +706,9 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             for (let i = 0; i + 1 < run.length; i += 1) runLength += Math.hypot(run[i + 1]![0] - run[i]![0], run[i + 1]![1] - run[i]![1]);
             if (runLength < 7) continue;
             const width = Math.max(1.3, street.width * 0.14);
-            medians.addRibbon(run, width, sample, 0.3);
-            medians.addDisc(run[0]!, width / 2, sample, 0.3, null, 8);
-            medians.addDisc(run[run.length - 1]!, width / 2, sample, 0.3, null, 8);
+            medians.addRibbon(run, width, deckSampler, 0.3);
+            medians.addDisc(run[0]!, width / 2, deckSampler, 0.3, null, 8);
+            medians.addDisc(run[run.length - 1]!, width / 2, deckSampler, 0.3, null, 8);
           }
         } else {
           for (const dash of dashSegments(rounded, 2.6, 3.6)) {
@@ -565,7 +721,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
                 break;
               }
             }
-            if (!inCross) markings.addRibbon(dash, 0.18, sample, 0.26);
+            if (!inCross) markings.addRibbon(dash, 0.18, deckSampler, 0.26);
           }
         }
       }
@@ -585,21 +741,32 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     for (const cross of resolved.intersections) {
       const bigLevel = cross.level === "boulevard" || cross.level === "avenue";
       const armZebra = (width: number): boolean => bigLevel || width >= resolved.rules.streetWidth * 1.4;
-      const anyZebra = bigLevel || cross.arms.some((arm) => arm.width >= resolved.rules.streetWidth * 1.4);
       const paved = resolved.rules.sidewalks && cross.level !== "lane";
-      if (paved && anyZebra) {
-        sidewalks.addDisc([cross.x, cross.z], cross.radius + 2.1, sample, 0.1);
+      // The junction pavement is the roads' union with rounded curb corners — a real crossing, not a
+      // stamped circle. A slightly larger apron underneath reads as the wrapped sidewalk/curb.
+      const outline = junctionOutline(cross);
+      if (outline !== null) {
+        if (paved) {
+          const apron = junctionOutline(cross, 1.15, resolved.rules.sidewalkWidth + 0.4);
+          if (apron !== null) sidewalks.addPolygon(apron, sample, 0.1);
+        }
+        patches.addPolygon(outline, deckSampler, 0.18);
+      } else {
+        patches.addDisc([cross.x, cross.z], cross.radius, deckSampler, 0.18);
       }
-      patches.addDisc([cross.x, cross.z], cross.radius, sample, 0.2);
       if (paved) {
+        const maxHalf = Math.max(...cross.arms.map((arm) => arm.width / 2));
         for (const arm of cross.arms) {
           if (!armZebra(arm.width)) continue;
           const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
           const perp: readonly [number, number] = [-dir[1], dir[0]];
+          // Stop line across the approach, just outside the crossing box.
+          const stopDist = maxHalf * 1.15 + 0.55;
+          addMarkQuad([cross.x + dir[0] * stopDist, cross.z + dir[1] * stopDist], perp, arm.width * 0.82, 0.5);
           for (let stripe = 0; stripe < 4; stripe += 1) {
-            const dist = cross.radius + 0.7 + stripe * 0.8;
+            const dist = maxHalf * 1.15 + 1.5 + stripe * 0.85;
             const center: RoadPoint = [cross.x + dir[0] * dist, cross.z + dir[1] * dist];
-            addMarkQuad(center, perp, arm.width * 0.78, 0.42);
+            addMarkQuad(center, perp, arm.width * 0.8, 0.44);
           }
         }
       }
@@ -639,6 +806,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       sidewalks: sidewalks.build(),
       patches: patches.build(),
       markings: markings.build(),
+      curbs: curbs.build(),
       medians: medians.build(),
       pavementDrives: pavementDrives.build(),
       gravelDrives: gravelDrives.build(),
@@ -759,6 +927,53 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     return { deck: decks.build(), concrete, steel };
   }, [resolved, sample]);
   useEffect(() => () => bridges?.deck?.dispose(), [bridges]);
+
+  // --- Tunnels: a bore roof over the road, side walls, and portal lintels at each mouth. ---
+  const tunnels = useMemo(() => {
+    if (resolved === null || resolved.tunnels.length === 0) return null;
+    const roofs = new MeshAccumulator();
+    const stone: THREE.Matrix4[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const clearance = 5.5;
+    for (const tunnel of resolved.tunnels) {
+      const first = tunnel.points[0]!;
+      const last = tunnel.points[tunnel.points.length - 1]!;
+      const abx = last[0] - first[0];
+      const abz = last[1] - first[1];
+      const span = Math.hypot(abx, abz) || 1;
+      const tangent: readonly [number, number] = [abx / span, abz / span];
+      const normal: readonly [number, number] = [-tangent[1], tangent[0]];
+      const floor = tunnel.bankHeight;
+      const yaw = Math.atan2(tangent[0], tangent[1]);
+      // Roof slab held flat over the road at head clearance.
+      roofs.addRibbon(tunnel.points, tunnel.width + 1.2, () => floor + clearance, 0);
+      // Side walls running the length of the bore.
+      const halfW = tunnel.width / 2 + 0.5;
+      for (const side of [1, -1] as const) {
+        const wx = (first[0] + last[0]) / 2 + normal[0] * halfW * side;
+        const wz = (first[1] + last[1]) / 2 + normal[1] * halfW * side;
+        stone.push(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(wx, floor + clearance / 2, wz),
+            new THREE.Quaternion().setFromAxisAngle(up, yaw),
+            new THREE.Vector3(0.6, clearance, span),
+          ),
+        );
+      }
+      // Portal lintel across each mouth so the entrances read as tunnels from the air and the road.
+      for (const [ex, ez] of [first, last]) {
+        stone.push(
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(ex, floor + clearance + 0.5, ez),
+            new THREE.Quaternion().setFromAxisAngle(up, yaw),
+            new THREE.Vector3(tunnel.width + 2.4, 1.2, 1.2),
+          ),
+        );
+      }
+    }
+    return { roof: roofs.build(), stone };
+  }, [resolved, sample]);
+  useEffect(() => () => tunnels?.roof?.dispose(), [tunnels]);
 
   // --- Instanced furniture: trees per species, street lights, hedges. ---
   const furniture = useMemo(() => {
@@ -894,6 +1109,11 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           <meshStandardMaterial color={ASPHALT_COLOR} roughness={0.96} metalness={0} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
+      {ground?.curbs != null ? (
+        <mesh geometry={ground.curbs} receiveShadow castShadow>
+          <meshStandardMaterial color={CURB_COLOR} roughness={0.9} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
       {ground?.markings != null ? (
         <mesh geometry={ground.markings}>
           <meshStandardMaterial color={MARKING_COLOR} roughness={0.8} metalness={0} side={THREE.DoubleSide} />
@@ -933,6 +1153,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         <InstancedBoxes matrices={bridges.concrete} color={CONCRETE_COLOR} />
       ) : null}
       {bridges !== null && bridges.steel.length > 0 ? <InstancedBoxes matrices={bridges.steel} color={STEEL_COLOR} /> : null}
+      {tunnels?.roof != null ? (
+        <mesh geometry={tunnels.roof} castShadow receiveShadow>
+          <meshStandardMaterial color={TUNNEL_COLOR} roughness={0.95} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {tunnels !== null && tunnels.stone.length > 0 ? <InstancedBoxes matrices={tunnels.stone} color={TUNNEL_COLOR} /> : null}
       {massing !== null ? massing.meshes.map((mesh, i) => <primitive key={`massing:${i}`} object={mesh} />) : null}
       {furniture !== null ? furniture.meshes.map((mesh, i) => <primitive key={`furniture:${i}`} object={mesh} />) : null}
       <DetailBuildings buildings={detail.buildings} palette={palette} />

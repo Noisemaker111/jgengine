@@ -19,6 +19,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `entityDefinitionSchema` (const) · `import { entityDefinitionSchema } from "@jgengine/core/editor"`
 - `entityEntryFromCatalog` (function) · `import { entityEntryFromCatalog } from "@jgengine/core/editor"`
 
+## editor-environment — persist sky/fog/lighting knobs on the scene document
+
+- `EditorEnvironment` (interface) · `import { EditorEnvironment } from "@jgengine/core/editor"`
+- `skyFromDocument` (function) · `import { skyFromDocument } from "@jgengine/core/editor"`
+
 ## editor-grid-import — Configure an ASCII/glyph → grid-layer import.
 
 - `AsciiGridImportOptions` (interface) · `import { AsciiGridImportOptions } from "@jgengine/core/editor"`

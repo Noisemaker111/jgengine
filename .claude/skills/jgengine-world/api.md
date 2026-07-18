@@ -1581,11 +1581,15 @@
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
-- `MapMarker` (interface): interface MapMarker<TMeta = unknown> — ⚠ undocumented
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
 - `MapRoute` (interface): interface MapRoute — ⚠ undocumented
 - `MapZone` (interface): interface MapZone — ⚠ undocumented
+- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
 - `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
+- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
 - `MinimapBake` (interface): interface MinimapBake — A baked minimap image: RGBA pixels plus the world bounds they span.
 - `MinimapBakeBounds` (interface): interface MinimapBakeBounds — Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional biome zones and water) into a top-down RGBA image and a matching world-bounds rectangle, then encode it as a PNG data URI. The editor runs this as a bake action and stores the result on the scene document; runtime feeds it straight into the existing `Minimap` / `WorldMap` `background` + `mapBounds` props — no new runtime render path, and the same authored world always bakes the same image (safe for verify/CI). Pure: no canvas, no DOM, `core` still imports nothing external.
 - `MinimapBakeOptions` (interface): interface MinimapBakeOptions — Options for {@link bakeMinimapImage}.
@@ -1874,6 +1878,7 @@
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
@@ -1952,7 +1957,7 @@
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
-- `markerKindStyle` (function): function markerKindStyle(kind: string, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
 - `migrateTerrainSnapshot` (function): function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSnapshot — Upgrades a pre-2.0 snapshot in place-safe (copy-on-write) form: derives a {@link TerrainMaterialLayer} stack from the distinct painted surfaces (first-seen order, default params) when none exists. Leaves the lazy `weights` buffer absent — a single-layer terrain stays compact until blended. Idempotent: a snapshot that already carries `layers` is returned unchanged.
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
@@ -2300,6 +2305,7 @@
 - `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
 - `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
 - `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
+- `CityTunnel` (interface): interface CityTunnel — One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
 
@@ -2495,14 +2501,19 @@
 ## @jgengine/core/world/markers
 
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
-- `MapMarker` (interface): interface MapMarker<TMeta = unknown> — ⚠ undocumented
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
+- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> — ⚠ undocumented
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
 - `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — ⚠ undocumented
 - `MarkerQuery` (interface): interface MarkerQuery — ⚠ undocumented
 - `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
+- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
-- `markerKindStyle` (function): function markerKindStyle(kind: string, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
 
 ## @jgengine/core/world/massing
 
@@ -2557,6 +2568,24 @@
 - `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
 - `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
+
+## @jgengine/core/world/pathNetwork
+
+- `PathDeadEnd` (interface): interface PathDeadEnd — One dangling street end kept as a cul-de-sac: node position plus the heading pointing off the road.
+- `PathEdge` (interface): interface PathEdge — One atomic node-to-node edge — the fabric graph consumes these (welds at shared node coords).
+- `PathFeature` (interface): interface PathFeature — A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline.
+- `PathFeatureKind` (type): type PathFeatureKind = "bridge" | "tunnel" — A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge.
+- `PathFeatureSpan` (interface): interface PathFeatureSpan — A feature span carried by a street: a `[from, to]` index window into the street's `points`.
+- `PathJunction` (interface): interface PathJunction — One crossing of three or more streets: patch center/radius plus outgoing arm directions.
+- `PathLevel` (type): type PathLevel = "boulevard" | "avenue" | "street" | "lane" — Road hierarchy, widest to narrowest — shared by the city fabric and the renderer.
+- `PathNetwork` (interface): interface PathNetwork — The fully-resolved network in volume-local coords.
+- `PathNetworkContext` (interface): interface PathNetworkContext — Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network.
+- `PathNetworkMode` (type): type PathNetworkMode = "net" | "circuit" — The generator's chosen topology family: an open street `net`, or a closed `circuit` loop.
+- `PathNetworkRules` (interface): interface PathNetworkRules — Fully-defaulted slider set the generator reads.
+- `PathNode` (interface): interface PathNode — One graph node: a junction, a dead end, or a mid-street bend, with its connection count.
+- `PathStreet` (interface): interface PathStreet — One chained through-street: a maximal run of edges through degree-2 nodes, for rendering + furniture.
+- `PathVec2` (type): type PathVec2 = readonly [number, number] — A path vertex in the volume-local XZ frame.
+- `buildPathNetwork` (function): function buildPathNetwork(rules: PathNetworkRules, hx: number, hz: number, context: PathNetworkContext = {}): PathNetwork — Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic per `(rules.seed, hx, hz, context)`. Pass a {@link PathNetworkContext} with a ground sampler to turn water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to world space.
 
 ## @jgengine/core/world/pathTerrain
 

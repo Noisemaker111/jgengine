@@ -254,6 +254,22 @@ export interface EditorPerfSample {
   rebuildMs?: number;
   /** raycastMs + rebuildMs — total authoring overhead separated from the frame/sim budget. */
   authoringMs?: number;
+  /**
+   * Average sim-driver time (ms) from core `devtools.frame` when FrameDriver has recorded frames.
+   * Same source as `debug_snapshot` / F2+D Perf panel — omitted when no frame samples exist
+   * (e.g. pure edit mode with no runtime tick). Never fabricated.
+   */
+  simMs?: number;
+  /**
+   * Average outside-sim time (ms) = frame − sim (render / React / GPU / GC / vsync miss).
+   * Same availability rule as `simMs`. Matches `FrameStats.avgOutsideMs`.
+   */
+  outsideMs?: number;
+  /**
+   * Top named sim phases (avg ms) from the same frame window when `measure("name", …)` marks exist.
+   * Omitted when the frame tracker has no named phases.
+   */
+  phases?: readonly { name: string; avgMs: number }[];
 }
 
 /** The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC. */

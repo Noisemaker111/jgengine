@@ -20,6 +20,10 @@ Search [capabilities.md](capabilities.md), use [api.md](api.md) for signatures, 
 5. Add preview fixtures using the real components for fast deterministic capture.
 6. Verify desktop and mobile layouts through `jgengine-verify`.
 
+Existing React games keep their entity store and use the focused
+[portable minimap recipe](recipes/portable-minimap.md); no `GameProvider`,
+`MarkerSet`, Three.js, or React Three Fiber adoption is required.
+
 ## Product rules
 
 - A game owns exactly one main menu. The website/runner is a bare loader.
@@ -33,4 +37,3 @@ Search [capabilities.md](capabilities.md), use [api.md](api.md) for signatures, 
 - Do not duplicate inventory, combat, quest, or selection state inside components.
 - A static facsimile preview does not test the real UI; compose production components with fixtures.
 - Visual quality is judged from rendered evidence, not component counts or prose.
-

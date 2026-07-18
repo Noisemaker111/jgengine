@@ -184,6 +184,12 @@ export function createShellLayoutStore(gameId: string): ShellLayoutStore {
         partial.leftOpen = true;
         partial.leftPage = "hierarchy";
       }
+      if (workspace === "scripting") {
+        // Scripting owns the left dock (trigger list + editor); keep hierarchy page stale underneath.
+        partial.leftOpen = true;
+        partial.rightOpen = true;
+        partial.inspectorTab = "components";
+      }
       if (workspace === "assets") {
         partial.bottomOpen = true;
         partial.bottomTab = "content";
