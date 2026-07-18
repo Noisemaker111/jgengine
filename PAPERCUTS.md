@@ -2,7 +2,8 @@
 
 Small frictions hit while working — a retried tool call, a dead-end command, a
 broken link, a confusing setup step, a flaky script, a stale cache, a misleading
-error, a non-obvious gotcha. One or two sentences: what you were doing → what got
+error, a non-obvious gotcha, a task that took far longer than it should have, or
+any solvable bump in the road. One or two sentences: what you were doing → what got
 in the way (a guess at the cause or fix is a bonus). Log them in the moment, even
 though none are blocking; together they show where the repo needs sanding down.
 
