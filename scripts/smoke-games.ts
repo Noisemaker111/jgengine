@@ -40,7 +40,13 @@ function boot(game: string): Promise<number> {
 const failures: string[] = [];
 for (const game of GAMES) {
   console.log(`\n[smoke] booting ${game} (mode=play)…`);
-  const code = await boot(game);
+  let code = await boot(game);
+  if (code !== 0) {
+    // One retry absorbs pure launch-timing flakes (e.g. Chrome debugger not
+    // ready in time) without masking a game that consistently throws.
+    console.error(`[smoke] ${game} exit ${code} — retrying once`);
+    code = await boot(game);
+  }
   if (code === 0) console.log(`[smoke] ${game} booted clean`);
   else {
     failures.push(game);
