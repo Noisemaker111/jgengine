@@ -16,7 +16,7 @@ import {
 
 import { isPointerClick } from "./viewportContextMenu";
 import type { EditorHostApi } from "./session";
-import { newPlacementId, type EditorUiState, type EditorUiStore, type GizmoMode, type SnapMode } from "./uiStore";
+import { newPlacementId, type EditorUiState, type EditorUiStore, type GizmoMode, type GizmoSpace, type SnapMode } from "./uiStore";
 import { useStoreSelector } from "./useStoreSelector";
 
 export type { GizmoMode } from "./uiStore";
@@ -31,17 +31,36 @@ const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 interface GizmoUiSlice {
   gizmoMode: GizmoMode;
+  gizmoSpace: GizmoSpace;
   snapMode: SnapMode;
   gridSize: number;
+  rotationSnapDeg: number | null;
+  scaleSnap: number | null;
   pathPoint: { pathId: string; index: number } | null;
 }
 
 function selectGizmoUi(state: EditorUiState): GizmoUiSlice {
-  return { gizmoMode: state.gizmoMode, snapMode: state.snapMode, gridSize: state.gridSize, pathPoint: state.pathPoint };
+  return {
+    gizmoMode: state.gizmoMode,
+    gizmoSpace: state.gizmoSpace,
+    snapMode: state.snapMode,
+    gridSize: state.gridSize,
+    rotationSnapDeg: state.rotationSnapDeg,
+    scaleSnap: state.scaleSnap,
+    pathPoint: state.pathPoint,
+  };
 }
 
 function gizmoUiEqual(a: GizmoUiSlice, b: GizmoUiSlice): boolean {
-  return a.gizmoMode === b.gizmoMode && a.snapMode === b.snapMode && a.gridSize === b.gridSize && a.pathPoint === b.pathPoint;
+  return (
+    a.gizmoMode === b.gizmoMode &&
+    a.gizmoSpace === b.gizmoSpace &&
+    a.snapMode === b.snapMode &&
+    a.gridSize === b.gridSize &&
+    a.rotationSnapDeg === b.rotationSnapDeg &&
+    a.scaleSnap === b.scaleSnap &&
+    a.pathPoint === b.pathPoint
+  );
 }
 
 /** Reads only the gizmo-relevant UI slice (mode, snap, path-point anchor) — skips re-render on
@@ -498,6 +517,9 @@ export const SelectionGizmo = memo(function SelectionGizmo({
       mode={mode}
       snapMode={snapMode}
       gridSize={uiState.gridSize}
+      space={uiState.gizmoSpace}
+      rotationSnap={uiState.rotationSnapDeg === null ? null : (uiState.rotationSnapDeg * Math.PI) / 180}
+      scaleSnap={uiState.scaleSnap}
       lift={target.lift}
       groundSnap={
         mode === "translate" && target.kind !== "path" ? groundSnap : undefined

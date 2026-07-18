@@ -651,8 +651,11 @@ export function EditorChrome({
       <SceneToolbar
         tool={uiState.tool}
         gizmoMode={uiState.gizmoMode}
+        gizmoSpace={uiState.gizmoSpace}
         snapMode={uiState.snapMode}
         gridSize={uiState.gridSize}
+        rotationSnapDeg={uiState.rotationSnapDeg}
+        scaleSnap={uiState.scaleSnap}
         showGrid={uiState.showGrid}
         showContours={uiState.showContours}
         showSurfaceGrid={uiState.showSurfaceGrid}
@@ -660,8 +663,11 @@ export function EditorChrome({
         placementActive={placement !== null}
         onSetTool={(tool) => ui.setTool(tool)}
         onSetGizmoMode={(mode) => ui.patch({ gizmoMode: mode })}
+        onSetGizmoSpace={(space) => ui.patch({ gizmoSpace: space })}
         onSetSnapMode={(mode) => ui.patch({ snapMode: mode })}
         onSetGridSize={(size) => ui.patch({ gridSize: size })}
+        onSetRotationSnapDeg={(deg) => ui.patch({ rotationSnapDeg: deg })}
+        onSetScaleSnap={(snap) => ui.patch({ scaleSnap: snap })}
         onToggleGrid={() => ui.patch({ showGrid: !uiState.showGrid })}
         onToggleContours={() => ui.patch({ showContours: !uiState.showContours })}
         onToggleSurfaceGrid={() => ui.patch({ showSurfaceGrid: !uiState.showSurfaceGrid })}

@@ -1546,7 +1546,7 @@
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
@@ -1563,7 +1563,7 @@
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
@@ -1592,11 +1592,13 @@
 
 ## @jgengine/shell/structures/TransformGizmo
 
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
 - `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
+- `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
 
 ## @jgengine/shell/terrain
 

@@ -82,8 +82,17 @@ export const DEFAULT_SCULPT_SETTINGS: SculptSettings = {
 /** Which transform gizmo is active for the current selection. */
 export type GizmoMode = "translate" | "rotate" | "scale";
 
+/** Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes. */
+export type GizmoSpace = "world" | "local";
+
 /** How gizmo drags land: stick to terrain height, quantize to a grid, or free. */
 export type SnapMode = "ground" | "grid" | "off";
+
+/** Rotation snap increments (degrees) offered by the toolbar snap menu. */
+export const ROTATION_SNAP_CHOICES_DEG: readonly number[] = [5, 15, 45, 90];
+
+/** Scale snap increments offered by the toolbar snap menu. */
+export const SCALE_SNAP_CHOICES: readonly number[] = [0.1, 0.25, 0.5, 1];
 
 /** The active creation tool — what a viewport click places next. */
 export type PlacementTool =
@@ -103,8 +112,14 @@ export interface EditorContextMenuState {
 /** Transient editor UI state shared between chrome, viewport, and gizmos. */
 export interface EditorUiState {
   gizmoMode: GizmoMode;
+  /** Whether gizmo handles align to world axes or the selection's yaw. */
+  gizmoSpace: GizmoSpace;
   snapMode: SnapMode;
   gridSize: number;
+  /** Rotation snap increment in degrees; `null` rotates freely. */
+  rotationSnapDeg: number | null;
+  /** Scale snap increment; `null` scales freely. */
+  scaleSnap: number | null;
   showGrid: boolean;
   /** Surface-following iso-elevation contour overlay (terrain readability). */
   showContours: boolean;
@@ -145,8 +160,11 @@ function placementId(prefix: string): string {
 export function createEditorUiStore(): EditorUiStore {
   let state: EditorUiState = {
     gizmoMode: "translate",
+    gizmoSpace: "world",
     snapMode: "ground",
     gridSize: 1,
+    rotationSnapDeg: 15,
+    scaleSnap: null,
     showGrid: true,
     showContours: false,
     showSurfaceGrid: false,
