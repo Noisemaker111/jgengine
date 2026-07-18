@@ -63,6 +63,7 @@ import {
 } from "@jgengine/core/ui/orientation";
 import { sky as resolveSkyDescriptor } from "@jgengine/core/world/features";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
+import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams";
 
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import { createAudioEngine } from "./audio/audioEngine";
@@ -150,6 +151,7 @@ export function GamePlayerShell({
     [rawMultiplayer],
   );
   const devtoolsEnabled = playable.devtools !== false && !poster;
+  armFallbackSeams(devtoolsEnabled);
   const [devtoolsOpen, setDevtoolsOpen] = useState(false);
   const devtoolsOpenRef = useRef(false);
   devtoolsOpenRef.current = devtoolsOpen;

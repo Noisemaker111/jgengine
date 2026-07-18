@@ -71,6 +71,7 @@
     "./devtools/controls",
     "./devtools/devtools",
     "./devtools/discover",
+    "./devtools/fallbackSeams",
     "./devtools/frame",
     "./devtools/logs",
     "./devtools/overrides",

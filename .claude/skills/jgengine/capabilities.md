@@ -20,6 +20,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`
 
+## render-fallback-diagnostics — Enable/disable the dev-only placeholder-fallback probe.
+
+- `armFallbackSeams` (function) · `import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams"`
+- `fallbackSeamsSnapshot` (function) · `import { fallbackSeamsSnapshot } from "@jgengine/core/devtools/fallbackSeams"`
+- `reportFallbackSeam` (function) · `import { reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams"`
+
 ## runtime-save — save/load the whole game world through a pluggable backend, autosave or save points
 
 - `createRuntimeSave` (function) · `import { createRuntimeSave } from "@jgengine/core/runtime/runtimeSave"`

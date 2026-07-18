@@ -24,6 +24,7 @@ Use guarded repository scripts (`bun run test`, `bun run test:all`, `bun run gat
 - Authored worlds assert required layers, objects, paths, markers, and ids from `editor.scene.json`.
 - Gameplay tests prove the observable acceptance scenario, including save/restore or multi-client behavior when changed.
 - `drive --playtest` with a declared capture probe is the softlock/progress rung for interactive loops.
+- Placeholder-vs-authored: `debug_snapshot().probes.fallbacks` reports which render seams resolved to fallbacks (green ground, primitive actors, proxy scatter) and why — a non-empty count proves content is unauthored/misconfigured rather than an intended placeholder.
 
 ## Performance proof
 
