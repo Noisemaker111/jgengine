@@ -142,11 +142,31 @@ export interface ParamGroup {
   collapsed?: boolean;
 }
 
+/**
+ * A named slider/weight bundle for a kind — a saved set of field values the inspector (or the
+ * `apply_preset` verb) writes into an object's `meta` in one patch, ready to tweak afterwards.
+ * Presets are plain data on the schema, so kinds ship archetypes and games can override the
+ * registration with their own.
+ */
+export interface ParamPreset {
+  id: string;
+  label?: string;
+  /** Field values the preset writes; fields not listed keep their current values. */
+  values: Readonly<Record<string, unknown>>;
+}
+
 /** A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom. */
 export interface ParamSchema {
   fields: readonly ParamField[];
   /** Optional named sections; fields reference one by `group`. Ungrouped fields render first, headerless. */
   groups?: readonly ParamGroup[];
+  /** Optional named field-value bundles the inspector offers as one-click applies. */
+  presets?: readonly ParamPreset[];
+}
+
+/** Look up a schema preset by id, or undefined. @internal */
+export function findSchemaPreset(schema: ParamSchema, id: string): ParamPreset | undefined {
+  return schema.presets?.find((preset) => preset.id === id);
 }
 
 /** Parsed params after `parseParams`: every schema field present with a validated, defaulted value. */
