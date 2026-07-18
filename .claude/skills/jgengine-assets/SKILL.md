@@ -26,6 +26,8 @@ Every logical asset id has a declared owner: `committed` (a single's shipped URL
 
 At load time the shell classifies a model fetch before parsing via `classifyAssetResponse` (`@jgengine/core/scene/assetDiagnostics`), so a missing file, a dev-server HTML fallback, corrupt bytes, or a non-model format surface as an actionable diagnostic naming the URL — not an opaque GLTF parse error.
 
+Reindex measures every GLB's `dims`; assets listed in `COLLISION_MESH_ASSET_IDS` (`collisionMeshAssets.ts`) additionally ship a compact quantized triangle mesh (`collisionMesh` on the index entry) that collider auto-fit raycasts instead of the fitted box — opt in only concave models whose box lies (archways, rings, frames), because each entry adds real index bytes and per-ray BVH cost.
+
 ## Source rules
 
 - Never use or reference Kenney.nl assets.

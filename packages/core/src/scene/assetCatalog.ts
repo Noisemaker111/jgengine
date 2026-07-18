@@ -1,4 +1,5 @@
 import type { AssetSpace } from "./assetSpace";
+import type { CollisionMeshData } from "./collisionMesh";
 
 /** Measured horizontal footprint, footprint center, and lowest Y of a model in model space. */
 export interface ModelDims {
@@ -13,6 +14,8 @@ export interface ModelAssetRef {
   url: string;
   /** Measured at asset reindex: horizontal footprint, footprint center, and lowest Y in model space (pre-scale). Lets the shell auto-center and ground-snap corner-pivot kit models. */
   dims?: ModelDims;
+  /** Opt-in compact triangle mesh extracted at asset reindex (see {@link "scene/collisionMesh".CollisionMeshData}) — feeds mesh-accurate hitboxes for concave models. */
+  collisionMesh?: CollisionMeshData;
   /** Authored asset-space metadata — canonical facing (degrees), source-unit scale, footprint, anchor, bounds, and rotation policy. The upstream owner of placement corrections; see {@link "scene/assetSpace".AssetSpace}. */
   space?: AssetSpace;
 }

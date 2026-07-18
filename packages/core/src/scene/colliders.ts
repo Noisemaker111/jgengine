@@ -1,4 +1,5 @@
 import type { ModelDims } from "./assetCatalog";
+import type { CollisionMeshData } from "./collisionMesh";
 import type { EntityPosition } from "./entityStore";
 
 export type ColliderPurpose = "physical" | "damage";
@@ -134,6 +135,8 @@ export interface ModelBodySource {
   y?: number;
   /** Placement registration. `"center"` (default) centers the footprint and grounds `minY` on the placement point; `"origin"` renders at the raw model origin. */
   anchor?: "center" | "origin";
+  /** Opt-in triangle collision mesh extracted at asset reindex; when present, fitting emits a mesh-accurate shape (rays pass through holes in concave models) instead of the fitted box. */
+  collisionMesh?: CollisionMeshData;
 }
 
 interface FittedBox {

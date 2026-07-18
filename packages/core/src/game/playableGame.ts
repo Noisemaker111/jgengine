@@ -10,6 +10,7 @@ import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
+import type { CollisionMeshData } from "../scene/collisionMesh";
 import type { SkyEnvironmentConfig } from "../world/features";
 import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
@@ -553,6 +554,8 @@ export interface ModelConfig {
   anchor?: "center" | "origin";
   /** Measured footprint/center/minY; supplied automatically when the model resolves through an `@jgengine/assets` catalog. Required for `anchor: "center"` to take effect. */
   dims?: ModelDims;
+  /** Opt-in compact collision mesh from the asset index; when present, collider auto-fit raycasts the actual triangles, so shots pass through holes in concave models (torus, archway) instead of hitting the fitted box. Supplied automatically for opted-in catalog assets. */
+  collisionMesh?: CollisionMeshData;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
   /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
