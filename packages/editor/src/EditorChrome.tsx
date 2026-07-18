@@ -500,30 +500,7 @@ export function EditorChrome({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-<<<<<<< Updated upstream
-  }, [session, ui, api, notify, copySelection]);
-
-  const kinds = useMemo(() => listEditorKinds(state.document), [state.document]);
-
-  const allKinds = useMemo(
-    () =>
-      [
-        ...new Set([
-          ...kinds.markers,
-          ...kinds.volumes,
-          ...kinds.paths,
-          ...(state.document.annotations.length > 0 ? ["note"] : []),
-        ]),
-      ].sort(),
-    [kinds, state.document.annotations.length],
-  );
-
-  // Recomputed each time the Add menu opens: studios may register after the chrome mounts
-  // (game modules load lazily), and a once-on-mount snapshot would silently hide them.
-  const studioKinds = useMemo(() => listSceneKinds().filter((definition) => definition.addCategory !== undefined), [addOpen]);
-=======
   }, [session, ui, api, notify, copySelection, openBottomTab, paletteQuery]);
->>>>>>> Stashed changes
 
   const placeAsset = (entry: EditorAssetEntry) => {
     const focus = api.getFocusTarget();

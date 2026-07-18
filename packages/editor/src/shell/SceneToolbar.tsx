@@ -120,6 +120,8 @@ export function SceneToolbar({
   const lastSnapRef = useRef<Exclude<SnapMode, "off">>("ground");
   if (snapMode !== "off") lastSnapRef.current = snapMode;
 
+  // Recomputed every render (opening the menu rerenders): studios may register after the chrome
+  // mounts (game modules load lazily), and a once-on-mount snapshot would silently hide them.
   const studioKinds = listSceneKinds().filter((definition) => definition.addCategory !== undefined);
 
   const pick = (placement: PlacementTool) => {
