@@ -12,6 +12,7 @@ import { registerWaterKind } from "../world/waterKind";
 import { registerGrassKind } from "../world/grassKind";
 import { registerSoilKind } from "../world/soilKind";
 import { registerBuildingGenerator } from "../world/buildingGenerator";
+import { registerCityKind } from "../world/cityKind";
 import { registerSceneKind, type ParamSchema } from "./sceneKinds";
 
 /** The scatter/foliage region schema — the fields the inspector exposed as hand-written `ScatterFields`. */
@@ -61,5 +62,6 @@ export function registerBuiltinSceneKinds(): void {
   registerWaterKind();
   registerGrassKind();
   registerSoilKind();
+  registerCityKind();
   registerBuildingGenerator();
 }

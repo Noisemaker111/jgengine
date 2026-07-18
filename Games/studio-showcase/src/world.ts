@@ -20,6 +20,8 @@ export const world: EnvironmentWorldFeature = environment({
   ...(content.sculpt === undefined ? {} : { sculpt: content.sculpt }),
   sky: sky({
     preset: "day",
+    // The city districts sit ~150-260m out; the default 260m fog would swallow them whole.
+    fog: { near: 500, far: 2500 },
     volumetricClouds: {
       coverage: 0.4,
       density: 1.6,

@@ -132,8 +132,68 @@
       "meta": {
         "on": "enter",
         "action": "announce",
-        "message": "Welcome — authored trigger fired",
+        "message": "Welcome \u2014 authored trigger fired",
         "tone": "good"
+      }
+    },
+    {
+      "id": "city_grid_1",
+      "kind": "city",
+      "shape": "box",
+      "center": {
+        "x": -150,
+        "y": 0,
+        "z": 180
+      },
+      "halfExtents": {
+        "x": 110,
+        "y": 10,
+        "z": 100
+      },
+      "label": "Downtown grid (city studio)",
+      "meta": {
+        "gridness": 1,
+        "curviness": 0.05,
+        "branching": 0.25,
+        "blockSize": 42,
+        "openSpace": 0.08,
+        "buildingDensity": 0.85,
+        "streetWidth": 8,
+        "floorsMin": 4,
+        "floorsMax": 14,
+        "floorHeight": 3,
+        "style": "generic",
+        "seed": "manhattan-7"
+      }
+    },
+    {
+      "id": "city_hills_1",
+      "kind": "city",
+      "shape": "box",
+      "center": {
+        "x": 150,
+        "y": 0,
+        "z": 180
+      },
+      "halfExtents": {
+        "x": 110,
+        "y": 10,
+        "z": 100
+      },
+      "label": "Winding hills (city studio)",
+      "meta": {
+        "gridness": 0.1,
+        "curviness": 0.8,
+        "branching": 0.7,
+        "blockSize": 60,
+        "openSpace": 0.25,
+        "buildingDensity": 0.55,
+        "streetWidth": 5,
+        "floorsMin": 1,
+        "floorsMax": 3,
+        "floorHeight": 3,
+        "style": "village",
+        "seed": "laurel-canyon-3"
       }
     }
   ],

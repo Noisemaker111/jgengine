@@ -18,6 +18,7 @@ import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 import { MaterialDropZone } from "./MaterialDropZone";
 import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
+import { CityPreview } from "./CityPreview";
 import { SelectionGizmo, ViewportSelect } from "./SelectionGizmo";
 import { TerrainReadout } from "./TerrainReadout";
 import { TerrainReadoutHud } from "./TerrainReadoutHud";
@@ -205,6 +206,7 @@ function EditorWorldOverlay({
       <MaterialDropZone api={api} />
       <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
+      <CityPreview api={api} />
       {showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
       {readoutActive ? (
         <TerrainReadout

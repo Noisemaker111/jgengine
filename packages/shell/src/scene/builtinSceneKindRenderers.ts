@@ -10,6 +10,7 @@ import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKind
 import { registerGrassFieldRenderer } from "./GrassFieldRenderer";
 import { registerWaterRenderer } from "./WaterRenderer";
 import { registerSoilPatchRenderer } from "./SoilPatchRenderer";
+import { registerCityRenderer } from "./CityRenderer";
 
 let registered = false;
 
@@ -21,4 +22,5 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerWaterRenderer();
   registerGrassFieldRenderer();
   registerSoilPatchRenderer();
+  registerCityRenderer();
 }
