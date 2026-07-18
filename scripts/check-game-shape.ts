@@ -1,23 +1,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const SKELETON_FILES = new Set([
-  "game.config.ts",
-  "index.tsx",
-  "preview.tsx",
-  "main.tsx",
-  "loop.ts",
-  "world.ts",
-  "index.css",
-  "style.css",
-  "editorLayers.ts",
-  "editorCatalogs.ts",
-  "editorCatalogs.test.ts",
-  "editorLayers.test.ts",
-  "editor.scene.json",
-  "scene-ownership.json",
-]);
-const SKELETON_DIRS = new Set(["game"]);
+import {
+  gameSkeletonRequiredSummary,
+  isAllowedGameSrcEntry,
+} from "../packages/jgengine/src/gameShape";
 
 const REQUIRED_TSCONFIG_PATHS: Record<string, string> = {
   "@jgengine/core/*": "../../packages/core/src/*",
@@ -111,7 +98,7 @@ for (const name of readdirSync(gamesDir)) {
   for (const entry of readdirSync(srcDir)) {
     const full = join(srcDir, entry);
     const isDir = statSync(full).isDirectory();
-    if (isDir ? !SKELETON_DIRS.has(entry) : !SKELETON_FILES.has(entry)) {
+    if (!isAllowedGameSrcEntry(entry, isDir)) {
       problems.push(`${rel(full)}: game-specific ${isDir ? "directory" : "file"} must live under src/game/`);
     }
   }
@@ -122,8 +109,9 @@ if (problems.length > 0) {
     `\ncheck-game-shape: ${problems.length} issue(s) off the canonical shape:\n` +
       problems.map((p) => `  ${p}`).join("\n") +
       `\n\nEvery game is one shape: src/ holds only the skeleton\n` +
-      `  game.config.ts  index.tsx  main.tsx  loop.ts  world.ts  index.css  style.css\n` +
+      `  ${gameSkeletonRequiredSummary().replaceAll(", ", "  ")}\n` +
       `and all game-specific modules, ui, and tests live under src/game/.\n` +
+      `Optional top-level extras: preview.tsx, scene-ownership.json, editorLayers*.ts, editorCatalogs*.ts, editor.scene.json.\n` +
       `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/defineGame".\n` +
       `Every game is also a standalone dev harness: index.html and vite.config.ts at the game root,\n` +
       `src/index.css for Tailwind (importing "./style.css") and a "dev" script in package.json to launch it.\n` +

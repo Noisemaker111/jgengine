@@ -654,6 +654,23 @@ export interface MovementCommitFrame {
   ctx: GameContext;
 }
 
+/**
+ * Per-channel combat presentation toggles for the 3D shell canvas.
+ * Missing keys default to enabled when the parent `presentationEffects` is an object.
+ */
+export interface PresentationEffectsConfig {
+  /** Ground telegraphs for AoE / cast indicators. Default true. */
+  telegraphs?: boolean;
+  /** One-shot spell VFX + retained (persistent) VFX instances. Default true. */
+  vfx?: boolean;
+  /** Floating combat text (damage numbers, etc.). Default true. */
+  floatText?: boolean;
+  /** Projectile tracer lines. Default true. */
+  tracers?: boolean;
+  /** Trauma-driven combat camera shake. Default true. */
+  shake?: boolean;
+}
+
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */
 export interface GameCaptureConfig {
   /** Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the play screen — the same commands the start-menu buttons dispatch. A bare string runs with a default input; the object form carries the input a command needs (e.g. `[{ name: "class.select", input: { classId: "siren" } }, "startRun"]`). A name the game never registers fails the capture loudly instead of shipping a menu screenshot. */
@@ -731,6 +748,13 @@ export interface PlayableGame<
    * scopes which entities it covers.
    */
   nameplates?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
+  /**
+   * Combat presentation stack mounted inside the 3D canvas (telegraphs, spell VFX, retained VFX,
+   * float text, projectile tracers, camera shake). Default `true` preserves historical always-on
+   * behavior. `false` mounts none. An object mounts only the listed pieces (missing keys default
+   * on so games can disable a single expensive channel, e.g. `{ tracers: false }`).
+   */
+  presentationEffects?: boolean | PresentationEffectsConfig;
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. `sounds` may be sample (`url`) or procedural (`synth`); `music` holds procedural themes crossfaded via `ctx.game.audio.music(id)`. */
   audio?: {
     sounds: Record<string, SoundDef>;

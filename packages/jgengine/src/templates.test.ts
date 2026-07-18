@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { isAllowedGameSrcEntry } from "./gameShape";
 import {
   displayNameFromId,
   editorScaffold,
@@ -10,21 +11,6 @@ import {
   parseCreateName,
   type TemplateFile,
 } from "./templates";
-
-const SKELETON_FILES = new Set([
-  "game.config.ts",
-  "index.tsx",
-  "main.tsx",
-  "loop.ts",
-  "world.ts",
-  "index.css",
-  "style.css",
-  "editorLayers.ts",
-  "editorLayers.test.ts",
-  "editorCatalogs.ts",
-  "editorCatalogs.test.ts",
-  "editor.scene.json",
-]);
 
 function render(variant: "standalone" | "in-repo"): TemplateFile[] {
   return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0" });
@@ -61,7 +47,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
         .map((path) => path.slice("src/".length));
       for (const entry of srcEntries) {
         const top = entry.split("/")[0]!;
-        expect(entry.includes("/") ? top === "game" : SKELETON_FILES.has(top)).toBe(true);
+        const nested = entry.includes("/");
+        expect(isAllowedGameSrcEntry(top, nested)).toBe(true);
       }
     });
 

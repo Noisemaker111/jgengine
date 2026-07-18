@@ -13,6 +13,7 @@ import type { ObservableKeyedStore } from "../../store/observableKeyedStore";
 import type { ClockSnapshot, SimClock } from "../../time/simClock";
 import type { MotionIntentBatch, MotionIntents } from "../motionIntents";
 import type { SnapshotModule } from "../worldSnapshot";
+import { decodeArray, decodeEntries, decodeRecord } from "../context/snapshotCodecs";
 
 /** @internal The live always-on subsystems the baseline descriptors serialize — handed in by `createGameContext`. */
 export interface BaselineDeps {
@@ -60,7 +61,8 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       replicate: {
         key: "entities",
         snapshot: () => d.entities.snapshot(),
-        hydrate: (data) => d.entities.hydrate(data as SceneEntity[]),
+        decode: (raw) => decodeArray<SceneEntity>(raw),
+        hydrate: (data) => d.entities.hydrate(data as readonly SceneEntity[]),
       },
     }),
   },
@@ -70,6 +72,7 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       replicate: {
         key: "stats",
         snapshot: () => snapshotEntityStats(d.statsByInstance),
+        decode: (raw) => decodeRecord<StatValueMap>(raw),
         hydrate: (data) => hydrateEntityStats(d.statsByInstance, data as Record<string, StatValueMap>),
       },
     }),
@@ -80,6 +83,7 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       replicate: {
         key: "store",
         snapshot: () => d.store.snapshot(),
+        decode: (raw) => decodeEntries(raw),
         hydrate: (data) => d.store.hydrate(data as readonly (readonly [string, unknown])[]),
       },
     }),
@@ -90,6 +94,7 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       replicate: {
         key: "feed",
         snapshot: () => d.feed.snapshot(),
+        decode: (raw) => decodeRecord<FeedEntry[]>(raw),
         hydrate: (data) => d.feed.hydrate(data as Record<string, FeedEntry[]>),
       },
     }),
@@ -108,8 +113,10 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
           }
           return byUser;
         },
+        decode: (raw) => decodeRecord<Record<string, InventoryState>>(raw),
         hydrate: (data) => {
-          for (const [userId, states] of Object.entries(data as Record<string, Record<string, InventoryState>>)) {
+          const byUser = data as Record<string, Record<string, InventoryState>>;
+          for (const [userId, states] of Object.entries(byUser)) {
             const set = d.inventoryFor(userId);
             for (const [inventoryId, state] of Object.entries(states)) set.replaceState(inventoryId, state);
           }
@@ -123,9 +130,11 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       save: {
         key: "economy",
         snapshot: () => Object.fromEntries(d.wallets),
+        decode: (raw) => decodeRecord<WalletState>(raw),
         hydrate: (data) => {
+          const wallets = data as Record<string, WalletState>;
           d.wallets.clear();
-          for (const [userId, state] of Object.entries(data as Record<string, WalletState>)) {
+          for (const [userId, state] of Object.entries(wallets)) {
             d.wallets.set(userId, state);
           }
           d.signalNotify();
@@ -139,6 +148,10 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       save: {
         key: "time",
         snapshot: () => d.time.snapshot(),
+        decode: (raw): ClockSnapshot | null => {
+          const rec = decodeRecord(raw);
+          return rec === null ? null : (rec as unknown as ClockSnapshot);
+        },
         hydrate: (data) => d.time.hydrate(data as ClockSnapshot),
       },
     }),
@@ -149,6 +162,10 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       save: {
         key: "pose",
         snapshot: () => d.pose.snapshotAll(),
+        decode: (raw): PoseSnapshot | null => {
+          const rec = decodeRecord(raw);
+          return rec === null ? null : (rec as unknown as PoseSnapshot);
+        },
         hydrate: (data) => d.pose.hydrateAll(data as PoseSnapshot),
       },
     }),
@@ -159,6 +176,10 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
       save: {
         key: "possession",
         snapshot: () => d.possession.snapshotAll(),
+        decode: (raw): PossessionSnapshot | null => {
+          const rec = decodeRecord(raw);
+          return rec === null ? null : (rec as unknown as PossessionSnapshot);
+        },
         hydrate: (data) => d.possession.hydrateAll(data as PossessionSnapshot),
       },
     }),
@@ -173,8 +194,10 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
           for (const [userId, queue] of d.motionByUser) out[userId] = queue.snapshot();
           return out;
         },
+        decode: (raw) => decodeRecord<MotionIntentBatch>(raw),
         hydrate: (data) => {
-          for (const [userId, batch] of Object.entries(data as Record<string, MotionIntentBatch>)) {
+          const batches = data as Record<string, MotionIntentBatch>;
+          for (const [userId, batch] of Object.entries(batches)) {
             d.motionFor(userId).hydrate(batch);
           }
         },

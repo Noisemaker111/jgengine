@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { gameSkeletonRequiredSummary, isAllowedGameSrcEntry } from "./gameShape";
 import { findWorkspaceRoot, readPackageJson, type PackageJson } from "./pkg";
 import { assessPrototypeLook } from "./prototypeLook";
 import { IN_REPO_TSCONFIG_PATHS } from "./templates";
@@ -10,22 +11,6 @@ export interface Finding {
   label: string;
   fix?: string;
 }
-
-const SKELETON_FILES = new Set([
-  "game.config.ts",
-  "index.tsx",
-  "main.tsx",
-  "loop.ts",
-  "world.ts",
-  "index.css",
-  "style.css",
-  "editorLayers.ts",
-  "editorLayers.test.ts",
-  "editorCatalogs.ts",
-  "editorCatalogs.test.ts",
-  "editor.scene.json",
-]);
-const SKELETON_DIRS = new Set(["game"]);
 
 function allEngineDeps(pkg: PackageJson): Record<string, string> {
   return Object.fromEntries(
@@ -189,12 +174,12 @@ export function diagnose(dir: string): Finding[] {
   if (existsSync(srcDir)) {
     const strays = readdirSync(srcDir).filter((entry) => {
       const isDir = statSync(join(srcDir, entry)).isDirectory();
-      return isDir ? !SKELETON_DIRS.has(entry) : !SKELETON_FILES.has(entry);
+      return !isAllowedGameSrcEntry(entry, isDir);
     });
     findings.push({
       ok: strays.length === 0,
       label: "src/ holds only the skeleton (everything else under src/game/)",
-      fix: `move ${strays.join(", ")} under src/game/ — src/ is only game.config.ts, index.tsx, main.tsx, loop.ts, world.ts, editorLayers.ts, editorLayers.test.ts, editorCatalogs.ts, editorCatalogs.test.ts, editor.scene.json, index.css, style.css`,
+      fix: `move ${strays.join(", ")} under src/game/ — src/ is only ${gameSkeletonRequiredSummary()} (plus optional preview.tsx, scene-ownership.json, editor* files)`,
     });
 
     const unguardedCallers = unguardedSaveEndpointCallers(srcDir);

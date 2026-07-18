@@ -349,6 +349,204 @@
       "meta": {
         "zone": "peaks"
       }
+    },
+    {
+      "id": "dungeon:hollow_crypt",
+      "kind": "poi",
+      "position": {
+        "x": 110,
+        "y": 0,
+        "z": 392
+      },
+      "label": "The Hollow Crypt",
+      "meta": {
+        "radius": 24
+      }
+    },
+    {
+      "id": "dungeon:hollow_crypt:entrance",
+      "kind": "travel",
+      "position": {
+        "x": 91.6,
+        "y": 0,
+        "z": 376.6
+      },
+      "label": "Hollow Crypt entrance"
+    },
+    {
+      "id": "dungeon:hollow_crypt:inside",
+      "kind": "travel",
+      "position": {
+        "x": 105.4,
+        "y": 0,
+        "z": 388.2
+      },
+      "label": "Hollow Crypt inside"
+    },
+    {
+      "id": "dungeon:sunken_bastion",
+      "kind": "poi",
+      "position": {
+        "x": -138,
+        "y": 0,
+        "z": 62
+      },
+      "label": "The Sunken Bastion",
+      "meta": {
+        "radius": 22
+      }
+    },
+    {
+      "id": "dungeon:sunken_bastion:entrance",
+      "kind": "travel",
+      "position": {
+        "x": -117.9,
+        "y": 0,
+        "z": 53
+      },
+      "label": "Sunken Bastion entrance"
+    },
+    {
+      "id": "dungeon:sunken_bastion:inside",
+      "kind": "travel",
+      "position": {
+        "x": -132.5,
+        "y": 0,
+        "z": 59.5
+      },
+      "label": "Sunken Bastion inside"
+    },
+    {
+      "id": "dungeon:gravewyrm_sanctum",
+      "kind": "poi",
+      "position": {
+        "x": -138,
+        "y": 0,
+        "z": 250
+      },
+      "label": "Gravewyrm Sanctum",
+      "meta": {
+        "radius": 26
+      }
+    },
+    {
+      "id": "dungeon:gravewyrm_sanctum:entrance",
+      "kind": "travel",
+      "position": {
+        "x": -113.6,
+        "y": 0,
+        "z": 258.9
+      },
+      "label": "Gravewyrm Sanctum entrance"
+    },
+    {
+      "id": "dungeon:gravewyrm_sanctum:inside",
+      "kind": "travel",
+      "position": {
+        "x": -132.4,
+        "y": 0,
+        "z": 252
+      },
+      "label": "Gravewyrm Sanctum inside"
+    },
+    {
+      "id": "dungeon:drowned_temple",
+      "kind": "poi",
+      "position": {
+        "x": 138,
+        "y": 0,
+        "z": -20
+      },
+      "label": "The Drowned Temple",
+      "meta": {
+        "radius": 22
+      }
+    },
+    {
+      "id": "dungeon:drowned_temple:entrance",
+      "kind": "travel",
+      "position": {
+        "x": 116.2,
+        "y": 0,
+        "z": -16.8
+      },
+      "label": "Drowned Temple entrance"
+    },
+    {
+      "id": "dungeon:drowned_temple:inside",
+      "kind": "travel",
+      "position": {
+        "x": 132.1,
+        "y": 0,
+        "z": -19.1
+      },
+      "label": "Drowned Temple inside"
+    },
+    {
+      "id": "dungeon:nythraxis_crypt",
+      "kind": "poi",
+      "position": {
+        "x": -138,
+        "y": 0,
+        "z": -370
+      },
+      "label": "Abandoned Crypt",
+      "meta": {
+        "radius": 18
+      }
+    },
+    {
+      "id": "dungeon:nythraxis_crypt:entrance",
+      "kind": "travel",
+      "position": {
+        "x": -121.9,
+        "y": 0,
+        "z": -361.9
+      },
+      "label": "Abandoned Crypt entrance"
+    },
+    {
+      "id": "dungeon:nythraxis_crypt:inside",
+      "kind": "travel",
+      "position": {
+        "x": -132.6,
+        "y": 0,
+        "z": -367.3
+      },
+      "label": "Abandoned Crypt inside"
+    },
+    {
+      "id": "dungeon:nythraxis_raid",
+      "kind": "poi",
+      "position": {
+        "x": 138,
+        "y": 0,
+        "z": 430
+      },
+      "label": "Nythraxis Raid Arena",
+      "meta": {
+        "radius": 28
+      }
+    },
+    {
+      "id": "dungeon:nythraxis_raid:entrance",
+      "kind": "travel",
+      "position": {
+        "x": 117.6,
+        "y": 0,
+        "z": 410.8
+      },
+      "label": "Nythraxis Raid entrance"
+    },
+    {
+      "id": "dungeon:nythraxis_raid:inside",
+      "kind": "travel",
+      "position": {
+        "x": 133.6,
+        "y": 0,
+        "z": 425.9
+      },
+      "label": "Nythraxis Raid inside"
     }
   ],
   "volumes": [
