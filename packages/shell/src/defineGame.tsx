@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import {
-  defineGame as defineEngineGame,
+  defineGameDefinition as defineEngineGame,
   type GameDefinitionConfig,
   type GameLoop,
 } from "@jgengine/core/game/defineGame";
@@ -26,6 +26,8 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   content?: GameContextContent;
   loop?: Partial<GameLoop<GameContext>>;
   GameUI?: ComponentType;
+  /** Tunes how the auto-mounted `AuthoredScene` places the document's catalog-id markers into the object store. Default `true`; pass `false` when the game spawns its placed content as entities itself (`placeAuthoredObjects`) to avoid a double render. */
+  scenePlacement?: boolean | { verticalOffset?: number };
 };
 
 export type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> &
@@ -39,14 +41,30 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
   };
 }
 
-function authoredSceneOverlay(document: EditorDocument): ComponentType<WorldOverlayProps> {
-  return function AuthoredSceneOverlay({ ctx }: WorldOverlayProps) {
-    return <AuthoredScene document={document} field={ctx.world.ground} placeObjects />;
+function authoredSceneOverlay(
+  document: EditorDocument,
+  placement: boolean | { verticalOffset?: number },
+  Vfx: ComponentType<WorldOverlayProps> | undefined,
+): ComponentType<WorldOverlayProps> {
+  return function AuthoredSceneOverlay(props: WorldOverlayProps) {
+    return (
+      <>
+        <AuthoredScene document={document} field={props.ctx.world.ground} placeObjects={placement} />
+        {Vfx === undefined ? null : <Vfx {...props} />}
+      </>
+    );
   };
 }
 
 const emptyUi: ComponentType = () => null;
 
+/**
+ * The one public authoring entry point: compose engine fields (systems, world, physics, input) and
+ * presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`.
+ * Defaults to solo/offline multiplayer; `editorLayers` auto-mounts the authored scene document.
+ *
+ * @capability define-game single public game-authoring path — compose systems, world, presentation, and authored scene in one definition
+ */
 export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
   config: GameConfig<TAssetRef>,
 ): PlayableGame {
@@ -58,6 +76,8 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     camera,
     multiplayer,
     editorLayers,
+    editorCatalogs,
+    scenePlacement,
     WorldOverlay,
     viewmodel,
     renderEntity,
@@ -126,8 +146,11 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
       (game.world?.kind === "environment" ? worldBackdrop(game.world) : undefined),
     camera: camera ?? { perspective: "third" },
     editorLayers,
+    editorCatalogs,
     WorldOverlay:
-      WorldOverlay ?? (editorLayers === undefined ? undefined : authoredSceneOverlay(editorLayers)),
+      editorLayers === undefined
+        ? WorldOverlay
+        : authoredSceneOverlay(editorLayers, scenePlacement ?? true, WorldOverlay),
     viewmodel,
     renderEntity,
     renderObject,

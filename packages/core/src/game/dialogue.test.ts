@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "./defineGame";
+import { defineGameDefinition } from "./defineGameDefinition";
 import { dialogueSlot } from "./dialogue";
 import { createGameContext } from "../runtime/gameContext";
 
 function ctx(dialogue: boolean) {
-  const definition = defineGame({
+  const definition = defineGameDefinition({
     name: "DialogueGame",
     multiplayer: "off",
     ...(dialogue ? { features: { dialogue: true } } : {}),

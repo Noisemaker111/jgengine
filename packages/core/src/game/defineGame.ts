@@ -16,7 +16,7 @@ import type { StoreHandle } from "../store/defineStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 
-/** Tunes offline whole-world save (`defineGame({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
+/** Tunes offline whole-world save (`defineGameDefinition({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
 export interface PersistConfig {
   /** `"autosave"` (default) writes on a debounce after any change; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
   mode?: RuntimeSaveMode;
@@ -170,7 +170,7 @@ export interface LifecycleConfig<TState = unknown> {
   };
 }
 
-/** Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems. */
+/** Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems. */
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -198,8 +198,9 @@ export interface GameDefinition<
   inventories?: Record<string, InventoryDeclaration>;
   input?: ActionCodesMap;
   server?: GameServerConfig;
+  /** Hosted per-player save policy, read only by an authoritative multiplayer host. Solo games leave this unset (nothing persists by default) and use `persist` when they want a save at all. */
   save?: SaveConfig;
-  /** Offline/single-player whole-world save. `true` autosaves the entire game to `localStorage`; a config object tunes the mode/cadence/target. Binds `ctx.game.save` — the game drives save points and restore. Ignored for multiplayer worlds (the host persists). */
+  /** The one save knob for solo games: offline whole-world save. `true` autosaves the entire game to `localStorage`; a config object tunes the mode/cadence/target. Binds `ctx.game.save` — the game drives save points and restore. Ignored for multiplayer worlds (the host persists via `save`). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
   loop?: GameLoop<GameContext>;
@@ -214,7 +215,7 @@ export interface GameDefinition<
   replication?: ReplicationPolicy;
 }
 
-/** Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional. */
+/** Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional. */
 export type GameDefinitionConfig<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -223,16 +224,16 @@ export type GameDefinitionConfig<
 };
 
 /**
- * Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`,
- * OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
- *
- * @capability define-game single public game-authoring path — compose systems, world, and loop in one definition
+ * Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates
+ * `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic
+ * hooks. Games author through `defineGame` from `@jgengine/shell/defineGame`, which calls this and adds
+ * the presentation layer; call this directly only from headless hosts that mount no shell.
  */
-export function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(
+export function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(
   config: GameDefinitionConfig<TAssetRef, TMultiplayer>,
 ): GameDefinition<TAssetRef, TMultiplayer> {
   if (config.name.trim().length === 0) {
-    throw new Error("defineGame: name must be non-empty");
+    throw new Error("defineGameDefinition: name must be non-empty");
   }
   // Boolean `features: { quest: true }` is sugar for the same activation map systems produce via
   // `feature: "quest"`. Both OR-merge here; `createGameContext` only reads this final map through

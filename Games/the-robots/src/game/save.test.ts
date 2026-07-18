@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -12,7 +12,7 @@ afterEach(() => resetCharacterState());
 
 function bootContext(backend: SaveBackend): GameContext {
   return createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "the-robots-save-test",
       assets: createAssetCatalog(),
       multiplayer: "off",

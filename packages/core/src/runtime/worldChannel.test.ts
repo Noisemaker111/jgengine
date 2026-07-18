@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGameDefinition";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
 import { createHostedWorldSession } from "./hostedWorldSession";
@@ -11,7 +11,7 @@ const CONTENT: GameContextContent = {
 };
 
 function definition() {
-  return defineGame({
+  return defineGameDefinition({
     name: "Shared",
     assets: createAssetCatalog(),
     multiplayer: "off",
@@ -199,7 +199,7 @@ describe("world channel (multi-client host↔client over an in-process loopback)
 });
 
 function privateDefinition() {
-  return defineGame({
+  return defineGameDefinition({
     name: "PrivateShared",
     assets: createAssetCatalog(),
     multiplayer: "off",

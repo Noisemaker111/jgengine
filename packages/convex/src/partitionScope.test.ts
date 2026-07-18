@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
@@ -216,7 +216,7 @@ const HOSTED_CONTENT = {
 
 function hostedGame(): HostedGameConfig {
   return {
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "Hosted Scope",
       assets: createAssetCatalog(),
       multiplayer: "off",

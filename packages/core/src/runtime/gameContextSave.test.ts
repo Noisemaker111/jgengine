@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGameDefinition";
 import { memorySaveBackend } from "../game/saveStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { defineStore } from "../store/defineStore";
@@ -10,11 +10,11 @@ import { createGameContext } from "./gameContext";
 const progress = defineStore<{ level: number }>("save.progress", { level: 1 });
 
 function offlineGame(persist: boolean | { storage?: "local" | "memory"; mode?: "autosave" | "manual" }) {
-  return defineGame({ name: "SaveTest", assets: createAssetCatalog(), multiplayer: "off", persist });
+  return defineGameDefinition({ name: "SaveTest", assets: createAssetCatalog(), multiplayer: "off", persist });
 }
 
 function progressionGame() {
-  return defineGame({
+  return defineGameDefinition({
     name: "ProgressionSave",
     assets: createAssetCatalog(),
     multiplayer: "off",
@@ -64,7 +64,7 @@ describe("ctx.game.save", () => {
 
   test("persist is ignored for a server-authoritative world", () => {
     const ctx = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "Hosted",
         assets: createAssetCatalog(),
         multiplayer: convex({ authority: "server" }),
@@ -78,7 +78,7 @@ describe("ctx.game.save", () => {
 
   test("no persist config leaves ctx.game.save undefined", () => {
     const ctx = createGameContext({
-      definition: defineGame({ name: "Plain", assets: createAssetCatalog(), multiplayer: "off" }),
+      definition: defineGameDefinition({ name: "Plain", assets: createAssetCatalog(), multiplayer: "off" }),
       content: {},
       player: { userId: "p1", isNew: true },
     });
@@ -127,7 +127,7 @@ describe("ctx.game.save", () => {
   };
 
   function baselineGame() {
-    return defineGame({
+    return defineGameDefinition({
       name: "BaselineSave",
       assets: createAssetCatalog(),
       multiplayer: "off",

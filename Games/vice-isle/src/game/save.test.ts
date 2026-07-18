@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -10,7 +10,7 @@ import { QUESTS } from "./quests/catalog";
 
 function bootContext(backend: SaveBackend): GameContext {
   return createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "vice-isle-save-test",
       assets: createAssetCatalog(),
       multiplayer: "off",

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGameDefinition";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext, type GameContextContent } from "../runtime/gameContext";
 import { defineKeyedStore } from "./defineKeyedStore";
@@ -13,7 +13,7 @@ const CONTENT: GameContextContent = {
 
 function makeContext() {
   return createGameContext({
-    definition: defineGame({ name: "KeyedStoreTest", assets: createAssetCatalog(), multiplayer: "off" }),
+    definition: defineGameDefinition({ name: "KeyedStoreTest", assets: createAssetCatalog(), multiplayer: "off" }),
     content: CONTENT,
     player: { userId: "user_a", isNew: true },
   });

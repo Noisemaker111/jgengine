@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { defineGame, type GameDefinition } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition, type GameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { lan, offline, p2p, ws, wsPresence } from "@jgengine/core/runtime/adapter";
 
@@ -25,7 +25,7 @@ class StubSocket {
 const originalWebSocket = globalThis.WebSocket;
 
 function makeGame(multiplayer: unknown): GameDefinition {
-  return defineGame({ name: "test-game", assets: createAssetCatalog(), multiplayer });
+  return defineGameDefinition({ name: "test-game", assets: createAssetCatalog(), multiplayer });
 }
 
 function connectedUrl(result: ReturnType<typeof resolveShellMultiplayer>): string | null {

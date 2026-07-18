@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import { createGameContext } from "../runtime/gameContext";
-import { defineGame } from "./defineGame";
+import { defineGameDefinition } from "./defineGameDefinition";
 import { defineSystem, featuresFromSystems, mergeSystemFeatures } from "./defineSystem";
 import { composeGameLoop, installSystems, systemsOf } from "./systemRuntime";
 
-const definition = defineGame({ name: "SystemsTest", multiplayer: "off" as const });
+const definition = defineGameDefinition({ name: "SystemsTest", multiplayer: "off" as const });
 
 function boot(systems: ReturnType<typeof defineSystem>[], loop?: Parameters<typeof composeGameLoop>[1]) {
-  const game = defineGame({
+  const game = defineGameDefinition({
     name: "SystemsTest",
     multiplayer: "off" as const,
     systems,
@@ -42,8 +42,8 @@ describe("featuresFromSystems / mergeSystemFeatures", () => {
     });
   });
 
-  test("defineGame merges system features onto the definition", () => {
-    const game = defineGame({
+  test("defineGameDefinition merges system features onto the definition", () => {
+    const game = defineGameDefinition({
       name: "Feat",
       multiplayer: "off" as const,
       systems: [defineSystem({ id: "q", feature: "quest", tick: { type: "manual" } })],

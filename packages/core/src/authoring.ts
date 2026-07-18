@@ -7,7 +7,7 @@
  */
 
 export {
-  defineGame,
+  defineGameDefinition,
   type GameDefinition,
   type GameDefinitionConfig,
   type GameLoop,

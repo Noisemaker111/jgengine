@@ -1,6 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import {
   createPingSystem,
   DEFAULT_PING_CATEGORIES,
@@ -83,7 +83,7 @@ function setWorldMapOpen(open: boolean): void {
   for (const listener of mapListeners) listener();
 }
 
-const game = defineGame({
+const game = defineGameDefinition({
   name: "extraction-map",
   assets: createAssetCatalog(),
   multiplayer: null,

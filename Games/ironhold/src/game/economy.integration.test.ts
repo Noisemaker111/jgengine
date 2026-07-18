@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { tickUnits } from "./ai/units";
@@ -8,7 +8,7 @@ import { GOLD } from "./tuning";
 import { initResourceField, resetSession, session } from "./session";
 
 function boot(): GameContext {
-  const definition = defineGame({ name: "IronholdEconTest", multiplayer: "off" });
+  const definition = defineGameDefinition({ name: "IronholdEconTest", multiplayer: "off" });
   return createGameContext({ definition, content, player: { userId: "commander", isNew: true } });
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGameDefinition";
 import { environment, grass, terrain } from "../world/features";
 import { summarizeEnvironment } from "../world/environmentSummary";
 import { offline } from "./adapter";
@@ -18,7 +18,7 @@ const content: GameContextContent = {
 };
 
 function heroGame() {
-  return defineGame({
+  return defineGameDefinition({
     name: "Headless Hero",
     multiplayer: offline(),
     world: environment({ terrain: terrain(), vegetation: grass({ density: 0.4 }) }),

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { memoryWorldStore, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import { diffSnapshots } from "@jgengine/core/runtime/worldReplication";
@@ -18,7 +18,7 @@ const CONTENT: GameContextContent = {
 
 function game(): HostedGameConfig {
   return {
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "Hosted Convex",
       assets: createAssetCatalog(),
       multiplayer: "off",

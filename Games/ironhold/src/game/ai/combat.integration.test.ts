@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
@@ -11,7 +11,7 @@ import { tickUnits } from "./units";
 /** Boot a real (headless) game context whose entity store seeds stats from our content, so
  * `effect("damage")` actually drains the `health` pool — the whole combat chain, no GPU. */
 function bootContext(): GameContext {
-  const definition = defineGame({ name: "IronholdTest", multiplayer: "off" });
+  const definition = defineGameDefinition({ name: "IronholdTest", multiplayer: "off" });
   return createGameContext({ definition, content, player: { userId: "p1", isNew: true } });
 }
 

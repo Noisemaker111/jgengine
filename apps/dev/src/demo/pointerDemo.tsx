@@ -1,4 +1,4 @@
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { contextVerb } from "@jgengine/core/interaction/contextMenu";
 import {
   createNavGrid,
@@ -90,7 +90,7 @@ function orderUnit(ctx: GameContext, id: string, point: readonly [number, number
   movers.set(id, { config, state: createPathFollow(config) });
 }
 
-const game = defineGame({
+const game = defineGameDefinition({
   name: "pointer-commander",
   assets: createAssetCatalog(),
   multiplayer: null,

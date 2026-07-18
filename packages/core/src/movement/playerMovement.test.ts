@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGameDefinition";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { fittedObjectColliders } from "../scene/colliders";
 import { encodeCollisionMesh, type CollisionMeshSource } from "../scene/collisionMesh";
@@ -20,7 +20,7 @@ const CONTENT: GameContextContent = {
 
 function context(userIds: string[]): GameContext {
   const ctx = createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "Move",
       assets: createAssetCatalog(),
       multiplayer: "off",

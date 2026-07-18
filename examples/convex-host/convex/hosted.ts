@@ -1,4 +1,4 @@
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import { createHostedGameServerFunctions } from "@jgengine/convex/hostedServer";
 
@@ -6,7 +6,7 @@ const content: GameContextContent = {
   entityById: (catalogId) => (catalogId === "hero" ? { stats: { health: { max: 10 } } } : null),
 };
 
-const definition = defineGame({
+const definition = defineGameDefinition({
   name: "Hosted Demo",
   multiplayer: "off",
   features: { players: true },

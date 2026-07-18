@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGameDefinition";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { applyWorldDiff } from "./worldReplication";
 import {
@@ -20,7 +20,7 @@ function session(opts: { store?: HostedWorldStore; now?: () => number; saveInter
     ...(opts.store === undefined ? {} : { store: opts.store }),
     ...(opts.now === undefined ? {} : { now: opts.now }),
     ...(opts.saveIntervalMs === undefined ? {} : { saveIntervalMs: opts.saveIntervalMs }),
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "World",
       assets: createAssetCatalog(),
       multiplayer: "off",

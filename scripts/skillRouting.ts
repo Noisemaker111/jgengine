@@ -45,6 +45,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   session: "jgengine-gameplay",
   settings: "jgengine-ui",
   stats: "jgengine-combat",
+  store: "jgengine-gameplay",
   survival: "jgengine-gameplay",
   tactics: "jgengine-gameplay",
   time: "jgengine-world",
@@ -55,7 +56,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   world: "jgengine-world",
 };
 
-export const CORE_INTERNAL_DOMAINS = new Set(["assets", "store"]);
+export const CORE_INTERNAL_DOMAINS = new Set(["assets"]);
 
 export const PACKAGE_SKILLS: Record<string, string> = {
   editor: "jgengine-editor",

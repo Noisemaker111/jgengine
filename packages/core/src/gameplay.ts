@@ -80,7 +80,7 @@ export {
 export { playControlsActive } from "./game/controlGate";
 export { createCosmetics } from "./game/cosmetics";
 export {
-  defineGame,
+  defineGameDefinition,
   type GameDefinition,
   type GameDefinitionConfig,
   type GameLoop,

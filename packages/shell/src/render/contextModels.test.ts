@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { encodeCollisionMesh, type CollisionMeshData } from "@jgengine/core/scene/collisionMesh";
@@ -53,7 +53,7 @@ describe("contextModels mesh-hitbox parity", () => {
     expect(clientModels).toBeDefined();
 
     const definition = () =>
-      defineGame({ name: "Parity", assets: createAssetCatalog(), multiplayer: "off" });
+      defineGameDefinition({ name: "Parity", assets: createAssetCatalog(), multiplayer: "off" });
     const content = { objectById: (catalogId: string) => (catalogId === "torus" ? {} : null) };
     const player = { userId: "user_a", isNew: true };
     const client = createGameContext({ definition: definition(), content, player, models: clientModels! });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { HostedWorldRecord, HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import type { GameRuntimeServerView } from "@jgengine/core/runtime/transport";
@@ -15,7 +15,7 @@ const CONTENT: GameContextContent = {
 };
 
 function definition() {
-  return defineGame({
+  return defineGameDefinition({
     name: "Shared",
     assets: createAssetCatalog(),
     multiplayer: "off",
