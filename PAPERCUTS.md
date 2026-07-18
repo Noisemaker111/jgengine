@@ -44,3 +44,11 @@ gate/test:all in the cloud container → 7 pre-existing failures identical on or
 2026-07-18T16:59:02.348Z — cloud-agent — Claude
 
 Running bun run gate on a fresh cloud container → agent:preflight fails on missing node_modules before build's ensure-ready --install-only can run; had to bun install manually first. Preflight could auto-install or point at ensure-ready.
+
+2026-07-18T17:39:17.438Z — cloud-agent — Claude
+
+Fresh branch off origin/main can't pass its own gate: check-content-gate fails because coordinate-literal-baseline.json lists Games/the-robots/src/game/world/zones.ts which no longer trips the lint (baselines only shrink). Every session that runs the gate hits this red before touching any real work — the shrinking baselines need reseeding on main (bun run check-content-gate --update) or a CI job that keeps them trimmed.
+
+2026-07-18T17:39:17.470Z — cloud-agent — Claude
+
+gen:capabilities has no encoding guard: the container's non-UTF-8 locale (LANG=, LC_CTYPE=POSIX) let mojibake em/en-dashes get committed into core JSDoc (gameContext.ts, commandApply.ts). check-capabilities then only reported 'stale — run gen:capabilities', and running that FIX faithfully copies the corruption into the committed skill docs. A cheap grep for the mojibake byte-signature in the gate (or in gen-capability-index) would catch corruption at the source instead of laundering it through the generator. (Locale now pinned to C.UTF-8 in .claude/settings.json to stop new corruption.)

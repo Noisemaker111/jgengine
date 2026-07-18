@@ -73,6 +73,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `IconSchool` (type) · `import { IconSchool } from "@jgengine/react"`
 
+## hud-layout-persist — inject a host callback so canvas HUD edits commit into the scene document
+
+- `HudLayoutPersistProvider` (function) · `import { HudLayoutPersistProvider } from "@jgengine/react"`
+
+## hud-layout-persist-hook — read the host panel-commit port from a HUD layout widget
+
+- `useHudLayoutPersist` (function) · `import { useHudLayoutPersist } from "@jgengine/react"`
+
 ## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
 
 - `SlotItem` (interface) · `import { SlotItem } from "@jgengine/react"`

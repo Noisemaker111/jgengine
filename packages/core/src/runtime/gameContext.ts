@@ -165,14 +165,14 @@ export interface GameContextOptions<
   /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
   save?: RuntimeSaveOptions;
   /**
-   * Host-side per-viewer replication policy â€” private-state and area-of-interest projection over the
+   * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
    * wire. Bound on the authoritative host only. Unset (the default) replicates the whole world to every
    * client, exactly as before; the simulation is identical either way, so a game plays the same.
    */
   replication?: ReplicationPolicy;
   /**
    * Render-model lookup feeding collider auto-fit: what each entity kind / object catalog id renders as
-   * (resolved `entityModels`/`objectModels` â€” the shell wires this automatically). When set, entities and
+   * (resolved `entityModels`/`objectModels` — the shell wires this automatically). When set, entities and
    * objects without authored `colliders` get hitboxes fitted to their model's measured bounds instead of
    * the humanoid/unit-cube defaults. A multiplayer host should receive the same lookup as its clients so
    * both resolve identical colliders.
@@ -181,7 +181,7 @@ export interface GameContextOptions<
 }
 
 /** Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
- * @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically â€” no hand-tuned sizes
+ * @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
  */
 export interface GameContextModels {
   entity?(kind: string): ModelBodySource | null | undefined;
@@ -195,7 +195,7 @@ export interface SceneObjectContext extends ObjectStore {
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
   /**
-   * Per-instance selection/highlight state for placed objects â€” the reactive counterpart to
+   * Per-instance selection/highlight state for placed objects — the reactive counterpart to
    * `worldHealthBars`/`nameplates` (entities), so a build-mode or RTS selection ring reads
    * `ctx.scene.object.selection` instead of hand-rolling one through `WorldOverlay` against external
    * state. Mutations (`add`/`remove`/`toggle`/`replace`/`clear`) bump `ctx.version()`/notify
@@ -275,7 +275,7 @@ export interface SceneEntityContext {
   vfx(input: VfxInput): void;
   /**
    * Retained VFX registry for long-lived, updatable effects (held beams, tethers, zones, target lines) whose
-   * endpoints and params change over time â€” the persistent complement to the one-shot {@link SceneEntityContext.vfx}
+   * endpoints and params change over time — the persistent complement to the one-shot {@link SceneEntityContext.vfx}
    * burst. `upsert` creates/replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional
    * fade; endpoints given as an entity instance id are followed live by the renderer without per-frame commands.
    */
@@ -301,7 +301,7 @@ export interface SceneEntityContext {
    * result, so a per-tick mover no longer pairs `moveToward` with a hand-written `setPose`.
    * `options.face` turns the entity to its direction of travel; omitted preserves the current
    * `rotationY`. Returns the committed position (`null`, committing nothing, when `moveToward` would
-   * â€” unknown instance/target).
+   * — unknown instance/target).
    */
   moveTowardCommit(
     instanceId: string,
@@ -316,11 +316,11 @@ export interface SceneEntityContext {
   form: Forms;
   paint: PaintLayer;
   /**
-   * Lazily creates (on first call) or returns the existing declarative bind for `key` â€” the sim-snapshot â†’
+   * Lazily creates (on first call) or returns the existing declarative bind for `key` — the sim-snapshot â†’
    * scene-entity pose mirror (#673). Call `bind(key).sync(bodies, dt)` once per tick with every sim body's
    * current snapshot instead of hand-writing `setPose` per body: an id seen for the first time is spawned
    * from its `kind`, an id already bound is posed, and a previously-bound id absent from this tick's
-   * `bodies` is despawned â€” no per-game spawn/despawn dance.
+   * `bodies` is despawned — no per-game spawn/despawn dance.
    */
   bind(key: string): BodyBind;
 }
@@ -347,9 +347,9 @@ export interface GameContextCommands {
   has(name: string): boolean;
   names(): string[];
   run(name: string, input: unknown): CommandResult<GameContext>;
-  /** Run a command attributed to `actorUserId` â€” a shared-world host routes each client's command through this so the handler can read {@link actor}. */
+  /** Run a command attributed to `actorUserId` — a shared-world host routes each client's command through this so the handler can read {@link actor}. */
   runAs(actorUserId: string, name: string, input: unknown): CommandResult<GameContext>;
-  /** The user a command is running on behalf of, or `null` outside a {@link runAs} call â€” commands default to `ctx.player.userId` when this is `null`. */
+  /** The user a command is running on behalf of, or `null` outside a {@link runAs} call — commands default to `ctx.player.userId` when this is `null`. */
   actor(): string | null;
 }
 
@@ -367,7 +367,7 @@ export interface GameContextLoot {
 export interface GameContextEconomy {
   balance(userId: string, currencyId: string): number;
   grant(userId: string, currencyId: string, amount: number): void;
-  /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) â€” omitted keeps the strict no-debt default. */
+  /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) — omitted keeps the strict no-debt default. */
   charge(userId: string, currencyId: string, amount: number, options?: WalletChargeOptions): { reason: string } | null;
   /** True once `balance(userId, currencyId)` has gone negative under an overdraft-enabled charge. */
   isOverdrawn(userId: string, currencyId: string): boolean;
@@ -396,7 +396,7 @@ export interface GameContextTurn {
 }
 
 export interface GameContextRace {
-  /** Lazily creates (on first call, `config` required) or returns the existing reactive race for `id` â€” discrete mutations and eventful `update` calls bump `ctx.version()`, so HUDs stop hand-managing `store.set` (#286.2). */
+  /** Lazily creates (on first call, `config` required) or returns the existing reactive race for `id` — discrete mutations and eventful `update` calls bump `ctx.version()`, so HUDs stop hand-managing `store.set` (#286.2). */
   state(id: string, config?: RaceStateConfig): RaceState;
 }
 
@@ -407,16 +407,16 @@ export interface GameAudio {
   music(theme: string | null, transpose?: number): void;
   resume(): void;
   /**
-   * Start â€” or idempotently keep â€” the retained, id-keyed loop `id` playing catalog `sound`, emitting
+   * Start — or idempotently keep — the retained, id-keyed loop `id` playing catalog `sound`, emitting
    * `audio.loopStart`. Re-calling with the same `sound` does not restart it (no click); a different `sound`
-   * replaces the source. Pair with {@link GameAudio.setLoop} to track a live signal â€” an RPM-pitched engine
-   * loop, a slip-scaled tire squeal (#1051) â€” and {@link GameAudio.stopLoop} to end it.
+   * replaces the source. Pair with {@link GameAudio.setLoop} to track a live signal — an RPM-pitched engine
+   * loop, a slip-scaled tire squeal (#1051) — and {@link GameAudio.stopLoop} to end it.
    */
   loop(id: string, sound: string, options?: { at?: readonly [number, number, number] }): void;
   /**
    * Live-update retained loop `id` via `audio.loopSet`: `rate` re-pitches it (1 = authored pitch, clamped
-   * 0.25â€“4 by the shell), `gain` rescales volume (0â€“1), `at` repositions its emitter. Cheap to call every
-   * tick (~60 Hz) â€” the shell ramps rate/gain over ~20 ms to avoid zipper noise. A no-op when `id` is not a
+   * 0.25–4 by the shell), `gain` rescales volume (0–1), `at` repositions its emitter. Cheap to call every
+   * tick (~60 Hz) — the shell ramps rate/gain over ~20 ms to avoid zipper noise. A no-op when `id` is not a
    * live loop (an update may race a stop) (#1051).
    */
   setLoop(id: string, params: { rate?: number; gain?: number; at?: readonly [number, number, number] }): void;
@@ -437,38 +437,38 @@ export interface GameContext {
     commands: GameContextCommands;
     events: GameEvents;
     audio: GameAudio;
-    /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) â€” emits `entity.animation` for the shell to pick up. */
+    /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) — emits `entity.animation` for the shell to pick up. */
     playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
     loot: GameContextLoot;
-    /** Shop/vendor barter â€” present only when `features.trade` is set. */
+    /** Shop/vendor barter — present only when `features.trade` is set. */
     trade?: TradeSystem;
-    /** Quest/mission journal â€” present only when `features.quest` is set. */
+    /** Quest/mission journal — present only when `features.quest` is set. */
     quest?: QuestJournal;
-    /** Talkable-NPC dialogue open/close bridge â€” present only when `features.dialogue` is set. */
+    /** Talkable-NPC dialogue open/close bridge — present only when `features.dialogue` is set. */
     dialogue?: GameDialogue;
-    /** Friends/party/presence/emotes/world-invites â€” present only when `features.social` is set. */
+    /** Friends/party/presence/emotes/world-invites — present only when `features.social` is set. */
     social?: Social;
-    /** Channels + messages â€” present only when `features.chat` is set (implies `social`). */
+    /** Channels + messages — present only when `features.chat` is set (implies `social`). */
     chat?: Chat;
-    /** Earned unlockable content â€” present only when `features.unlocks` is set. */
+    /** Earned unlockable content — present only when `features.unlocks` is set. */
     unlocks?: Unlocks;
     economy: GameContextEconomy;
-    /** Competitive score tracking â€” present only when `features.leaderboard` is set. */
+    /** Competitive score tracking — present only when `features.leaderboard` is set. */
     leaderboard?: Leaderboard;
-    /** Owned-entity roster â€” present only when `features.roster` is set. */
+    /** Owned-entity roster — present only when `features.roster` is set. */
     roster?: Roster;
     /** Game-defined keyed reactive store slot (#163.1); mutations bump `ctx.version()`/notify `ctx.subscribe`. */
     store: ObservableKeyedStore<unknown>;
-    /** Card pile zones â€” present only when `features.cards` is set. */
+    /** Card pile zones — present only when `features.cards` is set. */
     cards?: GameContextCards;
-    /** Turn/phase loop â€” present only when `features.turn` is set. */
+    /** Turn/phase loop — present only when `features.turn` is set. */
     turn?: GameContextTurn;
-    /** Lap/checkpoint race state â€” present only when `features.race` is set. */
+    /** Lap/checkpoint race state — present only when `features.race` is set. */
     race?: GameContextRace;
-    /** Connected-player set for a shared world â€” present only when `features.players` is set. */
+    /** Connected-player set for a shared world — present only when `features.players` is set. */
     players?: ConnectedPlayers;
-    /** Whole-world save/load bound to a pluggable backend â€” present only when `defineGame({ save })` is set (offline/single-player). Drive save points and quest/area checkpoints with `checkpoint()`, restore on boot with `load()`. */
+    /** Whole-world save/load bound to a pluggable backend — present only when `defineGame({ save })` is set (offline/single-player). Drive save points and quest/area checkpoints with `checkpoint()`, restore on boot with `load()`. */
     save?: RuntimeSave;
     /**
      * Register a save-only snapshot module after boot (system-owned persistence).
@@ -482,26 +482,26 @@ export interface GameContext {
     registerReplicate?(module: SnapshotModule): void;
   };
   player: {
-    /** The acting player's id â€” the command actor inside `runAs`, the local player everywhere else. */
+    /** The acting player's id — the command actor inside `runAs`, the local player everywhere else. */
     userId: string;
     isNew: boolean;
-    /** The acting player's inventory set â€” the command actor's bags inside `runAs`, the local player's everywhere else. */
+    /** The acting player's inventory set — the command actor's bags inside `runAs`, the local player's everywhere else. */
     inventory: InventorySet<string>;
-    /** A specific player's inventory set â€” how a host reads or grants into any connected player's bags. */
+    /** A specific player's inventory set — how a host reads or grants into any connected player's bags. */
     inventoryFor(userId: string): InventorySet<string>;
-    /** The acting player's stat modifiers â€” the command actor's inside `runAs`, the local player's everywhere else. */
+    /** The acting player's stat modifiers — the command actor's inside `runAs`, the local player's everywhere else. */
     stats: Stats<string>;
-    /** A specific player's stat modifiers â€” how a host reads or buffs any connected player's stats. */
+    /** A specific player's stat modifiers — how a host reads or buffs any connected player's stats. */
     statsFor(userId: string): Stats<string>;
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
     movement: PoseState;
     possession: Possession;
-    /** Cosmetic skins/customization â€” present only when `features.cosmetics` is set. */
+    /** Cosmetic skins/customization — present only when `features.cosmetics` is set. */
     cosmetics?: Cosmetics;
     /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
-    /** A specific player's motion queue â€” how the host-side per-player movement integrator drains each connected player's impulses. */
+    /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */
     motionFor(userId: string): MotionIntents;
   };
   item: {
@@ -516,13 +516,13 @@ export interface GameContext {
   subscribe(listener: () => void): () => void;
   version(): number;
   /**
-   * Bump {@link version}/notify {@link subscribe} directly â€” the escape hatch for a command that only
+   * Bump {@link version}/notify {@link subscribe} directly — the escape hatch for a command that only
    * mutates game-owned state outside the entity/object/economy/store layers (an external session map,
    * a plain closure variable) and needs to force a reactive HUD refresh without faking a `ctx.game.store.set`.
    */
   touch(): void;
   /**
-   * Gather every opted-in live subsystem into one {@link WorldSnapshot} â€” entities, entity stats, the
+   * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
    * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
    * baseline a host sends a joining client; {@link hydrate} is its inverse. Pass a `viewer` and the host
    * projects the snapshot to only what that viewer may see (private state, area of interest) when a
@@ -603,7 +603,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
    * Single feature-activation path (G9): `definition.features` is already the final map after
    * `defineGame` OR-merged explicit boolean sugar (`features: { quest: true }`) with system-implied
    * flags via `mergeSystemFeatures`. Descriptor install below is the only place that decides
-   * "feature on" â€” never a second enable check against systems.
+   * "feature on" — never a second enable check against systems.
    */
   const features = definition.features ?? {};
   const featureRegistry = new Map<keyof GameFeatures, unknown>();
