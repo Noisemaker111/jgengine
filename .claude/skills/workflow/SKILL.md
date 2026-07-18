@@ -9,10 +9,9 @@ description: Carry repository changes from issue through verified ready pull req
 
 Before claiming issues or editing packages, ensure the checkout can run Bun and resolve built `@jgengine/*` dist:
 
-- `bun run agent:bootstrap` (or `bun run agent:bootstrap --check` if you believe the tree is warm)
-- Isolated trees: `bun run agent:worktree -- <name>` or Claude `claude --worktree <name>`, then bootstrap that path
+- `bun run agent:bootstrap` (or `bun run agent:bootstrap --check` if you believe the tree is warm); start it in the background and never kill a slow install — re-invoking joins the running bootstrap
+- Local-machine parallelism only: `bun run agent:worktree -- <name>` or Claude `claude --worktree <name>`; cloud containers are already isolated — branch, do not worktree
 - Prefer `bun --cwd packages/<pkg> run <script>` over `bun run --cwd packages/<pkg> <script>`
-- Never place worktrees under `C:\tmp` on Windows Codex; never nest worktrees under another agent tree
 
 Do not open a multi-issue program or log papercuts until bootstrap succeeds.
 

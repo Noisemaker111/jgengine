@@ -68,3 +68,7 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
+
+2026-07-18T22:23:17.244Z — claude — Claude
+
+ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
