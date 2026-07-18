@@ -91,6 +91,7 @@ function useDocumentSave(
 ) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const savedDocRef = useRef(session.getState().document);
   const dirty = session.getState().document !== savedDocRef.current;
   const doSave = () => {
@@ -102,6 +103,7 @@ function useDocumentSave(
         savedDocRef.current = document;
         setSaveError(null);
         setSaveState("saved");
+        setLastSavedAt(Date.now());
         onResult?.(true, result.path === undefined ? "Scene saved" : `Scene saved to ${result.path}`);
       } else {
         setSaveError(result.error ?? "save failed");
@@ -110,7 +112,7 @@ function useDocumentSave(
       }
     });
   };
-  return { available: save !== undefined, dirty, saveState, saveError, doSave };
+  return { available: save !== undefined, dirty, saveState, saveError, lastSavedAt, doSave };
 }
 
 const LEFT_PAGES: readonly { id: LeftDockPage; label: string }[] = [
@@ -620,6 +622,7 @@ export function EditorChrome({
         gameId={gameId}
         dirty={dirty}
         saveState={docSave.saveState}
+        lastSavedAt={docSave.lastSavedAt}
         saveAvailable={docSave.available}
         saveError={docSave.saveError}
         canUndo={session.canUndo()}
