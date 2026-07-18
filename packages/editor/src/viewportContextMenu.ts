@@ -19,6 +19,7 @@ export type EditorContextActionId =
   | "duplicate"
   | "delete"
   | "createPrefab"
+  | "unparent"
   | "copy"
   | "paste"
   | "addMarker"
@@ -40,11 +41,13 @@ export interface BuildEditorContextMenuInput {
   hitId: string | null;
   selection: readonly string[];
   canPaste: boolean;
+  /** True when at least one selected/hit object has a parent (offers Unparent). */
+  canUnparent?: boolean;
 }
 
 /**
  * @internal Selection-aware editor context verbs (#866). Hit/selection → frame/duplicate/delete/copy/prefab;
- * empty ground → place tools + paste when clipboard has content.
+ * empty ground → place tools + paste when clipboard has content. Shared by viewport and hierarchy rows.
  */
 export function buildEditorContextMenu(input: BuildEditorContextMenuInput): readonly EditorContextAction[] {
   const hasSelection = input.selection.length > 0 || input.hitId !== null;
@@ -55,6 +58,9 @@ export function buildEditorContextMenu(input: BuildEditorContextMenuInput): read
       { id: "copy", label: "Copy" },
       { id: "delete", label: "Delete", separatorBefore: true },
       { id: "createPrefab", label: "Create prefab…", separatorBefore: true },
+      ...(input.canUnparent === true
+        ? ([{ id: "unparent", label: "Unparent", separatorBefore: true }] as const satisfies readonly EditorContextAction[])
+        : []),
       { id: "paste", label: "Paste", disabled: !input.canPaste, separatorBefore: true },
     ];
   }
