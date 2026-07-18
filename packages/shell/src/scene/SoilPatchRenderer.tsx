@@ -10,7 +10,7 @@ import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneK
 /** Height offset above the sampled terrain so the draped patch never z-fights the ground. */
 const SOIL_LIFT = 0.04;
 /** Amplitude of the seeded micro-relief layered onto the drape, meters. */
-const SOIL_RELIEF = 0.09;
+const SOIL_RELIEF = 0.13;
 
 /** Cheap deterministic 2D value noise (two octaves) for the patch's baked micro-relief. */
 function reliefNoise(x: number, z: number): number {
@@ -41,6 +41,7 @@ function reliefNoise(x: number, z: number): number {
  */
 function OneSoil({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
   const resolved = useMemo(() => resolveSoilObject(object), [object]);
+  const groundColorAt = context.groundColorAt;
   const material = useMemo(
     () =>
       resolved === null
@@ -48,8 +49,11 @@ function OneSoil({ object, context }: { object: SceneKindObject; context: SceneK
         : createSoilPatchMaterial(resolved.rules, {
             center: [resolved.center[0], resolved.center[2]],
             halfSize: [resolved.size[0] / 2, resolved.size[1] / 2],
+            ...(groundColorAt === undefined
+              ? {}
+              : { groundColor: groundColorAt(resolved.center[0], resolved.center[2]) }),
           }),
-    [resolved],
+    [resolved, groundColorAt],
   );
   const geometry = useMemo(() => {
     if (resolved === null) return null;

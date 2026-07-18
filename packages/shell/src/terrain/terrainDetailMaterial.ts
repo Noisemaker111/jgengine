@@ -176,11 +176,24 @@ ${NOISE_GLSL}`,
 vec2 jgWp = vJgWorldPos.xz;
 float jgFine = jgFbm(jgWp / uDetailScale);
 float jgMacro = jgFbm(jgWp / uMacroScale);
+float jgPatch = jgFbm(jgWp / (uMacroScale * 0.35) + vec2(37.2, 11.7));
 float jgSlope = 1.0 - clamp(vJgWorldNormal.y, 0.0, 1.0);
 float jgH = vJgWorldPos.y;
+// Blade-scale flecks fade with view distance so close ground reads as turf without
+// shimmering into noise on the horizon.
+float jgViewDist = length(vJgWorldPos - cameraPosition);
+float jgNear = 1.0 - smoothstep(14.0, 70.0, jgViewDist);
+float jgFleck = jgVNoise(jgWp / max(0.05, uDetailScale * 0.024));
+float jgFleckMid = jgVNoise(jgWp / max(0.12, uDetailScale * 0.07) + vec2(51.3, 7.9));
 vec3 jgBase = diffuseColor.rgb;
-jgBase *= mix(1.0 - 0.22 * uStrength, 1.0 + 0.18 * uStrength, jgFine);
-jgBase = mix(jgBase, jgBase * vec3(0.86, 0.9, 0.82), jgMacro * 0.25 * uStrength);
+jgBase *= mix(1.0 - 0.2 * uStrength, 1.0 + 0.16 * uStrength, jgFine);
+// Meadow patchwork: hue-shifted sun-dried sweeps and cooler lush pockets, not just darker spots.
+jgBase = mix(jgBase, jgBase * vec3(1.14, 1.05, 0.76), smoothstep(0.5, 0.8, jgMacro) * 0.55 * uStrength);
+jgBase = mix(jgBase, jgBase * vec3(0.78, 1.0, 0.86), smoothstep(0.52, 0.85, jgPatch) * 0.5 * uStrength);
+// Rolling large-scale light/dark sweeps keep far hills from flattening into one tone.
+jgBase *= 1.0 + (jgFbm(jgWp / (uMacroScale * 2.3) + vec2(9.1, 73.4)) - 0.5) * 0.22 * uStrength;
+jgBase *= 1.0 + (jgFleck - 0.5) * 0.48 * uStrength * jgNear;
+jgBase *= 1.0 + (jgFleckMid - 0.5) * 0.34 * uStrength;
 vec3 jgRock = uRockColor * mix(0.72, 1.15, jgFbm(jgWp / (uDetailScale * 1.7)));
 float jgRockW = smoothstep(uRockSlopeStart, uRockSlopeStart + 0.18, jgSlope) * uStrength;
 vec3 jgCol = mix(jgBase, jgRock, jgRockW);

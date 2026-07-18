@@ -1468,7 +1468,7 @@
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 
 ## @jgengine/shell/scene/AuthoredScene
@@ -1477,7 +1477,7 @@
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 
 ## @jgengine/shell/scene/GeneratedAssetRenderer
@@ -1608,7 +1608,7 @@
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
-- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
+- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
@@ -1645,7 +1645,7 @@
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
-- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
+- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
@@ -1686,7 +1686,8 @@
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
 - `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
-- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
+- `GRASS_TUFT_BLADES` (const): const GRASS_TUFT_BLADES: 5 — Blades baked into each tuft instance — one instance reads as a clump, not a lone blade.
+- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/terrain/ProceduralGround
@@ -1706,13 +1707,17 @@
 
 ## @jgengine/shell/terrain/grassGeometry
 
+- `GRASS_TUFT_BLADES` (const): const GRASS_TUFT_BLADES: 5 — Blades baked into each tuft instance — one instance reads as a clump, not a lone blade.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
+- `GrassExclusion` (interface): interface GrassExclusion — A rectangle (patch-local XZ) the grass bake keeps clear — soil patches, water, plazas.
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 
 ## @jgengine/shell/terrain/grassMaterial
 
+- `DEFAULT_GRASS_DISTANCE_FADE` (const): const DEFAULT_GRASS_DISTANCE_FADE: Required<GrassDistanceFadeOptions> — Default camera-distance fade band: tufts start thinning at 35 m and are gone by 95 m.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
+- `GrassDistanceFadeOptions` (interface): interface GrassDistanceFadeOptions — Camera-distance fade band: tufts thin out between `start` and `end` meters, so the instance budget spends where the camera lives.
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
@@ -1802,7 +1807,7 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
 - `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
 - `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
@@ -1826,7 +1831,7 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
 - `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
 - `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
@@ -1846,7 +1851,7 @@
 
 ## @jgengine/shell/water/Ocean
 
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanConfig
@@ -1876,8 +1881,8 @@
 
 ## @jgengine/shell/water/OceanShader
 
-- `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\n\nvarying vec3 vWorldPosition;\nvarying vec… — ⚠ undocumented
-- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nvarying vec3 vWorldPosition;\nvarying vec3 vNormal;\nvarying floa… — ⚠ undocumented
+- `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform float uTime;\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\nuniform float uDepthR… — ⚠ undocumented
+- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nattribute float aDepth;\n\nvarying vec3 vWorldPosition;\nvarying … — ⚠ undocumented
 
 ## @jgengine/shell/weather
 

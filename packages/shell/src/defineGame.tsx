@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useMemo, type ComponentType } from "react";
 
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import {
@@ -14,6 +14,7 @@ import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "./environment";
+import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
 import type { PlayableGame } from "./registry";
 import { AuthoredScene } from "./scene/AuthoredScene";
 
@@ -39,9 +40,24 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
   };
 }
 
-function authoredSceneOverlay(document: EditorDocument): ComponentType<WorldOverlayProps> {
+function authoredSceneOverlay(
+  document: EditorDocument,
+  world: GameDefinitionConfig<ModelAssetRef>["world"],
+): ComponentType<WorldOverlayProps> {
+  const terrain = world !== undefined && world.kind === "environment" ? world.terrain : undefined;
   return function AuthoredSceneOverlay({ ctx }: WorldOverlayProps) {
-    return <AuthoredScene document={document} field={ctx.world.ground} placeObjects />;
+    const groundColorAt = useMemo(
+      () => terrainGroundColorSampler(terrain, ctx.world.ground),
+      [ctx.world.ground],
+    );
+    return (
+      <AuthoredScene
+        document={document}
+        field={ctx.world.ground}
+        placeObjects
+        {...(groundColorAt === undefined ? {} : { groundColorAt })}
+      />
+    );
   };
 }
 
@@ -126,7 +142,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     camera: camera ?? { perspective: "third" },
     editorLayers,
     WorldOverlay:
-      WorldOverlay ?? (editorLayers === undefined ? undefined : authoredSceneOverlay(editorLayers)),
+      WorldOverlay ?? (editorLayers === undefined ? undefined : authoredSceneOverlay(editorLayers, game.world)),
     viewmodel,
     renderEntity,
     renderObject,

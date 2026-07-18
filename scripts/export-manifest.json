@@ -603,6 +603,7 @@
     "./environment/groundPadMath",
     "./environment/index",
     "./environment/skyLightingPolicy",
+    "./environment/terrainGroundColor",
     "./hotbarActions",
     "./input/mouseLook",
     "./inputSink",

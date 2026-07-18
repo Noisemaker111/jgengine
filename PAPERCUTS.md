@@ -20,3 +20,7 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 2026-07-18T14:14:38.795Z — claude-fable-5 — Claude
 
 capturing editor screenshots via drive: camera_goto only pans the orbit target with no distance/pitch control and KeyF framing can bury the camera in terrain/buildings — getting a usable aerial of a district took ~8 drive round-trips of guessing y offsets
+
+2026-07-18T17:17:53.370Z — claude-fable-5 — Claude
+
+Cold cloud container: 'bun run shoot' fails with 'Dev server failed to start' until 'bun scripts/ensure-ready.ts' has run once — shoot should bootstrap deps itself or say to run ensure-ready
