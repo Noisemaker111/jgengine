@@ -1,7 +1,7 @@
 import { cameraShake } from "@jgengine/shell/camera";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { handroll } from "../handroll";
+import { handrollOf } from "../handroll";
 import { AMMO_STAT_IDS, gearById, weaponById } from "./weapons/catalog";
 
 const lastFiredAt = new Map<string, number>();
@@ -48,7 +48,7 @@ const fireGun: ItemUseHandler<GameContext> = {
       if (hit !== undefined) {
         const target = ctx.scene.entity.get(hit.instanceId);
         if (target !== null && (target.name.startsWith("ped_") || target.name.startsWith("cop_"))) {
-          handroll.addHeat(ctx, target.name.startsWith("cop_") ? 90 : 55);
+          handrollOf(ctx).addHeat(ctx, target.name.startsWith("cop_") ? 90 : 55);
         }
       }
     }
@@ -78,7 +78,7 @@ const throwGrenade: ItemUseHandler<GameContext> = {
       if (settled.status !== "settled") return;
       ctx.scene.entity.effect({ from: input.from, at: settled.at, radius: explosion.radius, effect: "damage", via: { amount: damage } });
       cameraShake(0.55);
-      handroll.addHeat(ctx, 70);
+      handrollOf(ctx).addHeat(ctx, 70);
     });
     return { state: ctx };
   },

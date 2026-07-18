@@ -95,7 +95,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     } else {
       dropGunAt(ctx, event, anchor);
     }
-    if (ffylPhase() === "downed") {
+    if (ffylPhase(ctx) === "downed") {
       secondWind(ctx);
       ctx.scene.entity.update(userId, { movement: { walkSpeed: player.walkSpeed } });
       ctx.scene.entity.floatText({ instanceId: userId, text: "POWER SURGE!", kind: "pickup" });
@@ -165,11 +165,11 @@ function tickFfyl(ctx: GameContext, nowMs: number): void {
   const userId = ctx.player.userId;
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health === null) return;
-  if (ffylPhase() === "up" && health.current <= (health.min ?? 1)) {
+  if (ffylPhase(ctx) === "up" && health.current <= (health.min ?? 1)) {
     enterDowned(ctx, nowMs);
     ctx.scene.entity.update(userId, { movement: { walkSpeed: DOWNED_WALK_SPEED } });
   }
-  if (ffylExpired(nowMs)) respawnAtNewU(ctx);
+  if (ffylExpired(ctx, nowMs)) respawnAtNewU(ctx);
 }
 
 function tickZoneAndStations(ctx: GameContext, nowMs: number): void {

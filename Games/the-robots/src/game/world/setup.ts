@@ -45,7 +45,7 @@ function scaleSpawnedEnemy(ctx: GameContext, member: ClusterMember): void {
 
 function spawnMember(ctx: GameContext, member: ClusterMember): void {
   ctx.scene.entity.spawn(member.catalogId, { id: member.id, position: member.position });
-  rememberHome(member.id, member.position);
+  rememberHome(ctx, member.id, member.position);
   scaleSpawnedEnemy(ctx, member);
 }
 
