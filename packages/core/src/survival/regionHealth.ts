@@ -1,4 +1,5 @@
 import type { Moodle, MoodleSeverity } from "./moodle";
+import { clamp } from "../math/scalar";
 
 export interface HealthRegionConfig {
   id: string;
@@ -75,10 +76,6 @@ export interface MultiRegionHealth {
   /** Wounds as moodles for the shared status stack (#78 shares #90's moodle display). */
   ailmentMoodles(): Moodle[];
   readonly dead: boolean;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
 }
 
 interface RegionRuntime {

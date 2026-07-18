@@ -1,4 +1,5 @@
 import type { GameEvents } from "./events";
+import { clamp } from "../math/scalar";
 
 export interface QuestObjective {
   id: string;
@@ -85,10 +86,6 @@ export interface QuestJournal {
 interface QuestState {
   status: QuestStatus;
   progress: Map<string, number>;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 /**

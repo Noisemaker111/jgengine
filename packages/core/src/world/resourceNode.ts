@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 /** A quantity that is either fixed or a uniformly sampled `[min, max]` range resolved by the field rng. */
 export type Quantity = number | readonly [number, number];
 
@@ -102,10 +104,6 @@ export interface ResourceNodeField {
   snapshot(): Record<string, ResourceNodeState>;
   /** Restore mutable per-node state (budget, depletion, timers, block flag) from a {@link snapshot}. */
   hydrate(snapshot: Record<string, ResourceNodeState>): void;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
 }
 
 function resolveQuantity(quantity: Quantity, rng: () => number): number {
