@@ -709,7 +709,7 @@
 ## @jgengine/editor/shell/SceneToolbar
 
 - `ADD_VOLUME_ENTRIES` (const): const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] — Volume placement entries offered by the Add menu.
-- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, snapMode, gridSize, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetSnapMode, onSetGridSize, onToggleGrid, onToggleContours, onToggleSurfaceGrid, onToggleElevation, onFrame, onStartPlacement, onOpenAssi… — Contextual scene toolbar under the app bar: tools, gizmo modes, snapping, viewport overlays, framing, and the Add menu. Unsupported controls (local space, pivot, ortho projection, rotation/scale snap) render disabled rather than pretending to work.
+- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, gizmoSpace, snapMode, gridSize, rotationSnapDeg, scaleSnap, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetGizmoSpace, onSetSnapMode, onSetGridSize, onSetRotationSnapDeg, onSetScaleSnap, onToggleGrid, … — Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping, viewport overlays, framing, and the Add menu. Unsupported controls (pivot modes, ortho projection) render disabled rather than pretending to work.
 
 ## @jgengine/editor/shell/StatusBar
 
@@ -834,8 +834,11 @@
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `GizmoSpace` (type): type GizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes.
 - `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
+- `ROTATION_SNAP_CHOICES_DEG` (const): const ROTATION_SNAP_CHOICES_DEG: readonly number[] — Rotation snap increments (degrees) offered by the toolbar snap menu.
+- `SCALE_SNAP_CHOICES` (const): const SCALE_SNAP_CHOICES: readonly number[] — Scale snap increments offered by the toolbar snap menu.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.

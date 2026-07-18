@@ -26,7 +26,7 @@ import { TerrainSculpt } from "./TerrainSculpt";
 import { createTerrainReadoutStore, type TerrainReadoutStore } from "./terrainReadoutStore";
 import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
-import { createEditorUiStore, type EditorUiStore, type SnapMode } from "./uiStore";
+import { createEditorUiStore, type EditorUiStore, type GizmoSpace, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
@@ -65,8 +65,11 @@ function endpointSaver(gameId: string): EditorSaveFn | undefined {
 
 interface StoredEditorPrefs {
   visibility?: Record<string, boolean>;
+  gizmoSpace?: GizmoSpace;
   snapMode?: SnapMode;
   gridSize?: number;
+  rotationSnapDeg?: number | null;
+  scaleSnap?: number | null;
   showGrid?: boolean;
   showContours?: boolean;
   showSurfaceGrid?: boolean;
@@ -439,8 +442,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       host.api.setVisibility({ ...host.api.getVisibility(), ...prefs.visibility });
     }
     ui.patch({
+      ...(prefs.gizmoSpace === undefined ? {} : { gizmoSpace: prefs.gizmoSpace }),
       ...(prefs.snapMode === undefined ? {} : { snapMode: prefs.snapMode }),
       ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
+      ...(prefs.rotationSnapDeg === undefined ? {} : { rotationSnapDeg: prefs.rotationSnapDeg }),
+      ...(prefs.scaleSnap === undefined ? {} : { scaleSnap: prefs.scaleSnap }),
       ...(prefs.showGrid === undefined ? {} : { showGrid: prefs.showGrid }),
       ...(prefs.showContours === undefined ? {} : { showContours: prefs.showContours }),
       ...(prefs.showSurfaceGrid === undefined ? {} : { showSurfaceGrid: prefs.showSurfaceGrid }),
@@ -450,8 +456,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       const state = ui.getState();
       savePrefs(gameId, {
         visibility: host.api.getVisibility(),
+        gizmoSpace: state.gizmoSpace,
         snapMode: state.snapMode,
         gridSize: state.gridSize,
+        rotationSnapDeg: state.rotationSnapDeg,
+        scaleSnap: state.scaleSnap,
         showGrid: state.showGrid,
         showContours: state.showContours,
         showSurfaceGrid: state.showSurfaceGrid,

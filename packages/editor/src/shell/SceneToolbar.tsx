@@ -1,10 +1,18 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { WELL_KNOWN_MARKER_KINDS } from "@jgengine/core/editor/index";
 import { VEGETATION_VOLUME_KIND } from "@jgengine/core/world/vegetation";
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
-import type { EditorTool, GizmoMode, PlacementTool, SnapMode } from "../uiStore";
+import {
+  ROTATION_SNAP_CHOICES_DEG,
+  SCALE_SNAP_CHOICES,
+  type EditorTool,
+  type GizmoMode,
+  type GizmoSpace,
+  type PlacementTool,
+  type SnapMode,
+} from "../uiStore";
 import { Icon } from "./icons";
 import { BORDER, FOCUS_RING, MICRO_LABEL } from "./theme";
 import { IconButton, Segmented, ToolbarDivider } from "./ui";
@@ -36,6 +44,17 @@ function MenuShell({
   width?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Fixed positioning: the toolbar scrolls horizontally (overflow-x-auto), which also clips
+  // absolutely-positioned descendants — an absolute menu would render invisible below it.
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!open) {
+      setAnchor(null);
+      return;
+    }
+    const rect = ref.current?.parentElement?.getBoundingClientRect();
+    if (rect !== undefined) setAnchor({ left: rect.left, top: rect.bottom + 4 });
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
@@ -55,7 +74,8 @@ function MenuShell({
   return (
     <div
       ref={ref}
-      className={`absolute left-0 top-8 z-[70] max-h-[56vh] ${width} overflow-auto rounded-[8px] border border-white/10 bg-[#14171d] p-1.5 shadow-2xl shadow-black/60`}
+      style={anchor === null ? undefined : { left: anchor.left, top: anchor.top }}
+      className={`fixed z-[70] max-h-[56vh] ${width} overflow-auto rounded-[8px] border border-white/10 bg-[#14171d] p-1.5 shadow-2xl shadow-black/60`}
     >
       {children}
     </div>
@@ -65,16 +85,35 @@ function MenuShell({
 const MENU_ITEM =
   `block w-full rounded-[5px] px-2.5 py-1.5 text-left text-[12px] text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100 ${FOCUS_RING}`;
 
+/** Small preset chip inside the snap menu (grid sizes, rotation/scale increments). */
+function SnapChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-[4px] px-1.5 py-0.5 text-[10px] tabular-nums transition-colors ${FOCUS_RING} ${
+        active ? "bg-cyan-500/20 text-cyan-100" : "bg-white/[0.05] text-neutral-400 hover:text-neutral-200"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 /**
- * Contextual scene toolbar under the app bar: tools, gizmo modes, snapping, viewport overlays,
- * framing, and the Add menu. Unsupported controls (local space, pivot, ortho projection,
- * rotation/scale snap) render disabled rather than pretending to work.
+ * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping,
+ * viewport overlays, framing, and the Add menu. Unsupported controls (pivot modes, ortho
+ * projection) render disabled rather than pretending to work.
  */
 export function SceneToolbar({
   tool,
   gizmoMode,
+  gizmoSpace,
   snapMode,
   gridSize,
+  rotationSnapDeg,
+  scaleSnap,
   showGrid,
   showContours,
   showSurfaceGrid,
@@ -82,8 +121,11 @@ export function SceneToolbar({
   placementActive,
   onSetTool,
   onSetGizmoMode,
+  onSetGizmoSpace,
   onSetSnapMode,
   onSetGridSize,
+  onSetRotationSnapDeg,
+  onSetScaleSnap,
   onToggleGrid,
   onToggleContours,
   onToggleSurfaceGrid,
@@ -95,8 +137,11 @@ export function SceneToolbar({
 }: {
   tool: EditorTool;
   gizmoMode: GizmoMode;
+  gizmoSpace: GizmoSpace;
   snapMode: SnapMode;
   gridSize: number;
+  rotationSnapDeg: number | null;
+  scaleSnap: number | null;
   showGrid: boolean;
   showContours: boolean;
   showSurfaceGrid: boolean;
@@ -104,8 +149,11 @@ export function SceneToolbar({
   placementActive: boolean;
   onSetTool: (tool: EditorTool) => void;
   onSetGizmoMode: (mode: GizmoMode) => void;
+  onSetGizmoSpace: (space: GizmoSpace) => void;
   onSetSnapMode: (mode: SnapMode) => void;
   onSetGridSize: (size: number) => void;
+  onSetRotationSnapDeg: (deg: number | null) => void;
+  onSetScaleSnap: (snap: number | null) => void;
   onToggleGrid: () => void;
   onToggleContours: () => void;
   onToggleSurfaceGrid: () => void;
@@ -156,13 +204,23 @@ export function SceneToolbar({
           { value: "scale", label: "Scale", icon: "scale", kbd: "R", iconOnly: true },
         ]}
       />
+      <Segmented
+        ariaLabel="Gizmo space"
+        value={gizmoSpace}
+        onChange={onSetGizmoSpace}
+        disabled={tool === "terrain"}
+        options={[
+          { value: "world", label: "World" },
+          { value: "local", label: "Local" },
+        ]}
+      />
       <div
         className="flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.06] bg-black/20 px-2 text-[11px] text-neutral-600"
-        title="Gizmo operates in world space with center pivot — local space and pivot modes are planned"
+        title="Gizmo pivots at the selection center — pivot modes are planned"
         aria-disabled="true"
       >
         <Icon name="target" size={12} />
-        World · Pivot
+        Pivot
       </div>
       <ToolbarDivider />
       <div className="relative flex items-center gap-1">
@@ -201,25 +259,42 @@ export function SceneToolbar({
           {snapMode === "grid" ? (
             <div className="flex items-center gap-1 px-2 py-1.5">
               {GRID_SIZES.map((size) => (
-                <button
+                <SnapChip
                   key={size}
-                  type="button"
+                  label={`${size}m`}
+                  active={gridSize === size}
                   onClick={() => {
                     onSetGridSize(size);
                     setSnapOpen(false);
                   }}
-                  className={`rounded-[4px] px-1.5 py-0.5 text-[10px] tabular-nums transition-colors ${FOCUS_RING} ${
-                    gridSize === size ? "bg-cyan-500/20 text-cyan-100" : "bg-white/[0.05] text-neutral-400 hover:text-neutral-200"
-                  }`}
-                >
-                  {size}m
-                </button>
+                />
               ))}
             </div>
           ) : null}
           <div className="my-1 h-px bg-white/[0.07]" />
-          <div className="px-2.5 py-1 text-[11px] text-neutral-600" title="Planned — the gizmo currently snaps translation only">
-            Rotation / scale snap — planned
+          <div className={`px-2 pb-1 pt-1.5 ${MICRO_LABEL}`}>Rotation snap</div>
+          <div className="flex items-center gap-1 px-2 py-1.5">
+            <SnapChip label="Off" active={rotationSnapDeg === null} onClick={() => onSetRotationSnapDeg(null)} />
+            {ROTATION_SNAP_CHOICES_DEG.map((deg) => (
+              <SnapChip
+                key={deg}
+                label={`${deg}°`}
+                active={rotationSnapDeg === deg}
+                onClick={() => onSetRotationSnapDeg(deg)}
+              />
+            ))}
+          </div>
+          <div className={`px-2 pb-1 pt-1.5 ${MICRO_LABEL}`}>Scale snap</div>
+          <div className="flex items-center gap-1 px-2 py-1.5">
+            <SnapChip label="Off" active={scaleSnap === null} onClick={() => onSetScaleSnap(null)} />
+            {SCALE_SNAP_CHOICES.map((snap) => (
+              <SnapChip
+                key={snap}
+                label={`${snap}`}
+                active={scaleSnap === snap}
+                onClick={() => onSetScaleSnap(snap)}
+              />
+            ))}
           </div>
         </MenuShell>
       </div>
