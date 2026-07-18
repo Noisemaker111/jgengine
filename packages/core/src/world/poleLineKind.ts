@@ -42,6 +42,10 @@ export interface ResolvedPoleLine {
   cables: Cable[];
   poleHeight: number;
   poleAsset: string;
+  /** Wires per span — drives the renderer's crossarm width and insulator count. */
+  wireCount: number;
+  /** Lateral spread between adjacent wires, meters — the renderer hangs insulators at these offsets. */
+  wireSpacing: number;
 }
 
 /** The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam. */
@@ -109,7 +113,7 @@ export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, c
       }
     }
   }
-  return { poles, cables, poleHeight, poleAsset: params["poleAsset"] as string };
+  return { poles, cables, poleHeight, poleAsset: params["poleAsset"] as string, wireCount, wireSpacing };
 }
 
 /** Registers the pole-line scene kind (schema + resolver + inspector note). Called by `registerBuiltinSceneKinds`. @internal */

@@ -1729,6 +1729,10 @@
 
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 
+## @jgengine/shell/terrain/soilPatchMaterial
+
+- `SoilPatchEdge` (interface): interface SoilPatchEdge — Optional noise-eroded edge-fade config for {@link createSoilPatchMaterial} — the patch dissolves into the ground at its border.
+
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.

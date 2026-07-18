@@ -75,33 +75,111 @@ function mergePositionGeometries(geometries: readonly THREE.BufferGeometry[]): T
   return merged;
 }
 
-function ProxyPoles({ poles, height }: { poles: readonly Pole[]; height: number }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const geometry = useMemo(() => new THREE.CylinderGeometry(0.06, 0.11, height, 6), [height]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
+/**
+ * Proxy utility poles built from primitives when no GLB pole asset is named: a tapered trunk, a
+ * wood crossarm sized to the wire spread with a small brace, and one ceramic insulator peg under
+ * each wire offset — so the cables visibly hang *from* the pole instead of floating beside a stick.
+ */
+function ProxyPoles({
+  poles,
+  height,
+  wireCount,
+  wireSpacing,
+}: {
+  poles: readonly Pole[];
+  height: number;
+  wireCount: number;
+  wireSpacing: number;
+}) {
+  const trunkRef = useRef<THREE.InstancedMesh>(null);
+  const armRef = useRef<THREE.InstancedMesh>(null);
+  const insulatorRef = useRef<THREE.InstancedMesh>(null);
+  const armLength = wireCount > 1 ? (wireCount - 1) * wireSpacing + 0.5 : 0.6;
+  const trunkGeometry = useMemo(() => new THREE.CylinderGeometry(0.07, 0.13, height, 8), [height]);
+  const armGeometry = useMemo(() => new THREE.BoxGeometry(armLength, 0.09, 0.09), [armLength]);
+  const insulatorGeometry = useMemo(() => new THREE.CylinderGeometry(0.045, 0.06, 0.16, 6), []);
+  useEffect(
+    () => () => {
+      trunkGeometry.dispose();
+      armGeometry.dispose();
+      insulatorGeometry.dispose();
+    },
+    [trunkGeometry, armGeometry, insulatorGeometry],
+  );
   useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
+    const trunk = trunkRef.current;
+    const arm = armRef.current;
+    const insulator = insulatorRef.current;
+    if (trunk === null) return;
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
     const quaternion = new THREE.Quaternion();
     const euler = new THREE.Euler();
     const scale = new THREE.Vector3(1, 1, 1);
+    const armY = height - 0.22;
+    const half = (wireCount - 1) / 2;
     poles.forEach((pole, index) => {
-      position.set(pole.position[0], pole.position[1] + height / 2, pole.position[2]);
       euler.set(0, pole.yaw, 0);
       quaternion.setFromEuler(euler);
+      position.set(pole.position[0], pole.position[1] + height / 2, pole.position[2]);
       matrix.compose(position, quaternion, scale);
-      mesh.setMatrixAt(index, matrix);
+      trunk.setMatrixAt(index, matrix);
+      if (arm !== null) {
+        position.set(pole.position[0], pole.position[1] + armY, pole.position[2]);
+        matrix.compose(position, quaternion, scale);
+        arm.setMatrixAt(index, matrix);
+      }
+      if (insulator !== null) {
+        // Insulator pegs sit on the crossarm at each wire's lateral offset (the pole's local X axis
+        // after yaw — the same perpendicular the resolver strings cables along).
+        const cos = Math.cos(pole.yaw);
+        const sin = Math.sin(pole.yaw);
+        for (let w = 0; w < wireCount; w += 1) {
+          const offset = (w - half) * wireSpacing;
+          position.set(
+            pole.position[0] + cos * offset,
+            pole.position[1] + height - 0.08,
+            pole.position[2] - sin * offset,
+          );
+          matrix.compose(position, quaternion, scale);
+          insulator.setMatrixAt(index * wireCount + w, matrix);
+        }
+      }
     });
-    mesh.count = poles.length;
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [poles, height]);
+    trunk.count = poles.length;
+    trunk.instanceMatrix.needsUpdate = true;
+    trunk.computeBoundingSphere();
+    if (arm !== null) {
+      arm.count = poles.length;
+      arm.instanceMatrix.needsUpdate = true;
+      arm.computeBoundingSphere();
+    }
+    if (insulator !== null) {
+      insulator.count = poles.length * wireCount;
+      insulator.instanceMatrix.needsUpdate = true;
+      insulator.computeBoundingSphere();
+    }
+  }, [poles, height, wireCount, wireSpacing]);
   return (
-    <instancedMesh ref={meshRef} args={[geometry, undefined, Math.max(1, poles.length)]} castShadow receiveShadow>
-      <meshStandardMaterial color="#6b5636" roughness={0.9} metalness={0} />
-    </instancedMesh>
+    <>
+      <instancedMesh ref={trunkRef} args={[trunkGeometry, undefined, Math.max(1, poles.length)]} castShadow receiveShadow>
+        <meshStandardMaterial color="#5d4a30" roughness={0.92} metalness={0} />
+      </instancedMesh>
+      {wireCount > 0 ? (
+        <>
+          <instancedMesh ref={armRef} args={[armGeometry, undefined, Math.max(1, poles.length)]} castShadow receiveShadow>
+            <meshStandardMaterial color="#4e3d27" roughness={0.9} metalness={0} />
+          </instancedMesh>
+          <instancedMesh
+            ref={insulatorRef}
+            args={[insulatorGeometry, undefined, Math.max(1, poles.length * wireCount)]}
+            castShadow
+          >
+            <meshStandardMaterial color="#9aa7ad" roughness={0.35} metalness={0.15} />
+          </instancedMesh>
+        </>
+      ) : null}
+    </>
   );
 }
 
@@ -162,11 +240,15 @@ function OnePoleLine({ object, context }: { object: SceneKindObject; context: Sc
   return (
     <>
       {modelUrl !== undefined ? (
-        <Suspense fallback={<ProxyPoles poles={resolved.poles} height={resolved.poleHeight} />}>
+        <Suspense
+          fallback={
+            <ProxyPoles poles={resolved.poles} height={resolved.poleHeight} wireCount={resolved.wireCount} wireSpacing={resolved.wireSpacing} />
+          }
+        >
           <ModelPoles url={modelUrl} poles={resolved.poles} />
         </Suspense>
       ) : (
-        <ProxyPoles poles={resolved.poles} height={resolved.poleHeight} />
+        <ProxyPoles poles={resolved.poles} height={resolved.poleHeight} wireCount={resolved.wireCount} wireSpacing={resolved.wireSpacing} />
       )}
       <Cables cables={resolved.cables} />
     </>

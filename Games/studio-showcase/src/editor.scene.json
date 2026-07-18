@@ -42,25 +42,25 @@
       "kind": "water",
       "shape": "box",
       "center": {
-        "x": -20,
-        "y": -0.3,
-        "z": 14
-      },
-      "halfExtents": {
-        "x": 9,
-        "y": 0.5,
+        "x": -26,
+        "y": -0.15,
         "z": 8
       },
-      "label": "Pond (water studio)",
+      "halfExtents": {
+        "x": 15,
+        "y": 0.6,
+        "z": 12
+      },
+      "label": "Lake (water studio)",
       "meta": {
-        "color": "#1c6c86",
+        "color": "#155e78",
         "shallowColor": "#4bb6bf",
         "waveHeight": 0.18,
-        "waveSpeed": 0.7,
+        "waveSpeed": 0.8,
         "waveScale": 0.35,
-        "foam": 1.4,
-        "opacity": 0.88,
-        "reflectivity": 0.45
+        "foam": 1.0,
+        "opacity": 0.92,
+        "reflectivity": 0.55
       }
     },
     {
@@ -68,23 +68,23 @@
       "kind": "grass_field",
       "shape": "box",
       "center": {
-        "x": 20,
+        "x": 22,
         "y": 0.5,
-        "z": 14
+        "z": 12
       },
       "halfExtents": {
-        "x": 9,
+        "x": 13,
         "y": 0.5,
-        "z": 8
+        "z": 10
       },
       "label": "Meadow (grass studio)",
       "meta": {
-        "density": 6,
-        "bladeHeight": 0.7,
+        "density": 10,
+        "bladeHeight": 0.8,
         "colorBase": "#3f6f37",
         "colorTip": "#9ac25a",
-        "colorVariation": 0.35,
-        "windStrength": 0.3,
+        "colorVariation": 0.45,
+        "windStrength": 0.35,
         "windSpeed": 1.8,
         "windGust": 0.18,
         "roughness": 0.85,
@@ -96,14 +96,14 @@
       "kind": "soil",
       "shape": "box",
       "center": {
-        "x": -4,
+        "x": -2,
         "y": 0.1,
-        "z": 12
+        "z": 16
       },
       "halfExtents": {
-        "x": 5,
+        "x": 6.5,
         "y": 0.3,
-        "z": 4.5
+        "z": 5
       },
       "label": "Cracked yard (soil studio)",
       "meta": {
@@ -112,7 +112,7 @@
         "crackColor": "#3a2818",
         "crackIntensity": 0.75,
         "mossColor": "#5c7a3a",
-        "mossCoverage": 0.45,
+        "mossCoverage": 0.5,
         "seed": "cracked"
       }
     },
@@ -237,33 +237,33 @@
       "label": "Power line (pole studio)",
       "points": [
         {
-          "x": -26,
+          "x": -30,
           "y": 0,
-          "z": 22
+          "z": 30
         },
         {
-          "x": -9,
+          "x": -10,
           "y": 0,
-          "z": 20
+          "z": 27
         },
         {
-          "x": 9,
+          "x": 10,
           "y": 0,
-          "z": 20
+          "z": 27
         },
         {
-          "x": 26,
+          "x": 30,
           "y": 0,
-          "z": 22
+          "z": 30
         }
       ],
       "meta": {
-        "spacing": 8,
+        "spacing": 9,
         "poleHeight": 6,
         "wireCount": 3,
-        "wireSpacing": 0.6,
+        "wireSpacing": 0.7,
         "cableRadius": 0.06,
-        "sag": 1.2,
+        "sag": 1.0,
         "sagPerMeter": 0.04,
         "cableSegments": 14,
         "snapToTerrain": true,
