@@ -12,8 +12,11 @@ import {
   type TemplateFile,
 } from "./templates";
 
-function render(variant: "standalone" | "in-repo"): TemplateFile[] {
-  return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0" });
+function render(
+  variant: "standalone" | "in-repo",
+  options?: { world?: boolean; editor?: boolean },
+): TemplateFile[] {
+  return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0", ...options });
 }
 
 function fileOf(files: TemplateFile[], path: string): string {
@@ -22,22 +25,28 @@ function fileOf(files: TemplateFile[], path: string): string {
   return file.contents;
 }
 
+const THIN_FILES = [
+  "index.html",
+  "vite.config.ts",
+  "package.json",
+  "tsconfig.json",
+  "AGENTS.md",
+  "src/index.css",
+  "src/style.css",
+  "src/main.tsx",
+  "src/index.tsx",
+  "src/editor.scene.json",
+  "src/editorLayers.ts",
+  "src/editorLayers.test.ts",
+  "src/game.config.ts",
+  "src/loop.ts",
+  "src/game/ui/GameUI.tsx",
+];
+
 describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   for (const variant of ["standalone", "in-repo"] as const) {
-    test(`${variant}: ships the standalone harness and skeleton`, () => {
-      const paths = render(variant).map((file) => file.path);
-      for (const required of [
-        "index.html",
-        "vite.config.ts",
-        "package.json",
-        "tsconfig.json",
-        "src/index.css",
-        "src/main.tsx",
-        "src/index.tsx",
-        "src/game.config.ts",
-      ]) {
-        expect(paths).toContain(required);
-      }
+    test(`${variant}: default is exactly the thin editor-first file set`, () => {
+      expect(render(variant).map((file) => file.path).sort()).toEqual([...THIN_FILES].sort());
     });
 
     test(`${variant}: src/ holds only the skeleton, everything else under src/game/`, () => {
@@ -52,10 +61,25 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       }
     });
 
-    test(`${variant}: game.config.ts uses defineGame and index.tsx re-exports game`, () => {
+    test(`${variant}: game.config.ts uses defineGame from gameKit and index.tsx re-exports game`, () => {
       const files = render(variant);
-      expect(/from\s+["']@jgengine\/shell\/defineGame["']/.test(fileOf(files, "src/game.config.ts"))).toBe(true);
+      expect(/from\s+["']@jgengine\/shell\/gameKit["']/.test(fileOf(files, "src/game.config.ts"))).toBe(true);
       expect(/\bgame\b/.test(fileOf(files, "src/index.tsx").match(/export\s*\{[^}]*\}/g)?.join(" ") ?? "")).toBe(true);
+    });
+
+    test(`${variant}: game.config.ts omits server/multiplayer/save/camera knobs (shell defaults)`, () => {
+      const config = fileOf(render(variant), "src/game.config.ts");
+      expect(config).not.toContain("server:");
+      expect(config).not.toContain("multiplayer:");
+      expect(config).not.toContain("save:");
+      expect(config).not.toContain("camera:");
+    });
+
+    test(`${variant}: main.tsx is a bare GameHost mount — GameHost owns F2+E and the save endpoint`, () => {
+      const main = fileOf(render(variant), "src/main.tsx");
+      expect(main).toContain('editor={() => import("@jgengine/editor")}');
+      expect(main).not.toContain("installSaveEndpoint");
+      expect(main).not.toContain("__jgengineSummonEditor");
     });
 
     test(`${variant}: package.json has a dev script and is ESM`, () => {
@@ -111,10 +135,10 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   });
 
   for (const variant of ["standalone", "in-repo"] as const) {
-    test(`${variant}: scaffold walks out of the box (movement actions bound)`, () => {
-      const keybinds = fileOf(render(variant), "src/game/keybinds.ts");
+    test(`${variant}: scaffold walks out of the box (movement actions bound inline)`, () => {
+      const config = fileOf(render(variant), "src/game.config.ts");
       for (const action of ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "interact"]) {
-        expect(keybinds).toContain(`${action}:`);
+        expect(config).toContain(`${action}:`);
       }
     });
 
@@ -132,25 +156,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(fileOf(files, "src/index.css")).toContain('@import "./style.css"');
     });
 
-    test(`${variant}: scaffold authors entity definitions in a starter catalog`, () => {
-      const files = render(variant);
-      // The Data tab is never empty: a starter `entities` catalog ships, wired into the editor.
-      const catalogs = fileOf(files, "src/editorCatalogs.ts");
-      expect(catalogs).toContain("ENTITY_CATALOG_ID");
-      expect(catalogs).toContain("entityDefinitionSchema");
-      expect(fileOf(files, "src/main.tsx")).toContain("catalogs={editorCatalogs}");
-      expect(fileOf(files, "src/index.tsx")).toContain("editorCatalogs");
-      // A mob marker references a catalog row, and content resolves stats from the document.
-      const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
-        markers: { kind: string; catalogId?: string }[];
-      };
-      const mob = scene.markers.find((marker) => marker.kind === "mob");
-      expect(mob?.catalogId).toBe("grunt");
-      expect(fileOf(files, "src/game/content.ts")).toContain("entityEntryFromCatalog");
-      expect(fileOf(files, "src/loop.ts")).toContain("authoredEntitySpawns(editorLayers)");
-    });
-
-    test(`${variant}: scaffold authors a zero-code "reach the goal to win"`, () => {
+    test(`${variant}: scaffold authors a zero-code "reach the goal to win" via systems`, () => {
       const files = render(variant);
       const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
         markers: { kind: string; meta?: { on?: string; action?: string } }[];
@@ -158,18 +164,54 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       const goal = scene.markers.find((marker) => marker.kind === "goal");
       expect(goal?.meta?.on).toBe("enter");
       expect(goal?.meta?.action).toBe("win");
-      // The loop wires the shared trigger primitive; the win rule lives in the document, not code.
-      expect(fileOf(files, "src/loop.ts")).toContain("registerBuiltinTriggerActions");
-      expect(fileOf(files, "src/loop.ts")).toContain("createTriggerOutcome");
+      const loop = fileOf(files, "src/loop.ts");
+      expect(loop).toContain('defineSystem');
+      expect(loop).toContain('from "@jgengine/shell/gameKit"');
+      expect(loop).toContain("registerBuiltinTriggerActions");
+      expect(loop).toContain("createTriggerOutcome");
+      expect(fileOf(files, "src/game.config.ts")).toContain("systems,");
       expect(fileOf(files, "src/game/ui/GameUI.tsx")).toContain("outcome");
     });
   }
 
-  test("templates carry the verify gate and agent onboarding", () => {
+  test("--world: adds world.ts + game/assets.ts + game/models.ts wired into the config", () => {
+    const files = render("standalone", { world: true });
+    const paths = files.map((file) => file.path);
+    for (const extra of ["src/world.ts", "src/game/assets.ts", "src/game/models.ts"]) {
+      expect(paths).toContain(extra);
+    }
+    expect(fileOf(files, "src/world.ts")).toContain("environment(");
+    const config = fileOf(files, "src/game.config.ts");
+    expect(config).toContain("world,");
+    expect(config).toContain("physics,");
+    expect(config).toContain("entityModels,");
+    expect(config).toContain("objectModels,");
+  });
+
+  test("--no-editor: drops the scene document and all editor wiring", () => {
+    const files = render("standalone", { editor: false });
+    const paths = files.map((file) => file.path);
+    for (const dropped of ["src/editor.scene.json", "src/editorLayers.ts", "src/editorLayers.test.ts"]) {
+      expect(paths).not.toContain(dropped);
+    }
+    expect(fileOf(files, "src/main.tsx")).not.toContain("editor=");
+    expect(fileOf(files, "src/index.tsx")).not.toContain("editorLayers");
+    expect(fileOf(files, "src/game.config.ts")).not.toContain("editorLayers");
+    expect(fileOf(files, "src/loop.ts")).not.toContain("editorLayers");
+    expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
+  });
+
+  test("templates carry the gameKit-first agent onboarding", () => {
     const files = render("standalone");
-    expect(fileOf(files, "src/game/world.world.test.ts")).toContain("summarizeEnvironment");
-    expect(fileOf(files, "AGENTS.md")).toContain("User-facing first reply is short");
-    expect(fileOf(files, "AGENTS.md")).toContain("dump file trees");
+    const agents = fileOf(files, "AGENTS.md");
+    expect(agents).toContain("User-facing first reply is short");
+    expect(agents).toContain("dump file trees");
+    expect(agents).toContain("@jgengine/shell/gameKit");
+    expect(agents).toContain("recipes/minimal-game.md");
+    expect(agents).toContain("npx jgengine skills -p");
+    expect(agents).toContain("--all");
+    expect(agents).not.toContain("full export surface");
+    expect(agents).not.toContain("full game not a slice");
   });
 
   test("rejects a non-kebab-case id", () => {

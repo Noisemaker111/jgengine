@@ -16,6 +16,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
@@ -116,6 +117,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
@@ -190,6 +192,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
@@ -214,6 +217,7 @@
       "dependencies": {
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "^9.5.0",
@@ -238,6 +242,7 @@
       "dependencies": {
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",
@@ -263,6 +268,7 @@
       "dependencies": {
         "@jgengine/assets": "workspace:*",
         "@jgengine/core": "workspace:*",
+        "@jgengine/editor": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@jgengine/ws": "workspace:*",

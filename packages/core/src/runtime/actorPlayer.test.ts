@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext } from "./gameContext";
 
 function makeContext() {
   return createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "ActorGame",
       assets: createAssetCatalog(),
       multiplayer: "off",
@@ -84,7 +84,7 @@ describe("actor-aware ctx.player", () => {
     host.player.inventory.put("backpack", "sword", 1);
 
     const client = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "ActorGame",
         assets: createAssetCatalog(),
         multiplayer: "off",

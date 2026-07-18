@@ -115,6 +115,11 @@ function ResizeHandles({
   );
 }
 
+/**
+ * Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
+ *
+ * @capability hud-layout persistent, live-editable HUD panel layout state for `HudCanvas`
+ */
 export function useHudLayout(options?: {
   storageKey?: string;
   snap?: number;
@@ -295,6 +300,8 @@ function edgePad(envInset: string, extra: string | null, basePx: number, scale: 
  * offsets, no manual clearance for sibling panels, the touch-control dock
  * (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the
  * whole surface scales down and each panel applies its `compact` behavior.
+  *
+ * @capability hud-canvas the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
  */
 export function HudCanvas({
   layout,
@@ -587,6 +594,8 @@ function HudChip({
  * pointers panels stay draggable through the edit chord; a dragged panel
  * leaves the flow and keeps its custom placement. On compact displays custom
  * placements are ignored and the `compact` behavior applies.
+  *
+ * @capability hud-panel anchored HUD slot — drop any widget in a named, player-movable panel
  */
 export function HudPanel({
   id,

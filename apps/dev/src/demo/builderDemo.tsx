@@ -1,7 +1,7 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { Aabb } from "@jgengine/core/world/geometry";
@@ -252,7 +252,7 @@ function BuilderScene() {
   );
 }
 
-const game = defineGame({
+const game = defineGameDefinition({
   name: "builder-sandbox",
   assets: createAssetCatalog(),
   multiplayer: null,

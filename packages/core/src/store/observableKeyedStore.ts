@@ -1,3 +1,4 @@
+/** @internal */
 export interface ObservableKeyedStore<T> {
   set(key: string, value: T): void;
   delete(key: string): void;
@@ -17,6 +18,7 @@ export interface ObservableKeyedStore<T> {
   hydrate(data: readonly (readonly [string, T])[]): void;
 }
 
+/** @internal */
 export function createObservableKeyedStore<T>(
   areEqual?: (previous: T, next: T) => boolean,
 ): ObservableKeyedStore<T> {

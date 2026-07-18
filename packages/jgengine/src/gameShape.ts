@@ -10,17 +10,17 @@ export const GAME_SKELETON_REQUIRED_FILES = [
   "game.config.ts",
   "index.tsx",
   "main.tsx",
-  "loop.ts",
-  "world.ts",
   "index.css",
   "style.css",
 ] as const;
 
 /**
- * Top-level src/ files a game may keep outside `src/game/` (preview harness, scene
- * ownership manifest, editor document + wiring). Presence is optional.
+ * Top-level src/ files a game may keep outside `src/game/` (loop/world modules, preview harness,
+ * scene ownership manifest, editor document + wiring). Presence is optional.
  */
 export const GAME_SKELETON_OPTIONAL_FILES = [
+  "loop.ts",
+  "world.ts",
   "preview.tsx",
   "scene-ownership.json",
   "editorLayers.ts",

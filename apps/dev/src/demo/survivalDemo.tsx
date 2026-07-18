@@ -1,4 +1,4 @@
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import {
@@ -249,7 +249,7 @@ const entityCatalog: Record<string, GameContextEntityEntry> = {
   },
 };
 
-const game = defineGame({
+const game = defineGameDefinition({
   name: "survival-demo",
   assets: createAssetCatalog(),
   multiplayer: null,

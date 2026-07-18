@@ -8,4 +8,6 @@ import { game } from "./game.config";
 
 const root = document.getElementById("root");
 if (root === null) throw new Error("main: missing #root mount element");
-createRoot(root).render(<GameHost playable={game} />);
+createRoot(root).render(
+  <GameHost playable={game} gameId="spire-cards" editor={() => import("@jgengine/editor")} />,
+);

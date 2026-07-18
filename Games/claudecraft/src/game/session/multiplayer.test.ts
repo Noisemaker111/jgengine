@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
-import { defineGame as defineEngineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition as defineEngineGame } from "@jgengine/core/game/defineGame";
 import { createHostedWorldSession, type HostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
 
 import { game } from "../../game.config";

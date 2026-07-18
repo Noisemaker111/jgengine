@@ -7,6 +7,7 @@ import type { ViewmodelProps } from "./camera/GameFirstPersonCamera";
 export type RenderEntity = (entity: SceneEntity) => ReactNode;
 export type RenderObject = (object: SceneObject) => ReactNode;
 
+/** The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. */
 export type PlayableGame = EnginePlayableGame<
   ComponentType,
   ComponentType,

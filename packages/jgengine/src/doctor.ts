@@ -153,10 +153,12 @@ export function diagnose(dir: string): Finding[] {
   });
 
   const configPath = join(dir, "src", "game.config.ts");
-  const configOk = existsSync(configPath) && /from\s+["']@jgengine\/shell\/defineGame["']/.test(readFileSync(configPath, "utf8"));
+  const configOk =
+    existsSync(configPath) &&
+    /from\s+["']@jgengine\/shell\/(defineGame|gameKit)["']/.test(readFileSync(configPath, "utf8"));
   findings.push({
     ok: configOk,
-    label: 'src/game.config.ts defines the game via defineGame from "@jgengine/shell/defineGame"',
+    label: 'src/game.config.ts defines the game via defineGame from "@jgengine/shell/gameKit"',
     fix: "game.config.ts is the single entry — export const game = defineGame({...})",
   });
 
@@ -179,7 +181,7 @@ export function diagnose(dir: string): Finding[] {
     findings.push({
       ok: strays.length === 0,
       label: "src/ holds only the skeleton (everything else under src/game/)",
-      fix: `move ${strays.join(", ")} under src/game/ — src/ is only ${gameSkeletonRequiredSummary()} (plus optional preview.tsx, scene-ownership.json, editor* files)`,
+      fix: `move ${strays.join(", ")} under src/game/ — src/ is only ${gameSkeletonRequiredSummary()} (plus optional loop.ts, world.ts, preview.tsx, scene-ownership.json, editor* files)`,
     });
 
     const unguardedCallers = unguardedSaveEndpointCallers(srcDir);

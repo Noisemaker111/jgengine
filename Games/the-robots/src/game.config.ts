@@ -1,4 +1,3 @@
-import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { RarityStyle } from "@jgengine/core/game/worldItem";
@@ -145,7 +144,6 @@ export const game = defineGame({
   server: { mode: "campaign" },
   save: "none",
   persist: true,
-  multiplayer: offline(),
   content,
   loop,
   GameUI,

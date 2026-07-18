@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGame";
 import { gamePhase } from "../game/gamePhase";
 import { defineStore } from "../store/defineStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
@@ -20,7 +20,7 @@ const CONTENT: GameContextContent = {
 function runner(restore?: WorldSnapshot): HostedGameRunner {
   return createHostedGameRunner({
     ...(restore === undefined ? {} : { restore }),
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "Hosted",
       assets: createAssetCatalog(),
       multiplayer: "off",
@@ -224,7 +224,7 @@ describe("hosted runner lifecycle phase sync", () => {
 
   function phaseRunner(): HostedGameRunner {
     return createHostedGameRunner({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "PhaseHosted",
         multiplayer: "off",
         lifecycle: {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { content } from "../content";
@@ -17,7 +17,7 @@ import {
 
 function bootContext(): GameContext {
   return createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "vice-isle-bounty-test",
       assets: createAssetCatalog(),
       multiplayer: "off",

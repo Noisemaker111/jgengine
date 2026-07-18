@@ -41,7 +41,10 @@ export function stepRandomSeed(seed: RandomSeed): readonly [value: number, next:
   return [value, next as RandomSeed];
 }
 
-/** Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence. */
+/** Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+ *
+ * @capability seeded-random injected deterministic randomness for game logic — never `Math.random` in a simulation
+ */
 export function seededRng(seed: string | number): () => number {
   let cursor = randomSeedFrom(hashSeed(seed));
   return () => {
