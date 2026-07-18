@@ -33,19 +33,19 @@ export interface KinematicVehicleTuning {
  * Mass-and-force chassis layer (#1051); when present it supersedes `engineAccel`/`brakeAccel` with
  * force/mass dynamics. Drive/brake become forces divided by `massKg`, a per-tick tire friction budget
  * (`tireGrip` * grip curve * surface * downforce * m * g) is split lateral-first then longitudinal so
- * hard slides and launches saturate, `comHeight`/`trackWidth` set weight-transfer washout and body
- * lean, and `engineBrakeForce` decelerates a coasting car. All fields are required; omit the whole
- * block for the legacy model.
+ * hard slides and launches saturate, and `comHeight`/`trackWidth` set weight-transfer washout and body
+ * lean. Coasting decelerates from physical road load, not a per-vehicle constant: rolling resistance
+ * `μ_rr · m · g` always, plus engine braking `ENGINE_BRAKE_FRACTION · engineForce` routed through the
+ * current gear (so it strengthens as the car downshifts) whenever the throttle is lifted and a
+ * `powertrain` is configured. All fields are required; omit the whole block for the legacy model.
  */
 export interface KinematicChassisTuning {
   /** Total vehicle mass, kg (1200 compact … 11000 bus); divides every drive/brake force into accel. */
   massKg: number;
-  /** Peak drive force at the wheels, N — scaled by the powertrain torque curve and throttle. */
+  /** Peak drive force at the wheels, N — scaled by the powertrain torque curve and throttle. Also sets engine-braking magnitude. */
   engineForce: number;
   /** Peak service-brake force, N; still modulated by the existing ABS logic. */
   brakeForce: number;
-  /** Coast drag force at throttle 0, N (engine braking); applied against motion, no throttle held. */
-  engineBrakeForce: number;
   /** Peak tire friction coefficient μ on an ideal surface (~0.9 street, 1.1 sport, 0.7 bus). */
   tireGrip: number;
   /** Center-of-mass height, m (0.45 sports car … 1.4 bus); drives weight transfer and body lean. */
@@ -229,27 +229,35 @@ export function createKinematicVehicle(
       let tractionLimited = false;
       let absActive = false;
       let wheelspin = false;
-      if (axis.throttle > 0 && speed < topSpeed) {
-        // Powertrain torque factor (`torque * shift-cut`), or `1` when no gearbox is configured.
-        let torqueFactor = 1;
-        if (tuning.powertrain !== undefined) {
-          const powertrain = tuning.powertrain;
-          shiftRemaining = Math.max(0, shiftRemaining - dt);
-          const ratio = powertrain.gears[Math.min(gearIndex, powertrain.gears.length - 1)] ?? 1;
-          const wheelRpm = Math.abs(speed) / Math.max(0.01, powertrain.wheelRadius) * 60 / (Math.PI * 2);
-          rpm = Math.max(powertrain.idleRpm, Math.min(powertrain.redlineRpm, wheelRpm * ratio * powertrain.finalDrive));
-          if (shiftRemaining <= 0 && rpm >= powertrain.shiftUpRpm && gearIndex < powertrain.gears.length - 1) {
-            gearIndex += 1;
-            shiftRemaining = powertrain.shiftSeconds;
-          } else if (shiftRemaining <= 0 && rpm <= powertrain.shiftDownRpm && gearIndex > 0) {
-            gearIndex -= 1;
-            shiftRemaining = powertrain.shiftSeconds;
-          }
-          const normalizedRpm = (rpm - powertrain.idleRpm) / Math.max(1, powertrain.redlineRpm - powertrain.idleRpm);
-          const torque = sampleGripCurve(powertrain.torqueCurve, normalizedRpm);
-          const drive = shiftRemaining > 0 ? 0.32 : 1;
-          torqueFactor = torque * drive;
+
+      // Powertrain state tracks wheel speed EVERY tick (not just under throttle): the engine keeps
+      // spinning with the wheels, so rpm, gear and downshifts stay live while coasting or braking. That
+      // is what makes engine braking below gear-dependent. Drive torque itself is still applied only on
+      // throttle; `gearLeverage` (current ratio / top-gear ratio) is `1` in top gear and grows in the
+      // low gears the car downshifts into as it slows.
+      let torqueFactor = 1;
+      let gearLeverage = 1;
+      if (tuning.powertrain !== undefined) {
+        const powertrain = tuning.powertrain;
+        shiftRemaining = Math.max(0, shiftRemaining - dt);
+        const ratio = powertrain.gears[Math.min(gearIndex, powertrain.gears.length - 1)] ?? 1;
+        const topGearRatio = powertrain.gears[powertrain.gears.length - 1] ?? ratio;
+        gearLeverage = topGearRatio > 0 ? Math.min(ENGINE_BRAKE_MAX_LEVERAGE, ratio / topGearRatio) : 1;
+        const wheelRpm = Math.abs(speed) / Math.max(0.01, powertrain.wheelRadius) * 60 / (Math.PI * 2);
+        rpm = Math.max(powertrain.idleRpm, Math.min(powertrain.redlineRpm, wheelRpm * ratio * powertrain.finalDrive));
+        if (shiftRemaining <= 0 && rpm >= powertrain.shiftUpRpm && gearIndex < powertrain.gears.length - 1) {
+          gearIndex += 1;
+          shiftRemaining = powertrain.shiftSeconds;
+        } else if (shiftRemaining <= 0 && rpm <= powertrain.shiftDownRpm && gearIndex > 0) {
+          gearIndex -= 1;
+          shiftRemaining = powertrain.shiftSeconds;
         }
+        const normalizedRpm = (rpm - powertrain.idleRpm) / Math.max(1, powertrain.redlineRpm - powertrain.idleRpm);
+        const torque = sampleGripCurve(powertrain.torqueCurve, normalizedRpm);
+        torqueFactor = torque * (shiftRemaining > 0 ? 0.32 : 1);
+      }
+
+      if (axis.throttle > 0 && speed < topSpeed) {
         accel += chassis === undefined
           ? axis.throttle * engineAccel * torqueFactor
           : (axis.throttle * chassis.engineForce * (modifiers?.accelScale ?? 1) * torqueFactor) / chassis.massKg;
@@ -278,10 +286,20 @@ export function createKinematicVehicle(
           tractionLimited = true;
         }
       }
-      // Engine braking (#1051): throttle released and rolling → coast drag force opposing motion, on top
-      // of rollingResistance/aero; clamped so it cannot reverse the car within a tick. None while throttle held.
-      if (chassis !== undefined && axis.throttle <= 0 && dt > 0 && Math.abs(speed) > 1e-4) {
-        accel -= Math.sign(speed) * Math.min(chassis.engineBrakeForce / chassis.massKg, Math.abs(speed) / dt);
+      // Coast resistance for the mass-and-force chassis (#1051) — derived from the vehicle's own weight,
+      // gravity, and gearing, never a flat "brake force" constant. Two weight-based terms:
+      //   • rolling resistance  F = μ_rr · m · g                    (always, the road-load floor)
+      //   • engine braking      F = μ_eb · m · g · gearLeverage     (throttle lifted, in gear)
+      // Engine braking is routed through the CURRENT gear, so it strengthens as the car downshifts toward
+      // a stop — exactly like lifting off in a real drivetrain. Both are forces (∝ m·g) whose per-mass
+      // deceleration is weight-independent and gear-scaled; the per-tick decel is capped so coasting can
+      // never push the car backwards.
+      if (chassis !== undefined && dt > 0 && Math.abs(speed) > 1e-4) {
+        let resistDecel = ROLLING_RESISTANCE_COEFFICIENT * GRAVITY;
+        if (axis.throttle <= 0 && tuning.powertrain !== undefined) {
+          resistDecel += ENGINE_BRAKE_COEFFICIENT * GRAVITY * gearLeverage;
+        }
+        accel -= Math.sign(speed) * Math.min(resistDecel, Math.abs(speed) / dt);
       }
       vx += fx * accel * dt;
       vz += fz * accel * dt;
@@ -429,6 +447,24 @@ export function createKinematicVehicle(
 
 /** Gravitational acceleration, m/s², for the chassis friction budget and weight-transfer ratio (#1051). */
 const GRAVITY = 9.81;
+
+/**
+ * Tyre rolling-resistance coefficient μ_rr (#1051). The always-present coast force is `μ_rr · m · g`
+ * (the road-load floor) — a little high vs. a real ~0.013 tyre so a lifted-off car settles to a stop
+ * in a game-reasonable distance rather than gliding for tens of seconds.
+ */
+const ROLLING_RESISTANCE_COEFFICIENT = 0.03;
+
+/**
+ * Engine-braking drag as a weight fraction (#1051): the lift-off force is `μ_eb · m · g` routed through
+ * the current gear (`ratio / top-gear ratio`, capped by {@link ENGINE_BRAKE_MAX_LEVERAGE}). Like rolling
+ * resistance it scales with the vehicle's own weight and gravity — not a per-car constant — so every car
+ * settles with a consistent, firm lift-off deceleration that grows as it downshifts toward a stop, while
+ * always staying well short of the service brakes.
+ */
+const ENGINE_BRAKE_COEFFICIENT = 0.11;
+/** Cap on low-gear engine-braking leverage so lifting off never bites as hard as the brake pedal. */
+const ENGINE_BRAKE_MAX_LEVERAGE = 2.5;
 
 function clampSigned(value: number, magnitude: number): number {
   return Math.max(-Math.abs(magnitude), Math.min(Math.abs(magnitude), value));

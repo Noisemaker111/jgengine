@@ -268,12 +268,22 @@ describe("createKinematicVehicle — chassis mass/force layer (#1051)", () => {
     massKg: 1500,
     engineForce: 9000,
     brakeForce: 9000,
-    engineBrakeForce: 1500,
     tireGrip: 1.2,
     comHeight: 0.5,
     trackWidth: 1.8,
     ...over,
   });
+  const gearbox = {
+    idleRpm: 900,
+    redlineRpm: 7000,
+    shiftUpRpm: 6300,
+    shiftDownRpm: 2200,
+    shiftSeconds: 0.12,
+    finalDrive: 3.7,
+    wheelRadius: 0.34,
+    gears: [3.2, 2.1, 1.5, 1.15, 0.9],
+    torqueCurve: { points: [[0, 0.6], [0.45, 1], [0.8, 0.92], [1, 0.62]] },
+  } as const;
   type Vehicle = ReturnType<typeof createKinematicVehicle>;
   const ticksToReach = (v: Vehicle, target: number): number => {
     for (let i = 1; i <= 4000; i += 1) if (v.tick(DT, axis({ throttle: 1 })).forwardSpeed >= target) return i;
@@ -329,21 +339,47 @@ describe("createKinematicVehicle — chassis mass/force layer (#1051)", () => {
     expect(corner.longitudinalAcceleration).toBeLessThan(straightAccel);
   });
 
-  test("coasting decelerates near engineBrakeForce/mass and reaches half speed in bounded time", () => {
-    const car = createKinematicVehicle({
-      ...TUNING,
-      topSpeed: 60,
-      chassis: chassis({ engineForce: 12000, engineBrakeForce: 3000 }),
-    });
-    let step = car.tick(DT, axis({ throttle: 1 }));
-    while (step.forwardSpeed < 15) step = car.tick(DT, axis({ throttle: 1 }));
+  test("coasting engine-brakes firmly from weight and gear, but gentler than the service brakes", () => {
+    const build = (): ReturnType<typeof createKinematicVehicle> =>
+      createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis({ engineForce: 12000 }), powertrain: gearbox });
+    const coastCar = build();
+    let step = coastCar.tick(DT, axis({ throttle: 1 }));
+    while (step.forwardSpeed < 15) step = coastCar.tick(DT, axis({ throttle: 1 }));
     const startSpeed = step.forwardSpeed;
-    const coast = car.tick(DT, NEUTRAL_AXIS);
-    expect(coast.longitudinalAcceleration).toBeGreaterThan(-(3000 / 1500) - 0.6);
-    expect(coast.longitudinalAcceleration).toBeLessThan(-(3000 / 1500) + 0.6);
+
+    // Lift-off decel is firm (well past the bare rolling-resistance floor) but not as hard as braking.
+    const coast = coastCar.tick(DT, NEUTRAL_AXIS);
+    expect(coast.longitudinalAcceleration).toBeLessThan(-1.5);
+    expect(coast.longitudinalAcceleration).toBeGreaterThan(-5);
+
+    // Reaches half speed while coasting in bounded time.
     let latest = coast;
-    for (let i = 0; i < 800 && latest.forwardSpeed > startSpeed / 2; i += 1) latest = car.tick(DT, NEUTRAL_AXIS);
+    let coastTicks = 1;
+    for (let i = 0; i < 800 && latest.forwardSpeed > startSpeed / 2; i += 1) {
+      latest = coastCar.tick(DT, NEUTRAL_AXIS);
+      coastTicks += 1;
+    }
     expect(latest.forwardSpeed).toBeLessThan(startSpeed / 2);
+
+    // The same drop under braking is strictly quicker — lifting off must not equal stamping the brake.
+    const brakeCar = build();
+    let bstep = brakeCar.tick(DT, axis({ throttle: 1 }));
+    while (bstep.forwardSpeed < startSpeed) bstep = brakeCar.tick(DT, axis({ throttle: 1 }));
+    let brakeTicks = 0;
+    for (let i = 0; i < 800 && bstep.forwardSpeed > startSpeed / 2; i += 1) {
+      bstep = brakeCar.tick(DT, axis({ brake: 1 }));
+      brakeTicks += 1;
+    }
+    expect(brakeTicks).toBeLessThan(coastTicks);
+  });
+
+  test("chassis coasting without a powertrain still decays on weight-based rolling resistance", () => {
+    const car = createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis() });
+    for (let i = 0; i < 120; i += 1) car.tick(DT, axis({ throttle: 1 }));
+    const before = car.tick(DT, NEUTRAL_AXIS).forwardSpeed;
+    let after = before;
+    for (let i = 0; i < 120; i += 1) after = car.tick(DT, NEUTRAL_AXIS).forwardSpeed;
+    expect(after).toBeLessThan(before);
   });
 
   test("legacy (no chassis) coasting is unchanged — it holds speed without engine braking", () => {
