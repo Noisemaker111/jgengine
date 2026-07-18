@@ -52,3 +52,7 @@ Fresh branch off origin/main can't pass its own gate: check-content-gate fails b
 2026-07-18T17:39:17.470Z — cloud-agent — Claude
 
 gen:capabilities has no encoding guard: the container's non-UTF-8 locale (LANG=, LC_CTYPE=POSIX) let mojibake em/en-dashes get committed into core JSDoc (gameContext.ts, commandApply.ts). check-capabilities then only reported 'stale — run gen:capabilities', and running that FIX faithfully copies the corruption into the committed skill docs. A cheap grep for the mojibake byte-signature in the gate (or in gen-capability-index) would catch corruption at the source instead of laundering it through the generator. (Locale now pinned to C.UTF-8 in .claude/settings.json to stop new corruption.)
+
+2026-07-18T18:05:04.668Z — claude — Claude
+
+Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
