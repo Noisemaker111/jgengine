@@ -94,6 +94,10 @@ catalogId, definitions?)` (`@jgengine/core/editor`) turns a row into the runtime
 `ctx.scene.entity.spawn`. Author entities in the editor (place a marker → Data tab → tune the row →
 save); never hardcode entity stats where the document should own them.
 
+## Asset import
+
+Dropping a `.glb`/`.gltf` into the editor persists it durably, but where depends on the project shape (`editorHostPlugin`, `@jgengine/node`). A **standalone folder workspace** copies the bytes into the scanned asset folder and re-lists them under a scan-stable id (`importEditorAsset`); the id comes from the file's workspace-relative path, so a placement referencing it resolves after reload. A **promoted game** (one with a typed `src/game/assets.ts` catalog — `isPromotedProject`) instead copies the bytes into `public/<basePath>/imported/` and rewrites `assets.ts` to add a durable `extras` entry to its `buildCatalog({ extras })` call (`importPromotedAsset` → `upsertCatalogExtra`), so the **shipped** game serves and resolves the asset through its own typed catalog rather than a dev-only route. The id matches what a folder rescan would produce, the rewrite is idempotent (re-import of the same id collapses to a single entry), and an unparseable or multi-`buildCatalog` source throws so the host falls back to the folder-scan import rather than corrupt the file.
+
 ## Grid / tile layers
 
 Grid-addressed content (rooms, tactics maps, farms, nav/rule layers) lives on the scene document as

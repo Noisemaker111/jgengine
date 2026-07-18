@@ -33,4 +33,32 @@ describe("buildCatalog", () => {
     const catalog = buildCatalog({ basePath: "/models" });
     for (const entry of generatedIndex) expect(catalog.has(entry.id)).toBe(true);
   });
+
+  test("extras resolve to their url", () => {
+    const catalog = buildCatalog({
+      basePath: "/models",
+      extras: [{ id: "imported-ship", url: "/models/imported/Ship.glb", label: "Ship.glb" }],
+    });
+    expect(catalog.resolve("imported-ship")?.url).toBe("/models/imported/Ship.glb");
+  });
+
+  test("an extra id overrides a pack id (last-writer-wins after packs)", () => {
+    const catalog = buildCatalog({
+      basePath: "/models",
+      extras: [{ id: "quaternius-stylized-nature/Pine_1", url: "/models/imported/Custom.glb" }],
+    });
+    expect(catalog.resolve("quaternius-stylized-nature/Pine_1")?.url).toBe(
+      "/models/imported/Custom.glb",
+    );
+  });
+
+  test("an alias targeting an extra resolves to the extra's url", () => {
+    // `nature/tree_pine` aliases `quaternius-stylized-nature/Pine_1`; aliases run after extras,
+    // so overriding that id with an extra flows through to the alias.
+    const catalog = buildCatalog({
+      basePath: "/models",
+      extras: [{ id: "quaternius-stylized-nature/Pine_1", url: "/models/imported/Custom.glb" }],
+    });
+    expect(catalog.resolve("nature/tree_pine")?.url).toBe("/models/imported/Custom.glb");
+  });
 });
