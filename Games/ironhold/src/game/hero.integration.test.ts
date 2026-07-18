@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
@@ -20,7 +20,7 @@ import {
 } from "./hero";
 
 function boot(): GameContext {
-  const definition = defineGame({ name: "IronholdHeroTest", multiplayer: "off" });
+  const definition = defineGameDefinition({ name: "IronholdHeroTest", multiplayer: "off" });
   return createGameContext({ definition, content, player: { userId: "commander", isNew: true } });
 }
 

@@ -84,6 +84,8 @@ export interface SystemDefinition {
 /**
  * Declare a composable game system. Pure data + hooks — the engine compiles the schedule and
  * installs lifecycle when the game boots.
+  *
+ * @capability define-system composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
  */
 export function defineSystem(definition: SystemDefinition): SystemDefinition {
   if (definition.id.trim().length === 0) {

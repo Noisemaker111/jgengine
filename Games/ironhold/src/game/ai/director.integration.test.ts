@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { content } from "../content";
@@ -9,7 +9,7 @@ import { tickEnemyWaves, waveComposition } from "./director";
 
 /** Boot a real headless context, then stand a Warcamp (enemy) and a keep (player) at either end. */
 function boot(): GameContext {
-  const definition = defineGame({ name: "IronholdDirectorTest", multiplayer: "off" });
+  const definition = defineGameDefinition({ name: "IronholdDirectorTest", multiplayer: "off" });
   return createGameContext({ definition, content, player: { userId: "commander", isNew: true } });
 }
 

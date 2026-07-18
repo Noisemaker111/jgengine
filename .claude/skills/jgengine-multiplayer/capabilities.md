@@ -7,3 +7,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## convex-save — save a game to Convex (cloud) through the SaveBackend seam
 
 - `createConvexSaveBackend` (function) · `import { createConvexSaveBackend } from "@jgengine/convex"`
+
+## host-join-code-gate — membership-or-code gate for private hosted servers
+
+- `canJoinPrivateServer` (function) · `import { canJoinPrivateServer } from "@jgengine/convex"`
+
+## host-listing-filter — exclude private sessions from public browse results
+
+- `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/convex"`

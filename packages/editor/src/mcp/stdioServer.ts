@@ -162,6 +162,12 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         id: String(args.id ?? ""),
         patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
       };
+    case "apply_preset":
+      return {
+        method: "apply_preset",
+        id: String(args.id ?? ""),
+        preset: String(args.preset ?? ""),
+      };
     case "push_document_patch":
       return {
         method: "push_document_patch",

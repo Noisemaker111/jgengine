@@ -5167,9 +5167,1270 @@
       "meta": {
         "role": "guide"
       }
+    },
+    {
+      "id": "chest_windshear_waste_red_0",
+      "kind": "chest",
+      "position": {
+        "x": -480,
+        "y": 0,
+        "z": 610
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "windshear_waste"
+      }
+    },
+    {
+      "id": "chest_windshear_waste_ammo_1",
+      "kind": "chest",
+      "position": {
+        "x": -540,
+        "y": 0,
+        "z": 530
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "windshear_waste"
+      }
+    },
+    {
+      "id": "travel_windshear_waste",
+      "kind": "travel",
+      "position": {
+        "x": -520,
+        "y": 0,
+        "z": 560
+      },
+      "label": "Rustflat Waste travel",
+      "color": "#34d399",
+      "meta": {
+        "zoneId": "windshear_waste"
+      }
+    },
+    {
+      "id": "chest_southern_shelf_red_0",
+      "kind": "chest",
+      "position": {
+        "x": -100,
+        "y": 0,
+        "z": 520
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "southern_shelf"
+      }
+    },
+    {
+      "id": "chest_southern_shelf_ammo_1",
+      "kind": "chest",
+      "position": {
+        "x": -210,
+        "y": 0,
+        "z": 420
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "southern_shelf"
+      }
+    },
+    {
+      "id": "boss_rusk",
+      "kind": "boss",
+      "position": {
+        "x": -60,
+        "y": 0,
+        "z": 560
+      },
+      "label": "captain_rusk",
+      "color": "#f43f5e",
+      "meta": {
+        "catalogId": "captain_rusk",
+        "zoneId": "southern_shelf"
+      }
+    },
+    {
+      "id": "travel_southern_shelf",
+      "kind": "travel",
+      "position": {
+        "x": -190,
+        "y": 0,
+        "z": 440
+      },
+      "label": "Southern Shelf travel",
+      "color": "#34d399",
+      "meta": {
+        "zoneId": "southern_shelf"
+      }
+    },
+    {
+      "id": "chest_arid_badlands_red_0",
+      "kind": "chest",
+      "position": {
+        "x": 90,
+        "y": 0,
+        "z": 55
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "arid_badlands"
+      }
+    },
+    {
+      "id": "chest_arid_badlands_ammo_1",
+      "kind": "chest",
+      "position": {
+        "x": 16,
+        "y": 0,
+        "z": -46
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "arid_badlands"
+      }
+    },
+    {
+      "id": "chest_arid_badlands_ammo_2",
+      "kind": "chest",
+      "position": {
+        "x": 115,
+        "y": 0,
+        "z": 70
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "arid_badlands"
+      }
+    },
+    {
+      "id": "travel_arid_badlands",
+      "kind": "travel",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": -20
+      },
+      "label": "Arid Badlands — Coretown travel",
+      "color": "#34d399",
+      "meta": {
+        "zoneId": "arid_badlands"
+      }
+    },
+    {
+      "id": "chest_three_horns_red_0",
+      "kind": "chest",
+      "position": {
+        "x": 470,
+        "y": 0,
+        "z": 250
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "three_horns"
+      }
+    },
+    {
+      "id": "chest_three_horns_ammo_1",
+      "kind": "chest",
+      "position": {
+        "x": 380,
+        "y": 0,
+        "z": 340
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "three_horns"
+      }
+    },
+    {
+      "id": "boss_bad_maw",
+      "kind": "boss",
+      "position": {
+        "x": 500,
+        "y": 0,
+        "z": 380
+      },
+      "label": "bad_maw",
+      "color": "#f43f5e",
+      "meta": {
+        "catalogId": "bad_maw",
+        "zoneId": "three_horns"
+      }
+    },
+    {
+      "id": "travel_three_horns",
+      "kind": "travel",
+      "position": {
+        "x": 420,
+        "y": 0,
+        "z": 290
+      },
+      "label": "Three Horns Divide travel",
+      "color": "#34d399",
+      "meta": {
+        "zoneId": "three_horns"
+      }
+    },
+    {
+      "id": "chest_the_dust_red_0",
+      "kind": "chest",
+      "position": {
+        "x": 570,
+        "y": 0,
+        "z": -210
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "the_dust"
+      }
+    },
+    {
+      "id": "chest_the_dust_ammo_1",
+      "kind": "chest",
+      "position": {
+        "x": 470,
+        "y": 0,
+        "z": -300
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "the_dust"
+      }
+    },
+    {
+      "id": "travel_the_dust",
+      "kind": "travel",
+      "position": {
+        "x": 520,
+        "y": 0,
+        "z": -270
+      },
+      "label": "The Dust travel",
+      "color": "#34d399",
+      "meta": {
+        "zoneId": "the_dust"
+      }
+    },
+    {
+      "id": "chest_eridium_blight_red_0",
+      "kind": "chest",
+      "position": {
+        "x": -20,
+        "y": 0,
+        "z": -510
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "eridium_blight"
+      }
+    },
+    {
+      "id": "chest_eridium_blight_red_1",
+      "kind": "chest",
+      "position": {
+        "x": -140,
+        "y": 0,
+        "z": -610
+      },
+      "label": "red chest",
+      "color": "#fbbf24",
+      "meta": {
+        "kind": "red",
+        "zoneId": "eridium_blight"
+      }
+    },
+    {
+      "id": "chest_eridium_blight_ammo_2",
+      "kind": "chest",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -540
+      },
+      "label": "ammo chest",
+      "color": "#94a3b8",
+      "meta": {
+        "kind": "ammo",
+        "zoneId": "eridium_blight"
+      }
+    },
+    {
+      "id": "boss_warrior",
+      "kind": "boss",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -660
+      },
+      "label": "the_warrior",
+      "color": "#f43f5e",
+      "meta": {
+        "catalogId": "the_warrior",
+        "zoneId": "eridium_blight"
+      }
+    },
+    {
+      "id": "travel_eridium_blight",
+      "kind": "travel",
+      "position": {
+        "x": -80,
+        "y": 0,
+        "z": -520
+      },
+      "label": "Cores Blight — Ember Gate travel",
+      "color": "#34d399",
+      "meta": {
+        "zoneId": "eridium_blight"
+      }
+    },
+    {
+      "id": "poi_monglet_den",
+      "kind": "poi",
+      "position": {
+        "x": -640,
+        "y": 0,
+        "z": 430
+      },
+      "label": "Monglet Den",
+      "color": "#e879f9",
+      "meta": {
+        "dressing": "skag_den",
+        "spawns": [
+          {
+            "catalogId": "bullymong_brat",
+            "count": 4
+          },
+          {
+            "catalogId": "bullymong",
+            "count": 2
+          }
+        ],
+        "anchorZoneId": "windshear_waste",
+        "radius": 26
+      }
+    },
+    {
+      "id": "poi_lost_cache",
+      "kind": "poi",
+      "position": {
+        "x": 180,
+        "y": 0,
+        "z": 210
+      },
+      "label": "Lost Apex Cache",
+      "color": "#e879f9",
+      "meta": {
+        "dressing": "cache",
+        "spawns": [
+          {
+            "catalogId": "loader",
+            "count": 3
+          }
+        ],
+        "anchorZoneId": "arid_badlands",
+        "radius": 22
+      }
+    },
+    {
+      "id": "poi_wreck_field",
+      "kind": "poi",
+      "position": {
+        "x": 640,
+        "y": 0,
+        "z": 40
+      },
+      "label": "Buzzard Wreck Field",
+      "color": "#e879f9",
+      "meta": {
+        "dressing": "wreck_field",
+        "spawns": [
+          {
+            "catalogId": "marauder",
+            "count": 3
+          },
+          {
+            "catalogId": "psycho",
+            "count": 3
+          }
+        ],
+        "anchorZoneId": "the_dust",
+        "radius": 28
+      }
+    },
+    {
+      "id": "vendor_rigg",
+      "kind": "vendor",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": -6
+      },
+      "label": "Rigg",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "vendor_zed",
+      "kind": "vendor",
+      "position": {
+        "x": 14,
+        "y": 0,
+        "z": -8
+      },
+      "label": "Dr. Sparx",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "vendor_black_market",
+      "kind": "vendor",
+      "position": {
+        "x": 4,
+        "y": 0,
+        "z": 16
+      },
+      "label": "Black Market",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "new_u_station",
+      "kind": "travel",
+      "position": {
+        "x": -516,
+        "y": 0,
+        "z": 564
+      },
+      "label": "Rebuild",
+      "color": "#34d399"
+    },
+    {
+      "id": "npc_zed",
+      "kind": "npc",
+      "position": {
+        "x": 12,
+        "y": 0,
+        "z": -10
+      },
+      "label": "dr_sparx",
+      "color": "#60a5fa",
+      "meta": {
+        "name": "dr_sparx"
+      }
+    },
+    {
+      "id": "npc_rigg",
+      "kind": "npc",
+      "position": {
+        "x": -10,
+        "y": 0,
+        "z": -8
+      },
+      "label": "rigg",
+      "color": "#60a5fa",
+      "meta": {
+        "name": "rigg"
+      }
+    },
+    {
+      "id": "npc_gauge",
+      "kind": "npc",
+      "position": {
+        "x": 2,
+        "y": 0,
+        "z": 20
+      },
+      "label": "gauge",
+      "color": "#60a5fa",
+      "meta": {
+        "name": "gauge"
+      }
     }
   ],
-  "volumes": [],
+  "volumes": [
+    {
+      "id": "zone_windshear_waste",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": -520,
+        "y": 0,
+        "z": 560
+      },
+      "radius": 150,
+      "height": 24,
+      "label": "Rustflat Waste",
+      "color": "#38bdf8",
+      "meta": {
+        "zoneId": "windshear_waste",
+        "level": 1
+      }
+    },
+    {
+      "id": "flatten_windshear_waste",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": -520,
+        "y": 0,
+        "z": 560
+      },
+      "radius": 70,
+      "height": 8,
+      "label": "Rustflat Waste flatten",
+      "color": "#94a3b8",
+      "meta": {
+        "zoneId": "windshear_waste"
+      }
+    },
+    {
+      "id": "cluster_windshear_waste_0_bullymong",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -480,
+        "y": 0,
+        "z": 530
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "bullymongx4",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "windshear_waste",
+        "catalogId": "bullymong",
+        "count": 4,
+        "level": 1
+      }
+    },
+    {
+      "id": "cluster_windshear_waste_1_bullymong_brat",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -555,
+        "y": 0,
+        "z": 600
+      },
+      "radius": 22,
+      "height": 14,
+      "label": "bullymong_bratx5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "windshear_waste",
+        "catalogId": "bullymong_brat",
+        "count": 5,
+        "level": 1
+      }
+    },
+    {
+      "id": "zone_southern_shelf",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": -180,
+        "y": 0,
+        "z": 460
+      },
+      "radius": 190,
+      "height": 24,
+      "label": "Southern Shelf",
+      "color": "#38bdf8",
+      "meta": {
+        "zoneId": "southern_shelf",
+        "level": 4
+      }
+    },
+    {
+      "id": "flatten_southern_shelf",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": -180,
+        "y": 0,
+        "z": 460
+      },
+      "radius": 80,
+      "height": 8,
+      "label": "Southern Shelf flatten",
+      "color": "#94a3b8",
+      "meta": {
+        "zoneId": "southern_shelf"
+      }
+    },
+    {
+      "id": "cluster_southern_shelf_0_psycho",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 31,
+      "height": 14,
+      "label": "psychox5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "southern_shelf",
+        "catalogId": "psycho",
+        "count": 5,
+        "level": 4
+      }
+    },
+    {
+      "id": "cluster_southern_shelf_1_marauder",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 31,
+      "height": 14,
+      "label": "marauderx4",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "southern_shelf",
+        "catalogId": "marauder",
+        "count": 4,
+        "level": 4
+      }
+    },
+    {
+      "id": "cluster_southern_shelf_2_nomad",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 480
+      },
+      "radius": 22,
+      "height": 14,
+      "label": "nomadx2",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "southern_shelf",
+        "catalogId": "nomad",
+        "count": 2,
+        "level": 4
+      }
+    },
+    {
+      "id": "cluster_southern_shelf_3_bullymong",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -260,
+        "y": 0,
+        "z": 520
+      },
+      "radius": 28,
+      "height": 14,
+      "label": "bullymongx3",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "southern_shelf",
+        "catalogId": "bullymong",
+        "count": 3,
+        "level": 4
+      }
+    },
+    {
+      "id": "zone_arid_badlands",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "radius": 240,
+      "height": 24,
+      "label": "Arid Badlands — Coretown",
+      "color": "#38bdf8",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "level": 8
+      }
+    },
+    {
+      "id": "flatten_arid_badlands",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "radius": 90,
+      "height": 8,
+      "label": "Arid Badlands — Coretown flatten",
+      "color": "#94a3b8",
+      "meta": {
+        "zoneId": "arid_badlands"
+      }
+    },
+    {
+      "id": "cluster_arid_badlands_0_skag_pup",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 28,
+      "height": 14,
+      "label": "skag_pupx5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "catalogId": "skag_pup",
+        "count": 5,
+        "level": 8
+      }
+    },
+    {
+      "id": "cluster_arid_badlands_1_skag",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 28,
+      "height": 14,
+      "label": "skagx4",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "catalogId": "skag",
+        "count": 4,
+        "level": 8
+      }
+    },
+    {
+      "id": "cluster_arid_badlands_2_badass_skag",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 17,
+      "height": 14,
+      "label": "badass_skagx1",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "catalogId": "badass_skag",
+        "count": 1,
+        "level": 8
+      }
+    },
+    {
+      "id": "cluster_arid_badlands_3_psycho",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 34,
+      "height": 14,
+      "label": "psychox5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "catalogId": "psycho",
+        "count": 5,
+        "level": 8
+      }
+    },
+    {
+      "id": "cluster_arid_badlands_4_marauder",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 34,
+      "height": 14,
+      "label": "marauderx4",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "catalogId": "marauder",
+        "count": 4,
+        "level": 8
+      }
+    },
+    {
+      "id": "cluster_arid_badlands_5_badass_psycho",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 17,
+      "height": 14,
+      "label": "badass_psychox1",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "catalogId": "badass_psycho",
+        "count": 1,
+        "level": 8
+      }
+    },
+    {
+      "id": "zone_three_horns",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": 420,
+        "y": 0,
+        "z": 300
+      },
+      "radius": 220,
+      "height": 24,
+      "label": "Three Horns Divide",
+      "color": "#38bdf8",
+      "meta": {
+        "zoneId": "three_horns",
+        "level": 12
+      }
+    },
+    {
+      "id": "flatten_three_horns",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": 420,
+        "y": 0,
+        "z": 300
+      },
+      "radius": 70,
+      "height": 8,
+      "label": "Three Horns Divide flatten",
+      "color": "#94a3b8",
+      "meta": {
+        "zoneId": "three_horns"
+      }
+    },
+    {
+      "id": "cluster_three_horns_0_marauder",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 34,
+      "height": 14,
+      "label": "marauderx5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "three_horns",
+        "catalogId": "marauder",
+        "count": 5,
+        "level": 12
+      }
+    },
+    {
+      "id": "cluster_three_horns_1_nomad",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "nomadx3",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "three_horns",
+        "catalogId": "nomad",
+        "count": 3,
+        "level": 12
+      }
+    },
+    {
+      "id": "cluster_three_horns_2_spiderant",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 31,
+      "height": 14,
+      "label": "spiderantx5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "three_horns",
+        "catalogId": "spiderant",
+        "count": 5,
+        "level": 12
+      }
+    },
+    {
+      "id": "cluster_three_horns_3_spiderant_soldier",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "spiderant_soldierx3",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "three_horns",
+        "catalogId": "spiderant_soldier",
+        "count": 3,
+        "level": 12
+      }
+    },
+    {
+      "id": "zone_the_dust",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": 520,
+        "y": 0,
+        "z": -260
+      },
+      "radius": 230,
+      "height": 24,
+      "label": "The Dust",
+      "color": "#38bdf8",
+      "meta": {
+        "zoneId": "the_dust",
+        "level": 17
+      }
+    },
+    {
+      "id": "flatten_the_dust",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": 520,
+        "y": 0,
+        "z": -260
+      },
+      "radius": 70,
+      "height": 8,
+      "label": "The Dust flatten",
+      "color": "#94a3b8",
+      "meta": {
+        "zoneId": "the_dust"
+      }
+    },
+    {
+      "id": "cluster_the_dust_0_spiderant",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 31,
+      "height": 14,
+      "label": "spiderantx4",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "the_dust",
+        "catalogId": "spiderant",
+        "count": 4,
+        "level": 17
+      }
+    },
+    {
+      "id": "cluster_the_dust_1_spiderant_soldier",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "spiderant_soldierx3",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "the_dust",
+        "catalogId": "spiderant_soldier",
+        "count": 3,
+        "level": 17
+      }
+    },
+    {
+      "id": "cluster_the_dust_2_badass_psycho",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "badass_psychox2",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "the_dust",
+        "catalogId": "badass_psycho",
+        "count": 2,
+        "level": 17
+      }
+    },
+    {
+      "id": "cluster_the_dust_3_marauder",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 34,
+      "height": 14,
+      "label": "marauderx5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "the_dust",
+        "catalogId": "marauder",
+        "count": 5,
+        "level": 17
+      }
+    },
+    {
+      "id": "cluster_the_dust_4_nomad",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": 530,
+        "y": 0,
+        "z": -170
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "nomadx3",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "the_dust",
+        "catalogId": "nomad",
+        "count": 3,
+        "level": 17
+      }
+    },
+    {
+      "id": "zone_eridium_blight",
+      "kind": "zone",
+      "shape": "cylinder",
+      "center": {
+        "x": -80,
+        "y": 0,
+        "z": -560
+      },
+      "radius": 220,
+      "height": 24,
+      "label": "Cores Blight — Ember Gate",
+      "color": "#38bdf8",
+      "meta": {
+        "zoneId": "eridium_blight",
+        "level": 24
+      }
+    },
+    {
+      "id": "flatten_eridium_blight",
+      "kind": "flatten",
+      "shape": "cylinder",
+      "center": {
+        "x": -80,
+        "y": 0,
+        "z": -560
+      },
+      "radius": 90,
+      "height": 8,
+      "label": "Cores Blight — Ember Gate flatten",
+      "color": "#94a3b8",
+      "meta": {
+        "zoneId": "eridium_blight"
+      }
+    },
+    {
+      "id": "cluster_eridium_blight_0_loader",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 31,
+      "height": 14,
+      "label": "loaderx5",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "eridium_blight",
+        "catalogId": "loader",
+        "count": 5,
+        "level": 24
+      }
+    },
+    {
+      "id": "cluster_eridium_blight_1_loader_war",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 25,
+      "height": 14,
+      "label": "loader_warx3",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "eridium_blight",
+        "catalogId": "loader_war",
+        "count": 3,
+        "level": 24
+      }
+    },
+    {
+      "id": "cluster_eridium_blight_2_loader",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 31,
+      "height": 14,
+      "label": "loaderx4",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "eridium_blight",
+        "catalogId": "loader",
+        "count": 4,
+        "level": 24
+      }
+    },
+    {
+      "id": "cluster_eridium_blight_3_badass_loader",
+      "kind": "cluster",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 17,
+      "height": 14,
+      "label": "badass_loaderx1",
+      "color": "#fb923c",
+      "meta": {
+        "zoneId": "eridium_blight",
+        "catalogId": "badass_loader",
+        "count": 1,
+        "level": 24
+      }
+    },
+    {
+      "id": "poi_radius_poi_monglet_den",
+      "kind": "poi",
+      "shape": "cylinder",
+      "center": {
+        "x": -640,
+        "y": 0,
+        "z": 430
+      },
+      "radius": 26,
+      "height": 12,
+      "label": "Monglet Den",
+      "color": "#e879f9",
+      "meta": {
+        "poiId": "poi_monglet_den"
+      }
+    },
+    {
+      "id": "poi_radius_poi_lost_cache",
+      "kind": "poi",
+      "shape": "cylinder",
+      "center": {
+        "x": 180,
+        "y": 0,
+        "z": 210
+      },
+      "radius": 22,
+      "height": 12,
+      "label": "Lost Apex Cache",
+      "color": "#e879f9",
+      "meta": {
+        "poiId": "poi_lost_cache"
+      }
+    },
+    {
+      "id": "poi_radius_poi_wreck_field",
+      "kind": "poi",
+      "shape": "cylinder",
+      "center": {
+        "x": 640,
+        "y": 0,
+        "z": 40
+      },
+      "radius": 28,
+      "height": 12,
+      "label": "Buzzard Wreck Field",
+      "color": "#e879f9",
+      "meta": {
+        "poiId": "poi_wreck_field"
+      }
+    }
+  ],
   "paths": [
     {
       "id": "road_windshear_waste_southern_shelf",

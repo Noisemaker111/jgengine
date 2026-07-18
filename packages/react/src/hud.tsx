@@ -45,6 +45,8 @@ function useLocalPlayerId(entityId: string | undefined): string | null {
  * token-themed bars from `@jgengine/react/bars` instead — `HealthBar`, `ShieldBar`, `ManaBar`,
  * `StaminaBar`, `ExperienceBar`, `SoulBar`, `BossBar`, `AmmoCounter` — each does one readout and is
  * restyled globally via the shared `--jg-*` tokens (`barTokens`). Kept as a thin shim during migration.
+  *
+ * @capability hud-stat-bar self-styled bar widget bound to a stat (health, mana, stamina)
  */
 export function StatBar({
   statId = "health",
@@ -99,6 +101,8 @@ export function StatBar({
  * school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot.
  * Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to
  * map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
+  *
+ * @capability hud-hotbar inventory hotbar widget with keybind slots and icons
  */
 export function Hotbar({
   inventoryId,
@@ -223,6 +227,8 @@ export function Speedometer({
  * A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds
  * pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so
  * a game opts into letting the player scrub time.
+  *
+ * @capability hud-clock in-game time-of-day readout bound to the sim clock
  */
 export function Clock({
   format = "24h",
@@ -311,7 +317,9 @@ export function WaveBanner({
   );
 }
 
-/** A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. */
+/** A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.  *
+ * @capability hud-coins currency counter widget bound to a currency id
+ */
 export function Coins({
   currencyId,
   icon = "🪙",

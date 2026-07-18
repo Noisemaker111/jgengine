@@ -34,6 +34,7 @@ import type {
   GameContextRace,
   GameContextTurn,
 } from "../gameContext";
+import { decodeArray, decodeRecord } from "../context/snapshotCodecs";
 
 /**
  * Shared wiring every optional-feature descriptor draws from — the live core subsystems (entities,
@@ -83,6 +84,11 @@ export interface FeatureBuild {
  * {@link FeatureDeps}, and whether it replicates or persists. `createGameContext` iterates the
  * descriptor list instead of hand-wiring each `features.x ? create : undefined` branch — the seam a
  * new feature extends through.
+ *
+ * Feature activation has **one path**: `definition.features` after `defineGame` has already
+ * OR-merged explicit `features: { quest: true }` sugar with system-implied flags via
+ * `mergeSystemFeatures`. Descriptors only call `enabled(features)` against that final map — never
+ * re-check systems or a second flag source.
  * @internal
  */
 export interface FeatureDescriptor {
@@ -103,6 +109,7 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         save: {
           key: "unlocks",
           snapshot: () => unlocks.snapshotAll(),
+          decode: (raw) => decodeRecord<string[]>(raw),
           hydrate: (data) => unlocks.hydrateAll(data as Record<string, string[]>),
         },
       };
@@ -138,6 +145,10 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         replicate: {
           key: "social",
           snapshot: () => social.snapshot(),
+          decode: (rawVal): SocialSnapshot | null => {
+            const rec = decodeRecord(rawVal);
+            return rec === null ? null : (rec as unknown as SocialSnapshot);
+          },
           hydrate: (data) => social.hydrate(data as SocialSnapshot),
         },
       };
@@ -167,6 +178,10 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         replicate: {
           key: "chat",
           snapshot: () => chat.snapshot(),
+          decode: (rawVal): ChatSnapshot | null => {
+            const rec = decodeRecord(rawVal);
+            return rec === null ? null : (rec as unknown as ChatSnapshot);
+          },
           hydrate: (data) => chat.hydrate(data as ChatSnapshot),
         },
       };
@@ -182,6 +197,7 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         replicate: {
           key: "leaderboard",
           snapshot: () => leaderboard.snapshot(),
+          decode: (raw) => decodeArray<LeaderboardRow>(raw),
           hydrate: (data) => leaderboard.hydrate(data as LeaderboardRow[]),
         },
       };
@@ -201,6 +217,7 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         save: {
           key: "roster",
           snapshot: () => roster.snapshotAll(),
+          decode: (raw) => decodeRecord<readonly RosterEntry[]>(raw),
           hydrate: (data) => roster.hydrateAll(data as Record<string, readonly RosterEntry[]>),
         },
       };
@@ -216,6 +233,7 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         save: {
           key: "cosmetics",
           snapshot: () => cosmetics.snapshotAll(),
+          decode: (raw) => decodeRecord<Record<string, string>>(raw),
           hydrate: (data) => cosmetics.hydrateAll(data as Record<string, Record<string, string>>),
         },
       };
@@ -292,6 +310,7 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
         save: {
           key: "quest",
           snapshot: () => quest.snapshotAll(),
+          decode: (raw) => decodeRecord<QuestSnapshotEntry[]>(raw),
           hydrate: (data) => quest.hydrateAll(data as Record<string, QuestSnapshotEntry[]>),
         },
       };
@@ -336,8 +355,10 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
             for (const [id, cardPile] of d.cardPiles) out[id] = cardPile.state();
             return out;
           },
+          decode: (raw) => decodeRecord<CardPileState>(raw),
           hydrate: (data) => {
-            for (const [id, state] of Object.entries(data as Record<string, CardPileState>)) {
+            const piles = data as Record<string, CardPileState>;
+            for (const [id, state] of Object.entries(piles)) {
               d.cardPiles.get(id)?.reset(state);
             }
           },
@@ -358,8 +379,10 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
             for (const [id, turnLoop] of d.turnLoops) out[id] = turnLoop.capture();
             return out;
           },
+          decode: (raw) => decodeRecord<TurnLoopSnapshot>(raw),
           hydrate: (data) => {
-            for (const [id, state] of Object.entries(data as Record<string, TurnLoopSnapshot>)) {
+            const loops = data as Record<string, TurnLoopSnapshot>;
+            for (const [id, state] of Object.entries(loops)) {
               d.turnLoops.get(id)?.restore(state);
             }
           },

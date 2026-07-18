@@ -53,6 +53,19 @@ describe("writeGame", () => {
     expect(failures).toEqual([]);
   });
 
+  test("writeGame options thread through: --world adds world modules, --no-editor drops scene files", () => {
+    const worldDir = join(scratch(), "world-game");
+    writeGame(worldDir, "world-game", "World Game", "standalone", undefined, { world: true });
+    expect(existsSync(join(worldDir, "src", "world.ts"))).toBe(true);
+    expect(existsSync(join(worldDir, "src", "game", "models.ts"))).toBe(true);
+
+    const hudDir = join(scratch(), "hud-game");
+    writeGame(hudDir, "hud-game", "Hud Game", "standalone", undefined, { editor: false });
+    expect(existsSync(join(hudDir, "src", "editor.scene.json"))).toBe(false);
+    expect(existsSync(join(hudDir, "src", "editorLayers.ts"))).toBe(false);
+    expect(readFileSync(join(hudDir, "src", "main.tsx"), "utf8")).not.toContain("editor=");
+  });
+
   test("display name supersedes into config, HUD, and HTML title", () => {
     const dir = join(scratch(), "My-Game-Name");
     writeGame(dir, "my-game-name", "My Game Name", "standalone");

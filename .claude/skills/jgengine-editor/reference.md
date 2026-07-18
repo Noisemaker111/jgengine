@@ -1,3 +1,13 @@
+# Editor RPC/CLI and agent panel
+
+## Headless CLI persistence
+
+`bun packages/editor/src/mcp/cli.ts --game <id> --rpc '<json>' … --save` runs the RPC batch on one
+in-memory session and, when every RPC succeeds, writes the session document to
+`Games/<id>/src/editor.scene.json` (dev-save format: 2-space JSON + trailing newline, identical to
+the GUI's Ctrl+S through `devSavePlugin`). Without `--save`, `--rpc` mutations are discarded on
+exit — use it for read-only inspection only, or capture `export_document` yourself.
+
 # Editor agent panel (embedded)
 
 Toolbar **Agent** opens a dockable chat panel in `EditorChrome`. Tool calls use the same editor RPC verbs as the MCP/CLI bridge and the GUI — one session undo stack, interleaved with human edits.

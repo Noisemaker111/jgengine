@@ -39,6 +39,8 @@ export function convexPresence(config?: { topology?: MultiplayerTopology }): Mul
  * WebSocket transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer
  * `wsPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared,
  * host-authoritative world — see `examples/HOSTED.md`.
+ *
+ * @capability multiplayer-ws server-hosted shared world over WebSocket — `multiplayer: ws({ authority: "server" })`
  */
 export function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
@@ -62,6 +64,11 @@ export function socketIo(config?: { topology?: MultiplayerTopology; url?: string
   return { kind: "socketio", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
 }
 
+/**
+ * Serverless peer-to-peer (WebRTC) session — one peer hosts, friends join by room code.
+ *
+ * @capability multiplayer-p2p serverless co-op over WebRTC — `multiplayer: p2p({ room })`
+ */
 export function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "p2p", topology: config?.topology ?? "private", room: config?.room, authority: config?.authority };
 }
@@ -107,6 +114,12 @@ export function isOffline(multiplayer: unknown): boolean {
   return adapter === null || adapter.kind === "offline";
 }
 
+/**
+ * Explicit single-player adapter. Solo games never need this — omitting `multiplayer` in the shell
+ * `defineGame` already defaults to offline; pass it only where an adapter value is structurally required.
+ *
+ * @capability multiplayer-offline explicit solo adapter — omit `multiplayer` instead; offline is the shell default
+ */
 export function offline(): MultiplayerAdapterConfig {
   return { kind: "offline" };
 }

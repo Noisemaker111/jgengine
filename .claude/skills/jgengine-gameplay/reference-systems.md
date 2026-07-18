@@ -1,6 +1,6 @@
 # Composable systems (`defineSystem`)
 
-Single public authoring path: `defineGame({ systems, loop?, … })` from `@jgengine/shell/defineGame` (or core). Systems are meaningful capabilities — not micro-ticks.
+Single public authoring path: `defineGame({ systems, loop?, … })` from `@jgengine/shell/defineGame`. Systems are meaningful capabilities — not micro-ticks.
 
 ## API
 

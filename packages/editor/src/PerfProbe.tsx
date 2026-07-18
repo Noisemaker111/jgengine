@@ -3,6 +3,7 @@ import { memo, useRef } from "react";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
+import { getCameraTelemetry } from "./shell/cameraTelemetry";
 
 const SAMPLE_WINDOW_MS = 500;
 /** Sum-of-abs delta on camera position/orientation above which a frame counts as camera activity. */
@@ -36,6 +37,24 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
       Math.abs(camera.quaternion.z - cam.qz) +
       Math.abs(camera.quaternion.w - cam.qw);
     if (dPos > CAMERA_MOVE_EPSILON || dRot > CAMERA_MOVE_EPSILON) activeRef.current = true;
+
+    // Publish the camera basis for the DOM orientation widget (mutable channel, no React state).
+    const telemetry = getCameraTelemetry();
+    const m = camera.matrixWorld.elements;
+    telemetry.rightX = m[0]!;
+    telemetry.rightY = m[1]!;
+    telemetry.rightZ = m[2]!;
+    telemetry.upX = m[4]!;
+    telemetry.upY = m[5]!;
+    telemetry.upZ = m[6]!;
+    // Camera looks down -Z; store the viewing direction so depth<0 means "toward the camera".
+    telemetry.forwardX = -m[8]!;
+    telemetry.forwardY = -m[9]!;
+    telemetry.forwardZ = -m[10]!;
+    telemetry.azimuth = Math.atan2(-m[8]!, -m[10]!);
+    telemetry.elevation = Math.asin(Math.max(-1, Math.min(1, -m[9]!)));
+    telemetry.version += 1;
+
     cam.px = camera.position.x;
     cam.py = camera.position.y;
     cam.pz = camera.position.z;

@@ -9,8 +9,8 @@
         "y": 0,
         "z": 6
       },
-      "label": "Player spawn",
-      "color": "#22d3ee"
+      "color": "#22d3ee",
+      "label": "Player spawn"
     },
     {
       "id": "bookcase_1",
@@ -160,7 +160,7 @@
       "meta": {
         "on": "enter",
         "action": "announce",
-        "message": "Welcome \u2014 authored trigger fired",
+        "message": "Welcome — authored trigger fired",
         "tone": "good"
       }
     },
@@ -178,20 +178,75 @@
         "y": 12,
         "z": 130
       },
-      "label": "Downtown grid (city studio)",
+      "label": "Manhattan (city preset)",
       "meta": {
         "gridness": 1,
-        "curviness": 0.05,
-        "branching": 0.25,
-        "blockSize": 42,
-        "openSpace": 0.08,
-        "buildingDensity": 0.85,
-        "streetWidth": 8,
-        "floorsMin": 4,
-        "floorsMax": 14,
+        "curviness": 0,
+        "branching": 0.05,
+        "blockSize": 32,
+        "openSpace": 0.05,
+        "buildingDensity": 0.95,
+        "streetWidth": 9,
+        "floorsMin": 5,
+        "floorsMax": 55,
         "floorHeight": 3,
-        "style": "generic",
-        "seed": "manhattan-7"
+        "style": "capital",
+        "seed": "midtown-4",
+        "blockAspect": 2.4,
+        "boulevards": 0.5,
+        "gravelLanes": false,
+        "profile": "core-out",
+        "coreExtent": 0.6,
+        "midExtent": 0.88,
+        "coreMix": [
+          {
+            "item": "tower",
+            "weight": 5
+          },
+          {
+            "item": "slab",
+            "weight": 1
+          }
+        ],
+        "midMix": [
+          {
+            "item": "tower",
+            "weight": 2
+          },
+          {
+            "item": "slab",
+            "weight": 2
+          }
+        ],
+        "edgeMix": [
+          {
+            "item": "slab",
+            "weight": 3
+          },
+          {
+            "item": "rowhouse",
+            "weight": 2
+          }
+        ],
+        "lotScale": 1,
+        "treeDensity": 0.3,
+        "treeMix": [
+          {
+            "item": "broadleaf",
+            "weight": 1
+          }
+        ],
+        "lightDensity": 0.8,
+        "hedges": false,
+        "driveways": false,
+        "parking": false,
+        "fields": false,
+        "sidewalks": true,
+        "roadsideOccupancy": 0.97,
+        "blockDensity": 0.85,
+        "buildingRoadSetback": 0.8,
+        "buildingSpacing": 0.8,
+        "clusterStrength": 0.25
       }
     },
     {
@@ -208,21 +263,83 @@
         "y": 12,
         "z": 120
       },
-      "label": "Winding hills (city studio)",
+      "label": "Beverly Hills (city preset)",
       "meta": {
-        "gridness": 0.1,
+        "gridness": 0.2,
         "curviness": 0.8,
-        "branching": 0.7,
-        "blockSize": 60,
-        "openSpace": 0.25,
-        "buildingDensity": 0.55,
-        "streetWidth": 5,
+        "branching": 0.6,
+        "blockSize": 90,
+        "openSpace": 0.07,
+        "buildingDensity": 0.75,
+        "streetWidth": 6.5,
         "floorsMin": 1,
         "floorsMax": 3,
         "floorHeight": 3,
-        "style": "village",
-        "seed": "laurel-canyon-3",
-        "sidewalks": false
+        "style": "coastal",
+        "seed": "rodeo-2",
+        "sidewalks": true,
+        "blockAspect": 1,
+        "boulevards": 0,
+        "gravelLanes": false,
+        "profile": "uniform",
+        "coreExtent": 0.35,
+        "midExtent": 0.7,
+        "coreMix": [
+          {
+            "item": "mansion",
+            "weight": 3
+          },
+          {
+            "item": "house",
+            "weight": 1
+          }
+        ],
+        "midMix": [
+          {
+            "item": "mansion",
+            "weight": 3
+          },
+          {
+            "item": "house",
+            "weight": 1
+          }
+        ],
+        "edgeMix": [
+          {
+            "item": "mansion",
+            "weight": 2
+          },
+          {
+            "item": "house",
+            "weight": 2
+          }
+        ],
+        "lotScale": 1.5,
+        "treeDensity": 0.9,
+        "treeMix": [
+          {
+            "item": "palm",
+            "weight": 3
+          },
+          {
+            "item": "cypress",
+            "weight": 2
+          },
+          {
+            "item": "broadleaf",
+            "weight": 2
+          }
+        ],
+        "lightDensity": 0.35,
+        "hedges": true,
+        "driveways": true,
+        "parking": false,
+        "fields": false,
+        "roadsideOccupancy": 0.85,
+        "blockDensity": 0.3,
+        "buildingRoadSetback": 4.5,
+        "buildingSpacing": 2.2,
+        "clusterStrength": 0.35
       }
     },
     {
@@ -239,21 +356,263 @@
         "y": 14,
         "z": 150
       },
-      "label": "Canyon rim (city studio)",
+      "label": "Los Angeles (city preset)",
       "meta": {
-        "gridness": 0.2,
-        "curviness": 0.6,
-        "branching": 0.8,
-        "blockSize": 55,
-        "openSpace": 0.18,
-        "buildingDensity": 0.7,
-        "streetWidth": 6,
+        "gridness": 0.7,
+        "curviness": 0.25,
+        "branching": 0.5,
+        "blockSize": 62,
+        "openSpace": 0.08,
+        "buildingDensity": 0.8,
+        "streetWidth": 8,
         "floorsMin": 1,
-        "floorsMax": 4,
+        "floorsMax": 18,
         "floorHeight": 3,
-        "maxSlope": 0.34,
-        "style": "desert",
-        "seed": "mesa-verde-2"
+        "maxSlope": 0.4,
+        "style": "coastal",
+        "seed": "wilshire-9",
+        "blockAspect": 1.2,
+        "boulevards": 0.45,
+        "gravelLanes": false,
+        "profile": "core-out",
+        "coreExtent": 0.25,
+        "midExtent": 0.55,
+        "coreMix": [
+          {
+            "item": "tower",
+            "weight": 2
+          },
+          {
+            "item": "slab",
+            "weight": 2
+          },
+          {
+            "item": "shop",
+            "weight": 2
+          }
+        ],
+        "midMix": [
+          {
+            "item": "shop",
+            "weight": 2
+          },
+          {
+            "item": "house",
+            "weight": 3
+          },
+          {
+            "item": "slab",
+            "weight": 1
+          }
+        ],
+        "edgeMix": [
+          {
+            "item": "house",
+            "weight": 5
+          },
+          {
+            "item": "shop",
+            "weight": 1
+          }
+        ],
+        "lotScale": 1.1,
+        "treeDensity": 0.55,
+        "treeMix": [
+          {
+            "item": "palm",
+            "weight": 4
+          },
+          {
+            "item": "broadleaf",
+            "weight": 1
+          },
+          {
+            "item": "cypress",
+            "weight": 1
+          }
+        ],
+        "lightDensity": 0.6,
+        "hedges": false,
+        "driveways": true,
+        "parking": true,
+        "fields": false,
+        "sidewalks": true,
+        "minElevation": -3.2,
+        "roadsideOccupancy": 0.9,
+        "blockDensity": 0.55,
+        "buildingRoadSetback": 3,
+        "buildingSpacing": 1.8,
+        "clusterStrength": 0.5
+      }
+    },
+    {
+      "id": "city_rural_1",
+      "kind": "city",
+      "shape": "box",
+      "center": {
+        "x": 310,
+        "y": 0,
+        "z": -130
+      },
+      "halfExtents": {
+        "x": 130,
+        "y": 12,
+        "z": 130
+      },
+      "label": "Rural Ohio (city preset)",
+      "meta": {
+        "gridness": 1,
+        "curviness": 0.06,
+        "branching": 0.3,
+        "blockSize": 120,
+        "blockAspect": 1,
+        "openSpace": 0.55,
+        "buildingDensity": 0.4,
+        "streetWidth": 5.5,
+        "boulevards": 0,
+        "gravelLanes": true,
+        "profile": "core-out",
+        "coreExtent": 0.22,
+        "midExtent": 0.55,
+        "coreMix": [
+          {
+            "item": "shop",
+            "weight": 2
+          },
+          {
+            "item": "house",
+            "weight": 2
+          },
+          {
+            "item": "rowhouse",
+            "weight": 1
+          }
+        ],
+        "midMix": [
+          {
+            "item": "farmhouse",
+            "weight": 2
+          },
+          {
+            "item": "house",
+            "weight": 1
+          },
+          {
+            "item": "barn",
+            "weight": 1
+          }
+        ],
+        "edgeMix": [
+          {
+            "item": "farmhouse",
+            "weight": 2
+          },
+          {
+            "item": "barn",
+            "weight": 2
+          },
+          {
+            "item": "silo",
+            "weight": 1
+          }
+        ],
+        "lotScale": 1.4,
+        "floorsMin": 1,
+        "floorsMax": 2,
+        "treeDensity": 0.35,
+        "treeMix": [
+          {
+            "item": "broadleaf",
+            "weight": 3
+          },
+          {
+            "item": "conifer",
+            "weight": 2
+          }
+        ],
+        "lightDensity": 0.1,
+        "hedges": false,
+        "driveways": true,
+        "parking": false,
+        "fields": true,
+        "sidewalks": false,
+        "style": "village",
+        "seed": "route-9",
+        "roadsideOccupancy": 0.6,
+        "blockDensity": 0.25,
+        "buildingRoadSetback": 6,
+        "buildingSpacing": 5,
+        "clusterStrength": 0.8
+      }
+    },
+    {
+      "id": "city_metro_1",
+      "kind": "city",
+      "shape": "box",
+      "center": {
+        "x": -290,
+        "y": 0,
+        "z": -40
+      },
+      "halfExtents": {
+        "x": 150,
+        "y": 14,
+        "z": 140
+      },
+      "label": "Zoned metropolis (city preset)",
+      "meta": {
+        "gridness": 0.85,
+        "curviness": 0.15,
+        "branching": 0.4,
+        "blockSize": 48,
+        "blockAspect": 1.3,
+        "openSpace": 0.12,
+        "buildingDensity": 0.85,
+        "streetWidth": 7.5,
+        "boulevards": 0.4,
+        "profile": "core-out",
+        "coreExtent": 0.45,
+        "midExtent": 0.75,
+        "floorsMin": 1,
+        "floorsMax": 34,
+        "treeDensity": 0.55,
+        "lightDensity": 0.6,
+        "style": "generic",
+        "seed": "hexton-1",
+        "roadsideOccupancy": 0.92,
+        "blockDensity": 0.7,
+        "buildingRoadSetback": 1.5,
+        "buildingSpacing": 1.2,
+        "clusterStrength": 0.45
+      }
+    },
+    {
+      "id": "metro_estates",
+      "kind": "cityzone",
+      "shape": "box",
+      "center": {
+        "x": -390,
+        "y": 0,
+        "z": 40
+      },
+      "halfExtents": {
+        "x": 50,
+        "y": 10,
+        "z": 55
+      },
+      "label": "Estate quarter (zone override)",
+      "meta": {
+        "band": "edge",
+        "mix": [
+          {
+            "item": "mansion",
+            "weight": 3
+          },
+          {
+            "item": "house",
+            "weight": 1
+          }
+        ]
       }
     }
   ],
@@ -261,8 +620,6 @@
     {
       "id": "powerline_1",
       "kind": "pole_line",
-      "width": 4,
-      "label": "Power line (pole studio)",
       "points": [
         {
           "x": -30,
@@ -285,6 +642,8 @@
           "z": 30
         }
       ],
+      "width": 4,
+      "label": "Power line (pole studio)",
       "meta": {
         "spacing": 9,
         "poleHeight": 6,
@@ -301,5 +660,6 @@
   ],
   "annotations": [],
   "prefabs": [],
-  "collections": []
+  "collections": [],
+  "catalogs": []
 }

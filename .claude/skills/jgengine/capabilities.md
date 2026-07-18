@@ -4,21 +4,93 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## authored-spawn — read spawn points and markers from the editor document
+
+- `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/shell/gameKit"`
+
+## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
+
+- `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/shell/gameKit"`
+
 ## collider-autofit — hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`
 
-## define-game — single public game-authoring path — compose systems, world, and loop in one definition
+## define-game — single public game-authoring path — compose systems, world, presentation, and authored scene in one definition
 
-- `defineGame` (function) · `import { defineGame } from "@jgengine/core/authoring"`
+- `defineGame` (function) · `import { defineGame } from "@jgengine/shell/gameKit"`
+
+## define-system — composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
+
+- `defineSystem` (function) · `import { defineSystem } from "@jgengine/shell/gameKit"`
+
+## editor-catalogs — Export typed gameplay catalogs for in-editor tuning.
+
+- `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/shell/gameKit"`
+
+## game-system — declare a composable capability with its own schedule and lifecycle
+
+- `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/shell/gameKit"`
 
 ## headless-runner — play a real game loop with no renderer — tick, feed input, read the world snapshot
 
 - `HeadlessRunner` (interface) · `import { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner"`
 
+## host-join-code-gate — membership-or-code gate for private hosted servers
+
+- `canJoinPrivateServer` (function) · `import { canJoinPrivateServer } from "@jgengine/core/runtime/hostPolicy"`
+
+## host-listing-filter — exclude private sessions from public browse results
+
+- `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/core/runtime/hostPolicy"`
+
+## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
+
+- `HudCanvas` (function) · `import { HudCanvas } from "@jgengine/shell/gameKit"`
+
+## hud-clock — in-game time-of-day readout bound to the sim clock
+
+- `Clock` (function) · `import { Clock } from "@jgengine/shell/gameKit"`
+
+## hud-coins — currency counter widget bound to a currency id
+
+- `Coins` (function) · `import { Coins } from "@jgengine/shell/gameKit"`
+
+## hud-hotbar — inventory hotbar widget with keybind slots and icons
+
+- `Hotbar` (function) · `import { Hotbar } from "@jgengine/shell/gameKit"`
+
+## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
+
+- `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/shell/gameKit"`
+
+## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
+
+- `HudPanel` (function) · `import { HudPanel } from "@jgengine/shell/gameKit"`
+
+## hud-stat-bar — self-styled bar widget bound to a stat (health, mana, stamina)
+
+- `StatBar` (function) · `import { StatBar } from "@jgengine/shell/gameKit"`
+
 ## loot-table — validate a loot table definition for use with the registry
 
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`
+
+## mount-game — mount a defined game in the browser — `<GameHost playable={game} editor={() => import("@jgengine/editor")} />`
+
+- `GameHost` (function) · `import { GameHost } from "@jgengine/shell/gameKit"`
+
+## multiplayer-offline — explicit solo adapter — omit `multiplayer` instead; offline is the shell default
+
+- `offline` (function) · `import { offline } from "@jgengine/shell/gameKit"`
+
+## multiplayer-p2p — serverless co-op over WebRTC — `multiplayer: p2p({ room })`
+
+- `p2p` (function) · `import { p2p } from "@jgengine/core/runtime/adapter"`
+
+## multiplayer-ws — server-hosted shared world over WebSocket — `multiplayer: ws({ authority: "server" })`
+
+- `ws` (function) · `import { ws } from "@jgengine/core/runtime/adapter"`
 
 ## render-fallback-diagnostics — Enable/disable the dev-only placeholder-fallback probe.
 
@@ -37,3 +109,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/authoring"`
 - `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/authoring"`
 - `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/authoring"`
+
+## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
+
+- `seededRng` (function) · `import { seededRng } from "@jgengine/shell/gameKit"`
+
+## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
+
+- `defineKeyedStore` (function) · `import { defineKeyedStore } from "@jgengine/shell/gameKit"`
+
+## typed-store — a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
+
+- `defineStore` (function) · `import { defineStore } from "@jgengine/shell/gameKit"`
+
+## world-convergence — derive environment coordinate content from the scene document
+
+- `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/shell/gameKit"`
+
+## world-environment — declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+
+- `environment` (function) · `import { environment } from "@jgengine/shell/gameKit"`

@@ -325,7 +325,7 @@
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
-- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.
+- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
@@ -373,6 +373,8 @@
 - `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
 - `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
 - `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" | "themed" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens).
+- `HudLayoutPersist` (type): type HudLayoutPersist = (id: string, panel: EditorUiPanelLayout) => void — Host-owned callback that commits one HUD panel layout into the scene document (typically an undoable `setUiPanel` dispatch). Injected by the editor so product UI never reaches for editor globals.
+- `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `HudTheme` (interface): interface HudTheme — A full HUD theme.
 - `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
@@ -528,7 +530,8 @@
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** When true (defau… — ⚠ undocumented
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
+- `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
@@ -753,7 +756,7 @@
 ## @jgengine/react/hud
 
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
-- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.
+- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `Crosshair` (function): function Crosshair({ size = 18, gap = 5, thickness = 2, color = "rgba(255,255,255,0.85)", style, className, }: { size?: number; gap?: number; thickness?: number; color?: string; style?: CSSProperties; className?: string; }): React.JSX.Element — A minimal center crosshair reticle — four ticks around a gap. Purely presentational.
 - `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: … — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
 - `Speedometer` (function): function Speedometer({ entityId, scale = 3.6, unit = "km/h", max = 60, size = 96, style, className, }: { entityId?: string; scale?: number; unit?: string; max?: number; size?: number; style?: CSSProperties; className?: string; }): React.JSX.Element — A speedometer for an entity (defaults to the local player) — an SVG arc gauge + a digital readout. `scale` converts world units/second to your display unit (3.6 → km/h, 2.237 → mph); `max` sets the gauge's top of scale.
@@ -775,7 +778,13 @@
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** When true (defau… — ⚠ undocumented
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
+
+## @jgengine/react/hudLayoutPersist
+
+- `HudLayoutPersist` (type): type HudLayoutPersist = (id: string, panel: EditorUiPanelLayout) => void — Host-owned callback that commits one HUD panel layout into the scene document (typically an undoable `setUiPanel` dispatch). Injected by the editor so product UI never reaches for editor globals.
+- `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
+- `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 
 ## @jgengine/react/hudTheme
 
@@ -966,23 +975,16 @@
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
-## @jgengine/shell/GameHost
-
-- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer }: GameHostProps): React.JSX.Element — ⚠ undocumented
-- `GameHostProps` (interface): interface GameHostProps — ⚠ undocumented
-
 ## @jgengine/shell/GamePhaseStamp
 
 - `GamePhaseStamp` (function): function GamePhaseStamp(): null — ⚠ undocumented
 
 ## @jgengine/shell/GamePlayer
 
-- `GamePlayer` (function): function GamePlayer({ gameId, registry, fallbackGameId, loading = null, multiplayer = null }: GamePlayerProps): React.JSX.Element — ⚠ undocumented
 - `GamePlayerProps` (type): type GamePlayerProps = { gameId: string; registry: GameRegistry; fallbackGameId?: string; loading?: ReactNode; multiplayer?: ShellMultiplayer | null; } — ⚠ undocumented
 
 ## @jgengine/shell/GamePlayerShell
 
-- `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
 - `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 
 ## @jgengine/shell/GameUiPreview
@@ -1163,11 +1165,6 @@
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
-
-## @jgengine/shell/defineGame
-
-- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(config: GameConfig<TAssetRef>): PlayableGame — ⚠ undocumented
 
 ## @jgengine/shell/devtools/ColPanel
 
@@ -1407,7 +1404,7 @@
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — ⚠ undocumented
+- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle.
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
@@ -1546,7 +1543,7 @@
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
@@ -1563,7 +1560,7 @@
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
@@ -1592,11 +1589,13 @@
 
 ## @jgengine/shell/structures/TransformGizmo
 
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
+- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
 - `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
+- `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
 
 ## @jgengine/shell/terrain
 

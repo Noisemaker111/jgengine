@@ -15,11 +15,24 @@ Never replace authorable scene content with hardcoded meshes, coordinate arrays,
 
 Every editor-visible object has an explicit provenance — `authored`, `generated`, `runtime`, or `transient` — and a single verdict from `classifyOwnership` (`@jgengine/core/scene/sceneOwnership`): **expose** (authorable), **bake** (offer import to the document when the provider can emit schema-valid data), or **reject** (read-only runtime content). Runtime/transient content with neither a `bake` capability nor a declared `reason` is a boundary violation — content bypassing the document with no authored home. Genuinely runtime-only or geometry-free content is declared with a serializable `SceneOwnershipManifest` (`scene-ownership.json`), which `check-content-gate` validates — the replacement for game-name exemptions.
 
+## Headless fast path
+
+Inspect, mutate, and persist a game's scene in single commands — no GUI session and no reference reading needed for basic authoring:
+
+```sh
+bun packages/editor/src/mcp/cli.ts --game <id> --tools                     # verb inventory with descriptions
+bun packages/editor/src/mcp/cli.ts --game <id> --rpc '{"method":"scene_summary"}'
+bun packages/editor/src/mcp/cli.ts --game <id> \
+  --rpc '{"method":"set_transform","id":"boss","x":10,"y":0,"z":-5}' --save
+```
+
+Repeat `--rpc` to batch several mutations on one session; `--save` then writes the document back to `Games/<id>/src/editor.scene.json` in the same format as the GUI's Ctrl+S, and a failed RPC aborts the batch before anything is saved.
+
 ## Canonical workflow
 
 1. Inspect the current scene and available editor capabilities.
-2. Make authoring changes through the GUI or `bun packages/editor/src/mcp/cli.ts`; do not hand-edit the JSON.
-3. Save the scene document and verify the intended objects/layers are present.
+2. Make authoring changes through the GUI or the headless fast path above; do not hand-edit the JSON.
+3. Save the scene document (`--save` headless, Ctrl+S in the GUI) and verify the intended objects/layers are present.
 4. Make gameplay reference stable authored ids, path kinds, markers, or zones rather than copying coordinates (player spawns read the document's `player_spawn` marker via `authoredSpawnPosition` from `@jgengine/core/world/authoredSpawn`).
 5. Render through shared authored-scene primitives and verify with `jgengine-verify`.
 

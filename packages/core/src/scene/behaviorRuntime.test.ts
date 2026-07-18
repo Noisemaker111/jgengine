@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
 import { advanceBehaviors, behaviorControl } from "./behaviorRuntime";
 import { patrol, wander } from "./behaviors";
 
 function ctx() {
-  const definition = defineGame({ name: "Behaviors", multiplayer: "off" });
+  const definition = defineGameDefinition({ name: "Behaviors", multiplayer: "off" });
   return createGameContext({ definition, content: {}, player: { userId: "p1", isNew: true } });
 }
 

@@ -52,22 +52,39 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("src/ holds only the skeleton (everything else under src/game/)");
   });
 
-  test("passes installSaveEndpoint gating out of the box", () => {
+  test("allows optional skeleton files (preview.tsx, scene-ownership.json) at src/ top level", () => {
     const dir = scaffold();
+    writeFileSync(join(dir, "src", "preview.tsx"), "export default function Preview() { return null; }\n");
+    writeFileSync(join(dir, "src", "scene-ownership.json"), '{"version":1,"objects":[]}\n');
+    expect(failingLabels(dir)).not.toContain("src/ holds only the skeleton (everything else under src/game/)");
+  });
+
+  test("passes installSaveEndpoint gating vacuously — the scaffold never calls it (GameHost owns it)", () => {
+    const dir = scaffold();
+    expect(readFileSync(join(dir, "src", "main.tsx"), "utf8")).not.toContain("installSaveEndpoint");
     expect(failingLabels(dir)).not.toContain("installSaveEndpoint calls gated behind import.meta.env.DEV");
   });
 
   test("flags an unguarded installSaveEndpoint call", () => {
     const dir = scaffold();
-    const mainPath = join(dir, "src", "main.tsx");
-    const guarded = readFileSync(mainPath, "utf8");
-    const unguarded = guarded.replace(
-      /if \(import\.meta\.env\.DEV\) installSaveEndpoint\(/,
-      "installSaveEndpoint(",
+    writeFileSync(
+      join(dir, "src", "game", "boot.ts"),
+      `import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+installSaveEndpoint("/__jgengine/save", "probe-game");
+`,
     );
-    expect(unguarded).not.toBe(guarded);
-    writeFileSync(mainPath, unguarded);
     expect(failingLabels(dir)).toContain("installSaveEndpoint calls gated behind import.meta.env.DEV");
+  });
+
+  test("accepts a DEV-guarded installSaveEndpoint call", () => {
+    const dir = scaffold();
+    writeFileSync(
+      join(dir, "src", "game", "boot.ts"),
+      `import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", "probe-game");
+`,
+    );
+    expect(failingLabels(dir)).not.toContain("installSaveEndpoint calls gated behind import.meta.env.DEV");
   });
 
   test("reports a missing project", () => {

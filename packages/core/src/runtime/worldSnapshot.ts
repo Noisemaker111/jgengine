@@ -14,11 +14,20 @@ export interface SnapshotViewer {
  * - {@link project} narrows this module's snapshot to what one viewer may see (private state, area of
  *   interest). Absent → the module is world-public and every client receives it verbatim (the default).
  * - {@link version} is a monotone counter the host reads to skip re-serializing an unchanged module.
+ * - {@link decode} validates/coerces wire `unknown` into `T` before hydrate; returning `null` skips
+ *   that module (fail-soft) instead of poisoning live state with a bare cast.
  */
 export interface SnapshotModule<T = unknown> {
   readonly key: string;
   snapshot(): T;
   hydrate(data: T): void;
+  /**
+   * Optional wire codec: turn the raw snapshot value into a typed `T`, or `null` to skip this module.
+   * When present, {@link applyWorldSnapshot} runs it before {@link hydrate} and never calls hydrate on
+   * a failed decode — a bad host/client payload leaves the prior module state intact rather than
+   * throwing or applying garbage.
+   */
+  decode?(raw: unknown): T | null;
   /**
    * Narrow this module's full snapshot to what `viewer` is allowed to see — return the same shape
    * carrying only the visible subset (drop other players' private state, cull entities outside the
@@ -56,7 +65,10 @@ export function composeWorldSnapshot(
   return snapshot;
 }
 
-/** Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left untouched.
+/**
+ * Hydrate every registered module whose key is present in `snapshot`; keys absent from it are left
+ * untouched. When a module provides {@link SnapshotModule.decode}, a `null` decode skips that module
+ * (fail-soft) instead of calling hydrate with unvalidated wire data.
  * @internal
  */
 export function applyWorldSnapshot(
@@ -64,8 +76,14 @@ export function applyWorldSnapshot(
   snapshot: WorldSnapshot,
 ): void {
   for (const module of modules) {
-    if (Object.prototype.hasOwnProperty.call(snapshot, module.key)) {
-      module.hydrate(snapshot[module.key]);
+    if (!Object.prototype.hasOwnProperty.call(snapshot, module.key)) continue;
+    const raw = snapshot[module.key];
+    if (module.decode !== undefined) {
+      const decoded = module.decode(raw);
+      if (decoded === null) continue;
+      module.hydrate(decoded);
+    } else {
+      module.hydrate(raw);
     }
   }
 }

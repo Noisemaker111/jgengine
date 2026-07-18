@@ -66,6 +66,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   set_marker: [req(s("id")), s("kind"), s("color"), s("label"), n("rotationY"), o("meta")],
   set_note: [req(s("id")), s("text"), o("meta")],
   set_meta: [req(s("id")), req(o("patch"))],
+  apply_preset: [req(s("id")), req(s("preset"))],
   select: [req(sa("ids"))],
   clear_selection: [],
   camera_goto: [s("id"), n("x"), n("y"), n("z")],

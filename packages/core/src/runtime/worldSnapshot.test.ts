@@ -39,4 +39,20 @@ describe("world snapshot seam", () => {
     expect(dst.a.value).toEqual([1, 2]);
     expect(dst.b.value).toEqual({ n: 3 });
   });
+
+  test("decode that returns null skips hydrate (fail soft)", () => {
+    const box = { value: 1 };
+    const module: SnapshotModule<number> = {
+      key: "n",
+      snapshot: () => box.value,
+      decode: (raw) => (typeof raw === "number" ? raw : null),
+      hydrate: (data) => {
+        box.value = data;
+      },
+    };
+    applyWorldSnapshot([module], { n: "garbage" });
+    expect(box.value).toBe(1);
+    applyWorldSnapshot([module], { n: 42 });
+    expect(box.value).toBe(42);
+  });
 });

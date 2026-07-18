@@ -26,7 +26,6 @@ import {
   resizePanelSize,
   resolvePanelResize,
   type EditorUiDocument,
-  type EditorUiPanelLayout,
   type HudResizeAxes,
 } from "@jgengine/core/ui/hudDocument";
 import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
@@ -41,6 +40,7 @@ import { useDisplayProfile } from "./display";
 import { useEngineState } from "./engineStore";
 import { useGameLayoutMode, useRegisterLayoutRegion } from "./gameViewport";
 import { useOptionalGamePhase } from "./hooks";
+import { useHudLayoutPersist } from "./hudLayoutPersist";
 import { useHudViewport } from "./hudViewport";
 
 /** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
@@ -66,20 +66,6 @@ export type HudCompactMode = "keep" | "chip" | "hide";
 export interface HudEditChord {
   hold: string;
   press: string;
-}
-
-function patchDocumentUi(id: string, panel: EditorUiPanelLayout): void {
-  if (typeof window === "undefined") return;
-  const host = (
-    window as Window & {
-      __jgengineEditorHost?: { handle(request: { method: string } & Record<string, unknown>): unknown };
-    }
-  ).__jgengineEditorHost;
-  if (host === undefined) return;
-  host.handle({
-    method: "dispatch",
-    command: { type: "setUiPanel", id, patch: panel },
-  });
 }
 
 function sizeStyle(panel: { width?: number; height?: number } | undefined): CSSProperties {
@@ -129,6 +115,11 @@ function ResizeHandles({
   );
 }
 
+/**
+ * Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
+ *
+ * @capability hud-layout persistent, live-editable HUD panel layout state for `HudCanvas`
+ */
 export function useHudLayout(options?: {
   storageKey?: string;
   snap?: number;
@@ -138,7 +129,10 @@ export function useHudLayout(options?: {
    * When provided, hydrates the layout store (and wins over legacy localStorage).
    */
   documentUi?: EditorUiDocument;
-  /** When true (default), canvas moves/resizes write undoable `setUiPanel` patches to a live editor host. */
+  /**
+   * When true (default), canvas moves/resizes invoke the injected {@link HudLayoutPersist}
+   * port (`HudLayoutPersistProvider` / `onPanelCommit`). No-op when no host has provided one.
+   */
   documentPatches?: boolean;
 }): HudLayoutStore {
   const storageKey = options?.storageKey;
@@ -146,11 +140,18 @@ export function useHudLayout(options?: {
   const locked = options?.locked;
   const documentUi = options?.documentUi;
   const documentPatches = options?.documentPatches !== false;
+  const onPanelCommit = useHudLayoutPersist();
+  const onPanelCommitRef = useRef(onPanelCommit);
+  onPanelCommitRef.current = onPanelCommit;
   const layout = useMemo(() => {
     const store = createHudLayout({
       snap,
       locked,
-      onDocumentPatch: documentPatches ? patchDocumentUi : undefined,
+      onDocumentPatch: documentPatches
+        ? (id, panel) => {
+            onPanelCommitRef.current?.(id, panel);
+          }
+        : undefined,
     });
     if (documentUi !== undefined) {
       store.applyDocumentUi(documentUi);
@@ -299,6 +300,8 @@ function edgePad(envInset: string, extra: string | null, basePx: number, scale: 
  * offsets, no manual clearance for sibling panels, the touch-control dock
  * (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the
  * whole surface scales down and each panel applies its `compact` behavior.
+  *
+ * @capability hud-canvas the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
  */
 export function HudCanvas({
   layout,
@@ -591,6 +594,8 @@ function HudChip({
  * pointers panels stay draggable through the edit chord; a dragged panel
  * leaves the flow and keeps its custom placement. On compact displays custom
  * placements are ignored and the `compact` behavior applies.
+  *
+ * @capability hud-panel anchored HUD slot — drop any widget in a named, player-movable panel
  */
 export function HudPanel({
   id,

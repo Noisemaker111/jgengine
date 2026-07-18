@@ -59,6 +59,7 @@ export type EditorBridgeRequest =
   | { method: "set_marker"; id: string; kind?: string; color?: string; label?: string; rotationY?: number; meta?: Record<string, unknown> }
   | { method: "set_note"; id: string; text?: string; meta?: Record<string, unknown> }
   | { method: "set_meta"; id: string; patch: Record<string, unknown> }
+  | { method: "apply_preset"; id: string; preset: string }
   | { method: "select"; ids: string[] }
   | { method: "clear_selection" }
   | { method: "camera_goto"; id?: string; x?: number; y?: number; z?: number }

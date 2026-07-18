@@ -13,8 +13,8 @@
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
-- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems.
-- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional.
+- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
+- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional.
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
 - `GeneratedProvenance` (interface): interface GeneratedProvenance — An object derived from an authored document object — instances scattered from a painted layer, walls extruded from an authored footprint. Edits belong on the source object, not the generated instance.
@@ -42,7 +42,6 @@
 - `classifyOwnership` (function): function classifyOwnership(declaration: SceneOwnershipDeclaration): OwnershipVerdict — Resolve one declaration into a single boundary verdict.
 - `collectOwnershipDiagnostics` (function): function collectOwnershipDiagnostics(entries: Iterable<readonly [string, SceneOwnershipDeclaration]>): OwnershipDiagnostic[] — Audit a keyed set of declarations and return one diagnostic per object that breaks the boundary contract (a `reject` verdict carrying a `violation`). Deterministic: diagnostics come back in the iteration order of `entries`.
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
@@ -231,8 +230,8 @@
 - `isServerAuthoritative` (function): function isServerAuthoritative(multiplayer: unknown): boolean — True when the adapter opts into host-authoritative world replication (`authority: "server"`).
 - `lan` (function): function lan(config?: { topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority; }): MultiplayerAdapterConfig — ⚠ undocumented
 - `multiplayerAdapterKind` (function): function multiplayerAdapterKind(multiplayer: unknown): string | null — ⚠ undocumented
-- `offline` (function): function offline(): MultiplayerAdapterConfig — ⚠ undocumented
-- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
+- `offline` (function): function offline(): MultiplayerAdapterConfig — Explicit single-player adapter. Solo games never need this — omitting `multiplayer` in the shell `defineGame` already defaults to offline; pass it only where an adapter value is structurally required.
+- `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — Serverless peer-to-peer (WebRTC) session — one peer hosts, friends join by room code.
 - `resolveAuthority` (function): function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null — Resolved authority for a multiplayer config. - `offline` / missing adapter → `null` (single-player; not multiplayer authority). - unset or `"client"` → `"client"` (presence-only; each client ticks). - `"server"` → host-authoritative shared sim.
 - `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
 - `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
@@ -255,7 +254,7 @@
 - `CatalogEntityRole` (type): type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle" — ⚠ undocumented
 - `FloatTextInput` (interface): interface FloatTextInput — ⚠ undocumented
 - `GameAudio` (interface): interface GameAudio — Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051).
-- `GameContext` (interface): interface GameContext — ⚠ undocumented
+- `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
 - `GameContextCards` (interface): interface GameContextCards — ⚠ undocumented
 - `GameContextCommands` (interface): interface GameContextCommands — ⚠ undocumented
 - `GameContextContent` (interface): interface GameContextContent — ⚠ undocumented
@@ -280,6 +279,36 @@
 - `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `createGameContext` (function): function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(options: GameContextOptions<TAssetRef, TMultiplayer>): GameContext — ⚠ undocumented
+
+## @jgengine/core/runtime/gameContextTypes
+
+- `CatalogEntityRole` (type): type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle" — ⚠ undocumented
+- `FloatTextInput` (interface): interface FloatTextInput — ⚠ undocumented
+- `GameAudio` (interface): interface GameAudio — Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051).
+- `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
+- `GameContextCards` (interface): interface GameContextCards — ⚠ undocumented
+- `GameContextCommands` (interface): interface GameContextCommands — ⚠ undocumented
+- `GameContextContent` (interface): interface GameContextContent — ⚠ undocumented
+- `GameContextEconomy` (interface): interface GameContextEconomy — ⚠ undocumented
+- `GameContextEntityEntry` (interface): interface GameContextEntityEntry — ⚠ undocumented
+- `GameContextFeed` (interface): interface GameContextFeed extends Omit<GameFeed, "bind"> — ⚠ undocumented
+- `GameContextItemEntry` (interface): interface GameContextItemEntry — ⚠ undocumented
+- `GameContextItemUse` (interface): interface GameContextItemUse — ⚠ undocumented
+- `GameContextLoot` (interface): interface GameContextLoot — ⚠ undocumented
+- `GameContextModels` (interface): interface GameContextModels — Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
+- `GameContextObjectEntry` (interface): interface GameContextObjectEntry — ⚠ undocumented
+- `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
+- `GameContextRace` (interface): interface GameContextRace — ⚠ undocumented
+- `GameContextTurn` (interface): interface GameContextTurn — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld — ⚠ undocumented
+- `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
+- `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
+- `SceneEntityContext` (interface): interface SceneEntityContext — ⚠ undocumented
+- `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
+- `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
+- `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
+- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
+- `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 
 ## @jgengine/core/runtime/gameRuntime
 
@@ -318,6 +347,18 @@
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
 - `ToServerListingOptions` (type): type ToServerListingOptions = { includeJoinCode?: boolean; } — ⚠ undocumented
 - `WorldChunkRecord` (type): type WorldChunkRecord = { serverId: string; chunkKey: string; snapshot: RuntimeChunkRow; updatedAt: number; } — ⚠ undocumented
+
+## @jgengine/core/runtime/hostPolicy
+
+- `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
+- `isAutoJoinCandidate` (function): function isAutoJoinCandidate(args: { memberUserIds: readonly string[]; slotsPerServer: number; visibility: SessionVisibility | undefined; userId: string; }): boolean — Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity. Private rooms are never auto-picked (join-by-code / direct id only).
+- `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
+- `isPrivateJoinBlocked` (function): function isPrivateJoinBlocked(args: { visibility: SessionVisibility | undefined; memberUserIds: readonly string[]; userId: string; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Whether a private-visibility server blocks this join (non-member without a matching code). Public / undefined visibility never blocks.
+- `isServerFull` (function): function isServerFull(memberUserIds: readonly string[], slotsPerServer: number, userId: string): boolean — True when the server has no free slots for a non-member. Existing members never count as "full" so rejoin/leave cycles keep working.
+- `isServerMember` (function): function isServerMember(memberUserIds: readonly string[], userId: string): boolean — Whether `userId` is already on the server's member roster.
+- `statusAfterLeave` (function): function statusAfterLeave(remainingMemberCount: number, currentStatus: GameServerStatus): GameServerStatus — Status after a leave: empty rooms reopen; non-empty rooms keep their current status.
+- `withJoinedMember` (function): function withJoinedMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a successful join: unchanged when already a member, else appended.
+- `withoutMember` (function): function withoutMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a leave: `userId` removed; order of remaining members preserved.
 
 ## @jgengine/core/runtime/hostedGameRunner
 
@@ -441,3 +482,46 @@
 - `SnapshotModule` (interface): interface SnapshotModule<T = unknown> — The replication seam for host-authoritative shared worlds: the opt-in feature manifest *is* the replication schema. Each live subsystem a game opts into registers a {@link SnapshotModule} keyed by name; the host serializes exactly the registered set into a {@link WorldSnapshot} and a client hydrates the same keys back. Adding a replicated subsystem is a registration, never a new branch.
 - `SnapshotViewer` (interface): interface SnapshotViewer — Who a host→client snapshot is being projected for — the identity a {@link SnapshotModule.project} filters against.
 - `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
+
+## @jgengine/shell/GameHost
+
+- `EditorSummonModule` (interface): interface EditorSummonModule — Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it.
+- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor }: GameHostProps): React.JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
+- `GameHostProps` (interface): interface GameHostProps — Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon.
+
+## @jgengine/shell/defineGame
+
+- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
+- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(config: GameConfig<TAssetRef>): PlayableGame — The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`. Defaults to solo/offline multiplayer; `editorLayers` auto-mounts the authored scene document.
+
+## @jgengine/shell/gameKit
+
+- `Clock` (function): function Clock({ format, showDay, controls, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
+- `Coins` (function): function Coins({ currencyId, icon, style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
+- `EditorCatalogDefinition` (interface): interface EditorCatalogDefinition — Game-exported catalog definition: a `ParamSchema` plus default entries. Schemas stay in code; entry values merge into `document.catalogs` and are what the editor/RPC edits and saves.
+- `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
+- `EditorSummonModule` (interface): interface EditorSummonModule — Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it.
+- `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
+- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
+- `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
+- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor }: GameHostProps): React.JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
+- `GameHostProps` (interface): interface GameHostProps — Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon.
+- `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
+- `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: (item… — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
+- `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
+- `HudPanel` (function): function HudPanel({ id, anchor, order, compact: compactMode, chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack position within the region, a… — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle.
+- `StatBar` (function): function StatBar({ statId, entityId, tone, label, showValue, width, icon, style, className, }: { statId?: string; entityId?: string; tone?: StatTone; label?: string; showValue?: boolean; width?: number; icon?: ReactNode; style?: CSSProperties; className?: string; }): JSX.Element | null — A polished stat bar (health/mana/stamina/shield/xp) — a rounded, glassy meter with a tone-colored fill and an optional value readout. Reads `statId` off `entityId` (defaults to the local player). Renders nothing until the stat exists.
+- `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
+- `SystemDefinition` (interface): interface SystemDefinition — A reusable game capability — lifecycle, timing, events, and optional save / replication / reset / disposal. Pass instances via `defineGame({ systems })`. Prefer one system per meaningful capability (`combat`, `quests`), not per micro-tick.
+- `authoredSpawnPosition` (function): function authoredSpawnPosition(document: AuthoredSpawnDocumentLike, options?: AuthoredSpawnOptions): [number, number, number] | null — Position of the authored spawn marker as a spawn-ready `[x, y, z]` tuple, or null when the document has none. Reads the first `player_spawn` marker by default, so dragging the marker in the editor moves where players spawn — no coordinates copied into game code.
+- `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
+- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(config: GameConfig<TAssetRef>): PlayableGame — The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`. Defaults to solo/offline multiplayer; `editorLayers` auto-mounts the authored scene document.
+- `defineKeyedStore` (function): function defineKeyedStore<T>(keyFor: (id: string) => string, initial: T | (() => T)): KeyedStoreHandle<T> — Define a typed per-owner keyed family on the game store: game code expresses `read(ctx, userId)`/`write(ctx, userId, v)`/`update(...)` with the value type it means, and both the `` `prefix:${id}` `` key composition and the `unknown → T` cast live once, here, behind the boundary. Reach for this over N separate `defineStore` calls whenever the owning id varies at runtime (per-user class, per-instance auras) — `defineStore` stays the right call for a single fixed slot.
+- `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path).
+- `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
+- `environment` (function): function environment(config?: EnvironmentWorldConfig): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `environmentContentFromDocument` (function): function environmentContentFromDocument(doc: EditorDocument, options?: EnvironmentContentOptions): EnvironmentContent — Derives the coordinate/placement content of an `environment()` world from its scene document: terrain footprint (via {@link terrainBoundsFromDocument}), ground clearings under authored spawns/POIs (via `clearanceZonesFrom`), and the document's sculpt snapshot. This is the seam that lets a game author its world footprint and flatten regions in the editor instead of hardcoding them — the `world.ts` that consumes it carries only engine tuning.
+- `offline` (function): function offline(): MultiplayerAdapterConfig — Explicit single-player adapter. Solo games never need this — omitting `multiplayer` in the shell `defineGame` already defaults to offline; pass it only where an adapter value is structurally required.
+- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.

@@ -7,11 +7,11 @@ description: Design, audit, implement, and validate player experience, loops, sy
 
 ## Ownership
 
-Own the intended player experience and the rules that produce it: fantasy, pillars, verbs, decisions, feedback, loops, resources, progression, challenge, failure, onboarding, and social dynamics. Treat design claims as hypotheses proved by play, not a feature inventory or genre imitation.
+Own the intended player experience and the rules that produce it: fantasy, pillars, verbs, decisions, feedback, loops, resources, progression, challenge, failure, onboarding, and social dynamics. Treat design claims as hypotheses proved by play, not a feature inventory or genre imitation — no genre kits, presets, or archetypes; every game is a custom composition of needs (see [AGENTS.md](../../../AGENTS.md)).
 
 Use `level-design` for spatial realization; route implementation to `jgengine-gameplay`, `jgengine-world`, `jgengine-combat`, `jgengine-ui`, `jgengine-multiplayer` once intent is coherent.
 
-Read [references/application-playbook.md](references/application-playbook.md) whenever creating a game, redesigning one, or responding to “improve this game.” Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
+Read [references/application-playbook.md](references/application-playbook.md) only when the task explicitly calls for design depth — a design brief, a redesign, or "make this fun/better" work; it is not a mandatory step of creating a game. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
 
 ## Choose the mode
 

@@ -6,7 +6,9 @@ import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { WorldFeature } from "@jgengine/core/world/features";
 import type { GuideRegion } from "@jgengine/core/world/terrainGuides";
+import type { EditorUiPanelLayout } from "@jgengine/core/ui/hudDocument";
 import { listActiveHudLayouts, subscribeActiveHudLayouts } from "@jgengine/core/ui/hudLayout";
+import { HudLayoutPersistProvider } from "@jgengine/react/hudLayoutPersist";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -26,7 +28,7 @@ import { TerrainSculpt } from "./TerrainSculpt";
 import { createTerrainReadoutStore, type TerrainReadoutStore } from "./terrainReadoutStore";
 import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
-import { createEditorUiStore, type EditorUiStore, type SnapMode } from "./uiStore";
+import { createEditorUiStore, type EditorUiStore, type GizmoSpace, type SnapMode } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
@@ -65,8 +67,11 @@ function endpointSaver(gameId: string): EditorSaveFn | undefined {
 
 interface StoredEditorPrefs {
   visibility?: Record<string, boolean>;
+  gizmoSpace?: GizmoSpace;
   snapMode?: SnapMode;
   gridSize?: number;
+  rotationSnapDeg?: number | null;
+  scaleSnap?: number | null;
   showGrid?: boolean;
   showContours?: boolean;
   showSurfaceGrid?: boolean;
@@ -269,9 +274,10 @@ function EditorModeChipHost({
  * HUD-layout authoring surface, mounted in `hud` run mode over the game's real `HudCanvas`.
  * Enables drag/resize editing on every mounted HUD layout (including ones that mount after this
  * opens), so panel placement is reachable straight from the editor — no separate F2+C chord. Layout
- * edits flow through each layout's `onDocumentPatch` into undoable `setUiPanel` document writes. When
- * the author finishes (the canvas "Done" button, Esc, or F2+C toggles editing off), HUD mode exits
- * back to edit. F2+E also exits. Editing is turned back off for every layout on unmount.
+ * edits flow through the injected `HudLayoutPersistProvider` (`onPanelCommit` → undoable
+ * `setUiPanel`). When the author finishes (the canvas "Done" button, Esc, or F2+C toggles editing
+ * off), HUD mode exits back to edit. F2+E also exits. Editing is turned back off for every layout on
+ * unmount.
  */
 function HudLayoutEditingHost({ api }: { api: EditorHostApi }) {
   const exit = useCallback(() => api.setMode("edit"), [api]);
@@ -439,8 +445,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       host.api.setVisibility({ ...host.api.getVisibility(), ...prefs.visibility });
     }
     ui.patch({
+      ...(prefs.gizmoSpace === undefined ? {} : { gizmoSpace: prefs.gizmoSpace }),
       ...(prefs.snapMode === undefined ? {} : { snapMode: prefs.snapMode }),
       ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
+      ...(prefs.rotationSnapDeg === undefined ? {} : { rotationSnapDeg: prefs.rotationSnapDeg }),
+      ...(prefs.scaleSnap === undefined ? {} : { scaleSnap: prefs.scaleSnap }),
       ...(prefs.showGrid === undefined ? {} : { showGrid: prefs.showGrid }),
       ...(prefs.showContours === undefined ? {} : { showContours: prefs.showContours }),
       ...(prefs.showSurfaceGrid === undefined ? {} : { showSurfaceGrid: prefs.showSurfaceGrid }),
@@ -450,8 +459,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       const state = ui.getState();
       savePrefs(gameId, {
         visibility: host.api.getVisibility(),
+        gizmoSpace: state.gizmoSpace,
         snapMode: state.snapMode,
         gridSize: state.gridSize,
+        rotationSnapDeg: state.rotationSnapDeg,
+        scaleSnap: state.scaleSnap,
         showGrid: state.showGrid,
         showContours: state.showContours,
         showSurfaceGrid: state.showSurfaceGrid,
@@ -624,9 +636,18 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 
+  const onPanelCommit = useCallback(
+    (id: string, panel: EditorUiPanelLayout) => {
+      host.session.dispatch({ type: "setUiPanel", id, patch: panel });
+    },
+    [host],
+  );
+
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
-      <GamePlayerShell playable={editorPlayable} />
+      <HudLayoutPersistProvider onPanelCommit={onPanelCommit}>
+        <GamePlayerShell playable={editorPlayable} />
+      </HudLayoutPersistProvider>
       {mode === "edit" && showElevation ? <TerrainReadoutHud readout={readout} /> : null}
       {pendingDraft !== null && mode === "edit" ? (
         <div className="absolute left-1/2 top-14 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-950/90 px-4 py-2 text-xs text-amber-100 shadow-2xl shadow-black/50 backdrop-blur-md">

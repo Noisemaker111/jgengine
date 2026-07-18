@@ -7,6 +7,11 @@ import type { Group } from "three";
 export type TransformGizmoMode = "translate" | "rotate" | "scale";
 /** Snap policy: grid quantize, free drag, or ground-height sample on release. */
 export type TransformGizmoSnap = "grid" | "free" | "ground";
+/** Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes. */
+export type TransformGizmoSpace = "world" | "local";
+
+/** Default rotation snap increment (radians) when callers don't configure one. */
+export const DEFAULT_ROTATION_SNAP = Math.PI / 12;
 
 /** Pose reported by {@link TransformGizmo} when the user releases a drag. */
 export interface TransformGizmoPose {
@@ -22,6 +27,12 @@ export interface TransformGizmoProps {
   mode?: TransformGizmoMode;
   snapMode?: TransformGizmoSnap;
   gridSize?: number;
+  /** Handle orientation; `"local"` aligns handles to the target's yaw. */
+  space?: TransformGizmoSpace;
+  /** Rotation snap increment in radians; `null` rotates freely. */
+  rotationSnap?: number | null;
+  /** Scale snap increment; `null` (default) scales freely. */
+  scaleSnap?: number | null;
   /** Vertical offset so the gizmo sits above ground markers. */
   lift?: number;
   size?: number;
@@ -42,6 +53,9 @@ export const TransformGizmo = memo(function TransformGizmo({
   mode = "translate",
   snapMode = "free",
   gridSize = 1,
+  space = "world",
+  rotationSnap = DEFAULT_ROTATION_SNAP,
+  scaleSnap = null,
   lift = 0,
   size = 0.85,
   groundSnap,
@@ -66,10 +80,11 @@ export const TransformGizmo = memo(function TransformGizmo({
     group.scale.set(1, 1, 1);
   }, [position.x, position.y, position.z, rotationY, lift, anchorKey, mode]);
 
-  const snapProps =
-    snapMode === "grid"
-      ? { translationSnap: gridSize, rotationSnap: Math.PI / 12 }
-      : { rotationSnap: Math.PI / 12 };
+  const snapProps = {
+    translationSnap: snapMode === "grid" ? gridSize : null,
+    rotationSnap,
+    scaleSnap,
+  };
 
   const handleRelease = () => {
     draggingRef.current = false;
@@ -97,6 +112,7 @@ export const TransformGizmo = memo(function TransformGizmo({
           object={object}
           mode={mode}
           size={size}
+          space={space}
           {...snapProps}
           onMouseDown={() => {
             draggingRef.current = true;

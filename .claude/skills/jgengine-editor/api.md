@@ -394,7 +394,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — drives the header unsaved-dot by reference compare. */ baselineDocum… — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, the embedded {@link AgentPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — drives the header unsaved indicator by reference compare. */ baselin… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
@@ -446,7 +446,7 @@
 
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
-- `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by `OutlinerPanel` rows and the viewport drop zone.
+- `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 
 ## @jgengine/editor/DebugDraw
@@ -466,7 +466,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — drives the header unsaved-dot by reference compare. */ baselineDocum… — The full editor UI shell — toolbar, left panels (outliner/prefabs/sets/layers), viewport overlays, the selector-subscribed {@link InspectorPanel}, the embedded {@link AgentPanel}, and the asset browser — wired to the session, UI store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — drives the header unsaved indicator by reference compare. */ baselin… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
 ## @jgengine/editor/PerfProbe
 
@@ -576,7 +576,7 @@
 
 ## @jgengine/editor/handlers/document
 
-- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "set_marker" | "set_note" | "set_meta" | "select" | "clear_selection" | "camera_goto" | "camera_… — Document, selection, camera, mode, asset placement, and status verbs.
+- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "set_marker" | "set_note" | "set_meta" | "apply_preset" | "select" | "clear_selection" | "camera… — Document, selection, camera, mode, asset placement, and status verbs.
 
 ## @jgengine/editor/handlers/grids
 
@@ -609,7 +609,8 @@
 
 ## @jgengine/editor/mcp/cli
 
-- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; save: boolean; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `SaveSceneResult` (type): type SaveSceneResult = { ok: true; saved: string } | { ok: false; error: string } — Result of a `--save` write-back: the path written, or why nothing was written.
 
 ## @jgengine/editor/mcp/fieldSpec
 
@@ -681,6 +682,144 @@
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 
+## @jgengine/editor/shell/BottomDock
+
+- `BottomDock` (function): function BottomDock({ tab, onSelectTab, onClose, assets, session, api, consoleStore, perfHistory, browserView, onSetBrowserView, onPlaceAsset, }: { tab: BottomDockTab; onSelectTab: (tab: BottomDockTab) => void; onClose: () => void; assets: readonly EditorAssetEntry[]; session: EditorSession; api: Ed… — Tabbed bottom dock: Content Browser, Console, Profiler, Animation (staged), and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
+
+## @jgengine/editor/shell/CommandPalette
+
+- `CommandPalette` (function): function CommandPalette({ commands, onClose, initialQuery = "", }: { commands: readonly PaletteCommand[]; onClose: () => void; /** Pre-filled filter (e.g. "add " to open straight into placement commands). */ initialQuery?: string; }): React.JSX.Element — Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command and runs the highlighted one on Enter. Esc or backdrop click cancels without side effects.
+
+## @jgengine/editor/shell/ConsolePanel
+
+- `ConsolePanel` (function): function ConsolePanel({ store }: { store: EditorConsoleStore }): React.JSX.Element — Console dock tab over the real editor event log — notifications, save/import results, RPC and agent errors. Severity filters, counts, search, timestamps, and clear; no fabricated entries.
+
+## @jgengine/editor/shell/ContentBrowser
+
+- `ContentBrowser` (function): function ContentBrowser({ assets, session, onPlace, view, onSetView, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; view: BrowserViewMode; onSetView: (view: BrowserViewMode) => void; }): React.JSX.Element — Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset catalog, plus the terrain material palette (drag chips onto objects or the viewport). Thumbnails are typed glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing here fakes renders it doesn't have.
+
+## @jgengine/editor/shell/HierarchyPanel
+
+- `HierarchyPanel` (const): const HierarchyPanel: React.MemoExoticComponent<({ session, api, onAdd, }: { session: EditorSession; api: EditorHostApi; onAdd: () => void; }) => React.JSX.Element> — Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live document. Group headers carry real per-kind visibility toggles (the editor's layer system); rows locked through a locked collection show a lock indicator. Selector-subscribed and memoized, so UI-only churn never rerenders it.
+
+## @jgengine/editor/shell/ProfilerPanel
+
+- `ProfilerPanel` (function): function ProfilerPanel({ history }: { history: PerfHistoryStore }): React.JSX.Element — Profiler dock tab over the real {@link PerfProbe} sample history: frame-time graph, current and average values, and authoring-cost series when the probe reports one. Series the host cannot measure (CPU/GPU split, memory) are omitted entirely rather than fabricated.
+
+## @jgengine/editor/shell/SceneToolbar
+
+- `ADD_VOLUME_ENTRIES` (const): const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] — Volume placement entries offered by the Add menu.
+- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, gizmoSpace, snapMode, gridSize, rotationSnapDeg, scaleSnap, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetGizmoSpace, onSetSnapMode, onSetGridSize, onSetRotationSnapDeg, onSetScaleSnap, onToggleGrid, … — Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping, viewport overlays, framing, and the Add menu. Unsupported controls (pivot modes, ortho projection) render disabled rather than pretending to work.
+
+## @jgengine/editor/shell/StatusBar
+
+- `StatusBar` (function): function StatusBar({ api, history, objects, foliage, selectionCount, autosave, }: { api: EditorHostApi; history: PerfHistoryStore; objects: number; foliage: number; selectionCount: number; autosave: boolean; }): React.JSX.Element — Bottom status strip: readiness, scene stats, live perf pill, autosave state, and camera hints. Owns its own perf poll (and the profiler history feed) so the 500ms tick never rerenders the shell.
+- `formatTriangles` (function): function formatTriangles(count: number): string — Compact triangle-count formatting (1.2M / 340k).
+- `usePerfSample` (function): function usePerfSample(api: EditorHostApi, history?: PerfHistoryStore): EditorPerfSample | null — Shared editor-host perf poll: samples on an interval and feeds the profiler history.
+
+## @jgengine/editor/shell/TopAppBar
+
+- `TopAppBar` (function): function TopAppBar({ gameId, dirty, saveState, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; dirty: boolean; saveState: TopBarSaveState; saveAvailable: boolea… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step are shown disabled in edit mode — they operate through the runtime play controls once Play mode is entered.
+- `TopBarSaveState` (type): type TopBarSaveState = "idle" | "saving" | "saved" | "error" — Document save lifecycle mirrored from `useDocumentSave`.
+
+## @jgengine/editor/shell/ViewportOverlays
+
+- `OrientationWidget` (const): const OrientationWidget: React.MemoExoticComponent<() => React.JSX.Element> — Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders React.
+- `PerformanceOverlay` (const): const PerformanceOverlay: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => React.JSX.Element | null> — Top-left viewport performance readout backed by the real in-canvas {@link PerfProbe} samples. Rows without data (no sample yet) simply don't render — nothing is fabricated.
+- `ViewportUtilityPanel` (function): function ViewportUtilityPanel({ document, api, selectionCount, }: { document: EditorDocument; api: EditorHostApi; selectionCount: number; }): React.JSX.Element — Top-right collapsible viewport utility panel: real per-kind object counts from the live document plus camera framing actions. Deliberately not a minimap — no fake imagery.
+
+## @jgengine/editor/shell/WorkspaceRail
+
+- `WORKSPACES` (const): const WORKSPACES: readonly RailEntry[] — Rail order and support map. Unsupported modes are visible but disabled — never fake panels.
+- `WorkspaceRail` (function): function WorkspaceRail({ active, onSelect, }: { active: EditorWorkspace; onSelect: (workspace: EditorWorkspace) => void; }): React.JSX.Element — Narrow left workspace rail. Supported modes activate their home panels; planned modes are disabled with an explanatory tooltip so nothing pretends to work.
+
+## @jgengine/editor/shell/cameraTelemetry
+
+- `CameraTelemetry` (interface): interface CameraTelemetry — Per-frame camera orientation channel between the in-canvas probe and the DOM orientation widget. Deliberately a mutable record, not React state: the probe writes every frame and the widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
+- `createCameraTelemetry` (function): function createCameraTelemetry(): CameraTelemetry — Creates a telemetry record seeded at rest (identity basis).
+- `getCameraTelemetry` (function): function getCameraTelemetry(): CameraTelemetry — Shared telemetry singleton — probe and widget may mount in different React trees.
+
+## @jgengine/editor/shell/commandRegistry
+
+- `PaletteCommand` (interface): interface PaletteCommand — One executable command-palette entry.
+- `PaletteContext` (interface): interface PaletteContext — Everything the palette can drive — thin callbacks over existing editor systems.
+- `buildPaletteCommands` (function): function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] — Builds the full palette command list from live editor capabilities — no dead entries.
+- `filterPaletteCommands` (function): function filterPaletteCommands(commands: readonly PaletteCommand[], query: string): PaletteCommand[] — Case-insensitive subsequence-friendly filter over title, group, and keywords.
+
+## @jgengine/editor/shell/consoleStore
+
+- `CONSOLE_CAPACITY` (const): const CONSOLE_CAPACITY: 500 — Entries kept before the oldest are dropped.
+- `ConsoleEntry` (interface): interface ConsoleEntry — One recorded editor event.
+- `ConsoleSeverity` (type): type ConsoleSeverity = "info" | "warning" | "error" — Bounded editor event log backing the Console dock tab. Only real editor events are recorded — notifications, save/import/export results, RPC and agent errors — never fabricated runtime logs.
+- `EditorConsoleStore` (interface): interface EditorConsoleStore — Subscribable, bounded editor event log.
+- `createEditorConsoleStore` (function): function createEditorConsoleStore(now: () => number = () => Date.now()): EditorConsoleStore — Creates the editor console store. `now` is injectable for tests.
+
+## @jgengine/editor/shell/fields
+
+- `AxisNumberField` (function): function AxisNumberField({ axis, label, value, onCommit, step = 0.1, precision = 3, disabled = false, }: { /** Axis coloring; omit for a neutral field. */ axis?: "x" | "y" | "z"; label: string; value: number; onCommit: (value: number) => void; step?: number; precision?: number; disabled?: boolean; }… — Polished numeric field with an axis-colored label chip. The chip is a drag-scrub handle (pointer-drag adjusts by `step` per few pixels); the input commits finite values on change and re-normalizes its text on blur. Invalid text never commits.
+- `FieldRow` (function): function FieldRow({ label, children, title }: { label: string; children: React.ReactNode; title?: string }): React.JSX.Element — Labeled row wrapper aligning a caption with one or more fields.
+- `SectionAction` (function): function SectionAction({ label, onClick, active = false, disabled = false, children, }: { label: string; onClick: () => void; active?: boolean; disabled?: boolean; children: React.ReactNode; }): React.JSX.Element — Small ghost action used inside section headers (reset, link).
+- `TextField` (function): function TextField({ label, value, placeholder, onCommit, }: { label: string; value: string; placeholder?: string; onCommit: (value: string) => void; }): React.JSX.Element — Compact text input row used by the inspector header and component cards.
+
+## @jgengine/editor/shell/icons
+
+- `Icon` (function): function Icon({ name, size = 14, ...rest }: { name: IconName; size?: number } & SVGProps<SVGSVGElement>): React.JSX.Element — One 16px stroke icon from the shell's internal set; sized via the `size` prop.
+- `IconName` (type): type IconName = | "cursor" | "move" | "rotate" | "scale" | "terrain" | "brush" | "grid" | "magnet" | "frame" | "camera" | "eye" | "eyeOff" | "lock" | "unlock" | "search" | "filter" | "plus" | "folder" | "folderOpen" | "cube" | "pin" | "sphere" | "spline" | "note" | "play" | "pause" | "step" | "stop"… — Internal editor icon set: compact 16px stroke glyphs drawn in-repo so the shell has one consistent icon language without adding a dependency. Every glyph is original geometry.
+- `kindIcon` (function): function kindIcon(kind: string): IconName — Icon assigned to a scene-object kind for hierarchy rows and inspector headers.
+
+## @jgengine/editor/shell/layoutStore
+
+- `BottomDockTab` (type): type BottomDockTab = "content" | "console" | "profiler" | "animation" | "assistant" — Bottom dock tool tabs.
+- `BrowserViewMode` (type): type BrowserViewMode = "grid" | "list" — Content-browser presentation density.
+- `DEFAULT_LAYOUT` (const): const DEFAULT_LAYOUT: ShellLayoutState — Default shell layout, matching the reference composition.
+- `EditorWorkspace` (type): type EditorWorkspace = | "scene" | "terrain" | "assets" | "materials" | "scripting" | "animation" | "audio" | "lighting" | "ai" | "multiplayer" — Persistent editor-shell layout state: which workspace is active, which panels are open, their sizes, and dock tab selections. Kept apart from `uiStore` (transient interaction state) so layout preferences survive reloads without entangling gizmo/placement churn. Persistence is throttled so drag-resizing never writes localStorage per pointer move.
+- `InspectorTab` (type): type InspectorTab = "inspector" | "components" | "materials" — Inspector header tabs.
+- `LAYOUT_LIMITS` (const): const LAYOUT_LIMITS: { readonly leftWidth: { readonly min: 220; readonly max: 420; }; readonly rightWidth: { readonly min: 260; readonly max: 460; }; readonly bottomHeight: { readonly min: 160; readonly max: 480; }; } — Bounds applied to persisted/live panel sizes so restored layouts can never crush the viewport.
+- `LAYOUT_PERSIST_DELAY_MS` (const): const LAYOUT_PERSIST_DELAY_MS: 400 — How long resize/patch churn batches before one localStorage write.
+- `LeftDockPage` (type): type LeftDockPage = "hierarchy" | "collections" | "prefabs" | "catalogs" — Left dock content pages (hierarchy plus the existing data panels).
+- `ShellLayoutState` (interface): interface ShellLayoutState — The persisted + live shell layout state.
+- `ShellLayoutStore` (interface): interface ShellLayoutStore — Subscribable store over {@link ShellLayoutState} with clamped resize helpers.
+- `createShellLayoutStore` (function): function createShellLayoutStore(gameId: string): ShellLayoutStore — Creates the shell layout store, seeded from localStorage when available.
+- `normalizeLayout` (function): function normalizeLayout(raw: unknown): ShellLayoutState — Normalizes any partially-persisted layout into a valid state (sizes clamped, unions guarded).
+
+## @jgengine/editor/shell/perfHistory
+
+- `PERF_HISTORY_CAPACITY` (const): const PERF_HISTORY_CAPACITY: 240 — Samples retained (~2 minutes at the 500ms poll).
+- `PerfHistoryStore` (interface): interface PerfHistoryStore — Rolling history of real {@link EditorPerfSample}s for the Profiler dock tab's frame-time graph. Fed by the same 500ms host poll the toolbar pill uses; never fabricates values. Kept outside React state so recording continues while the profiler tab is closed without rerendering anything.
+- `createPerfHistoryStore` (function): function createPerfHistoryStore(): PerfHistoryStore — Creates the rolling perf-sample history store.
+- `seriesAverage` (function): function seriesAverage(values: readonly number[]): number — Mean of a numeric series, 0 for empty input.
+- `sparklinePoints` (function): function sparklinePoints(values: readonly number[], width: number, height: number, maxValue: number): string — Builds an SVG polyline `points` string for a series scaled into a width×height box.
+
+## @jgengine/editor/shell/theme
+
+- `APP_BG` (const): const APP_BG: "bg-[#0b0d10]" — Editor shell design tokens as Tailwind class constants. One place owns the layered dark theme (app < panel < control elevation), text scale, and interaction states so every shell component reads identically. Class strings are complete literals so the host app's Tailwind scan keeps them.
+- `AXIS_COLORS` (const): const AXIS_COLORS: Record<"x" | "y" | "z", { text: string; bar: string }> — Per-axis accent colors for transform fields (X red, Y green, Z blue — gizmo-matched).
+- `BORDER` (const): const BORDER: "border-white/[0.07]" — Low-contrast neutral border used between shell regions.
+- `CONTROL` (const): const CONTROL: "rounded-[5px] border border-white/[0.07] bg-[#191d24] text-neutral-300 transition-colors hover:bg-[#1f242d] hover:text-neutral-100 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-0" — Base interactive control: compact, subtle border, hover elevation.
+- `CONTROL_ACTIVE` (const): const CONTROL_ACTIVE: "border-cyan-400/40 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/20" — Active/selected control state — restrained cyan.
+- `CONTROL_BG` (const): const CONTROL_BG: "bg-[#191d24]" — Elevated control surface — inputs, chips, dropdowns.
+- `FLOAT_BG` (const): const FLOAT_BG: "bg-[#14171d]" — Floating layer surface — menus, palettes, popovers.
+- `FOCUS_RING` (const): const FOCUS_RING: "outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-0" — Shared focus ring for keyboard navigation on interactive controls.
+- `INPUT_CLS` (const): const INPUT_CLS: "rounded-[5px] border border-white/[0.08] bg-black/40 text-[12px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/50 focus:bg-black/60 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-0" — Text input styling shared across shell panels.
+- `MICRO_LABEL` (const): const MICRO_LABEL: "text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500" — Micro uppercase section label.
+- `NUMERIC` (const): const NUMERIC: "tabular-nums" — Tabular numerals for transforms, metrics, and timing readouts.
+- `PANEL_BG` (const): const PANEL_BG: "bg-[#111318]" — Panel surface — one elevation step above the app background.
+- `TEXT` (const): const TEXT: "text-[12px] text-neutral-300" — Standard control text row.
+- `TEXT_MUTED` (const): const TEXT_MUTED: "text-[11px] text-neutral-500" — Muted metadata text.
+
+## @jgengine/editor/shell/ui
+
+- `CollapsibleSection` (function): function CollapsibleSection({ title, icon, open, onToggle, children, trailing, tone, }: { title: string; icon?: IconName; open: boolean; onToggle: () => void; children: ReactNode; trailing?: ReactNode; /** Optional accent color for the title icon. */ tone?: string; }): React.JSX.Element — Collapsible component card for the inspector and side panels.
+- `EmptyState` (function): function EmptyState({ icon, title, description, badge, children, }: { icon: IconName; title: string; description: string; badge?: string; children?: ReactNode; }): React.JSX.Element — Polished empty state used by unsupported workspaces and empty docks.
+- `IconButton` (function): function IconButton({ icon, label, onClick, active = false, disabled = false, size = 14, className = "", tone = "neutral", }: { icon: IconName; label: string; onClick?: () => void; active?: boolean; disabled?: boolean; size?: number; className?: string; tone?: "neutral" | "ghost"; }): React.JSX.Elem… — Icon-only control with a mandatory accessible name (tooltip + aria-label).
+- `Kbd` (function): function Kbd({ children }: { children: ReactNode }): React.JSX.Element — Keyboard-shortcut chip rendered inside buttons and menus.
+- `PanelHeading` (function): function PanelHeading({ children, trailing }: { children: ReactNode; trailing?: ReactNode }): React.JSX.Element — Micro uppercase heading used inside panels.
+- `PanelResizer` (function): function PanelResizer({ orientation, label, onResize, sign = 1, }: { orientation: "vertical" | "horizontal"; label: string; onResize: (delta: number) => void; sign?: 1 | -1; }): React.JSX.Element — Drag handle between shell regions. Pointer-drag resizes continuously; arrow keys resize in 16px steps for keyboard access. `sign` maps a positive pointer delta to a size increase.
+- `PanelTabs` (function): function PanelTabs<T extends string>({ tabs, active, onSelect, trailing, ariaLabel, }: { tabs: readonly { id: T; label: string; icon?: IconName; badge?: string | number }[]; active: T; onSelect: (id: T) => void; trailing?: ReactNode; ariaLabel: string; }): React.JSX.Element — Horizontal tab strip for dock panels (bottom dock, inspector tabs).
+- `Segmented` (function): function Segmented<T extends string>({ options, value, onChange, ariaLabel, disabled = false, }: { options: readonly SegmentedOption<T>[]; value: T; onChange: (value: T) => void; ariaLabel: string; disabled?: boolean; }): React.JSX.Element — Compact segmented control on the elevated-control surface with a cyan active segment.
+- `SegmentedOption` (interface): interface SegmentedOption<T extends string> — One choice within a {@link Segmented} control.
+- `ToolbarDivider` (function): function ToolbarDivider(): React.JSX.Element — Thin vertical divider between toolbar clusters.
+
 ## @jgengine/editor/terrainReadoutStore
 
 - `TerrainReadoutState` (interface): interface TerrainReadoutState — Live, transient terrain-readability feedback shared by the viewport overlay and the HUD legend.
@@ -695,8 +834,11 @@
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `GizmoSpace` (type): type GizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes.
 - `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
+- `ROTATION_SNAP_CHOICES_DEG` (const): const ROTATION_SNAP_CHOICES_DEG: readonly number[] — Rotation snap increments (degrees) offered by the toolbar snap menu.
+- `SCALE_SNAP_CHOICES` (const): const SCALE_SNAP_CHOICES: readonly number[] — Scale snap increments offered by the toolbar snap menu.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SnapMode` (type): type SnapMode = "ground" | "grid" | "off" — How gizmo drags land: stick to terrain height, quantize to a grid, or free.
 - `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.

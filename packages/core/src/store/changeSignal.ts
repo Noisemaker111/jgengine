@@ -1,9 +1,11 @@
+/** @internal */
 export interface ChangeSignal {
   subscribe(listener: () => void): () => void;
   notify(): void;
   version(): number;
 }
 
+/** @internal */
 export function createChangeSignal(): ChangeSignal {
   const listeners = new Set<() => void>();
   let version = 0;
@@ -24,6 +26,7 @@ export function createChangeSignal(): ChangeSignal {
   };
 }
 
+/** @internal */
 export function notifyAfter<T extends object, K extends keyof T>(
   target: T,
   methods: readonly K[],

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent } from "./gameContext";
 import { createHostedWorldSession } from "./hostedWorldSession";
@@ -17,7 +17,7 @@ const CONTENT: GameContextContent = {
 };
 
 function definition() {
-  return defineGame({
+  return defineGameDefinition({
     name: "Mirrored",
     assets: createAssetCatalog(),
     multiplayer: "off",

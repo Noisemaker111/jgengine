@@ -1,13 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import {
-  defineGame,
-  seededRng,
-  selectSpawnPoint,
-} from "@jgengine/core/authoring";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { seededRng, selectSpawnPoint } from "@jgengine/core/authoring";
 
 describe("authoring surface", () => {
   test("creates a game without exposing scene or asset stores", () => {
-    const game = defineGame({ name: "Authoring example", multiplayer: null });
+    const game = defineGameDefinition({ name: "Authoring example", multiplayer: null });
     expect(game.name).toBe("Authoring example");
     expect(game.scene).toBeDefined();
     expect(game.assets).toBeDefined();

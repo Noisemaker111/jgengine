@@ -22,6 +22,7 @@
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
 - `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
+- `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
 - `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
 - `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
@@ -34,6 +35,7 @@
 - `createConvexSaveBackend` (function): function createConvexSaveBackend(options: ConvexSaveBackendOptions): SaveBackend — A cloud {@link SaveBackend} backed by Convex — reads through a query and writes through mutations, so a {@link createSaveStore} configured with it saves to the server instead of `localStorage`. The only change from an offline game is swapping the backend; autosave, slots, and migration behave the same.
 - `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
 - `defaultConvexSaveFunctions` (function): function defaultConvexSaveFunctions(): ConvexSaveFunctions — Default `saves.read` / `saves.write` / `saves.remove` refs for apps that follow the convention — pass your own `functions` to override.
+- `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
 - `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
 - `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 - `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
@@ -97,6 +99,8 @@
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
+- `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
+- `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
 
 ## @jgengine/core/multiplayer
 

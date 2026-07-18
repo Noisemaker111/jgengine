@@ -58,6 +58,20 @@ describe("assessPrototypeLook", () => {
     expect(verdict.isPrototype).toBe(false);
   });
 
+  test("passes an authored scene without model seams (shell auto-mounts AuthoredScene)", () => {
+    const verdict = assessPrototypeLook([
+      `export const game = defineGame({
+        name: "Thin",
+        systems,
+        loop: { onNewPlayer },
+        GameUI,
+        editorLayers,
+      });`,
+    ]);
+    expect(verdict.isPrototype).toBe(false);
+    expect(verdict.signals.hasAuthoredScene).toBe(true);
+  });
+
   test("skips HUD-only presentation", () => {
     const verdict = assessPrototypeLook([
       `export const game = defineGame({

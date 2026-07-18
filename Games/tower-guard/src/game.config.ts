@@ -1,9 +1,10 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 
+import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { keybinds } from "./game/keybinds";
-import { entityModels } from "./game/models";
+import { entityModels, scatterModels } from "./game/models";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
 import { TowerGuardWorldOverlay } from "./game/world/WorldOverlay";
@@ -25,6 +26,11 @@ export const game = defineGame({
     variant: "panel",
   },
   entityModels,
+  // Draped creep path + instanced foliage render from the document; towers/creeps/props spawn as
+  // entities in the loop, so object placement stays off — no double render.
+  editorLayers,
+  scenePlacement: false,
+  sceneScatterModels: scatterModels,
   WorldOverlay: TowerGuardWorldOverlay,
   worldHealthBars: { statId: "health" },
   pointer: { moveCommand: "tower.build" },

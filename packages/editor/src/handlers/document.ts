@@ -5,7 +5,7 @@ import {
   type EditorDocument,
 } from "@jgengine/core/editor/index";
 import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAsset";
-import { getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
+import { findSchemaPreset, getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
 
 import { EDITOR_RUN_MODES } from "../session";
 import type { HandlerTable } from "./context";
@@ -64,6 +64,7 @@ export const documentHandlers: Pick<
   | "set_marker"
   | "set_note"
   | "set_meta"
+  | "apply_preset"
   | "select"
   | "clear_selection"
   | "camera_goto"
@@ -213,6 +214,30 @@ export const documentHandlers: Pick<
             : { type: "setNote", id: request.id, patch: { meta: merged } },
     );
     return { ok: true, result: { id: request.id, kind: target.kind, meta: merged } };
+  },
+  apply_preset: (ctx, request) => {
+    const target = findMetaTarget(ctx.session.getState().document, request.id);
+    if (target === null) return { ok: false, error: `object not found: ${request.id}` };
+    const definition = getSceneKind(target.kind);
+    if (definition === undefined) return { ok: false, error: `kind "${target.kind}" has no registered schema` };
+    const preset = findSchemaPreset(definition.schema, request.preset);
+    if (preset === undefined) {
+      const available = (definition.schema.presets ?? []).map((entry) => entry.id).join(", ") || "none";
+      return { ok: false, error: `unknown preset "${request.preset}" for kind "${target.kind}" (available: ${available})` };
+    }
+    const merged = { ...target.meta, ...preset.values };
+    const invalid = validateMetaForKind(target.kind, merged);
+    if (invalid !== null) return { ok: false, error: invalid };
+    ctx.session.dispatch(
+      target.target === "marker"
+        ? { type: "setMarker", id: request.id, patch: { meta: merged } }
+        : target.target === "volume"
+          ? { type: "setVolume", id: request.id, patch: { meta: merged } }
+          : target.target === "path"
+            ? { type: "setPath", id: request.id, patch: { meta: merged } }
+            : { type: "setNote", id: request.id, patch: { meta: merged } },
+    );
+    return { ok: true, result: { id: request.id, kind: target.kind, preset: preset.id, meta: merged } };
   },
   select: (ctx, request) => {
     ctx.session.dispatch({ type: "select", ids: request.ids });

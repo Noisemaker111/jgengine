@@ -58,8 +58,8 @@ function planClusters(ctx: GameContext): void {
       for (let index = 0; index < cluster.count; index += 1) {
         const angle = rng() * Math.PI * 2;
         const radius = 2 + rng() * cluster.radius;
-        const x = zone.center.x + cluster.offset.x + Math.cos(angle) * radius;
-        const z = zone.center.z + cluster.offset.z + Math.sin(angle) * radius;
+        const x = cluster.center.x + Math.cos(angle) * radius;
+        const z = cluster.center.z + Math.sin(angle) * radius;
         clusterMembers.push({
           id: `spawn_${zone.id}_${clusterIndex}_${cluster.catalogId}_${index}`,
           catalogId: cluster.catalogId,

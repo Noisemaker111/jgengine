@@ -1,10 +1,5 @@
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { AuthoredScene } from "@jgengine/shell/scene";
 import { WorldNameplates, type NameplateSample } from "@jgengine/shell/world/WorldHud";
 
-import { assets } from "../assets";
-import { scatterModels } from "../models";
-import { editorLayers } from "../../editorLayers";
 import { session } from "../session";
 
 const FRIENDLY = "#46c85a";
@@ -36,14 +31,9 @@ function renderBar(sample: NameplateSample) {
   );
 }
 
-/** Renders the authored map dressing (dirt war-road ribbon + instanced forest ring) draped on the
- * live terrain, plus the faction health bars. Units/keeps/props are spawned as entities elsewhere,
- * so `placeObjects` is intentionally omitted here — no double render. */
-export function IronholdWorldOverlay({ ctx }: { ctx: GameContext }) {
-  return (
-    <>
-      <AuthoredScene document={editorLayers} field={ctx.world.ground} assets={assets} scatterModels={scatterModels} />
-      <WorldNameplates statId="health" maxDistance={999} tickMs={100} renderNameplate={renderBar} />
-    </>
-  );
+/** VFX-only overlay: the faction health bars. The authored map dressing (dirt war-road ribbon +
+ * instanced forest ring) is auto-mounted by `defineGame({ editorLayers })`; units/keeps/props are
+ * spawned as entities elsewhere, so `scenePlacement` stays off — no double render. */
+export function IronholdWorldOverlay() {
+  return <WorldNameplates statId="health" maxDistance={999} tickMs={100} renderNameplate={renderBar} />;
 }

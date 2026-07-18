@@ -9,7 +9,7 @@ Read the repository [README](../../../README.md) for package truth, commands, la
 
 ## 1. Establish the target
 
-Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
+Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 
 - player point of view and controls
 - world shape and authored content
@@ -36,7 +36,7 @@ Load only rows the target needs. Do not preload every domain.
 | models, sprites, materials, audio files, source licensing | `jgengine-assets` | asset discovery and catalogs |
 | authority, transport, replication, sessions, host persistence | `jgengine-multiplayer` | network topology and persistence adapters |
 
-Scenes normally require both `jgengine-editor` for authoring and `jgengine-world` for runtime consumption. Combat and multiplayer are opt-in, not default intake.
+World content routes editor-first: any request that adds, moves, restyles, or removes something visible in the world — however phrased ("design this world", "place the enemies", "make it look better") — starts in `jgengine-editor`; the other domains consume the authored document. Scenes normally require both `jgengine-editor` for authoring and `jgengine-world` for runtime consumption. Combat and multiplayer are opt-in, not default intake.
 
 ## 3. Discover before designing
 
@@ -45,7 +45,7 @@ Within each selected domain:
 1. Search `capabilities.md` by intent; it maps needs to imports.
 2. Open `api.md` only when exact signatures or export inventory are needed.
 3. Open the linked reference only for a deeper recipe or trap.
-4. For how several primitives wire into a running loop, read the domain's `recipes/` — connected, genre-free walkthroughs organized by composition seam. Prefer a recipe over reading a game's source; the games under `Games/*` are not templates or references, and a hybrid game is just a different composition of the same primitives.
+4. For how several primitives wire into a running loop, read the domain's `recipes/` — connected, genre-free walkthroughs organized by composition seam; this skill's own [recipes/minimal-game.md](recipes/minimal-game.md) is the default whole-game walkthrough. Prefer a recipe over reading a game's source; the games under `Games/*` are not templates or references, and a hybrid game is just a different composition of the same primitives.
 
 If no capability fits, identify the upstream package seam before writing game-local code. In this repository, implement a reusable primitive with its first adopter; if editor-owned content cannot be expressed, file the editor gap first.
 

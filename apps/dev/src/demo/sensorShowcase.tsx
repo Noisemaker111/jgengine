@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -35,7 +35,7 @@ const entityCatalog: Record<string, GameContextEntityEntry> = {
   [CLUE]: {},
 };
 
-const game = defineGame({
+const game = defineGameDefinition({
   name: "sensor-showcase",
   assets: createAssetCatalog(),
   multiplayer: null,

@@ -4,8 +4,9 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 
 ## Product invariants
 
-- **Author world content in the editor.** Scenes, placement, terrain, paths, zones, foliage, and assets belong in `editor.scene.json`, authored through the editor GUI or RPC/CLI. Runtime and gameplay consume that document through shared engine primitives. If the editor cannot express required content, file a `[FEATURE]` issue before any code fallback; never hardcode geometry or coordinate arrays a scene can own. Use `jgengine-editor` for authoring and `jgengine-world` for runtime consumption.
+- **Author world content in the editor.** Scenes, placement, terrain, paths, zones, foliage, and assets belong in `editor.scene.json`, authored through the editor GUI or RPC/CLI. Any request that adds, moves, restyles, or removes visible world content — streets, buildings, props, enemy/NPC placement, phase or trigger locations, "design this world", "make it look better" — is an editor authoring task first, however it is phrased. Runtime and gameplay consume that document through shared engine primitives. If the editor cannot express required content, file a `[FEATURE]` issue before any code fallback; never hardcode geometry or coordinate arrays a scene can own. Use `jgengine-editor` for authoring and `jgengine-world` for runtime consumption.
 - **Build reusable capability upstream.** Before editing `Games/*`, name the shared owner. Anything another game could need belongs in `packages/*` as a narrow, genre-agnostic seam with the game as its first adopter. Game-local code is reserved for genuinely game-specific content and feel. Extracting a primitive must preserve observable play.
+- **Every game is custom; no genre kits.** Never build or reach for genre kits, presets, archetypes, class templates, or "default sports car / default RPG / default FPS" product shapes in the SDK or skills. Treat every pitch as a unique composition of needs, not a genre to fill in. `Games/*` are probes, never templates — prefer `capabilities.md`, recipes, or core APIs over reading another game's source. When a custom game needs something awkward, incomplete, or handrolled (catalog builders, loadout compose, boost meters, driving glue, and the like), lift a narrow, data-first, genre-agnostic seam into `packages/*` and skills; do not invent a game-local mini-framework or copy `Games/*`. If two custom games would re-handroll the same glue, that glue belongs in the SDK or a skill recipe, not duplicated under `Games/*`.
 - **Respect package layering.** The dependency direction in [README.md](README.md#layering) is authoritative. Never import from a higher layer or make `core` depend on frameworks, rendering, browser, backend, or game code.
 - **Scale by default.** Prefer serializable state, deterministic injected randomness, bounded work, and allocation-aware hot paths. Avoid full-world per-frame scans and single-player-only contracts.
 - **Engine chrome is optional.** Shared UI is composable and headless where practical; games own placement, skin, and their single main menu.
@@ -18,6 +19,7 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 - Preserve user work. Never discard or overwrite unrelated changes. Start a new task branch from current `origin/main`; do not stack new work on a parked or merged task branch.
 - Move in slices; bound recon. Read only what the smallest end-to-end change needs, then act — recon must terminate in a commit or an approved plan, never in open-ended narration. Prefer a working vertical slice over broad discovery.
 - Parallelize by default. When the task has two or more legs that do not need each other's output — separate subsystems, separate files, independent audits or verification suites — spawn one Opus subagent per leg in a single batch instead of working them serially. Keep planning, overlapping edits, and final synthesis in the main agent; never give two workers the same files; judge worker evidence rather than trusting claims. Small edits, quick greps, and waiting stay inline. Serial work on independent legs is the exception and needs a reason.
+- Route drudge work to Haiku. Long mechanical sequences that need no judgment — babysitting `bun run gate`/preflight runs and reporting the verdict, regenerating manifests/artifacts, commit + push + PR-open choreography, tailing logs for a known marker, capturing screenshot galleries, mass renames from an explicit list — go to a `model: haiku` subagent instead of occupying the main model. The main agent writes a precise prompt with exact commands and success criteria, then judges the returned evidence. Anything requiring design decisions, debugging, or code authorship stays on the stronger model.
 - Claim a tracked issue before implementation. A fixed issue is closed by the PR with `Closes #N` (or explicitly when auto-close cannot work).
 - A PR is one coherent, independently reviewable and revertible change. Combine work sharing a root cause, API migration, files, acceptance criteria, and verification story. Split work that is independently releasable, reviewable, revertible, or likely to conflict. Issue count never determines PR count.
 - Follow the `workflow` skill for issue → change → verify → ship. Push with a standalone `git push` command. Never merge, enable auto-merge, or bump versions/releases unless the user explicitly asks; the user owns merge and release timing.
@@ -30,3 +32,19 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 - `jgengine` is intake and routing only. Load only domains the task needs; use each selected domain's `capabilities.md` for intent-to-import discovery, `api.md` for generated export inventory, and references for deeper workflows.
 - Each concept has one skill owner. `workflow` owns delivery, `jgengine-verify` owns evidence, `improve` owns backlog passes and post-fix friction retrospectives, and domain skills own their package/API boundaries. Concurrency has no skill: the parallelize-by-default invariant above is the whole policy.
 - Skill descriptions stay short and trigger-oriented. `SKILL.md` holds decisions and canonical workflows, not export catalogs or repeated project facts. The repository gates root mirroring, route integrity, and duplicate prose.
+
+## Model identity
+
+- State the model you are (name and ID) at the start of every conversation.
+- Model index — `$` is relative cost, `IQ` is relative capability, both rough and directional, not measured:
+
+  | Model | $ | IQ |
+  | --- | --- | --- |
+  | Fable | 9 | 10 |
+  | GPT 5.6 | 4 | 7 |
+  | Grok 4.5 | 3 | 6 |
+  | Opus | 4 | 5 |
+  | Sonnet | 3 | 4 |
+  | Haiku | 1 | 1 |
+
+  Route work by this index: Haiku for the mechanical drudge work described above, Sonnet for default implementation, Opus/GPT 5.6/Grok 4.5/Fable reserved for design decisions, hard debugging, or judgment calls that justify their cost.
