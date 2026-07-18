@@ -4,6 +4,7 @@ import {
   createNewGame,
   fetchGames,
   fetchProcessStatus,
+  gameThumbnailUrl,
   runGate,
   saveGameSettings,
   startGameProcess,
@@ -244,7 +245,11 @@ export function Launcher() {
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-800 text-sm font-semibold text-neutral-300">
                       {game.thumbnail !== null ? (
-                        <span className="text-[10px] text-neutral-500">img</span>
+                        <img
+                          src={gameThumbnailUrl(game.id)}
+                          alt={`${game.displayName} thumbnail`}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         game.displayName.slice(0, 1).toUpperCase()
                       )}

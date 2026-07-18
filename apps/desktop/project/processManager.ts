@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join, sep } from "node:path";
 
 import {
   applyGameSettingsPatch,
@@ -19,9 +19,15 @@ export interface ProcessSnapshot {
   lines: string[];
 }
 
+export interface ThumbnailFile {
+  data: Buffer;
+  contentType: string;
+}
+
 export interface ProjectSurfaceHost {
   list(): GameListEntry[];
   get(id: string): GameListEntry | null;
+  readThumbnail(id: string): ThumbnailFile | null;
   saveSettings(id: string, patch: GameSettingsPatch): { ok: true } | { ok: false; error: string };
   startGame(
     id: string,
@@ -124,6 +130,17 @@ export function createProjectSurfaceHost(options: {
     get(id) {
       return readGameSettings(gamesDir, id);
     },
+    readThumbnail(id) {
+      if (!GAME_ID_OK(id)) return null;
+      const game = readGameSettings(gamesDir, id);
+      if (game === null || game.thumbnail === null) return null;
+      const gameRoot = join(gamesDir, id);
+      const absolutePath = join(gameRoot, game.thumbnail);
+      // Guard against traversal: the resolved file must stay inside the game dir.
+      if (absolutePath !== gameRoot && !absolutePath.startsWith(gameRoot + sep)) return null;
+      if (!existsSync(absolutePath) || !statSync(absolutePath).isFile()) return null;
+      return { data: readFileSync(absolutePath), contentType: thumbnailContentType(absolutePath) };
+    },
     saveSettings(id, patch) {
       if (!GAME_ID_OK(id)) return { ok: false, error: `invalid game id: ${id}` };
       const configPath = join(gamesDir, id, "src", "game.config.ts");
@@ -205,4 +222,14 @@ export function createProjectSurfaceHost(options: {
 
 function GAME_ID_OK(id: string): boolean {
   return /^[a-z0-9][a-z0-9-]*$/.test(id);
+}
+
+function thumbnailContentType(path: string): string {
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  return "application/octet-stream";
 }

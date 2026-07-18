@@ -62,6 +62,21 @@ async function handleProjectRequest(
       return true;
     }
 
+    const thumbMatch = path.match(/^\/games\/([a-z0-9][a-z0-9-]*)\/thumbnail$/);
+    if (method === "GET" && thumbMatch?.[1] !== undefined) {
+      const thumb = host.readThumbnail(thumbMatch[1]);
+      if (thumb === null) {
+        sendJson(res, 404, { ok: false, error: "no thumbnail" });
+        return true;
+      }
+      res.writeHead(200, {
+        "content-type": thumb.contentType,
+        "cache-control": "no-cache",
+      });
+      res.end(thumb.data);
+      return true;
+    }
+
     const gameMatch = path.match(/^\/games\/([a-z0-9][a-z0-9-]*)$/);
     if (method === "GET" && gameMatch?.[1] !== undefined) {
       const game = host.get(gameMatch[1]);
