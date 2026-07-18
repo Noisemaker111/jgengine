@@ -9,6 +9,7 @@ import {
   type EditorAssetEntry,
 } from "../AssetBrowser";
 import { TERRAIN_MATERIALS } from "../uiStore";
+import { AssetThumbnail } from "./AssetThumbnail";
 import { Icon, type IconName } from "./icons";
 import type { BrowserViewMode } from "./layoutStore";
 import { FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./theme";
@@ -27,10 +28,9 @@ const MODEL_ACCEPT = ".glb,.gltf,model/gltf-binary,model/gltf+json";
 /**
  * Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset
  * catalog, plus the terrain material palette (drag chips onto objects or the viewport). Assets are
- * draggable into the viewport for placement (and still double-click / Place). Thumbnails are typed
- * glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing here fakes
- * renders it doesn't have. Import reuses the standalone editor's host importer (durable when the
- * dev host answers, ephemeral blob otherwise) so in-game authoring has a real .glb path.
+ * draggable into the viewport for placement (and still double-click / Place). Model cards with a URL
+ * get a real offscreen-GLB thumbnail (cached); catalog/marker rows and failed loads keep typed
+ * glyphs — never a fabricated screenshot. Import reuses the standalone editor's host importer.
  */
 export function ContentBrowser({
   assets,
@@ -250,8 +250,8 @@ export function ContentBrowser({
                           : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
                       }`}
                     >
-                      <div className="flex h-14 items-center justify-center border-b border-white/[0.05] bg-black/25 text-neutral-500 group-hover:text-neutral-300">
-                        <Icon name={ASSET_KIND_ICON[asset.kind]} size={22} />
+                      <div className="flex h-14 items-center justify-center overflow-hidden border-b border-white/[0.05] bg-black/25 text-neutral-500 group-hover:text-neutral-300">
+                        <AssetThumbnail asset={asset} size={22} />
                       </div>
                       <div className="p-1.5">
                         <div className="truncate text-[10px] text-neutral-200">{asset.label}</div>
@@ -281,7 +281,9 @@ export function ContentBrowser({
                         isSelected ? "bg-cyan-500/10 ring-1 ring-inset ring-cyan-400/30" : "hover:bg-white/[0.04]"
                       }`}
                     >
-                      <Icon name={ASSET_KIND_ICON[asset.kind]} size={14} className="shrink-0 text-neutral-500" />
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border border-white/[0.06] bg-black/30">
+                        <AssetThumbnail asset={asset} size={14} />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setSelectedId(asset.id)}
@@ -310,8 +312,8 @@ export function ContentBrowser({
 
           {selected !== null && !showMaterials ? (
             <aside className="w-48 shrink-0 overflow-auto border-l border-white/[0.06] p-2.5" aria-label="Asset details">
-              <div className="flex h-16 items-center justify-center rounded-[6px] border border-white/[0.07] bg-black/25 text-neutral-400">
-                <Icon name={ASSET_KIND_ICON[selected.kind]} size={26} />
+              <div className="flex h-16 items-center justify-center overflow-hidden rounded-[6px] border border-white/[0.07] bg-black/25 text-neutral-400">
+                <AssetThumbnail asset={selected} size={26} />
               </div>
               <div className="mt-2 truncate text-[12px] font-medium text-neutral-100">{selected.label}</div>
               <dl className="mt-1.5 space-y-1 text-[10px]">
