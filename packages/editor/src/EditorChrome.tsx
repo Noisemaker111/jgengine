@@ -14,6 +14,7 @@ import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
 import { ParentPickerMenu } from "./ParentPickerMenu";
+import { MaterialsWorkspacePanel } from "./MaterialsWorkspacePanel";
 import { PrefabsPanel } from "./PrefabsPanel";
 import { listParentCandidates } from "./parentCandidates";
 import {
@@ -621,7 +622,6 @@ export function EditorChrome({
 
   const selectWorkspace = (workspace: EditorWorkspace) => {
     layout.setWorkspace(workspace);
-    if (workspace === "materials") layout.patch({ rightOpen: true, inspectorTab: "materials" });
     if (workspace === "terrain") ui.setTool("terrain");
     else if (workspace !== "terrain" && ui.getState().tool === "terrain") ui.setTool("select");
   };
@@ -765,11 +765,19 @@ export function EditorChrome({
             <aside
               className={`pointer-events-auto hidden min-h-0 flex-col overflow-hidden border-r ${BORDER} bg-[#111318] sm:flex`}
               style={{ width: layoutState.leftWidth }}
-              aria-label={layoutState.workspace === "multiplayer" ? "Network workspace dock" : "Scene hierarchy dock"}
+              aria-label={
+                layoutState.workspace === "multiplayer"
+                  ? "Network workspace dock"
+                  : layoutState.workspace === "materials"
+                    ? "Materials workspace dock"
+                    : "Scene hierarchy dock"
+              }
             >
               <div className={`flex h-8 shrink-0 items-center gap-1 border-b ${BORDER} px-1.5`}>
                 {layoutState.workspace === "multiplayer" ? (
                   <span className="px-2 text-[11px] font-medium text-neutral-200">Network</span>
+                ) : layoutState.workspace === "materials" ? (
+                  <span className="px-2 text-[11px] text-neutral-100">Materials</span>
                 ) : (
                   LEFT_PAGES.map((page) => {
                     const badge =
@@ -809,6 +817,8 @@ export function EditorChrome({
               </div>
               {layoutState.workspace === "multiplayer" ? (
                 <NetworkWorkspacePanel snapshot={networkSnapshot} />
+              ) : layoutState.workspace === "materials" ? (
+                <MaterialsWorkspacePanel session={session} api={api} />
               ) : layoutState.leftPage === "collections" ? (
                 <CollectionsPanel session={session} />
               ) : layoutState.leftPage === "prefabs" ? (
