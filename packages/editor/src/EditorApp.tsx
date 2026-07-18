@@ -32,6 +32,7 @@ import {
   createEditorUiStore,
   type CameraProjectionMode,
   type EditorUiStore,
+  type GizmoPivot,
   type GizmoSpace,
   type SnapMode,
 } from "./uiStore";
@@ -74,6 +75,7 @@ function endpointSaver(gameId: string): EditorSaveFn | undefined {
 interface StoredEditorPrefs {
   visibility?: Record<string, boolean>;
   gizmoSpace?: GizmoSpace;
+  gizmoPivot?: GizmoPivot;
   snapMode?: SnapMode;
   gridSize?: number;
   rotationSnapDeg?: number | null;
@@ -453,6 +455,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     }
     ui.patch({
       ...(prefs.gizmoSpace === undefined ? {} : { gizmoSpace: prefs.gizmoSpace }),
+      ...(prefs.gizmoPivot === undefined ? {} : { gizmoPivot: prefs.gizmoPivot }),
       ...(prefs.snapMode === undefined ? {} : { snapMode: prefs.snapMode }),
       ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
       ...(prefs.rotationSnapDeg === undefined ? {} : { rotationSnapDeg: prefs.rotationSnapDeg }),
@@ -468,6 +471,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       savePrefs(gameId, {
         visibility: host.api.getVisibility(),
         gizmoSpace: state.gizmoSpace,
+        gizmoPivot: state.gizmoPivot,
         snapMode: state.snapMode,
         gridSize: state.gridSize,
         rotationSnapDeg: state.rotationSnapDeg,
