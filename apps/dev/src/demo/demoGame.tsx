@@ -1,4 +1,4 @@
-import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import type {
   GameContext,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";

@@ -50,6 +50,12 @@ function initialEditorMode(enabled: boolean): boolean {
   return new URLSearchParams(window.location.search).get("mode") === "editor";
 }
 
+/**
+ * The one documented mount: resolves multiplayer for the playable and renders the shell. With the
+ * `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
+ *
+ * @capability mount-game mount a defined game in the browser — `<GameHost playable={game} editor={() => import("@jgengine/editor")} />`
+ */
 export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor }: GameHostProps) {
   const resolvedGameId = gameId ?? playable.game.name;
   const [editorOpen, setEditorOpen] = useState(() => initialEditorMode(editor !== undefined));

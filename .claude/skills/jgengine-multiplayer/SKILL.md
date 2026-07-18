@@ -5,6 +5,17 @@ description: Design authority, transport, replication, sessions, and host persis
 
 # JGengine multiplayer
 
+## Do you need this skill at all?
+
+| Situation | Answer |
+| --- | --- |
+| Solo / single-player | Do not load this skill; omit `multiplayer` entirely — offline is the shell default |
+| Couch / same-screen play | Still solo — one client, no adapter |
+| Friends co-op, no server | `p2p({ room })` |
+| Hosted authoritative shared world | `ws({ authority: "server" })` + `@jgengine/node` host |
+| Presence/ghosts only | `wsPresence()` |
+| Cloud persistence | Convex adapters |
+
 ## Ownership
 
 This skill owns network topology, authority, transports, sessions/presence, replication/projection, reconnect, hosted runners, and persistence adapters. Serializable game state and save semantics stay in `jgengine-gameplay`.

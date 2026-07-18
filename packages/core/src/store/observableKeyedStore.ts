@@ -17,6 +17,7 @@ export interface ObservableKeyedStore<T> {
   hydrate(data: readonly (readonly [string, T])[]): void;
 }
 
+/** @internal */
 export function createObservableKeyedStore<T>(
   areEqual?: (previous: T, next: T) => boolean,
 ): ObservableKeyedStore<T> {

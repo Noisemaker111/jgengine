@@ -222,76 +222,35 @@ body,
 }
 `;
 
-const mainTsx = (id: string) => `import "./index.css";
-
-import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
-import { createRoot } from "react-dom/client";
-
-import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+// GameHost owns the whole editor summon (F2+E / ?mode=editor), the agent bridge hook, and the
+// DEV-guarded save endpoint — main.tsx stays a mount point.
+const mainTsx = (editor: boolean) =>
+  editor
+    ? `import { createRoot } from "react-dom/client";
 import { GameHost } from "@jgengine/shell/GameHost";
-
-import { editorCatalogs } from "./editorCatalogs";
 import { game } from "./game.config";
-
-const GAME_ID = "${id}";
-if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", GAME_ID);
-
-// Editor mode (F2+E / ?mode=editor) loads as a lazy chunk — never bundled into gameplay.
-const EditorApp = lazy(async () => {
-  const mod = await import("@jgengine/editor");
-  return {
-    default: mod.EditorApp as ComponentType<{
-      gameId: string;
-      playable: typeof game;
-      catalogs?: typeof editorCatalogs;
-    }>,
-  };
-});
-
-function App() {
-  const [editor, setEditor] = useState(
-    new URLSearchParams(window.location.search).get("mode") === "editor",
-  );
-  useEffect(() => {
-    if (editor) return;
-    const summon = () => setEditor(true);
-    (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
-    let f2Held = false;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "F2") f2Held = true;
-      else if (event.code === "KeyE" && f2Held) {
-        event.preventDefault();
-        summon();
-      }
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.code === "F2") f2Held = false;
-    };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      const host = window as { __jgengineSummonEditor?: () => void };
-      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
-    };
-  }, [editor]);
-  if (!editor) return <GameHost playable={game} />;
-  return (
-    <Suspense fallback={null}>
-      <EditorApp gameId={GAME_ID} playable={game} catalogs={editorCatalogs} />
-    </Suspense>
-  );
-}
+import "./index.css";
 
 const root = document.getElementById("root");
-if (root === null) throw new Error("main: missing #root mount element");
-createRoot(root).render(<App />);
+if (root === null) throw new Error("missing #root");
+createRoot(root).render(<GameHost playable={game} editor={() => import("@jgengine/editor")} />);
+`
+    : `import { createRoot } from "react-dom/client";
+import { GameHost } from "@jgengine/shell/GameHost";
+import { game } from "./game.config";
+import "./index.css";
+
+const root = document.getElementById("root");
+if (root === null) throw new Error("missing #root");
+createRoot(root).render(<GameHost playable={game} />);
 `;
 
-const indexTsx = `export { game } from "./game.config";
+const indexTsx = (editor: boolean) =>
+  editor
+    ? `export { game } from "./game.config";
 export { editorLayers } from "./editorLayers";
-export { editorCatalogs } from "./editorCatalogs";
+`
+    : `export { game } from "./game.config";
 `;
 
 // Starter scene document: the authored spawn plus a few placed catalog props, so the very first
@@ -311,7 +270,6 @@ const editorSceneJson = `{
     { "id": "tree_1", "kind": "prop", "position": { "x": -8, "y": 0, "z": -10 }, "label": "Tree", "catalogId": "tree" },
     { "id": "tree_2", "kind": "prop", "position": { "x": 10, "y": 0, "z": -14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
     { "id": "tree_3", "kind": "prop", "position": { "x": -12, "y": 0, "z": 4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" },
-    { "id": "grunt_1", "kind": "mob", "position": { "x": -4, "y": 0, "z": -9 }, "label": "Grunt", "catalogId": "grunt" },
     {
       "id": "goal",
       "kind": "goal",
@@ -334,58 +292,6 @@ import sceneJson from "./editor.scene.json";
  * of hand-editing the JSON or hardcoding coordinates in game code.
  */
 export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorDocument);
-`;
-
-const editorCatalogsTs = `import {
-  ENTITY_CATALOG_ID,
-  entityDefinitionSchema,
-  type EditorCatalogDefinition,
-} from "@jgengine/core/editor/index";
-
-import { MAX_HEALTH, PLAYER, WALK_SPEED } from "./game/tuning";
-
-/**
- * Gameplay data catalogs surfaced in the editor Data tab (F2+E → Data). Schemas stay in code; the
- * tuned values persist on the scene document (editor.scene.json). The \`entities\` catalog defines
- * each entity's role/health/speed/scale — add a row for a new mob, place a \`mob\` marker whose
- * catalog id is that row's id, and it spawns with those stats. No entity data hardcoded in TS.
- */
-export const editorCatalogs: readonly EditorCatalogDefinition[] = [
-  {
-    id: ENTITY_CATALOG_ID,
-    label: "Entities",
-    schema: entityDefinitionSchema,
-    entries: [
-      { id: PLAYER, label: "Player", meta: { role: "player", maxHealth: MAX_HEALTH, walkSpeed: WALK_SPEED, scale: 1 } },
-      { id: "grunt", label: "Grunt", meta: { role: "enemy", maxHealth: 20, walkSpeed: 2.5, scale: 1 } },
-    ],
-  },
-];
-`;
-
-const editorCatalogsTest = `import { describe, expect, test } from "bun:test";
-
-import { ENTITY_CATALOG_ID, entityEntryFromCatalog } from "@jgengine/core/editor/index";
-
-import { editorCatalogs } from "./editorCatalogs";
-import { editorLayers } from "./editorLayers";
-
-describe("editorCatalogs", () => {
-  test("ships an entities catalog so the Data tab is never empty", () => {
-    const entities = editorCatalogs.find((catalog) => catalog.id === ENTITY_CATALOG_ID);
-    expect(entities).toBeDefined();
-    expect(entities?.entries.length ?? 0).toBeGreaterThan(0);
-  });
-
-  test("an authored mob marker resolves its stats/speed from the catalog — no game code", () => {
-    const mob = editorLayers.markers.find((marker) => marker.kind === "mob");
-    expect(mob?.catalogId).toBe("grunt");
-    const entry = entityEntryFromCatalog(editorLayers, mob?.catalogId ?? "", editorCatalogs);
-    expect(entry?.role).toBe("enemy");
-    expect(entry?.stats?.health?.max).toBe(20);
-    expect(entry?.movement?.walkSpeed).toBe(2.5);
-  });
-});
 `;
 
 const editorLayersTest = `import { describe, expect, test } from "bun:test";
@@ -459,8 +365,6 @@ import { assets } from "./assets";
 /** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
 export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
   player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
-  // The authored "grunt" mob (see the entities catalog / Data tab) renders as a figure too.
-  grunt: { model: "asset:person_casual", style: { targetHeight: 1.7 } },
 });
 
 export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
@@ -469,35 +373,55 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
 });
 `;
 
-const gameConfigTs = (name: string) => `import { defineGame } from "@jgengine/shell/defineGame";
+export interface GameConfigOptions {
+  /** Ship world.ts + game/assets.ts + game/models.ts (create --world). */
+  world: boolean;
+  /** Ship the authored scene document + editor wiring (dropped by create --no-editor). */
+  editor: boolean;
+}
 
-import { editorLayers } from "./editorLayers";
-import { assets } from "./game/assets";
-import { entityById } from "./game/content";
-import { keybinds } from "./game/keybinds";
-import { entityModels, objectModels } from "./game/models";
-import { GameUI } from "./game/ui/GameUI";
-import { onInit, onNewPlayer, onTick } from "./loop";
-import { physics, world } from "./world";
+const gameConfigTs = (name: string, options: GameConfigOptions) => {
+  const imports = [
+    'import { defineGame } from "@jgengine/shell/gameKit";',
+    "",
+    ...(options.editor ? ['import { editorLayers } from "./editorLayers";'] : []),
+    ...(options.world
+      ? ['import { assets } from "./game/assets";', 'import { entityModels, objectModels } from "./game/models";']
+      : []),
+    'import { GameUI } from "./game/ui/GameUI";',
+    'import { onNewPlayer, systems } from "./loop";',
+    ...(options.world ? ['import { physics, world } from "./world";'] : []),
+  ];
+  const fields = [
+    `  name: ${JSON.stringify(name)},`,
+    ...(options.world ? ["  assets,", "  world,", "  physics,"] : []),
+    "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
+    "  input: {",
+    '    moveForward: ["KeyW"],',
+    '    moveBack: ["KeyS"],',
+    '    moveLeft: ["KeyA"],',
+    '    moveRight: ["KeyD"],',
+    '    jump: ["Space"],',
+    '    interact: ["KeyE"],',
+    "  },",
+    "  systems,",
+    "  loop: { onNewPlayer },",
+    "  GameUI,",
+    ...(options.editor
+      ? [
+          "  // The authored scene renders and opens in the editor (F2+E) with zero extra wiring.",
+          "  editorLayers,",
+        ]
+      : []),
+    ...(options.world ? ["  entityModels,", "  objectModels,"] : []),
+  ];
+  return `${imports.join("\n")}
 
 export const game = defineGame({
-  name: ${JSON.stringify(name)},
-  assets,
-  world,
-  physics,
-  input: keybinds,
-  server: { mode: "single" },
-  save: "none",
-  content: { entityById },
-  loop: { onInit, onNewPlayer, onTick },
-  GameUI,
-  // The authored scene renders and opens in the editor (F2+E) with zero extra wiring.
-  editorLayers,
-  entityModels,
-  objectModels,
-  camera: { perspective: "third" },
+${fields.join("\n")}
 });
 `;
+};
 
 const worldTs = (id: string) => `import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { environment, grass, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
@@ -511,18 +435,18 @@ export const world: EnvironmentWorldFeature = environment({
 export const physics: PhysicsConfig = { gravity: -24 };
 `;
 
-const loopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities";
-import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+const editorLoopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
   createAuthoredTriggerRuntime,
   createTriggerOutcome,
   registerBuiltinTriggerActions,
   type AuthoredTriggerRuntime,
 } from "@jgengine/core/scene/authoredTriggers";
+import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities";
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { PLAYER, SPAWN } from "./game/tuning";
 
 // Built-in announce/win/advance actions are authorable in the editor (select an object → Triggers).
 // The starter scene ships a "goal" marker with { on: enter, action: win }, so walking to it wins —
@@ -532,95 +456,93 @@ registerBuiltinTriggerActions();
 /** The win/announce/objective read-model the built-in actions write; GameUI renders it. */
 export const outcome = createTriggerOutcome();
 
+const ORIGIN: [number, number, number] = [0, 0, 0];
 let triggers: AuthoredTriggerRuntime | null = null;
-function triggerRuntime(): AuthoredTriggerRuntime {
-  if (triggers === null) {
-    triggers = createAuthoredTriggerRuntime({ document: editorLayers, handlers: outcome.handlers });
-  }
-  return triggers;
-}
 
-/** @internal */
-export function onInit(ctx: GameContext): void {
-  // Spawn every authored mob/boss marker at its placed position, with the stats/speed defined for
-  // its catalog id in the editor Data tab — place and tune entities in the editor (F2+E), not here.
-  for (const spawn of authoredEntitySpawns(editorLayers)) {
-    ctx.scene.entity.spawn(spawn.catalogId, { id: spawn.markerId, position: spawn.position });
-  }
-}
+/** Spawns the authored scene's entities and steps its triggers — content stays in the editor. */
+export const systems = [
+  defineSystem({
+    id: "authored-scene",
+    tick: { type: "frame" },
+    create(ctx) {
+      // Every authored mob/boss marker spawns at its placed position — place entities in the
+      // editor (F2+E), not here.
+      for (const spawn of authoredEntitySpawns(editorLayers)) {
+        ctx.scene.entity.spawn(spawn.catalogId, { id: spawn.markerId, position: spawn.position });
+      }
+      triggers = createAuthoredTriggerRuntime({ document: editorLayers, handlers: outcome.handlers });
+    },
+    update(ctx) {
+      // Feed the local player's pose to the authored triggers; enter/exit/interact fire from the scene.
+      const player = ctx.scene.entity.get(ctx.player.userId);
+      if (player === null || triggers === null) return;
+      triggers.step({
+        actors: [{ id: ctx.player.userId, position: player.position }],
+        interact: ctx.input.justPressed("interact") ? [ctx.player.userId] : [],
+      });
+    },
+  }),
+];
 
 /** @internal */
 export function onNewPlayer(ctx: GameContext): void {
   // Spawns at the scene's authored player_spawn marker — move it in the editor (F2+E), not here.
-  ctx.scene.entity.spawn(PLAYER, {
+  ctx.scene.entity.spawn("player", {
     id: ctx.player.userId,
-    position: authoredSpawnPosition(editorLayers) ?? SPAWN,
+    position: authoredSpawnPosition(editorLayers) ?? ORIGIN,
   });
 }
+`;
+
+const plainLoopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineSystem } from "@jgengine/shell/gameKit";
+
+const ORIGIN: [number, number, number] = [0, 0, 0];
+
+/** Your game rules tick here — one system per meaningful capability. */
+export const systems = [
+  defineSystem({
+    id: "rules",
+    tick: { type: "fixed" },
+    update(_ctx, _dt) {},
+  }),
+];
 
 /** @internal */
-export function onTick(ctx: GameContext, _dt: number): void {
-  // Feed the local player's pose to the authored triggers; enter/exit/interact fire from the scene.
-  const player = ctx.scene.entity.get(ctx.player.userId);
-  if (player === null) return;
-  triggerRuntime().step({
-    actors: [{ id: ctx.player.userId, position: player.position }],
-    interact: ctx.input.justPressed("interact") ? [ctx.player.userId] : [],
-  });
+export function onNewPlayer(ctx: GameContext): void {
+  ctx.scene.entity.spawn("player", { id: ctx.player.userId, position: ORIGIN });
 }
 `;
 
-const tuningTs = `export const PLAYER = "player";
-export const MAX_HEALTH = 5;
-export const WALK_SPEED = 4;
-export const SPAWN: [number, number, number] = [0, 0, 0];
-`;
+const loopTs = (editor: boolean) => (editor ? editorLoopTs : plainLoopTs);
 
-const contentTs = `import { entityEntryFromCatalog } from "@jgengine/core/editor/index";
-import type { GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
-
-import { editorCatalogs } from "../editorCatalogs";
-import { editorLayers } from "../editorLayers";
-
-/**
- * Resolves an entity's runtime definition (role/stats/movement) from the authored \`entities\` catalog
- * — the values you tune in the editor Data tab and save to editor.scene.json. Define a new entity by
- * adding a catalog row; nothing here changes. Returns null for ids the catalog does not define.
- * @internal
- */
-export function entityById(catalogId: string): GameContextEntityEntry | null {
-  return entityEntryFromCatalog(editorLayers, catalogId, editorCatalogs);
-}
-`;
-
-const keybindsTs = `import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
-
-// Binding any movement action makes the shell drive the walk controller — a fresh game walks.
-export const keybinds: ActionCodesMap = {
-  moveForward: ["KeyW"],
-  moveBack: ["KeyS"],
-  moveLeft: ["KeyA"],
-  moveRight: ["KeyD"],
-  jump: ["Space"],
-  interact: ["KeyE"],
-};
-`;
-
-const gameUiTsx = (id: string, name: string) => `import { useSyncExternalStore } from "react";
-import { HudCanvas, useHudLayout } from "@jgengine/react";
-
-import { outcome } from "../../loop";
-
-// ${name} — your HUD starts as an empty canvas the engine imposes nothing on. Drop widgets from
+const gameUiTsx = (id: string, name: string, editor: boolean) => {
+  const header = `// ${name} — your HUD starts as an empty canvas the engine imposes nothing on. Drop widgets from
 // "@jgengine/react" into <HudPanel> slots as you need them (each is self-styled and reads the
 // local player by default), or write your own — panel placement is editable live in canvas mode
 // (F2+C) and persists to the scene document's ui.panels:
 //
 //   import { HudPanel, StatBar, Hotbar, Clock, Coins } from "@jgengine/react";
 //   <HudPanel id="health" anchor="bottom-left"><StatBar statId="health" tone="health" /></HudPanel>
-//   <HudPanel id="hotbar" anchor="bottom-center"><Hotbar inventoryId="hotbar" /></HudPanel>
-//   <HudPanel id="clock"  anchor="top-left"><Clock /></HudPanel>
-//   <HudPanel id="coins"  anchor="top-right"><Coins currencyId="gold" /></HudPanel>
+//   <HudPanel id="hotbar" anchor="bottom-center"><Hotbar inventoryId="hotbar" /></HudPanel>`;
+  if (!editor) {
+    return `import { HudCanvas, useHudLayout } from "@jgengine/react";
+
+${header}
+
+/** @internal */
+export function GameUI() {
+  const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
+  return <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />;
+}
+`;
+  }
+  return `import { useSyncExternalStore } from "react";
+import { HudCanvas, useHudLayout } from "@jgengine/react";
+
+import { outcome } from "../../loop";
+
+${header}
 
 /** @internal */
 export function GameUI() {
@@ -644,29 +566,7 @@ export function GameUI() {
   );
 }
 `;
-
-const worldTest = (id: string) => `import { describe, expect, test } from "bun:test";
-import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-
-import { world } from "../world";
-
-describe("${id} world", () => {
-  const summary = summarizeEnvironment(world);
-
-  test("renders a populated scene", () => {
-    expect(summary.isEmpty).toBe(false);
-  });
-
-  test("has the expected backdrop content", () => {
-    expect(summary.counts.terrain).toBe(1);
-    expect(summary.counts.vegetationFields).toBe(1);
-  });
-
-  test("terrain resolves to a finite ground plane", () => {
-    expect(summary.terrain?.height.finite).toBe(true);
-  });
-});
-`;
+};
 
 const agentsMd = (name: string, variant: TemplateVariant) => `# ${name} — agent briefing
 
@@ -675,55 +575,38 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 **How people use JGengine:** they say *Make a game that … with jgengine* to an agent. They do **not** start from a CLI tutorial. \`npx jgengine\` is for **you** (scaffold, skills, docs).
 
 **This project is the game.** Build here, on the \`@jgengine/*\` npm packages. Never clone the jgengine GitHub repo, and never copy code, assets, or content from its \`Games/*\` directory — those are private in-repo test games, not templates, and their content is not licensed for reuse.
-- Engine API surface: the skills ship inside every \`@jgengine/*\` tarball — read \`node_modules/@jgengine/<pkg>/skills/\` (each domain skill carries \`SKILL.md\` + a generated \`api.md\` of the full export surface).
-- Agent skills — design playbooks, intake router, focused API domains, browserless verify gate: installed by create; recovery via \`npx jgengine skills -p\`.
-- Setup broken or UI unstyled: \`npx jgengine doctor\`.
 
-## What to do when the user wants this game built
+## Path to a playable game
 
-1. Read skills if present: \`jgengine\` (intake + routing), \`game-design\` for loops and systems, \`level-design\` for playable spaces, domain skills as needed, and \`jgengine-verify\` for evidence. They land under \`.agents/skills/\` or \`.claude/skills/\` when scaffolded via create.
-2. If skills are missing (your problem, not the user's): \`npx jgengine skills -p\`, or read them straight from \`node_modules/@jgengine/<pkg>/skills/\`.
-3. **User-facing first reply is short** — game name, fantasy in 2–4 lines, POV (1st / 3rd / top-down / HUD-only), world kind, scale vibe. Ask a few tight questions (POV, world, multiplayer, how big). **Do not** dump file trees, catalog ids, keybind tables, or full phase plans to the user.
-4. Keep the full engineering plan (files, systems, budgets) internal. After they answer, scaffold is already here — build in phases, full game not a slice.
+1. Start from \`.claude/skills/jgengine/recipes/minimal-game.md\` — the default end-to-end path, installed with the project skills. Skills missing (your problem, not the user's): \`npx jgengine skills -p\` restores the minimal set; add \`--all\` for the full domain skills when the game outgrows it.
+2. Discovery ladder: a skill's \`capabilities.md\` → its recipes → package source under \`node_modules/@jgengine/<pkg>/\` — never a full api inventory.
+3. Import from \`@jgengine/shell/gameKit\` first — the happy-path surface (\`defineGame\`, \`defineSystem\`, \`GameHost\`, HUD primitives, editor-layer helpers). Reach for deeper module paths only when the kit lacks the seam.
+4. **User-facing first reply is short** — game name, fantasy in 2–4 lines, POV (1st / 3rd / top-down / HUD-only), world kind, scale vibe. Ask a few tight questions. **Do not** dump file trees, catalog ids, keybind tables, or full phase plans to the user. Keep the engineering plan internal.
+5. Setup broken or UI unstyled: \`npx jgengine doctor\`. Dev: \`bun dev\`. Windows installer: \`npx jgengine desktop\`.
 
-## Engine loaders
+## Built-in modes — engine-owned via GameHost, use them
 
-- Skills + API docs in every tarball: \`node_modules/@jgengine/<pkg>/skills/\`
-- Doctor: \`npx jgengine doctor\`
-- Dev: \`bun dev\` / \`npm run dev\`
-- Windows installer: \`bun run desktop\` / \`npx jgengine desktop\` (or \`--url https://…\` for a hosted game)
+\`GameHost\` owns the F2 chord family in every JGengine game, and it is **your** toolkit, not just the player's:
 
-## Built-in modes — every game ships them, use them
+- **F2+E — editor mode** (also \`?mode=editor\`): the scene editor on \`src/editor.scene.json\` — place spawns, props, zones, paths, vegetation; Ctrl+S saves.
+- **F2+D — debug mode**: engine devtools overlay (perf, logs, keybinds, live tunables with Save-to-source).
+- **F2+C — canvas mode**: drag/resize HUD panels; layout persists to the scene document's \`ui.panels\`.
 
-The F2 chord family is in every JGengine game, and it is **your** toolkit, not just the player's:
-
-- **F2+D — debug mode**: engine devtools overlay (perf, logs, net, keybinds, live tunables with Save-to-source).
-- **F2+C — canvas mode**: drag/resize HUD panels; layout writes to scene document \`ui.panels\` (undoable with live editor).
-- **F2+E — editor mode** (also \`?mode=editor\`): the Blender/Unity-style scene editor — place spawns, zones, paths, vegetation; Save writes \`src/editor.scene.json\`.
-
-Prefer these over guessing: tune numbers in debug mode, fix HUD layout in canvas mode, and place/move world content in editor mode instead of hand-editing \`x,y,z\` in tables. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`canvas_resize_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. HUD placement lives in \`editor.scene.json\` → \`ui.panels\`; TSX \`HudPanel\` props are fallback-only. See the \`jgengine-editor\` skill.
+Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. See the \`jgengine-editor\` skill.
 
 ## Project rules
 
-- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editorCatalogs.ts\`, \`editorCatalogs.test.ts\`, \`editor.scene.json\`, \`index.css\`, \`style.css\`; everything else under \`src/game/\`.
-- Entry: \`defineGame({...})\` from \`@jgengine/shell/defineGame\` in \`game.config.ts\`.
-- World content: the scaffold ships \`src/editor.scene.json\` wired via \`defineGame({ editorLayers })\` — place spawns, props, zones, and paths in editor mode (F2+E, Ctrl+S saves), never as coordinate tables in code. The player spawns at the authored \`player_spawn\` marker (\`authoredSpawnPosition\`).
-- Prove world content with \`summarizeEnvironment\` in \`bun test\` (\`src/game/world.world.test.ts\`), not screenshot loops.
+- Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`index.css\`, \`style.css\` plus optional \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`; everything else under \`src/game/\`.
+- Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
+- Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
 - Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD is silently unstyled.
-- Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; \`onTick\` \`dt\` is game time.
-
-## Visual quality bar
-
-"Make it look better" work is screenshot-judged, by you, harshly. Take a shot of live gameplay first and call it honestly — flat untextured ground, default lighting, and an empty horizon "doesn't look like a game" and fails. Then use the whole art stack (terrain texture/variation, materials, lighting/daylight, sky/fog, post-processing, vegetation density, props and landmarks — see the \`jgengine-ui\` skill's "Visual quality bar") and re-shoot at each milestone until the frame reads like a shipped game. Data tests prove content exists; only your eyes prove it looks good.
+- Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 `;
 
 export {
   agentsMd,
-  contentTs,
-  editorCatalogsTest,
-  editorCatalogsTs,
   editorLayersTest,
   editorLayersTestFor,
   editorLayersTs,
@@ -736,14 +619,11 @@ export {
   indexHtml,
   indexTsx,
   inRepoPackageJson,
-  keybindsTs,
   loopTs,
   mainTsx,
   standalonePackageJson,
   styleCss,
   tsconfigJson,
-  tuningTs,
   viteConfig,
-  worldTest,
   worldTs,
 };

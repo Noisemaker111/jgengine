@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import {
   createHostedWorldSession,

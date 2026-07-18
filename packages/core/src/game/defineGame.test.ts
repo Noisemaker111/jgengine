@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext } from "../runtime/gameContext";
 import { flat } from "../world/features";
-import { createDisposer, defineGameDefinition } from "./defineGameDefinition";
+import { createDisposer, defineGameDefinition } from "./defineGame";
 
 const VALID = {
   name: "TestGame",

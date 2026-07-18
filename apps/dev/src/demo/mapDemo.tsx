@@ -1,6 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 
-import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import {
   createPingSystem,
   DEFAULT_PING_CATEGORIES,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createGameContext } from "../runtime/gameContext";
-import { defineGameDefinition } from "./defineGameDefinition";
+import { defineGameDefinition } from "./defineGame";
 import { defineSystem, featuresFromSystems, mergeSystemFeatures } from "./defineSystem";
 import { composeGameLoop, installSystems, systemsOf } from "./systemRuntime";
 

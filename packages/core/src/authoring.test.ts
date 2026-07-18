@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import {
-  defineGameDefinition,
-  seededRng,
-  selectSpawnPoint,
-} from "@jgengine/core/authoring";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { seededRng, selectSpawnPoint } from "@jgengine/core/authoring";
 
 describe("authoring surface", () => {
   test("creates a game without exposing scene or asset stores", () => {

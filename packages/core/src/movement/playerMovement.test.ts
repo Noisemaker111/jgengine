@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGameDefinition";
+import { defineGameDefinition } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { fittedObjectColliders } from "../scene/colliders";
 import { encodeCollisionMesh, type CollisionMeshSource } from "../scene/collisionMesh";

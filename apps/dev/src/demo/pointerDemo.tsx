@@ -1,4 +1,4 @@
-import { defineGameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { contextVerb } from "@jgengine/core/interaction/contextMenu";
 import {
   createNavGrid,

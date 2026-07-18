@@ -1,4 +1,7 @@
-import { API_SKILL_DIRS } from "../packages/jgengine/src/skills";
+import { API_SKILL_DIRS, MINIMAL_GAME_SKILLS } from "../packages/jgengine/src/skills";
+
+/** The enforced external default: what `jgengine create` actually installs (see packages/jgengine/src/skills.ts). Full domains are opt-in via `jgengine skills --all`. */
+export { MINIMAL_GAME_SKILLS };
 
 export const MAIN = "jgengine";
 
@@ -106,6 +109,7 @@ export const INTAKE_ROUTES = {
   multiplayer: ["jgengine-multiplayer"],
 } as const;
 
+/** In-repo intake yardstick for `report:skill-intake` — what a normal game task loads inside this monorepo. The external install policy is {@link MINIMAL_GAME_SKILLS}; domains beyond it load on demand, not by default. */
 export const NORMAL_GAME_INTAKE = [
   MAIN,
   "game-design",

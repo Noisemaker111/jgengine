@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "./defineGameDefinition";
+import { defineGameDefinition } from "./defineGame";
 import { dialogueSlot } from "./dialogue";
 import { createGameContext } from "../runtime/gameContext";
 

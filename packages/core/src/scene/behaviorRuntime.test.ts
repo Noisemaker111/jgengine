@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGameDefinition";
+import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
 import { advanceBehaviors, behaviorControl } from "./behaviorRuntime";
 import { patrol, wander } from "./behaviors";
