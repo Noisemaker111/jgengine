@@ -1,12 +1,13 @@
-import { memo, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 
 import { isEditorObjectLocked, type EditorSession } from "@jgengine/core/editor/index";
 
 import { MATERIAL_DRAG_MIME } from "../AssetBrowser";
-import { flattenOutliner } from "../outlinerModel";
+import { flattenOutliner, type OutlinerFlatRow } from "../outlinerModel";
 import type { EditorHostApi } from "../session";
 import { shallowArrayEqual, useStoreSelector, virtualWindow } from "../useStoreSelector";
 import { Icon, kindIcon } from "./icons";
+import { renameEditorObject } from "./renameObject";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./theme";
 import { IconButton, Segmented } from "./ui";
 
@@ -19,12 +20,22 @@ function dataTransferHas(types: readonly string[], mime: string): boolean {
   return types.includes(mime);
 }
 
+function selectableIds(rows: readonly OutlinerFlatRow[]): string[] {
+  const ids: string[] = [];
+  for (const row of rows) {
+    if (row.type === "kindItem") ids.push(row.ids[0]!);
+    else if (row.type === "treeItem") ids.push(row.id);
+  }
+  return ids;
+}
+
 /**
  * Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live
  * document. Group headers carry real per-kind visibility toggles (the editor's layer system);
  * rows locked through a locked collection show a lock indicator. Tree view supports drag-and-drop
- * reparenting through the existing `set_parent` RPC. Selector-subscribed and memoized, so UI-only
- * churn never rerenders it.
+ * reparenting through the existing `set_parent` RPC. Keyboard navigation (arrows / Enter / F2)
+ * and double-click rename are supported. Selector-subscribed and memoized, so UI-only churn never
+ * rerenders it.
  */
 export const HierarchyPanel = memo(function HierarchyPanel({
   session,
@@ -81,6 +92,85 @@ export const HierarchyPanel = memo(function HierarchyPanel({
     }
     session.dispatch({ type: "select", ids: [id] });
     api.handle({ method: "camera_goto", id });
+  };
+
+  const navigableIds = useMemo(() => selectableIds(rows), [rows]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (activeId !== null && !navigableIds.includes(activeId)) setActiveId(navigableIds[0] ?? null);
+  }, [activeId, navigableIds]);
+
+  useEffect(() => {
+    if (renamingId !== null) renameInputRef.current?.focus();
+  }, [renamingId]);
+
+  const beginRename = (id: string, label: string) => {
+    setRenamingId(id);
+    setRenameDraft(label);
+    setActiveId(id);
+  };
+
+  const commitRename = () => {
+    if (renamingId === null) return;
+    renameEditorObject(session, renamingId, renameDraft);
+    setRenamingId(null);
+  };
+
+  const cancelRename = () => setRenamingId(null);
+
+  const onListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (renamingId !== null) return;
+    if (navigableIds.length === 0) return;
+    const currentIndex = activeId === null ? -1 : navigableIds.indexOf(activeId);
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      const nextIndex =
+        currentIndex < 0
+          ? event.key === "ArrowDown"
+            ? 0
+            : navigableIds.length - 1
+          : Math.max(0, Math.min(navigableIds.length - 1, currentIndex + delta));
+      const id = navigableIds[nextIndex]!;
+      setActiveId(id);
+      selectRow(id, event.shiftKey);
+      const rowIndex = rows.findIndex(
+        (row) =>
+          (row.type === "kindItem" && row.ids[0] === id) || (row.type === "treeItem" && row.id === id),
+      );
+      if (rowIndex >= 0 && scrollRef.current !== null) {
+        const top = rowIndex * ROW_HEIGHT;
+        const bottom = top + ROW_HEIGHT;
+        const viewTop = scrollRef.current.scrollTop;
+        const viewBottom = viewTop + scrollRef.current.clientHeight;
+        if (top < viewTop) scrollRef.current.scrollTop = top;
+        else if (bottom > viewBottom) scrollRef.current.scrollTop = bottom - scrollRef.current.clientHeight;
+      }
+      return;
+    }
+
+    if (event.key === "Enter" && activeId !== null) {
+      event.preventDefault();
+      api.handle({ method: "camera_goto", id: activeId });
+      return;
+    }
+
+    if (event.key === "F2" && activeId !== null) {
+      event.preventDefault();
+      const row = rows.find(
+        (entry) =>
+          (entry.type === "kindItem" && entry.ids[0] === activeId) ||
+          (entry.type === "treeItem" && entry.id === activeId),
+      );
+      if (row !== undefined && (row.type === "kindItem" || row.type === "treeItem")) {
+        beginRename(activeId, row.label);
+      }
+    }
   };
 
   const [materialDropTarget, setMaterialDropTarget] = useState<string | null>(null);
@@ -158,7 +248,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
           <span className={`ml-auto text-[10px] text-neutral-600 ${NUMERIC}`}>{total} objects</span>
         </div>
         {view === "tree" ? (
-          <p className="px-0.5 text-[10px] text-neutral-600">Drag rows to reparent · drop on empty list to unparent</p>
+          <p className="px-0.5 text-[10px] text-neutral-600">Drag rows to reparent · drop on empty list to unparent · F2 rename</p>
         ) : null}
       </div>
       <div
@@ -166,7 +256,11 @@ export const HierarchyPanel = memo(function HierarchyPanel({
         className={`min-h-0 flex-1 overflow-auto px-1.5 py-1 ${
           reparentDropTarget === "__root__" ? "bg-cyan-500/10 ring-1 ring-inset ring-cyan-400/30" : ""
         }`}
+        tabIndex={0}
+        role="tree"
+        aria-label="Scene hierarchy"
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        onKeyDown={onListKeyDown}
         onDragOver={
           view === "tree"
             ? (event) => {
@@ -226,10 +320,13 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                   );
                 }
                 if (row.type === "kindItem") {
+                  const primaryId = row.ids[0]!;
                   const rowSelected = selectedId !== undefined && row.ids.includes(selectedId);
                   const cycleIndex = rowSelected ? row.ids.indexOf(selectedId) + 1 : 0;
                   const dropActive = materialDropTarget === row.key;
                   const locked = rowLocked(row.ids);
+                  const active = activeId === primaryId;
+                  const renaming = renamingId === primaryId && row.ids.length === 1;
                   return (
                     <button
                       key={row.key}
@@ -238,11 +335,17 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                       className={`flex w-full items-center gap-1.5 rounded-[5px] pl-6 pr-1.5 text-left text-[11px] transition-colors ${FOCUS_RING} ${
                         dropActive
                           ? "bg-cyan-500/25 ring-1 ring-inset ring-cyan-300/50"
-                          : rowSelected
+                          : rowSelected || active
                             ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/25"
                             : "text-neutral-300 hover:bg-white/[0.05]"
                       }`}
-                      onClick={(event) => selectRow(row.ids[0]!, event.ctrlKey || event.metaKey || event.shiftKey)}
+                      onClick={(event) => {
+                        setActiveId(primaryId);
+                        selectRow(primaryId, event.ctrlKey || event.metaKey || event.shiftKey);
+                      }}
+                      onDoubleClick={() => {
+                        if (row.ids.length === 1) beginRename(primaryId, row.label);
+                      }}
                       onDragOver={(event) => {
                         acceptMaterialDrop(event, row.ids, row.key);
                       }}
@@ -251,16 +354,38 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                         commitMaterialDrop(event, row.ids);
                       }}
                     >
-                      <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected ? "text-cyan-300" : "text-neutral-500"}`} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {row.label}
-                        {row.ids.length > 1 ? (
-                          <span className={`text-neutral-500 ${NUMERIC}`}>
-                            {" "}×{row.ids.length}
-                            {rowSelected ? ` · ${cycleIndex}/${row.ids.length} · N next` : ""}
-                          </span>
-                        ) : null}
-                      </span>
+                      <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected || active ? "text-cyan-300" : "text-neutral-500"}`} />
+                      {renaming ? (
+                        <input
+                          ref={renameInputRef}
+                          value={renameDraft}
+                          onChange={(event) => setRenameDraft(event.target.value)}
+                          onBlur={commitRename}
+                          onKeyDown={(event) => {
+                            event.stopPropagation();
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              commitRename();
+                            } else if (event.key === "Escape") {
+                              event.preventDefault();
+                              cancelRename();
+                            }
+                          }}
+                          onClick={(event) => event.stopPropagation()}
+                          className={`min-w-0 flex-1 rounded-[3px] border border-cyan-400/40 bg-black/40 px-1 py-0 text-[11px] text-neutral-100 outline-none ${FOCUS_RING}`}
+                          aria-label="Rename object"
+                        />
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate">
+                          {row.label}
+                          {row.ids.length > 1 ? (
+                            <span className={`text-neutral-500 ${NUMERIC}`}>
+                              {" "}×{row.ids.length}
+                              {rowSelected ? ` · ${cycleIndex}/${row.ids.length} · N next` : ""}
+                            </span>
+                          ) : null}
+                        </span>
+                      )}
                       {locked ? (
                         <Icon name="lock" size={11} className="shrink-0 text-amber-400/70" aria-label="Locked via collection" />
                       ) : null}
@@ -272,6 +397,8 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                 const reparentDrop = reparentDropTarget === row.key && draggingObjectId !== row.id;
                 const locked = isEditorObjectLocked(document, row.id);
                 const dragging = draggingObjectId === row.id;
+                const active = activeId === row.id;
+                const renaming = renamingId === row.id;
                 return (
                   <div key={row.key} style={{ height: ROW_HEIGHT, paddingLeft: `${row.depth * 12}px` }} className="flex items-center">
                     {row.hasChildren ? (
@@ -292,12 +419,16 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                       className={`flex h-full min-w-0 flex-1 items-center gap-1.5 truncate rounded-[5px] px-1.5 text-left text-[11px] transition-colors ${FOCUS_RING} ${
                         materialDrop || reparentDrop
                           ? "bg-cyan-500/25 ring-1 ring-inset ring-cyan-300/50"
-                          : rowSelected
+                          : rowSelected || active
                             ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/25"
                             : "text-neutral-300 hover:bg-white/[0.05]"
                       } ${dragging ? "opacity-50" : ""}`}
-                      onClick={(event) => selectRow(row.id, event.ctrlKey || event.metaKey || event.shiftKey)}
-                      title={`${row.id} — drag to reparent`}
+                      onClick={(event) => {
+                        setActiveId(row.id);
+                        selectRow(row.id, event.ctrlKey || event.metaKey || event.shiftKey);
+                      }}
+                      onDoubleClick={() => beginRename(row.id, row.label)}
+                      title={`${row.id} — drag to reparent · F2 rename · Enter frame`}
                       onDragStart={(event) => {
                         event.dataTransfer.setData(OBJECT_DRAG_MIME, row.id);
                         event.dataTransfer.effectAllowed = "move";
@@ -320,8 +451,30 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                         commitReparentDrop(event, row.id);
                       }}
                     >
-                      <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected ? "text-cyan-300" : "text-neutral-500"}`} />
-                      <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                      <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected || active ? "text-cyan-300" : "text-neutral-500"}`} />
+                      {renaming ? (
+                        <input
+                          ref={renameInputRef}
+                          value={renameDraft}
+                          onChange={(event) => setRenameDraft(event.target.value)}
+                          onBlur={commitRename}
+                          onKeyDown={(event) => {
+                            event.stopPropagation();
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              commitRename();
+                            } else if (event.key === "Escape") {
+                              event.preventDefault();
+                              cancelRename();
+                            }
+                          }}
+                          onClick={(event) => event.stopPropagation()}
+                          className={`min-w-0 flex-1 rounded-[3px] border border-cyan-400/40 bg-black/40 px-1 py-0 text-[11px] text-neutral-100 outline-none ${FOCUS_RING}`}
+                          aria-label="Rename object"
+                        />
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                      )}
                       <span className="text-[9px] text-neutral-600">{row.kind}</span>
                       {locked ? <Icon name="lock" size={11} className="shrink-0 text-amber-400/70" aria-label="Locked via collection" /> : null}
                     </button>
