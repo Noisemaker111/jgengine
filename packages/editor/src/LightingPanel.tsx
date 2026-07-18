@@ -42,6 +42,8 @@ function readDisplay(env: EditorEnvironment | undefined) {
  * Lighting workspace panel — edits `document.environment` (sky preset, time-of-day, intensities,
  * fog, optional horizon/zenith colors) through the session undo stack. No fabricated runtime data:
  * empty document shows defaults as display placeholders; the first edit writes a real bag.
+ *
+ * @internal
  */
 export function LightingPanel({ session }: { session: EditorSession }) {
   const state = useSyncExternalStore(session.subscribe, session.getState, session.getState);

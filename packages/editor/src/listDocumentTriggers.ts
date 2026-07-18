@@ -50,6 +50,8 @@ function bindingsFromMeta(meta: Record<string, unknown> | undefined): DocumentTr
  * Pure — no session, registry, or runtime state. Markers are listed before volumes; order within
  * each collection matches the document. Prefer this over {@link collectAuthoredTriggers} when the
  * UI wants one row per object rather than one row per binding.
+ *
+ * @internal
  */
 export function listDocumentTriggers(document: DocumentTriggersSource | SceneDocumentLike): DocumentTriggerEntry[] {
   const out: DocumentTriggerEntry[] = [];

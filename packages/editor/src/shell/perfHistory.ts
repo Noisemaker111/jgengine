@@ -68,6 +68,8 @@ export function seriesAverage(values: readonly number[]): number {
 /**
  * Mean of defined values only — used for optional series (`simMs` / `outsideMs` / `memoryMb`)
  * so zeros from absent samples do not drag the average down.
+ *
+ * @internal
  */
 export function seriesAverageDefined(values: readonly (number | undefined)[]): number {
   let sum = 0;
@@ -121,6 +123,8 @@ function roundMs(value: number): number {
 /**
  * Map core `devtools.frame.stats()` into optional editor sample fields.
  * Returns `null` when the frame tracker has no samples yet — callers must omit the series entirely.
+ *
+ * @internal
  */
 export function frameBudgetFromStats(stats: FrameBudgetStatsInput | null): FrameBudgetFields | null {
   if (stats === null) return null;
@@ -135,7 +139,11 @@ export function frameBudgetFromStats(stats: FrameBudgetStatsInput | null): Frame
   };
 }
 
-/** True when any sample carries real sim/outside budget fields from the frame tracker. */
+/**
+ * True when any sample carries real sim/outside budget fields from the frame tracker.
+ *
+ * @internal
+ */
 export function samplesHaveFrameBudget(samples: readonly EditorPerfSample[]): boolean {
   return samples.some((sample) => sample.simMs !== undefined && sample.outsideMs !== undefined);
 }
@@ -143,6 +151,8 @@ export function samplesHaveFrameBudget(samples: readonly EditorPerfSample[]): bo
 /**
  * Latest non-empty phase list from the history (newest sample that reported phases).
  * Empty when no named `measure()` marks have been recorded.
+ *
+ * @internal
  */
 export function latestPhases(
   samples: readonly EditorPerfSample[],

@@ -19,6 +19,8 @@ const DEFAULT_PLAY_SPEED = 8;
  * - Uses real path points + `@jgengine/core` path-follow sampling — not invented keyframes.
  * - Out of scope: clip authoring, keyframe curves, scene-kind param animation, director cinematics
  *   stored outside the scene document.
+ *
+ * @internal
  */
 export function AnimationPanel({ session, api }: { session: EditorSession; api: EditorHostApi }) {
   const paths = useStoreSelector(session, (state) => state.document.paths);

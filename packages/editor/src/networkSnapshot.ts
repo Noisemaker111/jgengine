@@ -90,6 +90,8 @@ function topologyOf(adapter: MultiplayerAdapterConfig | null): string | undefine
  * Builds a Network workspace snapshot from the game's multiplayer config plus optional live
  * presence rows. Adapter fields always reflect declared config; presence is only included when
  * the host passes it.
+ *
+ * @internal
  */
 export function buildEditorNetworkSnapshot(args: {
   gameId: string;
@@ -133,7 +135,11 @@ export function buildEditorNetworkSnapshot(args: {
   return snapshot;
 }
 
-/** True when the snapshot represents a multiplayer-capable game (not offline/unknown-null). */
+/**
+ * True when the snapshot represents a multiplayer-capable game (not offline/unknown-null).
+ *
+ * @internal
+ */
 export function isNetworkMultiplayerConfigured(snapshot: EditorNetworkSnapshot): boolean {
   return snapshot.adapterKind !== "offline" && snapshot.adapterKind !== "unknown" && snapshot.authority !== null;
 }
