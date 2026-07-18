@@ -18,6 +18,13 @@ export interface CollisionMeshData {
   positions: string;
   /** Base64 little-endian triangle vertex indices — u16, or u32 when `vertexCount` exceeds 65536. */
   indices: string;
+  /**
+   * Coarse compound-box decomposition of the same triangles (voxel occupancy at capsule resolution,
+   * greedy-merged): the walk-collision counterpart to the exact triangles, so movement passes through
+   * an archway opening instead of colliding with one solid bounding box. Absent in indexes generated
+   * before it was computed — consumers fall back to the single fitted box.
+   */
+  boxes?: readonly CollisionMeshBox[];
 }
 
 /** Raw triangle soup for {@link encodeCollisionMesh}: model-space xyz triples plus triangle indices. */
@@ -25,6 +32,9 @@ export interface CollisionMeshSource {
   positions: ArrayLike<number>;
   indices: ArrayLike<number>;
 }
+
+/** Model-space axis-aligned box as `[minX, minY, minZ, maxX, maxY, maxZ]`. */
+export type CollisionMeshBox = readonly [number, number, number, number, number, number];
 
 /**
  * Decoded, BVH-indexed triangles ready for per-ray queries — build once per asset via
@@ -163,6 +173,7 @@ export function encodeCollisionMesh(source: CollisionMeshSource): CollisionMeshD
   }
 
   const triangles: number[] = [];
+  const sourceTriangles: number[] = [];
   for (let t = 0; t + 2 < indices.length; t += 3) {
     const a = quantized[indices[t]!] ?? -1;
     const b = quantized[indices[t + 1]!] ?? -1;
@@ -170,6 +181,7 @@ export function encodeCollisionMesh(source: CollisionMeshSource): CollisionMeshD
     if (a < 0 || b < 0 || c < 0) continue;
     if (a === b || b === c || a === c) continue;
     triangles.push(a, b, c);
+    sourceTriangles.push(indices[t]!, indices[t + 1]!, indices[t + 2]!);
   }
   if (triangles.length === 0) return null;
 
@@ -193,7 +205,149 @@ export function encodeCollisionMesh(source: CollisionMeshSource): CollisionMeshD
     triangleCount: triangles.length / 3,
     positions: bytesToBase64(positionBytes),
     indices: bytesToBase64(indexBytes),
+    boxes: decomposeBoxes(positions, sourceTriangles, minX, minY, minZ, maxX, maxY, maxZ, BOX_MAX_CELLS_PER_AXIS),
   };
+}
+
+// Compound-box decomposition targets capsule-scale walk collision, not bullet accuracy: cells near
+// 0.25 model units keep an archway opening open while a handful of merged boxes cover the solid parts.
+const BOX_TARGET_CELL = 0.25;
+const BOX_MAX_CELLS_PER_AXIS = 32;
+const BOX_MAX_COUNT = 48;
+const BOX_MAX_SAMPLES_PER_EDGE = 96;
+// Guards ceil() against float-fuzzy measured bounds (4.0000002 → 17 cells instead of 16).
+const BOX_CELL_EPSILON = 1e-6;
+
+function roundCoord(value: number): number {
+  return Math.round(value * 10000) / 10000;
+}
+
+/**
+ * Voxelize the triangle surfaces over the mesh bounds and greedy-merge occupied cells into a small
+ * set of model-space boxes. Occupancy is conservative (any surface sample marks its cell), so
+ * openings only ever shrink, never leak. Falls back to one full-bounds box when the shape resists
+ * decomposition within the box cap.
+ */
+function decomposeBoxes(
+  positions: ArrayLike<number>,
+  sourceTriangles: readonly number[],
+  minX: number,
+  minY: number,
+  minZ: number,
+  maxX: number,
+  maxY: number,
+  maxZ: number,
+  cellsPerAxisCap: number,
+): CollisionMeshBox[] {
+  const extentX = maxX - minX;
+  const extentY = maxY - minY;
+  const extentZ = maxZ - minZ;
+  const nx = Math.max(1, Math.min(cellsPerAxisCap, Math.ceil(extentX / BOX_TARGET_CELL - BOX_CELL_EPSILON)));
+  const ny = Math.max(1, Math.min(cellsPerAxisCap, Math.ceil(extentY / BOX_TARGET_CELL - BOX_CELL_EPSILON)));
+  const nz = Math.max(1, Math.min(cellsPerAxisCap, Math.ceil(extentZ / BOX_TARGET_CELL - BOX_CELL_EPSILON)));
+  const cellX = extentX / nx;
+  const cellY = extentY / ny;
+  const cellZ = extentZ / nz;
+  let minCell = Infinity;
+  for (const cell of [cellX, cellY, cellZ]) {
+    if (cell > 0 && cell < minCell) minCell = cell;
+  }
+  if (!Number.isFinite(minCell)) {
+    return [[roundCoord(minX), roundCoord(minY), roundCoord(minZ), roundCoord(maxX), roundCoord(maxY), roundCoord(maxZ)]];
+  }
+
+  const occupied = new Uint8Array(nx * ny * nz);
+  const cellOf = (value: number, min: number, cell: number, count: number): number => {
+    if (cell <= 0) return 0;
+    const index = Math.floor((value - min) / cell);
+    return index < 0 ? 0 : index >= count ? count - 1 : index;
+  };
+  for (let t = 0; t + 2 < sourceTriangles.length; t += 3) {
+    const a = sourceTriangles[t]! * 3;
+    const b = sourceTriangles[t + 1]! * 3;
+    const c = sourceTriangles[t + 2]! * 3;
+    const ax = positions[a]!;
+    const ay = positions[a + 1]!;
+    const az = positions[a + 2]!;
+    const ux = positions[b]! - ax;
+    const uy = positions[b + 1]! - ay;
+    const uz = positions[b + 2]! - az;
+    const vx = positions[c]! - ax;
+    const vy = positions[c + 1]! - ay;
+    const vz = positions[c + 2]! - az;
+    const longest = Math.max(
+      Math.hypot(ux, uy, uz),
+      Math.hypot(vx, vy, vz),
+      Math.hypot(vx - ux, vy - uy, vz - uz),
+    );
+    const steps = Math.max(1, Math.min(BOX_MAX_SAMPLES_PER_EDGE, Math.ceil(longest / (minCell / 2))));
+    for (let i = 0; i <= steps; i += 1) {
+      for (let j = 0; j <= steps - i; j += 1) {
+        const u = i / steps;
+        const v = j / steps;
+        const px = ax + ux * u + vx * v;
+        const py = ay + uy * u + vy * v;
+        const pz = az + uz * u + vz * v;
+        const cx = cellOf(px, minX, cellX, nx);
+        const cy = cellOf(py, minY, cellY, ny);
+        const cz = cellOf(pz, minZ, cellZ, nz);
+        occupied[cx + cy * nx + cz * nx * ny] = 1;
+      }
+    }
+  }
+
+  const claimed = new Uint8Array(nx * ny * nz);
+  const growable = (x0: number, x1: number, y0: number, y1: number, z0: number, z1: number): boolean => {
+    for (let z = z0; z <= z1; z += 1) {
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const index = x + y * nx + z * nx * ny;
+          if (occupied[index] === 0 || claimed[index] === 1) return false;
+        }
+      }
+    }
+    return true;
+  };
+  const boxes: CollisionMeshBox[] = [];
+  for (let z = 0; z < nz; z += 1) {
+    for (let y = 0; y < ny; y += 1) {
+      for (let x = 0; x < nx; x += 1) {
+        const index = x + y * nx + z * nx * ny;
+        if (occupied[index] === 0 || claimed[index] === 1) continue;
+        let x1 = x;
+        while (x1 + 1 < nx && growable(x1 + 1, x1 + 1, y, y, z, z)) x1 += 1;
+        let y1 = y;
+        while (y1 + 1 < ny && growable(x, x1, y1 + 1, y1 + 1, z, z)) y1 += 1;
+        let z1 = z;
+        while (z1 + 1 < nz && growable(x, x1, y, y1, z1 + 1, z1 + 1)) z1 += 1;
+        for (let cz = z; cz <= z1; cz += 1) {
+          for (let cy = y; cy <= y1; cy += 1) {
+            for (let cx = x; cx <= x1; cx += 1) {
+              claimed[cx + cy * nx + cz * nx * ny] = 1;
+            }
+          }
+        }
+        boxes.push([
+          roundCoord(minX + x * cellX),
+          roundCoord(minY + y * cellY),
+          roundCoord(minZ + z * cellZ),
+          roundCoord(minX + (x1 + 1) * cellX),
+          roundCoord(minY + (y1 + 1) * cellY),
+          roundCoord(minZ + (z1 + 1) * cellZ),
+        ]);
+      }
+    }
+  }
+  if (boxes.length > BOX_MAX_COUNT) {
+    // Halve the effective resolution (not the unused cap headroom) so each retry genuinely coarsens;
+    // shapes that stay fragmented even at 4 cells per axis collapse to the plain bounds box.
+    const used = Math.max(nx, ny, nz);
+    if (used > 4) {
+      return decomposeBoxes(positions, sourceTriangles, minX, minY, minZ, maxX, maxY, maxZ, used >> 1);
+    }
+    return [[roundCoord(minX), roundCoord(minY), roundCoord(minZ), roundCoord(maxX), roundCoord(maxY), roundCoord(maxZ)]];
+  }
+  return boxes;
 }
 
 const LEAF_TRIANGLES = 4;
