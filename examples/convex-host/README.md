@@ -13,9 +13,10 @@ bun install
 bunx convex dev
 ```
 
-`bunx convex dev` codegens `convex/_generated/` (which every module here imports for
-`server`/`api` types) and prints your dev deployment URL. This package has no `check-types`
-script because it cannot typecheck until `_generated/` exists.
+`bunx convex dev` codegens `convex/_generated/` and prints your dev deployment URL. The
+`check-types` script typechecks every module against the `@jgengine/convex` source; it
+excludes `convex/crons.ts`, the one module that imports the codegen'd `./_generated/api`, so
+the gate stays green before `bunx convex dev` has generated it.
 
 Point a game at that URL and run it:
 
