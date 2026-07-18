@@ -59,4 +59,27 @@ describe("entityEntryFromCatalog", () => {
     expect(entry?.role).toBe("hostile");
     expect(entry?.stats?.health?.max).toBe(12);
   });
+
+  test("prefers a document-carried entities schema over the default entityDefinitionSchema", () => {
+    const document = createEmptyEditorDocument();
+    // A document schema that widens walkSpeed's ceiling from the default (max 20) to 999.
+    document.catalogs = [
+      {
+        id: ENTITY_CATALOG_ID,
+        schema: {
+          fields: [
+            { key: "role", type: "select", default: "enemy", options: [{ value: "enemy" }, { value: "hostile" }] },
+            { key: "maxHealth", type: "number", default: 20, min: 1, max: 100000 },
+            { key: "walkSpeed", type: "range", default: 3, min: 0, max: 999 },
+            { key: "scale", type: "range", default: 1, min: 0.1, max: 10 },
+          ],
+        },
+        entries: [{ id: "sprinter", meta: { role: "hostile", maxHealth: 30, walkSpeed: 120, scale: 1 } }],
+      },
+    ];
+    const entry = entityEntryFromCatalog(document, "sprinter");
+    // Under the default schema this would clamp to 20; the document schema keeps it.
+    expect(entry?.movement?.walkSpeed).toBe(120);
+    expect(entry?.role).toBe("hostile");
+  });
 });

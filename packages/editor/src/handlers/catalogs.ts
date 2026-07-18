@@ -6,7 +6,14 @@ import type { HandlerTable } from "./context";
 /** Gameplay data catalog verbs (list / get / merge-patch / add / remove rows). */
 export const catalogHandlers: Pick<
   HandlerTable,
-  "list_catalogs" | "get_catalog_entry" | "set_catalog_entry" | "add_catalog_entry" | "remove_catalog_entry"
+  | "list_catalogs"
+  | "get_catalog_entry"
+  | "set_catalog_entry"
+  | "add_catalog_entry"
+  | "remove_catalog_entry"
+  | "add_catalog"
+  | "remove_catalog"
+  | "set_catalog_schema"
 > = {
   list_catalogs: (ctx) => {
     const state = ctx.session.getState();
@@ -92,5 +99,45 @@ export const catalogHandlers: Pick<
       return { ok: false, error: `catalog entry not found: ${request.catalogId}/${request.entryId}` };
     }
     return { ok: true, result: { catalogId: request.catalogId, entryId: request.entryId } };
+  },
+  add_catalog: (ctx, request) => {
+    const catalogId = request.catalogId.trim();
+    if (catalogId.length === 0) return { ok: false, error: "add_catalog: catalogId is required" };
+    if (ctx.catalogById.has(catalogId) || findEditorCatalog(ctx.session.getState().document, catalogId) !== undefined) {
+      return { ok: false, error: `catalog already exists: ${catalogId}` };
+    }
+    // Default to an empty schema so the catalog is a document-authored one — carried on the document,
+    // addressable via list_catalogs, and ready for set_catalog_schema to add fields.
+    const before = ctx.session.getState();
+    const state = ctx.session.dispatch({
+      type: "addCatalog",
+      id: catalogId,
+      ...(request.label === undefined ? {} : { label: request.label }),
+      schema: request.schema ?? { fields: [] },
+    });
+    if (state === before) return { ok: false, error: `add_catalog rejected: ${catalogId}` };
+    const catalog = findEditorCatalog(state.document, catalogId);
+    return { ok: true, result: { catalogId, catalog } };
+  },
+  remove_catalog: (ctx, request) => {
+    const before = ctx.session.getState();
+    const state = ctx.session.dispatch({ type: "removeCatalog", id: request.catalogId });
+    if (state === before) return { ok: false, error: `catalog not found: ${request.catalogId}` };
+    return { ok: true, result: { catalogId: request.catalogId } };
+  },
+  set_catalog_schema: (ctx, request) => {
+    if (findEditorCatalog(ctx.session.getState().document, request.catalogId) === undefined) {
+      return { ok: false, error: `catalog not found: ${request.catalogId}` };
+    }
+    const before = ctx.session.getState();
+    const state = ctx.session.dispatch({
+      type: "setCatalogSchema",
+      id: request.catalogId,
+      schema: request.schema,
+      ...(request.label === undefined ? {} : { label: request.label }),
+    });
+    if (state === before) return { ok: false, error: `set_catalog_schema rejected: ${request.catalogId}` };
+    const catalog = findEditorCatalog(state.document, request.catalogId);
+    return { ok: true, result: { catalogId: request.catalogId, entries: catalog?.entries ?? [] } };
   },
 };
