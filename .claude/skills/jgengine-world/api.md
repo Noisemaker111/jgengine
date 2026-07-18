@@ -1463,6 +1463,8 @@
 - `Carryable` (class): class Carryable — A grabbed physics object following a moving hold point through a spring constraint (the pick — a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner carry (the follow point is the average of owners' hold points), an encumbrance read, and drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
 - `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
 - `CircleFormationOptions` (interface): interface CircleFormationOptions — Options for {@link circleFormation}.
+- `CityBlock` (interface): interface CityBlock — One closed city block: a face of the road graph, inset to curb and land boundaries.
+- `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
 - `CityBridge` (interface): interface CityBridge — One bridge deck spanning water: bank-to-bank polyline plus the silhouette style.
 - `CityDriveway` (interface): interface CityDriveway — One driveway ribbon from a street to a lot.
 - `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
@@ -1471,7 +1473,9 @@
 - `CityLot` (interface): interface CityLot — One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor.
 - `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
-- `CityPark` (interface): interface CityPark — One unbuilt block: plaza (core), green (mid), meadow (edge), or crop field.
+- `CityParcel` (interface): interface CityParcel — One polygonal parcel subdivided from a block's street frontage.
+- `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
+- `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
 - `CityPieceRole` (type): type CityPieceRole = "wall" | "roof" | "trim" | "accent" — Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette).
 - `CityPieceShape` (type): type CityPieceShape = "box" | "gable" | "cylinder" | "dome" — Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape.
@@ -2213,6 +2217,28 @@
 - `CellStateGridConfig` (interface): interface CellStateGridConfig<TState extends string> — ⚠ undocumented
 - `createCellStateGrid` (function): function createCellStateGrid<TState extends string>(config: CellStateGridConfig<TState>): CellStateGrid<TState> — ⚠ undocumented
 
+## @jgengine/core/world/cityBlocks
+
+- `BlockRings` (interface): interface BlockRings — A block's derived rings plus the sidewalk band (outer = curb line, inner = land line).
+- `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
+- `CityBlockLocal` (interface): interface CityBlockLocal — One closed block: a face of the road network, inset to its curb and land boundaries.
+- `CityParcelFrontage` (interface): interface CityParcelFrontage — One street-frontage reference of a parcel.
+- `CityParcelKind` (type): type CityParcelKind = "built" | "vacant" | "yard" — How a parcel is used after occupancy/fitting rolls.
+- `CityParcelLocal` (interface): interface CityParcelLocal — One polygonal parcel subdivided out of a block's street frontage.
+- `FabricParams` (interface): interface FabricParams — Everything block extraction needs from the district rules.
+- `FabricStreet` (interface): interface FabricStreet — Minimal street shape the fabric needs (matches cityKind's LocalStreet).
+- `GraphFace` (interface): interface GraphFace — One extracted face: closed centerline polygon + the street index along each polygon edge.
+- `ParcelCut` (interface): interface ParcelCut — Inputs for one parcel strip cut from a block ring.
+- `RingWalker` (class): class RingWalker — Arc-length station lookup along a closed ring.
+- `buildablePolygon` (function): function buildablePolygon(parcel: readonly Vec2[], frontA: Vec2, frontB: Vec2, frontSetback: number, sideGap: number, rearMargin: number, depth: number): Vec2[] — Buildable polygon for a parcel: the parcel clipped by the front setback (a half-plane pushed in from the frontage chord), side gaps along both cut lines, and a rear margin. Works on any parcel polygon — no vertex correspondence needed.
+- `carveCorridors` (function): function carveCorridors(poly: Vec2[], keep: Vec2, corridors: readonly { pts: readonly Vec2[]; width: number }[], margin: number): Vec2[] — Carve dead-end road corridors (cul-de-sac lanes pruned from the face graph) out of a polygon: for every corridor segment crossing it, keep the polygon piece on the side where `keep` lies.
+- `conformPolygonToRing` (function): function conformPolygonToRing(poly: readonly Vec2[], ring: readonly Vec2[]): Vec2[] — Conform a polygon to a containing ring: sample every edge (a straight edge can bulge across a concave notch even when its endpoints hug the boundary), then pull each escaping point to its nearest boundary point. Callers re-run this after any operation that adds mid-edge vertices.
+- `cutParcel` (function): function cutParcel(walker: RingWalker, blockRing: readonly Vec2[], cut: ParcelCut): Vec2[] | null — Cut one polygonal parcel out of a block land ring: the frontage arc between two stations, extruded inward along the station normals, clipped back to the block. Returns null when the strip collapses (over-tight corner, sliver arc).
+- `extractBlocks` (function): function extractBlocks(streets: readonly FabricStreet[], hx: number, hz: number, params: FabricParams): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } — Extract closed blocks from the street network: planar faces of the graph, each inset to its curb ring (pavement edge) and land ring (behind the sidewalk band). Faces that collapse under the inset come back with an empty `land` and are the caller's slivers/buffers.
+- `isSliverBlock` (function): function isSliverBlock(land: readonly Vec2[], minArea: number, minWidth: number): boolean — Deterministic sliver verdict shared by classification and tests.
+- `pointsInPolygon` (function): function pointsInPolygon(ring: readonly Vec2[], count: number, rng: () => number, margin = 1.5): Vec2[] — Sample deterministic points inside a polygon by seeded rejection over its bounds.
+- `sidewalkWidthFor` (function): function sidewalkWidthFor(level: FabricStreet["level"], base: number): number — Sidewalk band width by street hierarchy (base = the district's street-level width).
+
 ## @jgengine/core/world/cityContent
 
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
@@ -2225,6 +2251,33 @@
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
 - `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
 
+## @jgengine/core/world/cityGeometry
+
+- `Vec2` (type): type Vec2 = readonly [number, number] — Deterministic 2D polygon math for the `city` studio's block/parcel pipeline: signed areas, point-in-polygon, half-plane clipping, per-edge inward insets (the curb → sidewalk → land and parcel → buildable transforms), simple-loop recovery after aggressive insets, and rotated-rect fitting inside arbitrary polygons. Pure functions over `[x, z]` tuples — no allocation-heavy classes, no rendering, no randomness — so every consumer from the resolver to the tests shares one geometric truth.
+- `clipHalfPlane` (function): function clipHalfPlane(ring: readonly Vec2[], normal: Vec2, limit: number): Vec2[] — Clip a polygon to the half-plane `dot(p, normal) <= limit` (Sutherland–Hodgman step). Returns the surviving ring, possibly empty. The subject may be concave; the output of a single half-plane clip of a simple ring is always a valid (possibly pinched) ring.
+- `dedupeRing` (function): function dedupeRing(ring: readonly Vec2[], epsilon = 1e-6): Vec2[] — Remove consecutive (near-)duplicate vertices; returns [] when fewer than 3 survive.
+- `distanceToRing` (function): function distanceToRing(ring: readonly Vec2[], x: number, z: number): number — Distance from a point to the nearest boundary segment of a ring.
+- `ensureCcw` (function): function ensureCcw(ring: readonly Vec2[]): Vec2[] — Ensure counter-clockwise winding (positive signed area) without mutating the input.
+- `extractSimpleLoop` (function): function extractSimpleLoop(ring: readonly Vec2[], maxPasses = 6): Vec2[] — Recover the dominant simple loop from a lightly self-intersecting ring: whenever two edges cross, the smaller of the two loops the crossing pinches off is dropped. Bounded passes; rings that stay tangled after that return []. This is the cleanup net under aggressive insets — a concave block inset past a neck pinches into a bow-tie, and the bigger lobe is the block.
+- `fitRectInPolygon` (function): function fitRectInPolygon(ring: readonly Vec2[], cx: number, cz: number, maxW: number, maxD: number, rotationY: number, minScale = 0.55): { w: number; d: number; cx: number; cz: number } | null — Fit the largest rect (up to `maxW`×`maxD`, oriented to `rotationY`, centered near `[cx, cz]`) inside a polygon by bounded bisection on a single scale factor. Deterministic; returns null when even `minScale` of the request does not fit after nudging the center inward.
+- `insetRing` (function): function insetRing(ring: readonly Vec2[], edgeDistances: readonly number[]): Vec2[] — Inset a CCW ring inward with a PER-EDGE distance (edge i runs vertex i → i+1). True corners take the intersection of the two adjacent offset lines (so a street corner lands exactly where the two curb lines meet, even with different street widths); near-collinear vertices — polyline samples along a curve — fall back to the averaged-normal offset, which is exact in the limit. Returns [] when the inset collapses (sliver) or stays tangled after loop recovery.
+- `insetRingUniform` (function): function insetRingUniform(ring: readonly Vec2[], distance: number): Vec2[] — Uniform-distance convenience over {@link insetRing}.
+- `pointInPolygon` (function): function pointInPolygon(ring: readonly Vec2[], x: number, z: number): boolean — Even-odd point-in-polygon test.
+- `polygonArea` (function): function polygonArea(ring: readonly Vec2[]): number — Absolute polygon area.
+- `polygonCentroid` (function): function polygonCentroid(ring: readonly Vec2[]): Vec2 — Area centroid of a simple polygon (falls back to the vertex mean for degenerate rings).
+- `polygonMeanWidth` (function): function polygonMeanWidth(ring: readonly Vec2[]): number — Mean "width" proxy for sliver detection: the diameter of the largest inscribed strip is approximated by 2·area / perimeter (exact for long rectangles, conservative elsewhere).
+- `polygonPerimeter` (function): function polygonPerimeter(ring: readonly Vec2[]): number — Ring perimeter length.
+- `polygonSignedArea` (function): function polygonSignedArea(ring: readonly Vec2[]): number — Signed area of a polygon ring (positive = counter-clockwise in XZ).
+- `polygonsOverlap` (function): function polygonsOverlap(a: readonly Vec2[], b: readonly Vec2[], shrink = 0.05): boolean — Conservative polygon-overlap test: any vertex of one strictly inside the other, or any edges crossing.
+- `rayDistanceToRing` (function): function rayDistanceToRing(ring: readonly Vec2[], origin: Vec2, dir: Vec2, minT = 0.6): number — Distance from `origin` along `dir` to the first ring-boundary crossing (ignoring hits closer than `minT`, e.g. the edge the origin sits on). Infinity when the ray never leaves — degenerate.
+- `rectCorners` (function): function rectCorners(cx: number, cz: number, hw: number, hd: number, rotationY: number): Vec2[] — All four corners of a rotated rect (center, half-extents, yaw in engine rotationY convention).
+- `rectInsidePolygon` (function): function rectInsidePolygon(ring: readonly Vec2[], cx: number, cz: number, hw: number, hd: number, rotationY: number): boolean — True when the whole rotated rect (corners + edge midpoints) sits inside the ring.
+- `ringBounds` (function): function ringBounds(ring: readonly Vec2[]): { minX: number; minZ: number; maxX: number; maxZ: number } — Axis-aligned bounding box of a ring.
+- `ringSelfIntersects` (function): function ringSelfIntersects(ring: readonly Vec2[]): boolean — True when any two non-adjacent edges of the ring properly cross. O(n²), fine for block-scale n.
+- `splitByLine` (function): function splitByLine(ring: readonly Vec2[], normal: Vec2, limit: number): { below: Vec2[]; above: Vec2[] } — Split a polygon by the line `dot(p, normal) = limit` into the `<=` and `>=` sides.
+- `triangulatePolygon` (function): function triangulatePolygon(ring: readonly Vec2[]): { positions: Vec2[]; indices: number[] } — Ear-clip a simple polygon into triangles. Returns the cleaned/CCW-oriented vertex ring plus flat index triples into it (so a draping consumer can sample a height per returned vertex). O(n²) — fine for block/park rings. A polygon that stays un-clippable (self-touching after dedupe) yields whatever ears were found before the guard trips; degenerate input returns no triangles.
+- `triangulateRingBand` (function): function triangulateRingBand(outer: readonly Vec2[], inner: readonly Vec2[]): { positions: Vec2[]; indices: number[] } — Triangulate the band between two nested rings (an outer ring with an inner hole, e.g. a curb ring around a land ring — the sidewalk). Pairs the loops by cumulative arc-length fraction, aligning the inner start to the outer's first vertex, so it is robust to differing vertex counts and to a rotational offset between the rings. Returns the merged vertex list (outer, then the rotated inner) and index triples into it. Zero-area triangles — where the two rings coincide (a street edge with no sidewalk) — are dropped so `computeVertexNormals` never sees a degenerate face.
+
 ## @jgengine/core/world/cityKind
 
 - `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
@@ -2232,13 +2285,16 @@
 - `CITY_SCHEMA` (const): const CITY_SCHEMA: ParamSchema — The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam.
 - `CITY_ZONE_KIND` (const): const CITY_ZONE_KIND: "cityzone" — The editor volume kind that locally overrides a city's zone band/mix — a district in a district.
 - `CITY_ZONE_SCHEMA` (const): const CITY_ZONE_SCHEMA: ParamSchema — Zone-override schema for `cityzone` volumes: pin a band and optionally a bespoke class mix.
+- `CityBlock` (interface): interface CityBlock — One closed city block: a face of the road graph, inset to curb and land boundaries.
 - `CityBridge` (interface): interface CityBridge — One bridge deck spanning water: bank-to-bank polyline plus the silhouette style.
 - `CityDriveway` (interface): interface CityDriveway — One driveway ribbon from a street to a lot.
 - `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
 - `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
 - `CityLight` (interface): interface CityLight — One street light: curb position plus the yaw its arm faces (over the road).
 - `CityLot` (interface): interface CityLot — One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor.
-- `CityPark` (interface): interface CityPark — One unbuilt block: plaza (core), green (mid), meadow (edge), or crop field.
+- `CityParcel` (interface): interface CityParcel — One polygonal parcel subdivided from a block's street frontage.
+- `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
+- `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
 - `CityResolveContext` (interface): interface CityResolveContext extends SceneKindResolveContext — Extended resolve context: sibling `cityzone` volumes that override the band/mix locally.
 - `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.

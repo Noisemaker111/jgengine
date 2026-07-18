@@ -109,8 +109,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
 
-## city-district — resolve a `city` volume into deterministic streets, zoned lots, parks, and furniture
+## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
+- `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent

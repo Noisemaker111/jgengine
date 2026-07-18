@@ -379,6 +379,7 @@ export { buildingIndex, type BuildingIndex } from "./world/buildingIndex";
 export { type BuildingPaletteOverrides, type BuildingStyle } from "./world/buildings";
 export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from "./world/carve";
 export { catenaryCurve, sagCurve } from "./world/catenary";
+export { type CityBlockKind } from "./world/cityBlocks";
 export {
   CITY_LOT_CLASSES,
   CITY_TREE_SPECIES,
@@ -397,12 +398,15 @@ export {
   CITY_ZONE_KIND,
   CITY_ZONE_SCHEMA,
   resolveCityObject,
+  type CityBlock,
   type CityBridge,
   type CityDriveway,
   type CityHedge,
   type CityIntersection,
   type CityLight,
   type CityLot,
+  type CityParcel,
+  type CityParcelFrontageOut,
   type CityPark,
   type CityParking,
   type CityResolveContext,
