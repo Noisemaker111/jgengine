@@ -35,8 +35,8 @@ describe("scaffold → edit → play parity", () => {
     });
 
     test(`${variant}: scaffolded keybinds make the shell drive the walk controller`, () => {
-      const source = fileOf("src/game/keybinds.ts");
-      const boundActions = [...source.matchAll(/^\s{2}(\w+): \[/gm)].map((match) => match[1]!);
+      const source = fileOf("src/game.config.ts");
+      const boundActions = [...source.matchAll(/^\s{4}(\w+): \[/gm)].map((match) => match[1]!);
       expect(boundActions.length).toBeGreaterThan(0);
       const map = Object.fromEntries(boundActions.map((action) => [action, ["KeyW"]]));
       expect(shellDrivesPlayerPose(map)).toBe(true);
