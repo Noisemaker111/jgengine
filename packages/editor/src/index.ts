@@ -15,6 +15,7 @@ export {
   downloadSaver,
   importAssetToHost,
   loadDroppedAssets,
+  mergeStandaloneAssets,
   type StandaloneEditorProps,
   type StandaloneAsset,
   type AssetImporter,
@@ -45,7 +46,13 @@ export {
 export { TerrainSculpt } from "./TerrainSculpt";
 export { ScatterPreview } from "./ScatterPreview";
 export { EditorCameraDriver } from "./EditorCameraDriver";
-export { AssetBrowser, assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
+export {
+  AssetBrowser,
+  assetsFromCatalog,
+  editorAssetFromImport,
+  mergeEditorAssets,
+  type EditorAssetEntry,
+} from "./AssetBrowser";
 export {
   createEditorHost,
   getEditorHost,

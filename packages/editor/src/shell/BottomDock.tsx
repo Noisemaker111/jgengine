@@ -30,6 +30,8 @@ export function BottomDock({
   browserView,
   onSetBrowserView,
   onPlaceAsset,
+  onImportModels,
+  importBusy,
 }: {
   tab: BottomDockTab;
   onSelectTab: (tab: BottomDockTab) => void;
@@ -42,13 +44,22 @@ export function BottomDock({
   browserView: BrowserViewMode;
   onSetBrowserView: (view: BrowserViewMode) => void;
   onPlaceAsset: (entry: EditorAssetEntry) => void;
+  onImportModels?: (files: readonly File[]) => void | Promise<void>;
+  importBusy?: boolean;
 }) {
   const consoleEntries = useSyncExternalStore(consoleStore.subscribe, consoleStore.getEntries, consoleStore.getEntries);
   const consoleErrorCount = consoleEntries.reduce((sum, entry) => (entry.severity === "error" ? sum + 1 : sum), 0);
   let content: ReactNode;
   if (tab === "content") {
     content = (
-      <ContentBrowser assets={assets} session={session} onPlace={onPlaceAsset} view={browserView} onSetView={onSetBrowserView} />
+      <ContentBrowser
+        assets={assets}
+        session={session}
+        onPlace={onPlaceAsset}
+        view={browserView}
+        onSetView={onSetBrowserView}
+        {...(onImportModels === undefined ? {} : { onImportModels, importBusy })}
+      />
     );
   } else if (tab === "console") {
     content = <ConsolePanel store={consoleStore} />;

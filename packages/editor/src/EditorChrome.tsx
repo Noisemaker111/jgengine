@@ -9,7 +9,11 @@ import {
 } from "@jgengine/core/editor/index";
 import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/scatterRegion";
 
-import { type EditorAssetEntry } from "./AssetBrowser";
+import {
+  editorAssetFromImport,
+  mergeEditorAssets,
+  type EditorAssetEntry,
+} from "./AssetBrowser";
 import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
@@ -22,6 +26,11 @@ import {
 } from "./viewportContextMenu";
 import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi } from "./session";
+import {
+  importAssetToHost,
+  loadDroppedAssets,
+  type AssetImporter,
+} from "./assetImport";
 import { newPlacementId, type EditorUiStore, type PlacementTool } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { TerrainPanel } from "./TerrainPanel";
@@ -143,6 +152,8 @@ export function EditorChrome({
   baselineDocument,
   save,
   networkSnapshot,
+  importAsset = importAssetToHost,
+  onRegisterAsset,
 }: {
   gameId: string;
   session: EditorSession;
@@ -157,6 +168,16 @@ export function EditorChrome({
    * Built by `EditorApp` from the game definition; live presence rows only when the host injects them.
    */
   networkSnapshot: EditorNetworkSnapshot;
+  /**
+   * How dropped/imported models become durable. Default: the standalone host importer
+   * (`POST /__jgengine/import-asset`); when no host answers, imports degrade to blob URLs.
+   */
+  importAsset?: AssetImporter;
+  /**
+   * Optional side-effect after a model import succeeds: register the id/url into the live game
+   * asset catalog so AuthoredObjects can resolve the mesh without remounting the playable.
+   */
+  onRegisterAsset?: (id: string, url: string) => void;
 }) {
   const [, setTick] = useState(0);
   const layoutRef = useRef<ReturnType<typeof createShellLayoutStore> | null>(null);
@@ -168,6 +189,9 @@ export function EditorChrome({
   const perfHistoryRef = useRef<ReturnType<typeof createPerfHistoryStore> | null>(null);
   perfHistoryRef.current ??= createPerfHistoryStore();
   const perfHistory = perfHistoryRef.current;
+  /** Models added this session via Content Browser Import / drop — merged over the game catalog. */
+  const [importedAssets, setImportedAssets] = useState<readonly EditorAssetEntry[]>([]);
+  const [importBusy, setImportBusy] = useState(false);
 
   // Bridge global RPC/agent console emits into the dock console for this chrome instance.
   useEffect(
@@ -177,6 +201,16 @@ export function EditorChrome({
       }),
     [consoleStore],
   );
+
+  const liveAssets = useMemo(
+    () => mergeEditorAssets(assets, importedAssets),
+    [assets, importedAssets],
+  );
+
+  // Keep the host asset list in step with the browser so place_asset / list_assets see imports.
+  useEffect(() => {
+    api.setAssets(liveAssets);
+  }, [api, liveAssets]);
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState<string | null>(null);
@@ -577,6 +611,44 @@ export function EditorChrome({
     else notify(`Place failed: ${response.error ?? "unknown error"}`, "error");
   };
 
+  const importModels = useCallback(
+    async (files: readonly File[]) => {
+      if (files.length === 0 || importBusy) return;
+      setImportBusy(true);
+      try {
+        const next = await loadDroppedAssets(files, importAsset);
+        if (next.length === 0) {
+          notify("No .glb / .gltf models found in the drop", "error");
+          return;
+        }
+        const entries = next.map(editorAssetFromImport);
+        for (const entry of entries) {
+          if (entry.url !== undefined) onRegisterAsset?.(entry.id, entry.url);
+        }
+        setImportedAssets((current) => mergeEditorAssets(current, entries));
+        layout.patch({ bottomOpen: true, bottomTab: "content" });
+        const durable = entries.filter((entry) => entry.url !== undefined && !entry.url.startsWith("blob:")).length;
+        const ephemeral = entries.length - durable;
+        if (ephemeral === 0) {
+          notify(entries.length === 1 ? `Imported ${entries[0]!.label}` : `Imported ${entries.length} models`);
+        } else if (durable === 0) {
+          notify(
+            entries.length === 1
+              ? `Imported ${entries[0]!.label} (session-only — no host importer)`
+              : `Imported ${entries.length} models (session-only — no host importer)`,
+          );
+        } else {
+          notify(`Imported ${entries.length} models (${ephemeral} session-only)`);
+        }
+      } catch (error) {
+        notify(`Import failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+      } finally {
+        setImportBusy(false);
+      }
+    },
+    [importAsset, importBusy, layout, notify, onRegisterAsset],
+  );
+
   const importFile = (file: File) => {
     void file.text().then((text) => {
       try {
@@ -932,7 +1004,7 @@ export function EditorChrome({
                   tab={layoutState.bottomTab}
                   onSelectTab={(tab) => layout.patch({ bottomTab: tab })}
                   onClose={() => layout.patch({ bottomOpen: false })}
-                  assets={assets}
+                  assets={liveAssets}
                   session={session}
                   api={api}
                   consoleStore={consoleStore}
@@ -940,6 +1012,8 @@ export function EditorChrome({
                   browserView={layoutState.browserView}
                   onSetBrowserView={(view) => layout.patch({ browserView: view })}
                   onPlaceAsset={placeAsset}
+                  onImportModels={importModels}
+                  importBusy={importBusy}
                 />
               </div>
             </>

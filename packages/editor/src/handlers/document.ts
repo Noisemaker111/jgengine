@@ -318,7 +318,13 @@ export const documentHandlers: Pick<
       knownLabel: asset?.label,
       knownUrl: asset?.url,
     });
-    const marker = toEditorMarker(placed);
+    const placedMarker = toEditorMarker(placed);
+    // URL-backed catalog models need a first-class catalogId so AuthoredObjects places the mesh;
+    // generator assets keep meta.assetId only (no url) and render through AuthoredGenerators.
+    const marker =
+      typeof asset?.url === "string" && asset.url.length > 0
+        ? { ...placedMarker, catalogId: request.id }
+        : placedMarker;
     ctx.session.dispatch({ type: "addMarker", marker });
     return {
       ok: true,

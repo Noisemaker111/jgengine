@@ -57,6 +57,9 @@ describe("editor host RPC", () => {
     expect(marker?.position.x).toBe(10);
     expect(marker?.position.z).toBe(20);
     expect(marker?.meta?.assetId).toBe("rock_01");
+    // URL-backed catalog models also stamp catalogId so AuthoredObjects places the mesh.
+    expect(marker?.catalogId).toBe("rock_01");
+    expect(marker?.meta?.url).toBe("/models/rock.glb");
     dispose();
   });
 

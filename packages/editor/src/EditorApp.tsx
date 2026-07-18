@@ -665,6 +665,13 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     const WorldOverlay: ComponentType = function EditorOverlay() {
       return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />;
     };
+    const registerImportedAsset = (id: string, url: string) => {
+      try {
+        playable.game.assets.register(id, { url });
+      } catch {
+        // Catalog may reject late registration in some hosts; place_asset still keeps meta.url.
+      }
+    };
     const GameUI: ComponentType = function EditorUi() {
       return (
         <EditorChrome
@@ -676,6 +683,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
           baselineDocument={host.baselineDocument}
           save={saveFn}
           networkSnapshot={networkSnapshot}
+          onRegisterAsset={registerImportedAsset}
         />
       );
     };
