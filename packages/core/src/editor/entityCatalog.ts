@@ -79,7 +79,11 @@ export function entityEntryFromCatalog(
 ): GameContextEntityEntry | null {
   const meta = mergedEntityMeta(document, entityId, definitions);
   if (meta === undefined) return null;
-  const params = parseParams(entityDefinitionSchema, meta);
+  // Prefer a document-carried schema for the entities catalog (an editor-authored schema) over the
+  // hardcoded default, so a game that re-authored the entity fields in the editor drives the parse.
+  const schema =
+    document.catalogs.find((catalog) => catalog.id === ENTITY_CATALOG_ID)?.schema ?? entityDefinitionSchema;
+  const params = parseParams(schema, meta);
   const role = params.role as CatalogEntityRole;
   const maxHealth = params.maxHealth as number;
   const walkSpeed = params.walkSpeed as number;
@@ -92,4 +96,32 @@ export function entityEntryFromCatalog(
   };
   if (scale !== 1) entry.scale = scale;
   return entry;
+}
+
+/**
+ * Merges game-exported catalog definitions with editor-authored ones carried on the scene document.
+ * A document catalog that carries its own `schema` and has no matching game definition is synthesized
+ * into a full {@link EditorCatalogDefinition} (label falls back to the id) so the Data panel, the
+ * `list_catalogs` RPC, and the count all see it. A game definition always wins on id collision — its
+ * schema lives in code and is authoritative. Document catalogs without a schema (plain value bags for
+ * a game-declared catalog) are ignored here; they are addressed through their game definition.
+ * @capability editor-catalogs Merge game-exported and editor-authored catalogs into one addressable set.
+ */
+export function resolveCatalogDefinitions(
+  document: EntityCatalogDocumentLike,
+  gameDefinitions: readonly EditorCatalogDefinition[],
+): EditorCatalogDefinition[] {
+  const byId = new Map<string, EditorCatalogDefinition>(
+    gameDefinitions.map((definition) => [definition.id, definition]),
+  );
+  for (const catalog of document.catalogs) {
+    if (catalog.schema === undefined || byId.has(catalog.id)) continue;
+    byId.set(catalog.id, {
+      id: catalog.id,
+      label: catalog.label ?? catalog.id,
+      schema: catalog.schema,
+      entries: catalog.entries,
+    });
+  }
+  return [...byId.values()];
 }

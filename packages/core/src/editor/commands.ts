@@ -40,7 +40,9 @@ import {
   type EditorGridCellEdit,
   type EditorGridLayer,
 } from "./grid";
+import { parseParams, type ParamSchema } from "../scene/sceneKinds";
 import type {
+  EditorCatalogData,
   EditorCatalogEntry,
   EditorCollection,
   EditorDocument,
@@ -77,6 +79,9 @@ export type EditorCommand =
     }
   | { type: "addCatalogEntry"; catalogId: string; entry: EditorCatalogEntry }
   | { type: "removeCatalogEntry"; catalogId: string; entryId: string }
+  | { type: "addCatalog"; id: string; label?: string; schema?: ParamSchema }
+  | { type: "removeCatalog"; id: string }
+  | { type: "setCatalogSchema"; id: string; schema: ParamSchema; label?: string }
   | { type: "remove"; id: string }
   | { type: "removeMany"; ids: readonly string[] }
   | { type: "duplicate"; ids: readonly string[]; offset?: EditorVec3 }
@@ -565,6 +570,42 @@ const mutationHandlers: MutationHandlers = {
       row.id === command.catalogId
         ? { ...row, entries: row.entries.filter((entry) => entry.id !== command.entryId) }
         : row,
+    );
+    return { ...state, document: { ...state.document, catalogs } };
+  },
+  addCatalog: (state, command) => {
+    const id = command.id.trim();
+    if (id.length === 0) return null;
+    if (state.document.catalogs.some((catalog) => catalog.id === id)) return null;
+    const catalog: EditorCatalogData = {
+      id,
+      ...(command.label === undefined ? {} : { label: command.label }),
+      ...(command.schema === undefined ? {} : { schema: command.schema }),
+      entries: [],
+    };
+    return { ...state, document: { ...state.document, catalogs: [...state.document.catalogs, catalog] } };
+  },
+  removeCatalog: (state, command) => {
+    const next = state.document.catalogs.filter((catalog) => catalog.id !== command.id);
+    if (next.length === state.document.catalogs.length) return null;
+    return { ...state, document: { ...state.document, catalogs: next } };
+  },
+  setCatalogSchema: (state, command) => {
+    if (!state.document.catalogs.some((catalog) => catalog.id === command.id)) return null;
+    // Re-parse every row's meta against the NEW schema so removed keys drop, added keys default in,
+    // and range/number values clamp — the whole clamp contract for a schema edit in one step.
+    const catalogs = state.document.catalogs.map((catalog) =>
+      catalog.id === command.id
+        ? {
+            ...catalog,
+            schema: command.schema,
+            ...(command.label === undefined ? {} : { label: command.label }),
+            entries: catalog.entries.map((entry) => ({
+              ...entry,
+              meta: parseParams(command.schema, entry.meta) as Record<string, unknown>,
+            })),
+          }
+        : catalog,
     );
     return { ...state, document: { ...state.document, catalogs } };
   },
