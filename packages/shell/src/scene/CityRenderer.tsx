@@ -518,9 +518,17 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       }
       if (street.surface === "asphalt" && street.level !== "lane") {
         if (street.level === "boulevard") {
-          // Median strip instead of a center line, broken across intersections.
-          for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, 1.6)) {
-            medians.addRibbon(run, Math.max(1.3, street.width * 0.14), sample, 0.3);
+          // Median strip instead of a center line, broken WELL clear of every junction — a median
+          // stub poking into a crossing reads as debris. Runs shorter than a car are dropped and
+          // ends get a rounded cap so each island reads designed.
+          for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, 2.6)) {
+            let runLength = 0;
+            for (let i = 0; i + 1 < run.length; i += 1) runLength += Math.hypot(run[i + 1]![0] - run[i]![0], run[i + 1]![1] - run[i]![1]);
+            if (runLength < 7) continue;
+            const width = Math.max(1.3, street.width * 0.14);
+            medians.addRibbon(run, width, sample, 0.3);
+            medians.addDisc(run[0]!, width / 2, sample, 0.3, null, 8);
+            medians.addDisc(run[run.length - 1]!, width / 2, sample, 0.3, null, 8);
           }
         } else {
           for (const dash of dashSegments(rounded, 2.6, 3.6)) {
@@ -538,8 +546,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         }
       }
     }
-    // Intersection patches + crosswalks.
+    // Junctions: corner curb-return apron (sidewalk ring peeking out under the asphalt patch),
+    // the patch itself, and a zebra crossing on every REAL arm.
     for (const cross of resolved.intersections) {
+      if (resolved.rules.sidewalks && cross.level !== "lane") {
+        sidewalks.addDisc([cross.x, cross.z], cross.radius + 2.1, sample, 0.1);
+      }
       patches.addDisc([cross.x, cross.z], cross.radius, sample, 0.2);
       if (resolved.rules.sidewalks && cross.level !== "lane") {
         for (const arm of cross.arms) {
@@ -548,7 +560,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           for (let stripe = 0; stripe < 4; stripe += 1) {
             const dist = cross.radius + 0.7 + stripe * 0.8;
             const center: RoadPoint = [cross.x + dir[0] * dist, cross.z + dir[1] * dist];
-            addMarkQuad(center, perp, arm.width * 0.82, 0.42);
+            addMarkQuad(center, perp, arm.width * 0.78, 0.42);
           }
         }
       }
