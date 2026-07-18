@@ -4,6 +4,7 @@ dist/
 .DS_Store
 shots/
 **/public/models/*
+!**/public/models/imported/
 !apps/dev/public/models/claudecraft/
 !apps/dev/public/models/kaykit-adventurers/
 !apps/dev/public/models/kaykit-city-builder/

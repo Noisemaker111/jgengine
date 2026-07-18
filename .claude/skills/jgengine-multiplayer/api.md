@@ -283,6 +283,10 @@
 - `toNodeHandler` (function): function toNodeHandler(handler: WebHandler): NodeHandler — ⚠ undocumented
 - `toWebRequest` (function): function toWebRequest(req: IncomingMessage): Promise<Request> — ⚠ undocumented
 
+## @jgengine/node/assetNaming
+
+- `MODEL_EXT` (const): const MODEL_EXT: RegExp — File extensions the editor treats as placeable models.
+
 ## @jgengine/node/devSavePlugin
 
 - `EDITOR_SCENE_FILENAME` (const): const EDITOR_SCENE_FILENAME: "editor.scene.json" — Filename editor scene documents are saved under inside a game's `src/`.

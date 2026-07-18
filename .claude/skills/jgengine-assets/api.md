@@ -50,7 +50,7 @@
 - `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
 - `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
@@ -96,7 +96,8 @@
 ## @jgengine/assets/catalogs/build
 
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — ⚠ undocumented
+- `CatalogExtra` (interface): interface CatalogExtra — A durable, hand-or-tool authored catalog entry that is not part of the generated pack index, singles, or aliases — the shape the editor writes into a promoted game's `src/game/assets.ts` when an asset is imported. `label` is human-facing only and is intentionally not registered into the catalog (it mirrors how a single asset's author/license live only in the source literal), so at runtime an extra resolves to exactly `{ url }`.
+- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 
 ## @jgengine/assets/catalogs/buildSprites
