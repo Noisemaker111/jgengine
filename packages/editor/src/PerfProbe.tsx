@@ -1,9 +1,12 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { memo, useRef } from "react";
 
+import { devtools } from "@jgengine/core/devtools/devtools";
+
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
 import { getCameraTelemetry } from "./shell/cameraTelemetry";
+import { frameBudgetFromStats } from "./shell/perfHistory";
 
 const SAMPLE_WINDOW_MS = 500;
 /** Sum-of-abs delta on camera position/orientation above which a frame counts as camera activity. */
@@ -75,6 +78,13 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
     const active = activeRef.current || authoring.authoringMs > 0 || sceneChanged;
     lastDrawRef.current = drawCalls;
     lastTriRef.current = triangles;
+    // Chromium-only; other browsers omit memory rather than fabricating a value.
+    const heap = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
+    const memoryMb =
+      heap === undefined ? undefined : Math.round((heap.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
+    // Real sim / outside split from FrameDriver → devtools.frame (same as debug_snapshot). Omit when
+    // no runtime frames have been recorded yet — never invent a render series from viewport fps alone.
+    const budget = frameBudgetFromStats(devtools.frame.stats());
     api.setPerf({
       fps: Math.round(fps * 10) / 10,
       frameMs: Math.round((elapsed / framesRef.current) * 100) / 100,
@@ -85,6 +95,14 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
       raycastMs: authoring.raycastMs,
       rebuildMs: authoring.rebuildMs,
       authoringMs: authoring.authoringMs,
+      ...(memoryMb === undefined ? {} : { memoryMb }),
+      ...(budget === null
+        ? {}
+        : {
+            simMs: budget.simMs,
+            outsideMs: budget.outsideMs,
+            ...(budget.phases === undefined ? {} : { phases: budget.phases }),
+          }),
     });
     framesRef.current = 0;
     windowStartRef.current = now;

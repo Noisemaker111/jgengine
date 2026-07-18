@@ -3,12 +3,10 @@ import { useState } from "react";
 import type { EditorPrefab, EditorSession } from "@jgengine/core/editor/index";
 
 import type { EditorHostApi } from "./session";
+import { CONTROL, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
-const INPUT =
-  "rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60";
-const BTN =
-  "rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10 hover:text-neutral-100";
+const BTN = `${CONTROL} px-2 py-1 text-[11px] disabled:opacity-40`;
 
 function newPrefabId(): string {
   return `prefab_${Date.now().toString(36)}_${Math.floor(Math.random() * 1296).toString(36)}`;
@@ -41,9 +39,10 @@ export function PrefabsPanel({ session, api }: { session: EditorSession; api: Ed
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 p-2">
+      <div className={MICRO_LABEL}>Prefabs</div>
       <div className="flex gap-1">
         <input
-          className={`min-w-0 flex-1 ${INPUT}`}
+          className={`h-7 min-w-0 flex-1 px-2 ${INPUT_CLS}`}
           placeholder="New prefab name…"
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -58,9 +57,9 @@ export function PrefabsPanel({ session, api }: { session: EditorSession; api: Ed
       {selection.length === 0 ? (
         <div className="text-[10px] text-neutral-500">Select objects, name them, then make a prefab from the selection.</div>
       ) : null}
-      <div className="min-h-0 flex-1 space-y-1 overflow-auto pr-1">
+      <div className="min-h-0 flex-1 space-y-1.5 overflow-auto pr-1">
         {prefabs.length === 0 ? (
-          <div className="text-neutral-600">No prefabs yet.</div>
+          <div className="text-[11px] text-neutral-600">No prefabs yet.</div>
         ) : (
           prefabs.map((prefab) => {
             const count =
@@ -69,21 +68,21 @@ export function PrefabsPanel({ session, api }: { session: EditorSession; api: Ed
               prefab.fragment.paths.length +
               prefab.fragment.annotations.length;
             return (
-              <div key={prefab.id} className="flex items-center gap-2 rounded-md bg-white/[0.03] p-1.5 ring-1 ring-inset ring-white/[0.06]">
+              <div key={prefab.id} className="flex items-center gap-2 rounded-[6px] border border-white/[0.07] bg-white/[0.02] p-2">
                 <div className="min-w-0 flex-1 truncate">
-                  <div className="truncate text-neutral-100">{prefab.name}</div>
+                  <div className="truncate text-[12px] text-neutral-100">{prefab.name}</div>
                   <div className="text-[10px] text-neutral-500">{count} objects</div>
                 </div>
                 <button
                   type="button"
-                  className="shrink-0 rounded-md bg-cyan-500/20 px-2 py-0.5 text-cyan-200 ring-1 ring-inset ring-cyan-400/30 transition-colors hover:bg-cyan-500/30"
+                  className="shrink-0 rounded-[5px] border border-cyan-400/30 bg-cyan-500/15 px-2 py-0.5 text-[10px] text-cyan-200 transition-colors hover:bg-cyan-500/25"
                   onClick={() => insertAt(prefab)}
                 >
                   Insert
                 </button>
                 <button
                   type="button"
-                  className="shrink-0 rounded-md bg-rose-500/15 px-2 py-0.5 text-rose-200 ring-1 ring-inset ring-rose-400/25 transition-colors hover:bg-rose-500/25"
+                  className="shrink-0 rounded-[5px] border border-rose-400/25 bg-rose-500/15 px-2 py-0.5 text-[10px] text-rose-200 transition-colors hover:bg-rose-500/25"
                   onClick={() => session.dispatch({ type: "deletePrefab", prefabId: prefab.id })}
                 >
                   Delete

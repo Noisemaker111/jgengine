@@ -85,8 +85,19 @@ export type GizmoMode = "translate" | "rotate" | "scale";
 /** Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes. */
 export type GizmoSpace = "world" | "local";
 
+/**
+ * Where multi-select gizmo handles sit:
+ * - `origin` — primary selection (first selected id)
+ * - `center` — arithmetic mean of selected object positions
+ * - `median` — per-axis median of selected object positions
+ */
+export type GizmoPivot = "origin" | "center" | "median";
+
 /** How gizmo drags land: stick to terrain height, quantize to a grid, or free. */
 export type SnapMode = "ground" | "grid" | "off";
+
+/** Editor viewport camera projection — perspective (default) or orthographic top-down-friendly view. */
+export type CameraProjectionMode = "perspective" | "orthographic";
 
 /** Rotation snap increments (degrees) offered by the toolbar snap menu. */
 export const ROTATION_SNAP_CHOICES_DEG: readonly number[] = [5, 15, 45, 90];
@@ -114,12 +125,16 @@ export interface EditorUiState {
   gizmoMode: GizmoMode;
   /** Whether gizmo handles align to world axes or the selection's yaw. */
   gizmoSpace: GizmoSpace;
+  /** Multi-select gizmo pivot policy. */
+  gizmoPivot: GizmoPivot;
   snapMode: SnapMode;
   gridSize: number;
   /** Rotation snap increment in degrees; `null` rotates freely. */
   rotationSnapDeg: number | null;
   /** Scale snap increment; `null` scales freely. */
   scaleSnap: number | null;
+  /** Viewport camera projection (perspective vs orthographic). */
+  cameraProjection: CameraProjectionMode;
   showGrid: boolean;
   /** Surface-following iso-elevation contour overlay (terrain readability). */
   showContours: boolean;
@@ -130,6 +145,8 @@ export interface EditorUiState {
   placement: PlacementTool | null;
   pathDraft: readonly EditorVec3[];
   pathPoint: { pathId: string; index: number } | null;
+  /** Viewport pre-selection hover (object under cursor); null when nothing is hovered. */
+  hoverId: string | null;
   tool: EditorTool;
   terrainMode: TerrainMode;
   sculpt: SculptSettings;
@@ -161,10 +178,12 @@ export function createEditorUiStore(): EditorUiStore {
   let state: EditorUiState = {
     gizmoMode: "translate",
     gizmoSpace: "world",
+    gizmoPivot: "center",
     snapMode: "ground",
     gridSize: 1,
     rotationSnapDeg: 15,
     scaleSnap: null,
+    cameraProjection: "perspective",
     showGrid: true,
     showContours: false,
     showSurfaceGrid: false,
@@ -172,6 +191,7 @@ export function createEditorUiStore(): EditorUiStore {
     placement: null,
     pathDraft: [],
     pathPoint: null,
+    hoverId: null,
     tool: "select",
     terrainMode: "sculpt",
     sculpt: { ...DEFAULT_SCULPT_SETTINGS },

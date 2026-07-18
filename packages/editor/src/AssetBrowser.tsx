@@ -15,6 +15,31 @@ export interface EditorAssetEntry {
 /** Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone. */
 export const MATERIAL_DRAG_MIME = "application/x-jgengine-material";
 
+/**
+ * Custom drag mime for placeable catalog assets. Payload is JSON
+ * `{ id, label, kind }` so the viewport can call `place_asset` without a registry round-trip.
+ */
+export const ASSET_DRAG_MIME = "application/x-jgengine-editor-asset";
+
+/** Serializes a placeable asset for HTML5 drag into the viewport. @internal */
+export function encodeAssetDragPayload(entry: EditorAssetEntry): string {
+  return JSON.stringify({ id: entry.id, label: entry.label, kind: entry.kind });
+}
+
+/** Parses an asset drag payload; returns null when the data is missing or malformed. @internal */
+export function decodeAssetDragPayload(raw: string): EditorAssetEntry | null {
+  if (raw.length === 0) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<EditorAssetEntry>;
+    if (typeof parsed.id !== "string" || parsed.id.length === 0) return null;
+    if (typeof parsed.label !== "string") return null;
+    if (parsed.kind !== "model" && parsed.kind !== "catalog" && parsed.kind !== "marker") return null;
+    return { id: parsed.id, label: parsed.label, kind: parsed.kind };
+  } catch {
+    return null;
+  }
+}
+
 /** Materials palette: drag a chip onto an outliner row (assign to that object) or the viewport (paint terrain / assign to the object under the cursor). */
 function MaterialsPalette() {
   return (
@@ -123,4 +148,33 @@ export function assetsFromCatalog(ids: readonly string[], resolve?: (id: string)
       ...(resolved?.url === undefined ? {} : { url: resolved.url }),
     };
   });
+}
+
+/**
+ * Converts a durable/ephemeral standalone import into a Content Browser entry.
+ * Imported models are always kind `"model"` so place_asset stamps a catalogId for mesh resolution.
+ * @internal
+ */
+export function editorAssetFromImport(asset: { id: string; url: string; label?: string }): EditorAssetEntry {
+  return {
+    id: asset.id,
+    label: asset.label ?? asset.id,
+    kind: "model",
+    url: asset.url,
+  };
+}
+
+/**
+ * Merges imported model entries into the live browser list, replacing any prior entry that shares
+ * an id (re-import stays a single catalog row).
+ * @internal
+ */
+export function mergeEditorAssets(
+  current: readonly EditorAssetEntry[],
+  next: readonly EditorAssetEntry[],
+): EditorAssetEntry[] {
+  if (next.length === 0) return [...current];
+  const byId = new Map(current.map((asset) => [asset.id, asset]));
+  for (const asset of next) byId.set(asset.id, asset);
+  return Array.from(byId.values());
 }

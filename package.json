@@ -23,6 +23,8 @@
     }
   },
   "scripts": {
+    "agent:bootstrap": "bun scripts/agent-bootstrap.ts",
+    "agent:worktree": "bun scripts/agent-worktree.ts",
     "agent:preflight": "bun scripts/agent-preflight.ts",
     "ship:preflight": "bun scripts/agent-preflight.ts --ship",
     "gate": "bun scripts/guard.ts 1800 'bun run agent:preflight && bun run build && bun run check-types && bun run test:all'",

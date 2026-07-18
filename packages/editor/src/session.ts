@@ -27,6 +27,7 @@ import type { TerrainField } from "@jgengine/core/world/terrain";
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 
 import { EDITOR_RPC_HANDLERS, type HandlerContext } from "./handlers";
+import { emitEditorConsole } from "./shell/consoleSink";
 
 registerBuiltinSceneKinds();
 
@@ -136,6 +137,7 @@ export type EditorBridgeRequest =
   | { method: "remove_from_collection"; id: string; ids: string[] }
   | { method: "set_collection_flags"; id: string; color?: string; locked?: boolean; visible?: boolean }
   | { method: "select_collection"; id: string }
+  | { method: "set_object_flags"; ids: string[]; locked?: boolean; hidden?: boolean }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
   | { method: "assign_material"; ids: string[]; materialId: string }
   | { method: "list_grids" }
@@ -230,6 +232,11 @@ export interface EditorAssetInfo {
 
 /** Rolling frame-rate sample published by the in-canvas PerfProbe. */
 export interface EditorPerfSample {
+  /**
+   * JS heap used in megabytes when the browser exposes `performance.memory` (Chromium).
+   * Omitted entirely when unavailable — never fabricated.
+   */
+  memoryMb?: number;
   fps: number;
   frameMs: number;
   drawCalls: number;
@@ -247,6 +254,22 @@ export interface EditorPerfSample {
   rebuildMs?: number;
   /** raycastMs + rebuildMs — total authoring overhead separated from the frame/sim budget. */
   authoringMs?: number;
+  /**
+   * Average sim-driver time (ms) from core `devtools.frame` when FrameDriver has recorded frames.
+   * Same source as `debug_snapshot` / F2+D Perf panel — omitted when no frame samples exist
+   * (e.g. pure edit mode with no runtime tick). Never fabricated.
+   */
+  simMs?: number;
+  /**
+   * Average outside-sim time (ms) = frame − sim (render / React / GPU / GC / vsync miss).
+   * Same availability rule as `simMs`. Matches `FrameStats.avgOutsideMs`.
+   */
+  outsideMs?: number;
+  /**
+   * Top named sim phases (avg ms) from the same frame window when `measure("name", …)` marks exist.
+   * Omitted when the frame tracker has no named phases.
+   */
+  phases?: readonly { name: string; avgMs: number }[];
 }
 
 /** The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC. */
@@ -451,11 +474,17 @@ export function createEditorHost(options: {
         getTerrainSampler: api.getTerrainSampler,
       };
       try {
-        return EDITOR_RPC_HANDLERS[request.method](ctx, request as never);
+        const response = EDITOR_RPC_HANDLERS[request.method](ctx, request as never);
+        if (!response.ok) {
+          emitEditorConsole("error", "rpc", `${request.method}: ${response.error ?? "failed"}`);
+        }
+        return response;
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        emitEditorConsole("error", "rpc", `${request.method} threw: ${message}`);
         return {
           ok: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: message,
         };
       }
     },

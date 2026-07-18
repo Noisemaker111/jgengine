@@ -69,4 +69,31 @@ describe("buildEditorContextMenu", () => {
     expect(actions.map((a) => a.id)).toContain("frame");
     expect(actions.map((a) => a.id)).toContain("delete");
   });
+
+  test("offers Unparent when canUnparent is set", () => {
+    const withParent = buildEditorContextMenu({
+      hitId: "child",
+      selection: ["child"],
+      canPaste: false,
+      canUnparent: true,
+    });
+    expect(withParent.map((a) => a.id)).toContain("unparent");
+    const without = buildEditorContextMenu({
+      hitId: "child",
+      selection: ["child"],
+      canPaste: false,
+      canUnparent: false,
+    });
+    expect(without.map((a) => a.id)).not.toContain("unparent");
+  });
+
+  test("always offers Parent to… for object verbs", () => {
+    const actions = buildEditorContextMenu({
+      hitId: "spawn_1",
+      selection: ["spawn_1"],
+      canPaste: false,
+    });
+    expect(actions.map((a) => a.id)).toContain("parentTo");
+    expect(actions.find((a) => a.id === "parentTo")?.label).toBe("Parent to…");
+  });
 });

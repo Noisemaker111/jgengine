@@ -16,7 +16,16 @@ import {
 
 import { isPointerClick } from "./viewportContextMenu";
 import type { EditorHostApi } from "./session";
-import { newPlacementId, type EditorUiState, type EditorUiStore, type GizmoMode, type GizmoSpace, type SnapMode } from "./uiStore";
+import { resolvePivotPosition } from "./gizmoPivot";
+import {
+  newPlacementId,
+  type EditorUiState,
+  type EditorUiStore,
+  type GizmoMode,
+  type GizmoPivot,
+  type GizmoSpace,
+  type SnapMode,
+} from "./uiStore";
 import { useStoreSelector } from "./useStoreSelector";
 
 export type { GizmoMode } from "./uiStore";
@@ -32,6 +41,7 @@ const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 interface GizmoUiSlice {
   gizmoMode: GizmoMode;
   gizmoSpace: GizmoSpace;
+  gizmoPivot: GizmoPivot;
   snapMode: SnapMode;
   gridSize: number;
   rotationSnapDeg: number | null;
@@ -43,6 +53,7 @@ function selectGizmoUi(state: EditorUiState): GizmoUiSlice {
   return {
     gizmoMode: state.gizmoMode,
     gizmoSpace: state.gizmoSpace,
+    gizmoPivot: state.gizmoPivot,
     snapMode: state.snapMode,
     gridSize: state.gridSize,
     rotationSnapDeg: state.rotationSnapDeg,
@@ -55,6 +66,7 @@ function gizmoUiEqual(a: GizmoUiSlice, b: GizmoUiSlice): boolean {
   return (
     a.gizmoMode === b.gizmoMode &&
     a.gizmoSpace === b.gizmoSpace &&
+    a.gizmoPivot === b.gizmoPivot &&
     a.snapMode === b.snapMode &&
     a.gridSize === b.gridSize &&
     a.rotationSnapDeg === b.rotationSnapDeg &&
@@ -85,6 +97,28 @@ function pathCentroid(points: readonly EditorVec3[]): EditorVec3 {
   }
   const n = Math.max(1, points.length);
   return { x: x / n, y: y / n, z: z / n };
+}
+
+type GizmoKind = "marker" | "volume" | "path" | "note" | "pathPoint";
+
+function objectPosition(
+  session: EditorSession,
+  id: string,
+): { position: EditorVec3; lift: number; rotationY: number; kind: GizmoKind } | null {
+  const { document } = session.getState();
+  const marker = findEditorMarker(document, id);
+  if (marker !== undefined) {
+    return { position: marker.position, lift: MARKER_LIFT, rotationY: marker.rotationY ?? 0, kind: "marker" };
+  }
+  const volume = findEditorVolume(document, id);
+  if (volume !== undefined) return { position: volume.center, lift: 0, rotationY: 0, kind: "volume" };
+  const path = findEditorPath(document, id);
+  if (path !== undefined && path.points.length > 0) {
+    return { position: pathCentroid(path.points), lift: 0.8, rotationY: 0, kind: "path" };
+  }
+  const note = findEditorNote(document, id);
+  if (note !== undefined) return { position: note.position, lift: NOTE_LIFT, rotationY: 0, kind: "note" };
+  return null;
 }
 
 function isEditorOverlayNode(node: THREE.Object3D): boolean {
@@ -195,16 +229,22 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
       const state = session().getState();
       const visibility = api.getVisibility();
       const candidates: { id: string; distance: number }[] = [];
-      const consider = (id: string, kind: string, point: EditorVec3, lift: number) => {
-        if (visibility[kind] === false) return;
+      const consider = (id: string, kind: string, point: EditorVec3, lift: number, hidden?: boolean) => {
+        if (visibility[kind] === false || hidden === true) return;
         const distance = screenDistance(point, lift, clickX, clickY, rect);
         if (distance !== null && distance < SCREEN_PICK_RADIUS_PX) candidates.push({ id, distance });
       };
-      for (const marker of state.document.markers) consider(marker.id, marker.kind, marker.position, MARKER_LIFT);
-      for (const volume of state.document.volumes) consider(volume.id, volume.kind, volume.center, 0);
-      for (const note of state.document.annotations) consider(note.id, "note", note.position, NOTE_LIFT);
+      for (const marker of state.document.markers) {
+        consider(marker.id, marker.kind, marker.position, MARKER_LIFT, marker.hidden);
+      }
+      for (const volume of state.document.volumes) {
+        consider(volume.id, volume.kind, volume.center, 0, volume.hidden);
+      }
+      for (const note of state.document.annotations) {
+        consider(note.id, "note", note.position, NOTE_LIFT, note.hidden);
+      }
       for (const path of state.document.paths) {
-        if (visibility[path.kind] === false) continue;
+        if (visibility[path.kind] === false || path.hidden === true) continue;
         let best: number | null = null;
         for (const point of path.points) {
           const distance = screenDistance(point, 0.8, clickX, clickY, rect);
@@ -247,6 +287,40 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
         break;
       }
       return null;
+    };
+
+    // Throttled hover pick for pre-selection affordance — reuses the same document pick path as click.
+    let hoverRaf = 0;
+    let lastHoverClientX = 0;
+    let lastHoverClientY = 0;
+    const flushHover = () => {
+      hoverRaf = 0;
+      if (ui.getState().tool === "terrain" || ui.getState().placement !== null) {
+        if (ui.getState().hoverId !== null) ui.patch({ hoverId: null });
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      const clickX = lastHoverClientX - rect.left;
+      const clickY = lastHoverClientY - rect.top;
+      if (clickX < 0 || clickY < 0 || clickX > rect.width || clickY > rect.height) {
+        if (ui.getState().hoverId !== null) ui.patch({ hoverId: null });
+        return;
+      }
+      const id = pickDocumentId(clickX, clickY, rect) ?? pickTaggedId(clickX, clickY, rect);
+      if (ui.getState().hoverId !== id) ui.patch({ hoverId: id });
+    };
+    const onMove = (event: PointerEvent) => {
+      lastHoverClientX = event.clientX;
+      lastHoverClientY = event.clientY;
+      if (hoverRaf !== 0) return;
+      hoverRaf = requestAnimationFrame(flushHover);
+    };
+    const onLeave = () => {
+      if (hoverRaf !== 0) {
+        cancelAnimationFrame(hoverRaf);
+        hoverRaf = 0;
+      }
+      if (ui.getState().hoverId !== null) ui.patch({ hoverId: null });
     };
 
     const onDown = (event: PointerEvent) => {
@@ -355,10 +429,15 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
 
     canvas.addEventListener("pointerdown", onDown);
     canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("pointermove", onMove);
+    canvas.addEventListener("pointerleave", onLeave);
     canvas.addEventListener("contextmenu", onContextMenu);
     return () => {
+      if (hoverRaf !== 0) cancelAnimationFrame(hoverRaf);
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerleave", onLeave);
       canvas.removeEventListener("contextmenu", onContextMenu);
     };
   }, [gl, camera, scene, api, ui]);
@@ -375,8 +454,9 @@ interface GizmoTarget {
 
 function resolveTarget(
   session: EditorSession,
-  selectedId: string | undefined,
+  selection: readonly string[],
   pathPoint: { pathId: string; index: number } | null,
+  pivot: GizmoPivot,
 ): GizmoTarget | null {
   const { document } = session.getState();
   if (pathPoint !== null) {
@@ -384,20 +464,21 @@ function resolveTarget(
     const point = path?.points[pathPoint.index];
     if (point !== undefined) return { position: point, lift: 0.8, rotationY: 0, kind: "pathPoint" };
   }
-  if (selectedId === undefined) return null;
-  const marker = findEditorMarker(document, selectedId);
-  if (marker !== undefined) {
-    return { position: marker.position, lift: MARKER_LIFT, rotationY: marker.rotationY ?? 0, kind: "marker" };
+  if (selection.length === 0) return null;
+  const primaryId = selection[0]!;
+  const primary = objectPosition(session, primaryId);
+  if (primary === null) return null;
+  if (selection.length === 1) return primary;
+
+  const positions: EditorVec3[] = [];
+  for (const id of selection) {
+    const resolved = objectPosition(session, id);
+    if (resolved !== null) positions.push(resolved.position);
   }
-  const volume = findEditorVolume(document, selectedId);
-  if (volume !== undefined) return { position: volume.center, lift: 0, rotationY: 0, kind: "volume" };
-  const path = findEditorPath(document, selectedId);
-  if (path !== undefined && path.points.length > 0) {
-    return { position: pathCentroid(path.points), lift: 0.8, rotationY: 0, kind: "path" };
-  }
-  const note = findEditorNote(document, selectedId);
-  if (note !== undefined) return { position: note.position, lift: NOTE_LIFT, rotationY: 0, kind: "note" };
-  return null;
+  const pivotPos = resolvePivotPosition(positions, pivot, primary.position);
+  if (pivotPos === null) return primary;
+  // Multi-select always translates as a group from the pivot; rotation/scale stay primary-kind limited.
+  return { position: pivotPos, lift: primary.lift, rotationY: primary.rotationY, kind: primary.kind };
 }
 
 function effectiveMode(mode: GizmoMode, kind: GizmoTarget["kind"]): GizmoMode {
@@ -424,8 +505,8 @@ export const SelectionGizmo = memo(function SelectionGizmo({
   const state = session.getState();
   const selectedId = state.selection[0];
   const target = useMemo(
-    () => resolveTarget(session, selectedId, uiState.pathPoint),
-    [state, selectedId, uiState.pathPoint, session],
+    () => resolveTarget(session, state.selection, uiState.pathPoint, uiState.gizmoPivot),
+    [state, uiState.pathPoint, uiState.gizmoPivot, session],
   );
   const mode = target === null ? "translate" : effectiveMode(uiState.gizmoMode, target.kind);
 

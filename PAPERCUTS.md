@@ -29,10 +29,6 @@ driving screenshots via 'bun run drive' with --rpc JSON → guard.ts arg requoti
 
 Shooting close-ups from different vantage points → no way to override player spawn per-shot; had to mutate editor.scene.json player_spawn via python heredocs three times and hand-restore. shoot needs a --spawn x,y,z flag / ?spawn= URL param overlay (like ?cam=) so screenshots never mutate authored scene content.
 
-2026-07-18T16:20:39.762Z — claude-fable-5 — Claude
-
-Rebasing a feature branch via stash/rebase/stash-pop → pop left conflict markers in a file I'd already verified; ship:preflight passed anyway (it checks tree/base/diff, not compilation), so the broken file reached CI. A cheap conflict-marker grep or tsc-on-changed-files in agent-preflight --ship would have caught it locally.
-
 2026-07-18T16:51:34.018Z — claude-fable-5 — Claude
 
 capturing editor screenshots in the dev runner → 'assets pull' run from repo root provisions public/models at the repo root, but apps/dev serves apps/dev/public — the runtime error's suggested fix leaves the dev runner still 404ing until the pack is copied into apps/dev/public/models

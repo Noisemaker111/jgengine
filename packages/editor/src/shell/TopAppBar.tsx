@@ -1,13 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 
+import { formatSavedRelative } from "./formatSavedRelative";
 import { Icon } from "./icons";
 import { BORDER, FOCUS_RING } from "./theme";
 import { IconButton, Kbd, ToolbarDivider } from "./ui";
 
+/** @internal Re-export for historical TopAppBar importers. */
+export { formatSavedRelative } from "./formatSavedRelative";
+
 /** Document save lifecycle mirrored from `useDocumentSave`. */
 export type TopBarSaveState = "idle" | "saving" | "saved" | "error";
 
-function SaveStatus({ dirty, saveState }: { dirty: boolean; saveState: TopBarSaveState }) {
+function SaveStatus({
+  dirty,
+  saveState,
+  lastSavedAt,
+}: {
+  dirty: boolean;
+  saveState: TopBarSaveState;
+  /** Epoch ms of the last successful save this session; null when never saved this session. */
+  lastSavedAt: number | null;
+}) {
+  // Tick once a minute so "Saved 2m ago" advances without a save/dirty transition.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (dirty || lastSavedAt === null) return;
+    const id = window.setInterval(() => setTick((value) => value + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, [dirty, lastSavedAt]);
+
   if (saveState === "saving") {
     return (
       <span className="flex items-center gap-1.5 text-[11px] text-neutral-400">
@@ -32,23 +53,30 @@ function SaveStatus({ dirty, saveState }: { dirty: boolean; saveState: TopBarSav
       </span>
     );
   }
+  const relative = lastSavedAt === null ? null : formatSavedRelative(lastSavedAt);
+  const label = relative === null ? "Saved" : relative === "just now" ? "Saved just now" : `Saved ${relative}`;
   return (
-    <span className="flex items-center gap-1.5 text-[11px] text-neutral-500" title="All edits saved">
+    <span
+      className="flex items-center gap-1.5 text-[11px] text-neutral-500"
+      title={lastSavedAt === null ? "All edits saved" : `Last saved ${new Date(lastSavedAt).toLocaleString()}`}
+    >
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/80" />
-      Saved
+      {label}
     </span>
   );
 }
 
 /**
  * Global application bar: identity + save state on the left, command palette in the center,
- * history / run controls / document actions on the right. Pause and Step are shown disabled in
- * edit mode — they operate through the runtime play controls once Play mode is entered.
+ * history / run controls / document actions on the right. Pause and Step stay disabled in
+ * edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the
+ * runtime pause/step RPCs so mode switches keep shell chrome.
  */
 export function TopAppBar({
   gameId,
   dirty,
   saveState,
+  lastSavedAt = null,
   saveAvailable,
   saveError,
   canUndo,
@@ -69,6 +97,8 @@ export function TopAppBar({
   gameId: string;
   dirty: boolean;
   saveState: TopBarSaveState;
+  /** Epoch ms of the last successful save this session; omit/null when never saved. */
+  lastSavedAt?: number | null;
   saveAvailable: boolean;
   saveError: string | null;
   canUndo: boolean;
@@ -124,7 +154,7 @@ export function TopAppBar({
           <div className="text-[10px] text-neutral-500">Scene Editor</div>
         </div>
         <div className="ml-1 hidden md:block">
-          <SaveStatus dirty={dirty} saveState={saveState} />
+          <SaveStatus dirty={dirty} saveState={saveState} lastSavedAt={lastSavedAt} />
         </div>
       </div>
 

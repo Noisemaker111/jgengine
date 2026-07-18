@@ -16,6 +16,8 @@ import type {
   EditorDirective,
   EditorDirectiveArea,
   EditorDocument,
+  EditorEnvironment,
+  EditorFogConfig,
   EditorFragmentContent,
   EditorLayersInput,
   EditorMarker,
@@ -24,6 +26,7 @@ import type {
   EditorPath,
   EditorPopulationSpecies,
   EditorPrefab,
+  EditorSkyPreset,
   EditorTerrain,
   EditorVec3,
   EditorVolume,
@@ -33,6 +36,19 @@ import type {
 /** Copies a baked minimap so a document's PNG + bounds are never shared by reference across rebuilds. */
 function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
   return { background: minimap.background, bounds: { ...minimap.bounds } };
+}
+
+/** Deep-copies scene-document environment/lighting so edits never mutate history snapshots. */
+function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
+  return {
+    ...(environment.preset === undefined ? {} : { preset: environment.preset }),
+    ...(environment.timeOfDay === undefined ? {} : { timeOfDay: environment.timeOfDay }),
+    ...(environment.horizonColor === undefined ? {} : { horizonColor: environment.horizonColor }),
+    ...(environment.zenithColor === undefined ? {} : { zenithColor: environment.zenithColor }),
+    ...(environment.sunIntensity === undefined ? {} : { sunIntensity: environment.sunIntensity }),
+    ...(environment.ambientIntensity === undefined ? {} : { ambientIntensity: environment.ambientIntensity }),
+    ...(environment.fog === undefined ? {} : { fog: { ...environment.fog } }),
+  };
 }
 
 function cloneDirective(directive: EditorDirective): EditorDirective {
@@ -88,6 +104,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
   ui?: EditorDocument["ui"];
   directives?: EditorDirective[];
   minimap?: EditorMinimapBake;
+  environment?: EditorEnvironment;
 } {
   return {
     prefabs: doc.prefabs,
@@ -98,6 +115,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
     ...(doc.ui === undefined ? {} : { ui: doc.ui }),
     ...(doc.directives === undefined ? {} : { directives: doc.directives }),
     ...(doc.minimap === undefined ? {} : { minimap: doc.minimap }),
+    ...(doc.environment === undefined ? {} : { environment: doc.environment }),
   };
 }
 
@@ -182,6 +200,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
     ...(doc.minimap === undefined ? {} : { minimap: cloneMinimapBake(doc.minimap) }),
+    ...(doc.environment === undefined ? {} : { environment: cloneEnvironment(doc.environment) }),
   };
 }
 
@@ -249,6 +268,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
     ...(resolved.minimap === undefined ? {} : { minimap: cloneMinimapBake(resolved.minimap) }),
+    ...(resolved.environment === undefined ? {} : { environment: cloneEnvironment(resolved.environment) }),
   };
 }
 
@@ -299,6 +319,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     if (mergedGrids !== undefined) out.grids = mergedGrids;
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
     if (doc.minimap !== undefined) out.minimap = cloneMinimapBake(doc.minimap);
+    if (doc.environment !== undefined) out.environment = cloneEnvironment(doc.environment);
     if (doc.directives !== undefined) {
       out.directives = upsertById(out.directives ?? [], doc.directives);
     }
@@ -402,11 +423,53 @@ export function seedEditorCatalogs(
   return { ...doc, catalogs: next };
 }
 
-/** True when an object id is a member of any locked collection — blocks move/delete on it.
+/**
+ * True when an object carries a per-object `locked` flag (hierarchy lock toggle).
+ * Collection membership is checked separately by {@link isEditorObjectLocked}.
+ * @internal
+ */
+export function isEditorObjectSelfLocked(doc: EditorDocument, id: string): boolean {
+  const marker = doc.markers.find((entry) => entry.id === id);
+  if (marker !== undefined) return marker.locked === true;
+  const volume = doc.volumes.find((entry) => entry.id === id);
+  if (volume !== undefined) return volume.locked === true;
+  const path = doc.paths.find((entry) => entry.id === id);
+  if (path !== undefined) return path.locked === true;
+  const note = doc.annotations.find((entry) => entry.id === id);
+  return note?.locked === true;
+}
+
+/**
+ * True when an object is a member of any locked collection (production group lock).
+ * @internal
+ */
+export function isEditorObjectCollectionLocked(doc: EditorDocument, id: string): boolean {
+  return doc.collections.some((collection) => collection.locked === true && collection.memberIds.includes(id));
+}
+
+/**
+ * True when an object id is locked for edit — either its own `locked` flag or membership in a
+ * locked collection. Blocks move/delete via session mutations.
  * @internal
  */
 export function isEditorObjectLocked(doc: EditorDocument, id: string): boolean {
-  return doc.collections.some((collection) => collection.locked === true && collection.memberIds.includes(id));
+  return isEditorObjectSelfLocked(doc, id) || isEditorObjectCollectionLocked(doc, id);
+}
+
+/**
+ * True when an object carries `hidden: true` — omitted from editor viewport overlays and picking
+ * while remaining in the hierarchy and document.
+ * @internal
+ */
+export function isEditorObjectHidden(doc: EditorDocument, id: string): boolean {
+  const marker = doc.markers.find((entry) => entry.id === id);
+  if (marker !== undefined) return marker.hidden === true;
+  const volume = doc.volumes.find((entry) => entry.id === id);
+  if (volume !== undefined) return volume.hidden === true;
+  const path = doc.paths.find((entry) => entry.id === id);
+  if (path !== undefined) return path.hidden === true;
+  const note = doc.annotations.find((entry) => entry.id === id);
+  return note?.hidden === true;
 }
 
 /**
@@ -666,6 +729,8 @@ function decodeMarker(item: unknown, path: string, errors: EditorDocumentDiagnos
   if (typeof item.label === "string") marker.label = item.label;
   if (typeof item.catalogId === "string") marker.catalogId = item.catalogId;
   if (typeof item.parentId === "string") marker.parentId = item.parentId;
+  if (typeof item.locked === "boolean") marker.locked = item.locked;
+  if (typeof item.hidden === "boolean") marker.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) marker.meta = meta;
   return marker;
@@ -694,6 +759,8 @@ function decodeVolume(item: unknown, path: string, errors: EditorDocumentDiagnos
   if (typeof item.color === "string") volume.color = item.color;
   if (typeof item.label === "string") volume.label = item.label;
   if (typeof item.parentId === "string") volume.parentId = item.parentId;
+  if (typeof item.locked === "boolean") volume.locked = item.locked;
+  if (typeof item.hidden === "boolean") volume.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) volume.meta = meta;
   return volume;
@@ -717,6 +784,8 @@ function decodePath(item: unknown, path: string, errors: EditorDocumentDiagnosti
   if (typeof item.color === "string") decodedPath.color = item.color;
   if (typeof item.label === "string") decodedPath.label = item.label;
   if (typeof item.parentId === "string") decodedPath.parentId = item.parentId;
+  if (typeof item.locked === "boolean") decodedPath.locked = item.locked;
+  if (typeof item.hidden === "boolean") decodedPath.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) decodedPath.meta = meta;
   return decodedPath;
@@ -734,6 +803,8 @@ function decodeNote(item: unknown, path: string, errors: EditorDocumentDiagnosti
   const note: EditorNote = { id: item.id, text: item.text, position };
   if (typeof item.color === "string") note.color = item.color;
   if (typeof item.parentId === "string") note.parentId = item.parentId;
+  if (typeof item.locked === "boolean") note.locked = item.locked;
+  if (typeof item.hidden === "boolean") note.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) note.meta = meta;
   return note;
@@ -955,6 +1026,89 @@ function decodeMinimapBake(
   };
 }
 
+const SKY_PRESETS: ReadonlySet<string> = new Set(["day", "dusk", "night"]);
+
+/**
+ * Validates scene-document environment/lighting. Unknown presets, non-finite intensities, and
+ * malformed fog objects produce path-specific diagnostics; empty valid objects are accepted so a
+ * game can seed `environment: {}` as "use engine defaults, ready to author".
+ */
+function decodeEnvironment(
+  value: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): EditorEnvironment | undefined {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  let failed = false;
+  const env: EditorEnvironment = {};
+  if (value.preset !== undefined) {
+    if (typeof value.preset === "string" && SKY_PRESETS.has(value.preset)) {
+      env.preset = value.preset as EditorSkyPreset;
+    } else {
+      errors.push({ path: `${path}.preset`, message: 'expected "day" | "dusk" | "night"' });
+      failed = true;
+    }
+  }
+  if (value.timeOfDay !== undefined) {
+    if (typeof value.timeOfDay === "boolean") env.timeOfDay = value.timeOfDay;
+    else {
+      errors.push({ path: `${path}.timeOfDay`, message: "expected a boolean" });
+      failed = true;
+    }
+  }
+  if (value.horizonColor !== undefined) {
+    if (typeof value.horizonColor === "string") env.horizonColor = value.horizonColor;
+    else {
+      errors.push({ path: `${path}.horizonColor`, message: "expected a string" });
+      failed = true;
+    }
+  }
+  if (value.zenithColor !== undefined) {
+    if (typeof value.zenithColor === "string") env.zenithColor = value.zenithColor;
+    else {
+      errors.push({ path: `${path}.zenithColor`, message: "expected a string" });
+      failed = true;
+    }
+  }
+  for (const key of ["sunIntensity", "ambientIntensity"] as const) {
+    if (value[key] === undefined) continue;
+    if (typeof value[key] === "number" && Number.isFinite(value[key])) env[key] = value[key] as number;
+    else {
+      errors.push({ path: `${path}.${key}`, message: "expected a finite number" });
+      failed = true;
+    }
+  }
+  if (value.fog !== undefined) {
+    if (!isPlainObject(value.fog)) {
+      errors.push({ path: `${path}.fog`, message: "expected an object" });
+      failed = true;
+    } else {
+      const fog: EditorFogConfig = {};
+      if (value.fog.color !== undefined) {
+        if (typeof value.fog.color === "string") fog.color = value.fog.color;
+        else {
+          errors.push({ path: `${path}.fog.color`, message: "expected a string" });
+          failed = true;
+        }
+      }
+      for (const key of ["near", "far"] as const) {
+        if (value.fog[key] === undefined) continue;
+        if (typeof value.fog[key] === "number" && Number.isFinite(value.fog[key])) fog[key] = value.fog[key] as number;
+        else {
+          errors.push({ path: `${path}.fog.${key}`, message: "expected a finite number" });
+          failed = true;
+        }
+      }
+      if (Object.keys(fog).length > 0) env.fog = fog;
+    }
+  }
+  if (failed) return undefined;
+  return env;
+}
+
 const GRID_AXES: ReadonlySet<string> = new Set(["xz", "xy"]);
 
 function decodeGridPaletteEntry(
@@ -1062,6 +1216,8 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
   const minimap = raw.minimap === undefined ? undefined : decodeMinimapBake(raw.minimap, "$.minimap", errors);
+  const environment =
+    raw.environment === undefined ? undefined : decodeEnvironment(raw.environment, "$.environment", errors);
   // Placeable object ids form one document-global namespace (selection, parenting, and removal all
   // treat them that way), so a document that reuses an id — even across two different collections —
   // is malformed and rejected here with the offending path, rather than silently loading a scene
@@ -1101,6 +1257,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       ...(ui === undefined ? {} : { ui }),
       ...(directives === undefined ? {} : { directives }),
       ...(minimap === undefined ? {} : { minimap }),
+      ...(environment === undefined ? {} : { environment }),
     },
   };
 }
@@ -1135,6 +1292,7 @@ export function applyEditorDocumentOverlay(
 ): EditorDocument {
   const terrain = overlay.terrain ?? base.terrain;
   const minimap = overlay.minimap ?? base.minimap;
+  const environment = overlay.environment ?? base.environment;
   const ui =
     overlay.ui === undefined
       ? cloneEditorUiDocument(base.ui)
@@ -1158,6 +1316,7 @@ export function applyEditorDocumentOverlay(
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),
     ...(minimap === undefined ? {} : { minimap: cloneMinimapBake(minimap) }),
+    ...(environment === undefined ? {} : { environment: cloneEnvironment(environment) }),
     ...(base.directives === undefined && overlay.directives === undefined
       ? {}
       : { directives: upsertById(base.directives ?? [], overlay.directives ?? []) }),

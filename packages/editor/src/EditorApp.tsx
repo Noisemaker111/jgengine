@@ -17,6 +17,7 @@ import { assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 import { EditorCameraDriver } from "./EditorCameraDriver";
 import { EditorChrome } from "./EditorChrome";
 import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
+import { AssetDropZone } from "./AssetDropZone";
 import { MaterialDropZone } from "./MaterialDropZone";
 import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
@@ -27,8 +28,19 @@ import { TerrainReadoutHud } from "./TerrainReadoutHud";
 import { TerrainSculpt } from "./TerrainSculpt";
 import { createTerrainReadoutStore, type TerrainReadoutStore } from "./terrainReadoutStore";
 import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
+import {
+  buildEditorNetworkSnapshot,
+  type EditorNetworkPresenceInput,
+} from "./networkSnapshot";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
-import { createEditorUiStore, type EditorUiStore, type GizmoSpace, type SnapMode } from "./uiStore";
+import {
+  createEditorUiStore,
+  type CameraProjectionMode,
+  type EditorUiStore,
+  type GizmoPivot,
+  type GizmoSpace,
+  type SnapMode,
+} from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
@@ -43,6 +55,12 @@ export interface EditorAppProps {
   save?: EditorSaveFn;
   /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
   modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
+  /**
+   * Optional live multiplayer presence/session feed for the Network workspace.
+   * Adapter config always comes from `playable.game.multiplayer`; this only supplies real
+   * session identity and presence rows. Omit when the host has nothing live — the panel stays honest.
+   */
+  networkPresence?: EditorNetworkPresenceInput;
 }
 
 /** Persists an exported document JSON; resolves with where it landed or why it failed. */
@@ -68,10 +86,12 @@ function endpointSaver(gameId: string): EditorSaveFn | undefined {
 interface StoredEditorPrefs {
   visibility?: Record<string, boolean>;
   gizmoSpace?: GizmoSpace;
+  gizmoPivot?: GizmoPivot;
   snapMode?: SnapMode;
   gridSize?: number;
   rotationSnapDeg?: number | null;
   scaleSnap?: number | null;
+  cameraProjection?: CameraProjectionMode;
   showGrid?: boolean;
   showContours?: boolean;
   showSurfaceGrid?: boolean;
@@ -176,6 +196,7 @@ function EditorWorldOverlay({
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
   const pathPoint = useStoreSelector(ui, (s) => s.pathPoint);
   const pathDraft = useStoreSelector(ui, (s) => s.pathDraft);
+  const hoverId = useStoreSelector(ui, (s) => s.hoverId);
   const groundHeightAt = useCallback((x: number, z: number) => ctx.world.groundHeightAt(x, z), [ctx.world]);
 
   // Publish the live composed ground field so the `bake_minimap` RPC can rasterize authored terrain.
@@ -209,6 +230,7 @@ function EditorWorldOverlay({
       <EditorCameraDriver api={api} />
       <ViewportSelect api={api} ui={ui} />
       <MaterialDropZone api={api} />
+      <AssetDropZone api={api} />
       <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
       <CityPreview api={api} />
@@ -227,6 +249,7 @@ function EditorWorldOverlay({
         document={document}
         visibility={visibility}
         selection={selection}
+        hoverId={hoverId}
         onSelect={(id) => session.dispatch({ type: "select", ids: [id] })}
         activePathPoint={pathPoint}
         groundHeightAt={groundHeightAt}
@@ -367,9 +390,18 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence }: EditorAppProps) {
   const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
+  const networkSnapshot = useMemo(
+    () =>
+      buildEditorNetworkSnapshot({
+        gameId,
+        multiplayer: playable.game.multiplayer,
+        presence: networkPresence,
+      }),
+    [gameId, playable, networkPresence],
+  );
   const uiStoreRef = useRef<EditorUiStore | null>(null);
   if (uiStoreRef.current === null) uiStoreRef.current = createEditorUiStore();
   const ui = uiStoreRef.current;
@@ -446,10 +478,12 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     }
     ui.patch({
       ...(prefs.gizmoSpace === undefined ? {} : { gizmoSpace: prefs.gizmoSpace }),
+      ...(prefs.gizmoPivot === undefined ? {} : { gizmoPivot: prefs.gizmoPivot }),
       ...(prefs.snapMode === undefined ? {} : { snapMode: prefs.snapMode }),
       ...(prefs.gridSize === undefined ? {} : { gridSize: prefs.gridSize }),
       ...(prefs.rotationSnapDeg === undefined ? {} : { rotationSnapDeg: prefs.rotationSnapDeg }),
       ...(prefs.scaleSnap === undefined ? {} : { scaleSnap: prefs.scaleSnap }),
+      ...(prefs.cameraProjection === undefined ? {} : { cameraProjection: prefs.cameraProjection }),
       ...(prefs.showGrid === undefined ? {} : { showGrid: prefs.showGrid }),
       ...(prefs.showContours === undefined ? {} : { showContours: prefs.showContours }),
       ...(prefs.showSurfaceGrid === undefined ? {} : { showSurfaceGrid: prefs.showSurfaceGrid }),
@@ -460,10 +494,12 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       savePrefs(gameId, {
         visibility: host.api.getVisibility(),
         gizmoSpace: state.gizmoSpace,
+        gizmoPivot: state.gizmoPivot,
         snapMode: state.snapMode,
         gridSize: state.gridSize,
         rotationSnapDeg: state.rotationSnapDeg,
         scaleSnap: state.scaleSnap,
+        cameraProjection: state.cameraProjection,
         showGrid: state.showGrid,
         showContours: state.showContours,
         showSurfaceGrid: state.showSurfaceGrid,
@@ -501,6 +537,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     () => resolveEditorCamera(host.session.getState().document),
     [host],
   );
+  const cameraProjection = useStoreSelector(ui, (state) => state.cameraProjection);
 
   const editorPlayable: PlayableGame = useMemo(() => {
     const frozenLoop = {
@@ -516,10 +553,19 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
 
     const { target, span, far } = initialCamera;
     // Free-orbit inspection camera shared by edit and HUD-layout modes: no pointer lock, so the HUD
-    // panels stay draggable while the authored world renders behind them.
+    // panels stay draggable while the authored world renders behind them. Orthographic projection
+    // remounts the R3F canvas (Canvas.orthographic is mount-time); zoom scales with scene span so
+    // large worlds stay framed without a hand-tuned default.
+    const orthoZoom = Math.max(4, Math.min(80, 420 / Math.max(span, 1)));
     const inspectionCamera = {
       rig: "inspection" as const,
-      frustum: { fov: 55, near: 0.5, far },
+      projection: cameraProjection,
+      frustum: {
+        fov: 55,
+        near: 0.5,
+        far,
+        ...(cameraProjection === "orthographic" ? { zoom: orthoZoom } : {}),
+      },
       inspection: {
         target,
         initialDistance: span,
@@ -572,7 +618,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
             <>
               {BaseUI !== undefined ? <BaseUI /> : null}
               {useBuiltinPlayChrome ? (
-                <RuntimePlayInspectorChrome api={host.api} onExit={onExit} />
+                <RuntimePlayInspectorChrome gameId={gameId} api={host.api} onExit={onExit} />
               ) : (
                 <EditorModeChipHost api={host.api} mode="play" chip={resolvedModeChip} />
               )}
@@ -619,8 +665,27 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
     const WorldOverlay: ComponentType = function EditorOverlay() {
       return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />;
     };
+    const registerImportedAsset = (id: string, url: string) => {
+      try {
+        playable.game.assets.register(id, { url });
+      } catch {
+        // Catalog may reject late registration in some hosts; place_asset still keeps meta.url.
+      }
+    };
     const GameUI: ComponentType = function EditorUi() {
-      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineDocument={host.baselineDocument} save={saveFn} />;
+      return (
+        <EditorChrome
+          gameId={gameId}
+          session={host.api.getSession()}
+          api={host.api}
+          assets={catalogAssets}
+          ui={ui}
+          baselineDocument={host.baselineDocument}
+          save={saveFn}
+          networkSnapshot={networkSnapshot}
+          onRegisterAsset={registerImportedAsset}
+        />
+      );
     };
     return {
       ...playable,
@@ -632,7 +697,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
       camera: inspectionCamera,
     };
-  }, [playable, host, gameId, initialCamera, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip]);
+  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot]);
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 

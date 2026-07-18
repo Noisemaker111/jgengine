@@ -13,6 +13,7 @@ import {
   findEditorCollection,
   findEditorPrefab,
   importEditorDocumentJson,
+  isEditorObjectHidden,
   isEditorObjectLocked,
   listEditorKinds,
   mergeEditorDocuments,
@@ -715,6 +716,46 @@ describe("editor collections / selection sets", () => {
     expect(remaining).not.toContain("c");
   });
 
+  test("setObjectFlags locks and hides a placeable; lock blocks move/delete; flags round-trip", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: true, hidden: true } });
+    const lockedDoc = session.getState().document;
+    expect(lockedDoc.markers.find((m) => m.id === "a")!.locked).toBe(true);
+    expect(lockedDoc.markers.find((m) => m.id === "a")!.hidden).toBe(true);
+    expect(isEditorObjectLocked(lockedDoc, "a")).toBe(true);
+    expect(isEditorObjectHidden(lockedDoc, "a")).toBe(true);
+    expect(isEditorObjectLocked(lockedDoc, "b")).toBe(false);
+
+    session.dispatch({ type: "setTransform", id: "a", position: { x: 99, y: 0, z: 0 } });
+    expect(session.getState().document.markers.find((m) => m.id === "a")!.position.x).toBe(0);
+    session.dispatch({ type: "remove", id: "a" });
+    expect(session.getState().document.markers.some((m) => m.id === "a")).toBe(true);
+
+    // Clearing flags removes the keys so export stays compact.
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: false, hidden: false } });
+    const cleared = session.getState().document.markers.find((m) => m.id === "a")!;
+    expect(cleared.locked).toBeUndefined();
+    expect(cleared.hidden).toBeUndefined();
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(false);
+
+    session.dispatch({ type: "setObjectFlags", ids: ["b", "c"], patch: { hidden: true } });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(reloaded.markers.find((m) => m.id === "b")!.hidden).toBe(true);
+    expect(reloaded.markers.find((m) => m.id === "c")!.hidden).toBe(true);
+    expect(reloaded.markers.find((m) => m.id === "a")!.hidden).toBeUndefined();
+  });
+
+  test("object lock and collection lock both count; clearing object lock leaves collection lock", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a"] });
+    session.dispatch({ type: "setCollectionFlags", id: "pack", patch: { locked: true } });
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: true } });
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(true);
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: false } });
+    expect(session.getState().document.markers.find((m) => m.id === "a")!.locked).toBeUndefined();
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(true);
+  });
+
   test("deleteCollection drops it and removing a member prunes stale collection references", () => {
     const session = threeMobs();
     session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a", "b"] });
@@ -939,5 +980,72 @@ describe("minimap bake persistence (#1036)", () => {
     expect(session.getState().document.minimap).toEqual(first);
     session.dispatch({ type: "redo" });
     expect(session.getState().document.minimap).toEqual(second);
+  });
+});
+
+describe("document.environment (#1110 lighting)", () => {
+  const envBag = {
+    preset: "dusk" as const,
+    timeOfDay: true,
+    sunIntensity: 0.7,
+    ambientIntensity: 0.4,
+    horizonColor: "#ff8a5c",
+    zenithColor: "#1a2b4a",
+    fog: { color: "#ffb37a", near: 40, far: 220 },
+  };
+
+  test("decode/export round-trip keeps the environment bag", () => {
+    const doc = { ...createEmptyEditorDocument(), environment: envBag };
+    const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(doc)));
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error("expected ok");
+    expect(decoded.document.environment).toEqual(envBag);
+    expect(normalizeEditorLayers(doc).environment).toEqual(envBag);
+  });
+
+  test("malformed preset/intensity surface diagnostics", () => {
+    const badPreset = decodeEditorDocument({
+      ...createEmptyEditorDocument(),
+      environment: { preset: "sunset" },
+    });
+    expect(badPreset.ok).toBe(false);
+    if (badPreset.ok) throw new Error("expected failure");
+    expect(badPreset.errors.some((e) => e.path === "$.environment.preset")).toBe(true);
+
+    const badIntensity = decodeEditorDocument({
+      ...createEmptyEditorDocument(),
+      environment: { sunIntensity: Number.NaN },
+    });
+    expect(badIntensity.ok).toBe(false);
+    if (badIntensity.ok) throw new Error("expected failure");
+    expect(badIntensity.errors.some((e) => e.path === "$.environment.sunIntensity")).toBe(true);
+  });
+
+  test("setEnvironment is undoable, clearable, and survives unrelated removes", () => {
+    const session = createEditorSession({
+      ...createEmptyEditorDocument(),
+      markers: [{ id: "m", kind: "prop", position: { x: 0, y: 0, z: 0 } }],
+      environment: { preset: "day" },
+    });
+    session.dispatch({ type: "setEnvironment", environment: envBag });
+    expect(session.getState().document.environment).toEqual(envBag);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.environment).toEqual({ preset: "day" });
+    session.dispatch({ type: "redo" });
+    expect(session.getState().document.environment).toEqual(envBag);
+
+    session.dispatch({ type: "removeMany", ids: ["m"] });
+    expect(session.getState().document.environment).toEqual(envBag);
+
+    session.dispatch({ type: "setEnvironment", environment: undefined });
+    expect(session.getState().document.environment).toBeUndefined();
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.environment).toEqual(envBag);
+  });
+
+  test("overlay keeps base environment when overlay has none", () => {
+    const base = { ...createEmptyEditorDocument(), environment: envBag };
+    const overlaid = applyEditorDocumentOverlay(base, createEmptyEditorDocument());
+    expect(overlaid.environment).toEqual(envBag);
   });
 });

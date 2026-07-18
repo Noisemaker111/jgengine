@@ -1,8 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 
-import { MATERIAL_DRAG_MIME, type EditorAssetEntry } from "../AssetBrowser";
+import {
+  ASSET_DRAG_MIME,
+  MATERIAL_DRAG_MIME,
+  encodeAssetDragPayload,
+  type EditorAssetEntry,
+} from "../AssetBrowser";
 import { TERRAIN_MATERIALS } from "../uiStore";
 import { Icon, type IconName } from "./icons";
 import type { BrowserViewMode } from "./layoutStore";
@@ -17,11 +22,15 @@ const ASSET_KIND_ICON: Record<EditorAssetEntry["kind"], IconName> = {
   marker: "pin",
 };
 
+const MODEL_ACCEPT = ".glb,.gltf,model/gltf-binary,model/gltf+json";
+
 /**
  * Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset
- * catalog, plus the terrain material palette (drag chips onto objects or the viewport). Thumbnails
- * are typed glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing
- * here fakes renders it doesn't have.
+ * catalog, plus the terrain material palette (drag chips onto objects or the viewport). Assets are
+ * draggable into the viewport for placement (and still double-click / Place). Thumbnails are typed
+ * glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing here fakes
+ * renders it doesn't have. Import reuses the standalone editor's host importer (durable when the
+ * dev host answers, ephemeral blob otherwise) so in-game authoring has a real .glb path.
  */
 export function ContentBrowser({
   assets,
@@ -29,16 +38,24 @@ export function ContentBrowser({
   onPlace,
   view,
   onSetView,
+  onImportModels,
+  importBusy = false,
 }: {
   assets: readonly EditorAssetEntry[];
   session: EditorSession;
   onPlace: (entry: EditorAssetEntry) => void;
   view: BrowserViewMode;
   onSetView: (view: BrowserViewMode) => void;
+  /** When set, enables Import + drop-to-import for `.glb`/`.gltf` model files. */
+  onImportModels?: (files: readonly File[]) => void | Promise<void>;
+  /** True while an import is in flight (disables the Import control). */
+  importBusy?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [folder, setFolder] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dropActive, setDropActive] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const folders = useMemo<BrowserFolder[]>(() => {
     const kinds = new Map<string, number>();
@@ -71,9 +88,40 @@ export function ContentBrowser({
   const selected = filtered.find((asset) => asset.id === selectedId) ?? null;
   const activeFolder = folders.find((entry) => entry.id === folder) ?? folders[0]!;
   const showMaterials = folder === "materials";
+  const canImport = onImportModels !== undefined;
+
+  const takeDroppedFiles = (event: DragEvent) => {
+    if (!canImport || event.dataTransfer === null) return;
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length === 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setDropActive(false);
+    void onImportModels(files);
+  };
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div
+      className={`flex min-h-0 flex-1 ${dropActive ? "ring-2 ring-inset ring-cyan-400/40" : ""}`}
+      onDragEnter={(event) => {
+        if (!canImport || event.dataTransfer === null) return;
+        if (![...event.dataTransfer.types].includes("Files")) return;
+        event.preventDefault();
+        setDropActive(true);
+      }}
+      onDragOver={(event) => {
+        if (!canImport || event.dataTransfer === null) return;
+        if (![...event.dataTransfer.types].includes("Files")) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        setDropActive(true);
+      }}
+      onDragLeave={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setDropActive(false);
+      }}
+      onDrop={takeDroppedFiles}
+    >
       <nav aria-label="Asset folders" className="flex w-40 shrink-0 flex-col gap-0.5 overflow-auto border-r border-white/[0.06] p-1.5">
         <div className={`px-1.5 pb-1 ${MICRO_LABEL}`}>Folders</div>
         {folders.map((entry) => (
@@ -103,13 +151,39 @@ export function ContentBrowser({
             <Icon name="chevronRight" size={9} />
             <span className="text-neutral-300">{activeFolder.label}</span>
           </div>
+          {canImport ? (
+            <>
+              <button
+                type="button"
+                disabled={importBusy}
+                onClick={() => importInputRef.current?.click()}
+                className={`ml-auto flex h-6.5 items-center gap-1 rounded-[5px] bg-cyan-500/15 px-2 text-[11px] text-cyan-100 ring-1 ring-inset ring-cyan-400/30 transition-colors hover:bg-cyan-500/25 disabled:pointer-events-none disabled:opacity-50 ${FOCUS_RING}`}
+                title="Import .glb / .gltf models into the placeable catalog"
+              >
+                <Icon name="import" size={12} />
+                {importBusy ? "Importing…" : "Import"}
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept={MODEL_ACCEPT}
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  const files = event.target.files;
+                  if (files !== null && files.length > 0) void onImportModels(Array.from(files));
+                  event.target.value = "";
+                }}
+              />
+            </>
+          ) : null}
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search assets…"
             aria-label="Search assets"
-            className={`ml-auto h-6.5 w-52 px-2 ${INPUT_CLS}`}
+            className={`${canImport ? "" : "ml-auto "}h-6.5 w-52 px-2 ${INPUT_CLS}`}
           />
           <Segmented
             ariaLabel="Browser layout"
@@ -149,7 +223,9 @@ export function ContentBrowser({
                 description={
                   query.length > 0
                     ? `Nothing in ${activeFolder.label} matches “${query}”.`
-                    : "This game registers no placeable assets. Register models in the game's asset catalog, or drop .glb files into the standalone editor."
+                    : canImport
+                      ? "Drop .glb / .gltf files here, or use Import, to add placeable models."
+                      : "This game registers no placeable assets. Register models in the game's asset catalog, or drop .glb files into the standalone editor."
                 }
               />
             ) : view === "grid" ? (
@@ -160,10 +236,15 @@ export function ContentBrowser({
                     <button
                       key={asset.id}
                       type="button"
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData(ASSET_DRAG_MIME, encodeAssetDragPayload(asset));
+                        event.dataTransfer.effectAllowed = "copy";
+                      }}
                       onClick={() => setSelectedId(asset.id)}
                       onDoubleClick={() => onPlace(asset)}
-                      title={`${asset.label} — double-click to place`}
-                      className={`group flex flex-col overflow-hidden rounded-[6px] border text-left transition-colors ${FOCUS_RING} ${
+                      title={`${asset.label} — drag into viewport or double-click to place`}
+                      className={`group flex cursor-grab flex-col overflow-hidden rounded-[6px] border text-left transition-colors active:cursor-grabbing ${FOCUS_RING} ${
                         isSelected
                           ? "border-cyan-400/50 bg-cyan-500/10"
                           : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
@@ -191,7 +272,12 @@ export function ContentBrowser({
                   return (
                     <div
                       key={asset.id}
-                      className={`group flex items-center gap-2 rounded-[5px] px-1.5 py-1 transition-colors ${
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData(ASSET_DRAG_MIME, encodeAssetDragPayload(asset));
+                        event.dataTransfer.effectAllowed = "copy";
+                      }}
+                      className={`group flex cursor-grab items-center gap-2 rounded-[5px] px-1.5 py-1 transition-colors active:cursor-grabbing ${
                         isSelected ? "bg-cyan-500/10 ring-1 ring-inset ring-cyan-400/30" : "hover:bg-white/[0.04]"
                       }`}
                     >
@@ -262,6 +348,9 @@ export function ContentBrowser({
             {showMaterials ? `${TERRAIN_MATERIALS.length} materials` : `${filtered.length} of ${assets.length} assets`}
           </span>
           {selected !== null ? <span className="truncate text-neutral-500">{selected.id} selected</span> : null}
+          {canImport && !showMaterials ? (
+            <span className="truncate text-neutral-600">Drop .glb here or Import</span>
+          ) : null}
           <div className="ml-auto">
             <IconButton
               icon="pin"

@@ -31,10 +31,10 @@ try {
   failures.push(`package.json is not strict JSON: ${String(error)}`);
 }
 
-requirePath("bun.lock", "run bun install and commit the lockfile");
-requirePath("node_modules", "run bun install before generators or gates");
-requirePath("node_modules/ts-morph", "dependencies are incomplete; finish bun install before continuing");
-requirePath("node_modules/@typescript/native-preview", "dependencies are incomplete; finish bun install before continuing");
+requirePath("bun.lock", "run bun install and commit the lockfile (or `bun run agent:bootstrap`)");
+requirePath("node_modules", "run `bun run agent:bootstrap` (or bun install) before generators or gates");
+requirePath("node_modules/ts-morph", "dependencies incomplete — run `bun run agent:bootstrap`");
+requirePath("node_modules/@typescript/native-preview", "dependencies incomplete — run `bun run agent:bootstrap`");
 
 function workspacePatterns(): string[] {
   const workspaces = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).workspaces as
@@ -98,6 +98,32 @@ if (ship) {
 
   const status = run("git", ["status", "--porcelain"]);
   if (status !== "") failures.push("worktree is dirty — finish the diff before shipping");
+
+  // Catch stash-pop / merge conflict markers that leave the tree "clean" but break CI.
+  // Only scan files changed vs origin/main (or the working tree if no commits yet).
+  const changedFiles = run("git", ["diff", "--name-only", "--diff-filter=ACMR", "origin/main...HEAD"])
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  // Common conflict-marker lines; require the full 7-character delimiters so legitimate
+  // prose like "=======" underlines and markdown rules don't false-positive.
+  const CONFLICT_MARKERS = /^(<<<<<<< |>>>>>>> |=======\s*$)/m;
+  const TEXTISH =
+    /\.(?:ts|tsx|js|jsx|mjs|cjs|json|md|mdx|css|scss|html|yml|yaml|toml|txt|svg|sh|ps1|css\.ts)$/i;
+  for (const rel of changedFiles) {
+    if (!TEXTISH.test(rel)) continue;
+    const abs = join(root, rel);
+    if (!existsSync(abs)) continue;
+    let text: string;
+    try {
+      text = readFileSync(abs, "utf8");
+    } catch {
+      continue;
+    }
+    if (CONFLICT_MARKERS.test(text)) {
+      failures.push(`${rel} still contains conflict markers (<<<<<<< / ======= / >>>>>>>) — resolve before shipping`);
+    }
+  }
 
   const mergeBase = run("git", ["merge-base", "HEAD", "origin/main"]);
   const main = run("git", ["rev-parse", "origin/main"]);

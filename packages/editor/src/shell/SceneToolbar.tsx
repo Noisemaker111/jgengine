@@ -7,8 +7,10 @@ import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 import {
   ROTATION_SNAP_CHOICES_DEG,
   SCALE_SNAP_CHOICES,
+  type CameraProjectionMode,
   type EditorTool,
   type GizmoMode,
+  type GizmoPivot,
   type GizmoSpace,
   type PlacementTool,
   type SnapMode,
@@ -101,19 +103,26 @@ function SnapChip({ label, active, onClick }: { label: string; active: boolean; 
   );
 }
 
+const PIVOT_LABEL: Record<GizmoPivot, string> = {
+  origin: "Origin",
+  center: "Center",
+  median: "Median",
+};
+
 /**
- * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping,
- * viewport overlays, framing, and the Add menu. Unsupported controls (pivot modes, ortho
- * projection) render disabled rather than pretending to work.
+ * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, pivot,
+ * snapping, viewport overlays, framing, projection, and the Add menu.
  */
 export function SceneToolbar({
   tool,
   gizmoMode,
   gizmoSpace,
+  gizmoPivot,
   snapMode,
   gridSize,
   rotationSnapDeg,
   scaleSnap,
+  cameraProjection,
   showGrid,
   showContours,
   showSurfaceGrid,
@@ -122,10 +131,12 @@ export function SceneToolbar({
   onSetTool,
   onSetGizmoMode,
   onSetGizmoSpace,
+  onSetGizmoPivot,
   onSetSnapMode,
   onSetGridSize,
   onSetRotationSnapDeg,
   onSetScaleSnap,
+  onSetCameraProjection,
   onToggleGrid,
   onToggleContours,
   onToggleSurfaceGrid,
@@ -138,10 +149,12 @@ export function SceneToolbar({
   tool: EditorTool;
   gizmoMode: GizmoMode;
   gizmoSpace: GizmoSpace;
+  gizmoPivot: GizmoPivot;
   snapMode: SnapMode;
   gridSize: number;
   rotationSnapDeg: number | null;
   scaleSnap: number | null;
+  cameraProjection: CameraProjectionMode;
   showGrid: boolean;
   showContours: boolean;
   showSurfaceGrid: boolean;
@@ -150,10 +163,12 @@ export function SceneToolbar({
   onSetTool: (tool: EditorTool) => void;
   onSetGizmoMode: (mode: GizmoMode) => void;
   onSetGizmoSpace: (space: GizmoSpace) => void;
+  onSetGizmoPivot: (pivot: GizmoPivot) => void;
   onSetSnapMode: (mode: SnapMode) => void;
   onSetGridSize: (size: number) => void;
   onSetRotationSnapDeg: (deg: number | null) => void;
   onSetScaleSnap: (snap: number | null) => void;
+  onSetCameraProjection: (projection: CameraProjectionMode) => void;
   onToggleGrid: () => void;
   onToggleContours: () => void;
   onToggleSurfaceGrid: () => void;
@@ -165,6 +180,7 @@ export function SceneToolbar({
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [snapOpen, setSnapOpen] = useState(false);
+  const [pivotOpen, setPivotOpen] = useState(false);
   const lastSnapRef = useRef<Exclude<SnapMode, "off">>("ground");
   if (snapMode !== "off") lastSnapRef.current = snapMode;
 
@@ -214,13 +230,37 @@ export function SceneToolbar({
           { value: "local", label: "Local" },
         ]}
       />
-      <div
-        className="flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.06] bg-black/20 px-2 text-[11px] text-neutral-600"
-        title="Gizmo pivots at the selection center — pivot modes are planned"
-        aria-disabled="true"
-      >
-        <Icon name="target" size={12} />
-        Pivot
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setPivotOpen((value) => !value)}
+          disabled={tool === "terrain"}
+          aria-label={`Gizmo pivot: ${PIVOT_LABEL[gizmoPivot]}`}
+          aria-expanded={pivotOpen}
+          title="Gizmo pivot for multi-select: origin (primary), center (mean), or median"
+          className={`flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.07] bg-[#191d24] px-2 text-[11px] text-neutral-300 transition-colors hover:bg-[#1f242d] disabled:opacity-40 ${FOCUS_RING}`}
+        >
+          <Icon name="target" size={12} />
+          {PIVOT_LABEL[gizmoPivot]}
+          <Icon name="chevronDown" size={10} className="text-neutral-500" />
+        </button>
+        <MenuShell open={pivotOpen} onClose={() => setPivotOpen(false)} width="w-44">
+          <div className={`px-2 pb-1 pt-1.5 ${MICRO_LABEL}`}>Gizmo pivot</div>
+          {(["origin", "center", "median"] as const).map((pivot) => (
+            <button
+              key={pivot}
+              type="button"
+              className={`${MENU_ITEM} ${gizmoPivot === pivot ? "text-cyan-200" : ""}`}
+              onClick={() => {
+                onSetGizmoPivot(pivot);
+                setPivotOpen(false);
+              }}
+            >
+              {PIVOT_LABEL[pivot]}
+              {gizmoPivot === pivot ? " ✓" : ""}
+            </button>
+          ))}
+        </MenuShell>
       </div>
       <ToolbarDivider />
       <div className="relative flex items-center gap-1">
@@ -305,14 +345,31 @@ export function SceneToolbar({
       <IconButton icon="gauge" label="Elevation readout" active={showElevation} onClick={onToggleElevation} />
       <ToolbarDivider />
       <IconButton icon="frame" label="Frame selection / scene (F)" onClick={onFrame} />
-      <div
-        className="flex h-6 items-center gap-1 rounded-[5px] border border-white/[0.06] bg-black/20 px-2 text-[11px] text-neutral-600"
-        title="Perspective projection (orthographic view is planned)"
-        aria-disabled="true"
+      <button
+        type="button"
+        onClick={() =>
+          onSetCameraProjection(cameraProjection === "perspective" ? "orthographic" : "perspective")
+        }
+        title={
+          cameraProjection === "perspective"
+            ? "Perspective projection — click for orthographic"
+            : "Orthographic projection — click for perspective"
+        }
+        aria-label={
+          cameraProjection === "perspective"
+            ? "Camera projection: perspective (switch to orthographic)"
+            : "Camera projection: orthographic (switch to perspective)"
+        }
+        aria-pressed={cameraProjection === "orthographic"}
+        className={`flex h-6 items-center gap-1 rounded-[5px] border px-2 text-[11px] transition-colors ${FOCUS_RING} ${
+          cameraProjection === "orthographic"
+            ? "border-cyan-400/30 bg-cyan-500/15 text-cyan-100"
+            : "border-white/[0.07] bg-[#191d24] text-neutral-300 hover:bg-[#1f242d]"
+        }`}
       >
         <Icon name="camera" size={12} />
-        Persp
-      </div>
+        {cameraProjection === "perspective" ? "Persp" : "Ortho"}
+      </button>
       <ToolbarDivider />
       <div className="relative">
         <button

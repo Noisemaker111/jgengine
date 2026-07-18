@@ -4,6 +4,8 @@ export type { EditorDocument } from "./types";
 export type { EditorTerrain } from "./types";
 /** A baked top-down minimap (PNG data URI + world bounds) persisted on the scene document. */
 export type { EditorMinimapBake } from "./types";
+/** Scene-document sky/fog/lighting bag edited by the lighting workspace. */
+export type { EditorEnvironment, EditorFogConfig, EditorSkyPreset } from "./types";
 /** Per-kind show/hide flags for the editor's layer panel. */
 export type { EditorKindVisibility } from "./types";
 /** The four placeable-object collections a prefab fragment or clipboard fragment carries. */
@@ -82,7 +84,10 @@ export {
   findEditorPrefab,
   findEditorVolume,
   importEditorDocumentJson,
+  isEditorObjectCollectionLocked,
+  isEditorObjectHidden,
   isEditorObjectLocked,
+  isEditorObjectSelfLocked,
   listEditorKinds,
   mergeEditorDocuments,
   normalizeEditorLayers,
@@ -119,7 +124,12 @@ export type {
 } from "./world";
 /** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while decoding it. */
 export type { DecodeEditorDocumentResult } from "./document";
-export { environmentContentFromDocument, terrainBoundsFromDocument } from "./environment";
+export {
+  environmentContentFromDocument,
+  skyConfigFromEnvironment,
+  skyFromDocument,
+  terrainBoundsFromDocument,
+} from "./environment";
 /** Coordinate/placement content of an `environment()` world derived from the scene document. */
 export type { EnvironmentContent, EnvironmentContentOptions } from "./environment";
 export { bakeMinimapFromDocument, documentBakeZones } from "./minimap";
