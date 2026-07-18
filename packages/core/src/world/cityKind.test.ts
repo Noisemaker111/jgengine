@@ -403,6 +403,25 @@ describe("street hierarchy, intersections, furniture", () => {
     }
   });
 
+  test("every junction arm points at real pavement — T junctions get three arms, never a phantom fourth", () => {
+    // Organic nets snap partial streets to cross-street coordinates, so plenty of streets END at a
+    // junction; each arm must still land on some street's actual centerline.
+    const city = resolveCityObject(cityVolume({ seed: "tee", gridness: 0.35, curviness: 0.3, branching: 0.5 }))!;
+    expect(city.intersections.length).toBeGreaterThan(4);
+    let sawTee = false;
+    for (const cross of city.intersections) {
+      expect(cross.arms.length).toBeGreaterThanOrEqual(2);
+      if (cross.arms.length === 3) sawTee = true;
+      for (const arm of cross.arms) {
+        const px = cross.x + Math.sin(arm.angle) * (cross.radius + 3);
+        const pz = cross.z + Math.cos(arm.angle) * (cross.radius + 3);
+        const nearest = Math.min(...city.streets.map((street) => distToStreet(street, px, pz)));
+        expect(nearest).toBeLessThan(arm.width / 2 + 2.5);
+      }
+    }
+    expect(sawTee).toBe(true);
+  });
+
   test("boulevards widen avenues and carry level metadata", () => {
     const city = resolveCityObject(cityVolume({ seed: "blvd", boulevards: 1, gridness: 1 }))!;
     const boulevards = city.streets.filter((street) => street.level === "boulevard");

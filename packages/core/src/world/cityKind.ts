@@ -970,9 +970,12 @@ function buildBranches(
 }
 
 /**
- * Cross intersections between through streets of opposite axes, found via a shared-cell spatial
- * hash instead of quadratic polyline sweeps. Each crossing carries a patch radius and the four
- * outgoing arm directions for crosswalk stripes.
+ * Junctions between through streets of opposite axes, found via a shared-cell spatial hash instead
+ * of quadratic polyline sweeps. Nearby crossings merge into ONE junction (a boulevard met by two
+ * offset streets is one plaza, not three patches), and every emitted arm is REAL: a street that
+ * ENDS at the junction (partial streets snap their spans to cross-street coordinates by design)
+ * contributes one arm, a through street two — so T junctions get three crosswalks, never a
+ * phantom fourth painted across a road that isn't there.
  */
 function findIntersections(
   streets: LocalStreet[],
@@ -1023,29 +1026,65 @@ function findIntersections(
       }
     }
   }
-  const out: { x: number; z: number; radius: number; level: CityStreet["level"]; arms: { angle: number; width: number }[] }[] = [];
-  const taken = new Map<string, true>();
+  // Cluster crossings that share ground into one junction, unioning their member streets.
+  interface Cluster {
+    x: number;
+    z: number;
+    count: number;
+    members: Map<number, { tangent: readonly [number, number] }>;
+  }
+  const clusters = new Map<string, Cluster>();
   for (const { d, a, b } of best.values()) {
     const sa = streets[a.street]!;
     const sb = streets[b.street]!;
     if (d > (sa.width + sb.width) / 2) continue;
     const x = (a.x + b.x) / 2;
     const z = (a.z + b.z) / 2;
-    const dedupe = `${Math.round(x / 6)}:${Math.round(z / 6)}`;
-    if (taken.has(dedupe)) continue;
-    taken.set(dedupe, true);
-    // Just big enough to cover the two ribbons' overlap (plus rounded curb corners) — an oversized
-    // patch reads as a black blob at every crossing from the air.
-    const radius = Math.max(sa.width, sb.width) / 2 + 0.8;
-    const level = LEVEL_RANK[sa.level] >= LEVEL_RANK[sb.level] ? sa.level : sb.level;
-    const arms = [
-      { angle: Math.atan2(a.tangent[0], a.tangent[1]), width: sa.width },
-      { angle: Math.atan2(-a.tangent[0], -a.tangent[1]), width: sa.width },
-      { angle: Math.atan2(b.tangent[0], b.tangent[1]), width: sb.width },
-      { angle: Math.atan2(-b.tangent[0], -b.tangent[1]), width: sb.width },
-    ];
-    out.push({ x, z, radius, level, arms });
+    const key = `${Math.round(x / 7)}:${Math.round(z / 7)}`;
+    let cluster = clusters.get(key);
+    if (cluster === undefined) {
+      cluster = { x: 0, z: 0, count: 0, members: new Map() };
+      clusters.set(key, cluster);
+    }
+    cluster.x += x;
+    cluster.z += z;
+    cluster.count += 1;
+    if (!cluster.members.has(a.street)) cluster.members.set(a.street, { tangent: a.tangent });
+    if (!cluster.members.has(b.street)) cluster.members.set(b.street, { tangent: b.tangent });
+  }
+  const out: { x: number; z: number; radius: number; level: CityStreet["level"]; arms: { angle: number; width: number }[] }[] = [];
+  for (const cluster of clusters.values()) {
     if (out.length >= MAX_INTERSECTIONS) break;
+    const x = cluster.x / cluster.count;
+    const z = cluster.z / cluster.count;
+    let radius = 0;
+    let level: CityStreet["level"] = "street";
+    const arms: { angle: number; width: number }[] = [];
+    for (const [index, member] of cluster.members) {
+      const street = streets[index]!;
+      // Just big enough to cover the ribbons' overlap (plus rounded curb corners) — an oversized
+      // patch reads as a black blob at every crossing from the air.
+      radius = Math.max(radius, street.width / 2 + 0.8);
+      if (LEVEL_RANK[street.level] > LEVEL_RANK[level]) level = street.level;
+      // Which directions does this street actually LEAVE the junction in? Project its nearby
+      // polyline onto the local tangent: an arm exists only where pavement extends past the patch.
+      const [tx, tz] = member.tangent;
+      let minProj = 0;
+      let maxProj = 0;
+      for (const [px, pz] of street.points) {
+        const dx = px - x;
+        const dz = pz - z;
+        if (dx * dx + dz * dz > 45 * 45) continue;
+        const proj = dx * tx + dz * tz;
+        if (proj < minProj) minProj = proj;
+        if (proj > maxProj) maxProj = proj;
+      }
+      const reach = street.width / 2 + 3;
+      if (maxProj > reach) arms.push({ angle: Math.atan2(tx, tz), width: street.width });
+      if (-minProj > reach) arms.push({ angle: Math.atan2(-tx, -tz), width: street.width });
+    }
+    if (arms.length < 2) continue;
+    out.push({ x, z, radius, level, arms });
   }
   return out;
 }
