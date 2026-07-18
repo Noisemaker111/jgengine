@@ -281,6 +281,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
 
+## path-network — build a deterministic road/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
+
+- `buildPathNetwork` (function) · `import { buildPathNetwork } from "@jgengine/core/world/pathNetwork"`
+
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
 - `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
@@ -321,6 +325,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## population-director — ambient per-region creature population manager with timed weighted respawns and caps
 
 - `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
+
+## portable-marker-source — project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet
+
+- `createMarkerSource` (function) · `import { createMarkerSource } from "@jgengine/core/world"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 

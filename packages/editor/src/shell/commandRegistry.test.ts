@@ -103,6 +103,6 @@ test("buildPaletteCommands adds jump-to-object rows when objects are provided", 
 test("workspace rail declares support honestly — staged modes are disabled", () => {
   const supported = WORKSPACES.filter((entry) => entry.supported).map((entry) => entry.id);
   const staged = WORKSPACES.filter((entry) => !entry.supported).map((entry) => entry.id);
-  expect(supported).toEqual(["scene", "terrain", "assets", "materials", "lighting", "ai", "multiplayer"]);
-  expect(staged).toEqual(["scripting", "animation", "audio"]);
+  expect(supported).toEqual(["scene", "terrain", "assets", "materials", "scripting", "lighting", "ai", "multiplayer"]);
+  expect(staged).toEqual(["animation", "audio"]);
 });
