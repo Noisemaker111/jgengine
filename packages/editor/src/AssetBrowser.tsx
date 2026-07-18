@@ -15,6 +15,31 @@ export interface EditorAssetEntry {
 /** Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone. */
 export const MATERIAL_DRAG_MIME = "application/x-jgengine-material";
 
+/**
+ * Custom drag mime for placeable catalog assets. Payload is JSON
+ * `{ id, label, kind }` so the viewport can call `place_asset` without a registry round-trip.
+ */
+export const ASSET_DRAG_MIME = "application/x-jgengine-editor-asset";
+
+/** Serializes a placeable asset for HTML5 drag into the viewport. */
+export function encodeAssetDragPayload(entry: EditorAssetEntry): string {
+  return JSON.stringify({ id: entry.id, label: entry.label, kind: entry.kind });
+}
+
+/** Parses an asset drag payload; returns null when the data is missing or malformed. */
+export function decodeAssetDragPayload(raw: string): EditorAssetEntry | null {
+  if (raw.length === 0) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<EditorAssetEntry>;
+    if (typeof parsed.id !== "string" || parsed.id.length === 0) return null;
+    if (typeof parsed.label !== "string") return null;
+    if (parsed.kind !== "model" && parsed.kind !== "catalog" && parsed.kind !== "marker") return null;
+    return { id: parsed.id, label: parsed.label, kind: parsed.kind };
+  } catch {
+    return null;
+  }
+}
+
 /** Materials palette: drag a chip onto an outliner row (assign to that object) or the viewport (paint terrain / assign to the object under the cursor). */
 function MaterialsPalette() {
   return (

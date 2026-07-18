@@ -2,7 +2,12 @@ import { useMemo, useState } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 
-import { MATERIAL_DRAG_MIME, type EditorAssetEntry } from "../AssetBrowser";
+import {
+  ASSET_DRAG_MIME,
+  MATERIAL_DRAG_MIME,
+  encodeAssetDragPayload,
+  type EditorAssetEntry,
+} from "../AssetBrowser";
 import { TERRAIN_MATERIALS } from "../uiStore";
 import { Icon, type IconName } from "./icons";
 import type { BrowserViewMode } from "./layoutStore";
@@ -19,9 +24,10 @@ const ASSET_KIND_ICON: Record<EditorAssetEntry["kind"], IconName> = {
 
 /**
  * Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset
- * catalog, plus the terrain material palette (drag chips onto objects or the viewport). Thumbnails
- * are typed glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing
- * here fakes renders it doesn't have.
+ * catalog, plus the terrain material palette (drag chips onto objects or the viewport). Assets are
+ * draggable into the viewport for placement (and still double-click / Place). Thumbnails are typed
+ * glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing here fakes
+ * renders it doesn't have.
  */
 export function ContentBrowser({
   assets,
@@ -160,10 +166,15 @@ export function ContentBrowser({
                     <button
                       key={asset.id}
                       type="button"
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData(ASSET_DRAG_MIME, encodeAssetDragPayload(asset));
+                        event.dataTransfer.effectAllowed = "copy";
+                      }}
                       onClick={() => setSelectedId(asset.id)}
                       onDoubleClick={() => onPlace(asset)}
-                      title={`${asset.label} — double-click to place`}
-                      className={`group flex flex-col overflow-hidden rounded-[6px] border text-left transition-colors ${FOCUS_RING} ${
+                      title={`${asset.label} — drag into viewport or double-click to place`}
+                      className={`group flex cursor-grab flex-col overflow-hidden rounded-[6px] border text-left transition-colors active:cursor-grabbing ${FOCUS_RING} ${
                         isSelected
                           ? "border-cyan-400/50 bg-cyan-500/10"
                           : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
@@ -191,7 +202,12 @@ export function ContentBrowser({
                   return (
                     <div
                       key={asset.id}
-                      className={`group flex items-center gap-2 rounded-[5px] px-1.5 py-1 transition-colors ${
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData(ASSET_DRAG_MIME, encodeAssetDragPayload(asset));
+                        event.dataTransfer.effectAllowed = "copy";
+                      }}
+                      className={`group flex cursor-grab items-center gap-2 rounded-[5px] px-1.5 py-1 transition-colors active:cursor-grabbing ${
                         isSelected ? "bg-cyan-500/10 ring-1 ring-inset ring-cyan-400/30" : "hover:bg-white/[0.04]"
                       }`}
                     >

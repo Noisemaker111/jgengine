@@ -17,6 +17,7 @@ import { assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 import { EditorCameraDriver } from "./EditorCameraDriver";
 import { EditorChrome } from "./EditorChrome";
 import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
+import { AssetDropZone } from "./AssetDropZone";
 import { MaterialDropZone } from "./MaterialDropZone";
 import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
@@ -219,6 +220,7 @@ function EditorWorldOverlay({
       <EditorCameraDriver api={api} />
       <ViewportSelect api={api} ui={ui} />
       <MaterialDropZone api={api} />
+      <AssetDropZone api={api} />
       <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
       <CityPreview api={api} />
