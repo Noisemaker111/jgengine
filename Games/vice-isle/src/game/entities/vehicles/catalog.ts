@@ -90,7 +90,9 @@ function car(spec: CarSpec): KinematicVehicleTuning {
     turnSpeedRef: 7,
     gripStrength,
     handbrakeGrip: spec.handbrakeGrip,
-    rollingResistance: 0.08,
+    // Coast decay (throttle and brake both off). Firm enough that lifting off visibly scrubs speed
+    // instead of gliding forever, but light enough to leave top speed and momentum character intact.
+    rollingResistance: 0.15,
     chassis: {
       massKg: spec.massKg,
       engineForce: spec.engineForce,
@@ -135,12 +137,12 @@ function car(spec: CarSpec): KinematicVehicleTuning {
 }
 
 const CAR_SPECS: readonly CarSpec[] = [
-  { id: "car_compact", label: "Pico", body: "#f2c14e", cabin: "#26292f", price: 800, massKg: 1150, engineForce: 5200, brakeForce: 10500, engineBrakeForce: 1300, tireGrip: 0.92, comHeight: 0.56, trackWidth: 1.48, wheelbase: 2.42, topSpeed: 26, handbrakeGrip: 0.3, collisionRadius: 1.4 },
-  { id: "car_muscle", label: "Bandolero", body: "#d64545", cabin: "#26292f", price: 2400, massKg: 1650, engineForce: 15000, brakeForce: 13500, engineBrakeForce: 1800, tireGrip: 0.88, comHeight: 0.52, trackWidth: 1.6, wheelbase: 2.75, topSpeed: 38, handbrakeGrip: 0.16, collisionRadius: 1.4, torqueCurve: TORQUE_MUSCLE },
-  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 12800, brakeForce: 16500, engineBrakeForce: 1700, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 47, handbrakeGrip: 0.2, collisionRadius: 1.4, downforce: 0.5, steerResponse: 12 },
-  { id: "car_cop", label: "VCPD Cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 10800, brakeForce: 14800, engineBrakeForce: 1900, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 41, handbrakeGrip: 0.22, collisionRadius: 1.4 },
-  { id: "car_suv", label: "Vagabond", body: "#6b7d52", cabin: "#20242c", price: 3800, massKg: 2350, engineForce: 9200, brakeForce: 15500, engineBrakeForce: 2200, tireGrip: 0.82, comHeight: 0.98, trackWidth: 1.66, wheelbase: 2.85, topSpeed: 33, handbrakeGrip: 0.35, collisionRadius: 1.6, gears: GEARS_SUV },
-  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 26000, brakeForce: 48000, engineBrakeForce: 6000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 22, handbrakeGrip: 0.55, collisionRadius: 2.6, maxAngle: 0.42, steerResponse: 6, gears: GEARS_BUS, redlineRpm: 4600 },
+  { id: "car_compact", label: "Pico", body: "#f2c14e", cabin: "#26292f", price: 800, massKg: 1150, engineForce: 5200, brakeForce: 10500, engineBrakeForce: 2900, tireGrip: 0.92, comHeight: 0.56, trackWidth: 1.48, wheelbase: 2.42, topSpeed: 26, handbrakeGrip: 0.3, collisionRadius: 1.4 },
+  { id: "car_muscle", label: "Bandolero", body: "#d64545", cabin: "#26292f", price: 2400, massKg: 1650, engineForce: 15000, brakeForce: 13500, engineBrakeForce: 4000, tireGrip: 0.88, comHeight: 0.52, trackWidth: 1.6, wheelbase: 2.75, topSpeed: 38, handbrakeGrip: 0.16, collisionRadius: 1.4, torqueCurve: TORQUE_MUSCLE },
+  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 12800, brakeForce: 16500, engineBrakeForce: 3750, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 47, handbrakeGrip: 0.2, collisionRadius: 1.4, downforce: 0.5, steerResponse: 12 },
+  { id: "car_cop", label: "VCPD Cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 10800, brakeForce: 14800, engineBrakeForce: 4200, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 41, handbrakeGrip: 0.22, collisionRadius: 1.4 },
+  { id: "car_suv", label: "Vagabond", body: "#6b7d52", cabin: "#20242c", price: 3800, massKg: 2350, engineForce: 9200, brakeForce: 15500, engineBrakeForce: 4900, tireGrip: 0.82, comHeight: 0.98, trackWidth: 1.66, wheelbase: 2.85, topSpeed: 33, handbrakeGrip: 0.35, collisionRadius: 1.6, gears: GEARS_SUV },
+  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 26000, brakeForce: 48000, engineBrakeForce: 13200, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 22, handbrakeGrip: 0.55, collisionRadius: 2.6, maxAngle: 0.42, steerResponse: 6, gears: GEARS_BUS, redlineRpm: 4600 },
 ];
 
 const flightControls = {

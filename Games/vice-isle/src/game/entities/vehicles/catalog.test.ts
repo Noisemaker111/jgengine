@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createKinematicVehicle } from "@jgengine/core/world";
 
 import { VEHICLES, vehicleById } from "./catalog";
 
@@ -60,5 +61,28 @@ describe("vice-isle vehicle catalog (#1051)", () => {
 
   test("the bus has more than triple the compact's turning circle", () => {
     expect(turningRadius("car_bus")).toBeGreaterThan(turningRadius("car_compact") * 3);
+  });
+
+  test("lifting off the throttle scrubs speed instead of gliding forever", () => {
+    // Regression guard: coasting (no throttle, no brake) from ~30 km/h must fall below 10 km/h
+    // within 4 s for every ground car — the old floaty ~22 s glide was the "feels the same" bug.
+    const dt = 1 / 60;
+    for (const car of groundCars) {
+      if (car.dynamics.type !== "ground") continue;
+      const vehicle = createKinematicVehicle(car.dynamics.tuning, { position: [0, 0, 0], heading: 0 });
+      for (let i = 0; i < 3000; i += 1) {
+        const step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
+        if (Math.abs(step.forwardSpeed) * 3.6 >= 30) break;
+      }
+      let coastMs = 0;
+      let kmh = 30;
+      for (let i = 0; i < 4 * 60; i += 1) {
+        const step = vehicle.tick(dt, { throttle: 0, brake: 0, steer: 0, handbrake: 0 });
+        kmh = Math.abs(step.forwardSpeed) * 3.6;
+        coastMs += dt;
+        if (kmh <= 10) break;
+      }
+      expect(kmh, `${car.id} still coasting at ${kmh.toFixed(1)} km/h after ${coastMs.toFixed(1)}s`).toBeLessThanOrEqual(10);
+    }
   });
 });
