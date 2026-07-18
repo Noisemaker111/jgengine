@@ -11,6 +11,7 @@ import { IconButton, ToolbarDivider } from "./ui";
  * Slim shell chrome for Play mode — same app-bar language as edit mode so switching modes
  * does not feel like an app swap. Pause / Resume / Step drive the existing runtime play
  * controls (`runtime_pause` / `runtime_resume` / `runtime_step`); Exit returns to edit.
+ * @internal
  */
 export function PlayModeBar({
   gameId,

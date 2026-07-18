@@ -396,7 +396,7 @@
 - `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — drives the header unsaved indicator by reference compare. */ baselin… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
-- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
+- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" | "hud" — How the editor hosts the game: frozen placement view, roamable world, the real game, or HUD-layout authoring.
@@ -444,6 +444,7 @@
 
 ## @jgengine/editor/AssetBrowser
 
+- `ASSET_DRAG_MIME` (const): const ASSET_DRAG_MIME: "application/x-jgengine-editor-asset" — Custom drag mime for placeable catalog assets. Payload is JSON `{ id, label, kind }` so the viewport can call `place_asset` without a registry round-trip.
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone.
@@ -451,7 +452,7 @@
 
 ## @jgengine/editor/DebugDraw
 
-- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; onSelect: (id: string) => void; activePathPoint?: { pathId: string; index: number } | null; ground… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
+- `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 
 ## @jgengine/editor/EditorApp
@@ -688,7 +689,7 @@
 
 ## @jgengine/editor/shell/CommandPalette
 
-- `CommandPalette` (function): function CommandPalette({ commands, onClose, initialQuery = "", }: { commands: readonly PaletteCommand[]; onClose: () => void; /** Pre-filled filter (e.g. "add " to open straight into placement commands). */ initialQuery?: string; }): React.JSX.Element — Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command and runs the highlighted one on Enter. Esc or backdrop click cancels without side effects.
+- `CommandPalette` (function): function CommandPalette({ commands, onClose, initialQuery = "", }: { commands: readonly PaletteCommand[]; onClose: () => void; /** Pre-filled filter (e.g. "add " to open straight into placement commands). */ initialQuery?: string; }): React.JSX.Element — Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command (plus scene object jump rows), surfaces recent commands when the query is empty, and runs the highlighted entry on Enter. Esc or backdrop click cancels without side effects.
 
 ## @jgengine/editor/shell/ConsolePanel
 
@@ -696,20 +697,21 @@
 
 ## @jgengine/editor/shell/ContentBrowser
 
-- `ContentBrowser` (function): function ContentBrowser({ assets, session, onPlace, view, onSetView, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; view: BrowserViewMode; onSetView: (view: BrowserViewMode) => void; }): React.JSX.Element — Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset catalog, plus the terrain material palette (drag chips onto objects or the viewport). Thumbnails are typed glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing here fakes renders it doesn't have.
+- `ContentBrowser` (function): function ContentBrowser({ assets, session, onPlace, view, onSetView, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; view: BrowserViewMode; onSetView: (view: BrowserViewMode) => void; }): React.JSX.Element — Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset catalog, plus the terrain material palette (drag chips onto objects or the viewport). Assets are draggable into the viewport for placement (and still double-click / Place). Thumbnails are typed glyph cards — the catalog carries model URLs, not prerendered imagery, and nothing here fakes renders it doesn't have.
 
 ## @jgengine/editor/shell/HierarchyPanel
 
-- `HierarchyPanel` (const): const HierarchyPanel: React.MemoExoticComponent<({ session, api, onAdd, }: { session: EditorSession; api: EditorHostApi; onAdd: () => void; }) => React.JSX.Element> — Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live document. Group headers carry real per-kind visibility toggles (the editor's layer system); rows locked through a locked collection show a lock indicator. Selector-subscribed and memoized, so UI-only churn never rerenders it.
+- `HierarchyPanel` (const): const HierarchyPanel: React.MemoExoticComponent<({ session, api, onAdd, onRowContextMenu, }: { session: EditorSession; api: EditorHostApi; onAdd: () => void; onRowContextMenu?: ((event: { clientX: number; clientY: number; }, id: string) => void) | undefined; }) => React.JSX.Element> — Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live document. Group headers carry real per-kind visibility toggles (the editor's layer system); rows locked through a locked collection show a lock indicator. Tree view supports drag-and-drop reparenting through the existing `set_parent` RPC. Keyboard navigation (arrows / Enter / F2), double-click rename, and row context menus (frame / duplicate / delete / prefab / unparent) are supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
+- `OBJECT_DRAG_MIME` (const): const OBJECT_DRAG_MIME: "application/x-jgengine-editor-object" — HTML5 drag payload for hierarchy reparenting via `set_parent`.
 
 ## @jgengine/editor/shell/ProfilerPanel
 
-- `ProfilerPanel` (function): function ProfilerPanel({ history }: { history: PerfHistoryStore }): React.JSX.Element — Profiler dock tab over the real {@link PerfProbe} sample history: frame-time graph, current and average values, and authoring-cost series when the probe reports one. Series the host cannot measure (CPU/GPU split, memory) are omitted entirely rather than fabricated.
+- `ProfilerPanel` (function): function ProfilerPanel({ history }: { history: PerfHistoryStore }): React.JSX.Element — Profiler dock tab over the real {@link PerfProbe} sample history: frame-time graph, current and average values, authoring-cost series when the probe reports one, and JS heap memory when the browser exposes `performance.memory`. Series the host cannot measure are omitted entirely rather than fabricated.
 
 ## @jgengine/editor/shell/SceneToolbar
 
 - `ADD_VOLUME_ENTRIES` (const): const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] — Volume placement entries offered by the Add menu.
-- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, gizmoSpace, snapMode, gridSize, rotationSnapDeg, scaleSnap, cameraProjection, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetGizmoSpace, onSetSnapMode, onSetGridSize, onSetRotationSnapDeg, onSetScaleSn… — Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, snapping, viewport overlays, framing, projection, and the Add menu. Unsupported controls (pivot modes) render disabled rather than pretending to work.
+- `SceneToolbar` (function): function SceneToolbar({ tool, gizmoMode, gizmoSpace, gizmoPivot, snapMode, gridSize, rotationSnapDeg, scaleSnap, cameraProjection, showGrid, showContours, showSurfaceGrid, showElevation, placementActive, onSetTool, onSetGizmoMode, onSetGizmoSpace, onSetGizmoPivot, onSetSnapMode, onSetGridSize, onSet… — Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, pivot, snapping, viewport overlays, framing, projection, and the Add menu.
 
 ## @jgengine/editor/shell/StatusBar
 
@@ -719,14 +721,14 @@
 
 ## @jgengine/editor/shell/TopAppBar
 
-- `TopAppBar` (function): function TopAppBar({ gameId, dirty, saveState, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; dirty: boolean; saveState: TopBarSaveState; saveAvailable: boolea… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step are shown disabled in edit mode — they operate through the runtime play controls once Play mode is entered.
+- `TopAppBar` (function): function TopAppBar({ gameId, dirty, saveState, lastSavedAt = null, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; dirty: boolean; saveState: TopBarSaveState; /… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step stay disabled in edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the runtime pause/step RPCs so mode switches keep shell chrome.
 - `TopBarSaveState` (type): type TopBarSaveState = "idle" | "saving" | "saved" | "error" — Document save lifecycle mirrored from `useDocumentSave`.
 
 ## @jgengine/editor/shell/ViewportOverlays
 
 - `OrientationWidget` (const): const OrientationWidget: React.MemoExoticComponent<() => React.JSX.Element> — Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders React.
 - `PerformanceOverlay` (const): const PerformanceOverlay: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => React.JSX.Element | null> — Top-left viewport performance readout backed by the real in-canvas {@link PerfProbe} samples. Rows without data (no sample yet) simply don't render — nothing is fabricated.
-- `ViewportUtilityPanel` (function): function ViewportUtilityPanel({ document, api, selectionCount, }: { document: EditorDocument; api: EditorHostApi; selectionCount: number; }): React.JSX.Element — Top-right collapsible viewport utility panel: real per-kind object counts from the live document plus camera framing actions. Deliberately not a minimap — no fake imagery.
+- `ViewportUtilityPanel` (function): function ViewportUtilityPanel({ document, api, selectionCount, }: { document: EditorDocument; api: EditorHostApi; selectionCount: number; }): React.JSX.Element — Top-right collapsible viewport utility panel: real minimap from `document.minimap` when baked (via `bake_minimap` RPC — never a fake image), plus per-kind object counts and framing actions.
 
 ## @jgengine/editor/shell/WorkspaceRail
 
@@ -743,8 +745,9 @@
 
 - `PaletteCommand` (interface): interface PaletteCommand — One executable command-palette entry.
 - `PaletteContext` (interface): interface PaletteContext — Everything the palette can drive — thin callbacks over existing editor systems.
+- `PaletteObjectTarget` (interface): interface PaletteObjectTarget — A scene object the palette can jump to by name/id.
 - `buildPaletteCommands` (function): function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] — Builds the full palette command list from live editor capabilities — no dead entries.
-- `filterPaletteCommands` (function): function filterPaletteCommands(commands: readonly PaletteCommand[], query: string): PaletteCommand[] — Case-insensitive subsequence-friendly filter over title, group, and keywords.
+- `filterPaletteCommands` (function): function filterPaletteCommands(commands: readonly PaletteCommand[], query: string, recentIds: readonly string[] = []): PaletteCommand[] — Case-insensitive filter over title, group, and keywords. With an empty query, recent commands (that still exist) float to the top under a virtual order — the caller groups them visually.
 
 ## @jgengine/editor/shell/consoleStore
 
@@ -756,7 +759,7 @@
 
 ## @jgengine/editor/shell/fields
 
-- `AxisNumberField` (function): function AxisNumberField({ axis, label, value, onCommit, step = 0.1, precision = 3, disabled = false, }: { /** Axis coloring; omit for a neutral field. */ axis?: "x" | "y" | "z"; label: string; value: number; onCommit: (value: number) => void; step?: number; precision?: number; disabled?: boolean; }… — Polished numeric field with an axis-colored label chip. The chip is a drag-scrub handle (pointer-drag adjusts by `step` per few pixels); the input commits finite values on change and re-normalizes its text on blur. Invalid text never commits.
+- `AxisNumberField` (function): function AxisNumberField({ axis, label, value, onCommit, step = 0.1, precision = 3, disabled = false, mixed = false, }: { /** Axis coloring; omit for a neutral field. */ axis?: "x" | "y" | "z"; label: string; value: number; onCommit: (value: number) => void; step?: number; precision?: number; disabl… — Polished numeric field with an axis-colored label chip. The whole field is a drag-scrub surface (not just the chip): horizontal pointer-drag adjusts by `step` per few pixels while Alt/Option or double-click focuses the input for precise typing. The input commits finite values on change and re-normalizes its text on blur. Invalid text never commits.
 - `FieldRow` (function): function FieldRow({ label, children, title }: { label: string; children: React.ReactNode; title?: string }): React.JSX.Element — Labeled row wrapper aligning a caption with one or more fields.
 - `SectionAction` (function): function SectionAction({ label, onClick, active = false, disabled = false, children, }: { label: string; onClick: () => void; active?: boolean; disabled?: boolean; children: React.ReactNode; }): React.JSX.Element — Small ghost action used inside section headers (reset, link).
 - `TextField` (function): function TextField({ label, value, placeholder, onCommit, }: { label: string; value: string; placeholder?: string; onCommit: (value: string) => void; }): React.JSX.Element — Compact text input row used by the inspector header and component cards.
@@ -835,6 +838,7 @@
 - `EditorUiState` (interface): interface EditorUiState — Transient editor UI state shared between chrome, viewport, and gizmos.
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
+- `GizmoPivot` (type): type GizmoPivot = "origin" | "center" | "median" — Where multi-select gizmo handles sit: - `origin` — primary selection (first selected id) - `center` — arithmetic mean of selected object positions - `median` — per-axis median of selected object positions
 - `GizmoSpace` (type): type GizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes.
 - `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.

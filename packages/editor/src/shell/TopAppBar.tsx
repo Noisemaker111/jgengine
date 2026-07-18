@@ -5,6 +5,7 @@ import { Icon } from "./icons";
 import { BORDER, FOCUS_RING } from "./theme";
 import { IconButton, Kbd, ToolbarDivider } from "./ui";
 
+/** @internal Re-export for historical TopAppBar importers. */
 export { formatSavedRelative } from "./formatSavedRelative";
 
 /** Document save lifecycle mirrored from `useDocumentSave`. */
