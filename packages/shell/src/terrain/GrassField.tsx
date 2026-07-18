@@ -77,7 +77,11 @@ export function GrassField({
     [colorBase, colorTip, colorVariation, roughness, wind],
   );
 
-  geometry.instanceCount = resolveGrassInstanceBudget(count, density, area, budget);
+  const instanceCount = useMemo(
+    () => resolveGrassInstanceBudget(count, density, area, budget),
+    [count, density, area, budget],
+  );
+  geometry.instanceCount = instanceCount;
 
   useFrame((state) => {
     handle.uniforms.uTime.value = state.clock.elapsedTime;
