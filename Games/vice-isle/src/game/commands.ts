@@ -68,15 +68,14 @@ export function registerCommands(ctx: GameContext): void {
       const px = player?.position[0] ?? -176;
       const pz = player?.position[2] ?? 24;
       const py = player?.position[1] ?? 0;
+      // Director cinematics auto-clear when the keyframe path completes — no clear timer
+      // (a sim-clock timer drifts from the rig's real-time playback and can strand the camera).
       state.camera.setCinematic({
         keyframes: [
           { position: { x: 60, y: 160, z: -180 }, lookAt: { x: 40, y: 10, z: -60 }, duration: 0.01 },
           { position: { x: -40, y: 90, z: 60 }, lookAt: { x: -60, y: 4, z: 40 }, duration: 3, ease: "smooth" },
           { position: { x: px + 6, y: py + 4, z: pz + 10 }, lookAt: { x: px, y: py + 1.5, z: pz }, duration: 3, ease: "smooth" },
         ],
-      });
-      state.time.after(6.4, () => {
-        state.camera.setCinematic(null);
       });
     },
   });

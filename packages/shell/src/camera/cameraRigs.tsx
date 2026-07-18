@@ -649,15 +649,19 @@ export function ObserverRig(props: RigProps) {
   return null;
 }
 
-export function CinematicRig(props: RigProps) {
+export function CinematicRig(props: RigProps & { onComplete?: () => void }) {
   const { userId } = usePlayer();
   const followId = resolveFollowId(props.followEntityId, userId);
   const cinematic = props.config?.cinematic;
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const elapsedRef = useRef(0);
+  const completedRef = useRef(false);
+  const onCompleteRef = useRef(props.onComplete);
+  onCompleteRef.current = props.onComplete;
 
   useEffect(() => {
     elapsedRef.current = 0;
+    completedRef.current = false;
     beginTransition();
   }, [cinematic]);
 
@@ -671,6 +675,10 @@ export function CinematicRig(props: RigProps) {
       currentFov(camera),
     );
     commit(sample.pose, dt);
+    if (sample.done && !completedRef.current) {
+      completedRef.current = true;
+      onCompleteRef.current?.();
+    }
   }, CAMERA_RIG_FRAME_PRIORITY);
 
   return null;

@@ -67,6 +67,11 @@ export function GameCameraRig({
 
   const rig = (() => {
     if (directed.cinematic !== undefined) {
+      // A director-set cinematic auto-clears when its keyframe path completes, so a
+      // one-shot flyover can never strand the camera if a game-side clear timer drifts
+      // (the rig plays in real time; sim-clock timers do not). Static config cinematics
+      // hold their final frame as before.
+      const owner = director !== undefined && director.cinematic() !== null ? director : undefined;
       return (
         <CinematicRig
           yawRef={yawRef}
@@ -74,6 +79,7 @@ export function GameCameraRig({
           config={{ ...config, cinematic: directed.cinematic }}
           followEntityId={followEntityId}
           absoluteFov
+          {...(owner === undefined ? {} : { onComplete: () => owner.setCinematic(null) })}
         />
       );
     }
