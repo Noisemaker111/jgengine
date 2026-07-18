@@ -702,14 +702,21 @@ const ITEM_ID_RULES: readonly [readonly string[], GameIconName][] = [
   [["fist", "punch", "knuckle"], "fist"],
 ];
 
-export function iconForItemId(itemId: string): GameIconName | null {
-  const id = itemId.toLowerCase();
-  for (const [keywords, icon] of ITEM_ID_RULES) {
+type KeywordRule = readonly [readonly string[], GameIconName];
+
+/** First rule whose any keyword is a substring of the lowercased value, or null. */
+function matchKeywordRules(rules: readonly KeywordRule[], value: string): GameIconName | null {
+  const id = value.toLowerCase();
+  for (const [keywords, icon] of rules) {
     for (const keyword of keywords) {
       if (id.includes(keyword)) return icon;
     }
   }
   return null;
+}
+
+export function iconForItemId(itemId: string): GameIconName | null {
+  return matchKeywordRules(ITEM_ID_RULES, itemId);
 }
 
 const ACTION_RULES: readonly [readonly string[], GameIconName][] = [
@@ -745,11 +752,5 @@ const ACTION_RULES: readonly [readonly string[], GameIconName][] = [
 
 /** Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches. */
 export function iconForAction(action: string): GameIconName | null {
-  const id = action.toLowerCase();
-  for (const [keywords, icon] of ACTION_RULES) {
-    for (const keyword of keywords) {
-      if (id.includes(keyword)) return icon;
-    }
-  }
-  return null;
+  return matchKeywordRules(ACTION_RULES, action);
 }

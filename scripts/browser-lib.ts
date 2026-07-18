@@ -1,6 +1,15 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -238,21 +247,34 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   throw new Error(`Dev server failed to start on :${port} for ${identity}`);
 }
 
-export function killProcessTree(child: ChildProcess | null): void {
-  if (child?.pid === undefined) return;
+/**
+ * Force-kill a single pid across platforms. `tree` also reaps the process
+ * group on posix (SIGKILL to `-pid`) before falling back to the bare pid —
+ * used when we own a detached launcher whose children must die with it.
+ */
+export function killPid(pid: number | undefined, tree = false): void {
+  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return;
   if (process.platform === "win32") {
-    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
-  } else {
+    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
+    return;
+  }
+  if (tree) {
     try {
-      process.kill(-child.pid, "SIGKILL");
+      process.kill(-pid, "SIGKILL");
+      return;
     } catch {
-      try {
-        child.kill("SIGKILL");
-      } catch {
-        /* already gone */
-      }
+      /* group gone or ungrouped — fall through to the bare pid */
     }
   }
+  try {
+    process.kill(pid, "SIGKILL");
+  } catch {
+    /* already gone */
+  }
+}
+
+export function killProcessTree(child: ChildProcess | null): void {
+  killPid(child?.pid, true);
 }
 
 export function pickDebugPort(): number {
@@ -337,6 +359,20 @@ export class CdpSession {
     });
   }
 
+  /**
+   * Runtime.evaluate an expression with `returnByValue`, unwrapping
+   * `result.result.value` to the caller's `T`. Returns `undefined` when the
+   * page yields no value. Pass `awaitPromise` for async expressions.
+   */
+  async evaluate<T>(expression: string, opts: { awaitPromise?: boolean } = {}): Promise<T | undefined> {
+    const result = await this.send("Runtime.evaluate", {
+      expression,
+      returnByValue: true,
+      ...(opts.awaitPromise === true ? { awaitPromise: true } : {}),
+    });
+    return (result.result as { value?: T } | undefined)?.value;
+  }
+
   close(): void {
     for (const [, waiter] of this.pending) waiter.reject(new Error("CDP session closed"));
     this.pending.clear();
@@ -403,4 +439,129 @@ export function launchChrome(debugPort: number, prefix = "jg-drive-"): ChildProc
     ],
     { stdio: "ignore" },
   );
+}
+
+/**
+ * Poll `data-jg-capture` until the page reports an honest frame (`ready`) or
+ * surfaces an error, shared by shoot and drive. Throws with the page-reported
+ * detail on error, or on timeout.
+ */
+export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const remote = await session.evaluate<{ status: string | null; error: string | null }>(`({
+      status: document.documentElement.dataset.jgCapture ?? null,
+      error: document.documentElement.dataset.jgCaptureError ?? null
+    })`);
+    const status = remote?.status;
+    if (status === "ready") return;
+    if (status === "error") throw new Error(`capture error: ${remote?.error ?? "unknown"}`);
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+}
+
+/** Write bytes to a temp path then atomically swap into place (never a torn PNG). */
+export function writePngAtomic(outPath: string, bytes: Buffer): void {
+  const tmpPath = `${outPath}.tmp`;
+  writeFileSync(tmpPath, bytes);
+  if (existsSync(outPath)) unlinkSync(outPath);
+  renameSync(tmpPath, outPath);
+}
+
+/** Filename suffix marking a half-res judge shot. */
+export function sizeSuffix(size: SizeMode): string {
+  return size === "half" ? "-half" : "";
+}
+
+/** Validate a raw `--size` argument, throwing the shared usage error. */
+export function parseSizeArg(value: string | undefined): SizeMode {
+  if (value !== "full" && value !== "half") {
+    throw new Error(`--size must be full or half (got ${value ?? "nothing"})`);
+  }
+  return value;
+}
+
+export interface BrowserSession {
+  /** CDP debug port the page target lives on. */
+  debugPort: number;
+  /** The Chrome we launched, or null when attached to an existing/daemon one. */
+  chrome: ChildProcess | null;
+}
+
+export interface WithBrowserSessionOptions {
+  /** Leave the derived warm debug port instead of a random one. */
+  keep: boolean;
+  /** Attach to an already-running Chrome on this port (skips launch/kill). */
+  connect?: number;
+  /** Base per-shot timeout; the hard watchdog defaults to this + 120s. */
+  timeoutMs: number;
+  /** Dev server to tear down alongside Chrome when not left warm. */
+  server?: ChildProcess | null;
+  /** Pre-resolved debug port (daemon attach) — overrides keep/connect derivation. */
+  debugPort?: number;
+  /** Attach without launching even without `--connect` (daemon). */
+  attach?: boolean;
+  /** Leave Chrome + server running after `fn` resolves (warm loop / daemon). */
+  leaveWarm?: boolean;
+  /** user-data-dir prefix passed to {@link launchChrome}. */
+  chromePrefix?: string;
+  /** Override the hard watchdog budget (default `timeoutMs + 120_000`). */
+  hardDeadlineMs?: number;
+  /** Override the derived warm debug port. */
+  warmPort?: number;
+}
+
+/**
+ * Own the browser-driver shell shared by shoot and drive: derive the debug
+ * port, launch-or-attach Chrome, arm the hard-deadline watchdog, run `fn`,
+ * then force-kill Chrome + dev server unless left warm. `fn` returns the
+ * process exit code (defaults to 0); a throw is reported and yields 1.
+ */
+export async function withBrowserSession(
+  options: WithBrowserSessionOptions,
+  fn: (session: BrowserSession) => Promise<number | void>,
+): Promise<number> {
+  const warmPort = options.warmPort ?? resolveWarmChromePort();
+  const attach = options.attach ?? false;
+  const debugPort =
+    options.debugPort ?? options.connect ?? (options.keep ? warmPort : pickDebugPort());
+  const leaveWarm = options.leaveWarm ?? options.keep;
+  const hardDeadlineMs = options.hardDeadlineMs ?? options.timeoutMs + 120_000;
+
+  let chrome: ChildProcess | null = null;
+  let exitCode = 0;
+
+  const watchdog = setTimeout(() => {
+    console.error(
+      `browser session: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline — force-killing Chrome and dev server`,
+    );
+    // Daemon-owned Chrome/server are never handed to us (both null here), so
+    // these are no-ops when attached — safe to run unconditionally.
+    killProcessTree(chrome);
+    killProcessTree(options.server ?? null);
+    process.exit(124);
+  }, hardDeadlineMs);
+  watchdog.unref();
+
+  try {
+    if (options.connect !== undefined || attach) {
+      await waitForDebugger(debugPort, 5_000);
+    } else {
+      chrome = launchChrome(debugPort, options.chromePrefix);
+      await waitForDebugger(debugPort, 30_000);
+    }
+    const result = await fn({ debugPort, chrome });
+    if (typeof result === "number") exitCode = result;
+  } catch (error) {
+    exitCode = 1;
+    console.error(error instanceof Error ? error.message : error);
+  } finally {
+    clearTimeout(watchdog);
+    if (!leaveWarm) {
+      killProcessTree(chrome);
+      killProcessTree(options.server ?? null);
+    }
+  }
+  return exitCode;
 }

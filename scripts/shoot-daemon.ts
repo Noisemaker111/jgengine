@@ -10,7 +10,7 @@
  *   bun run shoot daemon stop
  *   bun run shoot <game> --mode play   # auto-attaches when daemon is live
  */
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,6 +19,7 @@ import {
   checkoutIdentity,
   ensureDevServer,
   isUp,
+  killPid,
   killProcessTree,
   launchChrome,
   resolveDevPort,
@@ -162,15 +163,7 @@ export async function stopDaemon(options: {
     killProcessTree(options.chrome);
     stopped = true;
   } else if (state?.chromePid !== undefined && pidAlive(state.chromePid)) {
-    if (process.platform === "win32") {
-      spawnSync("taskkill", ["/pid", String(state.chromePid), "/T", "/F"], { stdio: "ignore" });
-    } else {
-      try {
-        process.kill(state.chromePid, "SIGKILL");
-      } catch {
-        /* gone */
-      }
-    }
+    killPid(state.chromePid);
     stopped = true;
   }
 
@@ -178,15 +171,7 @@ export async function stopDaemon(options: {
     killProcessTree(options.server);
     stopped = true;
   } else if (state?.devPid !== undefined && pidAlive(state.devPid)) {
-    if (process.platform === "win32") {
-      spawnSync("taskkill", ["/pid", String(state.devPid), "/T", "/F"], { stdio: "ignore" });
-    } else {
-      try {
-        process.kill(state.devPid, "SIGKILL");
-      } catch {
-        /* gone */
-      }
-    }
+    killPid(state.devPid);
     stopped = true;
   }
 

@@ -20,19 +20,18 @@
  * vite's ~60-90s boot and Chrome's cold launch. `--size half` halves both
  * dimensions (~1/4 the pixels) for cheap mid-loop judge shots.
  */
-import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ChildProcess } from "node:child_process";
 import {
   CdpSession,
   applyDevice,
   ensureDevServer,
-  killProcessTree,
-  launchChrome,
   openPageSession,
-  pickDebugPort,
-  resolveWarmChromePort,
-  waitForDebugger,
+  parseSizeArg,
+  sizeSuffix,
+  waitCaptureReady,
+  withBrowserSession,
+  writePngAtomic,
   type SizeMode,
 } from "./browser-lib";
 import { summarizePlaytest, type ProbeSample } from "./playtest";
@@ -116,11 +115,7 @@ function parseArgs(argv: string[]): Args {
     const value = argv[index];
     if (value === "--mode") args.mode = argv[++index] ?? args.mode;
     else if (value === "--size") {
-      const size = argv[++index] as SizeMode | undefined;
-      if (size !== "full" && size !== "half") {
-        throw new Error(`--size must be full or half (got ${size ?? "nothing"})`);
-      }
-      args.size = size;
+      args.size = parseSizeArg(argv[++index]);
     } else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
     else if (value === "--click") args.steps.push({ kind: "click", text: argv[++index] ?? "" });
     else if (value === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++index] ?? 500) });
@@ -157,8 +152,7 @@ const SETTLE_INTERVAL_MS = 100;
 const SETTLE_TIMEOUT_MS = 5_000;
 
 async function measureClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number } | null> {
-  const result = await session.send("Runtime.evaluate", {
-    expression: `(() => {
+  const expression = `(() => {
       const needle = ${JSON.stringify(text)}.toLowerCase();
       const nodes = Array.from(document.querySelectorAll("button, [role=button], a, span, div, h1, h2, h3"));
       let best = null;
@@ -173,10 +167,8 @@ async function measureClickPoint(session: CdpSession, text: string): Promise<{ x
         }
       }
       return best === null ? null : { x: best.x, y: best.y };
-    })()`,
-    returnByValue: true,
-  });
-  return (result.result as { value?: { x: number; y: number } | null } | undefined)?.value ?? null;
+    })()`;
+  return (await session.evaluate<{ x: number; y: number } | null>(expression)) ?? null;
 }
 
 async function findClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number }> {
@@ -225,22 +217,19 @@ async function holdKey(session: CdpSession, code: string, holdMs: number): Promi
 
 async function rpc(session: CdpSession, json: string): Promise<void> {
   JSON.parse(json);
-  const result = await session.send("Runtime.evaluate", {
-    expression: `(async () => {
+  const value = await session.evaluate<string>(
+    `(async () => {
       const host = globalThis.__jgengineAgent ?? globalThis.__jgengineEditorHost;
       if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge or editor host on this page" });
       return JSON.stringify(await host.handle(${json}));
     })()`,
-    awaitPromise: true,
-    returnByValue: true,
-  });
-  const value = (result.result as { value?: string } | undefined)?.value;
+    { awaitPromise: true },
+  );
   console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
 }
 
 async function readProbe(session: CdpSession): Promise<Record<string, number> | null> {
-  const result = await session.send("Runtime.evaluate", {
-    expression: `(() => {
+  const value = await session.evaluate<Record<string, number> | null>(`(() => {
       const probe = globalThis.__jgProbe;
       if (typeof probe !== "function") return null;
       try {
@@ -255,36 +244,16 @@ async function readProbe(session: CdpSession): Promise<Record<string, number> | 
       } catch {
         return null;
       }
-    })()`,
-    returnByValue: true,
-  });
-  return (result.result as { value?: Record<string, number> | null } | undefined)?.value ?? null;
+    })()`);
+  return value ?? null;
 }
 
 async function screenshot(session: CdpSession, outPath: string): Promise<void> {
   const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const data = shot.data;
   if (typeof data !== "string" || data.length === 0) throw new Error("Page.captureScreenshot returned empty data");
-  const tmpPath = `${outPath}.tmp`;
-  writeFileSync(tmpPath, Buffer.from(data, "base64"));
-  if (existsSync(outPath)) unlinkSync(outPath);
-  renameSync(tmpPath, outPath);
+  writePngAtomic(outPath, Buffer.from(data, "base64"));
   console.log(outPath);
-}
-
-async function waitReady(session: CdpSession, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const result = await session.send("Runtime.evaluate", {
-      expression: `document.documentElement.dataset.jgCapture ?? null`,
-      returnByValue: true,
-    });
-    const status = (result.result as { value?: string | null } | undefined)?.value;
-    if (status === "ready") return;
-    if (status === "error") throw new Error("capture reported error during load");
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error(`drive: timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
 }
 
 const args = parseArgs(process.argv.slice(2));
@@ -296,105 +265,84 @@ if (args.help) {
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
-function sizeSuffix(size: SizeMode): string {
-  return size === "half" ? "-half" : "";
-}
+const dev = await ensureDevServer();
 
-let server: ChildProcess | null = null;
-let chrome: ChildProcess | null = null;
-let exitCode = 0;
+const exitCode = await withBrowserSession(
+  {
+    keep: args.keep,
+    connect: args.connect,
+    timeoutMs: args.timeoutMs,
+    server: dev.child,
+    chromePrefix: "jg-drive-",
+  },
+  async ({ debugPort }) => {
+    let code = 0;
+    const session = await openPageSession(debugPort);
+    try {
+      await session.send("Page.enable");
+      await session.send("Runtime.enable");
+      await applyDevice(session, "desktop", args.size);
+      const url = new URL(dev.base);
+      url.searchParams.set("game", args.game);
+      url.searchParams.set("mode", args.mode);
+      url.searchParams.set("capture", "1");
+      if (args.playtest) url.searchParams.set("seed", String(args.seed));
+      await session.send("Page.navigate", { url: url.toString() });
+      await waitCaptureReady(session, args.timeoutMs);
+      await new Promise((r) => setTimeout(r, 500));
 
-const watchdog = setTimeout(() => {
-  console.error("drive: hard deadline hit — force-killing Chrome and dev server");
-  killProcessTree(chrome);
-  killProcessTree(server);
-  process.exit(124);
-}, args.timeoutMs + 120_000);
-watchdog.unref();
+      const samples: ProbeSample[] = [];
+      let sampling = args.playtest;
+      const sampleStart = Date.now();
+      const sampler = args.playtest
+        ? (async () => {
+            while (sampling) {
+              const metrics = await readProbe(session);
+              if (metrics !== null) samples.push({ t: Date.now() - sampleStart, metrics });
+              await new Promise((r) => setTimeout(r, args.sampleMs));
+            }
+          })()
+        : Promise.resolve();
 
-try {
-  const dev = await ensureDevServer();
-  server = dev.child;
-  const warmPort = resolveWarmChromePort();
-  const debugPort = args.connect ?? (args.keep ? warmPort : pickDebugPort());
-  if (args.connect === undefined) {
-    chrome = launchChrome(debugPort, "jg-drive-");
-    await waitForDebugger(debugPort, 30_000);
-  } else {
-    await waitForDebugger(debugPort, 5_000);
-  }
-  const session = await openPageSession(debugPort);
-  try {
-    await session.send("Page.enable");
-    await session.send("Runtime.enable");
-    await applyDevice(session, "desktop", args.size);
-    const url = new URL(dev.base);
-    url.searchParams.set("game", args.game);
-    url.searchParams.set("mode", args.mode);
-    url.searchParams.set("capture", "1");
-    if (args.playtest) url.searchParams.set("seed", String(args.seed));
-    await session.send("Page.navigate", { url: url.toString() });
-    await waitReady(session, args.timeoutMs);
-    await new Promise((r) => setTimeout(r, 500));
-
-    const samples: ProbeSample[] = [];
-    let sampling = args.playtest;
-    const sampleStart = Date.now();
-    const sampler = args.playtest
-      ? (async () => {
-          while (sampling) {
-            const metrics = await readProbe(session);
-            if (metrics !== null) samples.push({ t: Date.now() - sampleStart, metrics });
-            await new Promise((r) => setTimeout(r, args.sampleMs));
-          }
-        })()
-      : Promise.resolve();
-
-    for (const step of args.steps) {
-      if (step.kind === "click") await click(session, step.text);
-      else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
-      else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
-      else if (step.kind === "rpc") await rpc(session, step.json);
-      else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
-    }
-
-    if (args.playtest) {
-      sampling = false;
-      await sampler;
-      const result = summarizePlaytest(samples, {
-        seed: args.seed,
-        softlockThresholdMs: args.softlockMs,
-        epsilon: args.epsilon,
-      });
-      console.log(JSON.stringify(result));
-      if (!result.probed) {
-        console.error(
-          `drive: no progress probe read — ${args.game} exposes no capture.probe (or it returned no metrics). Declare capture.probe to run the playtest rung.`,
-        );
-        if (args.strict) exitCode = 1;
-      } else if (result.softlocked) {
-        console.error(
-          `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
-        );
-        if (args.strict) exitCode = 1;
-      } else if (args.steps.every((step) => step.kind !== "key")) {
-        console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
+      for (const step of args.steps) {
+        if (step.kind === "click") await click(session, step.text);
+        else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
+        else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
+        else if (step.kind === "rpc") await rpc(session, step.json);
+        else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
       }
+
+      if (args.playtest) {
+        sampling = false;
+        await sampler;
+        const result = summarizePlaytest(samples, {
+          seed: args.seed,
+          softlockThresholdMs: args.softlockMs,
+          epsilon: args.epsilon,
+        });
+        console.log(JSON.stringify(result));
+        if (!result.probed) {
+          console.error(
+            `drive: no progress probe read — ${args.game} exposes no capture.probe (or it returned no metrics). Declare capture.probe to run the playtest rung.`,
+          );
+          if (args.strict) code = 1;
+        } else if (result.softlocked) {
+          console.error(
+            `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
+          );
+          if (args.strict) code = 1;
+        } else if (args.steps.every((step) => step.kind !== "key")) {
+          console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
+        }
+      }
+      if (args.keep) {
+        console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${dev.base}`);
+        console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
+      }
+    } finally {
+      session.close();
     }
-    if (args.keep) {
-      console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${dev.base}`);
-      console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
-    }
-  } finally {
-    session.close();
-  }
-} catch (error) {
-  exitCode = 1;
-  console.error(error instanceof Error ? error.message : error);
-} finally {
-  if (!args.keep) {
-    killProcessTree(chrome);
-    killProcessTree(server);
-  }
-}
+    return code;
+  },
+);
 process.exit(exitCode);

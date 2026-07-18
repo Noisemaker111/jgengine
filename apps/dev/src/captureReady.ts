@@ -4,6 +4,9 @@
  * Page.captureScreenshot — never ships PNG/base64 through the page.
  */
 
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { PlayableGame } from "@jgengine/shell/registry";
+
 export type CaptureStatus = "preparing" | "ready" | "error";
 
 export interface CaptureMeta {
@@ -162,5 +165,70 @@ export function armCaptureReady(mode: string, defaultSettleMs?: number): () => v
 
   return () => {
     cancelled = true;
+  };
+}
+
+type CaptureConfig = PlayableGame["capture"];
+export type CaptureRunEntry = string | { name: string; input?: unknown };
+
+/**
+ * Resolve which capture command run the runner should drive, mirroring the
+ * precedence `?state=` → `?run=` → the game's declared `capture.play`. Pure:
+ * an unknown `?state=` returns an `error` string for the caller to surface via
+ * {@link setCaptureStatus} rather than touching the DOM itself.
+ */
+export function resolveCaptureRun(args: {
+  capture: CaptureConfig;
+  stateParam: string | null;
+  run: readonly string[];
+  mode: string;
+  gameId: string;
+}): { captureRun: readonly CaptureRunEntry[]; error: string | null } {
+  const { capture, stateParam, run, mode, gameId } = args;
+  if (stateParam !== null) {
+    const stateRun = capture?.states?.[stateParam];
+    if (stateRun === undefined) {
+      const known = Object.keys(capture?.states ?? {}).sort();
+      const detail =
+        known.length > 0 ? `declared states: ${known.join(", ")}` : "the game declares no capture.states";
+      return { captureRun: [], error: `unknown capture state "${stateParam}" for ${gameId} — ${detail}` };
+    }
+    return { captureRun: stateRun, error: null };
+  }
+  if (run.length > 0) return { captureRun: run, error: null };
+  if (captureArmed() && mode === "play") return { captureRun: capture?.play ?? [], error: null };
+  return { captureRun: [], error: null };
+}
+
+/**
+ * Build the `onContextReady` callback the shell fires once the game context is
+ * live: install the playtest probe, run any staged scenario, then dispatch each
+ * capture command. Returns `undefined` when there is nothing to do so the shell
+ * skips the hook entirely.
+ */
+export function createCaptureContextReady(opts: {
+  captureRun: readonly CaptureRunEntry[];
+  probe?: (ctx: GameContext) => Record<string, number>;
+  stageScenario?: (ctx: GameContext) => void;
+  gameId: string;
+}): ((ctx: GameContext) => void) | undefined {
+  const { captureRun, probe, stageScenario, gameId } = opts;
+  if (stageScenario === undefined && captureRun.length === 0 && probe === undefined) return undefined;
+  const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
+  return (ctx: GameContext) => {
+    if (probe !== undefined) installPlaytestProbe(() => probe(ctx));
+    stageScenario?.(ctx);
+    for (const entry of captureRun) {
+      const name = typeof entry === "string" ? entry : entry.name;
+      const input = typeof entry === "string" ? defaultCommandInput : (entry.input ?? defaultCommandInput);
+      if (ctx.game.commands.has(name)) {
+        ctx.game.commands.run(name, input);
+      } else if (captureArmed()) {
+        setCaptureStatus(
+          "error",
+          `capture command "${name}" is not registered by ${gameId} — registered commands: ${ctx.game.commands.names().sort().join(", ")}`,
+        );
+      }
+    }
   };
 }
