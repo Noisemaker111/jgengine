@@ -6,6 +6,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import type { EditorHostApi } from "./session";
 import { MICRO } from "./chromeStyles";
+import { PlayModeBar } from "./shell/PlayModeBar";
 
 const PUBLISH_MS = 100;
 
@@ -85,14 +86,17 @@ export function RuntimePlayPublisher({ api }: { api: EditorHostApi }) {
 }
 
 /**
- * Play-mode chrome: pause/step controls plus a compact reverse-channel entity inspector.
- * Transform nudges go through `runtime_set` (document write-back by default).
+ * Play-mode chrome: slim shell app bar (Pause/Step/Exit via runtime play controls) plus a
+ * compact reverse-channel entity inspector. Transform nudges go through `runtime_set`
+ * (document write-back by default).
  * @internal
  */
 export function RuntimePlayInspectorChrome({
+  gameId,
   api,
   onExit,
 }: {
+  gameId: string;
   api: EditorHostApi;
   onExit: () => void;
 }) {
@@ -140,16 +144,6 @@ export function RuntimePlayInspectorChrome({
     setDetail(JSON.stringify(got.result, null, 2));
   }, [api, selectedId, summary?.entityCount, play.pendingSteps, play.paused]);
 
-  const pause = () => {
-    api.handle({ method: "runtime_pause" });
-  };
-  const resume = () => {
-    api.handle({ method: "runtime_resume" });
-  };
-  const step = () => {
-    api.handle({ method: "runtime_step", frames: 1 });
-  };
-
   const nudgeSelected = (axis: "x" | "z", delta: number) => {
     if (selectedId === null) return;
     const got = api.handle({ method: "runtime_get", id: selectedId });
@@ -169,29 +163,7 @@ export function RuntimePlayInspectorChrome({
 
   return (
     <div className="pointer-events-none absolute inset-0 z-50 flex flex-col">
-      <div className="pointer-events-none flex justify-center pt-2">
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-black/75 px-3 py-1.5 text-[11px] text-neutral-100 shadow-lg shadow-black/40 backdrop-blur-md">
-          <span className="text-neutral-300">{play.paused ? "❚❚ Paused" : "▶ Playing"}</span>
-          <button
-            type="button"
-            className="rounded-md bg-white/[0.08] px-2 py-0.5 hover:bg-white/15"
-            onClick={() => (play.paused ? resume() : pause())}
-          >
-            {play.paused ? "Resume" : "Pause"}
-          </button>
-          <button
-            type="button"
-            className="rounded-md bg-white/[0.08] px-2 py-0.5 hover:bg-white/15 disabled:opacity-40"
-            onClick={step}
-            disabled={!play.paused}
-          >
-            Step{play.pendingSteps > 0 ? ` (${play.pendingSteps})` : ""}
-          </button>
-          <button type="button" className="rounded-md bg-white/[0.08] px-2 py-0.5 hover:bg-white/15" onClick={onExit}>
-            Editor (F2+E)
-          </button>
-        </div>
-      </div>
+      <PlayModeBar gameId={gameId} api={api} onExit={onExit} />
       <aside className="pointer-events-auto ml-auto mt-2 mr-2 flex w-72 max-h-[70vh] flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#0d0f13]/95 text-[11px] text-neutral-200 shadow-2xl shadow-black/50 backdrop-blur-md">
         <div className="flex items-center border-b border-white/[0.06] px-3 py-2">
           <div className={MICRO}>Runtime</div>

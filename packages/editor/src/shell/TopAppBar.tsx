@@ -67,8 +67,9 @@ function SaveStatus({
 
 /**
  * Global application bar: identity + save state on the left, command palette in the center,
- * history / run controls / document actions on the right. Pause and Step are shown disabled in
- * edit mode — they operate through the runtime play controls once Play mode is entered.
+ * history / run controls / document actions on the right. Pause and Step stay disabled in
+ * edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the
+ * runtime pause/step RPCs so mode switches keep shell chrome.
  */
 export function TopAppBar({
   gameId,
