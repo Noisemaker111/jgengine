@@ -42,6 +42,11 @@ async function jsonFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return body;
 }
 
+/** URL of a game's thumbnail image, served by the project surface (`null` thumbnail ⇒ 404). */
+export function gameThumbnailUrl(id: string): string {
+  return `${PREFIX}/games/${encodeURIComponent(id)}/thumbnail`;
+}
+
 export async function fetchGames(): Promise<GameListEntry[]> {
   const body = await jsonFetch<{ games: GameListEntry[] }>("/games");
   return body.games;

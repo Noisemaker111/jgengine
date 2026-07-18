@@ -104,9 +104,10 @@ JGengine's editor-owned world and reusable-package workflow.
 ## Game concepts
 
 Some of the games in `Games/*` are our own take on someone else's idea. We
-credit the originators here, in the game's on-screen HUD, and on its page at
-jgengine.com/games/&lt;id&gt; (via the `credit` field in
-[`apps/web/src/content/games.ts`](apps/web/src/content/games.ts)).
+credit the originators here and in the game's on-screen HUD, which each game
+renders itself — for example, the World of ClaudeCraft port ships a `CreditLine`
+in its HUD. The jgengine.com game pages embed the runner and no longer render a
+separate per-game credit line.
 
 ### Levy Street — *World of ClaudeCraft*
 
@@ -120,15 +121,15 @@ rebuilds the core of that game on the engine's own primitives — the exact
 movement, armor, and XP formulas, the class kits, the three zone bands
 (Eastbrook Vale, Mirefen Marsh, Thornpeak Heights), the mob rosters and loot
 tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
-credited on the game's HUD and on its page at jgengine.com/games/claudecraft.
+credited here and on the game's HUD.
 
 ### Classic games (Wave 2)
 
 A handful of genre-anchor classics in `Games/*` are our own builds of decades-old
 game concepts — original code, art, and levels, but the mechanics trace back to
 specific inventors and titles. Credited here and on each game's HUD; all
-lineages this wave are corporate or traditional, so none carry a `credit` field
-in [`apps/web/src/content/games.ts`](apps/web/src/content/games.ts).
+lineages this wave are corporate or traditional, so each game shows a
+genre-homage line rather than crediting a named individual creator.
 
 | Game | id | Lineage |
 | --- | --- | --- |

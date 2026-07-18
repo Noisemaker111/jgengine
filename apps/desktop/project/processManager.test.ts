@@ -38,3 +38,40 @@ describe("project surface host settings", () => {
     expect(host.get("demo")?.displayName).toBe("Demo Two");
   });
 });
+
+describe("project surface host thumbnails", () => {
+  function makeGame(gamesDir: string, id: string): void {
+    const src = join(gamesDir, id, "src");
+    mkdirSync(src, { recursive: true });
+    writeFileSync(join(gamesDir, id, "package.json"), JSON.stringify({ name: `@games/${id}` }));
+  }
+
+  test("readThumbnail returns the image bytes and content type when present", () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), "jg-project-host-"));
+    roots.push(repoRoot);
+    const gamesDir = join(repoRoot, "Games");
+    makeGame(gamesDir, "withpng");
+    const publicDir = join(gamesDir, "withpng", "public");
+    mkdirSync(publicDir, { recursive: true });
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    writeFileSync(join(publicDir, "thumbnail.png"), bytes);
+
+    const host = createProjectSurfaceHost({ repoRoot, gamesDir });
+    const thumb = host.readThumbnail("withpng");
+    expect(thumb).not.toBeNull();
+    expect(thumb?.contentType).toBe("image/png");
+    expect(Buffer.compare(thumb!.data, bytes)).toBe(0);
+  });
+
+  test("readThumbnail returns null when the game has no thumbnail or is unknown", () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), "jg-project-host-"));
+    roots.push(repoRoot);
+    const gamesDir = join(repoRoot, "Games");
+    makeGame(gamesDir, "nothumb");
+
+    const host = createProjectSurfaceHost({ repoRoot, gamesDir });
+    expect(host.readThumbnail("nothumb")).toBeNull();
+    expect(host.readThumbnail("missing")).toBeNull();
+    expect(host.readThumbnail("../etc")).toBeNull();
+  });
+});

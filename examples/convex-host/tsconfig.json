@@ -1,33 +1,28 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
     "lib": [
       "ES2022",
-      "DOM"
+      "WebWorker"
     ],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "types": [],
     "paths": {
       "@jgengine/core/*": [
-        "../core/src/*"
+        "../../packages/core/src/*"
       ],
       "@jgengine/convex/*": [
-        "./src/*"
+        "../../packages/convex/src/*"
       ]
     }
   },
   "include": [
-    "src"
+    "convex"
   ],
   "exclude": [
-    "src/**/*.test.ts"
+    "convex/_generated",
+    "convex/crons.ts"
   ]
 }

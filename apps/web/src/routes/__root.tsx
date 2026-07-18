@@ -21,7 +21,7 @@ const JSON_LD = {
   url: SITE_URL,
   downloadUrl: "https://www.npmjs.com/package/jgengine",
   codeRepository: "https://github.com/Noisemaker111/jgengine",
-  license: "https://www.gnu.org/licenses/agpl-3.0.html",
+  license: "https://www.apache.org/licenses/LICENSE-2.0",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 

@@ -12,7 +12,7 @@ Built so coding agents can ship games from a short prompt. Skills provide design
 
 ## Packages
 
-**Versions:** the lockstep game SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}` (currently **0.10.x** — bump together). Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
+**Versions:** the lockstep game SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}` (currently **0.11.x** — bump together). Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
 
 | Package | What it is |
 | --- | --- |
