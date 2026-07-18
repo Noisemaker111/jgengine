@@ -73,6 +73,8 @@ const HELP = `bun run shoot [game] [options]
   --settle <ms>       wait past an intro before capture
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
+                      (page MUST set document.documentElement.dataset.jgCapture
+                      = "ready" when the frame is honest; otherwise shoot times out)
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this shot — pair with --connect <port>

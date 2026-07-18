@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 const git = (...args) => {
   try {
@@ -124,6 +126,16 @@ if (branch === defaultBranch) {
         `This container is ephemeral — push early (git push -u origin ${branch}).`,
     );
   }
+}
+
+const cold =
+  !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo")) &&
+  !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo.exe"));
+if (cold) {
+  notes.push(
+    `Cold checkout: node_modules incomplete. Run \`bun run agent:bootstrap\` before typecheck/test/gate/shoot ` +
+      `(install + package build). Do not open issues or invent worktrees until bootstrap succeeds.`,
+  );
 }
 
 emit(

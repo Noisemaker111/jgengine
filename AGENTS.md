@@ -14,6 +14,18 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 - **Ports copy behavior and data, not implementation.** Harvest numbers, tables, layouts, palettes, formulas, and feel, then rebuild on engine seams. Do not transplant another project's functions, renderers, or DOM/canvas workarounds.
 - **Credit borrowed work.** Record inspiration, ports, and copied permissive assets in `CREDITS.md`; player-facing game work also carries HUD and website credit.
 
+## Agent runtime (Claude / Codex / Grok)
+
+Cold checkouts and git worktrees are not ready until bootstrapped. Do this before recon thrash, issue storms, or package typechecks:
+
+1. **Bootstrap** — `bun run agent:bootstrap` (installs if needed, then full package build so `@jgengine/*` dist exists). Check only: `bun run agent:bootstrap --check`.
+2. **Package scripts** — prefer `bun --cwd packages/<pkg> run <script>`. Avoid `bun run --cwd packages/<pkg> <script>` (can hit the wrong root script).
+3. **Worktrees** — create with `bun run agent:worktree -- <name> [branch]` or Claude `claude --worktree <name>` (both land under `.claude/worktrees/`). Then bootstrap that path. Never use `C:\tmp\...` on Windows Codex elevated sandbox. Never nest a worktree under another agent worktree or edit the user's main checkout from an isolated tree.
+4. **Cloud Claude** — the container is already isolation; do not add a nested worktree. Run bootstrap if `node_modules` is missing.
+5. **Process order** — bootstrap first; then claim **one** issue (or the slice the user named); implement; focused tests; `bun run gate` / `bun run ship:preflight` when shipping. Do not open a multi-issue program before the tree can run Bun.
+6. **Papercuts** — log only after bootstrap works (`bun run papercut -m <model> "..."`). Do not thrash on papercut path while install/build is broken.
+7. **Evidence** — deterministic tests first. Screenshots only for pixel claims (`jgengine-verify`); use `bun run shoot` / `drive`, not a hand-rolled Vite app. Arbitrary `--url` pages must set `document.documentElement.dataset.jgCapture = "ready"`. Capture fails twice → stop and report lower-rung evidence.
+
 ## Change governance
 
 - Preserve user work. Never discard or overwrite unrelated changes. Start a new task branch from current `origin/main`; do not stack new work on a parked or merged task branch.
