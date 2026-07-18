@@ -141,14 +141,14 @@
       "kind": "city",
       "shape": "box",
       "center": {
-        "x": -150,
+        "x": -190,
         "y": 0,
-        "z": 180
+        "z": 270
       },
       "halfExtents": {
-        "x": 110,
-        "y": 10,
-        "z": 100
+        "x": 150,
+        "y": 12,
+        "z": 130
       },
       "label": "Downtown grid (city studio)",
       "meta": {
@@ -171,14 +171,14 @@
       "kind": "city",
       "shape": "box",
       "center": {
-        "x": 150,
+        "x": 180,
         "y": 0,
-        "z": 180
+        "z": 300
       },
       "halfExtents": {
-        "x": 110,
-        "y": 10,
-        "z": 100
+        "x": 140,
+        "y": 12,
+        "z": 120
       },
       "label": "Winding hills (city studio)",
       "meta": {
@@ -194,6 +194,37 @@
         "floorHeight": 3,
         "style": "village",
         "seed": "laurel-canyon-3"
+      }
+    },
+    {
+      "id": "city_canyon_1",
+      "kind": "city",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": -160
+      },
+      "halfExtents": {
+        "x": 180,
+        "y": 14,
+        "z": 150
+      },
+      "label": "Canyon rim (city studio)",
+      "meta": {
+        "gridness": 0.2,
+        "curviness": 0.6,
+        "branching": 0.8,
+        "blockSize": 55,
+        "openSpace": 0.18,
+        "buildingDensity": 0.7,
+        "streetWidth": 6,
+        "floorsMin": 1,
+        "floorsMax": 4,
+        "floorHeight": 3,
+        "maxSlope": 0.34,
+        "style": "desert",
+        "seed": "mesa-verde-2"
       }
     }
   ],

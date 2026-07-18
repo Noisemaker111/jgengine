@@ -140,3 +140,91 @@ describe("resolveCityObject", () => {
     expect(resolveCityObject({ id: "x", kind: "city" })).toBeNull();
   });
 });
+
+describe("resolveCityObject v2 quality", () => {
+  function corners(lot: { center: readonly [number, number]; size: readonly [number, number]; rotationY: number }): [number, number][] {
+    const c = Math.cos(lot.rotationY);
+    const s = Math.sin(lot.rotationY);
+    const [hw, hd] = [lot.size[0] / 2, lot.size[1] / 2];
+    return ([[hw, hd], [hw, -hd], [-hw, hd], [-hw, -hd]] as const).map(([dx, dz]) => [
+      lot.center[0] + dx * c + dz * s,
+      lot.center[1] - dx * s + dz * c,
+    ]);
+  }
+
+  function separated(a: ReturnType<typeof corners>, aAngle: number, b: ReturnType<typeof corners>, bAngle: number): boolean {
+    for (const angle of [aAngle, bAngle]) {
+      for (const [ax, az] of [
+        [Math.cos(angle), -Math.sin(angle)],
+        [Math.sin(angle), Math.cos(angle)],
+      ] as const) {
+        let minA = Infinity, maxA = -Infinity, minB = Infinity, maxB = -Infinity;
+        for (const [x, z] of a) { const p = x * ax + z * az; minA = Math.min(minA, p); maxA = Math.max(maxA, p); }
+        for (const [x, z] of b) { const p = x * ax + z * az; minB = Math.min(minB, p); maxB = Math.max(maxB, p); }
+        if (maxA < minB || maxB < minA) return true;
+      }
+    }
+    return false;
+  }
+
+  test("no two building lots overlap, even at max density and curviness", () => {
+    for (const seed of ["q1", "q2", "q3"]) {
+      const city = resolveCityObject(cityVolume({ seed, buildingDensity: 1, curviness: 0.8, gridness: 0.2, branching: 1 }))!;
+      const cs = city.lots.map((lot) => ({ corners: corners(lot), angle: lot.rotationY, center: lot.center }));
+      for (let i = 0; i < cs.length; i += 1) {
+        for (let j = i + 1; j < cs.length; j += 1) {
+          const a = cs[i]!, b = cs[j]!;
+          const dx = a.center[0] - b.center[0];
+          const dz = a.center[1] - b.center[1];
+          if (dx * dx + dz * dz > 40 * 40) continue;
+          expect(separated(a.corners, a.angle, b.corners, b.angle)).toBe(true);
+        }
+      }
+    }
+  });
+
+  test("no building lot center sits on a street", () => {
+    const city = resolveCityObject(cityVolume({ seed: "roads", buildingDensity: 1, curviness: 0.7, gridness: 0.3, branching: 1 }))!;
+    for (const lot of city.lots) {
+      for (const street of city.streets) {
+        for (let i = 0; i + 1 < street.points.length; i += 1) {
+          const [ax, az] = street.points[i]!;
+          const [bx, bz] = street.points[i + 1]!;
+          const vx = bx - ax, vz = bz - az;
+          const len2 = vx * vx + vz * vz;
+          const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((lot.center[0] - ax) * vx + (lot.center[1] - az) * vz) / len2));
+          const d = Math.hypot(lot.center[0] - (ax + vx * t), lot.center[1] - (az + vz * t));
+          expect(d).toBeGreaterThan(street.width / 2);
+        }
+      }
+    }
+  });
+
+  test("branch lanes connect to the network or are dropped", () => {
+    const city = resolveCityObject(cityVolume({ seed: "net", branching: 1, gridness: 0.5, curviness: 0.4 }))!;
+    const lanes = city.streets.filter((s) => s.level === "lane");
+    expect(lanes.length).toBeGreaterThan(0);
+    for (const lane of lanes) {
+      const [ex, ez] = lane.points[lane.points.length - 1]!;
+      let nearest = Infinity;
+      for (const other of city.streets) {
+        if (other === lane) continue;
+        for (const [x, z] of other.points) nearest = Math.min(nearest, Math.hypot(x - ex, z - ez));
+      }
+      const length = lane.points.reduce((sum, p, i) => (i === 0 ? 0 : sum + Math.hypot(p[0] - lane.points[i - 1]![0], p[1] - lane.points[i - 1]![1])), 0);
+      // Either the lane ended by touching another street, or it earned its keep by length.
+      expect(nearest < 20 || length > 25).toBe(true);
+    }
+  });
+
+  test("steep terrain rejects lots (cliff faces stay open) and stays deterministic", () => {
+    const cliff = { sampleHeight: (x: number) => (x > 0 ? x * 2 : 0) };
+    const flat = { sampleHeight: () => 0 };
+    const onCliff = resolveCityObject(cityVolume({ seed: "cliff", maxSlope: 0.3 }), cliff)!;
+    const onCliff2 = resolveCityObject(cityVolume({ seed: "cliff", maxSlope: 0.3 }), cliff)!;
+    const onFlat = resolveCityObject(cityVolume({ seed: "cliff", maxSlope: 0.3 }), flat)!;
+    expect(onCliff).toEqual(onCliff2);
+    expect(onCliff.lots.length).toBeLessThan(onFlat.lots.length);
+    for (const lot of onCliff.lots) expect(lot.center[0]).toBeLessThan(10);
+  });
+});

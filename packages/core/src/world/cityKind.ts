@@ -2,16 +2,26 @@
  * `city` studio: a procedural street/block/building district authored as a box volume — drop a
  * volume, and sliders tune the whole layout from a rigid Manhattan grid (`gridness` 1, `curviness`
  * 0) to winding organic hillside streets (`gridness` 0, `curviness` high). Streets are synthesized
- * as perturbed grid polylines with seeded wander, branches fork off mains, blocks between streets
- * become parks per `openSpace`, and building lots line street frontage with seeded floor counts.
- * Mixing districts is placing multiple city volumes with different params. Pure config + resolver
- * here; the merged street-ribbon / instanced-massing renderer lives in the `shell`. Everything is
- * deterministic per seed and persisted in `editor.scene.json`.
+ * as perturbed grid polylines with seeded wander; partial streets terminate at cross-street
+ * intersections and branch lanes grow until they connect to another street, so the network reads as
+ * connected. Blocks between streets become parks per `openSpace`, and building lots line street
+ * frontage with exact rotated-rectangle collision (no lot overlaps), street-clearance checks (no
+ * house on a road), and slope limits (no house on a cliff face) when terrain is available — steep
+ * ground stays open, which is what carves hillside/canyon cities. Mixing districts is placing
+ * multiple city volumes. Pure config + resolver here; the merged street-ribbon / instanced-massing
+ * renderer lives in the `shell`. Everything is deterministic per seed and persisted in
+ * `editor.scene.json`.
  *
  * @capability city-district editor-authorable procedural city district (streets, blocks, buildings)
  */
 import { seededStreams } from "../random/rng";
-import { parseParams, registerSceneKind, type ParamSchema, type SceneKindObject } from "../scene/sceneKinds";
+import {
+  parseParams,
+  registerSceneKind,
+  type ParamSchema,
+  type SceneKindObject,
+  type SceneKindResolveContext,
+} from "../scene/sceneKinds";
 import { BUILDING_STYLE_PALETTES, DEFAULT_BUILDING_STYLE, type BuildingStyle } from "./buildings";
 import type { RoadPoint } from "./roads";
 
@@ -24,7 +34,7 @@ export interface CityRules {
   gridness: number;
   /** How much individual streets wander sideways. 0 = ruler-straight. */
   curviness: number;
-  /** Density of short branch lanes forking off the main streets, 0..1. */
+  /** Density of branch lanes forking off the main streets, 0..1. */
   branching: number;
   /** Target block size (street spacing) in meters. */
   blockSize: number;
@@ -40,6 +50,10 @@ export interface CityRules {
   floorsMax: number;
   /** Height of one floor in meters. */
   floorHeight: number;
+  /** Steepest ground (rise over run) a lot will build on; steeper slopes stay open cliff/canyon. */
+  maxSlope: number;
+  /** Lots below this ground height are skipped — keeps buildings out of rivers/lakes/canyons floors. */
+  minElevation: number;
   /** Building style palette id (see {@link BUILDING_STYLE_PALETTES}). */
   style: BuildingStyle;
   /** Seed string; same seed reproduces the same city. Empty falls back to the volume id. */
@@ -58,6 +72,8 @@ export const CITY_DEFAULTS: CityRules = {
   floorsMin: 2,
   floorsMax: 9,
   floorHeight: 3,
+  maxSlope: 0.5,
+  minElevation: -2,
   style: DEFAULT_BUILDING_STYLE,
   seed: "",
 };
@@ -80,6 +96,8 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "floorsMin", label: "floors min", group: "buildings", min: 1, max: 30, step: 1, default: CITY_DEFAULTS.floorsMin },
     { type: "range", key: "floorsMax", label: "floors max", group: "buildings", min: 1, max: 30, step: 1, default: CITY_DEFAULTS.floorsMax },
     { type: "range", key: "floorHeight", label: "floor height", group: "buildings", min: 2, max: 5, step: 0.1, default: CITY_DEFAULTS.floorHeight, unit: "m" },
+    { type: "range", key: "maxSlope", label: "max slope", group: "buildings", min: 0.05, max: 2, step: 0.05, default: CITY_DEFAULTS.maxSlope },
+    { type: "number", key: "minElevation", label: "build above y", group: "buildings", step: 0.5, default: CITY_DEFAULTS.minElevation },
     {
       type: "select",
       key: "style",
@@ -108,6 +126,8 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     floorsMin: Math.min(floorsMin, floorsMax),
     floorsMax: Math.max(floorsMin, floorsMax),
     floorHeight: params["floorHeight"] as number,
+    maxSlope: params["maxSlope"] as number,
+    minElevation: params["minElevation"] as number,
     style: params["style"] as BuildingStyle,
     seed: params["seed"] as string,
   };
@@ -152,14 +172,12 @@ export interface ResolvedCity {
 
 /** Bounded-work caps so a huge volume can never generate unbounded content. */
 const MAX_LINES_PER_AXIS = 40;
-const MAX_STREETS = 260;
-const MAX_LOTS = 1600;
+const MAX_STREETS = 320;
+const MAX_LOTS = 2200;
 const TAU = Math.PI * 2;
 
 interface LocalStreet {
   axis: "x" | "z";
-  /** Base coordinate on the cross axis before wander. */
-  base: number;
   points: [number, number][];
   width: number;
   level: CityStreet["level"];
@@ -190,22 +208,186 @@ function lineCoords(rng: () => number, half: number, spacing: number, gridness: 
   return coords;
 }
 
-function buildMainStreets(rules: CityRules, streams: (stream: string) => () => number, hx: number, hz: number): { streets: LocalStreet[]; xs: number[]; zs: number[] } {
+/** Nearest value in `coords` to `target`, or `fallback` when the list is empty. */
+function snapToCoord(coords: readonly number[], target: number, fallback: number): number {
+  let best = fallback;
+  let bestDist = Infinity;
+  for (const c of coords) {
+    const d = Math.abs(c - target);
+    if (d < bestDist) {
+      bestDist = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
+/**
+ * Spatial hash of dense street centerline samples (with per-sample clearance radius). Serves both
+ * "is this point on/near a road" lot rejection and branch-to-street connection tests without
+ * quadratic polyline scans.
+ */
+class StreetIndex {
+  private cells = new Map<string, { x: number; z: number; r: number; street: number }[]>();
+  private readonly cell = 10;
+
+  private key(x: number, z: number): string {
+    return `${Math.floor(x / this.cell)}:${Math.floor(z / this.cell)}`;
+  }
+
+  addStreet(index: number, points: readonly [number, number][], width: number): void {
+    const r = width / 2;
+    for (let i = 0; i + 1 < points.length; i += 1) {
+      const [ax, az] = points[i]!;
+      const [bx, bz] = points[i + 1]!;
+      const len = Math.hypot(bx - ax, bz - az);
+      const steps = Math.max(1, Math.ceil(len / 3));
+      for (let s = 0; s <= steps; s += 1) {
+        const t = s / steps;
+        const x = ax + (bx - ax) * t;
+        const z = az + (bz - az) * t;
+        const key = this.key(x, z);
+        const bucket = this.cells.get(key);
+        const sample = { x, z, r, street: index };
+        if (bucket === undefined) this.cells.set(key, [sample]);
+        else bucket.push(sample);
+      }
+    }
+  }
+
+  /** Smallest (distance − clearance) to any street sample near the point; Infinity when clear. */
+  clearance(x: number, z: number, margin: number, excludeStreet = -1): number {
+    const cx = Math.floor(x / this.cell);
+    const cz = Math.floor(z / this.cell);
+    let worst = Infinity;
+    for (let i = cx - 1; i <= cx + 1; i += 1) {
+      for (let j = cz - 1; j <= cz + 1; j += 1) {
+        const bucket = this.cells.get(`${i}:${j}`);
+        if (bucket === undefined) continue;
+        for (const sample of bucket) {
+          if (sample.street === excludeStreet) continue;
+          const d = Math.hypot(sample.x - x, sample.z - z) - sample.r - margin;
+          if (d < worst) worst = d;
+        }
+      }
+    }
+    return worst;
+  }
+}
+
+/** Separating-axis test for two rotated rectangles (center, half-extents, yaw): true when a gap exists. */
+function rectsSeparated(
+  a: { x: number; z: number; hw: number; hd: number; angle: number },
+  b: { x: number; z: number; hw: number; hd: number; angle: number },
+): boolean {
+  const axes: [number, number][] = [];
+  for (const angle of [a.angle, b.angle]) {
+    axes.push([Math.cos(angle), -Math.sin(angle)], [Math.sin(angle), Math.cos(angle)]);
+  }
+  const corners = (r: typeof a): [number, number][] => {
+    const c = Math.cos(r.angle);
+    const s = Math.sin(r.angle);
+    const out: [number, number][] = [];
+    for (const [dx, dz] of [
+      [r.hw, r.hd],
+      [r.hw, -r.hd],
+      [-r.hw, r.hd],
+      [-r.hw, -r.hd],
+    ] as const) {
+      out.push([r.x + dx * c + dz * s, r.z - dx * s + dz * c]);
+    }
+    return out;
+  };
+  const ca = corners(a);
+  const cb = corners(b);
+  for (const [ax, az] of axes) {
+    let minA = Infinity,
+      maxA = -Infinity,
+      minB = Infinity,
+      maxB = -Infinity;
+    for (const [x, z] of ca) {
+      const p = x * ax + z * az;
+      if (p < minA) minA = p;
+      if (p > maxA) maxA = p;
+    }
+    for (const [x, z] of cb) {
+      const p = x * ax + z * az;
+      if (p < minB) minB = p;
+      if (p > maxB) maxB = p;
+    }
+    if (maxA < minB || maxB < minA) return true; // gap on this axis → no overlap
+  }
+  return false;
+}
+
+interface PlacedLot {
+  x: number;
+  z: number;
+  hw: number;
+  hd: number;
+  angle: number;
+}
+
+/** Broadphase grid over placed lots so overlap tests only touch neighbors. */
+class LotIndex {
+  private cells = new Map<string, PlacedLot[]>();
+  private readonly cell = 24;
+
+  private key(x: number, z: number): string {
+    return `${Math.floor(x / this.cell)}:${Math.floor(z / this.cell)}`;
+  }
+
+  overlapsAny(lot: PlacedLot, gap: number): boolean {
+    const grown = { ...lot, hw: lot.hw + gap / 2, hd: lot.hd + gap / 2 };
+    const cx = Math.floor(lot.x / this.cell);
+    const cz = Math.floor(lot.z / this.cell);
+    for (let i = cx - 1; i <= cx + 1; i += 1) {
+      for (let j = cz - 1; j <= cz + 1; j += 1) {
+        const bucket = this.cells.get(`${i}:${j}`);
+        if (bucket === undefined) continue;
+        for (const other of bucket) {
+          if (!rectsSeparated(grown, other)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  add(lot: PlacedLot): void {
+    const key = this.key(lot.x, lot.z);
+    const bucket = this.cells.get(key);
+    if (bucket === undefined) this.cells.set(key, [lot]);
+    else bucket.push(lot);
+  }
+}
+
+function buildMainStreets(
+  rules: CityRules,
+  streams: (stream: string) => () => number,
+  hx: number,
+  hz: number,
+): { streets: LocalStreet[]; xs: number[]; zs: number[] } {
   const layoutRng = streams("layout");
   const xs = lineCoords(layoutRng, hx, rules.blockSize, rules.gridness);
   const zs = lineCoords(layoutRng, hz, rules.blockSize, rules.gridness);
   const streets: LocalStreet[] = [];
-  const build = (axis: "x" | "z", bases: number[], runHalf: number) => {
+  const build = (axis: "x" | "z", bases: number[], crossCoords: number[], runHalf: number) => {
     for (let i = 0; i < bases.length; i += 1) {
       const rng = streams(`street:${axis}:${i}`);
       const base = bases[i]!;
-      // Organic nets drop some through-streets down to partial spans.
+      // Organic nets drop some through-streets down to partial spans — snapped to cross-street
+      // coordinates so the street terminates AT an intersection instead of dangling mid-block.
       let start = -runHalf;
       let end = runHalf;
-      if (rng() < (1 - rules.gridness) * 0.4) {
+      if (rng() < (1 - rules.gridness) * 0.4 && crossCoords.length >= 2) {
         const span = Math.max(rules.blockSize * 2, runHalf * (0.4 + rng() * 0.5));
-        start = -runHalf + rng() * Math.max(0, runHalf * 2 - span);
-        end = Math.min(runHalf, start + span);
+        const rawStart = -runHalf + rng() * Math.max(0, runHalf * 2 - span);
+        start = snapToCoord(crossCoords, rawStart, -runHalf);
+        end = snapToCoord(crossCoords, rawStart + span, runHalf);
+        if (end - start < rules.blockSize * 1.5) {
+          start = -runHalf;
+          end = runHalf;
+        }
       }
       // Straightness: wander amplitude from curviness, whole-street tilt from lost gridness.
       const amplitude = rules.curviness * rules.blockSize * 0.42;
@@ -222,36 +404,53 @@ function buildMainStreets(rules: CityRules, streams: (stream: string) => () => n
       for (let t = start; t < end; t += step) sample(t);
       sample(end);
       const level: CityStreet["level"] = i % 4 === 0 ? "avenue" : "street";
-      streets.push({ axis, base, points, width: level === "avenue" ? rules.streetWidth * 1.5 : rules.streetWidth, level });
+      streets.push({ axis, points, width: level === "avenue" ? rules.streetWidth * 1.5 : rules.streetWidth, level });
     }
   };
-  build("x", xs, hz);
-  build("z", zs, hx);
+  build("x", xs, zs, hz);
+  build("z", zs, xs, hx);
   return { streets, xs, zs };
 }
 
-function buildBranches(rules: CityRules, streams: (stream: string) => () => number, mains: LocalStreet[], hx: number, hz: number): LocalStreet[] {
+/** Branch lanes grow from a main street until they CONNECT to another street (or run out of room). */
+function buildBranches(
+  rules: CityRules,
+  streams: (stream: string) => () => number,
+  mains: LocalStreet[],
+  index: StreetIndex,
+  hx: number,
+  hz: number,
+): LocalStreet[] {
   if (mains.length === 0) return [];
   const count = Math.min(Math.round(rules.branching * mains.length * 1.6), MAX_STREETS - mains.length);
   const branches: LocalStreet[] = [];
   for (let i = 0; i < count; i += 1) {
     const rng = streams(`branch:${i}`);
-    const host = mains[Math.floor(rng() * mains.length)]!;
+    const hostIndex = Math.floor(rng() * mains.length);
+    const host = mains[hostIndex]!;
     if (host.points.length < 2) continue;
     const at = host.points[Math.floor(rng() * host.points.length)]!;
     const direction = rng() < 0.5 ? 1 : -1;
-    const length = rules.blockSize * (0.8 + rng() * 1.6);
+    const maxLength = rules.blockSize * (1.2 + rng() * 2);
     const wander = makeWander(rng, rules.curviness * rules.blockSize * 0.3, rules.blockSize * 2.4);
-    const step = Math.min(Math.max(rules.blockSize / 3, 6), 18);
+    const step = Math.min(Math.max(rules.blockSize / 4, 4), 12);
     const points: [number, number][] = [];
-    for (let t = 0; t <= length; t += step) {
+    let connected = false;
+    for (let t = 0; t <= maxLength; t += step) {
       const along = at[host.axis === "x" ? 0 : 1] + direction * t;
       const cross = at[host.axis === "x" ? 1 : 0] + wander(t);
       const point: [number, number] = host.axis === "x" ? [along, cross] : [cross, along];
       if (Math.abs(point[0]) > hx - 1 || Math.abs(point[1]) > hz - 1) break;
       points.push(point);
+      // Past the leaving-home stretch, stop the moment we touch another street — a T junction.
+      if (t > rules.blockSize * 0.5 && index.clearance(point[0], point[1], 0, hostIndex) < rules.streetWidth * 0.5) {
+        connected = true;
+        break;
+      }
     }
-    if (points.length >= 2) branches.push({ axis: host.axis === "x" ? "z" : "x", base: 0, points, width: rules.streetWidth * 0.65, level: "lane" });
+    // A lane that never reached anything and is shorter than half a block is a driveway — drop it.
+    if (points.length < 2 || (!connected && points.length * step < rules.blockSize * 0.6)) continue;
+    branches.push({ axis: host.axis === "x" ? "z" : "x", points, width: rules.streetWidth * 0.65, level: "lane" });
   }
   return branches;
 }
@@ -288,16 +487,16 @@ function buildLots(
   rules: CityRules,
   streams: (stream: string) => () => number,
   streets: LocalStreet[],
+  index: StreetIndex,
   parks: CityPark[],
   hx: number,
   hz: number,
+  slopeAt: ((x: number, z: number) => number) | null,
+  heightAt: ((x: number, z: number) => number) | null,
 ): CityLot[] {
   const lots: CityLot[] = [];
+  const placed = new LotIndex();
   const frontage = Math.min(Math.max(rules.blockSize / 3.2, 9), 26);
-  // Coarse occupancy hash keeps lots from different streets from stacking on the same ground.
-  const occupied = new Set<string>();
-  const cellSize = frontage * 0.85;
-  const cellKey = (x: number, z: number) => `${Math.round(x / cellSize)}:${Math.round(z / cellSize)}`;
   for (let s = 0; s < streets.length; s += 1) {
     const street = streets[s]!;
     const rng = streams(`lots:${s}`);
@@ -312,24 +511,57 @@ function buildLots(
         const px = ax + (bx - ax) * t;
         const pz = az + (bz - az) * t;
         const tangent = Math.atan2(bx - ax, bz - az);
-        const width = frontage * (0.72 + rng() * 0.22);
-        const depth = frontage * (0.7 + rng() * 0.7);
+        const width = frontage * (0.55 + rng() * 0.25);
+        const depth = frontage * (0.7 + rng() * 0.5);
         for (const side of [1, -1] as const) {
+          // Deep blocks earn a second back row of lots behind the frontage row, so downtowns fill
+          // their blocks instead of leaving hollow interiors.
+          const rows = rules.blockSize > depth * 2.2 + rules.streetWidth ? 2 : 1;
+          for (let row = 0; row < rows; row += 1) {
           const roll = rng();
-          const offset = street.width / 2 + 1.5 + depth / 2;
+          const slopeRoll = rng();
+          const offset = street.width / 2 + 1.5 + depth / 2 + row * (depth + 2.5);
           const cx = px + Math.cos(tangent) * offset * side;
           const cz = pz - Math.sin(tangent) * offset * side;
-          if (roll > rules.buildingDensity) continue;
+          if (roll > rules.buildingDensity * (row === 0 ? 1 : 0.7)) continue;
           if (Math.abs(cx) > hx - 3 || Math.abs(cz) > hz - 3) continue;
           if (insideAnyPark(parks, cx, cz, depth * 0.25)) continue;
-          const key = cellKey(cx, cz);
-          if (occupied.has(key)) continue;
-          occupied.add(key);
+          // Never build on a road: the lot's center and corners all keep clearance to ALL street
+          // centerlines — this stops houses landing on a curvy cross-street without the huge
+          // half-diagonal dead zone a center-only test needs.
+          const angle = tangent + Math.PI / 2;
+          const ca = Math.cos(angle);
+          const sa = Math.sin(angle);
+          let onRoad = index.clearance(cx, cz, 1) < 0;
+          if (!onRoad) {
+            for (const [dx, dz] of [
+              [width / 2, depth / 2],
+              [width / 2, -depth / 2],
+              [-width / 2, depth / 2],
+              [-width / 2, -depth / 2],
+            ] as const) {
+              if (index.clearance(cx + dx * ca + dz * sa, cz - dx * sa + dz * ca, 0.5) < 0) {
+                onRoad = true;
+                break;
+              }
+            }
+          }
+          if (onRoad) continue;
+          // Cliff rule: reject lots on ground steeper than maxSlope (with a little seeded fuzz so
+          // the cutoff line isn't a hard contour), leaving steep faces open.
+          if (slopeAt !== null && slopeAt(cx, cz) > rules.maxSlope * (0.85 + slopeRoll * 0.3)) continue;
+          // Water/canyon-floor rule: never build below the district's minimum elevation.
+          if (heightAt !== null && heightAt(cx, cz) < rules.minElevation) continue;
+          const candidate: PlacedLot = { x: cx, z: cz, hw: width / 2, hd: depth / 2, angle };
+          // Exact rotated-rect collision against neighbors — buildings know about each other.
+          if (placed.overlapsAny(candidate, 1)) continue;
+          placed.add(candidate);
           const floors = rules.floorsMin + Math.floor(rng() * (rules.floorsMax - rules.floorsMin + 1));
           lots.push({ id: `lot:${s}:${lots.length}`, center: [cx, cz], size: [width, depth], rotationY: tangent + Math.PI / 2, floors, jitter: rng() });
           if (lots.length >= MAX_LOTS) return lots;
+          }
         }
-        nextLot += frontage * (0.95 + rng() * 0.3);
+        nextLot += frontage * (0.9 + rng() * 0.25);
       }
       travelled += segLen;
     }
@@ -340,38 +572,85 @@ function buildLots(
 /**
  * Synthesize the deterministic city plan for one `city` volume: streets → parks → frontage lots,
  * all in the volume's local frame and then rotated/translated into world space. Same volume (id,
- * footprint, meta) always resolves to the identical plan. Returns null without a usable footprint.
+ * footprint, meta) over the same terrain always resolves to the identical plan. When `context`
+ * provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts
+ * keep their steep faces open. Returns null without a usable footprint.
  *
  * @capability city-district resolve a `city` volume into deterministic streets, building lots, and parks
  */
-export function resolveCityObject(object: SceneKindObject): ResolvedCity | null {
+export function resolveCityObject(object: SceneKindObject, context?: SceneKindResolveContext): ResolvedCity | null {
   const center = object.center ?? object.position;
   if (center === undefined) return null;
   const he = object.halfExtents;
   const hx = axisValue(he?.x) ?? object.radius ?? 0;
   const hz = axisValue(he?.z) ?? object.radius ?? 0;
   const rules = readCityRules(object.meta);
-  if (hx < rules.blockSize * 0.75 || hz < rules.blockSize * 0.75) {
-    return { center: [center.x, center.y, center.z], size: [hx * 2, hz * 2], rotationY: object.rotationY ?? 0, rules, streets: [], lots: [], parks: [] };
-  }
-  const streams = seededStreams(`city:${rules.seed.length > 0 ? rules.seed : object.id}`);
-  const { streets: mains, xs, zs } = buildMainStreets(rules, streams, hx, hz);
-  const branches = buildBranches(rules, streams, mains, hx, hz);
-  const local = [...mains, ...branches].slice(0, MAX_STREETS);
-  const parks = buildParks(rules, streams, xs, zs);
-  const lots = buildLots(rules, streams, local, parks, hx, hz);
-
   const rotationY = object.rotationY ?? 0;
+  if (hx < rules.blockSize * 0.75 || hz < rules.blockSize * 0.75) {
+    return { center: [center.x, center.y, center.z], size: [hx * 2, hz * 2], rotationY, rules, streets: [], lots: [], parks: [] };
+  }
   const cos = Math.cos(rotationY);
   const sin = Math.sin(rotationY);
   const toWorld = (x: number, z: number): RoadPoint => [center.x + x * cos + z * sin, center.z - x * sin + z * cos];
+
+  const sampleHeight = context?.sampleHeight;
+  const heightAt =
+    sampleHeight === undefined
+      ? null
+      : (x: number, z: number): number => {
+          const [wx, wz] = toWorld(x, z);
+          return sampleHeight(wx, wz);
+        };
+  const slopeAt =
+    sampleHeight === undefined
+      ? null
+      : (x: number, z: number): number => {
+          const [wx, wz] = toWorld(x, z);
+          const d = 4;
+          const dx = sampleHeight(wx + d, wz) - sampleHeight(wx - d, wz);
+          const dz = sampleHeight(wx, wz + d) - sampleHeight(wx, wz - d);
+          return Math.hypot(dx, dz) / (2 * d);
+        };
+
+  const streams = seededStreams(`city:${rules.seed.length > 0 ? rules.seed : object.id}`);
+  const built = buildMainStreets(rules, streams, hx, hz);
+  const xs = built.xs;
+  const zs = built.zs;
+  // Streets stop at the water's edge instead of running on under a lake/canyon river: split each
+  // polyline into the runs whose ground stays above the district's minimum elevation.
+  const clipToLand = (streets: LocalStreet[]): LocalStreet[] => {
+    if (heightAt === null) return streets;
+    const out: LocalStreet[] = [];
+    for (const street of streets) {
+      let run: [number, number][] = [];
+      const flush = () => {
+        if (run.length >= 2) out.push({ ...street, points: run });
+        run = [];
+      };
+      for (const point of street.points) {
+        if (heightAt(point[0], point[1]) >= rules.minElevation) run.push(point);
+        else flush();
+      }
+      flush();
+    }
+    return out;
+  };
+  const mains = clipToLand(built.streets);
+  const index = new StreetIndex();
+  mains.forEach((street, i) => index.addStreet(i, street.points, street.width));
+  const branches = clipToLand(buildBranches(rules, streams, mains, index, hx, hz));
+  branches.forEach((street, i) => index.addStreet(mains.length + i, street.points, street.width));
+  const local = [...mains, ...branches].slice(0, MAX_STREETS);
+  const parks = buildParks(rules, streams, xs, zs);
+  const lots = buildLots(rules, streams, local, index, parks, hx, hz, slopeAt, heightAt);
+
   return {
     center: [center.x, center.y, center.z],
     size: [hx * 2, hz * 2],
     rotationY,
     rules,
-    streets: local.map((street, index) => ({
-      id: `street:${index}`,
+    streets: local.map((street, i) => ({
+      id: `street:${i}`,
       points: street.points.map(([x, z]) => toWorld(x, z)),
       width: street.width,
       level: street.level,
@@ -390,7 +669,7 @@ export function registerCityKind(): void {
     addCategory: "Studios",
     accent: "#8fa8c9",
     schema: CITY_SCHEMA,
-    resolve: (object) => resolveCityObject(object),
+    resolve: (object, _params, context) => resolveCityObject(object, context),
     note: (object) => {
       const resolved = resolveCityObject(object);
       if (resolved === null) return "Give the volume a box footprint.";

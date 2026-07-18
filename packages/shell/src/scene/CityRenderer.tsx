@@ -21,8 +21,9 @@ const PARK_THICKNESS = 0.1;
 
 /** One authored city volume → merged street ribbons + instanced building massing + park patches. */
 function OneCity({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
-  const resolved = useMemo(() => resolveCityObject(object), [object]);
-  const sample = context.field.sampleHeight;
+  const field = context.field;
+  const sample = useMemo(() => (x: number, z: number) => field.sampleHeight(x, z), [field]);
+  const resolved = useMemo(() => resolveCityObject(object, { sampleHeight: sample }), [object, sample]);
 
   const streetGeometry = useMemo(() => {
     if (resolved === null || resolved.streets.length === 0) return null;
@@ -61,11 +62,31 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     for (let i = 0; i < resolved.lots.length; i += 1) {
       const lot = resolved.lots[i]!;
       const height = Math.max(1, lot.floors) * resolved.rules.floorHeight;
-      const groundY = sample(lot.center[0], lot.center[1]);
+      // Sample all four footprint corners: on a slope the box grows a foundation down to the lowest
+      // corner and its roof sits above the highest, so hillside houses step down cliffs instead of
+      // floating on one edge and clipping on the other.
+      const c = Math.cos(lot.rotationY);
+      const s = Math.sin(lot.rotationY);
+      const hw = lot.size[0] / 2;
+      const hd = lot.size[1] / 2;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const [dx, dz] of [
+        [hw, hd],
+        [hw, -hd],
+        [-hw, hd],
+        [-hw, -hd],
+      ] as const) {
+        const y = sample(lot.center[0] + dx * c + dz * s, lot.center[1] - dx * s + dz * c);
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      const base = minY - 0.4;
+      const total = maxY - base + height;
       matrix.compose(
-        new THREE.Vector3(lot.center[0], groundY + height / 2, lot.center[1]),
+        new THREE.Vector3(lot.center[0], base + total / 2, lot.center[1]),
         new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), lot.rotationY),
-        new THREE.Vector3(lot.size[0], height, lot.size[1]),
+        new THREE.Vector3(lot.size[0], total, lot.size[1]),
       );
       mesh.setMatrixAt(i, matrix);
       const shade = 0.82 + lot.jitter * 0.3;
