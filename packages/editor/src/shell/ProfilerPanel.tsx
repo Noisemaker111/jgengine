@@ -21,8 +21,9 @@ function Stat({ label, value, average }: { label: string; value: string; average
 
 /**
  * Profiler dock tab over the real {@link PerfProbe} sample history: frame-time graph, current and
- * average values, and authoring-cost series when the probe reports one. Series the host cannot
- * measure (CPU/GPU split, memory) are omitted entirely rather than fabricated.
+ * average values, authoring-cost series when the probe reports one, and JS heap memory when the
+ * browser exposes `performance.memory`. Series the host cannot measure are omitted entirely rather
+ * than fabricated.
  */
 export function ProfilerPanel({ history }: { history: PerfHistoryStore }) {
   const samples = useSyncExternalStore(history.subscribe, history.getSamples, history.getSamples);
@@ -30,9 +31,12 @@ export function ProfilerPanel({ history }: { history: PerfHistoryStore }) {
 
   const frameSeries = samples.map((sample) => sample.frameMs);
   const authoringSeries = samples.map((sample) => sample.authoringMs ?? 0);
+  const memorySeries = samples.map((sample) => sample.memoryMb ?? 0);
   const hasAuthoring = authoringSeries.some((value) => value > 0);
+  const hasMemory = samples.some((sample) => sample.memoryMb !== undefined);
   const latest = samples[samples.length - 1];
   const maxFrame = Math.max(33.4, ...frameSeries);
+  const maxMemory = hasMemory ? Math.max(16, ...memorySeries) : 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -80,6 +84,26 @@ export function ProfilerPanel({ history }: { history: PerfHistoryStore }) {
               <span className="flex items-center gap-1"><span className="h-0.5 w-3 bg-emerald-400/60" /> 60 fps budget</span>
               <span className="flex items-center gap-1"><span className="h-0.5 w-3 bg-amber-400/60" /> 30 fps budget</span>
             </div>
+            {hasMemory ? (
+              <div className="mt-3">
+                <div className="mb-1 text-[9px] uppercase tracking-wider text-neutral-600">JS heap (browser)</div>
+                <svg
+                  viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
+                  preserveAspectRatio="none"
+                  className="h-20 w-full rounded-[6px] border border-white/[0.07] bg-black/25"
+                  role="img"
+                  aria-label="JS heap memory graph"
+                >
+                  <polyline
+                    points={sparklinePoints(memorySeries, GRAPH_WIDTH, GRAPH_HEIGHT, maxMemory)}
+                    fill="none"
+                    stroke="#fbbf24"
+                    strokeWidth={1.5}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+              </div>
+            ) : null}
           </div>
           <div className="flex shrink-0 flex-col gap-1.5">
             <Stat
@@ -99,6 +123,13 @@ export function ProfilerPanel({ history }: { history: PerfHistoryStore }) {
                 label="Authoring"
                 value={`${(latest?.authoringMs ?? 0).toFixed(1)} ms`}
                 average={`${seriesAverage(authoringSeries).toFixed(1)} ms`}
+              />
+            ) : null}
+            {hasMemory ? (
+              <Stat
+                label="Heap"
+                value={`${(latest?.memoryMb ?? 0).toFixed(1)} MB`}
+                average={`${seriesAverage(memorySeries).toFixed(1)} MB`}
               />
             ) : null}
           </div>

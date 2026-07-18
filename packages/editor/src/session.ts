@@ -231,6 +231,11 @@ export interface EditorAssetInfo {
 
 /** Rolling frame-rate sample published by the in-canvas PerfProbe. */
 export interface EditorPerfSample {
+  /**
+   * JS heap used in megabytes when the browser exposes `performance.memory` (Chromium).
+   * Omitted entirely when unavailable — never fabricated.
+   */
+  memoryMb?: number;
   fps: number;
   frameMs: number;
   drawCalls: number;
