@@ -9,7 +9,7 @@ Read the repository [README](../../../README.md) for package truth, commands, la
 
 ## 1. Establish the target
 
-Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
+Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 
 - player point of view and controls
 - world shape and authored content
