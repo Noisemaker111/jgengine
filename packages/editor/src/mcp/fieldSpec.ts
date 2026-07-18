@@ -109,6 +109,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   remove_from_collection: [req(s("id")), req(sa("ids"))],
   set_collection_flags: [req(s("id")), s("color"), b("locked"), b("visible")],
   select_collection: [req(s("id"))],
+  set_object_flags: [req(sa("ids")), b("locked"), b("hidden")],
   batch_set_properties: [req(sa("ids")), s("color"), s("label"), o("meta")],
   assign_material: [req(sa("ids")), req(s("materialId"))],
   list_grids: [],

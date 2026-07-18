@@ -13,6 +13,7 @@ import {
   findEditorCollection,
   findEditorPrefab,
   importEditorDocumentJson,
+  isEditorObjectHidden,
   isEditorObjectLocked,
   listEditorKinds,
   mergeEditorDocuments,
@@ -713,6 +714,46 @@ describe("editor collections / selection sets", () => {
     const remaining = session.getState().document.markers.map((m) => m.id);
     expect(remaining).toContain("a");
     expect(remaining).not.toContain("c");
+  });
+
+  test("setObjectFlags locks and hides a placeable; lock blocks move/delete; flags round-trip", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: true, hidden: true } });
+    const lockedDoc = session.getState().document;
+    expect(lockedDoc.markers.find((m) => m.id === "a")!.locked).toBe(true);
+    expect(lockedDoc.markers.find((m) => m.id === "a")!.hidden).toBe(true);
+    expect(isEditorObjectLocked(lockedDoc, "a")).toBe(true);
+    expect(isEditorObjectHidden(lockedDoc, "a")).toBe(true);
+    expect(isEditorObjectLocked(lockedDoc, "b")).toBe(false);
+
+    session.dispatch({ type: "setTransform", id: "a", position: { x: 99, y: 0, z: 0 } });
+    expect(session.getState().document.markers.find((m) => m.id === "a")!.position.x).toBe(0);
+    session.dispatch({ type: "remove", id: "a" });
+    expect(session.getState().document.markers.some((m) => m.id === "a")).toBe(true);
+
+    // Clearing flags removes the keys so export stays compact.
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: false, hidden: false } });
+    const cleared = session.getState().document.markers.find((m) => m.id === "a")!;
+    expect(cleared.locked).toBeUndefined();
+    expect(cleared.hidden).toBeUndefined();
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(false);
+
+    session.dispatch({ type: "setObjectFlags", ids: ["b", "c"], patch: { hidden: true } });
+    const reloaded = importEditorDocumentJson(session.exportJson(true));
+    expect(reloaded.markers.find((m) => m.id === "b")!.hidden).toBe(true);
+    expect(reloaded.markers.find((m) => m.id === "c")!.hidden).toBe(true);
+    expect(reloaded.markers.find((m) => m.id === "a")!.hidden).toBeUndefined();
+  });
+
+  test("object lock and collection lock both count; clearing object lock leaves collection lock", () => {
+    const session = threeMobs();
+    session.dispatch({ type: "createCollection", id: "pack", name: "Pack", memberIds: ["a"] });
+    session.dispatch({ type: "setCollectionFlags", id: "pack", patch: { locked: true } });
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: true } });
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(true);
+    session.dispatch({ type: "setObjectFlags", ids: ["a"], patch: { locked: false } });
+    expect(session.getState().document.markers.find((m) => m.id === "a")!.locked).toBeUndefined();
+    expect(isEditorObjectLocked(session.getState().document, "a")).toBe(true);
   });
 
   test("deleteCollection drops it and removing a member prunes stale collection references", () => {

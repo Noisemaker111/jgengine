@@ -392,10 +392,18 @@ export function EditorChrome({
         const current = session.getState();
         const visibility = api.getVisibility();
         const ids = [
-          ...current.document.markers.filter((m) => visibility[m.kind] !== false).map((m) => m.id),
-          ...current.document.volumes.filter((v) => visibility[v.kind] !== false).map((v) => v.id),
-          ...current.document.paths.filter((p) => visibility[p.kind] !== false).map((p) => p.id),
-          ...(visibility["note"] !== false ? current.document.annotations.map((n) => n.id) : []),
+          ...current.document.markers
+            .filter((m) => visibility[m.kind] !== false && m.hidden !== true)
+            .map((m) => m.id),
+          ...current.document.volumes
+            .filter((v) => visibility[v.kind] !== false && v.hidden !== true)
+            .map((v) => v.id),
+          ...current.document.paths
+            .filter((p) => visibility[p.kind] !== false && p.hidden !== true)
+            .map((p) => p.id),
+          ...(visibility["note"] !== false
+            ? current.document.annotations.filter((n) => n.hidden !== true).map((n) => n.id)
+            : []),
         ];
         if (ids.length > 0) session.dispatch({ type: "select", ids });
         return;

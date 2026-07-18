@@ -402,11 +402,53 @@ export function seedEditorCatalogs(
   return { ...doc, catalogs: next };
 }
 
-/** True when an object id is a member of any locked collection — blocks move/delete on it.
+/**
+ * True when an object carries a per-object `locked` flag (hierarchy lock toggle).
+ * Collection membership is checked separately by {@link isEditorObjectLocked}.
+ * @internal
+ */
+export function isEditorObjectSelfLocked(doc: EditorDocument, id: string): boolean {
+  const marker = doc.markers.find((entry) => entry.id === id);
+  if (marker !== undefined) return marker.locked === true;
+  const volume = doc.volumes.find((entry) => entry.id === id);
+  if (volume !== undefined) return volume.locked === true;
+  const path = doc.paths.find((entry) => entry.id === id);
+  if (path !== undefined) return path.locked === true;
+  const note = doc.annotations.find((entry) => entry.id === id);
+  return note?.locked === true;
+}
+
+/**
+ * True when an object is a member of any locked collection (production group lock).
+ * @internal
+ */
+export function isEditorObjectCollectionLocked(doc: EditorDocument, id: string): boolean {
+  return doc.collections.some((collection) => collection.locked === true && collection.memberIds.includes(id));
+}
+
+/**
+ * True when an object id is locked for edit — either its own `locked` flag or membership in a
+ * locked collection. Blocks move/delete via session mutations.
  * @internal
  */
 export function isEditorObjectLocked(doc: EditorDocument, id: string): boolean {
-  return doc.collections.some((collection) => collection.locked === true && collection.memberIds.includes(id));
+  return isEditorObjectSelfLocked(doc, id) || isEditorObjectCollectionLocked(doc, id);
+}
+
+/**
+ * True when an object carries `hidden: true` — omitted from editor viewport overlays and picking
+ * while remaining in the hierarchy and document.
+ * @internal
+ */
+export function isEditorObjectHidden(doc: EditorDocument, id: string): boolean {
+  const marker = doc.markers.find((entry) => entry.id === id);
+  if (marker !== undefined) return marker.hidden === true;
+  const volume = doc.volumes.find((entry) => entry.id === id);
+  if (volume !== undefined) return volume.hidden === true;
+  const path = doc.paths.find((entry) => entry.id === id);
+  if (path !== undefined) return path.hidden === true;
+  const note = doc.annotations.find((entry) => entry.id === id);
+  return note?.hidden === true;
 }
 
 /**
@@ -666,6 +708,8 @@ function decodeMarker(item: unknown, path: string, errors: EditorDocumentDiagnos
   if (typeof item.label === "string") marker.label = item.label;
   if (typeof item.catalogId === "string") marker.catalogId = item.catalogId;
   if (typeof item.parentId === "string") marker.parentId = item.parentId;
+  if (typeof item.locked === "boolean") marker.locked = item.locked;
+  if (typeof item.hidden === "boolean") marker.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) marker.meta = meta;
   return marker;
@@ -694,6 +738,8 @@ function decodeVolume(item: unknown, path: string, errors: EditorDocumentDiagnos
   if (typeof item.color === "string") volume.color = item.color;
   if (typeof item.label === "string") volume.label = item.label;
   if (typeof item.parentId === "string") volume.parentId = item.parentId;
+  if (typeof item.locked === "boolean") volume.locked = item.locked;
+  if (typeof item.hidden === "boolean") volume.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) volume.meta = meta;
   return volume;
@@ -717,6 +763,8 @@ function decodePath(item: unknown, path: string, errors: EditorDocumentDiagnosti
   if (typeof item.color === "string") decodedPath.color = item.color;
   if (typeof item.label === "string") decodedPath.label = item.label;
   if (typeof item.parentId === "string") decodedPath.parentId = item.parentId;
+  if (typeof item.locked === "boolean") decodedPath.locked = item.locked;
+  if (typeof item.hidden === "boolean") decodedPath.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) decodedPath.meta = meta;
   return decodedPath;
@@ -734,6 +782,8 @@ function decodeNote(item: unknown, path: string, errors: EditorDocumentDiagnosti
   const note: EditorNote = { id: item.id, text: item.text, position };
   if (typeof item.color === "string") note.color = item.color;
   if (typeof item.parentId === "string") note.parentId = item.parentId;
+  if (typeof item.locked === "boolean") note.locked = item.locked;
+  if (typeof item.hidden === "boolean") note.hidden = item.hidden;
   const meta = decodeMeta(item.meta, `${path}.meta`, errors);
   if (meta !== undefined) note.meta = meta;
   return note;

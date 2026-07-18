@@ -87,6 +87,15 @@ export type EditorCommand =
       id: string;
       patch: { color?: string; locked?: boolean; visible?: boolean };
     }
+  | {
+      /**
+       * Per-object lock/visibility flags on placeables. `locked: false` / `hidden: false` clear the
+       * field so the document stays compact; collection locks are unchanged.
+       */
+      type: "setObjectFlags";
+      ids: readonly string[];
+      patch: { locked?: boolean; hidden?: boolean };
+    }
   | { type: "selectCollection"; id: string }
   | {
       type: "batchSetProperties";

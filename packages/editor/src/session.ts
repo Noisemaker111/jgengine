@@ -137,6 +137,7 @@ export type EditorBridgeRequest =
   | { method: "remove_from_collection"; id: string; ids: string[] }
   | { method: "set_collection_flags"; id: string; color?: string; locked?: boolean; visible?: boolean }
   | { method: "select_collection"; id: string }
+  | { method: "set_object_flags"; ids: string[]; locked?: boolean; hidden?: boolean }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
   | { method: "assign_material"; ids: string[]; materialId: string }
   | { method: "list_grids" }

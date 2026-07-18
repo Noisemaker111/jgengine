@@ -286,6 +286,36 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("set_object_flags locks and hides placeables via RPC", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [
+          { id: "a", kind: "mob", position: { x: 0, y: 0, z: 0 } },
+          { id: "b", kind: "mob", position: { x: 1, y: 0, z: 0 } },
+        ],
+      },
+    });
+
+    const locked = api.handle({ method: "set_object_flags", ids: ["a"], locked: true, hidden: true });
+    expect(locked.ok).toBe(true);
+    const marker = api.getSession().getState().document.markers.find((m) => m.id === "a");
+    expect(marker?.locked).toBe(true);
+    expect(marker?.hidden).toBe(true);
+
+    const moved = api.handle({ method: "set_transform", id: "a", x: 50 });
+    expect(moved.ok).toBe(false);
+
+    expect(api.handle({ method: "set_object_flags", ids: ["nope"], locked: true }).ok).toBe(false);
+    expect(api.handle({ method: "set_object_flags", ids: ["b"] }).ok).toBe(false);
+
+    api.handle({ method: "set_object_flags", ids: ["a"], locked: false, hidden: false });
+    const cleared = api.getSession().getState().document.markers.find((m) => m.id === "a");
+    expect(cleared?.locked).toBeUndefined();
+    expect(cleared?.hidden).toBeUndefined();
+    dispose();
+  });
+
   test("rejected mutations return ok:false with a reason (#1016)", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",

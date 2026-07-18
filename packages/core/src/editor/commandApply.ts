@@ -725,6 +725,26 @@ const mutationHandlers: MutationHandlers = {
     );
     return { ...state, document: { ...state.document, collections } };
   },
+  setObjectFlags: (state, command) => {
+    const ids = new Set(command.ids);
+    if (ids.size === 0) return null;
+    const { locked, hidden } = command.patch;
+    if (locked === undefined && hidden === undefined) return null;
+    const apply = <T extends { id: string; locked?: boolean; hidden?: boolean }>(item: T): T => {
+      if (!ids.has(item.id)) return item;
+      const next = { ...item };
+      if (locked !== undefined) {
+        if (locked) next.locked = true;
+        else delete next.locked;
+      }
+      if (hidden !== undefined) {
+        if (hidden) next.hidden = true;
+        else delete next.hidden;
+      }
+      return next;
+    };
+    return { ...state, document: { ...state.document, ...mapPlaceables(state.document, apply) } };
+  },
   selectCollection: (state, command) => {
     const collection = findEditorCollection(state.document, command.id);
     if (collection === undefined) return null;
