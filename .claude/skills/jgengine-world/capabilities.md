@@ -322,6 +322,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
 
+## portable-marker-source — project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet
+
+- `createMarkerSource` (function) · `import { createMarkerSource } from "@jgengine/core/world"`
+
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`

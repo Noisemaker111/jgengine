@@ -1,8 +1,9 @@
-import { markerKindStyle, type MarkerKindStyle, type MarkerSet } from "@jgengine/core/world/markers";
+import { markerKindStyle, type MarkerCollection, type MarkerKindStyle } from "@jgengine/core/world/markers";
 import { useMarkers } from "@jgengine/react/map";
 
 export interface MapMarkerBeaconsProps {
-  markers: MarkerSet;
+  /** Static views, an external marker source, or a native JGengine MarkerSet. */
+  markers: MarkerCollection;
   kindStyles?: Record<string, MarkerKindStyle>;
   height?: number;
 }

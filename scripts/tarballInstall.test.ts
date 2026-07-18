@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   computeExposedSubpaths,
   distExists,
@@ -52,26 +52,35 @@ describe.if(built)("published tarball contents", () => {
   });
 });
 
-function installTarball(pkg: (typeof publishedPackages)[number]): { consumer: string; scope: string } {
-  const work = mkdtempSync(join(tmpdir(), `jgengine-tarball-${pkg}-`));
-  const packed = execFileSync("npm", ["pack", "--pack-destination", work, "--json"], {
-    cwd: packageDir(pkg),
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-  });
-  const tgz = (JSON.parse(packed) as Array<{ filename: string }>)[0].filename;
-  const extractDir = join(work, "extract");
-  mkdirSync(extractDir, { recursive: true });
-  execFileSync("tar", ["-xzf", join(work, tgz), "-C", extractDir]);
+function installTarballs(packages: readonly (typeof publishedPackages)[number][]): { consumer: string; scope: string } {
+  const work = mkdtempSync(join(tmpdir(), "jgengine-tarballs-"));
   const scope = join(work, "consumer", "node_modules", "@jgengine");
   mkdirSync(scope, { recursive: true });
-  renameSync(join(extractDir, "package"), join(scope, pkg));
+  for (const pkg of packages) {
+    const packed = execFileSync("npm", ["pack", "--pack-destination", work, "--json"], {
+      cwd: packageDir(pkg),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const tgz = (JSON.parse(packed) as Array<{ filename: string }>)[0].filename;
+    const extractDir = join(work, `extract-${pkg}`);
+    mkdirSync(extractDir, { recursive: true });
+    execFileSync("tar", ["-xzf", join(work, tgz), "-C", extractDir]);
+    renameSync(join(extractDir, "package"), join(scope, pkg));
+  }
   return { consumer: join(work, "consumer"), scope };
+}
+
+function linkPeer(consumer: string, packageName: string): void {
+  const packageRoot = join(packageDir("react"), "node_modules", packageName);
+  const target = join(consumer, "node_modules", packageName);
+  mkdirSync(dirname(target), { recursive: true });
+  symlinkSync(packageRoot, target, "junction");
 }
 
 describe.if(built)("clean-consumer resolution of the real tarball (zero-dep packages, offline)", () => {
   test("@jgengine/core resolves its public entry but not its build-excluded test fixtures", () => {
-    const { consumer } = installTarball("core");
+    const { consumer } = installTarballs(["core"]);
     try {
       const script = [
         "import { VERSION } from '@jgengine/core';",
@@ -89,10 +98,10 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     } finally {
       rmSync(join(consumer, ".."), { recursive: true, force: true });
     }
-  });
+  }, 60_000);
 
   test("@jgengine/github resolves its public entry, wildcard rejects unknown subpaths", () => {
-    const { consumer } = installTarball("github");
+    const { consumer } = installTarballs(["github"]);
     try {
       const script = [
         "await import('@jgengine/github');",
@@ -109,7 +118,30 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     } finally {
       rmSync(join(consumer, ".."), { recursive: true, force: true });
     }
-  });
+  }, 60_000);
+
+  test("portable marker source and React minimap resolve together from real tarballs", () => {
+    const { consumer } = installTarballs(["core", "react"]);
+    try {
+      linkPeer(consumer, "react");
+      const script = [
+        "import { createMarkerSource } from '@jgengine/core/world/markers';",
+        "import { Minimap } from '@jgengine/react/map';",
+        "const units = [{ id: 'u1', x: 2, z: 4 }];",
+        "const markers = createMarkerSource({ getSnapshot: () => units, project: (unit) => ({ id: unit.id, position: [unit.x, 0, unit.z] }) });",
+        "if (markers.getSnapshot()[0]?.id !== 'u1') throw new Error('portable marker source failed');",
+        "if (typeof Minimap !== 'function') throw new Error('Minimap export failed');",
+        "console.log('ok');",
+      ].join("\n");
+      const out = execFileSync("node", ["--input-type=module", "-e", script], {
+        cwd: consumer,
+        encoding: "utf8",
+      });
+      expect(out.trim()).toBe("ok");
+    } finally {
+      rmSync(join(consumer, ".."), { recursive: true, force: true });
+    }
+  }, 60_000);
 });
 
 test.if(built)("node test fixtures exist in source but are build-excluded", () => {

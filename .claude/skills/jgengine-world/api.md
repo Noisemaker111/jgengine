@@ -1581,11 +1581,15 @@
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
-- `MapMarker` (interface): interface MapMarker<TMeta = unknown> — ⚠ undocumented
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
 - `MapRoute` (interface): interface MapRoute — ⚠ undocumented
 - `MapZone` (interface): interface MapZone — ⚠ undocumented
+- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
 - `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
+- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
 - `MinimapBake` (interface): interface MinimapBake — A baked minimap image: RGBA pixels plus the world bounds they span.
 - `MinimapBakeBounds` (interface): interface MinimapBakeBounds — Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional biome zones and water) into a top-down RGBA image and a matching world-bounds rectangle, then encode it as a PNG data URI. The editor runs this as a bake action and stores the result on the scene document; runtime feeds it straight into the existing `Minimap` / `WorldMap` `background` + `mapBounds` props — no new runtime render path, and the same authored world always bakes the same image (safe for verify/CI). Pure: no canvas, no DOM, `core` still imports nothing external.
 - `MinimapBakeOptions` (interface): interface MinimapBakeOptions — Options for {@link bakeMinimapImage}.
@@ -1874,6 +1878,7 @@
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
@@ -1952,7 +1957,7 @@
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
-- `markerKindStyle` (function): function markerKindStyle(kind: string, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
 - `migrateTerrainSnapshot` (function): function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSnapshot — Upgrades a pre-2.0 snapshot in place-safe (copy-on-write) form: derives a {@link TerrainMaterialLayer} stack from the distinct painted surfaces (first-seen order, default params) when none exists. Leaves the lazy `weights` buffer absent — a single-layer terrain stays compact until blended. Idempotent: a snapshot that already carries `layers` is returned unchanged.
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
@@ -2495,14 +2500,19 @@
 ## @jgengine/core/world/markers
 
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
-- `MapMarker` (interface): interface MapMarker<TMeta = unknown> — ⚠ undocumented
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
+- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> — ⚠ undocumented
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
 - `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — ⚠ undocumented
 - `MarkerQuery` (interface): interface MarkerQuery — ⚠ undocumented
 - `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
+- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
-- `markerKindStyle` (function): function markerKindStyle(kind: string, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
 
 ## @jgengine/core/world/massing
 
