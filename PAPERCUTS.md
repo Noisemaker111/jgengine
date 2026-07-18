@@ -168,3 +168,7 @@ editor CLI has no add_path verb — authoring a new route path headlessly requir
 2026-07-18T23:02:42.541Z — fable — Claude
 
 shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
+
+2026-07-18T23:09:33.687Z — fable — Claude
+
+vice-isle drive rpc editor_summon: editor host mounts then React 'Maximum update depth exceeded' loop in editor shell ContentBrowser/AssetThumbnail — page goes black, editor verbs unreachable (wanted an editor-view screenshot of authored paths)
