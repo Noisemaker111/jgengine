@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { parseEditorCliArgs } from "./cli";
+import { createEmptyEditorDocument } from "@jgengine/core/editor/index";
+
+import { parseEditorCliArgs, saveSceneDocument } from "./cli";
 
 const cliEntry = join(import.meta.dir, "cli.ts");
 const repoRoot = join(import.meta.dir, "../../../..");
@@ -80,9 +82,42 @@ describe("parseEditorCliArgs", () => {
     ]);
     expect(opts.serve).toBe(false);
   });
+
+  test("--save is off by default and set by the flag", () => {
+    expect(parseEditorCliArgs(["--rpc", '{"method":"scene_summary"}']).save).toBe(false);
+    expect(parseEditorCliArgs(["--rpc", '{"method":"scene_summary"}', "--save"]).save).toBe(true);
+  });
+});
+
+describe("saveSceneDocument", () => {
+  test("writes dev-save-format JSON into the game's src directory", () => {
+    const root = mkdtempSync(join(tmpdir(), "editor-cli-save-"));
+    mkdirSync(join(root, "demo", "src"), { recursive: true });
+    const document = createEmptyEditorDocument();
+
+    const result = saveSceneDocument("demo", document, root);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.saved).toBe(join(root, "demo", "src", "editor.scene.json"));
+    expect(readFileSync(result.saved, "utf8")).toBe(`${JSON.stringify(document, null, 2)}\n`);
+  });
+
+  test("refuses to invent a missing game src directory", () => {
+    const root = mkdtempSync(join(tmpdir(), "editor-cli-save-"));
+    const result = saveSceneDocument("missing", createEmptyEditorDocument(), root);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("missing");
+  });
 });
 
 describe("editor CLI entry", () => {
+  test("--save without an RPC batch is an error", async () => {
+    const { code, stderr } = await runCli(["--game", "__no-such-game__", "--save"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("--save applies to a --rpc/--rpc-file batch");
+  }, 20_000);
+
   test(
     "malformed inline --rpc prints a diagnostic pointing at --rpc-file",
     async () => {

@@ -36,7 +36,7 @@ Load only rows the target needs. Do not preload every domain.
 | models, sprites, materials, audio files, source licensing | `jgengine-assets` | asset discovery and catalogs |
 | authority, transport, replication, sessions, host persistence | `jgengine-multiplayer` | network topology and persistence adapters |
 
-Scenes normally require both `jgengine-editor` for authoring and `jgengine-world` for runtime consumption. Combat and multiplayer are opt-in, not default intake.
+World content routes editor-first: any request that adds, moves, restyles, or removes something visible in the world — however phrased ("design this world", "place the enemies", "make it look better") — starts in `jgengine-editor`; the other domains consume the authored document. Scenes normally require both `jgengine-editor` for authoring and `jgengine-world` for runtime consumption. Combat and multiplayer are opt-in, not default intake.
 
 ## 3. Discover before designing
 

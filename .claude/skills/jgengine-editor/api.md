@@ -609,7 +609,8 @@
 
 ## @jgengine/editor/mcp/cli
 
-- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; save: boolean; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `SaveSceneResult` (type): type SaveSceneResult = { ok: true; saved: string } | { ok: false; error: string } — Result of a `--save` write-back: the path written, or why nothing was written.
 
 ## @jgengine/editor/mcp/fieldSpec
 
