@@ -1095,7 +1095,7 @@
 - `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — ⚠ undocumented
 - `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
 - `ChaseRig` (function): function ChaseRig(props: RigProps): null — ⚠ undocumented
-- `CinematicRig` (function): function CinematicRig(props: RigProps): null — ⚠ undocumented
+- `CinematicRig` (function): function CinematicRig(props: RigProps & { onComplete?: () => void }): null — ⚠ undocumented
 - `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
 - `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
 - `RigProps` (interface): interface RigProps — ⚠ undocumented
