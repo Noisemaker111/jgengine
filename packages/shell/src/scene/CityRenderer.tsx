@@ -45,7 +45,7 @@ const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", fie
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
-const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 3.8, conifer: 3.4, palm: 2.9, cypress: 2.7 };
+const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 3.8, conifer: 3.4, palm: 3.3, cypress: 3.0 };
 
 type Sampler = (x: number, z: number) => number;
 
@@ -655,12 +655,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             new THREE.Matrix4().compose(
               new THREE.Vector3(x, y + postH / 2, z),
               new THREE.Quaternion(),
-              new THREE.Vector3(0.14, postH, 0.14),
+              new THREE.Vector3(0.18, postH, 0.18),
             ),
           );
           const top = new THREE.Vector3(x, y + postH, z);
           if (prevTop !== null && prevBase !== null) {
-            segmentBox(prevTop, top, 0.1, 0.12, steel);
+            segmentBox(prevTop, top, 0.13, 0.16, steel);
             if (bridge.style === "truss") {
               segmentBox(prevBase, top, 0.09, 0.09, steel);
               segmentBox(prevTop, base, 0.09, 0.09, steel);
