@@ -9,6 +9,7 @@ Use this for backlog missions ("look at all the issues, plan each one, implement
 
 ## Plan the pass
 
+0. Sweep `PAPERCUTS.md`: research each logged entry, fold real bugs into the issue queue, make the easy fixes directly, and delete entries once fixed (keep the file header). A pass that touches the backlog without reading the papercut list is incomplete.
 1. List open issues, drop stale or duplicate ones, and group the rest by shared root cause or seam using `workflow` PR-boundary rules.
 2. Order the queue so early fixes create seams later fixes reuse: infrastructure-shaped issues first, consumers after.
 3. Run genuinely independent groups as parallel subagent lanes; keep issues sharing a seam in one sequential lane.

@@ -105,3 +105,8 @@ export const game = defineGame({
     frustum: { far: 720 },
   },
 });
+
+// Attribution for the required-credit MIT port. Parsed by the desktop project
+// surface (apps/desktop/src/project/gameMeta.ts) and surfaced on the game's
+// jgengine.com page; the in-game HUD renders its own CreditLine.
+export const credit = { text: "Port of World of ClaudeCraft · Levy Street (MIT)", url: "https://github.com/levy-street/world-of-claudecraft", handle: "levy-street" };

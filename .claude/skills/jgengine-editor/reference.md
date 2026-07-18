@@ -75,24 +75,49 @@ Commands: `/help`, `/status`, `/summary`, `/selection`, `/frame`, `/undo`, `/red
 ## Data catalogs & entity definitions
 
 The **Data** tab (`CatalogsPanel`) edits gameplay tuning rows that persist on the scene document
-(`EditorDocument.catalogs`) — schemas come from a game's `editorCatalogs` export
-(`EditorCatalogDefinition[]`: `{ id, label, schema: ParamSchema, entries }`), wired to the editor via
-`defineGame`-sibling module export and passed as the `catalogs` prop (the scaffold's `main.tsx` passes
-`catalogs={editorCatalogs}`). Beyond tuning existing rows, the tab now **authors rows**: the `+ Row`
-control adds a schema-defaulted entry and each row has a remove (`×`). Agents/CLI drive the same edits
-with the `add_catalog_entry` / `remove_catalog_entry` RPC verbs (alongside `list_catalogs`,
-`get_catalog_entry`, `set_catalog_entry`); new-row meta is seeded from the catalog `ParamSchema`
-defaults and validated before it lands. Values save into `editor.scene.json` → `catalogs`.
+(`EditorDocument.catalogs`). Two kinds of catalog feed the tab, merged by
+`resolveCatalogDefinitions(document, gameDefinitions)`: **game-exported** catalogs whose schema lives
+in code (a game's `editorCatalogs` export, `EditorCatalogDefinition[]`: `{ id, label, schema:
+ParamSchema, entries }`, wired via a `defineGame`-sibling module export passed as the `catalogs` prop —
+the scaffold's `main.tsx` passes `catalogs={editorCatalogs}`), and **editor-authored** catalogs created
+entirely in the editor. A game def always wins on id collision; a document catalog is surfaced only when
+it carries its own `schema`.
+
+Beyond tuning existing rows the tab **authors catalogs and schemas**:
+- **Create a catalog** — the `＋ New catalog` form takes an id (+ optional label) and dispatches
+  `addCatalog` with an empty `schema: { fields: [] }`. The document now *carries the schema*
+  (`EditorCatalogData.schema`/`label`), so an editor-only catalog round-trips through save/reload and
+  drives the default `content.ts` path with no game code.
+- **Author schema fields** — for document-authored catalogs (`data.schema !== undefined`; game-exported
+  catalogs stay read-only since their schema is in code) the field editor adds/renames/removes fields
+  (key, type over `ParamField["type"]`, default, min/max). Every field mutation rebuilds the whole
+  `fields` array and dispatches one `setCatalogSchema`, whose reducer **re-parses every row's `meta`
+  against the new schema** via `parseParams`: removed keys drop, added keys default in, range/number
+  values clamp. One undoable step.
+- **Author rows** — `+ Row` adds a schema-defaulted entry; each row has a remove (`×`).
+
+Agents/CLI drive the same edits: `add_catalog` / `remove_catalog` / `set_catalog_schema` for the
+catalog + schema, and `add_catalog_entry` / `remove_catalog_entry` / `set_catalog_entry` for rows
+(alongside `list_catalogs`, `get_catalog_entry`). A catalog added via `add_catalog` is RPC-addressable
+immediately (the host recomputes merged defs per request). New-row meta is seeded from the catalog
+`ParamSchema` defaults and validated before it lands. Values and document-carried schemas save into
+`editor.scene.json` → `catalogs`.
 
 **Entity definitions** are a data catalog: the well-known `ENTITY_CATALOG_ID` (`"entities"`) catalog,
 whose rows carry role/health/speed/scale per `entityDefinitionSchema`. `entityEntryFromCatalog(document,
 catalogId, definitions?)` (`@jgengine/core/editor`) turns a row into the runtime
 `GameContextEntityEntry` the default `content.ts#entityById` returns — so a `mob`/`boss` marker whose
-`catalogId` names an entities row spawns with the stats/speed tuned in the editor, no game TS.
+`catalogId` names an entities row spawns with the stats/speed tuned in the editor, no game TS. It
+prefers a document-carried `entities` schema over `entityDefinitionSchema` when the document authored
+one, so a re-authored entity field set drives the parse.
 `authoredEntitySpawns(document)` (`@jgengine/core/world/authoredEntities`) yields the spawn plan
 (`{ markerId, catalogId, position, rotationY }`) the scaffold `loop.ts` feeds to
 `ctx.scene.entity.spawn`. Author entities in the editor (place a marker → Data tab → tune the row →
 save); never hardcode entity stats where the document should own them.
+
+## Asset import
+
+Dropping a `.glb`/`.gltf` into the editor persists it durably, but where depends on the project shape (`editorHostPlugin`, `@jgengine/node`). A **standalone folder workspace** copies the bytes into the scanned asset folder and re-lists them under a scan-stable id (`importEditorAsset`); the id comes from the file's workspace-relative path, so a placement referencing it resolves after reload. A **promoted game** (one with a typed `src/game/assets.ts` catalog — `isPromotedProject`) instead copies the bytes into `public/<basePath>/imported/` and rewrites `assets.ts` to add a durable `extras` entry to its `buildCatalog({ extras })` call (`importPromotedAsset` → `upsertCatalogExtra`), so the **shipped** game serves and resolves the asset through its own typed catalog rather than a dev-only route. The id matches what a folder rescan would produce, the rewrite is idempotent (re-import of the same id collapses to a single entry), and an unparseable or multi-`buildCatalog` source throws so the host falls back to the folder-scan import rather than corrupt the file.
 
 ## Grid / tile layers
 

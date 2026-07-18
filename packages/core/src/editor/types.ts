@@ -130,6 +130,14 @@ export interface EditorCatalogEntry {
 export interface EditorCatalogData {
   id: string;
   entries: EditorCatalogEntry[];
+  /**
+   * Optional document-carried `ParamSchema`. Present only for editor-authored catalogs (created from
+   * the Data tab, no matching game export); game-exported catalogs keep their schema in code. Carrying
+   * it here is what lets an editor-only catalog round-trip through save/reload and drive the inspector.
+   */
+  schema?: ParamSchema;
+  /** Optional display label for a document-authored catalog; falls back to the id when absent. */
+  label?: string;
 }
 
 /**

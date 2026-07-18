@@ -169,6 +169,52 @@ describe("resolveObstacleStep", () => {
     const result = resolveObstacleStep([-0.5, 0, 0], 0.5, 0, obstacles);
     expect(result.stepX).toBeCloseTo(0.2, 10);
   });
+
+  test("offset shifts the single-AABB obstacle center", () => {
+    // Box half [0.5] centered at position+offset = x=1; a step from x=0 stops short of x≈0.2.
+    const obstacles: CollisionObstacle[] = [{ position: [0, 0, 0], offset: [1, 0, 0], halfExtents: [0.5, 0.5, 0.5] }];
+    const result = resolveObstacleStep([0, 0, 0], 0.5, 0, obstacles);
+    expect(result.stepX).toBeCloseTo(0.2, 10);
+  });
+
+  test("a compound-boxes obstacle passes a step through the gap but blocks on a pillar sub-box", () => {
+    // Two pillars in X leaving an open central gap x∈(-0.5, 0.5); thin in Z (a wall face).
+    const obstacles: CollisionObstacle[] = [
+      {
+        position: [0, 0, 0],
+        boxes: [
+          { min: [-2, 0, -0.1], max: [-0.5, 3, 0.1] },
+          { min: [0.5, 0, -0.1], max: [2, 3, 0.1] },
+        ],
+      },
+    ];
+    // Walking +Z through the gap (x=0): unobstructed.
+    const throughGap = resolveObstacleStep([0, 0, -1], 0, 0.5, obstacles);
+    expect(throughGap.stepZ).toBeCloseTo(0.5, 10);
+    // Walking +Z into the right pillar (x=1.2): the Z step is stopped ≈playerRadius before the wall face.
+    const intoPillar = resolveObstacleStep([1.2, 0, -0.5], 0, 0.5, obstacles);
+    expect(intoPillar.stepZ).toBeLessThan(0.5);
+    expect(intoPillar.stepZ).toBeCloseTo(0.1, 10); // reaches z=-0.4 (face -0.1 minus radius 0.3)
+  });
+
+  test("a sub-box entirely above the head lets the capsule walk under it (lintel)", () => {
+    const obstacles: CollisionObstacle[] = [
+      { position: [0, 0, 0], boxes: [{ min: [-2, 3, -0.1], max: [2, 4, 0.1] }] },
+    ];
+    // Player feet y=0, head y=1.8; the lintel sub-box at y[3,4] is skipped entirely.
+    const result = resolveObstacleStep([0, 0, -1], 0, 0.5, obstacles);
+    expect(result.stepZ).toBeCloseTo(0.5, 10);
+  });
+
+  test("a wide wall obstacle blocks across its true multi-metre span, not one metre", () => {
+    // A 4m-wide wall (half-extent 2 in X); the default 0.5 box would leave x=1.5 clear.
+    const wall: CollisionObstacle[] = [{ position: [0, 0, 0], halfExtents: [2, 1.5, 0.5] }];
+    const blocked = resolveObstacleStep([1.5, 0, -1], 0, 0.5, wall);
+    expect(blocked.stepZ).toBeLessThan(0.5);
+    // Sanity: the same off-centre approach against a default unit box passes freely.
+    const narrow: CollisionObstacle[] = [{ position: [0, 0, 0] }];
+    expect(resolveObstacleStep([1.5, 0, -1], 0, 0.5, narrow).stepZ).toBeCloseTo(0.5, 10);
+  });
 });
 
 describe("constrainStepToAxis", () => {

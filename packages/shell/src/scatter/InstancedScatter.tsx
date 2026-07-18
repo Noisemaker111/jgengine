@@ -6,6 +6,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/world/scatterRegion";
+import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 
 import { buildScatterProxy } from "./scatterProxies";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
@@ -134,6 +135,9 @@ export function InstancedScatter({
   );
 
   const { proxyBatches, modelSpecies } = useMemo(() => {
+    // Dev diagnostic (no-op unless armed): re-zero the scatter seam before re-tallying which species
+    // fall to a stylized proxy (no resolveItem mapping / a null result). Reported once per species.
+    beginFallbackSeam("scatter");
     const proxy: ScatterBatch[] = [];
     const bySpecies = new Map<string, { model: ModelConfig; batches: ScatterBatch[] }>();
     const knownProxy = new Set<string>();
@@ -150,6 +154,7 @@ export function InstancedScatter({
       const resolved = resolveItem?.(batch.item) ?? null;
       if (resolved === null) {
         knownProxy.add(batch.item);
+        reportFallbackSeam("scatter", "omittedMapping");
         proxy.push(batch);
         continue;
       }

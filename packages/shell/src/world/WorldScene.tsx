@@ -8,6 +8,11 @@ import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/object
 import { WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
 import type { EntitySpriteConfig, ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
+import {
+  beginFallbackSeam,
+  endFallbackPass,
+  reportFallbackSeam,
+} from "@jgengine/core/devtools/fallbackSeams";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
@@ -237,7 +242,11 @@ function RockField() {
 }
 
 function WorldEnvironment({ environment: Environment }: { environment: ComponentType | undefined }) {
+  // Dev diagnostic (no-op unless armed): a missing environment component means the default green
+  // ground/rocks stand in for an unauthored scene. Re-zero then report so this is idempotent.
+  beginFallbackSeam("ground");
   if (Environment !== undefined) return <Environment />;
+  reportFallbackSeam("ground", "noScene");
   return (
     <>
       <GroundPlane />
@@ -277,19 +286,34 @@ function WorldActors({
     const relation = ctx.scene.entity.canReceive(entity.id, "damage") === null ? "hostile" : "friendly";
     ctx.scene.entity.setTarget(controlledId, relation === "hostile" || entity.role === "npc" ? entity.id : null);
   };
+  // Dev diagnostic (no-op unless armed): re-zero the entity/object seams before this render re-tallies
+  // which actors fall back to primitives. Committing the log runs in a useEffect after the render.
+  beginFallbackSeam("entity");
+  beginFallbackSeam("object");
+  useEffect(() => {
+    endFallbackPass();
+  });
   return (
     <>
       {entityIds.map((entityId) => {
         const entity = ctx.scene.entity.get(entityId);
         if (entity === null || entity.name === WORLD_ITEM_ENTITY_NAME) return null;
         if (hideLocalActor && entityId === controlledId) return null;
+        const custom = renderEntity?.(entity);
+        const model = resolveEntityModel(entityModels?.[entity.name], assets, entity.name);
+        const sprite = entitySprites?.[entity.name];
+        // Entity models resolve via the hard resolveModel (throws on a present-but-missing id), so
+        // reaching the primitive capsule with no model or sprite means the mapping was omitted.
+        if ((custom === undefined || custom === null) && model === undefined && sprite === undefined) {
+          reportFallbackSeam("entity", "omittedMapping");
+        }
         return (
           <EntityMarker
             key={entityId}
             entity={entity}
-            custom={renderEntity?.(entity)}
-            model={resolveEntityModel(entityModels?.[entity.name], assets, entity.name)}
-            sprite={entitySprites?.[entity.name]}
+            custom={custom}
+            model={model}
+            sprite={sprite}
             isLocal={entityId === controlledId}
             targeted={entityId === targetId}
             selected={selectedIds.has(entityId)}
@@ -300,18 +324,25 @@ function WorldActors({
       {objectIds.map((instanceId) => {
         const object = ctx.scene.object.get(instanceId);
         if (object === null) return null;
+        const custom = renderObject?.(object);
         const model =
           resolveModel(objectModels?.[object.catalogId], assets, {
             seam: "objectModels",
             key: object.catalogId,
           }) ?? tryResolveCatalogModel(object.catalogId, assets);
+        const style = objectStyles?.[object.catalogId];
+        // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
+        // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.
+        if ((custom === undefined || custom === null) && model === undefined && style?.hidden !== true) {
+          reportFallbackSeam("object", objectModels?.[object.catalogId] === undefined ? "omittedMapping" : "unpulledPack");
+        }
         return (
           <ObjectMarker
             key={instanceId}
             object={object}
-            custom={renderObject?.(object)}
+            custom={custom}
             model={model}
-            style={objectStyles?.[object.catalogId]}
+            style={style}
           />
         );
       })}

@@ -137,6 +137,7 @@
 - `parseGridCellKey` (function): function parseGridCellKey(key: string): { col: number; row: number } | null — Parses a `"col,row"` sparse-map key back into integer coordinates, or `null` when malformed.
 - `planRuntimeInspectorSet` (function): function planRuntimeInspectorSet(document: EditorDocument, input: { id: string; path?: string; value?: unknown; position?: { x: number; y: number; z: number }; rotationY?: number; values?: Record<string, unknown>; writeBack?: boolean; }): RuntimeInspectorSetPlan — Plans a play-mode poke: builds the ephemeral entity/tunable override and, when `writeBack` is true, the undoable document commands that promote it into the scene document.
 - `resizeGridLayer` (function): function resizeGridLayer(layer: EditorGridLayer, cols: number, rows: number): EditorGridLayer — Resizes the layer's bounds to `cols`×`rows`, dropping any cells that fall outside the new extent (values are anchored at the origin corner). Negative or fractional sizes are floored to `≥ 0`.
+- `resolveCatalogDefinitions` (function): function resolveCatalogDefinitions(document: EntityCatalogDocumentLike, gameDefinitions: readonly EditorCatalogDefinition[]): EditorCatalogDefinition[] — Merges game-exported catalog definitions with editor-authored ones carried on the scene document. A document catalog that carries its own `schema` and has no matching game definition is synthesized into a full {@link EditorCatalogDefinition} (label falls back to the id) so the Data panel, the `list_catalogs` RPC, and the count all see it. A game definition always wins on id collision — its schema lives in code and is authoritative. Document catalogs without a schema (plain value bags for a game-declared catalog) are ignored here; they are addressed through their game definition.
 - `resolveDirectiveFootprint` (function): function resolveDirectiveFootprint(doc: EditorDocument, directive: EditorDirective): DirectiveFootprint | null — Resolves the footprint a directive fills: an explicit `area`, else the footprint of the named `region` — a scatter/closed path (as a clip polygon) or a volume (its XZ AABB). Null when neither is present or the region id does not resolve.
 - `runtimeEntityMetaWriteBackCommand` (function): function runtimeEntityMetaWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Promotes ephemeral runtime `values` into an undoable meta patch on a document-linked object. Returns null when the id is not in the document or there are no values.
 - `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
@@ -184,6 +185,7 @@
 - `EntityCatalogDocumentLike` (interface): interface EntityCatalogDocumentLike — Minimal document shape {@link entityEntryFromCatalog} reads — any `EditorDocument` satisfies it.
 - `entityDefinitionSchema` (const): const entityDefinitionSchema: ParamSchema — The default {@link ParamSchema} for an authored entity definition — role, health, movement speed, and visual scale. Drives the editor Data-tab inspector for the `entities` catalog and is the shape {@link entityEntryFromCatalog} reads. A game exports it as an `editorCatalogs` schema; the scaffold ships a starter one so the tab is never empty.
 - `entityEntryFromCatalog` (function): function entityEntryFromCatalog(document: EntityCatalogDocumentLike, entityId: string, definitions?: readonly EditorCatalogDefinition[]): GameContextEntityEntry | null — Turns an authored entity row into the runtime {@link GameContextEntityEntry} a spawn consumes: looks up `entityId` in the document's {@link ENTITY_CATALOG_ID} catalog (falling back to the game-exported `definitions` defaults), parses it against {@link entityDefinitionSchema}, and maps the fields onto stats/movement/role. Returns `null` when no row defines the entity, so the default `content.ts` path can chain other resolvers. The single seam that makes "place a mob, tune its stats/speed in the editor, save — it spawns with those stats" work with zero game code.
+- `resolveCatalogDefinitions` (function): function resolveCatalogDefinitions(document: EntityCatalogDocumentLike, gameDefinitions: readonly EditorCatalogDefinition[]): EditorCatalogDefinition[] — Merges game-exported catalog definitions with editor-authored ones carried on the scene document. A document catalog that carries its own `schema` and has no matching game definition is synthesized into a full {@link EditorCatalogDefinition} (label falls back to the id) so the Data panel, the `list_catalogs` RPC, and the count all see it. A game definition always wins on id collision — its schema lives in code and is authoritative. Document catalogs without a schema (plain value bags for a game-declared catalog) are ignored here; they are addressed through their game definition.
 
 ## @jgengine/core/editor/environment
 
@@ -558,7 +560,7 @@
 
 ## @jgengine/editor/handlers/catalogs
 
-- `catalogHandlers` (const): const catalogHandlers: Pick< HandlerTable, "list_catalogs" | "get_catalog_entry" | "set_catalog_entry" | "add_catalog_entry" | "remove_catalog_entry" > — Gameplay data catalog verbs (list / get / merge-patch / add / remove rows).
+- `catalogHandlers` (const): const catalogHandlers: Pick< HandlerTable, | "list_catalogs" | "get_catalog_entry" | "set_catalog_entry" | "add_catalog_entry" | "remove_catalog_entry" | "add_catalog" | "remove_catalog" | "set_catalog_schema" > — Gameplay data catalog verbs (list / get / merge-patch / add / remove rows).
 
 ## @jgengine/editor/handlers/collections
 
@@ -606,7 +608,7 @@
 
 ## @jgengine/editor/mcp/cli
 
-- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSource: RpcPayloadSource | null; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
 
 ## @jgengine/editor/mcp/fieldSpec
 

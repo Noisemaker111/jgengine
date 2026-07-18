@@ -1,3 +1,4 @@
+import type { ParamField, ParamSchema } from "../scene/sceneKinds";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
 import { migrateTerrainSnapshot } from "../world/terraform";
 import {
@@ -127,6 +128,8 @@ function cloneCatalogEntry(entry: EditorCatalogEntry): EditorCatalogEntry {
 function cloneCatalogs(catalogs: readonly EditorCatalogData[] | undefined): EditorCatalogData[] {
   return (catalogs ?? []).map((catalog) => ({
     id: catalog.id,
+    ...(catalog.label === undefined ? {} : { label: catalog.label }),
+    ...(catalog.schema === undefined ? {} : { schema: catalog.schema }),
     entries: catalog.entries.map(cloneCatalogEntry),
   }));
 }
@@ -197,11 +200,26 @@ function upsertCatalogs(
   base: readonly EditorCatalogData[] | undefined,
   overlay: readonly EditorCatalogData[] | undefined,
 ): EditorCatalogData[] {
-  const byId = new Map((base ?? []).map((catalog) => [catalog.id, { id: catalog.id, entries: catalog.entries.map(cloneCatalogEntry) }]));
+  const byId = new Map(
+    (base ?? []).map((catalog) => [
+      catalog.id,
+      {
+        id: catalog.id,
+        ...(catalog.label === undefined ? {} : { label: catalog.label }),
+        ...(catalog.schema === undefined ? {} : { schema: catalog.schema }),
+        entries: catalog.entries.map(cloneCatalogEntry),
+      } as EditorCatalogData,
+    ]),
+  );
   for (const catalog of overlay ?? []) {
     const existing = byId.get(catalog.id);
+    // Overlay schema/label win when present; otherwise keep whatever the base carried.
+    const label = catalog.label ?? existing?.label;
+    const schema = catalog.schema ?? existing?.schema;
     byId.set(catalog.id, {
       id: catalog.id,
+      ...(label === undefined ? {} : { label }),
+      ...(schema === undefined ? {} : { schema }),
       entries: existing === undefined ? catalog.entries.map(cloneCatalogEntry) : upsertCatalogEntries(existing.entries, catalog.entries),
     });
   }
@@ -374,6 +392,8 @@ export function seedEditorCatalogs(
     }
     const catalog: EditorCatalogData = {
       id: definition.id,
+      ...(existing?.label === undefined ? {} : { label: existing.label }),
+      ...(existing?.schema === undefined ? {} : { schema: existing.schema }),
       entries: [...byId.values()],
     };
     if (existingIndex >= 0) next[existingIndex] = catalog;
@@ -788,6 +808,34 @@ function decodeCatalogEntry(item: unknown, path: string, errors: EditorDocumentD
   return entry;
 }
 
+/**
+ * Decodes a document-carried `ParamSchema` (`{ fields: ParamField[] }`) — modeled on
+ * `loadGameCatalogs`'s `decodeSchema`. Any field that is not a plain object with string `key` and
+ * `type` is dropped with a diagnostic instead of poisoning the whole schema; a non-array `fields`
+ * value drops the schema entirely (undefined). Structural but permissive: field-shape validation
+ * beyond key/type is left to `parseParams`, which defaults anything it cannot read.
+ */
+function decodeParamSchema(
+  raw: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): ParamSchema | undefined {
+  if (raw === undefined) return undefined;
+  if (!isPlainObject(raw) || !Array.isArray(raw.fields)) {
+    errors.push({ path, message: "expected { fields: ParamField[] }" });
+    return undefined;
+  }
+  const fields: ParamField[] = [];
+  raw.fields.forEach((field, index) => {
+    if (!isPlainObject(field) || typeof field.key !== "string" || typeof field.type !== "string") {
+      errors.push({ path: `${path}.fields[${index}]`, message: "expected a ParamField with string key + type" });
+      return;
+    }
+    fields.push(field as unknown as ParamField);
+  });
+  return { fields, ...(Array.isArray(raw.groups) ? { groups: raw.groups as ParamSchema["groups"] } : {}) };
+}
+
 function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorCatalogData | null {
   if (!isPlainObject(item)) {
     errors.push({ path, message: "expected an object" });
@@ -798,7 +846,11 @@ function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagno
     return null;
   }
   const entries = decodeArray(item.entries, `${path}.entries`, decodeCatalogEntry, errors);
-  return { id: item.id, entries };
+  const schema = decodeParamSchema(item.schema, `${path}.schema`, errors);
+  const catalog: EditorCatalogData = { id: item.id, entries };
+  if (typeof item.label === "string") catalog.label = item.label;
+  if (schema !== undefined) catalog.schema = schema;
+  return catalog;
 }
 
 function decodeDirectiveArea(

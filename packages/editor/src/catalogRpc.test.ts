@@ -146,6 +146,60 @@ describe("catalog RPC tools", () => {
     dispose();
   });
 
+  test("add_catalog creates a document-authored catalog that appears in list_catalogs and is row-addressable", () => {
+    const { api, dispose } = host();
+    const created = api.handle({
+      method: "add_catalog",
+      catalogId: "towers",
+      label: "Towers",
+      schema: { fields: [{ key: "damage", type: "number", default: 5, min: 1, max: 100 }] },
+    });
+    expect(created.ok).toBe(true);
+    // It shows up in the merged catalog list immediately (per-request ctx recompute).
+    const list = api.handle({ method: "list_catalogs" });
+    const catalogs = (list.result as { catalogs: { id: string; label: string }[] }).catalogs;
+    expect(catalogs.some((c) => c.id === "towers" && c.label === "Towers")).toBe(true);
+    // And is immediately row-addressable via add_catalog_entry.
+    const added = api.handle({ method: "add_catalog_entry", catalogId: "towers", entryId: "archer" });
+    expect(added.ok).toBe(true);
+    const got = api.handle({ method: "get_catalog_entry", catalogId: "towers", entryId: "archer" });
+    expect((got.result as { entry: { meta: Record<string, unknown> } }).entry.meta).toEqual({ damage: 5 });
+    dispose();
+  });
+
+  test("add_catalog rejects a duplicate id and an empty id", () => {
+    const { api, dispose } = host();
+    expect(api.handle({ method: "add_catalog", catalogId: "weapons" }).ok).toBe(false);
+    expect(api.handle({ method: "add_catalog", catalogId: "   " }).ok).toBe(false);
+    dispose();
+  });
+
+  test("set_catalog_schema reclamps rows and remove_catalog deletes the catalog", () => {
+    const { api, dispose } = host();
+    api.handle({
+      method: "add_catalog",
+      catalogId: "towers",
+      schema: { fields: [{ key: "damage", type: "number", default: 5, min: 1, max: 100 }] },
+    });
+    api.handle({ method: "add_catalog_entry", catalogId: "towers", entryId: "archer", meta: { damage: 90 } });
+    // Tighten damage's ceiling; the existing row value should clamp to 20.
+    const set = api.handle({
+      method: "set_catalog_schema",
+      catalogId: "towers",
+      schema: { fields: [{ key: "damage", type: "number", default: 5, min: 1, max: 20 }] },
+    });
+    expect(set.ok).toBe(true);
+    const got = api.handle({ method: "get_catalog_entry", catalogId: "towers", entryId: "archer" });
+    expect((got.result as { entry: { meta: Record<string, unknown> } }).entry.meta).toEqual({ damage: 20 });
+    // set_catalog_schema on an unknown catalog fails.
+    expect(api.handle({ method: "set_catalog_schema", catalogId: "nope", schema: { fields: [] } }).ok).toBe(false);
+    // remove_catalog drops it; a second removal reports a miss.
+    expect(api.handle({ method: "remove_catalog", catalogId: "towers" }).ok).toBe(true);
+    expect(api.handle({ method: "remove_catalog", catalogId: "towers" }).ok).toBe(false);
+    expect(api.handle({ method: "list_catalogs" }).result).toMatchObject({ catalogs: [{ id: "weapons" }] });
+    dispose();
+  });
+
   test("export_document includes catalogs for round-trip persistence", () => {
     const { api, dispose } = host();
     api.handle({ method: "set_catalog_entry", catalogId: "weapons", entryId: "cannon", patch: { rate: 1.1 } });

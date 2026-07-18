@@ -272,12 +272,22 @@ export function advancePlayerMotion(
 /** A placed scene object the walking player collides against as a circle-vs-AABB obstacle. */
 export interface CollisionObstacle {
   position: readonly [number, number, number];
-  /** Box half-size on each axis. Default `[0.5, 0.5, 0.5]` (unit-box scene objects). */
+  /** Box half-size on each axis. Default `[0.5, 0.5, 0.5]` (unit-box scene objects). Ignored when `boxes` is set. */
   halfExtents?: readonly [number, number, number];
+  /** Local center shift added to `position` for the single-AABB path (the collider's yaw-rotated offset). Ignored when `boxes` is set. */
+  offset?: readonly [number, number, number];
+  /**
+   * Optional compound solid: axis-aligned sub-boxes as `min`/`max` **relative to `position`** (add
+   * `position` for world space), already yaw-rotated and conservatively expanded by the caller. When
+   * present the capsule slides against EACH sub-box instead of the single `halfExtents` AABB, so a
+   * concave opening (the gap between an archway's pillars/lintel) lets the capsule pass through.
+   */
+  boxes?: readonly { min: readonly [number, number, number]; max: readonly [number, number, number] }[];
 }
 
 const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0.5, 0.5];
-const DEFAULT_OBSTACLE_PLAYER_RADIUS = 0.3;
+/** @internal Player radius the walking obstruction inflates obstacles by; callers gather within reach of it. */
+export const DEFAULT_OBSTACLE_PLAYER_RADIUS = 0.3;
 /** Feet-to-head span used for the obstacle's vertical overlap test; matches DEFAULT_VOXEL_DIMS.height. */
 const OBSTACLE_PLAYER_HEIGHT = 1.8;
 
@@ -319,22 +329,51 @@ export function resolveObstacleStep(
   const reachZ = Math.abs(stepZ) + playerRadius;
 
   const nearby: ObstacleBounds[] = [];
-  for (const obstacle of obstacles) {
-    const halfExtents = obstacle.halfExtents ?? DEFAULT_OBSTACLE_HALF_EXTENTS;
-    const obstacleBottom = obstacle.position[1] - halfExtents[1];
-    const obstacleTop = obstacle.position[1] + halfExtents[1];
-    if (obstacleTop <= feetY || obstacleBottom >= headY) continue;
-
-    const dx = obstacle.position[0] - current[0];
-    const dz = obstacle.position[2] - current[2];
-    if (Math.abs(dx) > halfExtents[0] + reachX || Math.abs(dz) > halfExtents[2] + reachZ) continue;
-
+  const considerBox = (
+    minX: number,
+    maxX: number,
+    minY: number,
+    maxY: number,
+    minZ: number,
+    maxZ: number,
+  ): void => {
+    // Vertical-span cull: a sub-box entirely above the head (walk under the lintel) or below the feet is skipped.
+    if (maxY <= feetY || minY >= headY) return;
+    const centerX = (minX + maxX) / 2;
+    const centerZ = (minZ + maxZ) / 2;
+    const halfX = (maxX - minX) / 2;
+    const halfZ = (maxZ - minZ) / 2;
+    if (Math.abs(centerX - current[0]) > halfX + reachX || Math.abs(centerZ - current[2]) > halfZ + reachZ) return;
     nearby.push({
-      minX: obstacle.position[0] - halfExtents[0] - playerRadius,
-      maxX: obstacle.position[0] + halfExtents[0] + playerRadius,
-      minZ: obstacle.position[2] - halfExtents[2] - playerRadius,
-      maxZ: obstacle.position[2] + halfExtents[2] + playerRadius,
+      minX: minX - playerRadius,
+      maxX: maxX + playerRadius,
+      minZ: minZ - playerRadius,
+      maxZ: maxZ + playerRadius,
     });
+  };
+  for (const obstacle of obstacles) {
+    const px = obstacle.position[0];
+    const py = obstacle.position[1];
+    const pz = obstacle.position[2];
+    if (obstacle.boxes !== undefined && obstacle.boxes.length > 0) {
+      for (const box of obstacle.boxes) {
+        considerBox(px + box.min[0], px + box.max[0], py + box.min[1], py + box.max[1], pz + box.min[2], pz + box.max[2]);
+      }
+      continue;
+    }
+    const halfExtents = obstacle.halfExtents ?? DEFAULT_OBSTACLE_HALF_EXTENTS;
+    const offset = obstacle.offset;
+    const cx = px + (offset !== undefined ? offset[0] : 0);
+    const cy = py + (offset !== undefined ? offset[1] : 0);
+    const cz = pz + (offset !== undefined ? offset[2] : 0);
+    considerBox(
+      cx - halfExtents[0],
+      cx + halfExtents[0],
+      cy - halfExtents[1],
+      cy + halfExtents[1],
+      cz - halfExtents[2],
+      cz + halfExtents[2],
+    );
   }
 
   let resultX = stepX;

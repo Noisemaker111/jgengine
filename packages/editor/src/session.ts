@@ -5,6 +5,7 @@ import {
   installDocumentLiveSync,
   listEditorKinds,
   normalizeEditorLayers,
+  resolveCatalogDefinitions,
   seedEditorCatalogs,
   type DocumentLiveSync,
   type DocumentPatch,
@@ -20,6 +21,7 @@ import {
   type RuntimePlayControl,
 } from "@jgengine/core/editor/index";
 import type { TerraformMode, TerrainMaterialLayer } from "@jgengine/core/world/terraform";
+import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
@@ -45,6 +47,9 @@ export type EditorBridgeRequest =
   | { method: "set_catalog_entry"; catalogId: string; entryId: string; patch: Record<string, unknown>; label?: string }
   | { method: "add_catalog_entry"; catalogId: string; entryId: string; meta?: Record<string, unknown>; label?: string }
   | { method: "remove_catalog_entry"; catalogId: string; entryId: string }
+  | { method: "add_catalog"; catalogId: string; label?: string; schema?: ParamSchema }
+  | { method: "remove_catalog"; catalogId: string }
+  | { method: "set_catalog_schema"; catalogId: string; schema: ParamSchema; label?: string }
   | { method: "list_selection" }
   | { method: "get_marker"; id: string }
   | { method: "get_volume"; id: string }
@@ -309,7 +314,6 @@ export function createEditorHost(options: {
   dispose: () => void;
 } {
   const catalogDefinitions = options.catalogs ?? [];
-  const catalogById = new Map(catalogDefinitions.map((definition) => [definition.id, definition]));
   const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);
   const liveSync = createDocumentLiveSync(document);
@@ -387,7 +391,7 @@ export function createEditorHost(options: {
     setAssets(next) {
       assets = [...next];
     },
-    getCatalogDefinitions: () => catalogDefinitions,
+    getCatalogDefinitions: () => resolveCatalogDefinitions(session.getState().document, catalogDefinitions),
     getPerf: () => perf,
     setPerf(sample) {
       perf = sample;
@@ -432,13 +436,16 @@ export function createEditorHost(options: {
     handle(request) {
       // One shared context + one try/catch envelope; each verb lives in its per-domain handler module,
       // dispatched through the method → handler table so a missing verb is a compile error, not a fall-through.
+      // Recompute the merged catalog set per request so a catalog just added via `add_catalog`
+      // (carried on the document, not the static game export) is RPC-addressable immediately.
+      const defs = resolveCatalogDefinitions(session.getState().document, catalogDefinitions);
       const ctx: HandlerContext = {
         api,
         session,
         liveSync,
         gameId: options.gameId,
-        catalogDefinitions,
-        catalogById,
+        catalogDefinitions: defs,
+        catalogById: new Map(defs.map((definition) => [definition.id, definition])),
         dispatchGuarded,
         getTerrainSampler: api.getTerrainSampler,
       };

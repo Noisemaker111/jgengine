@@ -2,9 +2,10 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { extname, join, relative, resolve, sep } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { MODEL_EXT, assetIdFromRel, safeAssetFilename } from "./assetNaming";
 import { EDITOR_SCENE_FILENAME, devSavePlugin } from "./devSavePlugin";
+import { importPromotedAsset, isPromotedProject } from "./promotedAssetCatalog";
 
-const MODEL_EXT = /\.(glb|gltf)$/i;
 const ASSET_ROUTE = "/__jgengine/assets/";
 const MANIFEST_ROUTE = "/__jgengine/manifest";
 const IMPORT_ROUTE = "/__jgengine/import-asset";
@@ -21,15 +22,6 @@ export interface EditorManifestAsset {
 export interface EditorManifest {
   scene: unknown | null;
   assets: EditorManifestAsset[];
-}
-
-function assetIdFromRel(rel: string): string {
-  const cleaned = rel
-    .replace(MODEL_EXT, "")
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase();
-  return cleaned.length > 0 ? cleaned : "asset";
 }
 
 function walkModels(root: string, dir: string = root): string[] {
@@ -62,17 +54,6 @@ export function buildEditorManifest(sceneDir: string, assetsDir: string): Editor
     return { id: assetIdFromRel(web), url: ASSET_ROUTE + web, label: web };
   });
   return { scene, assets };
-}
-
-/** Strips path components and unsafe characters from an uploaded model filename, keeping its `.glb`/`.gltf` extension. */
-function safeAssetFilename(filename: string): string {
-  const base = (filename.split(/[\\/]/).pop() ?? "").trim();
-  const ext = extname(base).toLowerCase();
-  const stem = base
-    .slice(0, base.length - ext.length)
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^[-.]+|[-.]+$/g, "");
-  return (stem.length > 0 ? stem : "asset") + ext;
 }
 
 /**
@@ -178,7 +159,19 @@ export function editorHostPlugin(options: EditorHostOptions = {}): EditorHostPlu
             } catch {
               filename = rawName ?? "";
             }
-            const asset = importEditorAsset(assetsDir, filename, bytes);
+            let asset: EditorManifestAsset;
+            if (isPromotedProject(dir)) {
+              // Promoted projects resolve assets through a typed `src/game/assets.ts` catalog, so
+              // persist a durable `extras` entry there. A thrown transform error (unparseable or
+              // multi-call source) falls back to the folder-scan import, preserving the contract.
+              try {
+                asset = importPromotedAsset(dir, filename, bytes);
+              } catch {
+                asset = importEditorAsset(assetsDir, filename, bytes);
+              }
+            } else {
+              asset = importEditorAsset(assetsDir, filename, bytes);
+            }
             res.setHeader("content-type", "application/json");
             res.end(JSON.stringify(asset));
           })

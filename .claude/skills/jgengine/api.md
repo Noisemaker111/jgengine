@@ -124,6 +124,19 @@
 - `DiscoveredRecord` (interface): interface DiscoveredRecord — Internal record for an auto-discovered field: identity, kind, initial value, source object, and get/set accessors.
 - `createDiscoverModule` (const): const createDiscoverModule: (deps: { signal: ChangeSignal; register: <T>(name: string, initial: T, options?: TunableOptions<T> | undefined) => Tunable<T>; controlRecords: Map<string, ControlRecord>; }) => DiscoverModule — Create the discovery subsystem that scans objects/tables for tunable fields and binds them as controls and probes.
 
+## @jgengine/core/devtools/fallbackSeams
+
+- `FallbackCause` (type): type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene" — Why a seam fell back: `omittedMapping` (no mapping supplied — often intended), `unpulledPack` (a mapping was supplied but its asset pack is not pulled/indexed), `noScene` (nothing authored — e.g. no environment component).
+- `FallbackSeam` (type): type FallbackSeam = "ground" | "entity" | "object" | "scatter" — Render seams that can resolve to a placeholder FALLBACK instead of authored content: `ground` (default green terrain), `entity`/`object` (primitive capsule/box actors), `scatter` (stylized proxy foliage).
+- `FallbackSeamCounts` (type): type FallbackSeamCounts = Record<FallbackSeam, Record<FallbackCause, number>> — A per-seam, per-cause count table. Serializable, allocation-stable (keys never change).
+- `FallbackSeamsReport` (type): type FallbackSeamsReport = Partial<Record<FallbackSeam, Partial<Record<FallbackCause, number>>>> — Non-zero-only view of {@link FallbackSeamCounts} returned by {@link fallbackSeamsSnapshot}.
+- `armFallbackSeams` (function): function armFallbackSeams(on: boolean): void — Arm or disarm the fallback-seam diagnostic. Off by default; the shell arms it only when devtools is enabled (dev builds), so production is a pure no-op. Toggling clears all counts so a fresh observation starts empty and the opt-out path reports nothing.
+- `beginFallbackPass` (function): function beginFallbackPass(): void — Zero every seam's tally. Used to bracket a whole observation batch (e.g. in tests). No-op when disarmed.
+- `beginFallbackSeam` (function): function beginFallbackSeam(seam: FallbackSeam): void — Zero one seam's tally before it re-reports (per-seam frame boundary). No-op when disarmed.
+- `endFallbackPass` (function): function endFallbackPass(): void — Close an observation pass: when the set of active fallbacks changes to a non-empty signature, emit ONE deduped warn line (never per-frame — the signature dedup suppresses repeats). No-op when disarmed.
+- `fallbackSeamsSnapshot` (function): function fallbackSeamsSnapshot(): FallbackSeamsReport — Snapshot the current fallback tally as a compact, serializable object (non-zero entries only; empty when nothing fell back). Flows into the devtools `fallbacks` probe and the `debug_snapshot` RPC.
+- `reportFallbackSeam` (function): function reportFallbackSeam(seam: FallbackSeam, cause: FallbackCause): void — Record that a render seam CHOSE a placeholder fallback (called at the choice site). A pure, allocation-free no-op when disarmed — the disarmed guard returns before touching any table.
+
 ## @jgengine/core/devtools/frame
 
 - `FrameModule` (interface): interface FrameModule — Frame subsystem exposing the frame-timing, profiling, and render-sample facades.

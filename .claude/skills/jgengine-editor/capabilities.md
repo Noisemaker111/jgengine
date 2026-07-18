@@ -11,6 +11,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `EditorCatalogEntry` (interface) · `import { EditorCatalogEntry } from "@jgengine/core/editor"`
 - `findEditorCatalog` (function) · `import { findEditorCatalog } from "@jgengine/core/editor"`
 - `findEditorCatalogEntry` (function) · `import { findEditorCatalogEntry } from "@jgengine/core/editor"`
+- `resolveCatalogDefinitions` (function) · `import { resolveCatalogDefinitions } from "@jgengine/core/editor"`
 - `seedEditorCatalogs` (function) · `import { seedEditorCatalogs } from "@jgengine/core/editor"`
 
 ## editor-entities — Author entity stats/movement per catalog row instead of hardcoding TS.

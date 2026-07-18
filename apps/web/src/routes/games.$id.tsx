@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { Page } from "../components/Layout";
-import { gameTitle, isGameId } from "../lib/games";
+import { gameCredit, gameTitle, isGameId } from "../lib/games";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/games/$id")({
@@ -29,6 +29,7 @@ function GamePage() {
     );
   }
   const playUrl = `/play/?game=${id}`;
+  const credit = gameCredit(id);
   return (
     <Page>
       <section className="relative">
@@ -64,6 +65,22 @@ function GamePage() {
             Runs entirely in your browser. Source:{" "}
             <code className="text-slate-400">Games/{id}</code> — built by a coding agent on JGengine.
           </p>
+          {credit !== null && (
+            <p className="mt-1 text-center text-xs text-slate-500">
+              {credit.url !== undefined ? (
+                <a
+                  href={credit.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-slate-400 underline decoration-slate-600 underline-offset-2 transition hover:text-emerald-300"
+                >
+                  {credit.text}
+                </a>
+              ) : (
+                <span className="text-slate-400">{credit.text}</span>
+              )}
+            </p>
+          )}
         </div>
       </section>
     </Page>

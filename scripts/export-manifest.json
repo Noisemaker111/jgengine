@@ -748,6 +748,7 @@
     "./handlers/grids",
     "./handlers/hierarchy",
     "./handlers/index",
+    "./handlers/minimap",
     "./handlers/runtime",
     "./handlers/terrain",
     "./index",

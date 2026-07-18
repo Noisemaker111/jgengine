@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { defineGame } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { fittedObjectColliders } from "../scene/colliders";
+import { encodeCollisionMesh, type CollisionMeshSource } from "../scene/collisionMesh";
 import { createGameContext, type GameContext, type GameContextContent } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
 import type { TerrainField } from "../world/terrain";
@@ -182,6 +184,85 @@ describe("smoothed body-turn", () => {
     driveWith(snap, "b", ["moveForward"], 20, tuning({ ground: FLAT_GROUND }), HEAD);
     expect(smooth.scene.entity.get("a")!.rotationY).toBeLessThan(snap.scene.entity.get("b")!.rotationY);
     expect(smooth.scene.entity.get("a")!.rotationY).toBeGreaterThan(0);
+  });
+});
+
+/** Append an axis-aligned box's 8 corners + 12 surface triangles to a soup. */
+function pushBox(
+  soup: { positions: number[]; indices: number[] },
+  min: readonly [number, number, number],
+  max: readonly [number, number, number],
+): void {
+  const base = soup.positions.length / 3;
+  for (let corner = 0; corner < 8; corner += 1) {
+    soup.positions.push(
+      (corner & 1) === 0 ? min[0] : max[0],
+      (corner & 2) === 0 ? min[1] : max[1],
+      (corner & 4) === 0 ? min[2] : max[2],
+    );
+  }
+  const quads: readonly [number, number, number, number][] = [
+    [0, 2, 3, 1], [4, 5, 7, 6], [0, 1, 5, 4], [2, 6, 7, 3], [0, 4, 6, 2], [1, 3, 7, 5],
+  ];
+  for (const [a, b, c, d] of quads) soup.indices.push(base + a, base + b, base + c, base + a, base + c, base + d);
+}
+
+/** A 4m-wide archway (pillars x[-2,-1] & x[1,2], full height 0..3; lintel across the top at y[2,3]) with
+ * an open 2m central doorway x∈(-1,1) that reaches the floor — the walk-through fixture (wide enough to
+ * clear the 0.3m-radius capsule once the pillar faces voxelize). */
+function archwaySoup(): CollisionMeshSource {
+  const soup = { positions: [] as number[], indices: [] as number[] };
+  pushBox(soup, [-2, 0, -0.15], [-1, 3, 0.15]);
+  pushBox(soup, [1, 0, -0.15], [2, 3, 0.15]);
+  pushBox(soup, [-2, 2, -0.15], [2, 3, 0.15]);
+  return soup;
+}
+
+const ARCHWAY_DIMS = { footprint: { w: 4, d: 0.3 }, center: { x: 0, z: 0 }, minY: 0, maxY: 3 };
+
+/** Fresh single-player context with the controlled entity relocated to `startX` on the −Z side of a wall. */
+function collisionContext(startX: number): GameContext {
+  const ctx = context(["a"]);
+  ctx.scene.entity.setPose("a", { position: [startX, 0, 0], rotationY: 0, dt: 1 / 60 });
+  return ctx;
+}
+
+/** Place the archway at world z=+2 and install its fitted (mesh + compound boxes) blocking collider. */
+function placeArchway(ctx: GameContext): void {
+  const collisionMesh = encodeCollisionMesh(archwaySoup());
+  if (collisionMesh === null) throw new Error("archway failed to encode");
+  const set = fittedObjectColliders({ dims: ARCHWAY_DIMS, collisionMesh });
+  if (set === null) throw new Error("archway failed to fit");
+  const id = ctx.scene.object.place("archway", 0, 0, 2);
+  ctx.scene.object.setColliders(id, set);
+}
+
+const COLLIDE = resolvePlayerMovementTuning({ movement: { collideObjects: true } });
+
+describe("stepPlayerMovement object collision (mesh-accurate)", () => {
+  test("a player walks THROUGH the archway opening (heading toward the doorway gap)", () => {
+    const ctx = collisionContext(0);
+    placeArchway(ctx);
+    driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
+    // Feet 0..head 1.8 clears the lintel (y≥2) and the doorway is open, so the player crosses z=2.
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(2);
+    expect(Math.abs(ctx.scene.entity.get("a")!.position[0])).toBeLessThan(0.5);
+  });
+
+  test("a player is stopped by a pillar 1.5m off-centre — the wall blocks across its true 4m span", () => {
+    const ctx = collisionContext(1.5);
+    placeArchway(ctx);
+    driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
+    // A phantom 1×1 box at the object centre would have let x=1.5 pass; the real pillar stops it short of z=2.
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThan(2);
+    expect(ctx.scene.entity.get("a")!.position[0]).toBeCloseTo(1.5, 6);
+  });
+
+  test("without collideObjects the same off-centre player passes straight through", () => {
+    const ctx = collisionContext(1.5);
+    placeArchway(ctx);
+    driveWith(ctx, "a", ["moveForward"], 120, FLAT, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(2);
   });
 });
 

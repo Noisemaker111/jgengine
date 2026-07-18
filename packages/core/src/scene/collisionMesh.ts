@@ -18,6 +18,13 @@ export interface CollisionMeshData {
   positions: string;
   /** Base64 little-endian triangle vertex indices — u16, or u32 when `vertexCount` exceeds 65536. */
   indices: string;
+  /**
+   * Optional compact model-space solid decomposition from {@link voxelizeToBoxes} — a deterministic set
+   * of AABBs approximating the model's filled volume so movement obstruction can slide a capsule against
+   * the real pillars/lintel of a concave opening (walk THROUGH an arch) instead of one outer box. Absent
+   * for models whose voxelization is empty, keeping box-less assets byte-identical.
+   */
+  boxes?: readonly { min: readonly [number, number, number]; max: readonly [number, number, number] }[];
 }
 
 /** Raw triangle soup for {@link encodeCollisionMesh}: model-space xyz triples plus triangle indices. */
@@ -186,6 +193,7 @@ export function encodeCollisionMesh(source: CollisionMeshSource): CollisionMeshD
     if (wide) indexView.setUint32(i * 4, triangles[i]!, true);
     else indexView.setUint16(i * 2, triangles[i]!, true);
   }
+  const boxes = voxelizeToBoxes(source, 0.25, 32);
   return {
     min: [minX, minY, minZ],
     max: [maxX, maxY, maxZ],
@@ -193,7 +201,258 @@ export function encodeCollisionMesh(source: CollisionMeshSource): CollisionMeshD
     triangleCount: triangles.length / 3,
     positions: bytesToBase64(positionBytes),
     indices: bytesToBase64(indexBytes),
+    ...(boxes.length > 0 ? { boxes } : {}),
   };
+}
+
+/** SAT test: do the three triangle vertices (already translated so the cell center is the origin) overlap
+ * an axis-aligned box of half-size `h`? Projects both onto `axis`; returns false only on a separating gap. */
+function triangleSeparatedOnAxis(
+  v0x: number, v0y: number, v0z: number,
+  v1x: number, v1y: number, v1z: number,
+  v2x: number, v2y: number, v2z: number,
+  ax: number, ay: number, az: number,
+  hx: number, hy: number, hz: number,
+): boolean {
+  const p0 = v0x * ax + v0y * ay + v0z * az;
+  const p1 = v1x * ax + v1y * ay + v1z * az;
+  const p2 = v2x * ax + v2y * ay + v2z * az;
+  const min = Math.min(p0, p1, p2);
+  const max = Math.max(p0, p1, p2);
+  const radius = Math.abs(ax) * hx + Math.abs(ay) * hy + Math.abs(az) * hz;
+  return min > radius || max < -radius;
+}
+
+/** Akenine–Möller triangle vs axis-aligned box overlap (13-axis SAT), box given by center + half-size. */
+function triangleOverlapsBox(
+  ax: number, ay: number, az: number,
+  bx: number, by: number, bz: number,
+  cx: number, cy: number, cz: number,
+  centerX: number, centerY: number, centerZ: number,
+  hx: number, hy: number, hz: number,
+): boolean {
+  const v0x = ax - centerX, v0y = ay - centerY, v0z = az - centerZ;
+  const v1x = bx - centerX, v1y = by - centerY, v1z = bz - centerZ;
+  const v2x = cx - centerX, v2y = cy - centerY, v2z = cz - centerZ;
+  const e0x = v1x - v0x, e0y = v1y - v0y, e0z = v1z - v0z;
+  const e1x = v2x - v1x, e1y = v2y - v1y, e1z = v2z - v1z;
+  const e2x = v0x - v2x, e2y = v0y - v2y, e2z = v0z - v2z;
+  const edges: readonly [number, number, number][] = [
+    [e0x, e0y, e0z],
+    [e1x, e1y, e1z],
+    [e2x, e2y, e2z],
+  ];
+  // 9 axes: each triangle edge crossed with each box face normal (X, Y, Z).
+  for (const [ex, ey, ez] of edges) {
+    // edge × X = (0, -ez, ey); edge × Y = (ez, 0, -ex); edge × Z = (-ey, ex, 0)
+    if (triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, 0, -ez, ey, hx, hy, hz)) return false;
+    if (triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, ez, 0, -ex, hx, hy, hz)) return false;
+    if (triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, -ey, ex, 0, hx, hy, hz)) return false;
+  }
+  // 3 box face normals.
+  if (triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, 1, 0, 0, hx, hy, hz)) return false;
+  if (triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, 0, 1, 0, hx, hy, hz)) return false;
+  if (triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, 0, 0, 1, hx, hy, hz)) return false;
+  // 1 axis: the triangle's face normal.
+  const nx = e0y * e1z - e0z * e1y;
+  const ny = e0z * e1x - e0x * e1z;
+  const nz = e0x * e1y - e0y * e1x;
+  if ((nx !== 0 || ny !== 0 || nz !== 0) &&
+    triangleSeparatedOnAxis(v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z, nx, ny, nz, hx, hy, hz)) {
+    return false;
+  }
+  return true;
+}
+
+const VOXEL_MAX_CELLS = 2_000_000;
+
+/**
+ * Decompose a triangle soup into a compact, deterministic set of model-space AABBs approximating its
+ * solid volume — the movement-obstruction counterpart to the raycast BVH. Rasterizes triangles onto a
+ * `cellSize` voxel grid, fills each vertical column between its lowest and highest occupied voxel (so a
+ * solid becomes solid and a concave opening — an archway — keeps its central gap empty while its pillars
+ * and lintel fill in), then greedy-merges occupied voxels into AABBs in a fixed z→y→x order. Pure and
+ * allocation-tolerant (runs once per asset at reindex). Caps the output at `maxBoxes`, folding any
+ * remainder into one enclosing AABB so obstruction stays conservative. Returns `[]` for degenerate input.
+ * @internal
+ */
+export function voxelizeToBoxes(
+  source: CollisionMeshSource,
+  cellSize = 0.25,
+  maxBoxes = 32,
+): { min: [number, number, number]; max: [number, number, number] }[] {
+  const positions = source.positions;
+  const indices = source.indices;
+  if (!(cellSize > 0) || !Number.isFinite(cellSize)) return [];
+  if (!(maxBoxes >= 1)) return [];
+  if (positions.length < 9 || positions.length % 3 !== 0) return [];
+  if (indices.length < 3 || indices.length % 3 !== 0) return [];
+  const vertexCount = positions.length / 3;
+
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  const referenced = new Uint8Array(vertexCount);
+  for (let i = 0; i < indices.length; i += 1) {
+    const index = indices[i]!;
+    if (!Number.isInteger(index) || index < 0 || index >= vertexCount) continue;
+    referenced[index] = 1;
+  }
+  for (let v = 0; v < vertexCount; v += 1) {
+    if (referenced[v] === 0) continue;
+    const x = positions[v * 3]!, y = positions[v * 3 + 1]!, z = positions[v * 3 + 2]!;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      referenced[v] = 0;
+      continue;
+    }
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (z < minZ) minZ = z;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+    if (z > maxZ) maxZ = z;
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return [];
+  const spanX = maxX - minX, spanY = maxY - minY, spanZ = maxZ - minZ;
+  if (!(spanX > 0) && !(spanY > 0) && !(spanZ > 0)) return [];
+
+  // Coarsen the grid up until it fits the cell budget, so a huge model can't allocate an enormous grid.
+  let cell = cellSize;
+  let nx = 1, ny = 1, nz = 1;
+  for (;;) {
+    nx = Math.max(1, Math.ceil(spanX / cell));
+    ny = Math.max(1, Math.ceil(spanY / cell));
+    nz = Math.max(1, Math.ceil(spanZ / cell));
+    if (nx * ny * nz <= VOXEL_MAX_CELLS) break;
+    cell *= 2;
+  }
+  const total = nx * ny * nz;
+  const stride = nx * ny;
+  const occupancy = new Uint8Array(total);
+
+  // Rasterize: mark every voxel each triangle actually overlaps (true SAT, not a fat AABB), so a triangle
+  // spanning an opening never leaks solidity into the gap between the surfaces it connects.
+  const half = cell / 2;
+  for (let t = 0; t + 2 < indices.length; t += 3) {
+    const ia = indices[t]!, ib = indices[t + 1]!, ic = indices[t + 2]!;
+    if (referenced[ia] === 0 || referenced[ib] === 0 || referenced[ic] === 0) continue;
+    const ax = positions[ia * 3]!, ay = positions[ia * 3 + 1]!, az = positions[ia * 3 + 2]!;
+    const bx = positions[ib * 3]!, by = positions[ib * 3 + 1]!, bz = positions[ib * 3 + 2]!;
+    const cx = positions[ic * 3]!, cy = positions[ic * 3 + 1]!, cz = positions[ic * 3 + 2]!;
+    const cellOf = (v: number, mn: number, n: number): number =>
+      Math.min(n - 1, Math.max(0, Math.floor((v - mn) / cell)));
+    const ix0 = cellOf(Math.min(ax, bx, cx), minX, nx);
+    const ix1 = cellOf(Math.max(ax, bx, cx), minX, nx);
+    const iy0 = cellOf(Math.min(ay, by, cy), minY, ny);
+    const iy1 = cellOf(Math.max(ay, by, cy), minY, ny);
+    const iz0 = cellOf(Math.min(az, bz, cz), minZ, nz);
+    const iz1 = cellOf(Math.max(az, bz, cz), minZ, nz);
+    for (let iz = iz0; iz <= iz1; iz += 1) {
+      const czc = minZ + (iz + 0.5) * cell;
+      for (let iy = iy0; iy <= iy1; iy += 1) {
+        const cyc = minY + (iy + 0.5) * cell;
+        for (let ix = ix0; ix <= ix1; ix += 1) {
+          const idx = ix + iy * nx + iz * stride;
+          if (occupancy[idx] === 1) continue;
+          const cxc = minX + (ix + 0.5) * cell;
+          if (triangleOverlapsBox(ax, ay, az, bx, by, bz, cx, cy, cz, cxc, cyc, czc, half, half, half)) {
+            occupancy[idx] = 1;
+          }
+        }
+      }
+    }
+  }
+
+  // Column fill: solidify each (x,z) column between its lowest and highest occupied voxel. A span becomes
+  // a filled interior; an arch keeps its central gap empty (that column only touches the lintel up top).
+  for (let iz = 0; iz < nz; iz += 1) {
+    for (let ix = 0; ix < nx; ix += 1) {
+      let firstY = -1, lastY = -1;
+      for (let iy = 0; iy < ny; iy += 1) {
+        if (occupancy[ix + iy * nx + iz * stride] === 1) {
+          if (firstY < 0) firstY = iy;
+          lastY = iy;
+        }
+      }
+      for (let iy = firstY; iy <= lastY; iy += 1) occupancy[ix + iy * nx + iz * stride] = 1;
+    }
+  }
+
+  // Greedy-merge occupied voxels into AABBs in fixed z→y→x order: grow +x along the row, then +y over the
+  // whole x-strip, then +z over the whole xy-slab. Deterministic — output order is the scan order.
+  const cellToModel = (i: number, mn: number, mx: number): number => Math.min(mx, mn + i * cell);
+  const claimed = new Uint8Array(total);
+  const boxes: { min: [number, number, number]; max: [number, number, number] }[] = [];
+  for (let z0 = 0; z0 < nz; z0 += 1) {
+    for (let y0 = 0; y0 < ny; y0 += 1) {
+      for (let x0 = 0; x0 < nx; x0 += 1) {
+        const i0 = x0 + y0 * nx + z0 * stride;
+        if (occupancy[i0] === 0 || claimed[i0] === 1) continue;
+
+        // At the cap, fold this voxel and every remaining unclaimed occupied voxel into one enclosing AABB.
+        if (boxes.length === maxBoxes - 1) {
+          let ex0 = nx, ey0 = ny, ez0 = nz, ex1 = -1, ey1 = -1, ez1 = -1;
+          for (let z = 0; z < nz; z += 1)
+            for (let y = 0; y < ny; y += 1)
+              for (let x = 0; x < nx; x += 1) {
+                const i = x + y * nx + z * stride;
+                if (occupancy[i] === 0 || claimed[i] === 1) continue;
+                if (x < ex0) ex0 = x;
+                if (y < ey0) ey0 = y;
+                if (z < ez0) ez0 = z;
+                if (x > ex1) ex1 = x;
+                if (y > ey1) ey1 = y;
+                if (z > ez1) ez1 = z;
+              }
+          boxes.push({
+            min: [cellToModel(ex0, minX, maxX), cellToModel(ey0, minY, maxY), cellToModel(ez0, minZ, maxZ)],
+            max: [cellToModel(ex1 + 1, minX, maxX), cellToModel(ey1 + 1, minY, maxY), cellToModel(ez1 + 1, minZ, maxZ)],
+          });
+          return boxes;
+        }
+
+        let x1 = x0;
+        while (x1 + 1 < nx) {
+          const i = x1 + 1 + y0 * nx + z0 * stride;
+          if (occupancy[i] === 0 || claimed[i] === 1) break;
+          x1 += 1;
+        }
+        let y1 = y0;
+        for (let grow = true; grow && y1 + 1 < ny; ) {
+          const yy = y1 + 1;
+          for (let x = x0; x <= x1; x += 1) {
+            const i = x + yy * nx + z0 * stride;
+            if (occupancy[i] === 0 || claimed[i] === 1) {
+              grow = false;
+              break;
+            }
+          }
+          if (grow) y1 = yy;
+        }
+        let z1 = z0;
+        for (let grow = true; grow && z1 + 1 < nz; ) {
+          const zz = z1 + 1;
+          for (let y = y0; grow && y <= y1; y += 1) {
+            for (let x = x0; x <= x1; x += 1) {
+              const i = x + y * nx + zz * stride;
+              if (occupancy[i] === 0 || claimed[i] === 1) {
+                grow = false;
+                break;
+              }
+            }
+          }
+          if (grow) z1 = zz;
+        }
+        for (let z = z0; z <= z1; z += 1)
+          for (let y = y0; y <= y1; y += 1)
+            for (let x = x0; x <= x1; x += 1) claimed[x + y * nx + z * stride] = 1;
+        boxes.push({
+          min: [cellToModel(x0, minX, maxX), cellToModel(y0, minY, maxY), cellToModel(z0, minZ, maxZ)],
+          max: [cellToModel(x1 + 1, minX, maxX), cellToModel(y1 + 1, minY, maxY), cellToModel(z1 + 1, minZ, maxZ)],
+        });
+      }
+    }
+  }
+  return boxes;
 }
 
 const LEAF_TRIANGLES = 4;

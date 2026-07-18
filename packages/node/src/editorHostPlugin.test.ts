@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { expect, test } from "bun:test";
 
 import { buildEditorManifest, importEditorAsset } from "./editorHostPlugin";
+import { isPromotedProject } from "./promotedAssetCatalog";
 
 function workspace(): string {
   return mkdtempSync(join(tmpdir(), "jg-editor-"));
@@ -74,4 +75,18 @@ test("importEditorAsset strips path components and unsafe characters from the fi
 test("importEditorAsset rejects a non-model file", () => {
   const dir = workspace();
   expect(() => importEditorAsset(dir, "notes.txt", new Uint8Array([0]))).toThrow();
+});
+
+test("a workspace without src/game/assets.ts is not promoted and imports via the folder scan (no #1030 regression)", () => {
+  const dir = workspace();
+  const assetsDir = join(dir, "assets");
+  expect(isPromotedProject(dir)).toBe(false);
+  // The route branch would call importEditorAsset for a non-promoted dir — its contract is unchanged.
+  const imported = importEditorAsset(assetsDir, "Crate.glb", new Uint8Array([9, 9, 9]));
+  expect(imported).toEqual({
+    id: "crate",
+    url: "/__jgengine/assets/Crate.glb",
+    label: "Crate.glb",
+  });
+  expect(readFileSync(join(assetsDir, "Crate.glb"))).toEqual(Buffer.from([9, 9, 9]));
 });

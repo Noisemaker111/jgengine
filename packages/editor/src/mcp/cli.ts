@@ -35,7 +35,7 @@ function printHelp(): void {
 export type EditorCliOptions = {
   gameId: string;
   port: number;
-  rpcSource: RpcPayloadSource | null;
+  rpcSources: RpcPayloadSource[];
   serve: boolean;
   stdio: boolean;
 };
@@ -48,7 +48,7 @@ export type EditorCliOptions = {
 export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
   let gameId = "the-robots";
   let port = 17373;
-  let rpcSource: RpcPayloadSource | null = null;
+  const rpcSources: RpcPayloadSource[] = [];
   let serve = true;
   let stdio = false;
 
@@ -59,16 +59,16 @@ export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
     else if (arg === "--rpc") {
       const value = argv[++i];
       if (value === undefined || value === "") {
-        rpcSource = { kind: "inline", raw: "" };
+        rpcSources.push({ kind: "inline", raw: "" });
       } else if (value === "-") {
-        rpcSource = { kind: "stdin" };
+        rpcSources.push({ kind: "stdin" });
       } else {
-        rpcSource = { kind: "inline", raw: value };
+        rpcSources.push({ kind: "inline", raw: value });
       }
       serve = false;
     } else if (arg === "--rpc-file") {
       const path = argv[++i];
-      rpcSource = { kind: "file", path: path ?? "" };
+      rpcSources.push({ kind: "file", path: path ?? "" });
       serve = false;
     } else if (arg === "--stdio") {
       stdio = true;
@@ -76,7 +76,7 @@ export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
     } else if (arg === "--serve") serve = true;
   }
 
-  return { gameId, port, rpcSource, serve, stdio };
+  return { gameId, port, rpcSources, serve, stdio };
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -91,7 +91,7 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
 
-  const { gameId, port, rpcSource, serve, stdio } = parseEditorCliArgs(argv);
+  const { gameId, port, rpcSources, serve, stdio } = parseEditorCliArgs(argv);
 
   if (stdio) {
     await runEditorMcpStdio({ gameId });
@@ -115,29 +115,35 @@ async function main(argv: string[]): Promise<number> {
     catalogs: catalogs.catalogs,
   });
 
-  if (rpcSource !== null) {
-    const payload = await loadRpcPayload(rpcSource);
-    if (!payload.ok) {
-      console.error(payload.error);
-      dispose();
-      return 1;
+  if (rpcSources.length > 0) {
+    for (const rpcSource of rpcSources) {
+      const payload = await loadRpcPayload(rpcSource);
+      if (!payload.ok) {
+        console.error(payload.error);
+        dispose();
+        return 1;
+      }
+      const decoded = decodeEditorBridgeRequest(payload.value);
+      if (!decoded.ok) {
+        console.log(
+          JSON.stringify(
+            { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
+            null,
+            2,
+          ),
+        );
+        dispose();
+        return 1;
+      }
+      const response = api.handle(decoded.request);
+      console.log(JSON.stringify(response, null, 2));
+      if (!response.ok) {
+        dispose();
+        return 1;
+      }
     }
-    const decoded = decodeEditorBridgeRequest(payload.value);
-    if (!decoded.ok) {
-      console.log(
-        JSON.stringify(
-          { ok: false, error: decoded.errors.map((e) => `${e.path} ${e.message}`).join("; ") },
-          null,
-          2,
-        ),
-      );
-      dispose();
-      return 1;
-    }
-    const response = api.handle(decoded.request);
-    console.log(JSON.stringify(response, null, 2));
     dispose();
-    return response.ok ? 0 : 1;
+    return 0;
   }
 
   if (serve) {

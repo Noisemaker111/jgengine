@@ -7,6 +7,7 @@ import {
   type DevtoolsSnapshot,
   type LongFrameEvent,
 } from "@jgengine/core/devtools/devtools";
+import { fallbackSeamsSnapshot } from "@jgengine/core/devtools/fallbackSeams";
 import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
@@ -246,6 +247,7 @@ export function DevtoolsOverlay({
     const disposers = [
       devtools.probes.register("entities", () => ctx.scene.entity.list().length),
       devtools.probes.register("objects", () => ctx.scene.object.list().length),
+      devtools.probes.register("fallbacks", () => fallbackSeamsSnapshot()),
     ];
     return () => {
       for (const dispose of disposers) dispose();
