@@ -192,6 +192,9 @@ export function createShellLayoutStore(gameId: string): ShellLayoutStore {
         partial.bottomOpen = true;
         partial.bottomTab = "assistant";
       }
+      if (workspace === "multiplayer") {
+        partial.leftOpen = true;
+      }
       state = { ...state, ...partial };
       emit();
     },

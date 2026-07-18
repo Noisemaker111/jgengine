@@ -21,7 +21,8 @@ export const WORKSPACES: readonly RailEntry[] = [
   { id: "audio", label: "Audio", icon: "audio", supported: false },
   { id: "lighting", label: "Lighting", icon: "bulb", supported: false },
   { id: "ai", label: "AI", icon: "sparkle", supported: true },
-  { id: "multiplayer", label: "Network", icon: "network", supported: false },
+  /** Presence/session inspection over host-supplied snapshot + game adapter config — never fabricated. */
+  { id: "multiplayer", label: "Network", icon: "network", supported: true },
 ];
 
 /**

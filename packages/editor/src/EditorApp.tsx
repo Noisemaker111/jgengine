@@ -28,6 +28,10 @@ import { TerrainReadoutHud } from "./TerrainReadoutHud";
 import { TerrainSculpt } from "./TerrainSculpt";
 import { createTerrainReadoutStore, type TerrainReadoutStore } from "./terrainReadoutStore";
 import { RuntimePlayInspectorChrome, RuntimePlayPublisher } from "./RuntimePlayBridge";
+import {
+  buildEditorNetworkSnapshot,
+  type EditorNetworkPresenceInput,
+} from "./networkSnapshot";
 import { createEditorHost, type EditorHostApi, type EditorRunMode } from "./session";
 import {
   createEditorUiStore,
@@ -51,6 +55,12 @@ export interface EditorAppProps {
   save?: EditorSaveFn;
   /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
   modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
+  /**
+   * Optional live multiplayer presence/session feed for the Network workspace.
+   * Adapter config always comes from `playable.game.multiplayer`; this only supplies real
+   * session identity and presence rows. Omit when the host has nothing live — the panel stays honest.
+   */
+  networkPresence?: EditorNetworkPresenceInput;
 }
 
 /** Persists an exported document JSON; resolves with where it landed or why it failed. */
@@ -380,9 +390,18 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence }: EditorAppProps) {
   const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
+  const networkSnapshot = useMemo(
+    () =>
+      buildEditorNetworkSnapshot({
+        gameId,
+        multiplayer: playable.game.multiplayer,
+        presence: networkPresence,
+      }),
+    [gameId, playable, networkPresence],
+  );
   const uiStoreRef = useRef<EditorUiStore | null>(null);
   if (uiStoreRef.current === null) uiStoreRef.current = createEditorUiStore();
   const ui = uiStoreRef.current;
@@ -647,7 +666,18 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />;
     };
     const GameUI: ComponentType = function EditorUi() {
-      return <EditorChrome gameId={gameId} session={host.api.getSession()} api={host.api} assets={catalogAssets} ui={ui} baselineDocument={host.baselineDocument} save={saveFn} />;
+      return (
+        <EditorChrome
+          gameId={gameId}
+          session={host.api.getSession()}
+          api={host.api}
+          assets={catalogAssets}
+          ui={ui}
+          baselineDocument={host.baselineDocument}
+          save={saveFn}
+          networkSnapshot={networkSnapshot}
+        />
+      );
     };
     return {
       ...playable,
@@ -659,7 +689,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip }
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
       camera: inspectionCamera,
     };
-  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip]);
+  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot]);
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 

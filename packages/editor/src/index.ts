@@ -1,5 +1,14 @@
 export { EditorApp, type EditorAppProps, type EditorSaveFn } from "./EditorApp";
 export {
+  buildEditorNetworkSnapshot,
+  isNetworkMultiplayerConfigured,
+  type EditorNetworkAdapterKind,
+  type EditorNetworkPresenceActor,
+  type EditorNetworkPresenceInput,
+  type EditorNetworkSession,
+  type EditorNetworkSnapshot,
+} from "./networkSnapshot";
+export {
   StandaloneEditor,
   createBlankPlayable,
   blankWorld,
