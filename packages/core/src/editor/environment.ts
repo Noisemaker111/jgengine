@@ -58,6 +58,28 @@ const LAKEBED_CELL = 1.5;
 const LAKEBED_UNDERCUT = 1.2;
 /** Meters from the shoreline over which the bed ramps to full depth. */
 const LAKEBED_SHORE_RAMP = 4;
+/** Wavelength (m) of the seeded shore-ramp modulation that keeps the waterline organic. */
+const LAKEBED_SHORE_NOISE_SCALE = 5.5;
+
+/** Deterministic 2D value noise in [0,1] — the shoreline wobble must be stable across runs. */
+function lakebedShoreNoise(x: number, z: number): number {
+  const lattice = (ix: number, iz: number): number => {
+    let h = (Math.imul(ix, 374761393) + Math.imul(iz, 668265263)) ^ 0x5bf03635;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  const ix = Math.floor(x);
+  const iz = Math.floor(z);
+  const fx = x - ix;
+  const fz = z - iz;
+  const ux = fx * fx * (3 - 2 * fx);
+  const uz = fz * fz * (3 - 2 * fz);
+  const a = lattice(ix, iz);
+  const b = lattice(ix + 1, iz);
+  const c = lattice(ix, iz + 1);
+  const d = lattice(ix + 1, iz + 1);
+  return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
+}
 
 /**
  * Derives a terrain-depression sculpt snapshot from the document's authored `water` volumes: each
@@ -95,10 +117,17 @@ export function lakebedFromWaterVolumes(doc: EditorDocument): TerraformSnapshot 
       let offset = 0;
       for (const water of waters) {
         const he = water.halfExtents!;
-        // Signed distance to the water rectangle on XZ: negative inside, positive outside.
-        const dx = Math.abs(x - water.center.x) - he.x;
-        const dz = Math.abs(z - water.center.z) - he.z;
-        const dist = Math.max(dx, dz);
+        // Rounded-rectangle signed distance on XZ (negative inside): the carve — and with it the
+        // waterline — rounds the box corners instead of stamping a sharp rectangle in the ground.
+        const rr = Math.min(he.x, he.z) * 0.3;
+        const ax = Math.abs(x - water.center.x) - he.x + rr;
+        const az = Math.abs(z - water.center.z) - he.z + rr;
+        const raw = Math.hypot(Math.max(ax, 0), Math.max(az, 0)) + Math.min(Math.max(ax, az), 0) - rr;
+        if (raw >= 0) continue;
+        // Seeded wobble wanders the shoreline up to ±0.8 m, ramped in from the box edge so the
+        // carve never escapes the authored footprint.
+        const wobble = (lakebedShoreNoise(x / LAKEBED_SHORE_NOISE_SCALE, z / LAKEBED_SHORE_NOISE_SCALE) - 0.5) * 1.6;
+        const dist = raw + wobble * Math.min(1, -raw / 1.5);
         if (dist >= 0) continue;
         const depth = he.y * 2 + LAKEBED_UNDERCUT;
         const t = Math.min(1, -dist / LAKEBED_SHORE_RAMP);

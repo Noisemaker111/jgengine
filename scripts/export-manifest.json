@@ -618,6 +618,7 @@
     "./environment/groundPadMath",
     "./environment/index",
     "./environment/skyLightingPolicy",
+    "./environment/terrainGroundColor",
     "./gameKit",
     "./hotbarActions",
     "./input/mouseLook",

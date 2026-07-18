@@ -56,6 +56,10 @@ vec2 jgSoilWorleyF1F2(vec2 p){
   }
   return vec2(f1, f2);
 }
+float jgSoilCrackMask(vec2 p, float scale){
+  vec2 f = jgSoilWorleyF1F2(p / scale);
+  return 1.0 - smoothstep(0.0, 0.065, f.y - f.x);
+}
 `;
 
 function hashSeed(text: string): number {
@@ -75,6 +79,8 @@ export interface SoilPatchEdge {
   halfSize: readonly [number, number];
   /** Fade band width in meters from the patch border inward. Default 1.6. */
   fade?: number;
+  /** Terrain color under the patch: the border blends its *color* toward the ground it meets, not just its alpha. Defaults to the soil base color (color blend off). */
+  groundColor?: string;
 }
 
 /**
@@ -106,6 +112,7 @@ export function createSoilPatchMaterial(rules: SoilRules, edge?: SoilPatchEdge):
       shader.uniforms.uSoilCenter = { value: new THREE.Vector2(edge.center[0], edge.center[1]) };
       shader.uniforms.uSoilHalfSize = { value: new THREE.Vector2(edge.halfSize[0], edge.halfSize[1]) };
       shader.uniforms.uSoilEdgeFade = { value: edge.fade ?? 1.6 };
+      shader.uniforms.uSoilGroundColor = { value: new THREE.Color(edge.groundColor ?? rules.baseColor) };
     }
 
     shader.vertexShader = shader.vertexShader.replace(
@@ -128,27 +135,48 @@ uniform float uSoilCrackIntensity;
 uniform vec3 uSoilMossColor;
 uniform float uSoilMossCoverage;
 uniform float uSoilSeed;
-${edge === undefined ? "" : "uniform vec2 uSoilCenter;\nuniform vec2 uSoilHalfSize;\nuniform float uSoilEdgeFade;\n"}${SOIL_NOISE_GLSL}`,
+${edge === undefined ? "" : "uniform vec2 uSoilCenter;\nuniform vec2 uSoilHalfSize;\nuniform float uSoilEdgeFade;\nuniform vec3 uSoilGroundColor;\n"}${SOIL_NOISE_GLSL}`,
     ).replace(
       "#include <color_fragment>",
       `#include <color_fragment>
 vec2 jgSoilP = vJgSoilWorldPos.xz + vec2(uSoilSeed * 0.37, uSoilSeed * 0.71);
-vec2 jgSoilF1F2 = jgSoilWorleyF1F2(jgSoilP / uSoilCrackScale);
-float jgSoilCrack = 1.0 - smoothstep(0.0, 0.1, jgSoilF1F2.y - jgSoilF1F2.x);
+float jgSoilCrack = jgSoilCrackMask(jgSoilP, uSoilCrackScale);
 vec3 jgSoilCol = mix(diffuseColor.rgb, uSoilCrackColor, jgSoilCrack * uSoilCrackIntensity);
+// Crack floors go darker still — paired with the relief normals they read as recessed, not painted.
+jgSoilCol *= 1.0 - jgSoilCrack * uSoilCrackIntensity * 0.4;
+// Sun-baked plate mottling so the dirt between cracks isn't one flat swatch.
+jgSoilCol *= mix(0.92, 1.08, jgSoilFbm(jgSoilP / 1.1));
 float jgSoilMossN = jgSoilFbm(jgSoilP / 2.4);
 float jgSoilMossMask = smoothstep(1.0 - uSoilMossCoverage, 1.0 - uSoilMossCoverage + 0.18, jgSoilMossN);
-jgSoilCol = mix(jgSoilCol, uSoilMossColor, jgSoilMossMask);
-diffuseColor.rgb = jgSoilCol;${
+// Fine clump break-up: moss creeps in speckled colonies (and pools into the cracks), not airbrushed blobs.
+jgSoilMossMask *= smoothstep(0.3, 0.75, jgSoilFbm(jgSoilP / 0.55));
+jgSoilMossMask = min(1.0, jgSoilMossMask + jgSoilMossMask * jgSoilCrack * 0.8);
+jgSoilCol = mix(jgSoilCol, uSoilMossColor * mix(0.85, 1.1, jgSoilFbm(jgSoilP / 0.9)), jgSoilMossMask);${
         edge === undefined
-          ? ""
+          ? "\ndiffuseColor.rgb = jgSoilCol;"
           : `
-// Noise-eroded edge fade: the patch dissolves into the ground instead of ending at a hard rectangle.
+// Border: color walks toward the terrain tint across the fade band (alpha alone left a decal
+// seam — the dirt must *become* the ground it meets), then a noise-eaten alpha finishes it.
 vec2 jgSoilEdgeD = uSoilHalfSize - abs(vJgSoilWorldPos.xz - uSoilCenter);
 float jgSoilEdgeDist = min(jgSoilEdgeD.x, jgSoilEdgeD.y);
 float jgSoilEdgeNoise = jgSoilFbm(jgSoilP * 0.9) * uSoilEdgeFade;
-diffuseColor.a *= clamp((jgSoilEdgeDist - jgSoilEdgeNoise) / max(uSoilEdgeFade, 0.001) + 0.55, 0.0, 1.0);`
+float jgSoilInside = clamp((jgSoilEdgeDist - jgSoilEdgeNoise) / max(uSoilEdgeFade, 0.001) + 0.55, 0.0, 1.0);
+jgSoilCol = mix(uSoilGroundColor, jgSoilCol, smoothstep(0.0, 0.85, jgSoilInside));
+diffuseColor.rgb = jgSoilCol;
+diffuseColor.a *= clamp(jgSoilInside * 1.5, 0.0, 1.0);`
       }`,
+    ).replace(
+      "#include <normal_fragment_maps>",
+      `#include <normal_fragment_maps>
+// Crack relief: tilt normals along the Worley gradient so crack walls catch and lose the light
+// (finite differences over the same field that colors the cracks — they self-shadow in sync).
+vec2 jgSoilNp = vJgSoilWorldPos.xz + vec2(uSoilSeed * 0.37, uSoilSeed * 0.71);
+float jgSoilNe = 0.05;
+vec2 jgSoilGrad = vec2(
+  jgSoilCrackMask(jgSoilNp + vec2(jgSoilNe, 0.0), uSoilCrackScale) - jgSoilCrackMask(jgSoilNp - vec2(jgSoilNe, 0.0), uSoilCrackScale),
+  jgSoilCrackMask(jgSoilNp + vec2(0.0, jgSoilNe), uSoilCrackScale) - jgSoilCrackMask(jgSoilNp - vec2(0.0, jgSoilNe), uSoilCrackScale)
+) / (2.0 * jgSoilNe);
+normal = normalize(normal + vec3(jgSoilGrad.x, 0.0, jgSoilGrad.y) * uSoilCrackIntensity * 0.2);`,
     );
   };
 

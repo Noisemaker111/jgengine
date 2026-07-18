@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { useMemo, type ComponentType } from "react";
 
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import {
@@ -15,6 +15,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "./environment";
+import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
 import type { PlayableGame } from "./registry";
 import { AuthoredScene } from "./scene/AuthoredScene";
 
@@ -49,9 +50,15 @@ function authoredSceneOverlay(
   placement: boolean | { verticalOffset?: number },
   scatterModels: Record<string, string | ModelConfig> | undefined,
   assets: AssetCatalog,
+  world: GameDefinitionConfig<ModelAssetRef>["world"],
   Vfx: ComponentType<WorldOverlayProps> | undefined,
 ): ComponentType<WorldOverlayProps> {
+  const terrain = world !== undefined && world.kind === "environment" ? world.terrain : undefined;
   return function AuthoredSceneOverlay(props: WorldOverlayProps) {
+    const groundColorAt = useMemo(
+      () => terrainGroundColorSampler(terrain, props.ctx.world.ground),
+      [props.ctx.world.ground],
+    );
     return (
       <>
         <AuthoredScene
@@ -59,6 +66,7 @@ function authoredSceneOverlay(
           field={props.ctx.world.ground}
           placeObjects={placement}
           {...(scatterModels === undefined ? {} : { scatterModels, assets })}
+          {...(groundColorAt === undefined ? {} : { groundColorAt })}
         />
         {Vfx === undefined ? null : <Vfx {...props} />}
       </>
@@ -161,7 +169,14 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     WorldOverlay:
       editorLayers === undefined
         ? WorldOverlay
-        : authoredSceneOverlay(editorLayers, scenePlacement ?? true, sceneScatterModels, game.assets, WorldOverlay),
+        : authoredSceneOverlay(
+            editorLayers,
+            scenePlacement ?? true,
+            sceneScatterModels,
+            game.assets,
+            game.world,
+            WorldOverlay,
+          ),
     viewmodel,
     renderEntity,
     renderObject,

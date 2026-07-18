@@ -53,14 +53,42 @@
       },
       "label": "Lake (water studio)",
       "meta": {
-        "color": "#0f4a63",
-        "shallowColor": "#2e8fa0",
+        "color": "#0d5273",
+        "shallowColor": "#43b0a4",
         "waveHeight": 0.07,
         "waveSpeed": 0.55,
         "waveScale": 0.6,
-        "foam": 1,
-        "opacity": 0.92,
+        "foam": 1.0,
+        "opacity": 0.9,
         "reflectivity": 0.35
+      }
+    },
+    {
+      "id": "base_turf",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "halfExtents": {
+        "x": 30,
+        "y": 0.5,
+        "z": 30
+      },
+      "label": "Yard turf (grass studio)",
+      "meta": {
+        "density": 69,
+        "bladeHeight": 0.5,
+        "colorBase": "#567f39",
+        "colorTip": "#a3c25c",
+        "colorVariation": 0.3,
+        "windStrength": 0.22,
+        "windSpeed": 1.6,
+        "windGust": 0.16,
+        "roughness": 0.85,
+        "seed": "yard-turf"
       }
     },
     {
@@ -79,7 +107,7 @@
       },
       "label": "Meadow (grass studio)",
       "meta": {
-        "density": 60,
+        "density": 110,
         "bladeHeight": 0.75,
         "colorBase": "#3f6f37",
         "colorTip": "#9ac25a",
@@ -108,11 +136,11 @@
       "label": "Cracked yard (soil studio)",
       "meta": {
         "baseColor": "#8a7256",
-        "crackScale": 3.2,
+        "crackScale": 2.6,
         "crackColor": "#3a2818",
-        "crackIntensity": 0.75,
+        "crackIntensity": 0.85,
         "mossColor": "#5c7a3a",
-        "mossCoverage": 0.5,
+        "mossCoverage": 0.34,
         "seed": "cracked"
       }
     },
@@ -621,8 +649,8 @@
         "poleHeight": 6,
         "wireCount": 3,
         "wireSpacing": 0.7,
-        "cableRadius": 0.06,
-        "sag": 1,
+        "cableRadius": 0.045,
+        "sag": 1.0,
         "sagPerMeter": 0.04,
         "cableSegments": 14,
         "snapToTerrain": true,

@@ -27,6 +27,10 @@ export interface OceanColorConfig {
   opacity?: number;
   fresnelStrength?: number;
   horizonBlend?: number;
+  /** Water depth (m) at which the body color reaches the full `deep` tone. Default 2.6. */
+  depthRange?: number;
+  /** Sun-glint sparkle intensity, 0 disables. Default 0.35. */
+  sparkle?: number;
 }
 
 export interface OceanFoamConfig {
@@ -34,6 +38,8 @@ export interface OceanFoamConfig {
   softness?: number;
   intensity?: number;
   coverage?: number;
+  /** Shoreline foam lick width (m of water depth it covers). Default 0.5. */
+  shoreWidth?: number;
 }
 
 export interface OceanConfig {
@@ -68,6 +74,8 @@ export interface ResolvedOceanColorConfig {
   opacity: number;
   fresnelStrength: number;
   horizonBlend: number;
+  depthRange: number;
+  sparkle: number;
 }
 
 export interface ResolvedOceanFoamConfig {
@@ -75,6 +83,7 @@ export interface ResolvedOceanFoamConfig {
   softness: number;
   intensity: number;
   coverage: number;
+  shoreWidth: number;
 }
 
 export interface ResolvedOceanWaveConfig {
@@ -132,12 +141,15 @@ export const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig = {
     opacity: 0.88,
     fresnelStrength: 0.7,
     horizonBlend: 0.38,
+    depthRange: 2.6,
+    sparkle: 0.35,
   },
   foam: {
     crestThreshold: 0.64,
     softness: 0.22,
     intensity: 0.8,
     coverage: 0.45,
+    shoreWidth: 0.5,
   },
   waves: [],
 };
@@ -231,6 +243,8 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
         finiteOr(patch.color?.fresnelStrength, DEFAULT_OCEAN_CONFIG.color.fresnelStrength),
       ),
       horizonBlend: clamp(finiteOr(patch.color?.horizonBlend, DEFAULT_OCEAN_CONFIG.color.horizonBlend), 0, 1),
+      depthRange: Math.max(0.05, finiteOr(patch.color?.depthRange, DEFAULT_OCEAN_CONFIG.color.depthRange)),
+      sparkle: Math.max(0, finiteOr(patch.color?.sparkle, DEFAULT_OCEAN_CONFIG.color.sparkle)),
     },
     foam: {
       ...DEFAULT_OCEAN_CONFIG.foam,
@@ -239,6 +253,7 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
       softness: clamp(finiteOr(patch.foam?.softness, DEFAULT_OCEAN_CONFIG.foam.softness), 0.001, 1),
       intensity: Math.max(0, finiteOr(patch.foam?.intensity, DEFAULT_OCEAN_CONFIG.foam.intensity)),
       coverage: clamp(finiteOr(patch.foam?.coverage, DEFAULT_OCEAN_CONFIG.foam.coverage), 0, 1),
+      shoreWidth: Math.max(0, finiteOr(patch.foam?.shoreWidth, DEFAULT_OCEAN_CONFIG.foam.shoreWidth)),
     },
   };
 

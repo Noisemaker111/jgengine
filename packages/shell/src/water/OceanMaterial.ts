@@ -18,7 +18,14 @@ export interface OceanMaterialUniforms {
   uFoamSoftness: { value: number };
   uFoamIntensity: { value: number };
   uFoamCoverage: { value: number };
+  uDepthRange: { value: number };
+  uShoreFoamWidth: { value: number };
+  uSparkle: { value: number };
+  uSunDirection: { value: THREE.Vector3 };
 }
+
+/** Matches the day-sky sun heading closely enough for stylized glints — not a lighting contract. */
+const OCEAN_SUN_DIRECTION = new THREE.Vector3(0.45, 0.78, 0.35).normalize();
 
 export type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms };
 
@@ -45,6 +52,10 @@ export function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMat
       uFoamSoftness: { value: config.foam.softness },
       uFoamIntensity: { value: config.foam.intensity },
       uFoamCoverage: { value: config.foam.coverage },
+      uDepthRange: { value: config.color.depthRange },
+      uShoreFoamWidth: { value: config.foam.shoreWidth },
+      uSparkle: { value: config.color.sparkle },
+      uSunDirection: { value: OCEAN_SUN_DIRECTION.clone() },
     },
   }) as OceanShaderMaterial;
   syncOceanMaterial(material, config, 0);
@@ -72,6 +83,9 @@ export function syncOceanMaterial(
   material.uniforms.uFoamSoftness.value = config.foam.softness;
   material.uniforms.uFoamIntensity.value = config.foam.intensity;
   material.uniforms.uFoamCoverage.value = config.foam.coverage;
+  material.uniforms.uDepthRange.value = config.color.depthRange;
+  material.uniforms.uShoreFoamWidth.value = config.foam.shoreWidth;
+  material.uniforms.uSparkle.value = config.color.sparkle;
   material.transparent = config.color.opacity < 1;
   material.depthWrite = config.color.opacity >= 0.98;
 }
