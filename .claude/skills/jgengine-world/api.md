@@ -1448,12 +1448,19 @@
 - `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
+- `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a mid-size mixed downtown.
+- `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
+- `CITY_SCHEMA` (const): const CITY_SCHEMA: ParamSchema — The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam.
 - `CameraView` (type): type CameraView = PerspectiveView | OrthographicView — ⚠ undocumented
 - `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's contribution to visibility. The VisibilitySystem unions results across every active context: an object stays renderable/loaded if *any* relevant camera needs it. A camera can opt out of driving asset streaming (e.g. a minimap that only needs positions, not loaded meshes) via `influencesStreaming: false`.
 - `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
 - `Carryable` (class): class Carryable — A grabbed physics object following a moving hold point through a spring constraint (the pick — a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner carry (the follow point is the average of owners' hold points), an encumbrance read, and drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
 - `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
 - `CircleFormationOptions` (interface): interface CircleFormationOptions — Options for {@link circleFormation}.
+- `CityLot` (interface): interface CityLot — One building lot: footprint center/size (XZ), yaw, seeded floors, and a 0..1 color-jitter token.
+- `CityPark` (interface): interface CityPark — One park/plaza block left unbuilt.
+- `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
+- `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with a render width and hierarchy level.
 - `ClockSnapshot` (interface): interface ClockSnapshot — ⚠ undocumented
 - `CollapseEvent` (interface): interface CollapseEvent — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
@@ -1635,6 +1642,7 @@
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
 - `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField — ⚠ undocumented
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
+- `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space streets, building lots, and parks plus the parsed rules.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
@@ -1970,6 +1978,7 @@
 - `resolveActivePrompt` (function): function resolveActivePrompt<T extends PositionedPrompt>(playerPosition: PromptPoint, prompts: readonly T[]): T | null — Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal priority and distance keep the earliest prompt in the list.
 - `resolveAnchorOffset` (function): function resolveAnchorOffset(space?: Pick<AssetSpace, "anchor" | "footprint">): Vec2 — The pivot's offset from the footprint center, in engine meters, implied by {@link AssetSpace.anchor} and {@link AssetSpace.footprint}. `center` yields `[0, 0]`; `corner` yields the min corner; a normalized `{ x, z }` scales by the footprint. Subtract it to seat a footprint centered on a point.
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike, options: ResolveAuthoredObjectsOptions = {}): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places. Entity-spawn kinds (`mob`/`boss`) are skipped by default — they carry a `catalogId` for their entity definition, but are spawned via `authoredEntitySpawns`, not placed as static meshes.
+- `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: SceneKindResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → parks → frontage lots, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. Returns null without a usable footprint.
 - `resolveControlGroupIntent` (function): function resolveControlGroupIntent(input: ControlGroupInput, options: ControlGroupOptions = {}): ControlGroupIntent — Resolve a control-group key press into a {@link ControlGroupIntent}: Ctrl+digit binds, a bare digit recalls, and a second recall of the same group within `doubleTapMs` focuses. Pure — the caller applies the intent against the store and its own focus hook, and records the returned recall for the next call.
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
 - `resolveFacingRotationY` (function): function resolveFacingRotationY(headingDegrees: number, space?: Pick<AssetSpace, "forwardDegrees">): number — The Three.js Y-rotation that makes a model whose front is authored at `forwardDegrees` visually point `headingDegrees` (engine north = `0`). This is the catalog-owned replacement for per-game corrective yaw: a model authored facing south (`forwardDegrees: 180`) placed toward north resolves to `Math.PI`.
@@ -2177,6 +2186,19 @@
 - `CellStateGrid` (interface): interface CellStateGrid<TState extends string> — A uniform world grid whose cells step through a discrete state ladder — pristine → cracked → burning → ruined — driven by whatever world events the game routes in (#284.8). Pure storage plus ladder mechanics; the game decides *when* to escalate, the grid guarantees ordered, clamped steps and cheap queries. `version()` bumps on every change for dirty-checked rendering.
 - `CellStateGridConfig` (interface): interface CellStateGridConfig<TState extends string> — ⚠ undocumented
 - `createCellStateGrid` (function): function createCellStateGrid<TState extends string>(config: CellStateGridConfig<TState>): CellStateGrid<TState> — ⚠ undocumented
+
+## @jgengine/core/world/cityKind
+
+- `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a mid-size mixed downtown.
+- `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
+- `CITY_SCHEMA` (const): const CITY_SCHEMA: ParamSchema — The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam.
+- `CityBridge` (interface): interface CityBridge — One bridge deck spanning water: a world-space XZ polyline from bank to bank.
+- `CityLot` (interface): interface CityLot — One building lot: footprint center/size (XZ), yaw, seeded floors, and a 0..1 color-jitter token.
+- `CityPark` (interface): interface CityPark — One park/plaza block left unbuilt.
+- `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
+- `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with a render width and hierarchy level.
+- `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space streets, building lots, and parks plus the parsed rules.
+- `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: SceneKindResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → parks → frontage lots, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. Returns null without a usable footprint.
 
 ## @jgengine/core/world/connectors
 
