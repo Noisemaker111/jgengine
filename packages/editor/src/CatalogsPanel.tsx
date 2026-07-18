@@ -5,6 +5,7 @@ import { findEditorCatalog, findEditorCatalogEntry } from "@jgengine/core/editor
 import { parseParams, type ParamField, type ParamSchema } from "@jgengine/core/scene/sceneKinds";
 
 import { SchemaInspector } from "./SchemaInspector";
+import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 import { useStoreSelector } from "./useStoreSelector";
 
 function slugifyEntryId(value: string): string {
@@ -62,8 +63,8 @@ function coerceField(prev: ParamField, type: ParamField["type"]): ParamField {
   }
 }
 
-const INPUT =
-  "min-w-0 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-[11px] outline-none placeholder:text-neutral-600 focus:border-cyan-400/60";
+const INPUT = `min-w-0 px-2 py-1 text-[11px] ${INPUT_CLS}`;
+const BTN = `${CONTROL} px-2 py-1 text-[11px] font-medium disabled:opacity-40`;
 
 /**
  * Gameplay data catalogs panel — lists merged (game-exported + document-authored) catalogs, lets an
@@ -109,13 +110,13 @@ export function CatalogsPanel({
 
   const newCatalogForm = (
     <form
-      className="flex flex-col gap-1 rounded-md bg-white/[0.03] p-2 ring-1 ring-inset ring-white/[0.06]"
+      className={`flex flex-col gap-1 rounded-[6px] border ${BORDER} bg-white/[0.02] p-2`}
       onSubmit={(event) => {
         event.preventDefault();
         addCatalog();
       }}
     >
-      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">New catalog</span>
+      <span className={MICRO_LABEL}>New catalog</span>
       <div className="flex items-center gap-1">
         <input
           className={`flex-1 ${INPUT}`}
@@ -132,7 +133,7 @@ export function CatalogsPanel({
         <button
           type="submit"
           disabled={slugifyEntryId(newCatalogId).length === 0}
-          className="shrink-0 rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-medium text-neutral-200 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/12 disabled:opacity-40"
+          className={BTN}
         >
           ＋ New catalog
         </button>
@@ -211,7 +212,7 @@ export function CatalogsPanel({
       <label className="flex items-center gap-2 text-[10px] text-neutral-400">
         <span className="shrink-0 uppercase tracking-wider text-neutral-500">Catalog</span>
         <select
-          className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none focus:border-cyan-400/60"
+          className={`min-w-0 flex-1 px-2 py-1 ${INPUT_CLS}`}
           value={activeDefinition.id}
           onChange={(event) => {
             const next = definitions.find((catalog) => catalog.id === event.target.value);
@@ -228,7 +229,7 @@ export function CatalogsPanel({
         {documentSchema !== undefined ? (
           <button
             type="button"
-            className="shrink-0 rounded-md px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-rose-500/20 hover:text-rose-200"
+            className={`shrink-0 rounded-[5px] px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-rose-500/20 hover:text-rose-200 ${FOCUS_RING}`}
             title={`Remove catalog ${activeDefinition.id}`}
             aria-label={`Remove catalog ${activeDefinition.id}`}
             onClick={() => {
@@ -242,7 +243,7 @@ export function CatalogsPanel({
         ) : null}
       </label>
       {documentSchema !== undefined ? (
-        <div className="flex flex-col gap-1 rounded-md bg-white/[0.03] p-2 ring-1 ring-inset ring-white/[0.06]">
+        <div className={`flex flex-col gap-1 rounded-[6px] border ${BORDER} bg-white/[0.02] p-2`}>
           <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">Schema fields</span>
           {schemaFields.map((field, index) => {
             const hasBounds = field.type === "range" || field.type === "number";
@@ -326,7 +327,7 @@ export function CatalogsPanel({
                 ) : null}
                 <button
                   type="button"
-                  className="shrink-0 rounded-md px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-rose-500/20 hover:text-rose-200"
+                  className={`shrink-0 rounded-[5px] px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-rose-500/20 hover:text-rose-200 ${FOCUS_RING}`}
                   title={`Remove field ${field.key}`}
                   aria-label={`Remove field ${field.key}`}
                   onClick={() => removeField(index)}
@@ -338,7 +339,7 @@ export function CatalogsPanel({
           })}
           <button
             type="button"
-            className="self-start rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-medium text-neutral-200 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/12"
+            className={BTN}
             onClick={addField}
           >
             + Field
@@ -367,7 +368,7 @@ export function CatalogsPanel({
               </button>
               <button
                 type="button"
-                className="shrink-0 rounded-md px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-rose-500/20 hover:text-rose-200"
+                className={`shrink-0 rounded-[5px] px-1.5 py-1 text-[11px] text-neutral-500 transition-colors hover:bg-rose-500/20 hover:text-rose-200 ${FOCUS_RING}`}
                 title={`Remove ${row.id}`}
                 aria-label={`Remove ${row.id}`}
                 onClick={() => removeRow(row.id)}
@@ -386,7 +387,7 @@ export function CatalogsPanel({
         }}
       >
         <input
-          className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-[11px] outline-none placeholder:text-neutral-600 focus:border-cyan-400/60"
+          className={`min-w-0 flex-1 px-2 py-1 text-[11px] ${INPUT_CLS}`}
           value={newRowId}
           placeholder="new row id (e.g. goblin)"
           onChange={(event) => setNewRowId(event.target.value)}
@@ -394,7 +395,7 @@ export function CatalogsPanel({
         <button
           type="submit"
           disabled={slugifyEntryId(newRowId).length === 0}
-          className="shrink-0 rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-medium text-neutral-200 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/12 disabled:opacity-40"
+          className={BTN}
         >
           + Row
         </button>
