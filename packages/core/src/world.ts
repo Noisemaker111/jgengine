@@ -469,10 +469,15 @@ export { mapLayerColor, type MapCellStates, type MapRoute, type MapZone } from "
 export {
   DEFAULT_MARKER_KINDS,
   createMarkerSet,
+  createMarkerSource,
   markerKindStyle,
   type MapMarker,
+  type MarkerCollection,
   type MarkerKindStyle,
   type MarkerSet,
+  type MarkerSource,
+  type MarkerSourceOptions,
+  type MarkerView,
 } from "./world/markers";
 export {
   bearingToCardinal,

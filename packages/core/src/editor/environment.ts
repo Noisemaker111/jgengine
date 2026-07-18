@@ -50,7 +50,11 @@ export function skyFromDocument(doc: EditorDocument): SkyEnvironmentConfig | und
   return skyConfigFromEnvironment(env);
 }
 
-/** Projects a validated {@link EditorEnvironment} bag onto {@link SkyEnvironmentConfig}. */
+/**
+ * Projects a validated {@link EditorEnvironment} bag onto {@link SkyEnvironmentConfig}.
+ *
+ * @internal
+ */
 export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironmentConfig {
   return {
     ...(env.preset === undefined ? {} : { preset: env.preset }),

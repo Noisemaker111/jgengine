@@ -56,7 +56,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Coins` (function) · `import { Coins } from "@jgengine/shell/gameKit"`
 
-## hud-hotbar — inventory hotbar widget with keybind slots and icons
+## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
 - `Hotbar` (function) · `import { Hotbar } from "@jgengine/shell/gameKit"`
 
@@ -68,7 +68,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudPanel` (function) · `import { HudPanel } from "@jgengine/shell/gameKit"`
 
-## hud-stat-bar — self-styled bar widget bound to a stat (health, mana, stamina)
+## hud-stat-bar — optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/shell/gameKit"`
 

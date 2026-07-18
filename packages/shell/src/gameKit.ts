@@ -30,7 +30,7 @@ export { environmentContentFromDocument } from "@jgengine/core/editor/environmen
 export { environment } from "@jgengine/core/world/features";
 export type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 
-// HUD primitives — an empty canvas plus self-styled widgets.
+// HUD layout + optional building blocks — games own custom chrome (not a stock face).
 export { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 export { StatBar, Hotbar, Clock, Coins } from "@jgengine/react/hud";
 

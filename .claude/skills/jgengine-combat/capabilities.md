@@ -137,6 +137,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDefensiveWindow` (function) · `import { createDefensiveWindow } from "@jgengine/core/combat"`
 
+## portable-stat-pool — apply deterministic bounded resource changes through a caller-owned stat adapter
+
+- `applyStatPoolDelta` (function) · `import { applyStatPoolDelta } from "@jgengine/core/combat"`
+
 ## projectiles — spawn and advance projectiles with travel and hit resolution
 
 - `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`
@@ -183,6 +187,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-block — base stats with stacking, expiring buffs and debuffs applied on read
 
 - `createStats` (function) · `import { createStats } from "@jgengine/core/combat"`
+
+## stat-pool — create a serializable current/min/max pool for any caller-named resource
+
+- `createStatPool` (function) · `import { createStatPool } from "@jgengine/core/combat"`
+
+## stat-pool-change — immutably increase or decrease any named bounded resource with clamp evidence
+
+- `changeStatPool` (function) · `import { changeStatPool } from "@jgengine/core/combat"`
+
+## stat-pool-patch — immutably retune a bounded resource's current value or bounds
+
+- `patchStatPool` (function) · `import { patchStatPool } from "@jgengine/core/combat"`
 
 ## status-application — resolve a data-defined status application with chance, matchup scaling, and stacking policy
 

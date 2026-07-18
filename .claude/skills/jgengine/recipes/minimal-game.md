@@ -71,8 +71,11 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 ```
 
-`GameUI` stays an empty `HudCanvas` (`useHudLayout` + `HudCanvas` from the kit); drop
-self-styled widgets (`StatBar`, `Hotbar`, `Coins`) into `HudPanel` slots as the game needs them.
+`GameUI` starts as an empty `HudCanvas` (`useHudLayout` + `HudCanvas` from the kit). That is
+intentional: **every game owns its UI**. Write a short UI art direction, then build custom
+panels for this pitch — do not ship stock drop-in widgets (`StatBar`, `Hotbar`, `Coins`, glass
+frames) as the product face. Reach for engine pieces only as headless data, layout, or
+interaction models under game-owned chrome (see `jgengine-ui`).
 
 ## 3. Author, play, win
 

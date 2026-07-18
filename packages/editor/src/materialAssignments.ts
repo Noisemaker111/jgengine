@@ -38,6 +38,8 @@ function readMaterialId(meta: Record<string, unknown> | undefined): string | nul
 /**
  * Lists every marker/volume/path with its current material assignment (or null).
  * Order is document order: markers, then volumes, then paths.
+ *
+ * @internal
  */
 export function listMaterialAssignments(document: MaterialDocumentSlice): MaterialAssignmentRow[] {
   const rows: MaterialAssignmentRow[] = [];
@@ -74,6 +76,8 @@ export function listMaterialAssignments(document: MaterialDocumentSlice): Materi
 /**
  * Filters material rows by text query (id/label/kind/materialId) and optional assignment filter.
  * Case-insensitive; empty query is a no-op on text.
+ *
+ * @internal
  */
 export function filterMaterialAssignments(
   rows: readonly MaterialAssignmentRow[],
@@ -95,7 +99,11 @@ export function filterMaterialAssignments(
   });
 }
 
-/** Aggregates how many placeables use each material id (assigned only). Sorted by count desc, then id. */
+/**
+ * Aggregates how many placeables use each material id (assigned only). Sorted by count desc, then id.
+ *
+ * @internal
+ */
 export function summarizeMaterialUsage(
   rows: readonly MaterialAssignmentRow[],
 ): readonly { materialId: string; count: number }[] {

@@ -51,6 +51,11 @@ editor/preset-written scene data (`environmentContentFromDocument`), not a world
 
 `parentSpace` positions are local to that space — convert at seams only.
 
+Display-only map consumers use the portable `MarkerView` / `MarkerSource`
+contracts in `@jgengine/core/world/markers`; the React integration and complete
+external-store walkthrough are owned by the
+[portable minimap recipe](../jgengine-ui/recipes/portable-minimap.md).
+
 ### Query primitives (renderer-free, for gameplay)
 
 Pure `@jgengine/core` functions so gameplay reads the same world the shell renders — no three.js needed:
@@ -253,5 +258,4 @@ Path progress adapter (`nav/pathFollow`): `PathProgress` is `{ kind: "normalized
 - **Lifecycle**: `issue(request)` validates and queues; `tick(ctx, dt)` activates the next order, advances the active one, and completes/cancels it — returning `{ active, activated, completed, canceled }`. `cancelActive`/`cancelAll`/`clear` force cleanup. `serialize()`/`load()` (or the `initial` option) round-trip mid-flight state for save and host-authoritative replication.
 - **Preemption policy** on each issue: `replace` (preempt active + clear pending), `append` (shift-queue), `front` (jump the queue without dropping the active order), `reject` (refuse while busy). Mark an order `uninterruptible` and a replacing order waits until it finishes; explicit `cancelActive` still forces it.
 - **Order kinds** are `OrderKind<Ctx, Payload>` with `start`/`update`/`finish`, composed over two narrow adapters — `OrderMover` (`position`/`moveToward`/`halt`) and `OrderTargeting` (`acquire`/`positionOf`). Built-ins ship as ordinary compositions with a configurable `kind` string so a game re-skins a verb ("harvest") without engine edits: `defineMoveOrder`, `defineStopOrder`, `defineHoldOrder`, `defineAttackMoveOrder`, `defineTargetedOrder`, `definePatrolOrder`. Engagement verbs write `{ engaging, inRange }` into `order.state`; the game reads it to run the actual attack/effect, keeping combat resolution game-side.
-
 

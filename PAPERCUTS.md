@@ -69,6 +69,92 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
 
+<<<<<<< HEAD
 2026-07-18T22:43:40.443Z — claude-fable-5 — Claude
 
 world redesign PR: main is broken — packages/editor/src/EditorChrome.tsx had a duplicate ')}' (merge #1176) that fails 'bun run build'; agent:bootstrap earlier reported success anyway, so the breakage only surfaced mid-task at gen:skill-api
+=======
+2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
+
+recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
+
+2026-07-18T20:23:57.542Z — gpt-5.6-sol — NoisemakerJon
+
+creating the required isolated worktree under C:\tmp -> Bun returned EPERM/No package.json there, and a nested ignored worktree then resolved scripts against the parent checkout; worktrees need a documented Bun-safe location outside the repository
+
+2026-07-18T20:24:06.560Z — gpt-5.6-sol — NoisemakerJon
+
+locating API adoption routing for the minimap slice -> the expected scripts/api-adoption.json path does not exist, so generator ownership was not discoverable by filename
+
+2026-07-18T20:24:14.469Z — gpt-5.6-sol — NoisemakerJon
+
+running a focused package typecheck from a nested worktree -> 'bun run --cwd packages/core check-types' resolved as the parent checkout's root build/check, wrote ignored dist output there, and failed on unrelated stale editor API artifacts; package-cwd syntax and worktree discovery were dangerously ambiguous
+
+2026-07-18T20:30:09.213Z — gpt-5.6-sol — NoisemakerJon
+
+running affected-package typechecks after a clean frozen install -> react/shell emitted hundreds of missing @jgengine/* modules because package checks require upstream dist builds but neither the script nor error explains that prerequisite
+
+2026-07-18T20:41:24.709Z — gpt-5.6-sol — NoisemakerJon
+
+verifying the standalone portable-minimap dev server with the required agent-browser skill -> the agent-browser CLI is not installed or on PATH, so verification had to fall back to the repository's Chrome/CDP shoot --url path
+
+2026-07-18T20:43:17.752Z — gpt-5.6-sol — NoisemakerJon
+
+capturing an arbitrary standalone React URL with bun run shoot --url -> the documented command timed out because shoot silently requires the page to set data-jg-capture=ready, a contract missing from --help
+
+2026-07-18T20:54:16.196Z — gpt-5.6-sol — NoisemakerJon
+
+running bun run build on the fresh portable-capability branch -> unrelated packages/editor/src/shell/HierarchyPanel.tsx failed TS6133 because an ids parameter is unused on the branch's origin/main base
+
+2026-07-18T20:56:08.573Z — gpt-5.6-sol — NoisemakerJon
+
+regenerating skill API on current origin/main for the portable marker exports -> check-skill-api fails on 11 unrelated newly exported editor helpers with no consumer import or capability tag, so main's generated API gate is red after the editor follow-up merges
+
+2026-07-18T21:07:01.236Z — gpt-5.6-sol — NoisemakerJon
+
+running the full suite on current origin/main for the portable minimap slice -> exportManifest.test.ts fails because six newly exposed editor subpaths are absent from scripts/export-manifest.json, so main's published-export gate is red independently of this change
+
+2026-07-18T21:07:45.656Z — gpt-5.6-sol — NoisemakerJon
+
+cleaning up the temporary Vite visual-verification server -> the sandbox allowed starting the preview but denied stopping the exact verified PID, requiring an escalated cleanup
+
+2026-07-18T21:09:23.828Z — gpt-5.6-sol — NoisemakerJon
+
+following AGENTS.md's instruction to run ship:preflight immediately before shipping -> the preflight rejects any dirty implementation and also requires a committed branch diff, so the documented ordering actually requires commit first and cannot validate the exact uncommitted tree
+
+2026-07-18T21:10:28.446Z — gpt-5.6-sol — NoisemakerJon
+
+combining tarball consumer tests with barrel generators in one focused bun test run -> the unchanged core clean-consumer test exceeded its default 5s timeout under contention even though the same tarball suite passes alone; focused verification commands need isolation or explicit timeouts
+
+2026-07-18T21:15:03.831Z — gpt-5.6-sol — NoisemakerJon
+
+rerunning scripts/tarballInstall.test.ts after one timeout adjustment -> repeated npm pack filesystem work hung beyond the 120s command guard with no streamed test output; clean-consumer validation needs per-case filtering or shared pack artifacts on Windows
+
+2026-07-18T21:23:09.992Z — gpt-5.6-sol — NoisemakerJon
+
+staging the reviewed worktree diff -> git could not create the linked-worktree index.lock under the main checkout's .git directory without escalation, despite the worktree itself being the authorized writable root
+
+2026-07-18T21:45:58.260Z — gpt-5.6-sol — NoisemakerJon
+
+running a focused core typecheck with bun --cwd packages/core run check-types -> Bun exited 0 after printing help instead of executing the script; invalid command ordering should not report success
+
+2026-07-18T21:57:19.685Z — gpt-5.6-sol — NoisemakerJon
+
+regenerating scripts/export-manifest.json for the new core/stats/statPool subpath -> current origin/main also injects six unrelated stale editor subpaths, so the scoped change had to remove those generated rows and the baseline manifest gate remains red
+
+2026-07-18T21:58:37.034Z — gpt-5.6-sol — NoisemakerJon
+
+running the isolated packed-core stat-pool import smoke test -> Windows tar extraction was killed at the explicit 30s test budget after a dangling process warning; real-tarball tests need a Windows-safe extractor or a larger filesystem budget
+
+2026-07-18T22:08:50.506Z — gpt-5.6-sol — NoisemakerJon
+
+running bun run gate for the stat-pool slice -> the build phase exited 255 immediately after launching the editor package build with no compiler diagnostic, so the full gate did not identify a failing source or check
+
+2026-07-18T22:13:40.362Z — gpt-5.6-sol — NoisemakerJon
+
+retrying the full gate after the isolated editor build passed -> 6337 tests passed, but five unchanged tarball-content cases and installPackagedSkills exceeded Bun's default 5s timeout under Windows filesystem contention, alongside the known six-subpath editor export-manifest drift
+
+2026-07-18T22:23:17.244Z — claude — Claude
+
+ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
+>>>>>>> origin/main

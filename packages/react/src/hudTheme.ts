@@ -1,13 +1,14 @@
 import { type CSSProperties } from "react";
 
 /**
- * `HudTheme` (#1034): one token object that restyles the shared HUD chrome at once. It is the
- * superset of the atomic-bar tokens (#1033) — `hudThemeVars(theme)` emits the same `--jg-*` custom
- * properties the bars already read, plus frame / slot / minimap-ring tokens — so setting it on any
- * HUD ancestor re-skins every token-driven primitive under it. Purely CSS-token driven (no image
- * assets); layout and per-widget `style` overrides still win, and games can ignore presets entirely.
+ * `HudTheme` (#1034): one token object that restyles shared token-driven building blocks at once.
+ * It is the superset of the atomic-bar tokens (#1033) — `hudThemeVars(theme)` emits the same
+ * `--jg-*` custom properties the bars already read, plus frame / slot / minimap-ring tokens — so
+ * setting a **game-authored** theme on any HUD ancestor re-skins those primitives. Purely CSS-token
+ * driven (no image assets). Tokens are not a finished UI: every game still owns composition, skin,
+ * and art direction (see AGENTS.md). Built-in presets are demo/scaffold starting points only.
  *
- * @capability hud-theme one token object + genre presets driving bars, frames, slots, and minimap ring
+ * @capability hud-theme game-authored token object for bars, frames, slots, and minimap ring
  */
 
 /** Per-readout fill colors plus a shared accent/glow. */
@@ -96,7 +97,7 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
   } as CSSProperties;
 }
 
-/** The upgraded default theme — a bare game reads as designed chrome, not a generic dark-glass dashboard. */
+/** Default theme tokens for previews/scaffold — not a finished game look; author a custom theme. */
 export const defaultHudTheme: HudTheme = {
   palette: {
     health: "#e5484d",
@@ -144,7 +145,7 @@ function theme(overrides: {
   };
 }
 
-/** Built-in genre presets — a one-prop identity choice; the ten-classic-styles surface. */
+/** Built-in theme presets for demos/scaffold only — not product identity; games author their own theme. */
 export const HUD_THEME_PRESETS = {
   "arcane-stone": theme({
     palette: { health: "#c0392b", mana: "#7c5cff", xp: "#d4a017", accent: "#b483ff", shield: "#8e7bd6" },
@@ -220,7 +221,7 @@ export const HUD_THEME_PRESETS = {
   }),
 } satisfies Record<string, HudTheme>;
 
-/** A genre-preset name. */
+/** Built-in demo/scaffold theme preset name — not a game identity. */
 export type HudThemePreset = keyof typeof HUD_THEME_PRESETS;
 
 /** Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme. */

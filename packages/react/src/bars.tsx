@@ -5,16 +5,15 @@ import { useEntityStat, useGameStore, localPlayerEntity } from "./hooks";
 /**
  * Atomic, purpose-named vitals — one component per readout (`HealthBar`, `ShieldBar`, …), never a
  * `tone`-switched umbrella and never a bundled combo. Every bar reads the same shared CSS custom
- * properties (`--jg-health`, `--jg-shield`, `--jg-xp`, plus frame/shape tokens), so a game restyles
- * the whole HUD by setting those vars once on any ancestor — theming is global, composition stays
- * the game's. A game that wants health + shield + xp stacked composes three components into its own
- * layout; the engine ships the parts, not the panel.
+ * properties (`--jg-health`, `--jg-shield`, `--jg-xp`, plus frame/shape tokens). Default token
+ * colors are scaffolding only: games own layout, framing, and art direction, and must set tokens
+ * (or replace the markup) so the HUD is unique to the pitch — the engine ships parts, not a face.
  *
  * Each bar accepts either an explicit `value`/`max` (pure, provider-free — for composition, tests,
  * and preview fixtures) or binds to a live entity stat (`statId`/`entityId`, defaulting to the local
  * player). It renders nothing until it has a value.
  *
- * @capability hud-vitals atomic purpose-named health/shield/mana/stamina/xp/soul/ammo/boss bars themed from shared tokens
+ * @capability hud-vitals atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
  */
 
 /** The shared vitals token contract — CSS custom properties every atomic bar reads. */
@@ -58,7 +57,7 @@ const TOKEN_VAR: Record<keyof BarTokens, string> = {
   bevel: "--jg-bar-bevel",
 };
 
-/** Built-in default values for every vitals token — the look a bare game gets. */
+/** Built-in default values for every vitals token — scaffolding/preview only, not a shipped look. */
 export const DEFAULT_BAR_TOKENS: Required<BarTokens> = {
   health: "#e5484d",
   healthLow: "#b21e23",

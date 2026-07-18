@@ -8,13 +8,13 @@ import { IconTreatment, schoolForItem } from "./iconTreatment";
 import { useCurrency, useEntityStat, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
 
 /**
- * Drop-in HUD components — good-looking with zero styling, and fully opt-in: a game imports only the
- * pieces it wants (`StatBar`, `Hotbar`, `Speedometer`, `Clock`, `WaveBanner`, `Coins`, `Crosshair`)
- * and places them itself. The engine imposes none of these; there is no forced HUD. Styling is
- * self-contained inline CSS (no Tailwind `@source` needed) with a shared dark-glass look; pass
+ * Optional HUD building blocks bound to live game state — not a finished game face. Every game
+ * owns custom presentation (see AGENTS.md); import these only as temporary scaffolding, previews,
+ * or under game-owned chrome. Prefer headless hooks + game markup for shipped UI. The engine
+ * mounts none of these by default. Styling is self-contained dark-glass for demos; pass
  * `style`/`className` to override. Anything reading the player defaults to the local player entity.
  *
- * @capability hud-components opt-in drop-in health/hotbar/speed/clock/wave/currency HUD widgets
+ * @capability hud-components optional health/hotbar/speed/clock/wave/currency building blocks — games own custom chrome
  */
 
 const PANEL: CSSProperties = hudFrameStyle("glass");
@@ -46,7 +46,7 @@ function useLocalPlayerId(entityId: string | undefined): string | null {
  * `StaminaBar`, `ExperienceBar`, `SoulBar`, `BossBar`, `AmmoCounter` — each does one readout and is
  * restyled globally via the shared `--jg-*` tokens (`barTokens`). Kept as a thin shim during migration.
   *
- * @capability hud-stat-bar self-styled bar widget bound to a stat (health, mana, stamina)
+ * @capability hud-stat-bar optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome
  */
 export function StatBar({
   statId = "health",
@@ -102,7 +102,7 @@ export function StatBar({
  * Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to
  * map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
   *
- * @capability hud-hotbar inventory hotbar widget with keybind slots and icons
+ * @capability hud-hotbar optional inventory hotbar building block — games own slot chrome
  */
 export function Hotbar({
   inventoryId,
