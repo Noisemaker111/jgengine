@@ -55,9 +55,9 @@
       "meta": {
         "color": "#0f4a63",
         "shallowColor": "#2e8fa0",
-        "waveHeight": 0.18,
-        "waveSpeed": 0.8,
-        "waveScale": 0.35,
+        "waveHeight": 0.07,
+        "waveSpeed": 0.55,
+        "waveScale": 0.6,
         "foam": 1.0,
         "opacity": 0.92,
         "reflectivity": 0.35

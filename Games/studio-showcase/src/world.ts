@@ -37,9 +37,13 @@ export const world: EnvironmentWorldFeature = environment({
   ...(content.sculpt === undefined ? {} : { sculpt: content.sculpt }),
   // A sparse base grass layer over the whole map so the ground reads alive, with the authored
   // grass_field volume as the dense hero meadow on top of it.
+  // Dense short turf near the play space (blade spacing ~0.2 m); the far field past 90 m stays
+  // plain ground so the instance budget goes where the camera lives.
   vegetation: grass({
-    area: { w: 120, d: 120 },
-    density: 8,
+    area: { w: 90, d: 90 },
+    density: 30,
+    bladeHeight: [0.18, 0.42],
+    bladeWidth: 0.035,
     colors: ["#4a7a38", "#77a94e"],
     seed: "showcase-ground",
   }),

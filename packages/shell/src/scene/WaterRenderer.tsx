@@ -13,7 +13,9 @@ function toOceanConfig(rules: WaterRules, size: readonly [number, number]): Ocea
   return {
     size: size[0],
     depth: size[1],
-    resolution: Math.min(160, Math.max(16, Math.round(maxSpan / 2))),
+    // ~2 vertices per meter (bounded): the old span/2 gave a 30 m lake a 15×15 grid, which waved
+    // like a blanket instead of water.
+    resolution: Math.min(220, Math.max(48, Math.round(maxSpan * 2))),
     amplitude: rules.waveHeight,
     speed: rules.waveSpeed,
     timeScale: rules.waveSpeed,

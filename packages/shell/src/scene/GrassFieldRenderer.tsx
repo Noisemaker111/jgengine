@@ -49,7 +49,7 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
   const { rules, center } = resolved;
   // Size the instance buffer to the authored patch (bounded): the default 1500-blade buffer reads
   // as stubble on anything bigger than a lawn, silently ignoring the authored density.
-  const instanceCount = Math.max(1500, Math.min(150000, Math.ceil(rules.density * area[0] * area[1])));
+  const instanceCount = Math.max(1500, Math.min(250000, Math.ceil(rules.density * area[0] * area[1])));
   return (
     <GrassField
       position={[center[0], center[1], center[2]]}
