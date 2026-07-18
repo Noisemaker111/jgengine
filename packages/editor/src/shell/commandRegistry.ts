@@ -138,7 +138,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
 const RECENT_KEY = "jgeditor:palette-recent";
 const RECENT_LIMIT = 8;
 
-/** Loads recent command ids from localStorage (session-shared across games). */
+/** Loads recent command ids from localStorage (session-shared across games). @internal */
 export function loadRecentCommandIds(): string[] {
   try {
     const raw = localStorage.getItem(RECENT_KEY);
@@ -151,7 +151,7 @@ export function loadRecentCommandIds(): string[] {
   }
 }
 
-/** Records a command id at the front of the recent list (deduped, capped). */
+/** Records a command id at the front of the recent list (deduped, capped). @internal */
 export function pushRecentCommandId(id: string): string[] {
   // Object jump rows are scene-specific and flood the recent list — skip them.
   if (id.startsWith("goto.object.")) return loadRecentCommandIds();

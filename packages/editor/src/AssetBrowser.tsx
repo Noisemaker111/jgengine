@@ -21,12 +21,12 @@ export const MATERIAL_DRAG_MIME = "application/x-jgengine-material";
  */
 export const ASSET_DRAG_MIME = "application/x-jgengine-editor-asset";
 
-/** Serializes a placeable asset for HTML5 drag into the viewport. */
+/** Serializes a placeable asset for HTML5 drag into the viewport. @internal */
 export function encodeAssetDragPayload(entry: EditorAssetEntry): string {
   return JSON.stringify({ id: entry.id, label: entry.label, kind: entry.kind });
 }
 
-/** Parses an asset drag payload; returns null when the data is missing or malformed. */
+/** Parses an asset drag payload; returns null when the data is missing or malformed. @internal */
 export function decodeAssetDragPayload(raw: string): EditorAssetEntry | null {
   if (raw.length === 0) return null;
   try {

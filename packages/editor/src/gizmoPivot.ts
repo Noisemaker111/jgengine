@@ -22,7 +22,7 @@ function meanOf(positions: readonly EditorVec3[]): EditorVec3 {
   return { x: x / n, y: y / n, z: z / n };
 }
 
-/** Aggregate a list of positions into a pivot according to the toolbar pivot mode. */
+/** Aggregate a list of positions into a pivot according to the toolbar pivot mode. @internal */
 export function resolvePivotPosition(
   positions: readonly EditorVec3[],
   pivot: GizmoPivot,

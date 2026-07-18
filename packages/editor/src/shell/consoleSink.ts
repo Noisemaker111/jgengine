@@ -7,6 +7,7 @@ let sink: ConsoleSink | null = null;
 /**
  * Installs the global console sink (typically the dock console store). Returns a disposer that
  * clears the sink only if it still points at this callback.
+ * @internal
  */
 export function installEditorConsoleSink(next: ConsoleSink): () => void {
   sink = next;
@@ -15,7 +16,7 @@ export function installEditorConsoleSink(next: ConsoleSink): () => void {
   };
 }
 
-/** Forwards a real editor event to the installed console sink, if any. */
+/** Forwards a real editor event to the installed console sink, if any. @internal */
 export function emitEditorConsole(
   severity: ConsoleSeverity,
   source: string,
