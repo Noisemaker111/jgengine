@@ -19,6 +19,8 @@ export interface ScrubbablePath {
 /**
  * Builds the path-follow config used by the flythrough scrubber. Pure; no document mutation.
  * Returns null when the path cannot be sampled (fewer than two points).
+ *
+ * @internal
  */
 export function pathFollowConfigFromEditorPath(path: EditorPath): PathFollowConfig | null {
   if (path.points.length < 2) return null;
@@ -26,7 +28,11 @@ export function pathFollowConfigFromEditorPath(path: EditorPath): PathFollowConf
   return { waypoints, speed: 1 };
 }
 
-/** Lists document paths that can be scrubbed, with length metadata for the dock UI. */
+/**
+ * Lists document paths that can be scrubbed, with length metadata for the dock UI.
+ *
+ * @internal
+ */
 export function listScrubbablePaths(paths: readonly EditorPath[]): ScrubbablePath[] {
   return paths
     .map((path) => {
@@ -46,6 +52,8 @@ export function listScrubbablePaths(paths: readonly EditorPath[]): ScrubbablePat
 /**
  * Samples a world position along an authored path at normalized progress `t` in `[0, 1]`.
  * Clamps `t`. Returns null when the path has fewer than two points.
+ *
+ * @internal
  */
 export function samplePathAt(
   path: EditorPath,

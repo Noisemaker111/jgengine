@@ -9,8 +9,10 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+/** Lifecycle of one GLB thumbnail render: idle → loading → ready, or error. */
 export type ThumbnailStatus = "idle" | "loading" | "ready" | "error";
 
+/** Cache entry for one asset's thumbnail: status plus the data URL when ready. */
 export interface ThumbnailState {
   status: ThumbnailStatus;
   /** `data:image/png;base64,…` when ready; otherwise null. */

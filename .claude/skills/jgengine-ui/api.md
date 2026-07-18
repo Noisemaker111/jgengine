@@ -380,7 +380,7 @@
 - `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
 - `HudThemeFrame` (interface): interface HudThemeFrame — Frame material + shape tokens (panels, `HudFrame variation="themed"`).
 - `HudThemePalette` (interface): interface HudThemePalette — `HudTheme` (#1034): one token object that restyles shared token-driven building blocks at once. It is the superset of the atomic-bar tokens (#1033) — `hudThemeVars(theme)` emits the same `--jg-*` custom properties the bars already read, plus frame / slot / minimap-ring tokens — so setting a **game-authored** theme on any HUD ancestor re-skins those primitives. Purely CSS-token driven (no image assets). Tokens are not a finished UI: every game still owns composition, skin, and art direction (see AGENTS.md). Built-in presets are demo/scaffold starting points only.
-- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — A genre-preset name.
+- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — Built-in demo/scaffold theme preset name — not a game identity.
 - `HudThemePreview` (function): function HudThemePreview({ className }: { className?: string }): React.JSX.Element — Renders the default theme plus every genre preset as a deterministic matrix.
 - `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
@@ -793,7 +793,7 @@
 - `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
 - `HudThemeFrame` (interface): interface HudThemeFrame — Frame material + shape tokens (panels, `HudFrame variation="themed"`).
 - `HudThemePalette` (interface): interface HudThemePalette — `HudTheme` (#1034): one token object that restyles shared token-driven building blocks at once. It is the superset of the atomic-bar tokens (#1033) — `hudThemeVars(theme)` emits the same `--jg-*` custom properties the bars already read, plus frame / slot / minimap-ring tokens — so setting a **game-authored** theme on any HUD ancestor re-skins those primitives. Purely CSS-token driven (no image assets). Tokens are not a finished UI: every game still owns composition, skin, and art direction (see AGENTS.md). Built-in presets are demo/scaffold starting points only.
-- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — A genre-preset name.
+- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — Built-in demo/scaffold theme preset name — not a game identity.
 - `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
 - `defaultHudTheme` (const): const defaultHudTheme: HudTheme — Default theme tokens for previews/scaffold — not a finished game look; author a custom theme.
 - `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
