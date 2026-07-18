@@ -123,4 +123,36 @@ describe("stat modifiers", () => {
     expect(stats.getBase("speed")).toBe(25);
     expect(stats.get("speed")).toBe(25);
   });
+
+  test("snapshot round-trips through JSON and resumes against an injected clock", () => {
+    let nowMs = 400;
+    const original = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 }, { now: () => nowMs });
+    original.addSource("potion", { speed: { add: 6 } }, { expiresAtMs: 1000 });
+    original.addSource("boots", { jumpHeight: { multiply: 1.5 } });
+
+    const decoded = JSON.parse(JSON.stringify(original.snapshot()));
+    const restored = createStats<PlayerStat>({ speed: 0, jumpHeight: 0, gravity: 0 }, { now: () => nowMs });
+    restored.restore(decoded);
+
+    expect(restored.get("speed")).toBe(16);
+    expect(restored.get("jumpHeight")).toBe(7.5);
+    nowMs = 1000;
+    expect(restored.get("speed")).toBe(10);
+    expect(restored.sources()).toEqual(["boots"]);
+  });
+
+  test("snapshot and restore detach nested modifier data and replace prior state", () => {
+    const original = createStats<PlayerStat>({ speed: 10, jumpHeight: 5, gravity: 20 });
+    original.addSource("boots", { speed: { add: 4 } });
+    const snapshot = original.snapshot();
+
+    original.setBase("speed", 100);
+    original.addSource("boots", { speed: { add: 99 } });
+    expect(snapshot.base.speed).toBe(10);
+    expect(snapshot.sources[0]?.modifiers.speed?.add).toBe(4);
+
+    original.restore(snapshot);
+    expect(original.get("speed")).toBe(14);
+    expect(original.sources()).toEqual(["boots"]);
+  });
 });

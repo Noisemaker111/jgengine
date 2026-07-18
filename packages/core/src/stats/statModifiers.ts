@@ -9,6 +9,19 @@ export interface CreateStatsOptions {
   now?: () => number;
 }
 
+/** One serializable modifier source in a {@link StatsSnapshot}. */
+interface StatModifierSourceSnapshot<TStat extends string> {
+  id: string;
+  modifiers: StatModifierSet<TStat>;
+  expiresAtMs?: number;
+}
+
+/** Complete plain-data state for a {@link Stats} runtime. */
+export interface StatsSnapshot<TStat extends string> {
+  base: Record<TStat, number>;
+  sources: StatModifierSourceSnapshot<TStat>[];
+}
+
 export interface Stats<TStat extends string> {
   setBase(stat: TStat, value: number): void;
   getBase(stat: TStat): number;
@@ -18,11 +31,24 @@ export interface Stats<TStat extends string> {
   get(stat: TStat, nowMs?: number): number;
   pruneExpired(nowMs: number): string[];
   sources(): string[];
+  /** Return a detached JSON-serializable copy of base values and modifier sources. */
+  snapshot(): StatsSnapshot<TStat>;
+  /** Replace all runtime state from caller-owned decoded snapshot data. */
+  restore(snapshot: StatsSnapshot<TStat>): void;
 }
 
 interface StatSourceEntry<TStat extends string> {
   modifiers: StatModifierSet<TStat>;
   expiresAtMs: number | undefined;
+}
+
+function cloneModifierSet<TStat extends string>(modifiers: StatModifierSet<TStat>): StatModifierSet<TStat> {
+  const copy: StatModifierSet<TStat> = {};
+  for (const stat of Object.keys(modifiers) as TStat[]) {
+    const modifier = modifiers[stat];
+    if (modifier !== undefined) copy[stat] = { ...modifier };
+  }
+  return copy;
 }
 
 /**
@@ -34,7 +60,7 @@ export function createStats<TStat extends string>(
   base: Record<TStat, number>,
   options?: CreateStatsOptions,
 ): Stats<TStat> {
-  const baseValues: Record<TStat, number> = { ...base };
+  let baseValues: Record<TStat, number> = { ...base };
   const sourceEntries = new Map<string, StatSourceEntry<TStat>>();
   const clock = options?.now;
 
@@ -105,6 +131,26 @@ export function createStats<TStat extends string>(
     },
     sources() {
       return Array.from(sourceEntries.keys());
+    },
+    snapshot() {
+      return {
+        base: { ...baseValues },
+        sources: Array.from(sourceEntries, ([id, entry]) => ({
+          id,
+          modifiers: cloneModifierSet(entry.modifiers),
+          ...(entry.expiresAtMs === undefined ? {} : { expiresAtMs: entry.expiresAtMs }),
+        })),
+      };
+    },
+    restore(snapshot) {
+      baseValues = { ...snapshot.base };
+      sourceEntries.clear();
+      for (const source of snapshot.sources) {
+        sourceEntries.set(source.id, {
+          modifiers: cloneModifierSet(source.modifiers),
+          expiresAtMs: source.expiresAtMs,
+        });
+      }
     },
   };
 }

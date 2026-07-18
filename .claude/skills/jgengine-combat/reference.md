@@ -13,6 +13,17 @@ Native scene entity stats are a compatibility bridge over the same model. See
 the [portable stat-pool recipe](recipes/portable-stat-pools.md) for complete
 imports, adapter code, ownership, and JSON save/restore.
 
+## Portable runtime snapshots
+
+`createMagazine` (`combat/magazine`) and `createStats`
+(`stats/statModifiers`) retain their convenience APIs while exposing detached
+plain state through `snapshot()` / `restore(...)`. Magazine snapshots include
+loaded rounds, in-progress reload time, and finite/infinite reserve state;
+stat snapshots include base values plus ordered modifier sources and absolute
+expiry timestamps. Re-supply immutable config and the caller's injected clock
+when rebuilding. The [portable runtime-state recipe](recipes/portable-runtime-state.md)
+shows a complete existing-save round trip, including a caller-owned reserve.
+
 ## Effects and projectiles
 
 Effect ids are **game-defined strings**. Magnitudes **drain** stats: positive subtracts down `receive.<effect>.order` (spilling to the next stat in the order), negative restores. Heals pass a negative amount (`via: { amount: -flashHeal }`, typically read from a `weapon.heal` stat).
@@ -105,4 +116,3 @@ Genre systems layered over the same effects/projectiles/targeting/loot primitive
 - **Completion predicates** — `completion: { kind, params }` names a registered evaluator; `BUILTIN_COMPLETION_PREDICATES` ships `immediate`, `manual`/`flag`, `timer` (phase seconds), `cleared` (tagged count drained), `metric` (live threshold), `event` (cumulative count), and `quorum` (N of nested predicates). Signals (`counts`/`metrics`/`events`/`flags`) come in through `ctx.signals`; evaluation is deterministic. Register your own via `config.predicates`.
 - **Spawn providers** — spawning is one optional node adapter: `spawn: { kind, params }` invoked on enter. `BUILTIN_SPAWN_PROVIDERS.points` reads a named authored scene point list from `ctx.spawnPoints` (coordinates stay in the scene, referenced by key — never embedded in the sequence); `list` echoes inline requests. Register catalog/director-backed providers via `config.spawnProviders`.
 - **Injection & scripted control** — `injectPhase(state, phase, { after | before | childOf })` inserts a phase or branch at runtime (e.g. a boss after the final wave) into the serializable tree without disturbing active/completed nodes; `forceCompletePhase` completes the active phase regardless of its predicate for scripted skips and failure/retry, restoring the authored predicate afterward.
-

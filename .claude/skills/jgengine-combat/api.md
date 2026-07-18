@@ -59,6 +59,7 @@
 - `MAX_INTERCEPT_STEPS` (const): const MAX_INTERCEPT_STEPS: 256 — Upper bound on interceptor evaluations for a single resolution; guards against runaway `split`/`redirect` loops.
 - `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
+- `MagazineSnapshot` (interface): interface MagazineSnapshot — Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve.
 - `MatchupOutputs` (interface): interface MatchupOutputs — The independent, typed outputs a channel-vs-trait matchup can scale. Every field is an optional multiplier that defaults to `1` (identity), so a matchup entry names only the axes it bends. `impact` scales the direct hit, `applyChance` the odds a status lands, `magnitude` and `duration` the applied status itself, and `extra` carries any further caller-defined scalar (knockback, stagger, heat) the engine forwards without interpreting.
 - `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
 - `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
@@ -95,6 +96,7 @@
 - `StatPoolInput` (interface): interface StatPoolInput — Input used to create a normalized pool. `current` defaults to `max`; `min` defaults to zero.
 - `StatPoolPatch` (interface): interface StatPoolPatch — Partial update applied without mutating the previous pool.
 - `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
+- `StatsSnapshot` (interface): interface StatsSnapshot<TStat extends string> — Complete plain-data state for a {@link Stats} runtime.
 - `StatusApplicationOutcome` (interface): interface StatusApplicationOutcome — The result of one status application: the outcome, the resulting instance (if any), and the roll.
 - `StatusApplicationSpec` (interface): interface StatusApplicationSpec — A serializable, effect-agnostic description of a status a hit tries to apply: an opaque `status` id the game routes to its own effect/DoT pipeline, a base landing `chance`, and the duration/ticks/magnitude/attribution/stacking data the resolver needs. The engine never interprets `status` — it is a reference, not a built-in condition.
 - `StatusImmunity` (interface): interface StatusImmunity — Statuses a target cannot receive at all — the immunity half of application policy.
@@ -400,6 +402,7 @@
 - `Magazine` (interface): interface Magazine — A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool, and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size, reload delay, and reserve bookkeeping per game (#536.2).
 - `MagazineConfig` (interface): interface MagazineConfig — Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from.
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
+- `MagazineSnapshot` (interface): interface MagazineSnapshot — Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve.
 - `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
 
 ## @jgengine/core/combat/projectiles
@@ -569,6 +572,7 @@
 - `StatModifier` (interface): interface StatModifier — ⚠ undocumented
 - `StatModifierSet` (type): type StatModifierSet<TStat extends string> = Partial<Record<TStat, StatModifier>> — ⚠ undocumented
 - `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
+- `StatsSnapshot` (interface): interface StatsSnapshot<TStat extends string> — Complete plain-data state for a {@link Stats} runtime.
 - `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
 
 ## @jgengine/core/stats/statPool

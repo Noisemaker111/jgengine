@@ -152,3 +152,39 @@ retrying the full gate after the isolated editor build passed -> 6337 tests pass
 2026-07-18T22:23:17.244Z — claude — Claude
 
 ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
+
+2026-07-18T22:31:58.957Z — gpt-5.6-sol — NoisemakerJon
+
+regenerating combat API docs for runtime snapshots on current origin/main -> generator also rewrote jgengine-editor/api.md and failed on 25 unrelated newly merged editor exports, so the scoped runtime PR must exclude those artifacts while main's skill API gate remains red
+
+2026-07-18T22:32:42.003Z — gpt-5.6-sol — NoisemakerJon
+
+logging a required repository papercut from this worktree -> bun run papercut reported the declared script missing, then direct Bun execution hit an EPERM sandbox read and required escalation
+
+2026-07-18T22:33:56.842Z — gpt-5.6-sol — NoisemakerJon
+
+checking capability docs for the runtime-state slice on fresh origin/main -> check-capabilities failed only because jgengine-editor/capabilities.md is already stale from unrelated merged editor exports
+
+2026-07-18T22:34:48.177Z — gpt-5.6-sol — NoisemakerJon
+
+running all-workspace type checks for the runtime-state slice on fresh origin/main -> 8 workspaces fail on the same unrelated duplicate JSX close at packages/editor/src/EditorChrome.tsx:930, while @jgengine/core typecheck and all 4,608 core tests pass
+
+2026-07-18T22:36:15.816Z — gpt-5.6-sol — NoisemakerJon
+
+running the final full gate for the runtime-state PR -> agent preflight and seven package builds passed, then the unchanged duplicate JSX close at packages/editor/src/EditorChrome.tsx:930 stopped the editor build on current main
+
+2026-07-18T22:37:19.095Z — gpt-5.6-sol — NoisemakerJon
+
+running ship preflight immediately after the verified runtime-state commit -> origin/main advanced during the slice, so the branch must be rebased and verification refreshed before the PR can open
+
+2026-07-18T22:40:28.980Z — gpt-5.6-sol — NoisemakerJon
+
+refreshing verification after rebasing runtime snapshots onto current main -> all 4,637 core tests, recipes, and capabilities pass, but shell typecheck is already red on missing MarkerCollection plus ResolvedCity.tunnels drift; skill API generation also reports two undocumented glbThumbnailCache exports
+
+2026-07-18T22:41:34.732Z — gpt-5.6-sol — NoisemakerJon
+
+running the final rebased gate for runtime snapshots -> every package build and artifact/skill-sync check passed, then check-skill-api stopped on current-main glbThumbnailCache JSDoc plus stale editor/UI API inventories unrelated to this PR
+
+2026-07-18T22:46:09.366Z — gpt-5.6-sol — NoisemakerJon
+
+opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead

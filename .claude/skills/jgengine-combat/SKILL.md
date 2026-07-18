@@ -16,6 +16,11 @@ Existing projects keep their resource state and follow the
 store through `StatPoolAccess`; do not require `StatValueMap`, `GameContext`, or
 a parallel entity store.
 
+Closure-backed magazines and stat modifiers expose plain snapshot/restore
+state for caller-owned saves, rollback, replay, and workers. Follow the
+[portable runtime-state recipe](recipes/portable-runtime-state.md); the caller
+keeps its clock, reserve state, schema, and authority.
+
 ## Canonical pipeline
 
 1. Acquire eligible candidates from a bounded spatial source.
