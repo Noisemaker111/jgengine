@@ -390,11 +390,12 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
       : []),
     'import { GameUI } from "./game/ui/GameUI";',
     'import { onNewPlayer, systems } from "./loop";',
-    ...(options.world ? ['import { physics, world } from "./world";'] : []),
+    ...(options.world ? ['import { world } from "./world";'] : []),
   ];
   const fields = [
     `  name: ${JSON.stringify(name)},`,
-    ...(options.world ? ["  assets,", "  world,", "  physics,"] : []),
+    // The world carries its own physics (laws of the place) — no separate physics field to wire.
+    ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
     "  input: {",
     '    moveForward: ["KeyW"],',
@@ -423,16 +424,16 @@ ${fields.join("\n")}
 `;
 };
 
-const worldTs = (id: string) => `import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { environment, grass, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+const worldTs = (id: string) => `import { world as place } from "@jgengine/core/world/place";
 
-export const world: EnvironmentWorldFeature = environment({
-  terrain: terrain({ bounds: { w: 96, d: 96 }, height: 0, material: "grass" }),
-  sky: sky({ preset: "day" }),
-  vegetation: grass({ area: { w: 80, d: 80 }, density: 2, colors: ["#3f7d2d", "#6bbf4a"], seed: "${id}" }),
+// The world is the place you play in: substrate + laws. Dress the place — sky look, foliage,
+// props, sculpt — in the editor (F2+E), which writes editor.scene.json; never here. With no
+// authored sky the engine renders its default sky.
+export const world = place({
+  id: "${id}",
+  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
+  physics: { gravity: -24 },
 });
-
-export const physics: PhysicsConfig = { gravity: -24 };
 `;
 
 const editorLoopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";

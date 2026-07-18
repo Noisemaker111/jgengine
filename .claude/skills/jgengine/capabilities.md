@@ -126,6 +126,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/shell/gameKit"`
 
-## world-environment — declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/shell/gameKit"`

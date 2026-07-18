@@ -257,6 +257,10 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
 /** @internal */
 export function groundFieldFor(world?: WorldFeature): TerrainField {
   if (world !== undefined && world.kind === "environment") return resolveEnvironmentField(world);
+  // Place worlds (`world()` from world/place) stand on a flat baseline field: flat/board grounds are
+  // exactly y=0, while round/voxel grounds keep their sampled shape in the game's own generation
+  // systems (the substrate declaration never bakes a heightfield). Editor-authored sculpt still
+  // layers through the environment path above.
   return flatField();
 }
 

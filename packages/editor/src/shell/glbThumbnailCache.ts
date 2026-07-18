@@ -9,8 +9,10 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+/** Lifecycle of one URL's thumbnail render: untouched → rendering → data URL or honest failure. */
 export type ThumbnailStatus = "idle" | "loading" | "ready" | "error";
 
+/** Snapshot consumers poll/subscribe for: render status plus the PNG data URL once ready. */
 export interface ThumbnailState {
   status: ThumbnailStatus;
   /** `data:image/png;base64,…` when ready; otherwise null. */

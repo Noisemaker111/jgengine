@@ -459,6 +459,27 @@ export {
   type WorldGridCell,
   type WorldGridConfig,
 } from "./world/features";
+export {
+  isPlaceWorld,
+  resolveWorldPhysics,
+  seedForPlace,
+  world,
+  type BoardGround,
+  type BoardGroundSize,
+  type FlatGround,
+  type FlatGroundSize,
+  type GroundConfig,
+  type GroundGenerator,
+  type GroundMode,
+  type PlaceConfig,
+  type PlaceWorldFeature,
+  type ResolvedGround,
+  type RoundGround,
+  type RoundGroundSize,
+  type SurfaceLaws,
+  type VoxelGround,
+  type VoxelGroundSize,
+} from "./world/place";
 export { createFogField, type FogCells, type FogField } from "./world/fog";
 export { boundaryNeighbors, createFootprintGrid, footprintObstacles, hasValidAdjacency } from "./world/footprintGrid";
 export { type Aabb, type AvoidZone } from "./world/geometry";

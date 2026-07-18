@@ -68,3 +68,7 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
+
+2026-07-18T22:43:40.443Z — claude-fable-5 — Claude
+
+world redesign PR: main is broken — packages/editor/src/EditorChrome.tsx had a duplicate ')}' (merge #1176) that fails 'bun run build'; agent:bootstrap earlier reported success anyway, so the breakage only surfaced mid-task at gen:skill-api

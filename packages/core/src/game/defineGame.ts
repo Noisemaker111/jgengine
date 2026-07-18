@@ -15,6 +15,7 @@ import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { StoreHandle } from "../store/defineStore";
 import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
+import { resolveWorldPhysics } from "../world/place";
 
 /** Tunes offline whole-world save (`defineGameDefinition({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
 export interface PersistConfig {
@@ -189,7 +190,13 @@ export interface GameDefinition<
    * Classic `loop` hooks still run for incremental migration (systems tick first, then `loop.onTick`).
    */
   systems?: readonly SystemDefinition[];
+  /**
+   * The place this game happens in — preferred shape is `world()` from `@jgengine/core/world/place`
+   * (ground + per-place laws; dressing lives in the editor's scene document). Omit entirely for
+   * pure UI/rules games that are not a spatial place.
+   */
   world?: WorldFeature;
+  /** Game-level default physics laws; a place world's own `physics` resolves over this. */
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
   time?: TimeConfig;
@@ -240,8 +247,12 @@ export function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplay
   // featureDescriptors.enabled — one enable path, no dual checks at install time.
   const features = mergeSystemFeatures(config.features, config.systems);
   const loop = composeGameLoop(config.systems, config.loop);
+  // A place world carries the laws of that place: its physics resolves over the game-level default,
+  // so every consumer of definition.physics (movement, combat, shell) sees the active world's laws.
+  const physics = resolveWorldPhysics(config.world, config.physics);
   return {
     ...config,
+    ...(physics === undefined ? {} : { physics }),
     features,
     loop,
     scene: createEntityStore(),

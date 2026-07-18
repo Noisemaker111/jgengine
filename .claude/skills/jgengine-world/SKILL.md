@@ -17,6 +17,10 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 
 ## Canonical workflows
 
+### Declare the place
+
+A world is the place you play in: substrate + laws, via `world()` from `@jgengine/core/world/place` — `{ id, ground: { mode: flat|round|voxel|board, size, surface?, generator? }, physics? }`. Thin is complete: flat with `Infinity` axes for 3D, `board` for 2D, or omit `world` for pure UI/rules games. Never put seed, sky, or vegetation in a world definition — seeds derive from world id + save/run (`seedForPlace`); sky look and foliage scatter are editor-authored scene content, with the engine default sky when the document has none. `ground.surface` carries matter/feel laws (metal vs slime vs felt) that the same rule systems read — swap the surface, not the rules. See [reference.md](reference.md) for the full shape; `environment()` is the legacy consumption path for editor/preset-written scene data, never the starter.
+
 ### Authored world
 
 1. Load the scene document through the shared authored-scene feature.
@@ -38,6 +42,7 @@ Render seams fall back to placeholders when content is unauthored: default green
 
 ## Traps
 
+- Do not put seed, sky presets, or vegetation/scatter fields in a world definition — `world()` rejects them; dressing belongs to the editor's scene document.
 - Do not put UI layout, touch chrome, combat resolution, or asset acquisition here.
 - Do not duplicate editor coordinates in runtime state.
 - Public APIs accept semantic policies and caller data, not renderer mechanics or internal tuning rolls.

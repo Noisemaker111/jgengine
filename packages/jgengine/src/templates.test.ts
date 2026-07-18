@@ -180,10 +180,17 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     for (const extra of ["src/world.ts", "src/game/assets.ts", "src/game/models.ts"]) {
       expect(paths).toContain(extra);
     }
-    expect(fileOf(files, "src/world.ts")).toContain("environment(");
+    const worldFile = fileOf(files, "src/world.ts");
+    expect(worldFile).toContain("place(");
+    expect(worldFile).toContain('mode: "flat"');
+    expect(worldFile).toContain("x: Infinity");
+    expect(worldFile).not.toContain("environment(");
+    expect(worldFile).not.toContain("sky(");
+    expect(worldFile).not.toContain("grass(");
+    expect(worldFile).not.toContain("seed");
     const config = fileOf(files, "src/game.config.ts");
     expect(config).toContain("world,");
-    expect(config).toContain("physics,");
+    expect(config).not.toContain("physics,");
     expect(config).toContain("entityModels,");
     expect(config).toContain("objectModels,");
   });

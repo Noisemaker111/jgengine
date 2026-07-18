@@ -455,6 +455,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
 
-## world-environment — declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
+
+## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
+
+- `world` (function) · `import { world } from "@jgengine/core/world"`
+
+## world-seed — derive a deterministic generator/scatter seed from world id + save/run seed
+
+- `seedForPlace` (function) · `import { seedForPlace } from "@jgengine/core/world"`

@@ -63,13 +63,14 @@ const EXPLORE = [
   },
 ];
 
-const HERO_SNIPPET = `import { environment, terrain, sky, grass } from "@jgengine/core/world/features";
+const HERO_SNIPPET = `import { world } from "@jgengine/core/world/place";
 
-export const world = environment({
-  terrain: terrain({ bounds: { w: 256, d: 256 }, height: 8, material: "grass" }),
-  sky: sky({ preset: "day" }),
-  vegetation: grass({ area: { w: 200, d: 200 }, density: 2, seed: "meadow" }),
-});`;
+export const overworld = world({
+  id: "overworld",
+  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
+  physics: { gravity: -24 },
+});
+// The place: substrate + laws. Sky and foliage are authored in the editor.`;
 
 const packageBlurb = (name: string) => PACKAGES.find((pkg) => pkg.name === name)?.blurb ?? "";
 

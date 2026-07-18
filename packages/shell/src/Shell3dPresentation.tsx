@@ -72,6 +72,7 @@ import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import { createPointerService } from "./pointer/pointerService";
 import { Reticle, WorldEntityBars, WorldNameplates } from "./world/WorldHud";
 import { GridWorldScene } from "./world/GridWorldScene";
+import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -200,9 +201,11 @@ export function Shell3dPresentation({
     playable.environment ??
     (world?.kind === "environment"
       ? () => <EnvironmentScene feature={world} />
-      : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
-        ? () => <GridWorldScene feature={world} />
-        : undefined);
+      : world?.kind === "place"
+        ? () => <PlaceScene feature={world} />
+        : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
+          ? () => <GridWorldScene feature={world} />
+          : undefined);
   const resolvedLook = resolveGameLook({
     look: playable.look,
     lighting: playable.lighting,

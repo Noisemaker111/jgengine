@@ -1442,6 +1442,8 @@
 - `BehaviorSnapshot` (type): type BehaviorSnapshot = | { readonly kind: "patrol"; readonly state: PathFollowState } | { readonly kind: "wander"; readonly origin: Waypoint; readonly target: Waypoint | null } — Serializable snapshot of one behavior instance — round-trips exactly through {@link BehaviorControl.serialize}/{@link BehaviorControl.restore}.
 - `BehaviorStatus` (type): type BehaviorStatus = "active" | "paused" | "disabled" — Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining state (`paused`), or is held off until re-enabled (`disabled`).
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
+- `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
+- `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
 - `BookmarkRecallMode` (type): type BookmarkRecallMode = "replace" | "merge" — How a recalled bookmark folds into the active selection.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
@@ -1519,6 +1521,8 @@
 - `FactionDef` (interface): interface FactionDef — ⚠ undocumented
 - `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
 - `FireGrid` (interface): interface FireGrid — ⚠ undocumented
+- `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
+- `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
 - `FlightControlRates` (interface): interface FlightControlRates — Angular authority, response, damping, and self-leveling configuration.
 - `FlightVector` (type): type FlightVector = readonly [number, number, number] — Three-dimensional world-space vector used by the flight model.
@@ -1543,6 +1547,9 @@
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — ⚠ undocumented
+- `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
+- `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
 - `GroundPoint` (type): type GroundPoint = readonly [number, number] — A world-space point on the ground plane as an `[x, z]` pair.
 - `GuideRegion` (interface): interface GuideRegion — An axis-aligned XZ rectangle to generate terrain-readability guides within.
 - `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
@@ -1650,6 +1657,8 @@
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
+- `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
+- `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
 - `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
 - `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
 - `PlacementController` (interface): interface PlacementController — ⚠ undocumented
@@ -1671,6 +1680,7 @@
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+- `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
@@ -1680,6 +1690,8 @@
 - `RoadSurfaceOptions` (interface): interface RoadSurfaceOptions — Grip levels and blend width for {@link roadSurfaceSampler}; each field is optional and defaulted.
 - `RoofPlan` (interface): interface RoofPlan — ⚠ undocumented
 - `RosterEntry` (interface): interface RosterEntry — ⚠ undocumented
+- `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
+- `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
 - `SHAPE_BOX` (const): const SHAPE_BOX: 0 — ⚠ undocumented
 - `SHAPE_SPHERE` (const): const SHAPE_SPHERE: 1 — ⚠ undocumented
@@ -1733,6 +1745,7 @@
 - `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
 - `SurfaceGridLine` (interface): interface SurfaceGridLine — One draped grid line from {@link surfaceGridLines}: its axis, emphasis, and draped vertices.
 - `SurfaceGridOptions` (interface): interface SurfaceGridOptions — Shaping for {@link surfaceGridLines}: region, spacing, emphasis cadence, and draping.
+- `SurfaceLaws` (interface): interface SurfaceLaws — The place model: a world is the place you play in — substrate (ground) plus laws (physics, surface) — never a dressed diorama. Sky look, foliage scatter, props, and sculpt are content: they are authored in the editor (or by a content preset that writes into the scene document) and consumed through the authored-scene seams, not declared on the world.
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `SynthPatch` (interface): interface SynthPatch — A procedural sound cue: a set of voices triggered together, each with its own `delay`, summed into one one-shot. Pure serialisable data — the shell realises it on Web Audio, so the same catalog runs headless in tests with no `AudioContext`.
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
@@ -1788,6 +1801,8 @@
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 - `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
+- `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
+- `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
 - `VoxelMaterial` (interface): interface VoxelMaterial — ⚠ undocumented
 - `VoxelVolume` (class): class VoxelVolume — A runtime-editable dense voxel grid — the carve/deposit op behind destructible dig worlds (Deep Rock Galactic tunnels, Astroneer terrain). Cells hold a material id (0 = empty); `carve` clears a sphere of solid cells that a tool is strong enough to break and returns how many it removed (feed that to a loot roll), `deposit` fills a sphere with a material. World↔cell mapping is `origin`+`scale`.
 - `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
@@ -1802,7 +1817,7 @@
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
 - `WindField` (interface): interface WindField — ⚠ undocumented
-- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
@@ -1918,7 +1933,7 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `encodeBakePng` (function): function encodeBakePng(bake: MinimapBake): Uint8Array — Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
 - `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
-- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
 - `extractContours` (function): function extractContours(sampleHeight: HeightSampler, options: ContourOptions): ContourLine[] — Traces surface-following contour lines from a height field via marching squares: samples a bounded grid over the region, then for every multiple of `interval` strictly inside the sampled height range emits the iso-line as XZ segments (saddle cells disambiguated by the cell-center average). Because a contour is exact constant elevation, drawing each segment at `y = level` makes it hug the terrain — the readable, scale-bearing overlay a flat ground grid cannot give. Pure math, renderer-agnostic.
@@ -1943,6 +1958,7 @@
 - `independentStacks` (function): function independentStacks<P>(): AreaStackPolicy<P> — Every overlapping membership applies independently (no deduplication) — the default for hazards, fields, and lights where two sources genuinely stack.
 - `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
 - `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
+- `isPlaceWorld` (function): function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature — Type guard for the place-model world feature.
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
 - `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
@@ -2020,6 +2036,7 @@
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] — ⚠ undocumented
 - `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — ⚠ undocumented
+- `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
 - `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
 - `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
@@ -2038,6 +2055,7 @@
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
 - `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
 - `screenRect` (function): function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect — Normalize two drag corners (in any order) into a rectangle.
+- `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
 - `selectWithinRect` (function): function selectWithinRect(candidates: readonly ScreenPoint[], rect: ScreenRect): string[] — Ids of the projected candidates whose screen point falls inside the marquee.
 - `shellRegion` (function): function shellRegion(center: Point3, innerRadius: number, outerRadius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even density; `"radial"` spreads uniformly in radius. Direction first, then radius.
@@ -2088,6 +2106,7 @@
 - `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
+- `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
 ## @jgengine/core/world/authoredEntities
@@ -2396,12 +2415,12 @@
 - `WaterEnvironmentDescriptor` (type): type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor — ⚠ undocumented
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WorldBounds` (interface): interface WorldBounds — ⚠ undocumented
-- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
-- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `island` (function): function island(config: TerrainIslandConfig): TerrainIslandDescriptor — ⚠ undocumented
@@ -2564,6 +2583,29 @@
 - `PathRetaining` (interface): interface PathRetaining — Retaining behavior for a path corridor's shoulders. A wall rises only where the corridor already cuts or fills into the surrounding ground by at least `threshold` — gentle stretches stay open — so a road through a canyon gets held banks while the same profile on flat ground does not. The wall fades in smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
 - `TerrainPathProfile` (interface): interface TerrainPathProfile — A serializable path-driven terrain modifier. The `points` centerline reshapes the heightfield across a corridor of `width`, feathering back to the surrounding ground across `shoulder`. `height` sets the centerline target (sample / fixed / grade); `depth` carves a channel below it (deepest at the centerline, easing to zero at the core edge — rivers and trenches); `retaining` raises walls where the cut/fill exceeds a threshold; `maxCut`/`maxFill` cap how far the ground may move from its base height. All fields are plain data (numbers, string enums, point arrays) so a profile round-trips through the scene document and evaluates identically at author time and runtime.
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
+
+## @jgengine/core/world/place
+
+- `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
+- `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
+- `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
+- `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
+- `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
+- `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
+- `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
+- `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
+- `ResolvedBoardGround` (type): type ResolvedBoardGround = Omit<BoardGround, "mode"> & { mode: "board" } — {@link BoardGround} with the `stage` alias resolved away.
+- `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
+- `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
+- `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
+- `SurfaceLaws` (interface): interface SurfaceLaws — The place model: a world is the place you play in — substrate (ground) plus laws (physics, surface) — never a dressed diorama. Sky look, foliage scatter, props, and sculpt are content: they are authored in the editor (or by a content preset that writes into the scene document) and consumed through the authored-scene seams, not declared on the world.
+- `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
+- `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
+- `isPlaceWorld` (function): function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature — Type guard for the place-model world feature.
+- `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
+- `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
+- `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
 
 ## @jgengine/core/world/placeAsset
 
