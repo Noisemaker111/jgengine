@@ -1,3 +1,4 @@
+/** @internal */
 export interface ChangeSignal {
   subscribe(listener: () => void): () => void;
   notify(): void;

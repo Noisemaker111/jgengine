@@ -300,6 +300,7 @@ export interface PlayerFovConfig {
   control?: boolean;
 }
 
+/** Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig. */
 export interface GameCameraConfig {
   /** Selects the rig — the one camera-selection knob. Overrides the legacy `perspective` shorthand. */
   rig?: CameraRigKind;

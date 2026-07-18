@@ -383,6 +383,7 @@ export interface GameAudio {
   stopLoop(id: string): void;
 }
 
+/** The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world. */
 export interface GameContext {
   scene: {
     object: SceneObjectContext;

@@ -28,6 +28,7 @@ export interface EditorSummonModule {
   }>;
 }
 
+/** Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon. */
 export interface GameHostProps {
   playable: PlayableGame;
   gameId?: string;

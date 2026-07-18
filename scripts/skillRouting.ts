@@ -74,7 +74,11 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   // leave generated game-authoring API docs (still published; agents use CLI help).
 };
 
-export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {};
+export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {
+  // The public authoring trio lives with the router skill so the minimal install
+  // (jgengine + editor + verify) already carries defineGame/gameKit/GameHost.
+  shell: { defineGame: MAIN, gameKit: MAIN, GameHost: MAIN },
+};
 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {

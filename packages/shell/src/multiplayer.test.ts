@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { defineGameDefinition, type GameDefinition } from "@jgengine/core/game/defineGameDefinition";
+import { defineGameDefinition, type GameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { lan, offline, p2p, ws, wsPresence } from "@jgengine/core/runtime/adapter";
 

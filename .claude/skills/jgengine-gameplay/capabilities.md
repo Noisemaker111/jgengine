@@ -67,9 +67,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `evaluatePredicate` (function) · `import { evaluatePredicate } from "@jgengine/core/gameplay"`
 - `readPath` (function) · `import { readPath } from "@jgengine/core/gameplay"`
 
-## define-game — single public game-authoring path — compose systems, world, and loop in one definition
+## define-system — composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
 
-- `defineGame` (function) · `import { defineGame } from "@jgengine/core/gameplay"`
+- `defineSystem` (function) · `import { defineSystem } from "@jgengine/core/gameplay"`
 
 ## detect — fire-once threshold/milestone/tier crossings when a value moves
 
@@ -333,6 +333,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
 
+## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
+
+- `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
+
 ## set — a bounded keyed value in a caller-owned serializable record
 
 - `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
@@ -384,6 +388,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `getRuleEffect` (function) · `import { getRuleEffect } from "@jgengine/core/gameplay"`
 - `listRuleEffects` (function) · `import { listRuleEffects } from "@jgengine/core/gameplay"`
 - `registerRuleEffect` (function) · `import { registerRuleEffect } from "@jgengine/core/gameplay"`
+
+## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
+
+- `defineKeyedStore` (function) · `import { defineKeyedStore } from "@jgengine/core/store/defineKeyedStore"`
+
+## typed-store — a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
+
+- `defineStore` (function) · `import { defineStore } from "@jgengine/core/store/defineStore"`
 
 ## unit-training — compose a timed work queue that trains catalog units into spawn orders
 

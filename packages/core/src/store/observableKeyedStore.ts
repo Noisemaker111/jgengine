@@ -1,3 +1,4 @@
+/** @internal */
 export interface ObservableKeyedStore<T> {
   set(key: string, value: T): void;
   delete(key: string): void;
