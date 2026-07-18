@@ -187,3 +187,11 @@ bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails 
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
+
+2026-07-18T23:04:31.014Z — gpt-5.6-sol — NoisemakerJon
+
+running independent recipe/surface/test/type checks for portable damage in parallel -> automatic permission review timed out after several minutes before commands ran, so verification had to be retried as one bounded sequence
+
+2026-07-18T23:09:23.301Z — gpt-5.6-sol — NoisemakerJon
+
+running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh

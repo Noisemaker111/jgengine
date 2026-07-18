@@ -16,6 +16,11 @@ Existing projects keep their resource state and follow the
 store through `StatPoolAccess`; do not require `StatValueMap`, `GameContext`, or
 a parallel entity store.
 
+Damage commitment accepts the same structural pool adapter while the matchup,
+receiver, interceptor, and status stages remain pure. Follow the
+[portable damage/effects recipe](recipes/portable-damage-effects.md) to compose
+them over an existing store, clock, RNG, spatial index, and death flow.
+
 ## Canonical pipeline
 
 1. Acquire eligible candidates from a bounded spatial source.

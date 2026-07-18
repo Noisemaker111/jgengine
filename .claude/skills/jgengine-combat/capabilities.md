@@ -204,7 +204,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
 
-## status-effects — apply and tick timed status effects and buffs on entities
+## status-effects — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
 

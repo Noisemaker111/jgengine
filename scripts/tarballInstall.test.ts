@@ -84,12 +84,16 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     try {
       const script = [
         "import { VERSION } from '@jgengine/core';",
+        "import { createEffectSystem } from '@jgengine/core/combat/effects';",
         "import { applyStatPoolDelta, createStatPool } from '@jgengine/core/stats/statPool';",
         "if (typeof VERSION !== 'string') throw new Error('VERSION not exported');",
         "const resources = { rover: { energy: createStatPool({ current: 8, max: 10 }) } };",
         "const access = { get: (owner, stat) => resources[owner]?.[stat] ?? null, set: (owner, stat, next) => { resources[owner][stat] = next; } };",
         "const changed = applyStatPoolDelta(access, 'rover', 'energy', -3);",
         "if (changed.status !== 'ok' || resources.rover.energy.current !== 5) throw new Error('portable stat pool failed');",
+        "const effects = createEffectSystem({ resolveReceive: () => ({ damage: { order: ['energy'] } }), statPools: access, getStat: () => null, spatial: { inRadius: () => [], hasLineOfSight: () => true, positionOf: () => undefined } });",
+        "const applied = effects.applyEffect({ from: 'hazard', to: 'rover', effect: 'damage', via: { amount: 2 } });",
+        "if (applied[0]?.applied[0]?.delta !== -2 || resources.rover.energy.current !== 3) throw new Error('portable effects failed');",
         "let blocked = false;",
         "try { await import('@jgengine/core/testFixtures'); } catch { blocked = true; }",
         "if (!blocked) throw new Error('testFixtures was importable from the tarball');",
