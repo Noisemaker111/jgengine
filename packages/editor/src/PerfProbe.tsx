@@ -75,6 +75,10 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
     const active = activeRef.current || authoring.authoringMs > 0 || sceneChanged;
     lastDrawRef.current = drawCalls;
     lastTriRef.current = triangles;
+    // Chromium-only; other browsers omit memory rather than fabricating a value.
+    const heap = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
+    const memoryMb =
+      heap === undefined ? undefined : Math.round((heap.usedJSHeapSize / (1024 * 1024)) * 10) / 10;
     api.setPerf({
       fps: Math.round(fps * 10) / 10,
       frameMs: Math.round((elapsed / framesRef.current) * 100) / 100,
@@ -85,6 +89,7 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
       raycastMs: authoring.raycastMs,
       rebuildMs: authoring.rebuildMs,
       authoringMs: authoring.authoringMs,
+      ...(memoryMb === undefined ? {} : { memoryMb }),
     });
     framesRef.current = 0;
     windowStartRef.current = now;
