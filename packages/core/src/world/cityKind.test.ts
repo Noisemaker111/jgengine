@@ -93,9 +93,9 @@ describe("resolveCityObject", () => {
     expect(parky.lots.length).toBeLessThan(dense.lots.length);
   });
 
-  test("building density scales lot count and floors honor bounds", () => {
-    const sparse = resolveCityObject(cityVolume({ seed: "d", buildingDensity: 0.1 }))!;
-    const dense = resolveCityObject(cityVolume({ seed: "d", buildingDensity: 1 }))!;
+  test("roadside occupancy scales lot count and floors honor bounds", () => {
+    const sparse = resolveCityObject(cityVolume({ seed: "d", roadsideOccupancy: 0.15 }))!;
+    const dense = resolveCityObject(cityVolume({ seed: "d", roadsideOccupancy: 1 }))!;
     expect(dense.lots.length).toBeGreaterThan(sparse.lots.length);
     const bounded = resolveCityObject(cityVolume({ seed: "d", floorsMin: 4, floorsMax: 6 }))!;
     for (const lot of bounded.lots) {
@@ -311,8 +311,10 @@ describe("zoning", () => {
     const half = resolveCityObject(cityVolume({ seed: "ovr" }), {
       zoneOverrides: [{ ...overrides[0]!, center: { x: 150, y: 0, z: 0 }, halfExtents: { x: 60, y: 10, z: 400 } }],
     })!;
-    const inside = half.lots.filter((lot) => lot.center[0] > 95 && lot.center[0] < 205);
-    const outside = half.lots.filter((lot) => lot.center[0] < 80);
+    // Margin past the override wall: the zone probe samples near the curb while deep lots'
+    // centers sit further into the block, so boundary-straddling parcels are legitimately mixed.
+    const inside = half.lots.filter((lot) => lot.center[0] > 112 && lot.center[0] < 188);
+    const outside = half.lots.filter((lot) => lot.center[0] < 78);
     expect(inside.length).toBeGreaterThan(0);
     for (const lot of inside) expect(lot.class).toBe("barn");
     expect(outside.some((lot) => lot.class !== "barn")).toBe(true);
@@ -482,6 +484,111 @@ describe("street hierarchy, intersections, furniture", () => {
     expect(bare.parkingLots.length).toBe(0);
   });
 
+  test("suburbs pack tight: consistent small setbacks, rhythmic rows, occupied frontage", () => {
+    // A controlled all-house district: rigid grid, flat ground, no parks, defaults for placement.
+    const meta = {
+      seed: "suburb",
+      gridness: 1,
+      curviness: 0,
+      branching: 0,
+      boulevards: 0,
+      openSpace: 0,
+      profile: "uniform",
+      coreMix: [{ item: "house", weight: 1 }],
+      midMix: [{ item: "house", weight: 1 }],
+      edgeMix: [{ item: "house", weight: 1 }],
+      roadsideOccupancy: 0.95,
+      clusterStrength: 0.3,
+    };
+    const city = resolveCityObject(cityVolume(meta))!;
+    expect(city.lots.length).toBeGreaterThan(150);
+    // Front rows hug the street with a small, consistent setback: center-to-anchor distance is
+    // curb + sidewalk + setback + half depth ≈ 12-13 m at defaults, and barely varies.
+    const frontGaps = city.lots
+      .map((lot) => Math.hypot(lot.center[0] - lot.anchor[0], lot.center[1] - lot.anchor[1]) - lot.size[1] / 2)
+      .filter((gap) => gap < 14)
+      .sort((a, b) => a - b);
+    expect(frontGaps.length).toBeGreaterThan(city.lots.length * 0.5);
+    const median = frontGaps[Math.floor(frontGaps.length / 2)]!;
+    expect(median).toBeGreaterThan(6);
+    expect(median).toBeLessThan(11);
+    const p90 = frontGaps[Math.floor(frontGaps.length * 0.9)]!;
+    expect(p90 - frontGaps[Math.floor(frontGaps.length * 0.1)]!).toBeLessThan(4.5);
+    // Neighbors form rows: the median nearest-neighbor distance stays near one lot width.
+    const nearest = city.lots.map((lot) => {
+      let best = Infinity;
+      for (const other of city.lots) {
+        if (other === lot) continue;
+        const d = Math.hypot(other.center[0] - lot.center[0], other.center[1] - lot.center[1]);
+        if (d < best) best = d;
+      }
+      return best;
+    });
+    nearest.sort((a, b) => a - b);
+    expect(nearest[Math.floor(nearest.length / 2)]!).toBeLessThan(15);
+    // Most road frontage faces a building: sample stations along every street's whole arc.
+    let stations = 0;
+    let occupied = 0;
+    for (const street of city.streets) {
+      let carried = 0;
+      for (let i = 0; i + 1 < street.points.length; i += 1) {
+        const [ax, az] = street.points[i]!;
+        const [bx, bz] = street.points[i + 1]!;
+        const len = Math.hypot(bx - ax, bz - az);
+        let d = 9 - carried;
+        while (d < len) {
+          const t = d / len;
+          const x = ax + (bx - ax) * t;
+          const z = az + (bz - az) * t;
+          d += 9;
+          if (Math.abs(x) > 170 || Math.abs(z) > 170) continue;
+          stations += 1;
+          for (const lot of city.lots) {
+            if (Math.hypot(lot.center[0] - x, lot.center[1] - z) < 19) {
+              occupied += 1;
+              break;
+            }
+          }
+        }
+        carried = len - (d - 9);
+      }
+    }
+    expect(stations).toBeGreaterThan(100);
+    expect(occupied / stations).toBeGreaterThan(0.62);
+  });
+
+  test("placement dials respond: setback pushes lots back, spacing spreads them, clustering pulls toward junctions", () => {
+    const base = { seed: "dials", gridness: 1, curviness: 0, openSpace: 0, coreMix: [{ item: "house", weight: 1 }], midMix: [{ item: "house", weight: 1 }], edgeMix: [{ item: "house", weight: 1 }] };
+    const medianFrontGap = (meta: Record<string, unknown>): number => {
+      const city = resolveCityObject(cityVolume(meta))!;
+      const gaps = city.lots
+        .map((lot) => Math.hypot(lot.center[0] - lot.anchor[0], lot.center[1] - lot.anchor[1]) - lot.size[1] / 2)
+        .filter((gap) => gap < 25)
+        .sort((a, b) => a - b);
+      return gaps[Math.floor(gaps.length / 2)]!;
+    };
+    expect(medianFrontGap({ ...base, buildingRoadSetback: 8 })).toBeGreaterThan(medianFrontGap({ ...base, buildingRoadSetback: 0.5 }) + 4);
+    const count = (meta: Record<string, unknown>): number => resolveCityObject(cityVolume(meta))!.lots.length;
+    expect(count({ ...base, buildingSpacing: 0.3 })).toBeGreaterThan(count({ ...base, buildingSpacing: 8 }));
+    // Clustering makes junctions centers of development: on a nearly-empty long-block district,
+    // clusterStrength forms crossroad hamlets — lot count multiplies and the near-junction share
+    // rises until the placeable corner band saturates.
+    const clustered = (clusterStrength: number): { lots: number; nearShare: number } => {
+      const city = resolveCityObject(cityVolume({ ...base, blockSize: 100, roadsideOccupancy: 0.05, clusterStrength }))!;
+      let near = 0;
+      for (const lot of city.lots) {
+        let best = Infinity;
+        for (const cross of city.intersections) best = Math.min(best, Math.hypot(cross.x - lot.center[0], cross.z - lot.center[1]));
+        if (best < 32) near += 1;
+      }
+      return { lots: city.lots.length, nearShare: near / Math.max(1, city.lots.length) };
+    };
+    const uniform = clustered(0);
+    const knotted = clustered(1);
+    expect(knotted.lots).toBeGreaterThan(uniform.lots * 2);
+    expect(knotted.nearShare).toBeGreaterThan(uniform.nearShare + 0.03);
+  });
+
   test("parking pads never overlap building lots", () => {
     const city = resolveCityObject(cityVolume({ seed: "metro" }))!;
     expect(city.parkingLots.length).toBeGreaterThan(0);
@@ -521,6 +628,12 @@ describe("street hierarchy, intersections, furniture", () => {
         expect(separated).toBe(true);
       }
     }
+  });
+
+  test("legacy buildingDensity meta still drives occupancy on old documents", () => {
+    const sparse = resolveCityObject(cityVolume({ seed: "legacy", buildingDensity: 0.15 }))!;
+    const dense = resolveCityObject(cityVolume({ seed: "legacy", buildingDensity: 0.95 }))!;
+    expect(dense.lots.length).toBeGreaterThan(sparse.lots.length * 1.5);
   });
 
   test("massing pieces ride every lot and stay within its footprint envelope", () => {

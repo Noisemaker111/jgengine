@@ -435,7 +435,12 @@
         "sidewalks": false,
         "style": "ruin",
         "seed": "ashfall-3",
-        "surface": "gravel"
+        "surface": "gravel",
+        "roadsideOccupancy": 0.9,
+        "blockDensity": 0.5,
+        "buildingRoadSetback": 1.2,
+        "buildingSpacing": 1,
+        "clusterStrength": 0.6
       }
     }
   ],

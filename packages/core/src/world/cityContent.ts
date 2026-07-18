@@ -70,10 +70,10 @@ interface ClassProfile {
   width: readonly [number, number];
   /** Depth range in meters (before `lotScale`). */
   depth: readonly [number, number];
-  /** Gap from the street edge to the lot front. */
-  setback: readonly [number, number];
-  /** Side gap to the next lot along the frontage. */
-  gap: readonly [number, number];
+  /** Multiplier on the district's `buildingRoadSetback` — estates and farms sit further back. */
+  setbackFactor: number;
+  /** Multiplier on the district's `buildingSpacing` — rowhouses nearly touch, farms spread out. */
+  spacingFactor: number;
   /** Floor-count range before the district floor clamp. */
   floors: readonly [number, number];
   /** Whether deep blocks may host a second back row of this class. */
@@ -81,15 +81,15 @@ interface ClassProfile {
 }
 
 const CLASS_PROFILES: Record<CityLotClass, ClassProfile> = {
-  tower: { width: [16, 24], depth: [14, 20], setback: [0.5, 1.5], gap: [1.5, 3], floors: [12, 34], backRow: true },
-  slab: { width: [14, 20], depth: [11, 15], setback: [1, 2.5], gap: [2, 4], floors: [4, 9], backRow: true },
-  shop: { width: [10, 15], depth: [8, 12], setback: [0.5, 1.5], gap: [1, 2.5], floors: [1, 2], backRow: true },
-  rowhouse: { width: [6, 8.5], depth: [9, 12], setback: [1, 2.5], gap: [0.4, 1], floors: [2, 3], backRow: true },
-  house: { width: [9, 12], depth: [8, 11], setback: [3.5, 6], gap: [3, 6], floors: [1, 2], backRow: true },
-  mansion: { width: [18, 26], depth: [14, 20], setback: [7, 12], gap: [4, 9], floors: [2, 3], backRow: false },
-  farmhouse: { width: [11, 14], depth: [9, 12], setback: [10, 18], gap: [14, 30], floors: [2, 2], backRow: false },
-  barn: { width: [12, 16], depth: [9, 13], setback: [14, 26], gap: [16, 34], floors: [1, 1], backRow: false },
-  silo: { width: [5, 6], depth: [5, 6], setback: [16, 28], gap: [10, 24], floors: [1, 1], backRow: false },
+  tower: { width: [16, 24], depth: [14, 20], setbackFactor: 0.3, spacingFactor: 1, floors: [12, 34], backRow: true },
+  slab: { width: [14, 20], depth: [11, 15], setbackFactor: 0.5, spacingFactor: 1, floors: [4, 9], backRow: true },
+  shop: { width: [10, 15], depth: [8, 12], setbackFactor: 0.2, spacingFactor: 0.6, floors: [1, 2], backRow: true },
+  rowhouse: { width: [6, 8.5], depth: [9, 12], setbackFactor: 0.5, spacingFactor: 0.12, floors: [2, 3], backRow: true },
+  house: { width: [9, 12], depth: [8, 11], setbackFactor: 1, spacingFactor: 1, floors: [1, 2], backRow: true },
+  mansion: { width: [18, 26], depth: [14, 20], setbackFactor: 2, spacingFactor: 1.6, floors: [2, 3], backRow: false },
+  farmhouse: { width: [11, 14], depth: [9, 12], setbackFactor: 2.8, spacingFactor: 4, floors: [2, 2], backRow: false },
+  barn: { width: [12, 16], depth: [9, 13], setbackFactor: 3.6, spacingFactor: 5, floors: [1, 1], backRow: false },
+  silo: { width: [5, 6], depth: [5, 6], setbackFactor: 4, spacingFactor: 3, floors: [1, 1], backRow: false },
 };
 
 /** Placement numbers a resolved lot carries out of the class profile. @internal */
@@ -106,21 +106,28 @@ function range(rng: () => number, [lo, hi]: readonly [number, number]): number {
   return lo + rng() * (hi - lo);
 }
 
-/** Roll a class's lot dimensions/setback/floors, scaled and clamped to the district rules. @internal */
+/**
+ * Roll a class's lot dimensions/setback/floors from the district's placement dials. Setback keeps
+ * only a whisper of jitter around `setbackBase × class factor`, so a street's frontage reads as an
+ * aligned building wall; spacing likewise, so neighbors form rhythmic rows instead of scatter.
+ * @internal
+ */
 export function rollClassPlacement(
   cls: CityLotClass,
   rng: () => number,
   lotScale: number,
   floorsMin: number,
   floorsMax: number,
+  setbackBase: number,
+  spacingBase: number,
 ): ClassPlacement {
   const profile = CLASS_PROFILES[cls];
   const floors = Math.round(range(rng, profile.floors));
   return {
     width: range(rng, profile.width) * lotScale,
     depth: range(rng, profile.depth) * lotScale,
-    setback: range(rng, profile.setback),
-    gap: range(rng, profile.gap) * Math.max(0.75, lotScale * 0.85),
+    setback: setbackBase * profile.setbackFactor * (0.9 + rng() * 0.2),
+    gap: Math.max(0.2, spacingBase * profile.spacingFactor * (0.7 + rng() * 0.6)),
     floors: Math.max(floorsMin, Math.min(floorsMax, floors)),
     backRow: profile.backRow,
   };
