@@ -2,15 +2,27 @@ import { createObservableKeyedStore } from "../store/observableKeyedStore";
 
 export type MarkerPosition = readonly [number, number, number];
 
-export interface MapMarker<TMeta = unknown> {
+/**
+ * Small, display-only marker shape consumed by map renderers. Existing games
+ * can project their own entities to this view without adopting marker
+ * lifecycle storage or duplicating them into a {@link MarkerSet}.
+ */
+export interface MarkerView<TMeta = unknown> {
   id: string;
-  kind: string;
   position: MarkerPosition;
+  kind?: string;
   label?: string;
+  /** Optional world heading in radians for presentations that draw directional markers. */
+  heading?: number;
+  meta?: TMeta;
+}
+
+/** A marker owned by {@link MarkerSet}, including its lifecycle and query fields. */
+export interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> {
+  kind: string;
   owner?: string;
   createdAt: number;
   expiresAt?: number;
-  meta?: TMeta;
 }
 
 export interface MarkerInput<TMeta = unknown> {
@@ -18,6 +30,8 @@ export interface MarkerInput<TMeta = unknown> {
   kind: string;
   position: MarkerPosition;
   label?: string;
+  /** Optional world heading in radians for directional map presentations. */
+  heading?: number;
   owner?: string;
   createdAt?: number;
   expiresAt?: number;
@@ -55,9 +69,10 @@ export const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> = {
 };
 
 export function markerKindStyle(
-  kind: string,
+  kind: string | undefined,
   styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS,
 ): MarkerKindStyle {
+  if (kind === undefined) return { id: "marker", color: "#e2e8f0", glyph: "\u2022", priority: 30 };
   return styles[kind] ?? { id: kind, color: "#e2e8f0", glyph: "•", priority: 30 };
 }
 
@@ -71,6 +86,93 @@ export interface MarkerSet<TMeta = unknown> {
   clear(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): readonly MapMarker<TMeta>[];
+}
+
+/**
+ * Observable marker snapshots owned by an external project. `getSnapshot`
+ * must return the same array identity until the source changes and calls its
+ * subscribers, matching React's external-store contract.
+ */
+export interface MarkerSource<TMarker extends MarkerView = MarkerView> {
+  subscribe(listener: () => void): () => void;
+  getSnapshot(): readonly TMarker[];
+  /** Optional hydration snapshot; omit when the client snapshot is also valid during SSR. */
+  getServerSnapshot?: () => readonly TMarker[];
+}
+
+/** Marker data accepted by portable consumers: static views, an external source, or a native set. */
+export type MarkerCollection<TMarker extends MarkerView = MarkerView> =
+  | readonly TMarker[]
+  | MarkerSource<TMarker>
+  | MarkerSet;
+
+/** Configuration for projecting a caller-owned collection into display-only markers. */
+export interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> {
+  /** Subscribe to changes in the caller-owned collection. Static collections may omit this. */
+  subscribe?: (listener: () => void) => () => void;
+  /** Read the current caller-owned collection. Keep its identity stable between changes. */
+  getSnapshot: () => readonly TEntity[];
+  /** Optional server collection used to keep hydration output deterministic. */
+  getServerSnapshot?: () => readonly TEntity[];
+  /** Project one caller-owned record into the minimal marker view. */
+  project: (value: TEntity, index: number) => TMarker;
+}
+
+interface ProjectedSnapshot<TMarker extends MarkerView> {
+  invalidate(): void;
+  read(): readonly TMarker[];
+}
+
+function projectedSnapshot<TEntity, TMarker extends MarkerView>(
+  readSource: () => readonly TEntity[],
+  project: (value: TEntity, index: number) => TMarker,
+): ProjectedSnapshot<TMarker> {
+  let dirty = true;
+  let source: readonly TEntity[] | undefined;
+  let snapshot: readonly TMarker[] = [];
+  return {
+    invalidate() {
+      dirty = true;
+    },
+    read() {
+      const next = readSource();
+      if (dirty || next !== source) {
+        source = next;
+        snapshot = next.map(project);
+        dirty = false;
+      }
+      return snapshot;
+    },
+  };
+}
+
+/**
+ * Adapt a caller-owned array/store to an observable marker source. Projection
+ * is cached between source changes, so React reads do not copy the collection
+ * per frame. The caller retains ownership of entities, updates, persistence,
+ * and subscription scheduling.
+ *
+ * @capability portable-marker-source project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet
+ */
+export function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(
+  options: MarkerSourceOptions<TEntity, TMarker>,
+): MarkerSource<TMarker> {
+  const client = projectedSnapshot(options.getSnapshot, options.project);
+  const server =
+    options.getServerSnapshot === undefined
+      ? client
+      : projectedSnapshot(options.getServerSnapshot, options.project);
+  return {
+    subscribe(listener) {
+      if (options.subscribe === undefined) return () => undefined;
+      return options.subscribe(() => {
+        client.invalidate();
+        listener();
+      });
+    },
+    getSnapshot: client.read,
+    getServerSnapshot: server.read,
+  };
 }
 
 function distanceXZ(a: MarkerPosition, b: MarkerPosition): number {
@@ -101,6 +203,7 @@ export function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): 
         createdAt: input.createdAt ?? now(),
       };
       if (input.label !== undefined) marker.label = input.label;
+      if (input.heading !== undefined) marker.heading = input.heading;
       if (input.owner !== undefined) marker.owner = input.owner;
       if (input.expiresAt !== undefined) marker.expiresAt = input.expiresAt;
       if (input.meta !== undefined) marker.meta = input.meta;

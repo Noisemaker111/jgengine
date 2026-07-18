@@ -4,8 +4,11 @@ import {
   DEFAULT_MARKER_KINDS,
   markerKindStyle,
   type MapMarker,
+  type MarkerCollection,
   type MarkerKindStyle,
+  type MarkerSource,
   type MarkerSet,
+  type MarkerView,
 } from "@jgengine/core/world/markers";
 import {
   bearingToCardinal,
@@ -150,8 +153,42 @@ function cellStateNodes(
   return nodes;
 }
 
-export function useMarkers(markers: MarkerSet): readonly MapMarker[] {
-  return useSyncExternalStore(markers.subscribe, markers.snapshot, markers.snapshot);
+interface MarkerAccess<TMarker extends MarkerView> {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => readonly TMarker[];
+  getServerSnapshot: () => readonly TMarker[];
+}
+
+function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> {
+  if (Array.isArray(markers)) {
+    const snapshot = markers as readonly MarkerView[];
+    return { subscribe: NO_SUBSCRIBE, getSnapshot: () => snapshot, getServerSnapshot: () => snapshot };
+  }
+  if ("getSnapshot" in markers) {
+    const source = markers as MarkerSource;
+    return {
+      subscribe: (listener) => source.subscribe(listener),
+      getSnapshot: () => source.getSnapshot(),
+      getServerSnapshot: () => (source.getServerSnapshot ?? source.getSnapshot).call(source),
+    };
+  }
+  const markerSet = markers as MarkerSet;
+  return {
+    subscribe: (listener) => markerSet.subscribe(listener),
+    getSnapshot: () => markerSet.snapshot(),
+    getServerSnapshot: () => markerSet.snapshot(),
+  };
+}
+
+/** Subscribe to a native marker set or external marker source, or read a static marker array. */
+export function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[];
+export function useMarkers<TMarker extends MarkerView>(
+  markers: readonly TMarker[] | MarkerSource<TMarker>,
+): readonly TMarker[];
+export function useMarkers(markers: MarkerCollection): readonly MarkerView[];
+export function useMarkers(markers: MarkerCollection): readonly MarkerView[] {
+  const access = useMemo(() => markerAccess(markers), [markers]);
+  return useSyncExternalStore(access.subscribe, access.getSnapshot, access.getServerSnapshot);
 }
 
 export function useFog(fog: FogField): ReturnType<FogField["cells"]> {
@@ -159,7 +196,8 @@ export function useFog(fog: FogField): ReturnType<FogField["cells"]> {
 }
 
 export interface MinimapProps {
-  markers: MarkerSet;
+  /** Static views, an external marker source, or a native JGengine MarkerSet. */
+  markers: MarkerCollection;
   center: WorldXZ;
   worldRadius: number;
   fog?: FogField;
@@ -180,6 +218,8 @@ export interface MinimapProps {
   /** Click-to-pin seam (#285.6): receives the clicked world XZ via `unprojectFromMinimap`. */
   onWorldClick?: (world: WorldXZ) => void;
   className?: string;
+  /** Caller-owned outer chrome overrides, applied after the built-in defaults. */
+  style?: CSSProperties;
   title?: string;
   children?: ReactNode;
 }
@@ -193,8 +233,9 @@ export interface MapBounds {
 
 /**
  * Framed circular minimap: optional baked terrain background, reveal-on-event
- * fog overlay, categorized marker icons, and a facing arrow. Reads a core
- * `MarkerSet` / `FogField`; supply your own `kindStyles` palette to reskin.
+ * fog overlay, categorized marker icons, and a facing arrow. Reads static
+ * marker views, an external marker source, or a native `MarkerSet`; supply
+ * your own `kindStyles` palette to reskin. Does not require `GameProvider`.
  *
  * @capability minimap framed circular minimap with terrain bake, fog, markers, and facing arrow
  */
@@ -214,6 +255,7 @@ export function Minimap({
   cellStates,
   onWorldClick,
   className,
+  style,
   title = "Map",
   children,
 }: MinimapProps): ReactNode {
@@ -232,8 +274,12 @@ export function Minimap({
   };
   const half = size / 2;
   const clipId = `mm-clip-${size}`;
-  const sorted = [...markerList].sort(
-    (a, b) => markerKindStyle(a.kind, kindStyles).priority - markerKindStyle(b.kind, kindStyles).priority,
+  const sorted = useMemo(
+    () =>
+      [...markerList].sort(
+        (a, b) => markerKindStyle(a.kind, kindStyles).priority - markerKindStyle(b.kind, kindStyles).priority,
+      ),
+    [markerList, kindStyles],
   );
 
   const fogImage = useMemo(() => {
@@ -267,6 +313,7 @@ export function Minimap({
         boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
         color: "#e2e8f0",
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        ...style,
       }}
     >
       <div
@@ -354,11 +401,12 @@ export function Minimap({
           })()}
           <circle cx={half} cy={half} r={half - 1} fill="none" stroke="rgba(148,163,184,0.12)" />
           {sorted.map((marker) => {
-            const style = markerKindStyle(marker.kind, kindStyles);
+            const kind = marker.kind ?? "marker";
+            const style = markerKindStyle(kind, kindStyles);
             const projected = projectToMinimap(marker.position, view);
             const at = projected.inside ? projected : clampToMinimapEdge(projected, size);
             return (
-              <g key={marker.id} data-marker-kind={marker.kind}>
+              <g key={marker.id} data-marker-kind={kind}>
                 <circle cx={at.x} cy={at.y} r={7} fill="rgba(2,6,12,0.55)" />
                 <text
                   x={at.x}
@@ -493,8 +541,7 @@ export function MinimapChrome({
 
 const NO_SUBSCRIBE = (): (() => void) => () => undefined;
 const NULL_CELLS = (): null => null;
-const EMPTY_MARKERS_VALUE: readonly MapMarker[] = [];
-const EMPTY_MARKERS = (): readonly MapMarker[] => EMPTY_MARKERS_VALUE;
+const EMPTY_MARKERS_VALUE: readonly MarkerView[] = [];
 
 const COMPASS_TICKS: readonly { cardinal: Cardinal; bearing: number }[] = [
   { cardinal: "N", bearing: 0 },
@@ -511,7 +558,7 @@ export interface CompassProps {
   /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the tracked entity — pass it raw, never pre-converted to a bearing. */
   facingYaw: number;
   center?: WorldXZ;
-  markers?: MarkerSet;
+  markers?: MarkerCollection;
   width?: number;
   fov?: number;
   kindStyles?: Record<string, MarkerKindStyle>;
@@ -520,7 +567,8 @@ export interface CompassProps {
 
 /**
  * Horizontal compass strip centered on the player's facing direction, with the
- * eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
+ * eight cardinals and optional marker pips from static views, an external
+ * source, or a native `MarkerSet`.
  */
 export function Compass({
   facingYaw,
@@ -531,11 +579,7 @@ export function Compass({
   kindStyles = DEFAULT_MARKER_KINDS,
   className,
 }: CompassProps): ReactNode {
-  const markerList = useSyncExternalStore(
-    markers?.subscribe ?? NO_SUBSCRIBE,
-    markers?.snapshot ?? EMPTY_MARKERS,
-    markers?.snapshot ?? EMPTY_MARKERS,
-  );
+  const markerList = useMarkers(markers ?? EMPTY_MARKERS_VALUE);
   const facingBearing = headingToBearing(facingYaw);
   const half = fov / 2;
   const toX = (bearing: number): number | null => {
@@ -596,11 +640,12 @@ export function Compass({
             const bearing = compassBearing(center, [marker.position[0], marker.position[2]]);
             const x = toX(bearing);
             if (x === null) return null;
-            const style = markerKindStyle(marker.kind, kindStyles);
+            const kind = marker.kind ?? "marker";
+            const style = markerKindStyle(kind, kindStyles);
             return (
               <span
                 key={marker.id}
-                data-compass-marker={marker.kind}
+                data-compass-marker={kind}
                 style={{
                   position: "absolute",
                   left: x,
@@ -875,7 +920,8 @@ function WorldMapFogImage({
 }
 
 export interface WorldMapProps {
-  markers: MarkerSet;
+  /** Static views, an external marker source, or a native JGengine MarkerSet. */
+  markers: MarkerCollection;
   bounds: MapBounds;
   player?: WorldXZ;
   /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the player — pass it raw, never pre-converted to a bearing. */
@@ -1005,9 +1051,10 @@ export function WorldMap({
         })()}
         {markerList.map((marker) => {
           const at = project(marker.position[0], marker.position[2]);
-          const style = markerKindStyle(marker.kind, kindStyles);
+          const kind = marker.kind ?? "marker";
+          const style = markerKindStyle(kind, kindStyles);
           return (
-            <g key={marker.id} data-world-marker={marker.kind}>
+            <g key={marker.id} data-world-marker={kind}>
               <circle cx={at.x} cy={at.y} r={9} fill="rgba(2,6,12,0.6)" stroke={style.color} strokeWidth={1.2} />
               <text x={at.x} y={at.y + 4} textAnchor="middle" fontSize={12} fill={style.color} style={{ fontWeight: 700 }}>
                 {style.glyph}

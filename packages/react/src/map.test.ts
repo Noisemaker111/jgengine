@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { MinimapChrome, MinimapTrack, type MinimapChromeMarker } from "./map";
+import { Compass, Minimap, MinimapChrome, MinimapTrack, WorldMap, type MinimapChromeMarker } from "./map";
+import { createMarkerSet, createMarkerSource } from "@jgengine/core/world/markers";
 import type { MinimapView } from "@jgengine/core/world/minimap";
 
 function renderSvg(props: Parameters<typeof MinimapChrome>[0]): string {
@@ -10,6 +11,80 @@ function renderSvg(props: Parameters<typeof MinimapChrome>[0]): string {
 }
 
 const view: MinimapView = { center: [0, 0], worldRadius: 100, size: 200 };
+
+describe("portable minimap markers", () => {
+  test("renders a static display-marker array without lifecycle fields or GameProvider", () => {
+    const markers = [
+      { id: "ally-1", position: [12, 0, -4] as const, kind: "ally" },
+      { id: "plain-1", position: [-8, 0, 6] as const },
+    ] as const;
+
+    const html = renderToStaticMarkup(
+      createElement(Minimap, { markers, center: [0, 0], worldRadius: 100, size: 180 }),
+    );
+
+    expect(html).toContain('data-marker-kind="ally"');
+    expect(html).toContain('data-marker-kind="marker"');
+  });
+
+  test("keeps existing MarkerSet callers source-compatible", () => {
+    const markers = createMarkerSet(() => 100);
+    markers.add({ id: "objective-1", kind: "objective", position: [0, 0, 10] });
+
+    const minimap = renderToStaticMarkup(
+      createElement(Minimap, { markers, center: [0, 0], worldRadius: 100 }),
+    );
+    const compass = renderToStaticMarkup(
+      createElement(Compass, { markers, center: [0, 0], facingYaw: 0 }),
+    );
+
+    expect(minimap).toContain('data-marker-kind="objective"');
+    expect(compass).toContain('data-compass-marker="objective"');
+  });
+
+  test("renders a mapped external source with hydration-stable SSR output", () => {
+    const units = [
+      { id: "red-1", x: 16, z: -24, team: "enemy", name: "Scout" },
+      { id: "blue-1", x: -12, z: 9, team: "ally", name: "Guard" },
+    ];
+    const markers = createMarkerSource({
+      subscribe: () => () => undefined,
+      getSnapshot: () => units,
+      project: (unit) => ({
+        id: unit.id,
+        position: [unit.x, 0, unit.z],
+        kind: unit.team,
+        label: unit.name,
+      }),
+    });
+    const render = () =>
+      renderToStaticMarkup(
+        createElement(Minimap, { markers, center: [0, 0], worldRadius: 120, title: "External units" }),
+      );
+
+    const first = render();
+    expect(render()).toBe(first);
+    expect(first).toContain('data-marker-kind="enemy"');
+    expect(first).toContain('data-marker-kind="ally"');
+  });
+
+  test("shares the portable source with the full WorldMap renderer", () => {
+    const markers = createMarkerSource({
+      getSnapshot: () => [{ id: "site", x: 3, z: 7, label: "Relay" }],
+      project: (entry) => ({ id: entry.id, position: [entry.x, 0, entry.z], label: entry.label }),
+    });
+    const html = renderToStaticMarkup(
+      createElement(WorldMap, {
+        markers,
+        bounds: { minX: -20, minZ: -20, maxX: 20, maxZ: 20 },
+        width: 240,
+      }),
+    );
+
+    expect(html).toContain('data-world-marker="marker"');
+    expect(html).toContain("Relay");
+  });
+});
 
 describe("MinimapChrome", () => {
   test("renders no frame by default", () => {
