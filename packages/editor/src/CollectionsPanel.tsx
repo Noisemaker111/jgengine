@@ -2,14 +2,11 @@ import { useState } from "react";
 
 import type { EditorCollection, EditorSession } from "@jgengine/core/editor/index";
 
+import { CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 
-const INPUT =
-  "rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60";
-const BTN =
-  "rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10 hover:text-neutral-100";
-const CHIP_BTN =
-  "rounded-md px-1.5 py-0.5 text-[10px] ring-1 ring-inset transition-colors";
+const BTN = `${CONTROL} px-2 py-1 text-[11px] disabled:opacity-40`;
+const CHIP_BTN = `rounded-[4px] px-1.5 py-0.5 text-[10px] ring-1 ring-inset transition-colors ${FOCUS_RING}`;
 
 function newCollectionId(): string {
   return `col_${Date.now().toString(36)}_${Math.floor(Math.random() * 1296).toString(36)}`;
@@ -36,9 +33,10 @@ export function CollectionsPanel({ session }: { session: EditorSession }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 p-2">
+      <div className={MICRO_LABEL}>Collections</div>
       <div className="flex gap-1">
         <input
-          className={`min-w-0 flex-1 ${INPUT}`}
+          className={`h-7 min-w-0 flex-1 px-2 ${INPUT_CLS}`}
           placeholder="New collection name…"
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -76,7 +74,7 @@ function CollectionRow({
   selection: readonly string[];
 }) {
   return (
-    <div className="space-y-1 rounded-md bg-white/[0.03] p-1.5 ring-1 ring-inset ring-white/[0.06]">
+    <div className="space-y-1.5 rounded-[6px] border border-white/[0.07] bg-white/[0.02] p-2">
       <div className="flex items-center gap-1.5">
         <span
           className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-inset ring-white/20"
@@ -84,13 +82,13 @@ function CollectionRow({
         />
         <button
           type="button"
-          className="min-w-0 flex-1 truncate text-left text-neutral-200 hover:text-cyan-200"
+          className={`min-w-0 flex-1 truncate text-left text-[12px] text-neutral-200 hover:text-cyan-200 ${FOCUS_RING}`}
           title="Restore selection"
           onClick={() => session.dispatch({ type: "selectCollection", id: collection.id })}
         >
           {collection.name}
         </button>
-        <span className="text-neutral-500">{collection.memberIds.length}</span>
+        <span className="text-[10px] tabular-nums text-neutral-500">{collection.memberIds.length}</span>
       </div>
       <div className="flex flex-wrap gap-1">
         <button
