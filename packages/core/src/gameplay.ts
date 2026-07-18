@@ -31,7 +31,9 @@ export {
   type RecipeDef,
   type RecipeItem,
 } from "./crafting/recipe";
+export { createAuctionBook, type Auction, type AuctionSettlement } from "./economy/auctionBook";
 export { createListingBook, type Listing } from "./economy/listingBook";
+export { createPriceHistory, type PriceStats, type SaleRecord } from "./economy/priceHistory";
 export {
   addScheduledRule,
   advanceLedger,
