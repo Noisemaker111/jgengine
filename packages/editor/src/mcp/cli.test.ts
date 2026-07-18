@@ -66,18 +66,27 @@ describe("parseEditorCliArgs", () => {
 });
 
 describe("editor CLI entry", () => {
-  test("malformed inline --rpc prints a diagnostic pointing at --rpc-file", async () => {
-    const { code, stdout, stderr } = await runCli([
-      "--game",
-      "__no-such-game__",
-      "--rpc",
-      '{"method":"import_document","json":"{',
-    ]);
-    expect(code).toBe(1);
-    const text = `${stdout}\n${stderr}`;
-    expect(text).toContain("failed to parse RPC JSON");
-    expect(text).toContain("--rpc-file");
-  });
+  test(
+    "malformed inline --rpc prints a diagnostic pointing at --rpc-file",
+    async () => {
+      const { code, stdout, stderr } = await runCli([
+        "--game",
+        "__no-such-game__",
+        "--rpc",
+        '{"method":"import_document","json":"{',
+      ]);
+      expect(code).toBe(1);
+      const text = `${stdout}\n${stderr}`;
+      expect(text).toContain("failed to parse RPC JSON");
+      expect(text).toContain("--rpc-file");
+    },
+    // First test in this file to spawn a real `bun cli.ts` subprocess, so it pays the cold
+    // module-resolution cost that later spawns here don't (those land in ~100ms once bun's
+    // module cache is warm). Under CI's parallel test load that cold start has repeatedly
+    // exceeded the default 5000ms timeout and gotten SIGTERM'd (issue #1050); give it real
+    // headroom instead of racing the runner.
+    20_000,
+  );
 
   test("imports a multi-hundred-object document via --rpc-file end-to-end", async () => {
     const objectCount = 400;
