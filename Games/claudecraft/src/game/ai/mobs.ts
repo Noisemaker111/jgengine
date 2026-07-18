@@ -5,6 +5,7 @@ import {
   type InterestSchedulerConfig,
 } from "@jgengine/core/ai/interestScheduler";
 import { acquireTarget, type AcquisitionPolicy } from "@jgengine/core/ai/targetAcquisition";
+import { advancePursuit, armPursuit, type PursuitState } from "@jgengine/core/ai/pursuit";
 import { createThreatTable, type ThreatTable } from "@jgengine/core/ai/threat";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -20,13 +21,12 @@ import { dungeonById } from "../dungeons/catalog";
 import { CRYPT, zoneById } from "../world/zones";
 import { HIT_TAKEN_RAGE } from "../combat/engine";
 
-interface MobRuntime {
+interface MobRuntime extends PursuitState {
   defId: string;
   level: number;
   spawn: readonly [number, number, number];
   threat: ThreatTable;
   evading: boolean;
-  nextSwingAt: number;
   nextWanderAt: number;
   wanderTo: readonly [number, number] | null;
   frenzyUntil: number;
@@ -135,7 +135,7 @@ export function spawnMobAt(
     spawn: [position[0], y, position[1]],
     threat: createThreatTable({ decayPerSecond: 1, forgetBelow: 0.5 }),
     evading: false,
-    nextSwingAt: 0,
+    attackCooldown: 0,
     nextWanderAt: 0,
     wanderTo: null,
     frenzyUntil: 0,
@@ -227,7 +227,6 @@ function socialPull(ctx: GameContext, def: MobDef, instanceId: string, targetId:
 
 function swingAtPlayer(ctx: GameContext, def: MobDef, runtime: MobRuntime, instanceId: string, targetId: string): void {
   const now = ctx.time.now();
-  if (now < runtime.nextSwingAt) return;
   const sheet = heroSheet(ctx, targetId);
   const weakenPct = aurasOf(ctx, instanceId).reduce(
     (sum, aura) => (aura.buffStat === "attackPower" && (aura.buffAmount ?? 0) < 0 ? sum + (aura.buffAmount ?? 0) : sum),
@@ -248,7 +247,7 @@ function swingAtPlayer(ctx: GameContext, def: MobDef, runtime: MobRuntime, insta
   enterCombat(ctx, targetId);
   const haste =
     (now < runtime.frenzyUntil ? (def.packFrenzy?.hasteMult ?? 1) : 1) * (enrage?.hasteMult ?? 1);
-  runtime.nextSwingAt = now + def.attackSpeed / haste;
+  armPursuit(runtime, def.attackSpeed / haste);
 }
 
 function castMobAbility(ctx: GameContext, def: MobDef, runtime: MobRuntime, instanceId: string): void {
@@ -410,18 +409,19 @@ export function tickMobs(ctx: GameContext, dt: number): void {
     if (targetId !== null) {
       if (now < runtime.stunnedUntil) continue;
       const distHome = Math.hypot(self.position[0] - runtime.spawn[0], self.position[2] - runtime.spawn[2]);
-      if (distHome > LEASH_DISTANCE) {
+      const targetDist = ctx.scene.entity.distance(instanceId, targetId);
+      const action = advancePursuit(runtime, dt, targetDist, MELEE_REACH, "always", distHome, LEASH_DISTANCE);
+      if (action === "leash") {
         runtime.threat.clear();
         runtime.evading = true;
         continue;
       }
-      const targetDist = ctx.scene.entity.distance(instanceId, targetId);
-      if (targetDist === null) continue;
-      if (targetDist > MELEE_REACH) {
+      if (action === "idle") continue;
+      if (action === "pursue") {
         if (now >= runtime.rootedUntil) {
           moveMob(ctx, instanceId, targetId, def.moveSpeed, dt, MELEE_REACH - 0.4);
         }
-      } else {
+      } else if (action === "attack") {
         swingAtPlayer(ctx, def, runtime, instanceId, targetId);
       }
       if (def.abilities !== undefined) castMobAbility(ctx, def, runtime, instanceId);

@@ -59,7 +59,7 @@ describe("decodeEditorBridgeRequest", () => {
     const decoded = decodeEditorBridgeRequest({ method: "set_mode", mode: "flycam" });
     expect(decoded.ok).toBe(false);
     if (decoded.ok) throw new Error("expected decode failure");
-    expect(decoded.errors).toEqual([{ path: "$.mode", message: "expected one of edit | walk | play" }]);
+    expect(decoded.errors).toEqual([{ path: "$.mode", message: "expected one of edit | walk | play | hud" }]);
   });
 
   test("a nullable field accepts null", () => {

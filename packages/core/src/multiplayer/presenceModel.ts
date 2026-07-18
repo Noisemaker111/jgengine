@@ -27,6 +27,15 @@ export interface PoseSyncRules {
   keepAliveRefreshMs: number;
 }
 
+/** Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex). */
+export const DEFAULT_POSE_SYNC_RULES: PoseSyncRules = {
+  maxSpeed: 12,
+  maxVerticalOffset: 3,
+  minElapsedSec: 0.05,
+  maxElapsedSec: 0.5,
+  keepAliveRefreshMs: 10_000,
+};
+
 export interface PoseSyncDecision {
   position: { x: number; y: number; z: number };
   rotationY: number;

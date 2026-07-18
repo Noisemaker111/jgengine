@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
+import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
@@ -131,29 +132,33 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
     if (acquired !== null) target = session.units.get(acquired) ?? null;
   }
 
-  // 2) Fight the target if we have one.
+  // 2) Fight the target if we have one. The chase → stop-at-reach → cooldown-gated hit → leash-home
+  // loop is the shared pursuit primitive; only a guard on an idle post leashes, measured from the
+  // target to the post, and the cooldown ticks only in range (frozen during the chase).
   if (target !== null) {
     const ent = ctx.scene.entity.get(target.id);
     if (ent !== null) {
-      // A guard that has been led too far from its post breaks off and returns.
-      if (u.command.kind === "idle" && u.guardPoint !== undefined) {
-        if (distToPoint(ent.position, u.guardPoint.x, u.guardPoint.z) > u.leash) {
-          stepTo(ctx, dt, u, def.walkSpeed, u.guardPoint.x, u.guardPoint.z);
-          return;
-        }
-      }
+      const guarding = u.command.kind === "idle" && u.guardPoint !== undefined;
+      const homeDistance = guarding
+        ? distToPoint(ent.position, u.guardPoint!.x, u.guardPoint!.z)
+        : Number.NEGATIVE_INFINITY;
+      const leashRange = guarding ? u.leash : Number.POSITIVE_INFINITY;
       const reach = target.kind === "building" ? def.attackRange + BUILDING_REACH_BONUS : def.attackRange;
-      if (distXZ(self.position, ent.position) > reach) {
+      const action = advancePursuit(u, dt, distXZ(self.position, ent.position), reach, "inRange", homeDistance, leashRange);
+      if (action === "leash") {
+        stepTo(ctx, dt, u, def.walkSpeed, u.guardPoint!.x, u.guardPoint!.z);
+        return;
+      }
+      if (action === "pursue") {
         stepTo(ctx, dt, u, def.walkSpeed, ent.position[0], ent.position[2]);
         return;
       }
       faceToward(ctx, u.id, self.position, ent.position[0], ent.position[2]);
-      u.attackCooldown -= dt;
-      if (u.attackCooldown <= 0) {
+      if (action === "attack") {
         const base = def.damage + heroAttackBonus(ctx, u.catalogId);
         const amount = resolveDamage(base, u.faction, target.faction);
         ctx.scene.entity.effect({ from: u.id, to: target.id, effect: "damage", via: { amount } });
-        u.attackCooldown = def.attackCooldown;
+        armPursuit(u, def.attackCooldown);
       }
       return;
     }

@@ -1,6 +1,6 @@
 import { useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { drivingStore, handroll } from "../../handroll";
+import { drivingStore, handrollOf } from "../../handroll";
 import { vehicleById } from "../../entities/vehicles/catalog";
 
 export function Speedo() {
@@ -10,7 +10,7 @@ export function Speedo() {
     if (id === null || id === undefined) return null;
     return ctx.scene.entity.get(id)?.name ?? null;
   });
-  const telemetry = useGameStore(() => handroll.telemetry());
+  const telemetry = useGameStore((ctx) => handrollOf(ctx).telemetry());
   if (drivingId === null) return null;
   const label = vehicleName !== null ? (vehicleById(vehicleName)?.label ?? "Vehicle") : "Vehicle";
   const kmh = Math.round(telemetry.speedKmh);

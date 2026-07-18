@@ -55,7 +55,7 @@ function applyHitModifiers(
   const shield = ctx.scene.entity.stats.get(targetId, "shield");
   const shielded = shield !== null && shield.current > 0;
 
-  let mult = elementalDamageMult(gun.element, surface, shielded, targetId, nowMs) * gunDamageMult();
+  let mult = elementalDamageMult(ctx, gun.element, surface, shielded, targetId, nowMs) * gunDamageMult();
   const crit = combatRng() < gun.weapon.critChance + bonus("critChance");
   if (crit) mult *= gun.weapon.critMult + bonus("critDamage");
 
@@ -68,7 +68,7 @@ function applyHitModifiers(
   }
   const killed = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 1) <= 0;
   noteHit(nowMs, crit, killed);
-  applyElementalProc(combatRng, gun, from, targetId, nowMs);
+  applyElementalProc(ctx, combatRng, gun, from, targetId, nowMs);
 }
 
 const fireGun: ItemUseHandler<GameContext> = {
@@ -76,18 +76,18 @@ const fireGun: ItemUseHandler<GameContext> = {
     const gun = gunById(input.itemId);
     if (gun === undefined) return { state: ctx, error: "unknown-gun" };
     const nowMs = ctx.time.now() * 1000;
-    if (isReloading(gun, nowMs)) return { state: ctx };
+    if (isReloading(ctx, gun, nowMs)) return { state: ctx };
 
     const gateKey = `${input.from}:${gun.id}`;
     const readyAt = lastFiredAt.get(gateKey) ?? 0;
     if (nowMs < readyAt) return { state: ctx };
 
-    if (!consumeRound(gun)) {
+    if (!consumeRound(ctx, gun)) {
       if (!startReload(ctx, gun, nowMs)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} AMMO`);
       return { state: ctx };
     }
     if (bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund")) {
-      magState(gun).inMag += gun.ammoPerShot;
+      magState(ctx, gun).inMag += gun.ammoPerShot;
       ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
     }
     lastFiredAt.set(gateKey, nowMs + Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))));

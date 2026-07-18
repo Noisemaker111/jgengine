@@ -313,6 +313,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
 
+## pursuit — chase-to-reach cooldown-gated attack with optional leash-to-home; owns the attack cooldown
+
+- `advancePursuit` (function) · `import { advancePursuit } from "@jgengine/core/ai/pursuit"`
+
 ## qte — a quick-time-event timed input sequence with hit windows
 
 - `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/world"`

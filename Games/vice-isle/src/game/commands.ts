@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { handroll } from "./handroll";
+import { handrollOf } from "./handroll";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { CRED_GATES, credLevel } from "./progression/cred";
 import { GARAGE_POS } from "./world/districts";
@@ -47,7 +47,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("throwGrenade", {
     apply(state) {
-      if (handroll.drivingVehicleId() !== null) return;
+      if (handrollOf(state).drivingVehicleId() !== null) return;
       state.item.use.use({ from: state.player.userId, itemId: "grenade_pineapple" });
     },
   });
@@ -84,18 +84,18 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("vehicle.enter", {
     apply(state, input) {
       const vehicleId = (input as { vehicle?: string }).vehicle;
-      if (vehicleId === undefined || handroll.drivingVehicleId() !== null) return;
+      if (vehicleId === undefined || handrollOf(state).drivingVehicleId() !== null) return;
       const vehicle = state.scene.entity.get(vehicleId);
       if (vehicle === null || vehicleById(vehicle.name) === undefined) return;
-      handroll.enterVehicle(state, vehicleId);
-      handroll.addHeat(state, 30);
+      handrollOf(state).enterVehicle(state, vehicleId);
+      handrollOf(state).addHeat(state, 30);
       state.game.feed.push("vice.log", { text: `Boosted a ${vehicleById(vehicle.name)?.label ?? "car"}` });
     },
   });
 
   ctx.game.commands.define("exitVehicle", {
     apply(state) {
-      handroll.exitVehicle(state);
+      handrollOf(state).exitVehicle(state);
     },
   });
 
@@ -172,17 +172,17 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("race.start", {
     apply(state) {
-      if (handroll.drivingVehicleId() === null) {
+      if (handrollOf(state).drivingVehicleId() === null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: "YOU NEED A CAR", kind: "warn" });
         return;
       }
-      if (handroll.raceActive()) return;
+      if (handrollOf(state).raceActive()) return;
       const charge = state.game.economy.charge(state.player.userId, "cash", RACE_ENTRY_FEE);
       if (charge !== null) {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: `ENTRY $${RACE_ENTRY_FEE}`, kind: "warn" });
         return;
       }
-      if (!handroll.startRace(state)) {
+      if (!handrollOf(state).startRace(state)) {
         state.game.economy.grant(state.player.userId, "cash", RACE_ENTRY_FEE);
         return;
       }
@@ -216,7 +216,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("shop.bribe", {
     apply(state) {
-      const wanted = handroll.wanted();
+      const wanted = handrollOf(state).wanted();
       if (wanted.stars === 0) return;
       const cost = wanted.stars * 250;
       const charge = state.game.economy.charge(state.player.userId, "cash", cost);
@@ -224,7 +224,7 @@ export function registerCommands(ctx: GameContext): void {
         state.scene.entity.floatText({ instanceId: state.player.userId, text: "NOT ENOUGH CASH", kind: "warn" });
         return;
       }
-      handroll.clearWanted(state);
+      handrollOf(state).clearWanted(state);
       state.game.feed.push("vice.log", { text: `Bribed VCPD for $${cost}` });
     },
   });

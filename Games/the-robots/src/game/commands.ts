@@ -152,7 +152,7 @@ function openAmmoChest(ctx: GameContext, instanceId: string): void {
 export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<AimPayload>("fire", {
     apply(state: GameContext, input) {
-      if (ffylPhase() === "dead") return;
+      if (ffylPhase(state) === "dead") return;
       const itemId = selectedGunId(state);
       if (itemId === null) return;
       state.item.use.use({ from: state.player.userId, itemId, inventoryId: "hotbar", aim: input.aim });
@@ -305,7 +305,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define<{ zoneId?: string }>("travel.go", {
     apply(state: GameContext, input) {
-      if (ffylPhase() === "downed") return;
+      if (ffylPhase(state) === "downed") return;
       const station = TRAVEL_STATIONS.find((candidate) => candidate.zoneId === input.zoneId);
       if (station === undefined) return;
       const discovered = discoveredStationsStore.read(state);

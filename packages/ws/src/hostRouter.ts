@@ -1,5 +1,9 @@
 import type { PoseSyncRules, PresencePoseState } from "@jgengine/core/multiplayer/presenceModel";
-import { decidePoseSync, spawnPresenceState } from "@jgengine/core/multiplayer/presenceModel";
+import {
+  DEFAULT_POSE_SYNC_RULES,
+  decidePoseSync,
+  spawnPresenceState,
+} from "@jgengine/core/multiplayer/presenceModel";
 import { createPositionHistory, type PositionHistory } from "@jgengine/core/multiplayer/lagCompensation";
 import {
   createChatRateLimiter,
@@ -81,13 +85,7 @@ export type HostRouter = {
   close: () => void;
 };
 
-export const DEFAULT_POSE_RULES: PoseSyncRules = {
-  maxSpeed: 12,
-  maxVerticalOffset: 3,
-  minElapsedSec: 0.05,
-  maxElapsedSec: 0.5,
-  keepAliveRefreshMs: 10_000,
-};
+export const DEFAULT_POSE_RULES: PoseSyncRules = DEFAULT_POSE_SYNC_RULES;
 
 /** Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises. */
 export const MAX_QUEUED_MESSAGES = 64;
@@ -110,6 +108,33 @@ function appearanceEqual(a: WsAppearance | undefined, b: WsAppearance | undefine
   const bKeys = Object.keys(b);
   if (aKeys.length !== bKeys.length) return false;
   return aKeys.every((key) => a[key] === b[key]);
+}
+
+function getOrCreate<K, V>(map: Map<K, V>, key: K, factory: () => V): V {
+  let value = map.get(key);
+  if (value === undefined) {
+    value = factory();
+    map.set(key, value);
+  }
+  return value;
+}
+
+/**
+ * Remove `userId` from every visited `server|scope` bucket, drop buckets that empty out, and notify
+ * per changed key. Backs both the disconnect-wide and per-server drops for presence and voice.
+ */
+function dropUserFrom<V>(
+  store: Map<string, Map<string, V>>,
+  userId: string,
+  shouldVisit: (key: string) => boolean,
+  onChanged: (key: string) => void,
+): void {
+  for (const [key, inner] of store) {
+    if (!shouldVisit(key)) continue;
+    if (!inner.delete(userId)) continue;
+    if (inner.size === 0) store.delete(key);
+    onChanged(key);
+  }
 }
 
 export function createHostRouter(options: HostRouterOptions): HostRouter {
@@ -150,14 +175,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const positionHistoryMs = options.positionHistoryMs ?? 1_000;
   const histories = new Map<string, PositionHistory>();
 
-  const historyFor = (serverId: string): PositionHistory => {
-    let history = histories.get(serverId);
-    if (history === undefined) {
-      history = createPositionHistory({ historyMs: positionHistoryMs });
-      histories.set(serverId, history);
-    }
-    return history;
-  };
+  const historyFor = (serverId: string): PositionHistory =>
+    getOrCreate(histories, serverId, () => createPositionHistory({ historyMs: positionHistoryMs }));
 
   const send = (connection: Connection, message: WsServerMessage) => {
     connection.transport.send(encodeWsMessage(message));
@@ -184,15 +203,21 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }));
   };
 
-  const broadcastPresence = (serverId: string) => {
-    const key = subscriptionKey("presence", serverId);
+  const broadcast = (key: string, build: () => WsServerMessage) => {
     const targets = subscribersOf(key);
     if (targets.length === 0) return;
-    const data = presenceRows(serverId);
-    for (const connection of targets) {
-      send(connection, { v: 1, t: "update", channel: "presence", serverId, data });
-    }
+    const message = build();
+    for (const connection of targets) send(connection, message);
   };
+
+  const broadcastPresence = (serverId: string) =>
+    broadcast(subscriptionKey("presence", serverId), () => ({
+      v: 1,
+      t: "update",
+      channel: "presence",
+      serverId,
+      data: presenceRows(serverId),
+    }));
 
   const commandMiddleware = createCommandMiddleware({
     limits: options.limits,
@@ -227,69 +252,53 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const chatMaxBodyLength = options.chatMaxBodyLength ?? DEFAULT_CHAT_BODY_LENGTH;
   let chatCounter = 0;
 
-  const chatRing = (serverId: string, channelId: string): WsChatMessage[] => {
-    const key = `${serverId}|${channelId}`;
-    let ring = chatRings.get(key);
-    if (ring === undefined) {
-      ring = [];
-      chatRings.set(key, ring);
-    }
-    return ring;
-  };
+  const chatRing = (serverId: string, channelId: string): WsChatMessage[] =>
+    getOrCreate(chatRings, `${serverId}|${channelId}`, () => []);
 
-  const broadcastChat = (serverId: string, channelId: string) => {
-    const key = subscriptionKey("chat", serverId, channelId);
-    const targets = subscribersOf(key);
-    if (targets.length === 0) return;
-    const data = chatRing(serverId, channelId).slice();
-    for (const connection of targets) {
-      send(connection, { v: 1, t: "update", channel: "chat", serverId, action: channelId, data });
-    }
-  };
+  const broadcastChat = (serverId: string, channelId: string) =>
+    broadcast(subscriptionKey("chat", serverId, channelId), () => ({
+      v: 1,
+      t: "update",
+      channel: "chat",
+      serverId,
+      action: channelId,
+      data: chatRing(serverId, channelId).slice(),
+    }));
 
   const voiceRosters = new Map<string, Map<string, WsVoiceParticipant>>();
 
-  const voiceRoster = (serverId: string, channelId: string): Map<string, WsVoiceParticipant> => {
-    const key = `${serverId}|${channelId}`;
-    let roster = voiceRosters.get(key);
-    if (roster === undefined) {
-      roster = new Map();
-      voiceRosters.set(key, roster);
-    }
-    return roster;
-  };
+  const voiceRoster = (serverId: string, channelId: string): Map<string, WsVoiceParticipant> =>
+    getOrCreate(voiceRosters, `${serverId}|${channelId}`, () => new Map());
 
   const voiceParticipants = (serverId: string, channelId: string): WsVoiceParticipant[] =>
     [...voiceRoster(serverId, channelId).values()].map((participant) => ({ ...participant }));
 
-  const broadcastVoice = (serverId: string, channelId: string) => {
-    const key = subscriptionKey("voice", serverId, channelId);
-    const targets = subscribersOf(key);
-    if (targets.length === 0) return;
-    const data = voiceParticipants(serverId, channelId);
-    for (const connection of targets) {
-      send(connection, { v: 1, t: "update", channel: "voice", serverId, action: channelId, data });
-    }
-  };
+  const broadcastVoice = (serverId: string, channelId: string) =>
+    broadcast(subscriptionKey("voice", serverId, channelId), () => ({
+      v: 1,
+      t: "update",
+      channel: "voice",
+      serverId,
+      action: channelId,
+      data: voiceParticipants(serverId, channelId),
+    }));
 
   const dropVoice = (connection: Connection) => {
     if (connection.userId === null) return;
-    for (const [key, roster] of voiceRosters) {
-      if (!roster.delete(connection.userId)) continue;
-      if (roster.size === 0) voiceRosters.delete(key);
+    dropUserFrom(voiceRosters, connection.userId, () => true, (key) => {
       const [serverId, channelId] = key.split("|") as [string, string];
       broadcastVoice(serverId, channelId);
-    }
+    });
   };
 
   const dropVoiceForServer = (userId: string, serverId: string) => {
     const prefix = `${serverId}|`;
-    for (const [key, roster] of voiceRosters) {
-      if (!key.startsWith(prefix)) continue;
-      if (!roster.delete(userId)) continue;
-      if (roster.size === 0) voiceRosters.delete(key);
-      broadcastVoice(serverId, key.slice(prefix.length));
-    }
+    dropUserFrom(
+      voiceRosters,
+      userId,
+      (key) => key.startsWith(prefix),
+      (key) => broadcastVoice(serverId, key.slice(prefix.length)),
+    );
   };
 
   const requireMembership = async (
@@ -447,19 +456,11 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const dropPresence = (connection: Connection) => {
     if (connection.userId === null) return;
-    for (const [serverId, rows] of presence) {
-      if (rows.delete(connection.userId)) {
-        if (rows.size === 0) presence.delete(serverId);
-        broadcastPresence(serverId);
-      }
-    }
+    dropUserFrom(presence, connection.userId, () => true, (serverId) => broadcastPresence(serverId));
   };
 
   const dropPresenceForServer = (userId: string, serverId: string) => {
-    const rows = presence.get(serverId);
-    if (rows === undefined || !rows.delete(userId)) return;
-    if (rows.size === 0) presence.delete(serverId);
-    broadcastPresence(serverId);
+    dropUserFrom(presence, userId, (key) => key === serverId, () => broadcastPresence(serverId));
   };
 
   const handleMessage = async (connection: Connection, message: WsClientMessage) => {

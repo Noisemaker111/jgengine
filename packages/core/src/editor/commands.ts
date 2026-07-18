@@ -314,585 +314,568 @@ function updateGridLayer(
   return { ...state, document: { ...state.document, grids: updated } };
 }
 
-function applyMutating(state: EditorSessionState, command: EditorCommand): EditorSessionState | null {
-  switch (command.type) {
-    case "select":
-      return { ...state, selection: [...command.ids] };
-    case "clearSelection":
-      return { ...state, selection: [] };
-    case "setTransform": {
-      if (isEditorObjectLocked(state.document, command.id)) return null;
-      const marker = findEditorMarker(state.document, command.id);
-      const volume = findEditorVolume(state.document, command.id);
-      const note = state.document.annotations.find((n) => n.id === command.id);
-      const previous = marker?.position ?? volume?.center ?? note?.position;
-      // Moving a parent to a new position carries its whole subtree by the same delta.
-      const childDelta =
-        command.position === undefined || previous === undefined
-          ? null
-          : {
-              x: command.position.x - previous.x,
-              y: command.position.y - previous.y,
-              z: command.position.z - previous.z,
-            };
-      const descendants =
-        childDelta === null ? new Set<string>() : collectDescendants(state.document, [command.id]);
-      const shift = (point: EditorVec3): EditorVec3 =>
-        childDelta === null ? point : shifted(point, childDelta);
-      const markers = state.document.markers.map((entry) => {
-        if (entry.id === command.id) {
-          return {
-            ...entry,
-            position: command.position === undefined ? entry.position : { ...command.position },
-            ...(command.rotationY === undefined ? {} : { rotationY: command.rotationY }),
+/**
+ * Maps a single `fn` over all four placeable collections (markers/volumes/paths/annotations),
+ * returning just those four fields for spreading back into a document. Notes lack a `label` field,
+ * so callers that treat notes differently pass a dedicated `fnNote`; by default notes share `fn`.
+ */
+function mapPlaceables(
+  doc: EditorDocument,
+  fn: <T extends { id: string; meta?: Record<string, unknown>; parentId?: string }>(item: T) => T,
+  fnNote: (note: EditorNote) => EditorNote = fn,
+): Pick<EditorDocument, "markers" | "volumes" | "paths" | "annotations"> {
+  return {
+    markers: doc.markers.map(fn),
+    volumes: doc.volumes.map(fn),
+    paths: doc.paths.map(fn),
+    annotations: doc.annotations.map(fnNote),
+  };
+}
+
+/** A single mutation handler: narrows `command` to its variant and returns the next state or null. */
+type MutationHandlers = {
+  [K in EditorCommand["type"]]: (
+    state: EditorSessionState,
+    command: Extract<EditorCommand, { type: K }>,
+  ) => EditorSessionState | null;
+};
+
+const mutationHandlers: MutationHandlers = {
+  select: (state, command) => ({ ...state, selection: [...command.ids] }),
+  clearSelection: (state) => ({ ...state, selection: [] }),
+  setTransform: (state, command) => {
+    if (isEditorObjectLocked(state.document, command.id)) return null;
+    const marker = findEditorMarker(state.document, command.id);
+    const volume = findEditorVolume(state.document, command.id);
+    const note = state.document.annotations.find((n) => n.id === command.id);
+    const previous = marker?.position ?? volume?.center ?? note?.position;
+    // Moving a parent to a new position carries its whole subtree by the same delta.
+    const childDelta =
+      command.position === undefined || previous === undefined
+        ? null
+        : {
+            x: command.position.x - previous.x,
+            y: command.position.y - previous.y,
+            z: command.position.z - previous.z,
           };
-        }
-        return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
-      });
-      const volumes = state.document.volumes.map((entry) => {
-        if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, center: { ...command.position } };
-        return descendants.has(entry.id) ? { ...entry, center: shift(entry.center) } : entry;
-      });
-      const paths = state.document.paths.map((entry) =>
-        descendants.has(entry.id) ? { ...entry, points: entry.points.map(shift) } : entry,
-      );
-      const annotations = state.document.annotations.map((entry) => {
-        if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, position: { ...command.position } };
-        return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
-      });
+    const descendants =
+      childDelta === null ? new Set<string>() : collectDescendants(state.document, [command.id]);
+    const shift = (point: EditorVec3): EditorVec3 =>
+      childDelta === null ? point : shifted(point, childDelta);
+    const markers = state.document.markers.map((entry) => {
+      if (entry.id === command.id) {
+        return {
+          ...entry,
+          position: command.position === undefined ? entry.position : { ...command.position },
+          ...(command.rotationY === undefined ? {} : { rotationY: command.rotationY }),
+        };
+      }
+      return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
+    });
+    const volumes = state.document.volumes.map((entry) => {
+      if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, center: { ...command.position } };
+      return descendants.has(entry.id) ? { ...entry, center: shift(entry.center) } : entry;
+    });
+    const paths = state.document.paths.map((entry) =>
+      descendants.has(entry.id) ? { ...entry, points: entry.points.map(shift) } : entry,
+    );
+    const annotations = state.document.annotations.map((entry) => {
+      if (entry.id === command.id) return command.position === undefined ? entry : { ...entry, position: { ...command.position } };
+      return descendants.has(entry.id) ? { ...entry, position: shift(entry.position) } : entry;
+    });
+    return {
+      ...state,
+      document: { ...state.document, markers, volumes, paths, annotations },
+    };
+  },
+  translate: (state, command) => {
+    const movable = command.ids.filter((id) => !isEditorObjectLocked(state.document, id));
+    if (movable.length === 0) return null;
+    const ids = new Set(movable);
+    for (const descendant of collectDescendants(state.document, movable)) ids.add(descendant);
+    return {
+      ...state,
+      document: translateByIds(state.document, ids, command.delta),
+    };
+  },
+  setParent: (state, command) => {
+    const targets = command.ids.filter((id) => !wouldCreateCycle(state.document, id, command.parentId));
+    if (targets.length === 0) return state;
+    const wanted = new Set(targets);
+    const reparent = <T extends { id: string; parentId?: string }>(entry: T): T => {
+      if (!wanted.has(entry.id)) return entry;
+      if (command.parentId === null) {
+        if (entry.parentId === undefined) return entry;
+        const next = { ...entry };
+        delete next.parentId;
+        return next;
+      }
+      return { ...entry, parentId: command.parentId };
+    };
+    return { ...state, document: { ...state.document, ...mapPlaceables(state.document, reparent) } };
+  },
+  addMarker: (state, command) => {
+    const marker = ownIdOrGloballyUnique(state.document, command.marker, state.document.markers);
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        markers: [...state.document.markers.filter((m) => m.id !== marker.id), marker],
+      },
+      selection: [marker.id],
+    };
+  },
+  addVolume: (state, command) => {
+    const volume = ownIdOrGloballyUnique(state.document, command.volume, state.document.volumes);
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        volumes: [...state.document.volumes.filter((v) => v.id !== volume.id), volume],
+      },
+      selection: [volume.id],
+    };
+  },
+  addPath: (state, command) => {
+    const path = ownIdOrGloballyUnique(state.document, command.path, state.document.paths);
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        paths: [...state.document.paths.filter((p) => p.id !== path.id), path],
+      },
+      selection: [path.id],
+    };
+  },
+  addNote: (state, command) => {
+    const note = ownIdOrGloballyUnique(state.document, command.note, state.document.annotations);
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        annotations: [...state.document.annotations.filter((n) => n.id !== note.id), note],
+      },
+      selection: [note.id],
+    };
+  },
+  setMarker: (state, command) => {
+    const markers = state.document.markers.map((marker) => {
+      if (marker.id !== command.id) return marker;
       return {
-        ...state,
-        document: { ...state.document, markers, volumes, paths, annotations },
+        ...marker,
+        ...command.patch,
+        position: command.patch.position === undefined ? marker.position : { ...command.patch.position },
+        meta: command.patch.meta === undefined ? marker.meta : { ...command.patch.meta },
       };
-    }
-    case "translate": {
-      const movable = command.ids.filter((id) => !isEditorObjectLocked(state.document, id));
-      if (movable.length === 0) return null;
-      const ids = new Set(movable);
-      for (const descendant of collectDescendants(state.document, movable)) ids.add(descendant);
+    });
+    return { ...state, document: { ...state.document, markers } };
+  },
+  setVolume: (state, command) => {
+    const volumes = state.document.volumes.map((volume) => {
+      if (volume.id !== command.id) return volume;
       return {
-        ...state,
-        document: translateByIds(state.document, ids, command.delta),
+        ...volume,
+        ...command.patch,
+        center: command.patch.center === undefined ? volume.center : { ...command.patch.center },
+        halfExtents:
+          command.patch.halfExtents === undefined
+            ? volume.halfExtents
+            : { ...command.patch.halfExtents },
+        meta: command.patch.meta === undefined ? volume.meta : { ...command.patch.meta },
       };
-    }
-    case "setParent": {
-      const targets = command.ids.filter((id) => !wouldCreateCycle(state.document, id, command.parentId));
-      if (targets.length === 0) return state;
-      const wanted = new Set(targets);
-      const reparent = <T extends { id: string; parentId?: string }>(entry: T): T => {
-        if (!wanted.has(entry.id)) return entry;
-        if (command.parentId === null) {
-          if (entry.parentId === undefined) return entry;
-          const next = { ...entry };
-          delete next.parentId;
+    });
+    return { ...state, document: { ...state.document, volumes } };
+  },
+  setPath: (state, command) => {
+    const paths = state.document.paths.map((path) => {
+      if (path.id !== command.id) return path;
+      return {
+        ...path,
+        ...command.patch,
+        points:
+          command.patch.points === undefined
+            ? path.points
+            : command.patch.points.map((point) => ({ ...point })),
+        meta: command.patch.meta === undefined ? path.meta : { ...command.patch.meta },
+      };
+    });
+    return { ...state, document: { ...state.document, paths } };
+  },
+  setNote: (state, command) => {
+    const annotations = state.document.annotations.map((note) => {
+      if (note.id !== command.id) return note;
+      return {
+        ...note,
+        ...command.patch,
+        position: command.patch.position === undefined ? note.position : { ...command.patch.position },
+        meta: command.patch.meta === undefined ? note.meta : { ...command.patch.meta },
+      };
+    });
+    return { ...state, document: { ...state.document, annotations } };
+  },
+  setCatalogEntry: (state, command) => {
+    const catalog = state.document.catalogs.find((entry) => entry.id === command.catalogId);
+    if (catalog === undefined) return null;
+    if (!catalog.entries.some((entry) => entry.id === command.entryId)) return null;
+    const catalogs = state.document.catalogs.map((row) => {
+      if (row.id !== command.catalogId) return row;
+      return {
+        ...row,
+        entries: row.entries.map((entry) => {
+          if (entry.id !== command.entryId) return entry;
+          const next: EditorCatalogEntry = { id: entry.id };
+          const label = command.patch.label ?? entry.label;
+          if (label !== undefined) next.label = label;
+          if (command.patch.meta !== undefined) next.meta = { ...entry.meta, ...command.patch.meta };
+          else if (entry.meta !== undefined) next.meta = { ...entry.meta };
           return next;
-        }
-        return { ...entry, parentId: command.parentId };
+        }),
       };
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          markers: state.document.markers.map(reparent),
-          volumes: state.document.volumes.map(reparent),
-          paths: state.document.paths.map(reparent),
-          annotations: state.document.annotations.map(reparent),
-        },
-      };
+    });
+    return { ...state, document: { ...state.document, catalogs } };
+  },
+  addCatalogEntry: (state, command) => {
+    const trimmedId = command.entry.id.trim();
+    if (trimmedId.length === 0) return null;
+    const existing = state.document.catalogs.find((catalog) => catalog.id === command.catalogId);
+    const taken = new Set((existing?.entries ?? []).map((entry) => entry.id));
+    let id = trimmedId;
+    let n = 2;
+    while (taken.has(id)) {
+      id = `${trimmedId}_${n}`;
+      n += 1;
     }
-    case "addMarker": {
-      const marker = ownIdOrGloballyUnique(state.document, command.marker, state.document.markers);
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          markers: [...state.document.markers.filter((m) => m.id !== marker.id), marker],
-        },
-        selection: [marker.id],
-      };
+    const entry: EditorCatalogEntry = {
+      id,
+      ...(command.entry.label === undefined ? {} : { label: command.entry.label }),
+      ...(command.entry.meta === undefined ? {} : { meta: { ...command.entry.meta } }),
+    };
+    const catalogs =
+      existing === undefined
+        ? [...state.document.catalogs, { id: command.catalogId, entries: [entry] }]
+        : state.document.catalogs.map((catalog) =>
+            catalog.id === command.catalogId ? { ...catalog, entries: [...catalog.entries, entry] } : catalog,
+          );
+    return { ...state, document: { ...state.document, catalogs } };
+  },
+  removeCatalogEntry: (state, command) => {
+    const catalog = state.document.catalogs.find((entry) => entry.id === command.catalogId);
+    if (catalog === undefined || !catalog.entries.some((entry) => entry.id === command.entryId)) return null;
+    const catalogs = state.document.catalogs.map((row) =>
+      row.id === command.catalogId
+        ? { ...row, entries: row.entries.filter((entry) => entry.id !== command.entryId) }
+        : row,
+    );
+    return { ...state, document: { ...state.document, catalogs } };
+  },
+  remove: (state, command) => {
+    if (isEditorObjectLocked(state.document, command.id)) return null;
+    return {
+      document: removeByIds(state.document, new Set([command.id])),
+      selection: state.selection.filter((id) => id !== command.id),
+    };
+  },
+  removeMany: (state, command) => {
+    const gone = new Set(command.ids.filter((id) => !isEditorObjectLocked(state.document, id)));
+    if (gone.size === 0) return null;
+    return {
+      document: removeByIds(state.document, gone),
+      selection: state.selection.filter((id) => !gone.has(id)),
+    };
+  },
+  duplicate: (state, command) =>
+    insertFragment(
+      state,
+      extractEditorFragment(state.document, command.ids),
+      command.offset ?? { x: 2, y: 0, z: 2 },
+      true,
+    ),
+  addFragment: (state, command) =>
+    insertFragment(state, command.fragment, command.offset ?? { x: 0, y: 0, z: 0 }, false),
+  importDocument: (_state, command) => ({
+    document: cloneEditorDocument(command.document),
+    selection: [],
+  }),
+  replaceDocument: (_state, command) => ({
+    document: cloneEditorDocument(command.document),
+    selection: [],
+  }),
+  importJson: (_state, command) => ({
+    document: importEditorDocumentJson(command.json),
+    selection: [],
+  }),
+  setTerrain: (state, command) => ({ ...state, document: { ...state.document, terrain: command.terrain } }),
+  clearTerrain: (state) => {
+    const nextDoc: EditorDocument = {
+      version: 1,
+      markers: state.document.markers,
+      volumes: state.document.volumes,
+      paths: state.document.paths,
+      annotations: state.document.annotations,
+      prefabs: state.document.prefabs,
+      collections: state.document.collections,
+      catalogs: state.document.catalogs,
+      ...(state.document.grids === undefined ? {} : { grids: state.document.grids }),
+      ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
+    };
+    return { ...state, document: nextDoc };
+  },
+  setUiPanel: (state, command) => {
+    const ui = patchUiPanel(state.document.ui, command.id, command.patch);
+    return { ...state, document: { ...state.document, ui } };
+  },
+  removeUiPanel: (state, command) => {
+    const ui = removeUiPanel(state.document.ui, command.id);
+    if (ui === undefined) {
+      const { ui: _removed, ...rest } = state.document;
+      void _removed;
+      return { ...state, document: rest };
     }
-    case "addVolume": {
-      const volume = ownIdOrGloballyUnique(state.document, command.volume, state.document.volumes);
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          volumes: [...state.document.volumes.filter((v) => v.id !== volume.id), volume],
-        },
-        selection: [volume.id],
-      };
+    return { ...state, document: { ...state.document, ui } };
+  },
+  setUi: (state, command) => {
+    if (command.ui === undefined) {
+      const { ui: _removed, ...rest } = state.document;
+      void _removed;
+      return { ...state, document: rest };
     }
-    case "addPath": {
-      const path = ownIdOrGloballyUnique(state.document, command.path, state.document.paths);
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          paths: [...state.document.paths.filter((p) => p.id !== path.id), path],
-        },
-        selection: [path.id],
-      };
-    }
-    case "addNote": {
-      const note = ownIdOrGloballyUnique(state.document, command.note, state.document.annotations);
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          annotations: [...state.document.annotations.filter((n) => n.id !== note.id), note],
-        },
-        selection: [note.id],
-      };
-    }
-    case "setMarker": {
-      const markers = state.document.markers.map((marker) => {
-        if (marker.id !== command.id) return marker;
-        return {
-          ...marker,
-          ...command.patch,
-          position: command.patch.position === undefined ? marker.position : { ...command.patch.position },
-          meta: command.patch.meta === undefined ? marker.meta : { ...command.patch.meta },
-        };
-      });
-      return { ...state, document: { ...state.document, markers } };
-    }
-    case "setVolume": {
-      const volumes = state.document.volumes.map((volume) => {
-        if (volume.id !== command.id) return volume;
-        return {
-          ...volume,
-          ...command.patch,
-          center: command.patch.center === undefined ? volume.center : { ...command.patch.center },
-          halfExtents:
-            command.patch.halfExtents === undefined
-              ? volume.halfExtents
-              : { ...command.patch.halfExtents },
-          meta: command.patch.meta === undefined ? volume.meta : { ...command.patch.meta },
-        };
-      });
-      return { ...state, document: { ...state.document, volumes } };
-    }
-    case "setPath": {
-      const paths = state.document.paths.map((path) => {
-        if (path.id !== command.id) return path;
-        return {
-          ...path,
-          ...command.patch,
-          points:
-            command.patch.points === undefined
-              ? path.points
-              : command.patch.points.map((point) => ({ ...point })),
-          meta: command.patch.meta === undefined ? path.meta : { ...command.patch.meta },
-        };
-      });
-      return { ...state, document: { ...state.document, paths } };
-    }
-    case "setNote": {
-      const annotations = state.document.annotations.map((note) => {
-        if (note.id !== command.id) return note;
-        return {
-          ...note,
-          ...command.patch,
-          position: command.patch.position === undefined ? note.position : { ...command.patch.position },
-          meta: command.patch.meta === undefined ? note.meta : { ...command.patch.meta },
-        };
-      });
-      return { ...state, document: { ...state.document, annotations } };
-    }
-    case "setCatalogEntry": {
-      const catalog = state.document.catalogs.find((entry) => entry.id === command.catalogId);
-      if (catalog === undefined) return null;
-      if (!catalog.entries.some((entry) => entry.id === command.entryId)) return null;
-      const catalogs = state.document.catalogs.map((row) => {
-        if (row.id !== command.catalogId) return row;
-        return {
-          ...row,
-          entries: row.entries.map((entry) => {
-            if (entry.id !== command.entryId) return entry;
-            const next: EditorCatalogEntry = { id: entry.id };
-            const label = command.patch.label ?? entry.label;
-            if (label !== undefined) next.label = label;
-            if (command.patch.meta !== undefined) next.meta = { ...entry.meta, ...command.patch.meta };
-            else if (entry.meta !== undefined) next.meta = { ...entry.meta };
-            return next;
-          }),
-        };
-      });
-      return { ...state, document: { ...state.document, catalogs } };
-    }
-    case "addCatalogEntry": {
-      const trimmedId = command.entry.id.trim();
-      if (trimmedId.length === 0) return null;
-      const existing = state.document.catalogs.find((catalog) => catalog.id === command.catalogId);
-      const taken = new Set((existing?.entries ?? []).map((entry) => entry.id));
-      let id = trimmedId;
-      let n = 2;
-      while (taken.has(id)) {
-        id = `${trimmedId}_${n}`;
-        n += 1;
-      }
-      const entry: EditorCatalogEntry = {
-        id,
-        ...(command.entry.label === undefined ? {} : { label: command.entry.label }),
-        ...(command.entry.meta === undefined ? {} : { meta: { ...command.entry.meta } }),
-      };
-      const catalogs =
-        existing === undefined
-          ? [...state.document.catalogs, { id: command.catalogId, entries: [entry] }]
-          : state.document.catalogs.map((catalog) =>
-              catalog.id === command.catalogId ? { ...catalog, entries: [...catalog.entries, entry] } : catalog,
-            );
-      return { ...state, document: { ...state.document, catalogs } };
-    }
-    case "removeCatalogEntry": {
-      const catalog = state.document.catalogs.find((entry) => entry.id === command.catalogId);
-      if (catalog === undefined || !catalog.entries.some((entry) => entry.id === command.entryId)) return null;
-      const catalogs = state.document.catalogs.map((row) =>
-        row.id === command.catalogId
-          ? { ...row, entries: row.entries.filter((entry) => entry.id !== command.entryId) }
-          : row,
-      );
-      return { ...state, document: { ...state.document, catalogs } };
-    }
-    case "remove":
-      if (isEditorObjectLocked(state.document, command.id)) return null;
-      return {
-        document: removeByIds(state.document, new Set([command.id])),
-        selection: state.selection.filter((id) => id !== command.id),
-      };
-    case "removeMany": {
-      const gone = new Set(command.ids.filter((id) => !isEditorObjectLocked(state.document, id)));
-      if (gone.size === 0) return null;
-      return {
-        document: removeByIds(state.document, gone),
-        selection: state.selection.filter((id) => !gone.has(id)),
-      };
-    }
-    case "duplicate":
-      return insertFragment(
-        state,
-        extractEditorFragment(state.document, command.ids),
-        command.offset ?? { x: 2, y: 0, z: 2 },
-        true,
-      );
-    case "addFragment":
-      return insertFragment(state, command.fragment, command.offset ?? { x: 0, y: 0, z: 0 }, false);
-    case "importDocument":
-    case "replaceDocument":
-      return {
-        document: cloneEditorDocument(command.document),
-        selection: [],
-      };
-    case "importJson":
-      return {
-        document: importEditorDocumentJson(command.json),
-        selection: [],
-      };
-    case "setTerrain":
-      return { ...state, document: { ...state.document, terrain: command.terrain } };
-    case "clearTerrain": {
-      const nextDoc: EditorDocument = {
-        version: 1,
-        markers: state.document.markers,
-        volumes: state.document.volumes,
-        paths: state.document.paths,
-        annotations: state.document.annotations,
-        prefabs: state.document.prefabs,
-        collections: state.document.collections,
-        catalogs: state.document.catalogs,
-        ...(state.document.grids === undefined ? {} : { grids: state.document.grids }),
-        ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
-      };
-      return { ...state, document: nextDoc };
-    }
-    case "setUiPanel": {
-      const ui = patchUiPanel(state.document.ui, command.id, command.patch);
-      return { ...state, document: { ...state.document, ui } };
-    }
-    case "removeUiPanel": {
-      const ui = removeUiPanel(state.document.ui, command.id);
-      if (ui === undefined) {
-        const { ui: _removed, ...rest } = state.document;
-        void _removed;
-        return { ...state, document: rest };
-      }
-      return { ...state, document: { ...state.document, ui } };
-    }
-    case "setUi": {
-      if (command.ui === undefined) {
-        const { ui: _removed, ...rest } = state.document;
-        void _removed;
-        return { ...state, document: rest };
-      }
-      return { ...state, document: { ...state.document, ui: command.ui } };
-    }
-    case "sculptTerrain": {
-      if (state.document.terrain === undefined) return state;
-      return {
-        ...state,
-        document: { ...state.document, terrain: applyDeltaToSnapshot(state.document.terrain, command.delta) },
-      };
-    }
-    case "paintTerrain": {
-      if (state.document.terrain === undefined) return state;
-      return {
-        ...state,
-        document: { ...state.document, terrain: applySurfaceDeltaToSnapshot(state.document.terrain, command.delta) },
-      };
-    }
-    case "blendTerrain": {
-      if (state.document.terrain === undefined) return state;
-      return {
-        ...state,
-        document: { ...state.document, terrain: applyWeightDeltaToSnapshot(state.document.terrain, command.delta) },
-      };
-    }
-    case "setTerrainLayers": {
-      if (state.document.terrain === undefined) return state;
-      const terrain = state.document.terrain;
-      const layers = command.layers.map((layer) => ({ ...layer }));
-      const before = terrain.layers ?? [];
-      // Keep hand-painted weights only when the layer id sequence is unchanged (a params-only edit).
-      const sameSequence =
-        before.length === layers.length && before.every((layer, i) => layer.id === layers[i]!.id);
-      const next: EditorTerrain =
-        sameSequence
-          ? { ...terrain, layers }
-          : (() => {
-              const copy = { ...terrain, layers };
-              delete copy.weights;
-              return copy;
-            })();
-      return { ...state, document: { ...state.document, terrain: next } };
-    }
-    case "convertScatterToObjects": {
-      const path = state.document.paths.find((entry) => entry.id === command.pathId);
-      if (path === undefined) return state;
-      const taken = collectIds(state.document);
-      const markers = command.markers.map((marker) => {
-        let id = marker.id;
-        while (taken.has(id)) id = copyId(marker.id, taken);
-        taken.add(id);
-        return { ...marker, id };
-      });
-      return {
-        document: {
-          ...state.document,
-          markers: [...state.document.markers, ...markers],
-          paths: state.document.paths.filter((entry) => entry.id !== command.pathId),
-        },
-        selection: markers.map((marker) => marker.id),
-      };
-    }
-    case "createPrefab": {
-      if (command.ids.length === 0) return state;
-      const fragment = createPrefabFragment(state.document, command.ids);
-      const prefab: EditorPrefab = { id: command.id, name: command.name, fragment };
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          prefabs: [...state.document.prefabs.filter((entry) => entry.id !== command.id), prefab],
-        },
-      };
-    }
-    case "deletePrefab":
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          prefabs: state.document.prefabs.filter((entry) => entry.id !== command.prefabId),
-        },
-      };
-    case "insertPrefab": {
-      const prefab = findEditorPrefab(state.document, command.prefabId);
-      if (prefab === undefined) return state;
-      const instanceId =
-        command.instanceId ??
-        `${prefab.id}_inst_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_296_000).toString(36)}`;
-      const tagged = fragmentAsDocument({
-        markers: prefab.fragment.markers.map((marker) => tagWithInstance(marker, prefab.id, instanceId)),
-        volumes: prefab.fragment.volumes.map((volume) => tagWithInstance(volume, prefab.id, instanceId)),
-        paths: prefab.fragment.paths.map((path) => tagWithInstance(path, prefab.id, instanceId)),
-        annotations: prefab.fragment.annotations.map((note) => tagWithInstance(note, prefab.id, instanceId)),
-      });
-      return insertFragment(state, tagged, command.at, true);
-    }
-    case "detachPrefabInstance": {
-      const strip = <T extends { meta?: Record<string, unknown> }>(item: T): T => {
-        if (item.meta?.prefabInstanceId !== command.instanceId) return item;
-        const meta = { ...item.meta };
-        delete meta.prefabId;
-        delete meta.prefabInstanceId;
-        return { ...item, meta };
-      };
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          markers: state.document.markers.map(strip),
-          volumes: state.document.volumes.map(strip),
-          paths: state.document.paths.map(strip),
-          annotations: state.document.annotations.map(strip),
-        },
-      };
-    }
-    case "createCollection": {
-      const collection: EditorCollection = {
-        id: command.id,
-        name: command.name,
-        memberIds: [...(command.memberIds ?? [])],
-      };
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          collections: [...state.document.collections.filter((entry) => entry.id !== command.id), collection],
-        },
-      };
-    }
-    case "renameCollection": {
-      const collections = state.document.collections.map((collection) =>
-        collection.id === command.id ? { ...collection, name: command.name } : collection,
-      );
-      return { ...state, document: { ...state.document, collections } };
-    }
-    case "deleteCollection":
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          collections: state.document.collections.filter((entry) => entry.id !== command.id),
-        },
-      };
-    case "setCollectionMembers": {
-      const collections = state.document.collections.map((collection) =>
-        collection.id === command.id ? { ...collection, memberIds: [...command.memberIds] } : collection,
-      );
-      return { ...state, document: { ...state.document, collections } };
-    }
-    case "addToCollection": {
-      const adding = new Set(command.ids);
-      const collections = state.document.collections.map((collection) => {
-        if (collection.id !== command.id) return collection;
-        const merged = new Set(collection.memberIds);
-        for (const id of adding) merged.add(id);
-        return { ...collection, memberIds: [...merged] };
-      });
-      return { ...state, document: { ...state.document, collections } };
-    }
-    case "removeFromCollection": {
-      const removing = new Set(command.ids);
-      const collections = state.document.collections.map((collection) =>
-        collection.id === command.id
-          ? { ...collection, memberIds: collection.memberIds.filter((id) => !removing.has(id)) }
-          : collection,
-      );
-      return { ...state, document: { ...state.document, collections } };
-    }
-    case "setCollectionFlags": {
-      const collections = state.document.collections.map((collection) =>
-        collection.id === command.id ? { ...collection, ...command.patch } : collection,
-      );
-      return { ...state, document: { ...state.document, collections } };
-    }
-    case "selectCollection": {
-      const collection = findEditorCollection(state.document, command.id);
-      if (collection === undefined) return null;
-      return { ...state, selection: [...collection.memberIds] };
-    }
-    case "batchSetProperties": {
-      const ids = new Set(command.ids);
-      const patch = command.patch;
-      const markers = state.document.markers.map((marker) =>
-        ids.has(marker.id)
-          ? {
-              ...marker,
-              ...(patch.color === undefined ? {} : { color: patch.color }),
-              ...(patch.label === undefined ? {} : { label: patch.label }),
-              ...(patch.meta === undefined ? {} : { meta: { ...marker.meta, ...patch.meta } }),
-            }
-          : marker,
-      );
-      const volumes = state.document.volumes.map((volume) =>
-        ids.has(volume.id)
-          ? {
-              ...volume,
-              ...(patch.color === undefined ? {} : { color: patch.color }),
-              ...(patch.label === undefined ? {} : { label: patch.label }),
-              ...(patch.meta === undefined ? {} : { meta: { ...volume.meta, ...patch.meta } }),
-            }
-          : volume,
-      );
-      const paths = state.document.paths.map((path) =>
-        ids.has(path.id)
-          ? {
-              ...path,
-              ...(patch.color === undefined ? {} : { color: patch.color }),
-              ...(patch.label === undefined ? {} : { label: patch.label }),
-              ...(patch.meta === undefined ? {} : { meta: { ...path.meta, ...patch.meta } }),
-            }
-          : path,
-      );
-      const annotations = state.document.annotations.map((note) =>
-        ids.has(note.id)
-          ? {
-              ...note,
-              ...(patch.color === undefined ? {} : { color: patch.color }),
-              ...(patch.meta === undefined ? {} : { meta: { ...note.meta, ...patch.meta } }),
-            }
-          : note,
-      );
-      return { ...state, document: { ...state.document, markers, volumes, paths, annotations } };
-    }
-    case "addGridLayer": {
-      const layer = migrateGridLayer(command.layer);
-      const grids = state.document.grids ?? [];
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          grids: [...grids.filter((entry) => entry.id !== layer.id), layer],
-        },
-      };
-    }
-    case "removeGridLayer": {
-      const grids = state.document.grids;
-      if (grids === undefined) return null;
-      const next = grids.filter((layer) => layer.id !== command.id);
-      if (next.length === grids.length) return null;
-      return { ...state, document: { ...state.document, grids: next } };
-    }
-    case "setGridLayer":
-      return updateGridLayer(state, command.id, (layer) => migrateGridLayer({ ...layer, ...command.patch }));
-    case "paintGridCells":
-      return updateGridLayer(state, command.id, (layer) => paintGridCells(layer, command.cells));
-    case "fillGridRect":
-      return updateGridLayer(state, command.id, (layer) =>
-        fillGridRect(layer, command.col0, command.row0, command.col1, command.row1, command.value),
-      );
-    case "floodFillGrid":
-      return updateGridLayer(state, command.id, (layer) => floodFillGrid(layer, command.col, command.row, command.value));
-    case "resizeGridLayer":
-      return updateGridLayer(state, command.id, (layer) => resizeGridLayer(layer, command.cols, command.rows));
-    case "assignMaterial": {
-      const ids = new Set(command.ids);
-      const stamp = (meta: Record<string, unknown> | undefined) => ({ ...meta, materialId: command.materialId });
-      return {
-        ...state,
-        document: {
-          ...state.document,
-          markers: state.document.markers.map((marker) => (ids.has(marker.id) ? { ...marker, meta: stamp(marker.meta) } : marker)),
-          volumes: state.document.volumes.map((volume) => (ids.has(volume.id) ? { ...volume, meta: stamp(volume.meta) } : volume)),
-          paths: state.document.paths.map((path) => (ids.has(path.id) ? { ...path, meta: stamp(path.meta) } : path)),
-          annotations: state.document.annotations.map((note) => (ids.has(note.id) ? { ...note, meta: stamp(note.meta) } : note)),
-        },
-      };
-    }
-    case "undo":
-    case "redo":
-      return null;
-  }
+    return { ...state, document: { ...state.document, ui: command.ui } };
+  },
+  sculptTerrain: (state, command) => {
+    if (state.document.terrain === undefined) return state;
+    return {
+      ...state,
+      document: { ...state.document, terrain: applyDeltaToSnapshot(state.document.terrain, command.delta) },
+    };
+  },
+  paintTerrain: (state, command) => {
+    if (state.document.terrain === undefined) return state;
+    return {
+      ...state,
+      document: { ...state.document, terrain: applySurfaceDeltaToSnapshot(state.document.terrain, command.delta) },
+    };
+  },
+  blendTerrain: (state, command) => {
+    if (state.document.terrain === undefined) return state;
+    return {
+      ...state,
+      document: { ...state.document, terrain: applyWeightDeltaToSnapshot(state.document.terrain, command.delta) },
+    };
+  },
+  setTerrainLayers: (state, command) => {
+    if (state.document.terrain === undefined) return state;
+    const terrain = state.document.terrain;
+    const layers = command.layers.map((layer) => ({ ...layer }));
+    const before = terrain.layers ?? [];
+    // Keep hand-painted weights only when the layer id sequence is unchanged (a params-only edit).
+    const sameSequence =
+      before.length === layers.length && before.every((layer, i) => layer.id === layers[i]!.id);
+    const next: EditorTerrain =
+      sameSequence
+        ? { ...terrain, layers }
+        : (() => {
+            const copy = { ...terrain, layers };
+            delete copy.weights;
+            return copy;
+          })();
+    return { ...state, document: { ...state.document, terrain: next } };
+  },
+  convertScatterToObjects: (state, command) => {
+    const path = state.document.paths.find((entry) => entry.id === command.pathId);
+    if (path === undefined) return state;
+    const taken = collectIds(state.document);
+    const markers = command.markers.map((marker) => {
+      let id = marker.id;
+      while (taken.has(id)) id = copyId(marker.id, taken);
+      taken.add(id);
+      return { ...marker, id };
+    });
+    return {
+      document: {
+        ...state.document,
+        markers: [...state.document.markers, ...markers],
+        paths: state.document.paths.filter((entry) => entry.id !== command.pathId),
+      },
+      selection: markers.map((marker) => marker.id),
+    };
+  },
+  createPrefab: (state, command) => {
+    if (command.ids.length === 0) return state;
+    const fragment = createPrefabFragment(state.document, command.ids);
+    const prefab: EditorPrefab = { id: command.id, name: command.name, fragment };
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        prefabs: [...state.document.prefabs.filter((entry) => entry.id !== command.id), prefab],
+      },
+    };
+  },
+  deletePrefab: (state, command) => ({
+    ...state,
+    document: {
+      ...state.document,
+      prefabs: state.document.prefabs.filter((entry) => entry.id !== command.prefabId),
+    },
+  }),
+  insertPrefab: (state, command) => {
+    const prefab = findEditorPrefab(state.document, command.prefabId);
+    if (prefab === undefined) return state;
+    const instanceId =
+      command.instanceId ??
+      `${prefab.id}_inst_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_296_000).toString(36)}`;
+    const tagged = fragmentAsDocument({
+      markers: prefab.fragment.markers.map((marker) => tagWithInstance(marker, prefab.id, instanceId)),
+      volumes: prefab.fragment.volumes.map((volume) => tagWithInstance(volume, prefab.id, instanceId)),
+      paths: prefab.fragment.paths.map((path) => tagWithInstance(path, prefab.id, instanceId)),
+      annotations: prefab.fragment.annotations.map((note) => tagWithInstance(note, prefab.id, instanceId)),
+    });
+    return insertFragment(state, tagged, command.at, true);
+  },
+  detachPrefabInstance: (state, command) => {
+    const strip = <T extends { meta?: Record<string, unknown> }>(item: T): T => {
+      if (item.meta?.prefabInstanceId !== command.instanceId) return item;
+      const meta = { ...item.meta };
+      delete meta.prefabId;
+      delete meta.prefabInstanceId;
+      return { ...item, meta };
+    };
+    return { ...state, document: { ...state.document, ...mapPlaceables(state.document, strip) } };
+  },
+  createCollection: (state, command) => {
+    const collection: EditorCollection = {
+      id: command.id,
+      name: command.name,
+      memberIds: [...(command.memberIds ?? [])],
+    };
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        collections: [...state.document.collections.filter((entry) => entry.id !== command.id), collection],
+      },
+    };
+  },
+  renameCollection: (state, command) => {
+    const collections = state.document.collections.map((collection) =>
+      collection.id === command.id ? { ...collection, name: command.name } : collection,
+    );
+    return { ...state, document: { ...state.document, collections } };
+  },
+  deleteCollection: (state, command) => ({
+    ...state,
+    document: {
+      ...state.document,
+      collections: state.document.collections.filter((entry) => entry.id !== command.id),
+    },
+  }),
+  setCollectionMembers: (state, command) => {
+    const collections = state.document.collections.map((collection) =>
+      collection.id === command.id ? { ...collection, memberIds: [...command.memberIds] } : collection,
+    );
+    return { ...state, document: { ...state.document, collections } };
+  },
+  addToCollection: (state, command) => {
+    const adding = new Set(command.ids);
+    const collections = state.document.collections.map((collection) => {
+      if (collection.id !== command.id) return collection;
+      const merged = new Set(collection.memberIds);
+      for (const id of adding) merged.add(id);
+      return { ...collection, memberIds: [...merged] };
+    });
+    return { ...state, document: { ...state.document, collections } };
+  },
+  removeFromCollection: (state, command) => {
+    const removing = new Set(command.ids);
+    const collections = state.document.collections.map((collection) =>
+      collection.id === command.id
+        ? { ...collection, memberIds: collection.memberIds.filter((id) => !removing.has(id)) }
+        : collection,
+    );
+    return { ...state, document: { ...state.document, collections } };
+  },
+  setCollectionFlags: (state, command) => {
+    const collections = state.document.collections.map((collection) =>
+      collection.id === command.id ? { ...collection, ...command.patch } : collection,
+    );
+    return { ...state, document: { ...state.document, collections } };
+  },
+  selectCollection: (state, command) => {
+    const collection = findEditorCollection(state.document, command.id);
+    if (collection === undefined) return null;
+    return { ...state, selection: [...collection.memberIds] };
+  },
+  batchSetProperties: (state, command) => {
+    const ids = new Set(command.ids);
+    const patch = command.patch;
+    // Notes carry no `label`, so they take color/meta only via a dedicated mapper.
+    const apply = <T extends { id: string; color?: string; label?: string; meta?: Record<string, unknown> }>(
+      item: T,
+    ): T =>
+      ids.has(item.id)
+        ? {
+            ...item,
+            ...(patch.color === undefined ? {} : { color: patch.color }),
+            ...(patch.label === undefined ? {} : { label: patch.label }),
+            ...(patch.meta === undefined ? {} : { meta: { ...item.meta, ...patch.meta } }),
+          }
+        : item;
+    const applyNote = (note: EditorNote): EditorNote =>
+      ids.has(note.id)
+        ? {
+            ...note,
+            ...(patch.color === undefined ? {} : { color: patch.color }),
+            ...(patch.meta === undefined ? {} : { meta: { ...note.meta, ...patch.meta } }),
+          }
+        : note;
+    return { ...state, document: { ...state.document, ...mapPlaceables(state.document, apply, applyNote) } };
+  },
+  addGridLayer: (state, command) => {
+    const layer = migrateGridLayer(command.layer);
+    const grids = state.document.grids ?? [];
+    return {
+      ...state,
+      document: {
+        ...state.document,
+        grids: [...grids.filter((entry) => entry.id !== layer.id), layer],
+      },
+    };
+  },
+  removeGridLayer: (state, command) => {
+    const grids = state.document.grids;
+    if (grids === undefined) return null;
+    const next = grids.filter((layer) => layer.id !== command.id);
+    if (next.length === grids.length) return null;
+    return { ...state, document: { ...state.document, grids: next } };
+  },
+  setGridLayer: (state, command) =>
+    updateGridLayer(state, command.id, (layer) => migrateGridLayer({ ...layer, ...command.patch })),
+  paintGridCells: (state, command) =>
+    updateGridLayer(state, command.id, (layer) => paintGridCells(layer, command.cells)),
+  fillGridRect: (state, command) =>
+    updateGridLayer(state, command.id, (layer) =>
+      fillGridRect(layer, command.col0, command.row0, command.col1, command.row1, command.value),
+    ),
+  floodFillGrid: (state, command) =>
+    updateGridLayer(state, command.id, (layer) => floodFillGrid(layer, command.col, command.row, command.value)),
+  resizeGridLayer: (state, command) =>
+    updateGridLayer(state, command.id, (layer) => resizeGridLayer(layer, command.cols, command.rows)),
+  assignMaterial: (state, command) => {
+    const ids = new Set(command.ids);
+    const stamp = <T extends { id: string; meta?: Record<string, unknown> }>(item: T): T =>
+      ids.has(item.id) ? { ...item, meta: { ...item.meta, materialId: command.materialId } } : item;
+    return { ...state, document: { ...state.document, ...mapPlaceables(state.document, stamp) } };
+  },
+  undo: () => null,
+  redo: () => null,
+};
+
+function applyMutating(state: EditorSessionState, command: EditorCommand): EditorSessionState | null {
+  const handler = mutationHandlers[command.type] as (
+    state: EditorSessionState,
+    command: EditorCommand,
+  ) => EditorSessionState | null;
+  return handler(state, command);
 }
 
 function isStructural(command: EditorCommand): boolean {
@@ -906,14 +889,44 @@ function isStructural(command: EditorCommand): boolean {
 }
 
 /**
- * A single reversible step. A `snapshot` entry restores a whole prior document; a `sculpt` entry
- * carries only the stroke's compact vertex delta, so terrain history never copies the heightfield.
+ * A terrain-brush stroke in history: a compact vertex delta plus the selection to restore, tagged
+ * by which brush produced it. History stores only the delta, so terrain undo never copies the
+ * heightfield.
  */
-type HistoryEntry =
-  | { kind: "snapshot"; state: EditorSessionState }
+type TerrainStroke =
   | { kind: "sculpt"; delta: TerraformDelta; selection: string[] }
   | { kind: "paint"; delta: SurfaceDelta; selection: string[] }
   | { kind: "blend"; delta: WeightDelta; selection: string[] };
+
+type TerrainStrokeKind = TerrainStroke["kind"];
+
+/**
+ * Per-brush apply/revert pair over the heightfield snapshot. One registry drives every terrain
+ * command, push, and undo/redo path, so the three brushes never fork into parallel code.
+ */
+const terrainStrokes: {
+  [K in TerrainStrokeKind]: {
+    apply(terrain: EditorTerrain, delta: Extract<TerrainStroke, { kind: K }>["delta"]): EditorTerrain;
+    revert(terrain: EditorTerrain, delta: Extract<TerrainStroke, { kind: K }>["delta"]): EditorTerrain;
+  };
+} = {
+  sculpt: { apply: applyDeltaToSnapshot, revert: revertDeltaFromSnapshot },
+  paint: { apply: applySurfaceDeltaToSnapshot, revert: revertSurfaceDeltaFromSnapshot },
+  blend: { apply: applyWeightDeltaToSnapshot, revert: revertWeightDeltaFromSnapshot },
+};
+
+/** Maps a terrain-brush command type to its stroke kind. */
+const terrainStrokeKind: Record<"sculptTerrain" | "paintTerrain" | "blendTerrain", TerrainStrokeKind> = {
+  sculptTerrain: "sculpt",
+  paintTerrain: "paint",
+  blendTerrain: "blend",
+};
+
+/**
+ * A single reversible step. A `snapshot` entry restores a whole prior document; a stroke entry
+ * carries only the brush's compact vertex delta.
+ */
+type HistoryEntry = { kind: "snapshot"; state: EditorSessionState } | TerrainStroke;
 
 /** Creates an editor session with undo/redo history seeded from an initial document.
  * @internal
@@ -932,43 +945,23 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
     for (const listener of listeners) listener(state);
   };
 
-  const sculptWith = (
-    delta: TerraformDelta,
+  const applyStroke = (
+    entry: TerrainStroke,
     direction: "apply" | "revert",
     selection: string[],
   ): EditorSessionState => {
     const terrain = state.document.terrain;
     if (terrain === undefined) return state;
-    const next = direction === "apply" ? applyDeltaToSnapshot(terrain, delta) : revertDeltaFromSnapshot(terrain, delta);
+    const next = terrainStrokes[entry.kind][direction](terrain, entry.delta as never);
     return { document: { ...state.document, terrain: next }, selection };
   };
 
-  const paintWith = (
-    delta: SurfaceDelta,
-    direction: "apply" | "revert",
-    selection: string[],
-  ): EditorSessionState => {
-    const terrain = state.document.terrain;
-    if (terrain === undefined) return state;
-    const next =
-      direction === "apply"
-        ? applySurfaceDeltaToSnapshot(terrain, delta)
-        : revertSurfaceDeltaFromSnapshot(terrain, delta);
-    return { document: { ...state.document, terrain: next }, selection };
-  };
-
-  const blendWith = (
-    delta: WeightDelta,
-    direction: "apply" | "revert",
-    selection: string[],
-  ): EditorSessionState => {
-    const terrain = state.document.terrain;
-    if (terrain === undefined) return state;
-    const next =
-      direction === "apply"
-        ? applyWeightDeltaToSnapshot(terrain, delta)
-        : revertWeightDeltaFromSnapshot(terrain, delta);
-    return { document: { ...state.document, terrain: next }, selection };
+  const pushTerrainStroke = (entry: TerrainStroke): void => {
+    past.push(entry);
+    if (past.length > historyLimit) past.shift();
+    future.length = 0;
+    lastCoalesce = null;
+    state = applyStroke(entry, "apply", entry.selection);
   };
 
   return {
@@ -985,18 +978,12 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
       if (command.type === "undo") {
         const entry = past.pop();
         if (entry === undefined) return state;
-        if (entry.kind === "sculpt") {
-          future.push({ kind: "sculpt", delta: entry.delta, selection: state.selection });
-          state = sculptWith(entry.delta, "revert", entry.selection);
-        } else if (entry.kind === "paint") {
-          future.push({ kind: "paint", delta: entry.delta, selection: state.selection });
-          state = paintWith(entry.delta, "revert", entry.selection);
-        } else if (entry.kind === "blend") {
-          future.push({ kind: "blend", delta: entry.delta, selection: state.selection });
-          state = blendWith(entry.delta, "revert", entry.selection);
-        } else {
+        if (entry.kind === "snapshot") {
           future.push({ kind: "snapshot", state: snapshotState(state) });
           state = entry.state;
+        } else {
+          future.push({ ...entry, selection: [...state.selection] });
+          state = applyStroke(entry, "revert", entry.selection);
         }
         lastCoalesce = null;
         emit();
@@ -1005,53 +992,25 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
       if (command.type === "redo") {
         const entry = future.pop();
         if (entry === undefined) return state;
-        if (entry.kind === "sculpt") {
-          past.push({ kind: "sculpt", delta: entry.delta, selection: state.selection });
-          state = sculptWith(entry.delta, "apply", entry.selection);
-        } else if (entry.kind === "paint") {
-          past.push({ kind: "paint", delta: entry.delta, selection: state.selection });
-          state = paintWith(entry.delta, "apply", entry.selection);
-        } else if (entry.kind === "blend") {
-          past.push({ kind: "blend", delta: entry.delta, selection: state.selection });
-          state = blendWith(entry.delta, "apply", entry.selection);
-        } else {
+        if (entry.kind === "snapshot") {
           past.push({ kind: "snapshot", state: snapshotState(state) });
           state = entry.state;
+        } else {
+          past.push({ ...entry, selection: [...state.selection] });
+          state = applyStroke(entry, "apply", entry.selection);
         }
         lastCoalesce = null;
         emit();
         return state;
       }
 
-      if (command.type === "sculptTerrain") {
+      if (command.type === "sculptTerrain" || command.type === "paintTerrain" || command.type === "blendTerrain") {
         if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
-        past.push({ kind: "sculpt", delta: command.delta, selection: [...state.selection] });
-        if (past.length > historyLimit) past.shift();
-        future.length = 0;
-        lastCoalesce = null;
-        state = sculptWith(command.delta, "apply", state.selection);
-        emit();
-        return state;
-      }
-
-      if (command.type === "paintTerrain") {
-        if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
-        past.push({ kind: "paint", delta: command.delta, selection: [...state.selection] });
-        if (past.length > historyLimit) past.shift();
-        future.length = 0;
-        lastCoalesce = null;
-        state = paintWith(command.delta, "apply", state.selection);
-        emit();
-        return state;
-      }
-
-      if (command.type === "blendTerrain") {
-        if (state.document.terrain === undefined || command.delta.indices.length === 0) return state;
-        past.push({ kind: "blend", delta: command.delta, selection: [...state.selection] });
-        if (past.length > historyLimit) past.shift();
-        future.length = 0;
-        lastCoalesce = null;
-        state = blendWith(command.delta, "apply", state.selection);
+        pushTerrainStroke({
+          kind: terrainStrokeKind[command.type],
+          delta: command.delta,
+          selection: [...state.selection],
+        } as TerrainStroke);
         emit();
         return state;
       }

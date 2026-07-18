@@ -1,4 +1,5 @@
 import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../../ammo";
 import { gunById, magState, type GunDef } from "../../handroll";
@@ -14,6 +15,7 @@ function useNowMs(): number {
 }
 
 export function AmmoPlate() {
+  const ctx = useGameContext();
   const { userId } = usePlayer();
   const selected = useSelectedSlot();
   const slots = useInventory("hotbar");
@@ -26,7 +28,7 @@ export function AmmoPlate() {
   if (gun === undefined) {
     return <div className="text-sm font-bold uppercase tracking-widest text-stone-400">No weapon — find a gun</div>;
   }
-  const mag = magState(gun);
+  const mag = magState(ctx, gun);
   const reloading = mag.reloadingUntilMs > nowMs;
 
   return (

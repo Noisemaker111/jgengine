@@ -8,7 +8,7 @@
  * seconds. Manual warm loop still works: `--keep` / `--connect <port>` /
  * `--size half`. See `jgengine-verify` / `jgengine-ui`.
  */
-import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
 import { join, resolve } from "node:path";
 import {
@@ -18,12 +18,12 @@ import {
   checkoutIdentity,
   ensureDevServer,
   isUp,
-  killProcessTree,
-  launchChrome,
   openPageSession,
-  pickDebugPort,
-  resolveWarmChromePort,
-  waitForDebugger,
+  parseSizeArg,
+  sizeSuffix,
+  waitCaptureReady,
+  withBrowserSession,
+  writePngAtomic,
   type Device,
   type SizeMode,
 } from "./browser-lib";
@@ -119,11 +119,7 @@ function parseArgs(argv: string[]): Args {
       }
       args.device = device;
     } else if (value === "--size") {
-      const size = argv[++index] as SizeMode | undefined;
-      if (size !== "full" && size !== "half") {
-        throw new Error(`--size must be full or half (got ${size ?? "nothing"})`);
-      }
-      args.size = size;
+      args.size = parseSizeArg(argv[++index]);
     } else if (value === "--stage") args.stage = true;
     else if (value === "--state") args.state = argv[++index];
     else if (value === "--preview") {
@@ -158,10 +154,6 @@ function devicesFor(arg: DeviceArg): Device[] {
   return arg === "both" ? ["desktop", "mobile"] : [arg];
 }
 
-function sizeSuffix(size: SizeMode): string {
-  return size === "half" ? "-half" : "";
-}
-
 function outPathFor(args: Args, device: Device, outDir: string): string {
   if (args.out !== undefined) {
     const resolved = resolve(args.out);
@@ -181,27 +173,6 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     return join(outDir, `${args.game}-preview-${state}${suffix}.png`);
   }
   return join(outDir, `${args.game}-${args.mode}${suffix}.png`);
-}
-
-async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const result = await session.send("Runtime.evaluate", {
-      expression: `({
-        status: document.documentElement.dataset.jgCapture ?? null,
-        error: document.documentElement.dataset.jgCaptureError ?? null
-      })`,
-      returnByValue: true,
-    });
-    const remote = result.result as { value?: { status: string | null; error: string | null } } | undefined;
-    const status = remote?.value?.status;
-    if (status === "ready") return;
-    if (status === "error") {
-      throw new Error(`capture error: ${remote?.value?.error ?? "unknown"}`);
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
 }
 
 function targetUrl(args: Args, device: Device, devBase: string): string {
@@ -225,20 +196,16 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
 }
 
 async function readHudOverflow(session: CdpSession): Promise<string | null> {
-  const result = await session.send("Runtime.evaluate", {
-    expression: `document.querySelector("[data-hud-overflow]")?.getAttribute("data-hud-overflow") ?? null`,
-    returnByValue: true,
-  });
-  const value = (result.result as { value?: unknown } | undefined)?.value;
+  const value = await session.evaluate<unknown>(
+    `document.querySelector("[data-hud-overflow]")?.getAttribute("data-hud-overflow") ?? null`,
+  );
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
 async function readLayoutCollision(session: CdpSession): Promise<string | null> {
-  const result = await session.send("Runtime.evaluate", {
-    expression: `document.querySelector("[data-jg-layout-collision]")?.getAttribute("data-jg-layout-collision") ?? null`,
-    returnByValue: true,
-  });
-  const value = (result.result as { value?: unknown } | undefined)?.value;
+  const value = await session.evaluate<unknown>(
+    `document.querySelector("[data-jg-layout-collision]")?.getAttribute("data-jg-layout-collision") ?? null`,
+  );
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
@@ -279,10 +246,7 @@ async function shootOne(
       throw new Error("Page.captureScreenshot returned empty data");
     }
     const bytes = Buffer.from(data, "base64");
-    const tmpPath = `${outPath}.tmp`;
-    writeFileSync(tmpPath, bytes);
-    if (existsSync(outPath)) unlinkSync(outPath);
-    renameSync(tmpPath, outPath);
+    writePngAtomic(outPath, bytes);
     console.log(outPath);
     const profile = DEVICES[device];
     const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}`;
@@ -372,59 +336,40 @@ if (daemon !== null) {
 } else {
   devBase = args.url;
 }
-let chrome: ChildProcess | null = null;
-const warmPort = resolveWarmChromePort();
-const debugPort =
-  args.connect ??
-  (daemon !== null ? daemon.chromePort : args.keep ? warmPort : pickDebugPort());
-let exitCode = 0;
-const leaveWarm = args.keep || attachedDaemon;
-
-const hardDeadlineMs = args.timeoutMs * Math.max(targets.length, 1) + 120_000;
-const watchdog = setTimeout(() => {
-  console.error(`shoot: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline — force-killing Chrome and dev server`);
-  if (!attachedDaemon) {
-    killProcessTree(chrome);
-    killProcessTree(server);
-  }
-  process.exit(124);
-}, hardDeadlineMs);
-watchdog.unref();
-
-try {
-  if (args.connect !== undefined || attachedDaemon) {
-    await waitForDebugger(debugPort, attachedDaemon ? 5_000 : 5_000);
-  } else {
-    chrome = launchChrome(debugPort, "jg-shoot-");
-    await waitForDebugger(debugPort, 30_000);
-  }
-
-  for (const device of targets) {
-    const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir), devBase);
-    if (!fits) exitCode = 1;
-  }
-  if (args.keep && !attachedDaemon) {
-    const devPort = Number(new URL(devBase).port);
-    writeDaemonState({
-      identity: checkoutIdentity(),
-      chromePort: debugPort,
-      devPort,
-      devBase,
-      chromePid: chrome?.pid,
-      devPid: server?.pid,
-      startedAt: new Date().toISOString(),
-    });
-    console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
-    console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} (daemon auto-attach)`);
-    console.error(`shoot: or explicit → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);
-  }
-} catch (error) {
-  exitCode = 1;
-  console.error(error instanceof Error ? error.message : error);
-} finally {
-  if (!leaveWarm) {
-    killProcessTree(chrome);
-    killProcessTree(server);
-  }
-}
+const exitCode = await withBrowserSession(
+  {
+    keep: args.keep,
+    connect: args.connect,
+    timeoutMs: args.timeoutMs,
+    server,
+    debugPort: daemon !== null ? daemon.chromePort : undefined,
+    attach: attachedDaemon,
+    leaveWarm: args.keep || attachedDaemon,
+    chromePrefix: "jg-shoot-",
+    hardDeadlineMs: args.timeoutMs * Math.max(targets.length, 1) + 120_000,
+  },
+  async ({ debugPort, chrome }) => {
+    let code = 0;
+    for (const device of targets) {
+      const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir), devBase);
+      if (!fits) code = 1;
+    }
+    if (args.keep && !attachedDaemon) {
+      const devPort = Number(new URL(devBase).port);
+      writeDaemonState({
+        identity: checkoutIdentity(),
+        chromePort: debugPort,
+        devPort,
+        devBase,
+        chromePid: chrome?.pid,
+        devPid: server?.pid,
+        startedAt: new Date().toISOString(),
+      });
+      console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
+      console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} (daemon auto-attach)`);
+      console.error(`shoot: or explicit → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);
+    }
+    return code;
+  },
+);
 process.exit(exitCode);

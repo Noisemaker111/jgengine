@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import {
   applyElementalProc,
@@ -65,24 +66,28 @@ describe("gun generation", () => {
 });
 
 describe("elemental matrix", () => {
+  // Per-session flux/DOT state lives on the perContext seam keyed by GameContext identity; a bare
+  // object stands in as a distinct context key for these pure element-math checks.
+  const ctx = {} as unknown as GameContext;
   test("shock doubles against shields", () => {
-    expect(elementalDamageMult("shock", "flesh", true, "t", 0)).toBe(2);
+    expect(elementalDamageMult(ctx, "shock", "flesh", true, "t", 0)).toBe(2);
   });
   test("corrosive beats armor, incendiary beats flesh", () => {
-    expect(elementalDamageMult("corrosive", "armor", false, "t", 0)).toBe(1.5);
-    expect(elementalDamageMult("incendiary", "flesh", false, "t", 0)).toBe(1.5);
-    expect(elementalDamageMult("incendiary", "armor", false, "t", 0)).toBe(0.75);
+    expect(elementalDamageMult(ctx, "corrosive", "armor", false, "t", 0)).toBe(1.5);
+    expect(elementalDamageMult(ctx, "incendiary", "flesh", false, "t", 0)).toBe(1.5);
+    expect(elementalDamageMult(ctx, "incendiary", "armor", false, "t", 0)).toBe(0.75);
   });
   test("flux debuff amplifies non-flux damage via the generic received-modifier seam", () => {
+    const fluxCtx = {} as unknown as GameContext;
     const target = "flux-target";
-    expect(isFluxed(target, 0)).toBe(false);
-    expect(elementalDamageMult("incendiary", "flesh", false, target, 0)).toBe(1.5);
+    expect(isFluxed(fluxCtx, target, 0)).toBe(false);
+    expect(elementalDamageMult(fluxCtx, "incendiary", "flesh", false, target, 0)).toBe(1.5);
     const fluxGun = { element: "flux", elementChance: 1 } as unknown as GunDef;
-    applyElementalProc(() => 0, fluxGun, "src", target, 0);
-    expect(isFluxed(target, 0)).toBe(true);
+    applyElementalProc(fluxCtx, () => 0, fluxGun, "src", target, 0);
+    expect(isFluxed(fluxCtx, target, 0)).toBe(true);
     // incendiary/flesh (1.5) amplified x2 while fluxed; the flux channel itself is never amplified.
-    expect(elementalDamageMult("incendiary", "flesh", false, target, 0)).toBe(3);
-    expect(elementalDamageMult("flux", "flesh", false, target, 0)).toBe(1);
+    expect(elementalDamageMult(fluxCtx, "incendiary", "flesh", false, target, 0)).toBe(3);
+    expect(elementalDamageMult(fluxCtx, "flux", "flesh", false, target, 0)).toBe(1);
   });
 });
 

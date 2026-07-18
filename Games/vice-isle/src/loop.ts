@@ -13,7 +13,7 @@ import {
 } from "./game/commands";
 import { enemyById } from "./game/entities/enemies/catalog";
 import { lootTables } from "./game/entities/enemies/loot-tables";
-import { drivingStore, raceStore, resetHandroll, handroll } from "./game/handroll";
+import { drivingStore, raceStore, handrollOf } from "./game/handroll";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { advanceBustedHold, BUSTED_HOLD_SEC, BUSTED_RADIUS, bustedFine, clinicFee } from "./game/failStates";
 import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
@@ -108,7 +108,7 @@ function tickMissions(ctx: GameContext): void {
 
   const shake = quests.find((q) => q.questId === "m4_shake_the_heat" && q.status === "active");
   if (shake !== undefined) {
-    const wanted = handroll.wanted();
+    const wanted = handrollOf(ctx).wanted();
     if (wanted.peakStars >= 3 && wanted.stars === 0) {
       ctx.game.quest!.progress(ctx.player.userId, "m4_shake_the_heat", "lose_wanted", 1);
       ctx.game.quest!.turnIn(ctx.player.userId, "m4_shake_the_heat");
@@ -126,13 +126,13 @@ function tickMissions(ctx: GameContext): void {
 
   const delivery = quests.find((q) => q.questId === "m6_hot_wheels" && q.status === "active");
   if (delivery !== undefined) {
-    const drivingId = handroll.drivingVehicleId();
+    const drivingId = handrollOf(ctx).drivingVehicleId();
     const vehicle = drivingId !== null ? ctx.scene.entity.get(drivingId) : null;
     if (vehicle !== null && vehicle.name === "car_sport") {
       const dist = Math.hypot(vehicle.position[0] - GARAGE_POS[0], vehicle.position[2] - GARAGE_POS[2]);
       if (dist < 9) {
         ctx.game.quest!.progress(ctx.player.userId, "m6_hot_wheels", "deliver_cicada", 1);
-        handroll.exitVehicle(ctx);
+        handrollOf(ctx).exitVehicle(ctx);
         ctx.game.feed.push("vice.log", { text: "Cicada GT delivered." });
       }
     }
@@ -207,7 +207,7 @@ function tickMissionSpawns(ctx: GameContext, dt: number): void {
 }
 
 function tickPedPanic(ctx: GameContext, dt: number): void {
-  if (handroll.wanted().stars === 0) return;
+  if (handrollOf(ctx).wanted().stars === 0) return;
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return;
   for (const entity of ctx.scene.entity.list()) {
@@ -261,8 +261,8 @@ function tickRaceEconomy(ctx: GameContext): void {
 
 /** A cop on top of an on-foot wanted player for a sustained beat makes the arrest. */
 function tickBusted(ctx: GameContext, dt: number): void {
-  const stars = handroll.wanted().stars;
-  if (stars === 0 || handroll.drivingVehicleId() !== null) {
+  const stars = handrollOf(ctx).wanted().stars;
+  if (stars === 0 || handrollOf(ctx).drivingVehicleId() !== null) {
     bustedHold = 0;
     return;
   }
@@ -282,7 +282,7 @@ function tickBusted(ctx: GameContext, dt: number): void {
   if (fine > 0) ctx.game.economy.charge(ctx.player.userId, "cash", fine);
   const y = ctx.world.groundHeightAt(VCPD_POS[0], VCPD_POS[2]);
   ctx.scene.entity.setPose(ctx.player.userId, { position: [VCPD_POS[0], y, VCPD_POS[2]] });
-  handroll.clearWanted(ctx);
+  handrollOf(ctx).clearWanted(ctx);
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "BUSTED", kind: "warn" });
   ctx.game.feed.push("vice.log", { text: `Busted. VCPD released you for $${fine}.` });
 }
@@ -300,7 +300,7 @@ function restageAfterWasted(ctx: GameContext): void {
 function tickWasted(ctx: GameContext): void {
   const health = ctx.scene.entity.stats.get(ctx.player.userId, "health");
   if (health === null || health.current > 0) return;
-  handroll.exitVehicle(ctx);
+  handrollOf(ctx).exitVehicle(ctx);
   ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: health.max });
   ctx.scene.entity.stats.set(ctx.player.userId, "armor", { current: 0 });
   const home = safehouseStore.read(ctx) === true ? SAFEHOUSE_POS : PLAYER_SPAWN;
@@ -308,7 +308,7 @@ function tickWasted(ctx: GameContext): void {
   ctx.scene.entity.setPose(ctx.player.userId, { position: [home[0], y, home[2]] });
   const fee = clinicFee(ctx.game.economy.balance(ctx.player.userId, "cash"));
   if (fee > 0) ctx.game.economy.charge(ctx.player.userId, "cash", fee);
-  handroll.clearWanted(ctx);
+  handrollOf(ctx).clearWanted(ctx);
   restageAfterWasted(ctx);
   ctx.game.feed.push("vice.log", {
     text: fee > 0 ? `Wasted. The clinic took $${fee}.` : "Wasted. The clinic took pity.",
@@ -326,7 +326,7 @@ function normalizeAfterRestore(ctx: GameContext): void {
   garageStore.clear(ctx);
   raceStore.clear(ctx);
   drivingStore.clear(ctx);
-  handroll.clearWanted(ctx);
+  handrollOf(ctx).clearWanted(ctx);
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player !== null) {
     ctx.scene.entity.update(ctx.player.userId, { movement: { ...(player.movement ?? {}), frozen: false } });
@@ -343,7 +343,6 @@ async function resumeFromSave(ctx: GameContext): Promise<void> {
 }
 
 function onInit(ctx: GameContext): void {
-  resetHandroll();
   resetWeaponState();
   resetMissionState();
   ctx.item.use.register(itemUseHandlers);
@@ -369,12 +368,12 @@ function onInit(ctx: GameContext): void {
       ctx.game.economy.grant(ctx.player.userId, "cash", enemy.bounty);
     }
     if (dead.instanceId !== undefined) onBountyKilled(ctx, dead.instanceId);
-    if (catalogId.startsWith("ped_")) handroll.addHeat(ctx, 60);
-    if (catalogId.startsWith("cop_") && catalogId !== "car_cop") handroll.addHeat(ctx, 110);
+    if (catalogId.startsWith("ped_")) handrollOf(ctx).addHeat(ctx, 60);
+    if (catalogId.startsWith("cop_") && catalogId !== "car_cop") handrollOf(ctx).addHeat(ctx, 110);
     if (vehicleById(catalogId) !== undefined && dead.instanceId !== undefined) {
       const at = dead.at ?? ctx.scene.entity.get(dead.instanceId)?.position ?? [0, 0, 0];
-      handroll.explodeVehicle(ctx, dead.instanceId, at);
-      handroll.addHeat(ctx, 45);
+      handrollOf(ctx).explodeVehicle(ctx, dead.instanceId, at);
+      handrollOf(ctx).addHeat(ctx, 45);
     }
   });
 
@@ -397,7 +396,7 @@ function onNewPlayer(ctx: GameContext): void {
 }
 
 function onTick(ctx: GameContext, dt: number): void {
-  handroll.tick(ctx, dt);
+  handrollOf(ctx).tick(ctx, dt);
   tickGangers(ctx, dt);
   tickMissions(ctx);
   tickMissionSpawns(ctx, dt);

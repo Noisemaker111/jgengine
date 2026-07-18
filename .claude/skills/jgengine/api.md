@@ -70,34 +70,40 @@
 - `CommandResult` (type): type CommandResult<TState> = | { status: "applied"; state: TState } | { status: "rejected"; reason: string } | { status: "unknown-command" } — ⚠ undocumented
 - `createCommandRegistry` (function): function createCommandRegistry<TState>(): CommandRegistry<TState> — ⚠ undocumented
 
+## @jgengine/core/devtools/controls
+
+- `ControlRecord` (interface): interface ControlRecord — Internal mutable record backing a registered control: schema metadata, current value, and change listeners.
+- `ControlsModule` (interface): interface ControlsModule — Controls subsystem: the public controls facade plus internal register/write helpers and the record map.
+- `createControlsModule` (const): const createControlsModule: (deps: { signal: ChangeSignal; }) => ControlsModule — Create the controls subsystem that registers, validates, and mutates tunable controls, notifying on change.
+
 ## @jgengine/core/devtools/devtools
 
 - `AngleUnit` (type): type AngleUnit = "rad" | "deg" — ⚠ undocumented
 - `CONTROL_SCHEMA_VERSION` (const): const CONTROL_SCHEMA_VERSION: 1 — ⚠ undocumented
-- `Devtools` (interface): interface Devtools — ⚠ undocumented
-- `DevtoolsControl` (interface): interface DevtoolsControl — ⚠ undocumented
+- `Devtools` (interface): interface Devtools — Top-level devtools facade aggregating frame, profile, render, logs, latency, controls, discover, overrides, and probes.
+- `DevtoolsControl` (interface): interface DevtoolsControl — Registered tunable control with its resolved schema metadata and read/write/reset accessors.
 - `DevtoolsControlKind` (type): type DevtoolsControlKind = | "slider" | "toggle" | "color" | "select" | "text" | "vec2" | "vec3" | "vec4" | "interval" | "angle" | "enum" — ⚠ undocumented
-- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — ⚠ undocumented
-- `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — ⚠ undocumented
+- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, and formatted message.
+- `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — Severity level for a captured devtools log entry.
 - `DevtoolsOverrides` (interface): interface DevtoolsOverrides — ⚠ undocumented
-- `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — ⚠ undocumented
-- `DiscoveredEntry` (interface): interface DiscoveredEntry — ⚠ undocumented
+- `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields.
+- `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
 - `DiscoverySkip` (interface): interface DiscoverySkip — ⚠ undocumented
-- `FrameRecordSample` (interface): interface FrameRecordSample — ⚠ undocumented
-- `FrameStats` (interface): interface FrameStats — ⚠ undocumented
-- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — ⚠ undocumented
-- `LatencyStats` (interface): interface LatencyStats — ⚠ undocumented
-- `LongFrameEvent` (interface): interface LongFrameEvent — ⚠ undocumented
+- `FrameRecordSample` (interface): interface FrameRecordSample — Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations.
+- `FrameStats` (interface): interface FrameStats — Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown.
+- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget).
+- `LatencyStats` (interface): interface LatencyStats — Aggregated latency statistics (last/avg/min/max) over recorded latency samples.
+- `LongFrameEvent` (interface): interface LongFrameEvent — Recorded spike event for a frame that exceeded the long-frame threshold, with culprit attribution.
 - `NormalizedColor` (interface): interface NormalizedColor — ⚠ undocumented
 - `OVERRIDES_FORMAT_VERSION` (const): const OVERRIDES_FORMAT_VERSION: 1 — ⚠ undocumented
 - `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic — ⚠ undocumented
-- `OverrideApplyResult` (interface): interface OverrideApplyResult — ⚠ undocumented
-- `PhaseStats` (interface): interface PhaseStats — ⚠ undocumented
-- `RenderSample` (interface): interface RenderSample — ⚠ undocumented
+- `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.
+- `PhaseStats` (interface): interface PhaseStats — Timing summary for a single named profiling phase across the sampling window.
+- `RenderSample` (interface): interface RenderSample — Snapshot of renderer resource counts (draw calls, triangles, geometries, textures) for a frame.
 - `ScanFieldMeta` (interface): interface ScanFieldMeta extends TunableOptions — ⚠ undocumented
 - `ScanMeta` (type): type ScanMeta = Readonly<Record<string, ScanFieldMeta>> — ⚠ undocumented
-- `Tunable` (interface): interface Tunable<T> — ⚠ undocumented
-- `TunableAccessor` (interface): interface TunableAccessor — ⚠ undocumented
+- `Tunable` (interface): interface Tunable<T> — Typed handle to a registered control, exposing its live value and subscribe/set/reset operations.
+- `TunableAccessor` (interface): interface TunableAccessor — Get/set accessor pair plus initial value used to bind a discovered field to a control.
 - `TunableChoice` (interface): interface TunableChoice<T = unknown> — ⚠ undocumented
 - `TunableInterval` (type): type TunableInterval = { min: number; max: number } — ⚠ undocumented
 - `TunableOptions` (interface): interface TunableOptions<T = unknown> — ⚠ undocumented
@@ -106,11 +112,34 @@
 - `TunableVec4` (type): type TunableVec4 = [number, number, number, number] — ⚠ undocumented
 - `createDevtools` (function): function createDevtools(): Devtools — ⚠ undocumented
 - `devtools` (const): const devtools: Devtools — ⚠ undocumented
-- `formatLogMessage` (function): function formatLogMessage(args: readonly unknown[]): string — ⚠ undocumented
+- `formatLogMessage` (function): function formatLogMessage(args: readonly unknown[]): string — Format an array of console arguments into a single truncated log message string.
 - `instrumentLatency` (function): function instrumentLatency<T extends object>(target: T, methods: readonly (keyof T)[], record: (ms: number) => void = devtools.latency.record): T — ⚠ undocumented
 - `measureProfile` (function): function measureProfile<T>(name: string, fn: () => T): T — ⚠ undocumented
 - `snapshotDevtools` (function): function snapshotDevtools(): DevtoolsSnapshot — ⚠ undocumented
 - `tunable` (function): function tunable<T>(name: string, initial: T, options?: TunableOptions<T>): Tunable<T> — ⚠ undocumented
+
+## @jgengine/core/devtools/discover
+
+- `DiscoverModule` (interface): interface DiscoverModule — Discovery subsystem: the public discover and probes facades plus internal record map and helpers.
+- `DiscoveredRecord` (interface): interface DiscoveredRecord — Internal record for an auto-discovered field: identity, kind, initial value, source object, and get/set accessors.
+- `createDiscoverModule` (const): const createDiscoverModule: (deps: { signal: ChangeSignal; register: <T>(name: string, initial: T, options?: TunableOptions<T> | undefined) => Tunable<T>; controlRecords: Map<string, ControlRecord>; }) => DiscoverModule — Create the discovery subsystem that scans objects/tables for tunable fields and binds them as controls and probes.
+
+## @jgengine/core/devtools/frame
+
+- `FrameModule` (interface): interface FrameModule — Frame subsystem exposing the frame-timing, profiling, and render-sample facades.
+- `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget).
+- `createFrameModule` (const): const createFrameModule: (deps: { readProbes: () => Record<string, unknown>; }) => FrameModule — Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events.
+
+## @jgengine/core/devtools/logs
+
+- `LogsModule` (interface): interface LogsModule — Logs subsystem exposing the log-capture and latency-tracking facades.
+- `createLogsModule` (const): const createLogsModule: (deps: { signal: ChangeSignal; }) => LogsModule — Create the logs subsystem that buffers captured console output and records latency samples.
+- `formatLogMessage` (function): function formatLogMessage(args: readonly unknown[]): string — Format an array of console arguments into a single truncated log message string.
+
+## @jgengine/core/devtools/overrides
+
+- `OverridesModule` (interface): interface OverridesModule — Overrides subsystem exposing the export/apply facade for persisting and restoring control values.
+- `createOverridesModule` (const): const createOverridesModule: (deps: { signal: ChangeSignal; controlRecords: Map<string, ControlRecord>; writeControl: (record: ControlRecord, raw: unknown) => boolean; discoveredRecords: Map<string, DiscoveredRecord>; enableDiscovered: (id: string) => void; }) => OverridesModule — Create the overrides subsystem that serializes changed control values and re-applies a saved overrides payload.
 
 ## @jgengine/core/devtools/rewriteTunables
 
@@ -149,6 +178,24 @@
 - `TunableVec2` (type): type TunableVec2 = [number, number] — ⚠ undocumented
 - `TunableVec3` (type): type TunableVec3 = [number, number, number] — ⚠ undocumented
 - `TunableVec4` (type): type TunableVec4 = [number, number, number, number] — ⚠ undocumented
+
+## @jgengine/core/devtools/types
+
+- `Devtools` (interface): interface Devtools — Top-level devtools facade aggregating frame, profile, render, logs, latency, controls, discover, overrides, and probes.
+- `DevtoolsControl` (interface): interface DevtoolsControl — Registered tunable control with its resolved schema metadata and read/write/reset accessors.
+- `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, and formatted message.
+- `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — Severity level for a captured devtools log entry.
+- `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields.
+- `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
+- `FrameRecordSample` (interface): interface FrameRecordSample — Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations.
+- `FrameStats` (interface): interface FrameStats — Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown.
+- `LatencyStats` (interface): interface LatencyStats — Aggregated latency statistics (last/avg/min/max) over recorded latency samples.
+- `LongFrameEvent` (interface): interface LongFrameEvent — Recorded spike event for a frame that exceeded the long-frame threshold, with culprit attribution.
+- `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.
+- `PhaseStats` (interface): interface PhaseStats — Timing summary for a single named profiling phase across the sampling window.
+- `RenderSample` (interface): interface RenderSample — Snapshot of renderer resource counts (draw calls, triangles, geometries, textures) for a frame.
+- `Tunable` (interface): interface Tunable<T> — Typed handle to a registered control, exposing its live value and subscribe/set/reset operations.
+- `TunableAccessor` (interface): interface TunableAccessor — Get/set accessor pair plus initial value used to bind a discovered field to a control.
 
 ## @jgengine/core/meta/changelog
 

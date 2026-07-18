@@ -1,5 +1,6 @@
 import { aimToPoint } from "@jgengine/core/input/pointer";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { cameraShake } from "@jgengine/shell/camera";
 import { ffylPhase } from "../../handroll";
@@ -7,26 +8,18 @@ import { zoneLevelAt } from "../../world/zones";
 import { enemyById, levelDamageMult, type EnemyDef } from "./catalog";
 import { createBossAuraField, reconcileBossAuras, type BossSample } from "./hazardAura";
 
-const bossAuraField = createBossAuraField();
-
-const nextAttackAt = new Map<string, number>();
-const nextNovaAt = new Map<string, number>();
-const homes = new Map<string, EntityPosition>();
-const wanderTargets = new Map<string, { target: EntityPosition; untilMs: number }>();
+/** Per-session enemy AI bookkeeping — keyed by context so it is reclaimed with the world (#632). */
+const bossAuraFieldOf = perContext(() => createBossAuraField());
+const nextAttackAtOf = perContext(() => new Map<string, number>());
+const nextNovaAtOf = perContext(() => new Map<string, number>());
+const homesOf = perContext(() => new Map<string, EntityPosition>());
+const wanderTargetsOf = perContext(() => new Map<string, { target: EntityPosition; untilMs: number }>());
 
 export const FLYNT_NOVA = { intervalMs: 7000, windupMs: 1500, radius: 4.2, damage: 40 };
 export const LEASH_RADIUS = 46;
 
-export function resetAiState(): void {
-  nextAttackAt.clear();
-  nextNovaAt.clear();
-  homes.clear();
-  wanderTargets.clear();
-  bossAuraField.clear();
-}
-
-export function rememberHome(id: string, position: EntityPosition): void {
-  homes.set(id, [position[0], position[1], position[2]]);
+export function rememberHome(ctx: GameContext, id: string, position: EntityPosition): void {
+  homesOf(ctx).set(id, [position[0], position[1], position[2]]);
 }
 
 function idHash(id: string): number {
@@ -47,8 +40,8 @@ function distance2d(a: EntityPosition, b: EntityPosition): number {
 }
 
 function wander(ctx: GameContext, def: EnemyDef, id: string, position: EntityPosition, nowMs: number, dt: number): void {
-  const home = homes.get(id) ?? position;
-  let plan = wanderTargets.get(id);
+  const home = homesOf(ctx).get(id) ?? position;
+  let plan = wanderTargetsOf(ctx).get(id);
   if (plan === undefined || nowMs > plan.untilMs) {
     const hash = idHash(`${id}:${Math.floor(nowMs / 4000)}`);
     const angle = ((hash % 360) / 360) * Math.PI * 2;
@@ -57,7 +50,7 @@ function wander(ctx: GameContext, def: EnemyDef, id: string, position: EntityPos
       target: [home[0] + Math.cos(angle) * radius, home[1], home[2] + Math.sin(angle) * radius],
       untilMs: nowMs + 3500 + (Math.abs(hash) % 2500),
     };
-    wanderTargets.set(id, plan);
+    wanderTargetsOf(ctx).set(id, plan);
   }
   ctx.scene.entity.moveToward(id, plan.target, { speed: def.walkSpeed * 0.45, stopDistance: 0.6, dt });
 }
@@ -97,9 +90,9 @@ function tickMelee(
     ctx.scene.entity.moveToward(enemyId, target, { speed: def.walkSpeed, stopDistance: def.attack.reach * 0.6, dt });
     return;
   }
-  const readyAt = nextAttackAt.get(enemyId) ?? 0;
+  const readyAt = nextAttackAtOf(ctx).get(enemyId) ?? 0;
   if (nowMs < readyAt) return;
-  nextAttackAt.set(enemyId, nowMs + def.attack.intervalMs);
+  nextAttackAtOf(ctx).set(enemyId, nowMs + def.attack.intervalMs);
   ctx.game.playEntityAnimation(enemyId, "attack");
   const damage = Math.round(def.attack.damage * levelDamageMult(zoneLevelAt(enemyPos[0], enemyPos[2])));
   ctx.scene.entity.effect({ from: enemyId, to: playerId, effect: "damage", via: { amount: damage } });
@@ -122,9 +115,9 @@ function tickRanged(
     const target = steerTarget(ctx, enemyId, enemyPos, playerPos);
     ctx.scene.entity.moveToward(enemyId, target, { speed: def.walkSpeed, stopDistance: attack.preferRange * 0.8, dt });
   }
-  const readyAt = nextAttackAt.get(enemyId) ?? 0;
+  const readyAt = nextAttackAtOf(ctx).get(enemyId) ?? 0;
   if (nowMs < readyAt) return;
-  nextAttackAt.set(enemyId, nowMs + attack.intervalMs);
+  nextAttackAtOf(ctx).set(enemyId, nowMs + attack.intervalMs);
   ctx.game.playEntityAnimation(enemyId, "attack");
   const origin: EntityPosition = [enemyPos[0], enemyPos[1] + attack.eyeHeight, enemyPos[2]];
   const targetPoint: EntityPosition = [playerPos[0], playerPos[1] + 1.1, playerPos[2]];
@@ -146,13 +139,13 @@ function tickRanged(
 
 function tickRuskNova(ctx: GameContext, def: EnemyDef, enemyId: string, playerPos: EntityPosition, nowMs: number): void {
   if (def.family !== "boss") return;
-  const readyAt = nextNovaAt.get(enemyId);
+  const readyAt = nextNovaAtOf(ctx).get(enemyId);
   if (readyAt === undefined) {
-    nextNovaAt.set(enemyId, nowMs + FLYNT_NOVA.intervalMs * 0.6);
+    nextNovaAtOf(ctx).set(enemyId, nowMs + FLYNT_NOVA.intervalMs * 0.6);
     return;
   }
   if (nowMs < readyAt) return;
-  nextNovaAt.set(enemyId, nowMs + FLYNT_NOVA.intervalMs);
+  nextNovaAtOf(ctx).set(enemyId, nowMs + FLYNT_NOVA.intervalMs);
   ctx.scene.entity.telegraph({
     from: enemyId,
     shape: { kind: "circle", radius: FLYNT_NOVA.radius },
@@ -168,11 +161,11 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
   if (playerEntity === null) return;
   const playerPos = playerEntity.position;
   const nowMs = ctx.time.now() * 1000;
-  const playerDowned = ffylPhase() === "downed";
+  const playerDowned = ffylPhase(ctx) === "downed";
 
-  if (nextAttackAt.size > 512) {
-    for (const key of nextAttackAt.keys()) {
-      if (ctx.scene.entity.get(key) === null) nextAttackAt.delete(key);
+  if (nextAttackAtOf(ctx).size > 512) {
+    for (const key of nextAttackAtOf(ctx).keys()) {
+      if (ctx.scene.entity.get(key) === null) nextAttackAtOf(ctx).delete(key);
     }
   }
 
@@ -180,9 +173,9 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
   for (const entity of ctx.scene.entity.list()) {
     const def = enemyById(entity.name);
     if (def === undefined) continue;
-    const home = homes.get(entity.id);
-    if (home === undefined) rememberHome(entity.id, entity.position);
-    const anchor = homes.get(entity.id) ?? entity.position;
+    const home = homesOf(ctx).get(entity.id);
+    if (home === undefined) rememberHome(ctx, entity.id, entity.position);
+    const anchor = homesOf(ctx).get(entity.id) ?? entity.position;
     if (def.family === "boss") {
       bossSamples.push({ id: entity.id, position: entity.position, level: zoneLevelAt(entity.position[0], entity.position[2]) });
     }
@@ -218,7 +211,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
   // Continuous boss "overload" auras: source-following damage fields that follow each boss and shock
   // the player standing inside on a fixed cadence, cleaned up automatically when a boss dies.
   const auraTarget = playerDowned ? null : { id: playerId, position: playerPos };
-  for (const hit of reconcileBossAuras(bossAuraField, bossSamples, auraTarget, dt * 1000, levelDamageMult)) {
+  for (const hit of reconcileBossAuras(bossAuraFieldOf(ctx), bossSamples, auraTarget, dt * 1000, levelDamageMult)) {
     ctx.scene.entity.effect({ from: hit.bossId, to: playerId, effect: "damage", via: { amount: hit.amount } });
   }
 }

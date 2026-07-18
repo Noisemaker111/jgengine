@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { safehouseStore } from "./commands";
 import { vehicleById } from "./entities/vehicles/catalog";
-import { handroll } from "./handroll";
+import { handrollOf } from "./handroll";
 import { GARAGE_POS, GUNSHOP_POS, MARCO_POS, SAFEHOUSE_POS } from "./world/districts";
 
 const staticPrompts: readonly PositionedPrompt[] = [
@@ -60,8 +60,8 @@ function safehousePrompt(ctx: GameContext): PositionedPrompt {
 }
 
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
-  if (handroll.drivingVehicleId() !== null) {
-    if (handroll.raceActive()) return [];
+  if (handrollOf(ctx).drivingVehicleId() !== null) {
+    if (handrollOf(ctx).raceActive()) return [];
     return [racePrompt];
   }
   const player = ctx.scene.entity.get(ctx.player.userId);

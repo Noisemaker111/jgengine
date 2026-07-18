@@ -3,6 +3,7 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Color, Group, MeshStandardMaterial, Vector3, type Object3D } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/modelRender";
+import { useGameContext } from "@jgengine/react/provider";
 import { assets } from "../assets";
 import { equippedGun, gameNow, lastShot } from "../feel";
 import { gunById, magState, type GunDef, type GunFamily } from "../handroll";
@@ -131,6 +132,7 @@ export function FerralonWorldOverlay() {
 }
 
 export function FerralonViewmodel() {
+  const ctx = useGameContext();
   const camera = useThree((state) => state.camera);
   const rig = useRef<Group>(null);
   const flash = useRef<Group>(null);
@@ -155,7 +157,7 @@ export function FerralonViewmodel() {
 
     let reloadDip = 0;
     let reloadSpin = 0;
-    if (gun !== undefined && magState(gun).reloadingUntilMs > nowMs) {
+    if (gun !== undefined && magState(ctx, gun).reloadingUntilMs > nowMs) {
       reloadDip = 0.16;
       reloadSpin = Math.sin(state.clock.elapsedTime * 9) * 0.35;
     }
