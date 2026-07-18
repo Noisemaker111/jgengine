@@ -162,6 +162,13 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         id: String(args.id ?? ""),
         patch: (typeof args.patch === "object" && args.patch !== null ? args.patch : {}) as Record<string, unknown>,
       };
+    case "set_object_flags":
+      return {
+        method: "set_object_flags",
+        ids: Array.isArray(args.ids) ? args.ids.map(String) : [],
+        ...(typeof args.locked === "boolean" ? { locked: args.locked } : {}),
+        ...(typeof args.hidden === "boolean" ? { hidden: args.hidden } : {}),
+      };
     case "apply_preset":
       return {
         method: "apply_preset",

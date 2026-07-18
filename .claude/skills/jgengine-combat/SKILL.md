@@ -11,6 +11,11 @@ This skill owns combat resolution: target policy, combat stats, teams/factions a
 
 Search [capabilities.md](capabilities.md), then use [api.md](api.md) for signatures and [reference.md](reference.md) for complete pipelines.
 
+Existing projects keep their resource state and follow the
+[portable stat-pool recipe](recipes/portable-stat-pools.md). Adapt the caller's
+store through `StatPoolAccess`; do not require `StatValueMap`, `GameContext`, or
+a parallel entity store.
+
 ## Canonical pipeline
 
 1. Acquire eligible candidates from a bounded spatial source.
@@ -31,4 +36,3 @@ Compose stages through registration/policy seams; adding a damage type, effect, 
 - Reward generation and allocation are different operations, especially in multiplayer.
 - Compose multiple loot pools with `createLootPipeline` (ordered stages, gates, fallbacks, roll modifiers, per-drop provenance) over `lootTable`; keep genre concepts (world/dedicated/boss/luck/pity) in game-space stages and modifiers, never in core.
 - UI bars, reticles, and feedback route to `jgengine-ui`.
-

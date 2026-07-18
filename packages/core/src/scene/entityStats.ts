@@ -1,16 +1,17 @@
-import { clamp } from "../math/scalar";
+import {
+  changeStatPool,
+  createStatPool,
+  patchStatPool,
+  type StatPool,
+  type StatPoolAccess,
+  type StatPoolPatch,
+} from "../stats/statPool";
 
-export interface StatValue {
-  current: number;
-  max: number;
-  min: number;
-}
+/** Native entity-stat name retained as a compatibility bridge to the portable pool model. */
+export interface StatValue extends StatPool {}
 
-export interface StatValuePatch {
-  current?: number;
-  max?: number;
-  min?: number;
-}
+/** Native entity-stat patch retained as a compatibility bridge. */
+export interface StatValuePatch extends StatPoolPatch {}
 
 export type StatValueMap = Record<string, StatValue>;
 
@@ -28,10 +29,11 @@ export function getStatValue(map: StatValueMap, statId: string): StatValue | nul
 /** @internal */
 export function setStatValue(map: StatValueMap, statId: string, patch: StatValuePatch): StatValueMap {
   const existing = map[statId];
-  const max = patch.max ?? existing?.max ?? 0;
-  const min = patch.min ?? existing?.min ?? 0;
-  const current = clamp(patch.current ?? existing?.current ?? max, min, max);
-  return { ...map, [statId]: { current, max, min } };
+  const next =
+    existing === undefined
+      ? createStatPool({ max: patch.max ?? 0, min: patch.min, current: patch.current })
+      : patchStatPool(existing, patch);
+  return { ...map, [statId]: next };
 }
 
 /** @internal */
@@ -40,14 +42,14 @@ export function applyPoolDelta(map: StatValueMap, statId: string, amount: number
   if (existing === undefined) {
     return { status: "rejected", reason: `unknown stat "${statId}"` };
   }
-  const current = clamp(existing.current + amount, existing.min, existing.max);
-  const stat = { ...existing, current };
+  const change = changeStatPool(existing, amount);
+  const stat = change.pool;
   return {
     status: "ok",
     map: { ...map, [statId]: stat },
     stat,
-    hitMin: current === existing.min,
-    hitMax: current === existing.max,
+    hitMin: change.hitMin,
+    hitMax: change.hitMax,
   };
 }
 
@@ -55,9 +57,7 @@ export function applyPoolDelta(map: StatValueMap, statId: string, amount: number
 export function seedStatValues(catalogStats: StatCatalog): StatValueMap {
   const map: StatValueMap = {};
   for (const [statId, declaration] of Object.entries(catalogStats)) {
-    const min = declaration.min ?? 0;
-    const current = clamp(declaration.current ?? declaration.max, min, declaration.max);
-    map[statId] = { current, max: declaration.max, min };
+    map[statId] = createStatPool(declaration);
   }
   return map;
 }
@@ -92,7 +92,8 @@ export function hydrateEntityStats(
   }
 }
 
-export interface EntityStatsApi {
+/** Native entity-stat adapter over the portable {@link StatPoolAccess} contract. */
+export interface EntityStatsApi extends StatPoolAccess {
   get(instanceId: string, statId: string): StatValue | null;
   set(instanceId: string, statId: string, patch: StatValuePatch): boolean;
   delta(instanceId: string, statId: string, amount: number): null | { reason: string };

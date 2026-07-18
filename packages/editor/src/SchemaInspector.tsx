@@ -9,6 +9,15 @@ import {
   type WeightedParamEntry,
 } from "@jgengine/core/scene/sceneKinds";
 
+import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
+
+const INPUT = `px-2 py-1 ${INPUT_CLS}`;
+const MICRO = MICRO_LABEL;
+const BTN = `${CONTROL} px-2 py-1 text-[10px] disabled:opacity-40`;
+
+/** A patch to a single meta key, coalesced under a stable undo key. */
+export type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void;
+
 /** One-click archetype bundles: picking a preset writes its whole value bag as a single meta patch. */
 function PresetRow({ schema, onMeta }: { schema: ParamSchema; onMeta: MetaPatch }) {
   const presets = schema.presets ?? [];
@@ -36,13 +45,6 @@ function PresetRow({ schema, onMeta }: { schema: ParamSchema; onMeta: MetaPatch 
     </label>
   );
 }
-
-const INPUT =
-  "rounded-md border border-white/10 bg-black/40 px-2 py-1 outline-none transition-colors placeholder:text-neutral-600 focus:border-cyan-400/60 focus:bg-black/60";
-const MICRO = "text-[9px] font-semibold uppercase tracking-wider text-neutral-500";
-
-/** A patch to a single meta key, coalesced under a stable undo key. */
-export type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void;
 
 function labelOf(field: ParamField): string {
   return field.label ?? field.key;
@@ -124,7 +126,7 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
           <span className={MICRO}>{labelOf(field)}</span>
           <input
             type="color"
-            className="h-7 w-14 cursor-pointer rounded-md border border-white/10 bg-black/40"
+            className={`h-7 w-14 cursor-pointer rounded-[5px] border border-white/10 bg-black/40 ${FOCUS_RING}`}
             value={value}
             onChange={(event) => onMeta({ [field.key]: event.target.value }, coalesce)}
           />
@@ -150,7 +152,7 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
           </label>
           <button
             type="button"
-            className="shrink-0 rounded-md bg-white/[0.04] px-2 py-1 text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10"
+            className={BTN}
             title="Reroll seed"
             onClick={() => onMeta({ [field.key]: `r${Math.abs(Math.round((value.length + 1) * 2654435761)).toString(36).slice(0, 6)}${value.length}` }, coalesce)}
           >
@@ -169,12 +171,12 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
             <div key={index} className="flex items-center gap-1">
               <input className={`min-w-0 flex-1 ${INPUT}`} value={entry.item} placeholder={field.itemLabel ?? "id"} onChange={(event) => set(list.map((e, i) => (i === index ? { ...e, item: event.target.value } : e)))} />
               <input type="number" step={1} min={0} className={`w-14 ${INPUT}`} value={entry.weight} onChange={(event) => set(list.map((e, i) => (i === index ? { ...e, weight: Math.max(0, Number(event.target.value)) } : e)))} />
-              <button type="button" className="rounded-md bg-white/[0.04] px-1.5 py-1 text-neutral-400 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-rose-500/20 hover:text-rose-200" disabled={list.length <= 1} onClick={() => set(list.filter((_, i) => i !== index))}>
+              <button type="button" className={`${CONTROL} px-1.5 py-1 text-neutral-400 hover:bg-rose-500/20 hover:text-rose-200 disabled:opacity-40`} disabled={list.length <= 1} onClick={() => set(list.filter((_, i) => i !== index))}>
                 ×
               </button>
             </div>
           ))}
-          <button type="button" className="w-full rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-neutral-300 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={() => set([...list, { item: "", weight: 1 }])}>
+          <button type="button" className={`w-full ${BTN}`} onClick={() => set([...list, { item: "", weight: 1 }])}>
             + row
           </button>
         </div>
@@ -195,7 +197,7 @@ function ActionButton({ field, schema, onMeta }: { field: Extract<ParamField, { 
   return (
     <button
       type="button"
-      className="w-full rounded-md bg-white/[0.06] px-2 py-1 text-[10px] font-medium text-neutral-200 ring-1 ring-inset ring-white/[0.08] transition-colors hover:bg-white/12"
+      className={`w-full ${BTN} font-medium`}
       onClick={run}
     >
       {field.action === "randomize" ? "🎲 " : "↺ "}
@@ -224,7 +226,7 @@ function GroupSection({
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   return (
-    <div className="rounded-md border border-white/[0.06]">
+    <div className={`rounded-[6px] border ${BORDER}`}>
       <button
         type="button"
         className="flex w-full items-center gap-1 px-2 py-1 text-left text-[9px] font-semibold uppercase tracking-[0.12em] text-neutral-300 transition-colors hover:bg-white/[0.04]"

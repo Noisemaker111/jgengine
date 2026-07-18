@@ -1,10 +1,14 @@
 /**
  * `city` studio: a procedural district authored as a box volume — drop a volume and sliders tune
  * the whole synthesis, from a rigid Manhattan grid (`gridness` 1, `curviness` 0) to winding
- * hillside estates or a two-road crossroads farm town. Streets are perturbed grid polylines with a
- * visible hierarchy (boulevards with medians, avenues, streets, lanes — optionally gravel), cross
- * intersections and cul-de-sac bulbs are first-class data, and water gaps become styled bridge
- * decks. Generation is BLOCK-FIRST (`cityBlocks`): the street graph's planar faces become closed
+ * hillside estates, a two-road crossroads farm town, or — at the loopiness-high / branching-and-
+ * connectivity-low corner — a closed RACE CIRCUIT. Streets come from the unified seed-driven
+ * {@link buildPathNetwork} engine (city and track are the same generator at opposite slider
+ * extremes), carry a visible hierarchy (boulevards with medians, avenues, streets, lanes —
+ * optionally gravel), and connect or deliberately dead-end into cul-de-sac bulbs; water gaps become
+ * styled bridge decks and ridges become tunnel bores, both path features on continuous streets so a
+ * lap stays closed. The block/parcel/building FABRIC is optional (`fabric` off = bare roads or a
+ * plot-free track). Generation is BLOCK-FIRST (`cityBlocks`): the street graph's planar faces become closed
  * block polygons (a curved street bounds a curved block), each inset to curb and land rings with
  * the sidewalk band between them, then classified and subdivided into polygonal frontage PARCELS
  * whose buildable polygons (after setbacks) place every building. Inside the district a ZONE
@@ -50,6 +54,14 @@ import { furnitureSpots } from "./streets";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { RoadPoint } from "./roads";
 import {
+  buildPathNetwork,
+  pathNetworkMode,
+  type PathFeatureKind,
+  type PathLevel,
+  type PathNetworkRules,
+  type PathStreet,
+} from "./pathNetwork";
+import {
   buildablePolygon,
   carveCorridors,
   conformPolygonToRing,
@@ -87,6 +99,23 @@ export interface CityRules {
   curviness: number;
   /** Density of branch lanes forking off the main streets, 0..1. */
   branching: number;
+  /** How loopy the network is: 0 = a tree that dead-ends; 1 collapses to one closed circuit (a race
+   * track). High loopiness with branching/connectivity near zero is the "race circuit" corner. */
+  loopiness: number;
+  /** Extra chord edges knitting neighbors together — mesh density. 1 = a dense connected grid. */
+  connectivity: number;
+  /** Fraction of dangling ends kept as cul-de-sacs (vs reconnected into loops), 0..1. */
+  deadEnds: number;
+  /** Minimum curve radius (m): caps street wander curvature and corner tightness. */
+  minCurveRadius: number;
+  /** Shallowest corner (degrees) a street keeps — gentler bends straighten out. */
+  minTurnAngle: number;
+  /** Sharpest corner (degrees) a street may take — tighter ones are beveled away. */
+  maxTurnAngle: number;
+  /** Lay parcels + buildings against the streets (city fabric). Off = bare roads/track, no plots. */
+  fabric: boolean;
+  /** Streets bore through ridges on tunnel decks instead of climbing over them. */
+  tunnels: boolean;
   /** Target block size (street spacing) in meters. */
   blockSize: number;
   /** Cross-axis spacing multiplier — 2+ gives long skinny Manhattan blocks with avenue/street rhythm. */
@@ -169,6 +198,14 @@ export const CITY_DEFAULTS: CityRules = {
   gridness: 0.85,
   curviness: 0.15,
   branching: 0.4,
+  loopiness: 0,
+  connectivity: 0.88,
+  deadEnds: 0.35,
+  minCurveRadius: 24,
+  minTurnAngle: 0,
+  maxTurnAngle: 150,
+  fabric: true,
+  tunnels: true,
   blockSize: 48,
   blockAspect: 1,
   openSpace: 0.12,
@@ -235,6 +272,12 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "gridness", label: "grid-ness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.gridness },
     { type: "range", key: "curviness", label: "curviness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.curviness },
     { type: "range", key: "branching", label: "branching", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.branching },
+    { type: "range", key: "loopiness", label: "loopiness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.loopiness },
+    { type: "range", key: "connectivity", label: "connectivity", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.connectivity },
+    { type: "range", key: "deadEnds", label: "dead ends", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.deadEnds },
+    { type: "range", key: "minCurveRadius", label: "min curve radius", group: "layout", min: 6, max: 120, step: 1, default: CITY_DEFAULTS.minCurveRadius, unit: "m" },
+    { type: "range", key: "minTurnAngle", label: "min turn angle", group: "layout", min: 0, max: 60, step: 1, default: CITY_DEFAULTS.minTurnAngle, unit: "°" },
+    { type: "range", key: "maxTurnAngle", label: "max turn angle", group: "layout", min: 30, max: 180, step: 1, default: CITY_DEFAULTS.maxTurnAngle, unit: "°" },
     { type: "range", key: "blockSize", label: "block size", group: "layout", min: 20, max: 140, step: 1, default: CITY_DEFAULTS.blockSize, unit: "m" },
     { type: "range", key: "blockAspect", label: "block aspect", group: "layout", min: 1, max: 3, step: 0.05, default: CITY_DEFAULTS.blockAspect },
     { type: "range", key: "openSpace", label: "open space", group: "layout", min: 0, max: 0.9, step: 0.01, default: CITY_DEFAULTS.openSpace },
@@ -249,7 +292,9 @@ export const CITY_SCHEMA: ParamSchema = {
       default: CITY_DEFAULTS.surface,
       options: [{ value: "auto" }, { value: "gravel" }],
     },
+    { type: "bool", key: "fabric", label: "buildings & parcels", group: "layout", default: CITY_DEFAULTS.fabric },
     { type: "bool", key: "bridges", label: "bridges over water", group: "layout", default: CITY_DEFAULTS.bridges },
+    { type: "bool", key: "tunnels", label: "tunnels through ridges", group: "layout", default: CITY_DEFAULTS.tunnels },
     {
       type: "select",
       key: "bridgeStyle",
@@ -508,6 +553,72 @@ export const CITY_SCHEMA: ParamSchema = {
       },
     },
     {
+      id: "circuit",
+      label: "Race circuit",
+      values: {
+        gridness: 0.4,
+        curviness: 0.55,
+        branching: 0.15,
+        loopiness: 1,
+        connectivity: 0.05,
+        deadEnds: 0,
+        minCurveRadius: 34,
+        minTurnAngle: 0,
+        maxTurnAngle: 95,
+        blockSize: 95,
+        blockAspect: 1,
+        openSpace: 0,
+        streetWidth: 12,
+        boulevards: 0,
+        gravelLanes: false,
+        surface: "auto",
+        fabric: false,
+        bridges: true,
+        tunnels: true,
+        sidewalks: false,
+        treeDensity: 0.2,
+        lightDensity: 0.25,
+        hedges: false,
+        driveways: false,
+        parking: false,
+        fields: false,
+        style: "generic",
+      },
+    },
+    {
+      id: "rally",
+      label: "Rally stage",
+      values: {
+        gridness: 0.1,
+        curviness: 0.95,
+        branching: 0.2,
+        loopiness: 0.15,
+        connectivity: 0.12,
+        deadEnds: 0.3,
+        minCurveRadius: 12,
+        minTurnAngle: 0,
+        maxTurnAngle: 150,
+        blockSize: 72,
+        blockAspect: 1,
+        openSpace: 0,
+        streetWidth: 6,
+        boulevards: 0,
+        gravelLanes: true,
+        surface: "gravel",
+        fabric: false,
+        bridges: true,
+        tunnels: true,
+        sidewalks: false,
+        treeDensity: 0.65,
+        lightDensity: 0.05,
+        hedges: false,
+        driveways: false,
+        parking: false,
+        fields: false,
+        style: "village",
+      },
+    },
+    {
       id: "metropolis",
       label: "Zoned metropolis",
       values: {
@@ -564,6 +675,14 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     gridness: params["gridness"] as number,
     curviness: params["curviness"] as number,
     branching: params["branching"] as number,
+    loopiness: params["loopiness"] as number,
+    connectivity: params["connectivity"] as number,
+    deadEnds: params["deadEnds"] as number,
+    minCurveRadius: params["minCurveRadius"] as number,
+    minTurnAngle: params["minTurnAngle"] as number,
+    maxTurnAngle: params["maxTurnAngle"] as number,
+    fabric: params["fabric"] as boolean,
+    tunnels: params["tunnels"] as boolean,
     blockSize: params["blockSize"] as number,
     blockAspect: params["blockAspect"] as number,
     openSpace: params["openSpace"] as number,
@@ -615,6 +734,8 @@ export interface CityStreet {
   sidewalk: boolean;
   /** Cul-de-sac turning bulb at a dangling end, when the lane never reconnected. */
   bulb?: RoadPoint;
+  /** Bridge/tunnel spans along this street as `[from, to]` index windows into `points`. */
+  features?: readonly { kind: PathFeatureKind; from: number; to: number; bankHeight: number }[];
 }
 
 /** One crossing of two through streets: patch center/radius plus crosswalk arm directions. */
@@ -695,6 +816,17 @@ export interface CityBridge {
   points: readonly RoadPoint[];
   width: number;
   style: CityRules["bridgeStyle"];
+  /** Ground height at the banks — the deck reference the renderer drapes to. */
+  bankHeight: number;
+}
+
+/** One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height. */
+export interface CityTunnel {
+  id: string;
+  points: readonly RoadPoint[];
+  width: number;
+  /** Ground height at the portals — the road floor stays flat at this height through the ridge. */
+  bankHeight: number;
 }
 
 /** One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver. */
@@ -760,6 +892,8 @@ export interface ResolvedCity {
   streets: readonly CityStreet[];
   intersections: readonly CityIntersection[];
   bridges: readonly CityBridge[];
+  /** Tunnel bores piercing ridges — path features on continuous streets. */
+  tunnels: readonly CityTunnel[];
   /** Closed road-derived block polygons — the land the street network encloses. */
   blocks: readonly CityBlock[];
   /** Polygonal parcels subdivided from block frontage. */
@@ -779,7 +913,6 @@ export interface CityResolveContext extends SceneKindResolveContext {
 }
 
 /** Bounded-work caps so a huge volume can never generate unbounded content. */
-const MAX_LINES_PER_AXIS = 40;
 const MAX_STREETS = 320;
 const MAX_LOTS = 2600;
 const MAX_INTERSECTIONS = 600;
@@ -790,13 +923,13 @@ const MAX_PARKING = 380;
 const TAU = Math.PI * 2;
 
 interface LocalStreet {
-  axis: "x" | "z";
   points: [number, number][];
   width: number;
   level: CityStreet["level"];
   surface: CityStreet["surface"];
   sidewalk: boolean;
   bulb?: [number, number];
+  features?: readonly { kind: PathFeatureKind; from: number; to: number; bankHeight: number }[];
 }
 
 function axisValue(value: unknown): number | undefined {
@@ -812,31 +945,7 @@ function makeWander(rng: () => number, amplitude: number, wavelength: number): (
   return (t) => amplitude * (Math.sin(t * f1 + p1) * 0.65 + Math.sin(t * f2 + p2) * 0.35);
 }
 
-/** Irregularly-spaced line coordinates across `[-half, half]` — regular when gridness is 1. */
-function lineCoords(rng: () => number, half: number, spacing: number, gridness: number): number[] {
-  const coords: number[] = [];
-  const jitter = (1 - gridness) * 0.7;
-  let pos = -half + spacing * (0.5 + (rng() - 0.5) * jitter);
-  while (pos < half - spacing * 0.35 && coords.length < MAX_LINES_PER_AXIS) {
-    coords.push(pos);
-    pos += spacing * (1 + (rng() - 0.5) * jitter);
-  }
-  return coords;
-}
 
-/** Nearest value in `coords` to `target`, or `fallback` when the list is empty. */
-function snapToCoord(coords: readonly number[], target: number, fallback: number): number {
-  let best = fallback;
-  let bestDist = Infinity;
-  for (const c of coords) {
-    const d = Math.abs(c - target);
-    if (d < bestDist) {
-      bestDist = d;
-      best = c;
-    }
-  }
-  return best;
-}
 
 /**
  * Spatial hash of dense street centerline samples (with per-sample clearance radius). Serves both
@@ -1001,267 +1110,6 @@ class LotIndex {
 
 const LEVEL_RANK: Record<CityStreet["level"], number> = { boulevard: 3, avenue: 2, street: 1, lane: 0 };
 
-function buildMainStreets(
-  rules: CityRules,
-  streams: (stream: string) => () => number,
-  hx: number,
-  hz: number,
-): { streets: LocalStreet[]; xs: number[]; zs: number[] } {
-  const layoutRng = streams("layout");
-  const levelRng = streams("levels");
-  // Cross-axis rhythm: `blockAspect` stretches the x-line spacing so blocks go long and skinny —
-  // the widely-spaced lines become avenues, the tight cross streets stay narrow (Manhattan).
-  const xs = lineCoords(layoutRng, hx, rules.blockSize * rules.blockAspect, rules.gridness);
-  const zs = lineCoords(layoutRng, hz, rules.blockSize, rules.gridness);
-  const streets: LocalStreet[] = [];
-  const aspected = rules.blockAspect >= 1.6;
-  // Structural curvature: intersection approaches stay straight (wander is damped to zero near
-  // every cross-street coordinate), and a per-hierarchy minimum curve radius caps the wander
-  // amplitude — collectors take long gentle curves, locals shorter ones, and nobody S-wiggles.
-  const MIN_RADIUS: Record<CityStreet["level"], number> = { boulevard: 90, avenue: 70, street: 45, lane: 26 };
-  const approachDamp = (t: number, crossCoords: readonly number[], approach: number): number => {
-    let nearest = Infinity;
-    for (const c of crossCoords) {
-      const d = Math.abs(t - c);
-      if (d < nearest) nearest = d;
-    }
-    if (nearest >= approach) return 1;
-    const u = nearest / approach;
-    return u * u * (3 - 2 * u);
-  };
-  const build = (axis: "x" | "z", bases: number[], crossCoords: number[], runHalf: number) => {
-    for (let i = 0; i < bases.length; i += 1) {
-      const rng = streams(`street:${axis}:${i}`);
-      const base = bases[i]!;
-      // Organic nets drop some through-streets down to partial spans — snapped to cross-street
-      // coordinates so the street terminates AT an intersection instead of dangling mid-block.
-      let start = -runHalf;
-      let end = runHalf;
-      if (rng() < (1 - rules.gridness) * 0.4 && crossCoords.length >= 2) {
-        const span = Math.max(rules.blockSize * 2, runHalf * (0.4 + rng() * 0.5));
-        const rawStart = -runHalf + rng() * Math.max(0, runHalf * 2 - span);
-        start = snapToCoord(crossCoords, rawStart, -runHalf);
-        end = snapToCoord(crossCoords, rawStart + span, runHalf);
-        if (end - start < rules.blockSize * 1.5) {
-          start = -runHalf;
-          end = runHalf;
-        }
-      }
-      // Hierarchy first (it shapes the curvature): on an aspected grid every widely-spaced line
-      // is an avenue and every 8th cross street is a crosstown avenue; on square grids every 4th
-      // line of a big-enough net. A share of avenues (`boulevards`) upgrades to a boulevard.
-      let level: CityStreet["level"] = "street";
-      if (aspected) level = axis === "x" ? "avenue" : i % 8 === 4 ? "avenue" : "street";
-      else if (bases.length >= 5 && i % 4 === 0) level = "avenue";
-      if (level === "avenue" && levelRng() < rules.boulevards) level = "boulevard";
-      const width = level === "boulevard" ? rules.streetWidth * 2.2 : level === "avenue" ? rules.streetWidth * 1.5 : rules.streetWidth;
-      // Straightness: wander amplitude from curviness, whole-street tilt from lost gridness.
-      // Collectors (avenue+) take LONGER wavelengths than locals, and the amplitude is capped so
-      // the tightest bend of the sinusoid never dips under the hierarchy's minimum curve radius
-      // (max curvature of A·sin(2πt/λ) is A·(2π/λ)²).
-      const wavelength = rules.blockSize * (LEVEL_RANK[level] >= LEVEL_RANK.avenue ? 4.6 + rng() * 1.8 : 3.4 + rng() * 1.4);
-      // 0.3 covers the wander's octave mix and wavelength jitter (both raise peak curvature).
-      const radiusCap = (0.3 * wavelength * wavelength) / (4 * Math.PI * Math.PI * MIN_RADIUS[level]);
-      const amplitude = Math.min(rules.curviness * rules.blockSize * 0.42, radiusCap);
-      const wander = makeWander(rng, amplitude, wavelength);
-      const drift = Math.tan((1 - rules.gridness) * (rng() - 0.5) * 0.5);
-      const clampHalf = axis === "x" ? hx : hz;
-      const step = Math.min(Math.max(rules.blockSize / 3, 6), 18);
-      const approach = Math.max(rules.streetWidth * 2.4, 13);
-      const points: [number, number][] = [];
-      const sample = (t: number) => {
-        const offset = wander(t) * approachDamp(t, crossCoords, approach) + drift * t;
-        const cross = Math.max(-clampHalf + 1, Math.min(clampHalf - 1, base + offset));
-        points.push(axis === "x" ? [cross, t] : [t, cross]);
-      };
-      for (let t = start; t < end; t += step) sample(t);
-      sample(end);
-      const surface: CityStreet["surface"] = rules.surface === "gravel" ? "gravel" : "asphalt";
-      streets.push({ axis, points, width, level, surface, sidewalk: rules.sidewalks && surface === "asphalt" });
-    }
-  };
-  build("x", xs, zs, hz);
-  build("z", zs, xs, hx);
-  return { streets, xs, zs };
-}
-
-/**
- * Branch lanes grow from a main street until they CONNECT to another street (or run out of room).
- * A dangling lane that earned its length survives as a cul-de-sac with a turning bulb at the end.
- */
-function buildBranches(
-  rules: CityRules,
-  streams: (stream: string) => () => number,
-  mains: LocalStreet[],
-  index: StreetIndex,
-  hx: number,
-  hz: number,
-): LocalStreet[] {
-  if (mains.length === 0) return [];
-  const count = Math.min(Math.round(rules.branching * mains.length * 1.6), MAX_STREETS - mains.length);
-  const branches: LocalStreet[] = [];
-  for (let i = 0; i < count; i += 1) {
-    const rng = streams(`branch:${i}`);
-    const hostIndex = Math.floor(rng() * mains.length);
-    const host = mains[hostIndex]!;
-    if (host.points.length < 2) continue;
-    const at = host.points[Math.floor(rng() * host.points.length)]!;
-    const direction = rng() < 0.5 ? 1 : -1;
-    const maxLength = rules.blockSize * (1.2 + rng() * 2);
-    // Lanes wander least: short branches read as straight stubs with at most one gentle bend.
-    const laneWavelength = rules.blockSize * 2.8;
-    const laneCap = (0.3 * laneWavelength * laneWavelength) / (4 * Math.PI * Math.PI * 26);
-    const wander = makeWander(rng, Math.min(rules.curviness * rules.blockSize * 0.3, laneCap), laneWavelength);
-    const step = Math.min(Math.max(rules.blockSize / 4, 4), 12);
-    const points: [number, number][] = [];
-    let connected = false;
-    for (let t = 0; t <= maxLength; t += step) {
-      const along = at[host.axis === "x" ? 0 : 1] + direction * t;
-      const cross = at[host.axis === "x" ? 1 : 0] + wander(t);
-      const point: [number, number] = host.axis === "x" ? [along, cross] : [cross, along];
-      if (Math.abs(point[0]) > hx - 1 || Math.abs(point[1]) > hz - 1) break;
-      points.push(point);
-      // Past the leaving-home stretch, stop the moment we touch another street — a T junction.
-      if (t > rules.blockSize * 0.5 && index.clearance(point[0], point[1], 0, hostIndex) < rules.streetWidth * 0.5) {
-        connected = true;
-        break;
-      }
-    }
-    // A lane that never reached anything and is shorter than half a block is a driveway — drop it.
-    if (points.length < 2 || (!connected && points.length * step < rules.blockSize * 0.6)) continue;
-    const lane: LocalStreet = {
-      axis: host.axis === "x" ? "z" : "x",
-      points,
-      width: rules.streetWidth * 0.65,
-      level: "lane",
-      surface: rules.surface === "gravel" || rules.gravelLanes ? "gravel" : "asphalt",
-      sidewalk: rules.sidewalks && rules.surface !== "gravel" && !rules.gravelLanes,
-    };
-    if (!connected) lane.bulb = points[points.length - 1]!;
-    branches.push(lane);
-  }
-  return branches;
-}
-
-/**
- * Junctions between through streets of opposite axes, found via a shared-cell spatial hash instead
- * of quadratic polyline sweeps. Nearby crossings merge into ONE junction (a boulevard met by two
- * offset streets is one plaza, not three patches), and every emitted arm is REAL: a street that
- * ENDS at the junction (partial streets snap their spans to cross-street coordinates by design)
- * contributes one arm, a through street two — so T junctions get three crosswalks, never a
- * phantom fourth painted across a road that isn't there.
- */
-function findIntersections(
-  streets: LocalStreet[],
-): { x: number; z: number; radius: number; level: CityStreet["level"]; arms: { angle: number; width: number }[] }[] {
-  interface Sample {
-    x: number;
-    z: number;
-    street: number;
-    tangent: readonly [number, number];
-  }
-  const cell = 6;
-  const cells = new Map<string, Sample[]>();
-  for (let s = 0; s < streets.length; s += 1) {
-    const street = streets[s]!;
-    if (street.level === "lane") continue;
-    for (let i = 0; i + 1 < street.points.length; i += 1) {
-      const [ax, az] = street.points[i]!;
-      const [bx, bz] = street.points[i + 1]!;
-      const len = Math.hypot(bx - ax, bz - az) || 1;
-      const tangent: readonly [number, number] = [(bx - ax) / len, (bz - az) / len];
-      const steps = Math.max(1, Math.ceil(len / 2.5));
-      for (let k = 0; k <= steps; k += 1) {
-        const t = k / steps;
-        const x = ax + (bx - ax) * t;
-        const z = az + (bz - az) * t;
-        const key = `${Math.floor(x / cell)}:${Math.floor(z / cell)}`;
-        const bucket = cells.get(key);
-        const sample: Sample = { x, z, street: s, tangent };
-        if (bucket === undefined) cells.set(key, [sample]);
-        else bucket.push(sample);
-      }
-    }
-  }
-  // Track the closest sample pair per street pair; a pair whose min distance is under the summed
-  // half-widths is a real crossing.
-  const best = new Map<string, { d: number; a: Sample; b: Sample }>();
-  for (const bucket of cells.values()) {
-    for (let i = 0; i < bucket.length; i += 1) {
-      for (let j = i + 1; j < bucket.length; j += 1) {
-        const a = bucket[i]!;
-        const b = bucket[j]!;
-        if (a.street === b.street) continue;
-        if (streets[a.street]!.axis === streets[b.street]!.axis) continue;
-        const d = Math.hypot(a.x - b.x, a.z - b.z);
-        const key = a.street < b.street ? `${a.street}:${b.street}` : `${b.street}:${a.street}`;
-        const prev = best.get(key);
-        if (prev === undefined || d < prev.d) best.set(key, { d, a, b });
-      }
-    }
-  }
-  // Cluster crossings that share ground into one junction, unioning their member streets.
-  interface Cluster {
-    x: number;
-    z: number;
-    count: number;
-    members: Map<number, { tangent: readonly [number, number] }>;
-  }
-  const clusters = new Map<string, Cluster>();
-  for (const { d, a, b } of best.values()) {
-    const sa = streets[a.street]!;
-    const sb = streets[b.street]!;
-    if (d > (sa.width + sb.width) / 2) continue;
-    const x = (a.x + b.x) / 2;
-    const z = (a.z + b.z) / 2;
-    const key = `${Math.round(x / 7)}:${Math.round(z / 7)}`;
-    let cluster = clusters.get(key);
-    if (cluster === undefined) {
-      cluster = { x: 0, z: 0, count: 0, members: new Map() };
-      clusters.set(key, cluster);
-    }
-    cluster.x += x;
-    cluster.z += z;
-    cluster.count += 1;
-    if (!cluster.members.has(a.street)) cluster.members.set(a.street, { tangent: a.tangent });
-    if (!cluster.members.has(b.street)) cluster.members.set(b.street, { tangent: b.tangent });
-  }
-  const out: { x: number; z: number; radius: number; level: CityStreet["level"]; arms: { angle: number; width: number }[] }[] = [];
-  for (const cluster of clusters.values()) {
-    if (out.length >= MAX_INTERSECTIONS) break;
-    const x = cluster.x / cluster.count;
-    const z = cluster.z / cluster.count;
-    let radius = 0;
-    let level: CityStreet["level"] = "street";
-    const arms: { angle: number; width: number }[] = [];
-    for (const [index, member] of cluster.members) {
-      const street = streets[index]!;
-      // Just big enough to cover the ribbons' overlap (plus rounded curb corners) — an oversized
-      // patch reads as a black blob at every crossing from the air.
-      radius = Math.max(radius, street.width / 2 + 0.8);
-      if (LEVEL_RANK[street.level] > LEVEL_RANK[level]) level = street.level;
-      // Which directions does this street actually LEAVE the junction in? Project its nearby
-      // polyline onto the local tangent: an arm exists only where pavement extends past the patch.
-      const [tx, tz] = member.tangent;
-      let minProj = 0;
-      let maxProj = 0;
-      for (const [px, pz] of street.points) {
-        const dx = px - x;
-        const dz = pz - z;
-        if (dx * dx + dz * dz > 45 * 45) continue;
-        const proj = dx * tx + dz * tz;
-        if (proj < minProj) minProj = proj;
-        if (proj > maxProj) maxProj = proj;
-      }
-      const reach = street.width / 2 + 3;
-      if (maxProj > reach) arms.push({ angle: Math.atan2(tx, tz), width: street.width });
-      if (-minProj > reach) arms.push({ angle: Math.atan2(-tx, -tz), width: street.width });
-    }
-    if (arms.length < 2) continue;
-    out.push({ x, z, radius, level, arms });
-  }
-  return out;
-}
 
 interface LocalPark {
   id: string;
@@ -1718,6 +1566,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     streets: [],
     intersections: [],
     bridges: [],
+    tunnels: [],
     blocks: [],
     parcels: [],
     lots: [],
@@ -1779,66 +1628,68 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
         };
 
   const streams = seededStreams(`city:${rules.seed.length > 0 ? rules.seed : object.id}`);
-  const built = buildMainStreets(rules, streams, hx, hz);
-  const bridgeRng = streams("bridges");
-  // Streets stop at the water's edge instead of running on under a lake/canyon river: split each
-  // polyline into the runs whose ground stays above the district's minimum elevation. A short
-  // underwater run bounded by land on both sides becomes a BRIDGE deck (bank point to bank point)
-  // when the district allows them — lanes never bridge, and spans longer than a few blocks clip.
-  const localBridges: { points: [number, number][]; width: number }[] = [];
-  const maxBridgeSpan = rules.blockSize * 2.5;
-  const clipToLand = (streets: LocalStreet[]): LocalStreet[] => {
-    if (heightAt === null) return streets;
-    const out: LocalStreet[] = [];
-    for (const street of streets) {
-      let run: [number, number][] = [];
-      let wet: [number, number][] = [];
-      const flushLand = () => {
-        if (run.length >= 2) out.push({ ...street, points: run });
-      };
-      for (const point of street.points) {
-        if (heightAt(point[0], point[1]) >= rules.minElevation) {
-          if (wet.length > 0) {
-            // Land after water: bridge it when short enough and there was land before.
-            const bank = run.length > 0 ? run[run.length - 1]! : null;
-            let span = 0;
-            const deck: [number, number][] = bank === null ? [...wet] : [bank, ...wet];
-            deck.push(point);
-            for (let i = 1; i < deck.length; i += 1) span += Math.hypot(deck[i]![0] - deck[i - 1]![0], deck[i]![1] - deck[i - 1]![1]);
-            // Hierarchy decides who crosses: boulevards/avenues always bridge, plain streets roll
-            // for it (a river should be crossed every few blocks, not at every single street), and
-            // lanes never do. The roll is drawn per candidate in deterministic order.
-            const wants = street.level === "boulevard" || street.level === "avenue" || (street.level === "street" && bridgeRng() < 0.45);
-            if (rules.bridges && bank !== null && wants && span <= maxBridgeSpan) {
-              // Record the deck, then split the land street at the banks so the draped road ends
-              // at the shore instead of sagging underwater beneath the deck.
-              localBridges.push({ points: deck, width: street.width });
-            }
-            wet = [];
-            flushLand();
-            run = [point];
-            continue;
-          }
-          run.push(point);
-        } else {
-          wet.push(point);
-        }
-      }
-      flushLand();
-    }
-    return out;
+  // The unified path-network engine grows the whole road/track graph from the sliders — a city street
+  // net and a closed race circuit are the SAME generator at opposite slider extremes.
+  const netRules: PathNetworkRules = {
+    seed: rules.seed.length > 0 ? rules.seed : object.id,
+    gridness: rules.gridness,
+    loopiness: rules.loopiness,
+    connectivity: rules.connectivity,
+    branching: rules.branching,
+    deadEnds: rules.deadEnds,
+    segmentLength: rules.blockSize,
+    aspect: rules.blockAspect,
+    winding: rules.curviness,
+    minCurveRadius: rules.minCurveRadius,
+    minTurnAngle: rules.minTurnAngle,
+    maxTurnAngle: rules.maxTurnAngle,
+    width: rules.streetWidth,
+    boulevards: rules.boulevards,
   };
-  const mains = clipToLand(built.streets);
+  const network = buildPathNetwork(netRules, hx, hz, {
+    heightAt: heightAt ?? undefined,
+    minElevation: rules.minElevation,
+    bridges: rules.bridges,
+    tunnels: rules.tunnels,
+  });
+  // Resolve each generated street's surface + sidewalk from its hierarchy level.
+  const surfaceFor = (level: PathLevel): CityStreet["surface"] =>
+    rules.surface === "gravel" || (level === "lane" && rules.gravelLanes) ? "gravel" : "asphalt";
+  const local: LocalStreet[] = network.streets.slice(0, MAX_STREETS).map((street: PathStreet) => {
+    const surface = surfaceFor(street.level);
+    return {
+      points: street.points.map(([x, z]) => [x, z] as [number, number]),
+      width: street.width,
+      level: street.level,
+      surface,
+      sidewalk: rules.sidewalks && surface === "asphalt",
+      ...(street.bulb === undefined ? {} : { bulb: [street.bulb[0], street.bulb[1]] as [number, number] }),
+      ...(street.features.length === 0 ? {} : { features: street.features }),
+    };
+  });
   const index = new StreetIndex();
-  mains.forEach((street, i) => index.addStreet(i, street.points, street.width));
-  const branches = clipToLand(buildBranches(rules, streams, mains, index, hx, hz));
-  branches.forEach((street, i) => index.addStreet(mains.length + i, street.points, street.width));
-  localBridges.forEach((bridge, i) => index.addStreet(mains.length + branches.length + i, bridge.points, bridge.width));
-  const local = [...mains, ...branches].slice(0, MAX_STREETS);
-  const intersections = findIntersections(local);
-  const lotResult = buildFabric(rules, streams, local, index, hx, hz, slopeAt, heightAt, overrideAt, intersections);
+  local.forEach((street, i) => index.addStreet(i, street.points, street.width));
+  const intersections = network.junctions
+    .slice(0, MAX_INTERSECTIONS)
+    .map((j) => ({ x: j.x, z: j.z, radius: j.radius, level: j.level, arms: j.arms.map((arm) => ({ ...arm })) }));
+  const localBridges = network.bridges.map((b) => ({
+    points: b.points.map(([x, z]) => [x, z] as [number, number]),
+    width: b.width,
+    bankHeight: b.bankHeight,
+  }));
+  const localTunnels = network.tunnels.map((t) => ({
+    points: t.points.map(([x, z]) => [x, z] as [number, number]),
+    width: t.width,
+    bankHeight: t.bankHeight,
+  }));
+  // Fabric (block/parcel/building subdivision) is optional: a bare road or race track leaves it off,
+  // so a circuit never carries forced-on plots — parcels and buildings appear only when you want it.
+  const emptyFabric: FabricResult = { blocks: [], parcels: [], parks: [], lots: [], placed: new LotIndex(), hedges: [], driveways: [] };
+  const lotResult = rules.fabric
+    ? buildFabric(rules, streams, local, index, hx, hz, slopeAt, heightAt, overrideAt, intersections)
+    : emptyFabric;
   const parks = lotResult.parks;
-  buildFieldRows(parks, lotResult.placed, streams);
+  if (rules.fabric) buildFieldRows(parks, lotResult.placed, streams);
 
   // --- Street furniture: bounded, seeded, and hooked to the network. ---
   const trees: { x: number; z: number; species: CityTreeSpecies; scale: number; jitter: number }[] = [];
@@ -1889,10 +1740,11 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       for (const spot of spots) {
         if (trees.length >= MAX_TREES) break;
         if (treeRng() > rules.treeDensity * 0.85 + 0.15) continue;
-        const x = spot.position[0] + (treeRng() - 0.5) * 1.6;
-        const z = spot.position[1] + (treeRng() - 0.5) * 1.6;
-        if (!insideBounds(x, z) || nearIntersection(x, z, 1)) continue;
-        if (index.clearance(x, z, 1.2) < 0) continue;
+        const x = spot.position[0] + (treeRng() - 0.5) * 1.2;
+        const z = spot.position[1] + (treeRng() - 0.5) * 1.2;
+        // Keep canopies out of the crossing sight-triangle and off the carriageway edge.
+        if (!insideBounds(x, z) || nearIntersection(x, z, 5)) continue;
+        if (index.clearance(x, z, 2.6) < 0) continue;
         if (lotResult.placed.overlapsAny({ x, z, hw: 0.5, hd: 0.5, angle: 0 }, 0.5)) continue;
         trees.push({ x, z, species: pickSpecies(rules.treeMix, treeRng()), scale: 0.85 + treeRng() * 0.5, jitter: treeRng() });
       }
@@ -1978,6 +1830,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       surface: street.surface,
       sidewalk: street.sidewalk,
       ...(street.bulb === undefined ? {} : { bulb: toWorld(street.bulb[0], street.bulb[1]) }),
+      ...(street.features === undefined ? {} : { features: street.features.map((f) => ({ ...f })) }),
     })),
     intersections: intersections.map((cross, i) => {
       const [x, z] = toWorld(cross.x, cross.z);
@@ -1995,6 +1848,13 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       points: bridge.points.map(([x, z]) => toWorld(x, z)),
       width: bridge.width,
       style: rules.bridgeStyle,
+      bankHeight: bridge.bankHeight,
+    })),
+    tunnels: localTunnels.map((tunnel, i) => ({
+      id: `tunnel:${i}`,
+      points: tunnel.points.map(([x, z]) => toWorld(x, z)),
+      width: tunnel.width,
+      bankHeight: tunnel.bankHeight,
     })),
     blocks: lotResult.blocks.map((block) => ({
       id: block.id,
@@ -2074,7 +1934,7 @@ export function registerCityKind(): void {
   registerSceneKind<ResolvedCity | null>({
     kind: CITY_KIND,
     target: "volume",
-    label: "City district",
+    label: "City / track",
     addCategory: "Studios",
     accent: "#8fa8c9",
     schema: CITY_SCHEMA,
@@ -2083,7 +1943,29 @@ export function registerCityKind(): void {
       const resolved = resolveCityObject(object);
       if (resolved === null) return "Give the volume a box footprint.";
       if (resolved.streets.length === 0) return `Footprint too small — needs at least ${Math.ceil(resolved.rules.blockSize * 1.5)} m across.`;
-      return `${resolved.streets.length} streets · ${resolved.lots.length} buildings · ${resolved.parks.length} parks · ${resolved.trees.length} trees`;
+      const mode = pathNetworkMode({
+        seed: resolved.rules.seed,
+        gridness: resolved.rules.gridness,
+        loopiness: resolved.rules.loopiness,
+        connectivity: resolved.rules.connectivity,
+        branching: resolved.rules.branching,
+        deadEnds: resolved.rules.deadEnds,
+        segmentLength: resolved.rules.blockSize,
+        aspect: resolved.rules.blockAspect,
+        winding: resolved.rules.curviness,
+        minCurveRadius: resolved.rules.minCurveRadius,
+        minTurnAngle: resolved.rules.minTurnAngle,
+        maxTurnAngle: resolved.rules.maxTurnAngle,
+        width: resolved.rules.streetWidth,
+        boulevards: resolved.rules.boulevards,
+      });
+      const feats = [
+        resolved.bridges.length > 0 ? `${resolved.bridges.length} bridges` : "",
+        resolved.tunnels.length > 0 ? `${resolved.tunnels.length} tunnels` : "",
+      ].filter((s) => s.length > 0);
+      const head = mode === "circuit" ? `circuit · ${resolved.streets.length} streets` : `${resolved.streets.length} streets`;
+      const fabric = resolved.rules.fabric ? ` · ${resolved.lots.length} buildings · ${resolved.parks.length} parks` : " · no fabric";
+      return `${head}${fabric}${feats.length > 0 ? ` · ${feats.join(" · ")}` : ""}`;
     },
   });
   registerSceneKind({

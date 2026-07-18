@@ -80,6 +80,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
     { id: "panel.content", title: "Open Content Browser", group: "Panels", kbd: "Ctrl+B", run: () => ctx.openBottomTab("content") },
     { id: "panel.console", title: "Open Console", group: "Panels", run: () => ctx.openBottomTab("console") },
     { id: "panel.profiler", title: "Open Profiler", group: "Panels", run: () => ctx.openBottomTab("profiler") },
+    { id: "panel.animation", title: "Open Animation (path flythrough)", group: "Panels", keywords: "timeline path scrub", run: () => ctx.openBottomTab("animation") },
     { id: "panel.assistant", title: "Open AI Assistant", group: "Panels", run: () => ctx.openBottomTab("assistant") },
     { id: "panel.left", title: "Toggle hierarchy panel", group: "Panels", run: () => ctx.toggleLeftDock() },
     { id: "panel.right", title: "Toggle inspector panel", group: "Panels", run: () => ctx.toggleRightDock() },
@@ -138,7 +139,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
 const RECENT_KEY = "jgeditor:palette-recent";
 const RECENT_LIMIT = 8;
 
-/** Loads recent command ids from localStorage (session-shared across games). */
+/** Loads recent command ids from localStorage (session-shared across games). @internal */
 export function loadRecentCommandIds(): string[] {
   try {
     const raw = localStorage.getItem(RECENT_KEY);
@@ -151,7 +152,7 @@ export function loadRecentCommandIds(): string[] {
   }
 }
 
-/** Records a command id at the front of the recent list (deduped, capped). */
+/** Records a command id at the front of the recent list (deduped, capped). @internal */
 export function pushRecentCommandId(id: string): string[] {
   // Object jump rows are scene-specific and flood the recent list — skip them.
   if (id.startsWith("goto.object.")) return loadRecentCommandIds();

@@ -92,6 +92,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "remove_from_collection", description: "Remove ids from a collection's membership." },
   { name: "set_collection_flags", description: "Patch a collection's color / locked / visible flags." },
   { name: "select_collection", description: "Restore the current selection to a collection's member ids." },
+  { name: "set_object_flags", description: "Set per-object locked (blocks transform/delete) and/or hidden (viewport hide) flags on placeables by id. false clears the field." },
   { name: "batch_set_properties", description: "Patch color/label/meta across every listed id in one dispatch, regardless of kind." },
   { name: "assign_material", description: "Stamp meta.materialId on every listed object — the drag-drop material assignment primitive." },
   { name: "list_grids", description: "List the scene document's grid/tile layers (id, kind, bounds, cell count, palette ids)." },

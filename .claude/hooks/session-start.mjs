@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 const git = (...args) => {
   try {
@@ -124,6 +126,22 @@ if (branch === defaultBranch) {
         `This container is ephemeral — push early (git push -u origin ${branch}).`,
     );
   }
+}
+
+const cold =
+  !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo")) &&
+  !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo.exe"));
+if (cold) {
+  notes.push(
+    `Cold checkout: node_modules incomplete. FIRST ACTION: start \`bun run agent:bootstrap\` as a ` +
+      `background Bash task and do recon/edits while it runs (~2-3 min: install + package build). ` +
+      `NEVER kill or re-run-over a slow install — a killed \`bun install\` leaves half-hardlinked ` +
+      `node_modules, and cleaning that up is what turns 3 minutes into 15. Bootstrap is ` +
+      `lock-guarded (re-invoking joins the running one) and self-heals a partial tree. ` +
+      `Do not open issues or create worktrees before it succeeds. If cold starts annoy the user, ` +
+      `suggest setting this cloud environment's setup script to \`bash scripts/cloud-setup.sh\` ` +
+      `(claude.ai/code environment settings) so sessions start from a warm snapshot.`,
+  );
 }
 
 emit(

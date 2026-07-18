@@ -27,6 +27,16 @@ export interface EditorMarker {
   catalogId?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /**
+   * Per-object edit lock — blocks transform/remove the same way a locked collection does.
+   * Combined with collection locks in `isEditorObjectLocked`.
+   */
+  locked?: boolean;
+  /**
+   * Per-object viewport hide — object stays in the hierarchy/document but is omitted from
+   * editor overlays and picking when true. Independent of per-kind layer visibility.
+   */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -43,6 +53,10 @@ export interface EditorVolume {
   label?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /** Per-object edit lock — see {@link EditorMarker.locked}. */
+  locked?: boolean;
+  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -56,6 +70,10 @@ export interface EditorPath {
   label?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /** Per-object edit lock — see {@link EditorMarker.locked}. */
+  locked?: boolean;
+  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -67,6 +85,10 @@ export interface EditorNote {
   color?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
+  /** Per-object edit lock — see {@link EditorMarker.locked}. */
+  locked?: boolean;
+  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
+  hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
@@ -170,6 +192,39 @@ export interface EditorMinimapBake {
   bounds: MinimapBakeBounds;
 }
 
+/** Named sky look stored on the scene document; matches runtime `SkyEnvironmentConfig.preset`. */
+export type EditorSkyPreset = "day" | "dusk" | "night";
+
+/**
+ * Linear distance fog authored on the scene document — serializable subset of sky/backdrop fog.
+ * Absent fields keep engine defaults when the document is applied at runtime.
+ */
+export interface EditorFogConfig {
+  color?: string;
+  near?: number;
+  far?: number;
+}
+
+/**
+ * Scene-document environment/lighting authoring (#1110): sky preset, optional time-of-day drive,
+ * horizon/zenith tints, sun/ambient intensity, and fog. Serializable and genre-agnostic — games
+ * feed it into `environment({ sky: sky(skyFromDocument(doc)) })` (or leave world.ts sky as a
+ * fallback when the field is absent). Absent until the lighting workspace (or a seed layer) writes
+ * it, so existing documents load unchanged.
+ * @capability editor-environment persist sky/fog/lighting knobs on the scene document
+ */
+export interface EditorEnvironment {
+  /** Fixed sky look when `timeOfDay` is off (or no clock is available). */
+  preset?: EditorSkyPreset;
+  /** Drive sun/sky from the world clock's day fraction instead of the fixed `preset`. */
+  timeOfDay?: boolean;
+  horizonColor?: string;
+  zenithColor?: string;
+  sunIntensity?: number;
+  ambientIntensity?: number;
+  fog?: EditorFogConfig;
+}
+
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   version: 1;
@@ -209,6 +264,11 @@ export interface EditorDocument {
    * until baked, so old docs and unbaked games load unchanged.
    */
   minimap?: EditorMinimapBake;
+  /**
+   * Scene-document sky/fog/lighting (#1110). Absent until authored in the lighting workspace or
+   * seeded via `editorLayers`, so old docs load unchanged and world.ts can keep a fallback sky.
+   */
+  environment?: EditorEnvironment;
 }
 
 /** XZ world-space bounds, `[minX, minZ]`..`[maxX, maxZ]`, for a directive that names no region. */

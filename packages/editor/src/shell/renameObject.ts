@@ -6,7 +6,7 @@ import {
   type EditorSession,
 } from "@jgengine/core/editor/index";
 
-/** Renames a placeable object by writing its label (notes use `text`). Returns false if unknown. */
+/** Renames a placeable object by writing its label (notes use `text`). Returns false if unknown. @internal */
 export function renameEditorObject(session: EditorSession, id: string, nextLabel: string): boolean {
   const label = nextLabel.trim();
   if (label.length === 0) return false;

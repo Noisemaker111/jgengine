@@ -5,7 +5,7 @@
  * throttled so drag-resizing never writes localStorage per pointer move.
  */
 
-/** Left-rail workspace modes. Only some are backed by full panels today; the rest are staged. */
+/** Left-rail workspace modes. Scene/terrain/assets/materials/ai/multiplayer open real home panels; the rest are staged. */
 export type EditorWorkspace =
   | "scene"
   | "terrain"
@@ -184,13 +184,29 @@ export function createShellLayoutStore(gameId: string): ShellLayoutStore {
         partial.leftOpen = true;
         partial.leftPage = "hierarchy";
       }
+      if (workspace === "scripting") {
+        // Scripting owns the left dock (trigger list + editor); keep hierarchy page stale underneath.
+        partial.leftOpen = true;
+        partial.rightOpen = true;
+        partial.inspectorTab = "components";
+      }
       if (workspace === "assets") {
         partial.bottomOpen = true;
         partial.bottomTab = "content";
       }
+      // Materials home: left inventory of real meta.materialId stamps + right materials inspector.
+      if (workspace === "materials") {
+        partial.leftOpen = true;
+        partial.rightOpen = true;
+        partial.inspectorTab = "materials";
+      }
       if (workspace === "ai") {
         partial.bottomOpen = true;
         partial.bottomTab = "assistant";
+      }
+      // Network owns the left dock; lighting is a viewport panel but keeps hierarchy open for context.
+      if (workspace === "multiplayer" || workspace === "lighting") {
+        partial.leftOpen = true;
       }
       state = { ...state, ...partial };
       emit();

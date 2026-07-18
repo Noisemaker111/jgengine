@@ -71,6 +71,22 @@ test("setWorkspace opens the workspace's home panel", () => {
   expect(store.getState().bottomTab).toBe("content");
   store.setWorkspace("ai");
   expect(store.getState().bottomTab).toBe("assistant");
+  store.patch({ leftOpen: false });
+  store.setWorkspace("multiplayer");
+  expect(store.getState().workspace).toBe("multiplayer");
+  expect(store.getState().leftOpen).toBe(true);
+  store.patch({ leftOpen: false, rightOpen: false, inspectorTab: "inspector" });
+  store.setWorkspace("materials");
+  expect(store.getState().leftOpen).toBe(true);
+  expect(store.getState().rightOpen).toBe(true);
+  expect(store.getState().inspectorTab).toBe("materials");
+  expect(store.getState().workspace).toBe("materials");
+  store.patch({ leftOpen: false, rightOpen: false, inspectorTab: "inspector" });
+  store.setWorkspace("scripting");
+  expect(store.getState().leftOpen).toBe(true);
+  expect(store.getState().rightOpen).toBe(true);
+  expect(store.getState().inspectorTab).toBe("components");
+  expect(store.getState().workspace).toBe("scripting");
 });
 
 test("toggleSection flips per-section collapse state", () => {

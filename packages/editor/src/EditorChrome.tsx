@@ -9,20 +9,33 @@ import {
 } from "@jgengine/core/editor/index";
 import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/world/scatterRegion";
 
-import { type EditorAssetEntry } from "./AssetBrowser";
+import {
+  editorAssetFromImport,
+  mergeEditorAssets,
+  type EditorAssetEntry,
+} from "./AssetBrowser";
 import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
+import { ParentPickerMenu } from "./ParentPickerMenu";
+import { MaterialsWorkspacePanel } from "./MaterialsWorkspacePanel";
 import { PrefabsPanel } from "./PrefabsPanel";
+import { listParentCandidates } from "./parentCandidates";
 import {
   buildEditorContextMenu,
   type EditorContextAction,
 } from "./viewportContextMenu";
 import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi } from "./session";
+import {
+  importAssetToHost,
+  loadDroppedAssets,
+  type AssetImporter,
+} from "./assetImport";
 import { newPlacementId, type EditorUiStore, type PlacementTool } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { TerrainPanel } from "./TerrainPanel";
+import { LightingPanel } from "./LightingPanel";
 import { InspectorPanel } from "./InspectorPanel";
 import { BottomDock } from "./shell/BottomDock";
 import { CommandPalette } from "./shell/CommandPalette";
@@ -31,9 +44,11 @@ import { SceneToolbar } from "./shell/SceneToolbar";
 import { StatusBar } from "./shell/StatusBar";
 import { TopAppBar } from "./shell/TopAppBar";
 import { OrientationWidget, PerformanceOverlay, ViewportUtilityPanel } from "./shell/ViewportOverlays";
+import { NetworkWorkspacePanel } from "./shell/NetworkWorkspacePanel";
 import { WorkspaceRail } from "./shell/WorkspaceRail";
 import { buildPaletteCommands } from "./shell/commandRegistry";
 import { createEditorConsoleStore } from "./shell/consoleStore";
+import { installEditorConsoleSink } from "./shell/consoleSink";
 import { Icon } from "./shell/icons";
 import {
   createShellLayoutStore,
@@ -44,6 +59,8 @@ import {
 import { createPerfHistoryStore } from "./shell/perfHistory";
 import { BORDER, FOCUS_RING } from "./shell/theme";
 import { IconButton, Kbd, PanelResizer } from "./shell/ui";
+import type { EditorNetworkSnapshot } from "./networkSnapshot";
+import { ScriptingPanel } from "./ScriptingPanel";
 
 let clipboardFragment: EditorDocument | null = null;
 
@@ -137,6 +154,9 @@ export function EditorChrome({
   ui,
   baselineDocument,
   save,
+  networkSnapshot,
+  importAsset = importAssetToHost,
+  onRegisterAsset,
 }: {
   gameId: string;
   session: EditorSession;
@@ -146,6 +166,21 @@ export function EditorChrome({
   /** The document as loaded — drives the header unsaved indicator by reference compare. */
   baselineDocument?: EditorDocument;
   save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  /**
+   * Network workspace inspection payload (adapter config + optional host presence).
+   * Built by `EditorApp` from the game definition; live presence rows only when the host injects them.
+   */
+  networkSnapshot: EditorNetworkSnapshot;
+  /**
+   * How dropped/imported models become durable. Default: the standalone host importer
+   * (`POST /__jgengine/import-asset`); when no host answers, imports degrade to blob URLs.
+   */
+  importAsset?: AssetImporter;
+  /**
+   * Optional side-effect after a model import succeeds: register the id/url into the live game
+   * asset catalog so AuthoredObjects can resolve the mesh without remounting the playable.
+   */
+  onRegisterAsset?: (id: string, url: string) => void;
 }) {
   const [, setTick] = useState(0);
   const layoutRef = useRef<ReturnType<typeof createShellLayoutStore> | null>(null);
@@ -157,6 +192,28 @@ export function EditorChrome({
   const perfHistoryRef = useRef<ReturnType<typeof createPerfHistoryStore> | null>(null);
   perfHistoryRef.current ??= createPerfHistoryStore();
   const perfHistory = perfHistoryRef.current;
+  /** Models added this session via Content Browser Import / drop — merged over the game catalog. */
+  const [importedAssets, setImportedAssets] = useState<readonly EditorAssetEntry[]>([]);
+  const [importBusy, setImportBusy] = useState(false);
+
+  // Bridge global RPC/agent console emits into the dock console for this chrome instance.
+  useEffect(
+    () =>
+      installEditorConsoleSink((severity, source, message) => {
+        consoleStore.log(severity, source, message);
+      }),
+    [consoleStore],
+  );
+
+  const liveAssets = useMemo(
+    () => mergeEditorAssets(assets, importedAssets),
+    [assets, importedAssets],
+  );
+
+  // Keep the host asset list in step with the browser so place_asset / list_assets see imports.
+  useEffect(() => {
+    api.setAssets(liveAssets);
+  }, [api, liveAssets]);
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState<string | null>(null);
@@ -222,6 +279,12 @@ export function EditorChrome({
     if (ui.getState().contextMenu !== null) ui.patch({ contextMenu: null });
   }, [ui]);
 
+  const [parentPicker, setParentPicker] = useState<{
+    clientX: number;
+    clientY: number;
+    ids: readonly string[];
+  } | null>(null);
+
   const openBottomTab = useCallback(
     (tab: BottomDockTab) => {
       layout.patch({ bottomOpen: true, bottomTab: tab });
@@ -279,6 +342,17 @@ export function EditorChrome({
             notify(`Created prefab “${name}”`);
           }
           return;
+        case "parentTo": {
+          const ids =
+            selection.length > 0
+              ? selection
+              : menu?.hitId !== null && menu?.hitId !== undefined
+                ? [menu.hitId]
+                : [];
+          if (ids.length === 0 || menu === null) return;
+          setParentPicker({ clientX: menu.clientX, clientY: menu.clientY, ids: [...ids] });
+          return;
+        }
         case "unparent": {
           const ids = selection.length > 0 ? selection : menu?.hitId !== null && menu?.hitId !== undefined ? [menu.hitId] : [];
           if (ids.length === 0) return;
@@ -382,10 +456,18 @@ export function EditorChrome({
         const current = session.getState();
         const visibility = api.getVisibility();
         const ids = [
-          ...current.document.markers.filter((m) => visibility[m.kind] !== false).map((m) => m.id),
-          ...current.document.volumes.filter((v) => visibility[v.kind] !== false).map((v) => v.id),
-          ...current.document.paths.filter((p) => visibility[p.kind] !== false).map((p) => p.id),
-          ...(visibility["note"] !== false ? current.document.annotations.map((n) => n.id) : []),
+          ...current.document.markers
+            .filter((m) => visibility[m.kind] !== false && m.hidden !== true)
+            .map((m) => m.id),
+          ...current.document.volumes
+            .filter((v) => visibility[v.kind] !== false && v.hidden !== true)
+            .map((v) => v.id),
+          ...current.document.paths
+            .filter((p) => visibility[p.kind] !== false && p.hidden !== true)
+            .map((p) => p.id),
+          ...(visibility["note"] !== false
+            ? current.document.annotations.filter((n) => n.hidden !== true).map((n) => n.id)
+            : []),
         ];
         if (ids.length > 0) session.dispatch({ type: "select", ids });
         return;
@@ -532,6 +614,44 @@ export function EditorChrome({
     else notify(`Place failed: ${response.error ?? "unknown error"}`, "error");
   };
 
+  const importModels = useCallback(
+    async (files: readonly File[]) => {
+      if (files.length === 0 || importBusy) return;
+      setImportBusy(true);
+      try {
+        const next = await loadDroppedAssets(files, importAsset);
+        if (next.length === 0) {
+          notify("No .glb / .gltf models found in the drop", "error");
+          return;
+        }
+        const entries = next.map(editorAssetFromImport);
+        for (const entry of entries) {
+          if (entry.url !== undefined) onRegisterAsset?.(entry.id, entry.url);
+        }
+        setImportedAssets((current) => mergeEditorAssets(current, entries));
+        layout.patch({ bottomOpen: true, bottomTab: "content" });
+        const durable = entries.filter((entry) => entry.url !== undefined && !entry.url.startsWith("blob:")).length;
+        const ephemeral = entries.length - durable;
+        if (ephemeral === 0) {
+          notify(entries.length === 1 ? `Imported ${entries[0]!.label}` : `Imported ${entries.length} models`);
+        } else if (durable === 0) {
+          notify(
+            entries.length === 1
+              ? `Imported ${entries[0]!.label} (session-only — no host importer)`
+              : `Imported ${entries.length} models (session-only — no host importer)`,
+          );
+        } else {
+          notify(`Imported ${entries.length} models (${ephemeral} session-only)`);
+        }
+      } catch (error) {
+        notify(`Import failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+      } finally {
+        setImportBusy(false);
+      }
+    },
+    [importAsset, importBusy, layout, notify, onRegisterAsset],
+  );
+
   const importFile = (file: File) => {
     void file.text().then((text) => {
       try {
@@ -576,9 +696,8 @@ export function EditorChrome({
 
   const selectWorkspace = (workspace: EditorWorkspace) => {
     layout.setWorkspace(workspace);
-    if (workspace === "materials") layout.patch({ rightOpen: true, inspectorTab: "materials" });
     if (workspace === "terrain") ui.setTool("terrain");
-    else if (workspace === "scene" && ui.getState().tool === "terrain") ui.setTool("select");
+    else if (ui.getState().tool === "terrain") ui.setTool("select");
   };
 
   const paletteObjects = useMemo(() => {
@@ -720,45 +839,70 @@ export function EditorChrome({
             <aside
               className={`pointer-events-auto hidden min-h-0 flex-col overflow-hidden border-r ${BORDER} bg-[#111318] sm:flex`}
               style={{ width: layoutState.leftWidth }}
-              aria-label="Scene hierarchy dock"
+              aria-label={
+                layoutState.workspace === "multiplayer"
+                  ? "Network workspace dock"
+                  : layoutState.workspace === "materials"
+                    ? "Materials workspace dock"
+                    : layoutState.workspace === "scripting"
+                      ? "Scripting workspace dock"
+                      : "Scene hierarchy dock"
+              }
             >
               <div className={`flex h-8 shrink-0 items-center gap-1 border-b ${BORDER} px-1.5`}>
-                {LEFT_PAGES.map((page) => {
-                  const badge =
-                    page.id === "collections"
-                      ? state.document.collections.length
-                      : page.id === "prefabs"
-                        ? state.document.prefabs.length
-                        : page.id === "catalogs"
-                          ? api.getCatalogDefinitions().length
-                          : null;
-                  const selected = layoutState.leftPage === page.id;
-                  return (
-                    <button
-                      key={page.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      onClick={() => layout.patch({ leftPage: page.id })}
-                      className={`flex h-6.5 items-center gap-1 rounded-[5px] px-2 text-[11px] transition-colors ${FOCUS_RING} ${
-                        selected ? "bg-white/[0.08] text-neutral-100" : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300"
-                      }`}
-                    >
-                      {page.label}
-                      {badge !== null && badge > 0 ? <span className="text-[9px] tabular-nums text-neutral-500">{badge}</span> : null}
-                    </button>
-                  );
-                })}
+                {layoutState.workspace === "multiplayer" ? (
+                  <span className="px-2 text-[11px] font-medium text-neutral-200">Network</span>
+                ) : layoutState.workspace === "materials" ? (
+                  <span className="px-2 text-[11px] text-neutral-100">Materials</span>
+                ) : layoutState.workspace === "scripting" ? (
+                  <>
+                    <Icon name="script" size={13} className="ml-1 text-amber-300" />
+                    <span className="px-1 text-[11px] text-neutral-200">Scripting</span>
+                  </>
+                ) : (
+                  LEFT_PAGES.map((page) => {
+                    const badge =
+                      page.id === "collections"
+                        ? state.document.collections.length
+                        : page.id === "prefabs"
+                          ? state.document.prefabs.length
+                          : page.id === "catalogs"
+                            ? api.getCatalogDefinitions().length
+                            : null;
+                    const selected = layoutState.leftPage === page.id;
+                    return (
+                      <button
+                        key={page.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => layout.patch({ leftPage: page.id })}
+                        className={`flex h-6.5 items-center gap-1 rounded-[5px] px-2 text-[11px] transition-colors ${FOCUS_RING} ${
+                          selected ? "bg-white/[0.08] text-neutral-100" : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300"
+                        }`}
+                      >
+                        {page.label}
+                        {badge !== null && badge > 0 ? <span className="text-[9px] tabular-nums text-neutral-500">{badge}</span> : null}
+                      </button>
+                    );
+                  })
+                )}
                 <IconButton
                   icon="close"
-                  label="Collapse hierarchy panel"
+                  label="Collapse left panel"
                   size={11}
                   tone="ghost"
                   className="ml-auto"
                   onClick={() => layout.patch({ leftOpen: false })}
                 />
               </div>
-              {layoutState.leftPage === "collections" ? (
+              {layoutState.workspace === "multiplayer" ? (
+                <NetworkWorkspacePanel snapshot={networkSnapshot} />
+              ) : layoutState.workspace === "materials" ? (
+                <MaterialsWorkspacePanel session={session} api={api} />
+              ) : layoutState.workspace === "scripting" ? (
+                <ScriptingPanel session={session} api={api} />
+              ) : layoutState.leftPage === "collections" ? (
                 <CollectionsPanel session={session} />
               ) : layoutState.leftPage === "prefabs" ? (
                 <PrefabsPanel session={session} api={api} />
@@ -793,6 +937,8 @@ export function EditorChrome({
             <PerformanceOverlay api={api} />
             {uiState.tool === "terrain" ? (
               <TerrainPanel session={session} ui={ui} api={api} />
+            ) : layoutState.workspace === "lighting" ? (
+              <LightingPanel session={session} />
             ) : (
               <ViewportUtilityPanel document={state.document} api={api} selectionCount={state.selection.length} />
             )}
@@ -845,6 +991,32 @@ export function EditorChrome({
                 onClose={closeContextMenu}
               />
             ) : null}
+            {parentPicker !== null ? (
+              <ParentPickerMenu
+                x={parentPicker.clientX}
+                y={parentPicker.clientY}
+                candidates={listParentCandidates(state.document, parentPicker.ids)}
+                onPick={(parentId) => {
+                  const ids = [...parentPicker.ids];
+                  setParentPicker(null);
+                  const result = api.handle({ method: "set_parent", ids, parentId });
+                  if (!result.ok) {
+                    notify(result.error ?? "Parent to failed", "error");
+                    return;
+                  }
+                  if (parentId === null) {
+                    notify(ids.length === 1 ? "Unparented object" : `Unparented ${ids.length} objects`);
+                  } else {
+                    notify(
+                      ids.length === 1
+                        ? `Parented to ${parentId}`
+                        : `Parented ${ids.length} objects to ${parentId}`,
+                    );
+                  }
+                }}
+                onClose={() => setParentPicker(null)}
+              />
+            ) : null}
           </main>
 
           {layoutState.bottomOpen ? (
@@ -855,7 +1027,7 @@ export function EditorChrome({
                   tab={layoutState.bottomTab}
                   onSelectTab={(tab) => layout.patch({ bottomTab: tab })}
                   onClose={() => layout.patch({ bottomOpen: false })}
-                  assets={assets}
+                  assets={liveAssets}
                   session={session}
                   api={api}
                   consoleStore={consoleStore}
@@ -863,6 +1035,8 @@ export function EditorChrome({
                   browserView={layoutState.browserView}
                   onSetBrowserView={(view) => layout.patch({ browserView: view })}
                   onPlaceAsset={placeAsset}
+                  onImportModels={importModels}
+                  importBusy={importBusy}
                 />
               </div>
             </>

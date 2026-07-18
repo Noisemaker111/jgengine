@@ -530,6 +530,14 @@ const mutationHandlers: MutationHandlers = {
   }),
   setTerrain: (state, command) => ({ ...state, document: { ...state.document, terrain: command.terrain } }),
   setMinimapBake: (state, command) => ({ ...state, document: { ...state.document, minimap: command.minimap } }),
+  setEnvironment: (state, command) => {
+    if (command.environment === undefined) {
+      const { environment: _removed, ...rest } = state.document;
+      void _removed;
+      return { ...state, document: rest };
+    }
+    return { ...state, document: { ...state.document, environment: command.environment } };
+  },
   clearTerrain: (state) => {
     const nextDoc: EditorDocument = {
       version: 1,
@@ -542,6 +550,9 @@ const mutationHandlers: MutationHandlers = {
       catalogs: state.document.catalogs,
       ...(state.document.grids === undefined ? {} : { grids: state.document.grids }),
       ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
+      ...(state.document.directives === undefined ? {} : { directives: state.document.directives }),
+      ...(state.document.minimap === undefined ? {} : { minimap: state.document.minimap }),
+      ...(state.document.environment === undefined ? {} : { environment: state.document.environment }),
     };
     return { ...state, document: nextDoc };
   },
@@ -724,6 +735,26 @@ const mutationHandlers: MutationHandlers = {
       collection.id === command.id ? { ...collection, ...command.patch } : collection,
     );
     return { ...state, document: { ...state.document, collections } };
+  },
+  setObjectFlags: (state, command) => {
+    const ids = new Set(command.ids);
+    if (ids.size === 0) return null;
+    const { locked, hidden } = command.patch;
+    if (locked === undefined && hidden === undefined) return null;
+    const apply = <T extends { id: string; locked?: boolean; hidden?: boolean }>(item: T): T => {
+      if (!ids.has(item.id)) return item;
+      const next = { ...item };
+      if (locked !== undefined) {
+        if (locked) next.locked = true;
+        else delete next.locked;
+      }
+      if (hidden !== undefined) {
+        if (hidden) next.hidden = true;
+        else delete next.hidden;
+      }
+      return next;
+    };
+    return { ...state, document: { ...state.document, ...mapPlaceables(state.document, apply) } };
   },
   selectCollection: (state, command) => {
     const collection = findEditorCollection(state.document, command.id);

@@ -248,17 +248,20 @@ describe("bridges", () => {
       expect(river.sampleHeight(first[0])).toBeGreaterThanOrEqual(-2);
       expect(river.sampleHeight(last[0])).toBeGreaterThanOrEqual(-2);
     }
-    // No land street keeps an underwater point.
-    for (const street of city.streets) {
-      for (const [x] of street.points) expect(river.sampleHeight(x)).toBeGreaterThanOrEqual(-2);
+    // Streets stay continuous across the water (the path stays whole for traffic/circuits) and carry a
+    // bridge feature span where they cross.
+    const crossing = city.streets.filter((street) => street.points.some(([x]) => river.sampleHeight(x) < -2));
+    expect(crossing.length).toBeGreaterThan(0);
+    for (const street of crossing) {
+      expect((street.features ?? []).some((feature) => feature.kind === "bridge")).toBe(true);
     }
   });
 
-  test("bridges toggle off clips streets at the shore instead", () => {
+  test("bridges toggle off leaves the road continuous with no deck", () => {
     const city = resolveCityObject(cityVolume({ seed: "riv", gridness: 1, curviness: 0, branching: 0, bridges: false }), river)!;
     expect(city.bridges.length).toBe(0);
     for (const street of city.streets) {
-      for (const [x] of street.points) expect(river.sampleHeight(x)).toBeGreaterThanOrEqual(-2);
+      expect((street.features ?? []).some((feature) => feature.kind === "bridge")).toBe(false);
     }
   });
 
@@ -476,7 +479,8 @@ describe("block/parcel fabric invariants", () => {
         else mid[key] = va;
       }
       const city = resolveCityObject(cityVolume(mid))!;
-      expect(city.streets.length).toBeGreaterThan(3);
+      // A blend of a circuit preset can be a single closed loop; only require a real network.
+      expect(city.streets.length).toBeGreaterThan(0);
       expectFabricInvariants(city, `interp:${presets[i]!.id}→${presets[i + 1]!.id}`);
     }
   });
@@ -523,8 +527,14 @@ describe("presets", () => {
       const a = resolveCityObject(cityVolume(meta, { halfExtents: { x: 260, y: 10, z: 260 } }))!;
       const b = resolveCityObject(cityVolume(meta, { halfExtents: { x: 260, y: 10, z: 260 } }))!;
       expect(a).toEqual(b);
-      expect(a.streets.length).toBeGreaterThan(4);
-      expect(a.lots.length).toBeGreaterThan(15);
+      if (preset.values.fabric === false) {
+        // A track preset is bare roads: a real network, deliberately no plots.
+        expect(a.streets.length).toBeGreaterThan(0);
+        expect(a.lots.length).toBe(0);
+      } else {
+        expect(a.streets.length).toBeGreaterThan(4);
+        expect(a.lots.length).toBeGreaterThan(15);
+      }
     }
   });
 
@@ -587,11 +597,14 @@ describe("street hierarchy, intersections, furniture", () => {
     const city = resolveCityObject(cityVolume({ seed: "grid", gridness: 1, curviness: 0, branching: 0 }))!;
     expect(city.intersections.length).toBeGreaterThan(10);
     for (const cross of city.intersections) {
-      expect(cross.arms.length).toBe(4);
+      // A graph junction has 3 arms (a boundary T) or 4 (an interior cross) — never fewer.
+      expect(cross.arms.length).toBeGreaterThanOrEqual(3);
       const touching = city.streets.filter((street) => distToStreet(street, cross.x, cross.z) < street.width).length;
       expect(touching).toBeGreaterThanOrEqual(2);
       expect(cross.radius).toBeGreaterThan(2);
     }
+    // A dense grid still has plenty of full four-way crossings.
+    expect(city.intersections.filter((cross) => cross.arms.length === 4).length).toBeGreaterThan(5);
   });
 
   test("every junction arm points at real pavement — T junctions get three arms, never a phantom fourth", () => {

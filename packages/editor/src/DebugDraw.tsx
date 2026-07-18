@@ -428,19 +428,22 @@ export function EditorLayerOverlays({
 
   const visibilityKey = useMemo(() => JSON.stringify(visibility), [visibility]);
   const volumes = useMemo(
-    () => document.volumes.filter((volume) => isVisible(visibility, volume.kind)),
+    () => document.volumes.filter((volume) => isVisible(visibility, volume.kind) && volume.hidden !== true),
     [document.volumes, visibilityKey, visibility],
   );
   const paths = useMemo(
-    () => document.paths.filter((path) => isVisible(visibility, path.kind)),
+    () => document.paths.filter((path) => isVisible(visibility, path.kind) && path.hidden !== true),
     [document.paths, visibilityKey, visibility],
   );
   const markers = useMemo(
-    () => document.markers.filter((marker) => isVisible(visibility, marker.kind)),
+    () => document.markers.filter((marker) => isVisible(visibility, marker.kind) && marker.hidden !== true),
     [document.markers, visibilityKey, visibility],
   );
   const notes = useMemo(
-    () => (isVisible(visibility, "note") ? document.annotations : []),
+    () =>
+      isVisible(visibility, "note")
+        ? document.annotations.filter((note) => note.hidden !== true)
+        : [],
     [document.annotations, visibilityKey, visibility],
   );
 

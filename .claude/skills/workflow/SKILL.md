@@ -5,9 +5,19 @@ description: Carry repository changes from issue through verified ready pull req
 
 # Repository change workflow
 
+## Bootstrap first
+
+Before claiming issues or editing packages, ensure the checkout can run Bun and resolve built `@jgengine/*` dist:
+
+- `bun run agent:bootstrap` (or `bun run agent:bootstrap --check` if you believe the tree is warm); start it in the background and never kill a slow install — re-invoking joins the running bootstrap
+- Local-machine parallelism only: `bun run agent:worktree -- <name>` or Claude `claude --worktree <name>`; cloud containers are already isolated — branch, do not worktree
+- Prefer `bun --cwd packages/<pkg> run <script>` over `bun run --cwd packages/<pkg> <script>`
+
+Do not open a multi-issue program or log papercuts until bootstrap succeeds.
+
 ## Scope and issue
 
-Start from current `origin/main` on a fresh task branch without discarding user work. Search open issues before creating one. Claim tracked work once with `Working on this in <branch>`; close fixed issues through the PR body.
+Start from current `origin/main` on a fresh task branch without discarding user work. Search open issues before creating one. Claim tracked work once with `Working on this in <branch>`; close fixed issues through the PR body. Prefer **one shippable issue per session** unless the user explicitly requested a multi-slice program.
 
 Choose the PR boundary by cohesion:
 
