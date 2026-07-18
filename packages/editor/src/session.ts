@@ -112,7 +112,7 @@ export type EditorBridgeRequest =
     }
   | { method: "convert_scatter"; pathId: string }
   | {
-      method: "generate_path_network";
+      method: "generate_streets";
       volumeId?: string;
       center?: { x: number; y: number; z: number };
       halfX?: number;

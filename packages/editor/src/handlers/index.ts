@@ -5,7 +5,7 @@ import { documentHandlers } from "./document";
 import { gridHandlers } from "./grids";
 import { hierarchyHandlers } from "./hierarchy";
 import { minimapHandlers } from "./minimap";
-import { pathNetworkHandlers } from "./pathNetwork";
+import { streetsHandlers } from "./streets";
 import { runtimeHandlers } from "./runtime";
 import { terrainHandlers } from "./terrain";
 
@@ -19,7 +19,7 @@ export const EDITOR_RPC_HANDLERS: HandlerTable = {
   ...catalogHandlers,
   ...terrainHandlers,
   ...minimapHandlers,
-  ...pathNetworkHandlers,
+  ...streetsHandlers,
   ...hierarchyHandlers,
   ...collectionHandlers,
   ...gridHandlers,

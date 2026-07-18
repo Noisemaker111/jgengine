@@ -35,13 +35,13 @@ function genPaths(doc: EditorDocument, seed = "s1"): EditorPath[] {
   return doc.paths.filter((p) => p.id.startsWith(`gen-${seed}-`));
 }
 
-describe("generate_path_network", () => {
+describe("generate_streets", () => {
   test("bakes deterministic world-frame paths for a fixed seed", () => {
     const a = hostWithVolume();
     const b = hostWithVolume();
 
-    const resA = a.api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s1", mode: "net" });
-    const resB = b.api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s1", mode: "net" });
+    const resA = a.api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net" });
+    const resB = b.api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net" });
     expect(resA.ok).toBe(true);
     expect(resB.ok).toBe(true);
 
@@ -56,7 +56,7 @@ describe("generate_path_network", () => {
 
     // Nets bake `road`s and points are offset into the volume's world origin (center 100,-50).
     expect(genA.every((p) => p.kind === "road")).toBe(true);
-    expect(genA.every((p) => p.meta?.generator === "pathNetwork" && p.meta?.seed === "s1")).toBe(true);
+    expect(genA.every((p) => p.meta?.generator === "streetGenerator" && p.meta?.seed === "s1")).toBe(true);
     const first = genA[0]!.points[0]!;
     expect(first.y).toBe(5); // baked at the volume center height
     // A point must land inside the volume footprint (center ± half-extents).
@@ -74,7 +74,7 @@ describe("generate_path_network", () => {
 
   test("save round-trips the baked paths through editor.scene.json", () => {
     const { api, dispose } = hostWithVolume();
-    api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s1", mode: "net" });
+    api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net" });
     const doc = api.getSession().getState().document;
     const baked = genPaths(doc);
     expect(baked.length).toBeGreaterThan(0);
@@ -101,13 +101,13 @@ describe("generate_path_network", () => {
 
   test("re-running the same seed replaces its prior output rather than duplicating", () => {
     const { api, dispose } = hostWithVolume();
-    const first = api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s1", mode: "net" });
+    const first = api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net" });
     expect(first.ok).toBe(true);
     const firstCount = (first.result as { pathCount: number }).pathCount;
     const firstIds = (first.result as { ids: string[] }).ids;
     expect(firstCount).toBeGreaterThan(0);
 
-    const second = api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s1", mode: "net" });
+    const second = api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net" });
     expect(second.ok).toBe(true);
     const secondResult = second.result as { pathCount: number; removed: number; ids: string[] };
     // Idempotent: same id set, and it removed exactly the prior baked set (no duplication).
@@ -121,7 +121,7 @@ describe("generate_path_network", () => {
     expect(doc.paths.some((p) => p.id === "manual-1")).toBe(true);
 
     // A different seed coexists rather than replacing s1's output.
-    const other = api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s2", mode: "net" });
+    const other = api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s2", mode: "net" });
     expect(other.ok).toBe(true);
     expect((other.result as { removed: number }).removed).toBe(0);
     expect(genPaths(api.getSession().getState().document, "s1").length).toBe(firstCount);
@@ -131,7 +131,7 @@ describe("generate_path_network", () => {
 
   test("circuit mode emits a closed route (first ≈ last point)", () => {
     const { api, dispose } = hostWithVolume();
-    const res = api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "track", mode: "circuit" });
+    const res = api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "track", mode: "circuit" });
     expect(res.ok).toBe(true);
     const result = res.result as { mode: string; kind: string };
     expect(result.mode).toBe("circuit");
@@ -152,7 +152,7 @@ describe("generate_path_network", () => {
   test("bakes into explicit center + half-extents when no volume is named", () => {
     const { api, dispose } = createEditorHost({ gameId: "pathnet-test", layers: {} });
     const res = api.handle({
-      method: "generate_path_network",
+      method: "generate_streets",
       center: { x: 0, y: 3, z: 0 },
       halfX: 180,
       halfZ: 180,
@@ -165,7 +165,7 @@ describe("generate_path_network", () => {
 
   test("rejects a bake with neither a volume nor explicit bounds", () => {
     const { api, dispose } = createEditorHost({ gameId: "pathnet-test", layers: {} });
-    const res = api.handle({ method: "generate_path_network", seed: "s1" });
+    const res = api.handle({ method: "generate_streets", seed: "s1" });
     expect(res.ok).toBe(false);
     expect(res.error).toContain("volumeId");
     dispose();
@@ -173,7 +173,7 @@ describe("generate_path_network", () => {
 
   test("the bake is a single undoable edit", () => {
     const { api, dispose } = hostWithVolume();
-    api.handle({ method: "generate_path_network", volumeId: "vol_box", seed: "s1", mode: "net" });
+    api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net" });
     expect(genPaths(api.getSession().getState().document).length).toBeGreaterThan(0);
     const undo = api.handle({ method: "undo" });
     expect(undo.ok).toBe(true);

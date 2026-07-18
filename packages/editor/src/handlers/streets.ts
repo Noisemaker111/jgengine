@@ -1,10 +1,10 @@
-import { buildPathNetwork, type PathNetworkRules, type PathStreet } from "@jgengine/core/world/pathNetwork";
+import { generateStreets, type StreetNetworkRules, type Street } from "@jgengine/core/world/streetGenerator";
 import type { EditorDocument, EditorPath, EditorVec3, EditorVolume } from "@jgengine/core/editor/index";
 
 import type { HandlerTable } from "./context";
 
 /**
- * Bake the pure `buildPathNetwork` generator (`@jgengine/core/world/pathNetwork`) into the scene
+ * Bake the pure `generateStreets` generator (`@jgengine/core/world/streetGenerator`) into the scene
  * document as authorable `road`/`route` paths (#1185). The generator answers to sliders and returns
  * volume-local through-streets; this verb transforms those into world-frame {@link EditorPath}s and
  * inserts them as one undoable edit with stable, seed-derived ids so a re-run replaces its own prior
@@ -18,8 +18,8 @@ import type { HandlerTable } from "./context";
 /** Requested topology family — selects the default slider preset the generator grows from. */
 type RequestedMode = "net" | "circuit";
 
-/** Fully-defaulted slider preset for an open street net (resolves to `net` in `pathNetworkMode`). */
-const NET_DEFAULTS: Omit<PathNetworkRules, "seed"> = {
+/** Fully-defaulted slider preset for an open street net (resolves to `net` in `streetNetworkMode`). */
+const NET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   gridness: 0.9,
   loopiness: 0.2,
   connectivity: 0.35,
@@ -35,8 +35,8 @@ const NET_DEFAULTS: Omit<PathNetworkRules, "seed"> = {
   boulevards: 0.3,
 };
 
-/** Fully-defaulted slider preset for a closed race circuit (resolves to `circuit` in `pathNetworkMode`). */
-const CIRCUIT_DEFAULTS: Omit<PathNetworkRules, "seed"> = {
+/** Fully-defaulted slider preset for a closed race circuit (resolves to `circuit` in `streetNetworkMode`). */
+const CIRCUIT_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   gridness: 0.1,
   loopiness: 1,
   connectivity: 0,
@@ -53,7 +53,7 @@ const CIRCUIT_DEFAULTS: Omit<PathNetworkRules, "seed"> = {
 };
 
 /** The numeric slider keys a caller may overlay onto the mode preset via `params`. */
-const RULE_KEYS: readonly (keyof Omit<PathNetworkRules, "seed">)[] = [
+const RULE_KEYS: readonly (keyof Omit<StreetNetworkRules, "seed">)[] = [
   "gridness",
   "loopiness",
   "connectivity",
@@ -70,7 +70,7 @@ const RULE_KEYS: readonly (keyof Omit<PathNetworkRules, "seed">)[] = [
 ];
 
 /** The tag every baked path carries in `meta.generator`, so a re-run can find and replace its own output. */
-const GENERATOR_TAG = "pathNetwork";
+const GENERATOR_TAG = "streetGenerator";
 
 /** Stable id prefix for a seed's baked paths — the idempotency key for replace-on-re-run. */
 function genPrefix(seed: string): string {
@@ -95,8 +95,8 @@ function volumeFootprint(volume: EditorVolume): { hx: number; hz: number; origin
 }
 
 /** Document, selection, camera, mode, asset placement, and status verbs. */
-export const pathNetworkHandlers: Pick<HandlerTable, "generate_path_network"> = {
-  generate_path_network: (ctx, request) => {
+export const streetsHandlers: Pick<HandlerTable, "generate_streets"> = {
+  generate_streets: (ctx, request) => {
     const doc = ctx.session.getState().document;
     const seed = request.seed ?? "path";
     const requestedMode: RequestedMode = request.mode === "circuit" ? "circuit" : "net";
@@ -112,7 +112,7 @@ export const pathNetworkHandlers: Pick<HandlerTable, "generate_path_network"> = 
     } else {
       const center = request.center ?? { x: 0, y: 0, z: 0 };
       if (request.halfX === undefined || request.halfZ === undefined) {
-        return { ok: false, error: "generate_path_network requires volumeId, or center + halfX + halfZ" };
+        return { ok: false, error: "generate_streets requires volumeId, or center + halfX + halfZ" };
       }
       hx = Math.max(1, request.halfX);
       hz = Math.max(1, request.halfZ);
@@ -121,7 +121,7 @@ export const pathNetworkHandlers: Pick<HandlerTable, "generate_path_network"> = 
 
     // Build rules: mode preset, overlaid with any numeric slider overrides from `params`.
     const preset = requestedMode === "circuit" ? CIRCUIT_DEFAULTS : NET_DEFAULTS;
-    const rules: PathNetworkRules = { seed, ...preset };
+    const rules: StreetNetworkRules = { seed, ...preset };
     const params = request.params;
     if (params !== undefined) {
       for (const key of RULE_KEYS) {
@@ -132,13 +132,13 @@ export const pathNetworkHandlers: Pick<HandlerTable, "generate_path_network"> = 
       }
     }
 
-    const network = buildPathNetwork(rules, hx, hz);
+    const network = generateStreets(rules, hx, hz);
     // The generator resolves the ACTUAL topology from the rules; use it for the default path kind so a
     // circuit bakes `route`s and a net bakes `road`s even when the caller's sliders cross the boundary.
     const kind = request.kind ?? (network.mode === "circuit" ? "route" : "road");
     const baseY = origin.y;
 
-    const toWorld = (street: PathStreet): EditorVec3[] =>
+    const toWorld = (street: Street): EditorVec3[] =>
       street.points.map(([lx, lz]) => ({ x: origin.x + lx, y: baseY, z: origin.z + lz }));
 
     // Through-streets → one path each (a circuit's ring is a single closed loop street: first ≈ last).
@@ -167,7 +167,7 @@ export const pathNetworkHandlers: Pick<HandlerTable, "generate_path_network"> = 
     const kept = doc.paths.filter((p) => !isGeneratedForSeed(p, seed));
     const nextDoc: EditorDocument = { ...doc, paths: [...kept, ...newPaths] };
     const { applied } = ctx.dispatchGuarded({ type: "replaceDocument", document: nextDoc });
-    if (!applied) return { ok: false, error: "generate_path_network: document replace had no effect" };
+    if (!applied) return { ok: false, error: "generate_streets: document replace had no effect" };
     // replaceDocument clears selection; re-select the freshly baked paths for the caller.
     ctx.session.dispatch({ type: "select", ids: newPaths.map((p) => p.id) });
 

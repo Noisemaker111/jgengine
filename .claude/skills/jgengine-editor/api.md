@@ -609,13 +609,13 @@
 
 - `minimapHandlers` (const): const minimapHandlers: Pick<HandlerTable, "bake_minimap"> — Bake the authored terrain into a stored minimap PNG (#1036). Composes the live viewport's base ground field with the document's sculpt snapshot, rasterizes it top-down via the pure core bake, and stores `{ background, bounds }` on `document.minimap` as an undoable edit — runtime then feeds those straight into the `Minimap`/`WorldMap` props with no re-raster. Needs the mounted viewport's composed sampler, so it is a live-editor-only action, not a headless CLI verb.
 
-## @jgengine/editor/handlers/pathNetwork
-
-- `pathNetworkHandlers` (const): const pathNetworkHandlers: Pick<HandlerTable, "generate_path_network"> — Document, selection, camera, mode, asset placement, and status verbs.
-
 ## @jgengine/editor/handlers/runtime
 
 - `runtimeHandlers` (const): const runtimeHandlers: Pick< HandlerTable, | "push_document_patch" | "pull_document_patches" | "document_revision" | "push_runtime_delta" | "pull_runtime_deltas" | "runtime_snapshot" | "runtime_summary" | "runtime_get" | "runtime_set" | "runtime_pause" | "runtime_resume" | "runtime_step" | "set_runt… — Live-sync document patches, the ephemeral runtime reverse channel, and play-mode poke verbs.
+
+## @jgengine/editor/handlers/streets
+
+- `streetsHandlers` (const): const streetsHandlers: Pick<HandlerTable, "generate_streets"> — Document, selection, camera, mode, asset placement, and status verbs.
 
 ## @jgengine/editor/handlers/terrain
 
