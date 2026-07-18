@@ -185,6 +185,7 @@ function EditorWorldOverlay({
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
   const pathPoint = useStoreSelector(ui, (s) => s.pathPoint);
   const pathDraft = useStoreSelector(ui, (s) => s.pathDraft);
+  const hoverId = useStoreSelector(ui, (s) => s.hoverId);
   const groundHeightAt = useCallback((x: number, z: number) => ctx.world.groundHeightAt(x, z), [ctx.world]);
 
   // Publish the live composed ground field so the `bake_minimap` RPC can rasterize authored terrain.
@@ -236,6 +237,7 @@ function EditorWorldOverlay({
         document={document}
         visibility={visibility}
         selection={selection}
+        hoverId={hoverId}
         onSelect={(id) => session.dispatch({ type: "select", ids: [id] })}
         activePathPoint={pathPoint}
         groundHeightAt={groundHeightAt}

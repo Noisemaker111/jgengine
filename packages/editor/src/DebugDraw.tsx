@@ -106,9 +106,21 @@ function volumeWireframe(volume: EditorVolume): Float32Array {
   return new Float32Array(out);
 }
 
+/** Shell-cyan selection fill — replaces the old white debug tint. */
+const SELECTION_COLOR = "#67e8f9";
+/** Pre-selection hover fill (softer cyan, not selected). */
+const HOVER_COLOR = "#22d3ee";
+
+function emphasisColor(selected: boolean, hovered: boolean, base: string): string {
+  if (selected) return SELECTION_COLOR;
+  if (hovered) return HOVER_COLOR;
+  return base;
+}
+
 const MarkerMesh = memo(function MarkerMesh({
   marker,
   selected,
+  hovered,
   onSelect,
   sharedSphere,
   sharedCone,
@@ -116,14 +128,16 @@ const MarkerMesh = memo(function MarkerMesh({
 }: {
   marker: EditorMarker;
   selected: boolean;
+  hovered: boolean;
   onSelect: (id: string) => void;
   sharedSphere: THREE.SphereGeometry;
   sharedCone: THREE.ConeGeometry;
   groundHeightAt?: (x: number, z: number) => number;
 }) {
   const color = colorFor(marker.kind, marker.color);
-  const scale = selected ? 1.25 : 1;
+  const scale = selected ? 1.28 : hovered ? 1.12 : 1;
   const baseY = groundHeightAt !== undefined ? groundHeightAt(marker.position.x, marker.position.z) : marker.position.y;
+  const fill = emphasisColor(selected, hovered, color);
   return (
     <group
       position={[marker.position.x, baseY + 1.2, marker.position.z]}
@@ -136,10 +150,15 @@ const MarkerMesh = memo(function MarkerMesh({
       }}
     >
       <mesh geometry={sharedSphere}>
-        <meshBasicMaterial color={selected ? "#ffffff" : color} />
+        <meshBasicMaterial color={fill} transparent opacity={selected ? 1 : hovered ? 0.9 : 1} />
       </mesh>
+      {selected || hovered ? (
+        <mesh geometry={sharedSphere} scale={1.18}>
+          <meshBasicMaterial color={fill} transparent opacity={selected ? 0.28 : 0.18} depthWrite={false} />
+        </mesh>
+      ) : null}
       <mesh position={[0, 1.35, 0]} geometry={sharedCone}>
-        <meshBasicMaterial color={color} />
+        <meshBasicMaterial color={selected || hovered ? fill : color} />
       </mesh>
     </group>
   );
@@ -149,10 +168,12 @@ const MarkerMesh = memo(function MarkerMesh({
 const VolumeShapeLines = memo(function VolumeShapeLines({
   volume,
   selected,
+  hovered,
   onSelect,
 }: {
   volume: EditorVolume;
   selected: boolean;
+  hovered: boolean;
   onSelect: (id: string) => void;
 }) {
   const color = colorFor(volume.kind, volume.color);
@@ -160,9 +181,10 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(volumeWireframe(volume), 3));
     const material = new THREE.LineBasicMaterial({
-      color: selected ? "#ffffff" : color,
+      color: emphasisColor(selected, hovered, color),
       transparent: true,
-      opacity: selected ? 1 : 0.75,
+      opacity: selected ? 1 : hovered ? 0.9 : 0.75,
+      linewidth: selected || hovered ? 2 : 1,
     });
     return new THREE.LineSegments(geometry, material);
   }, [
@@ -174,6 +196,7 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
     volume.halfExtents?.z,
     color,
     selected,
+    hovered,
   ]);
 
   useEffect(
@@ -201,12 +224,14 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
 const PathRibbon = memo(function PathRibbon({
   path,
   selected,
+  hovered,
   activePointIndex,
   onSelect,
   groundHeightAt,
 }: {
   path: EditorPath;
   selected: boolean;
+  hovered: boolean;
   activePointIndex: number | null;
   onSelect: (id: string) => void;
   groundHeightAt?: (x: number, z: number) => number;
@@ -216,7 +241,7 @@ const PathRibbon = memo(function PathRibbon({
     groundHeightAt !== undefined ? groundHeightAt(point.x, point.z) : point.y;
   const object = useMemo(() => {
     if (path.points.length < 2) return null;
-    const stride = !selected && path.points.length > 80 ? 2 : 1;
+    const stride = !selected && !hovered && path.points.length > 80 ? 2 : 1;
     const picked: { x: number; y: number; z: number }[] = [];
     for (let i = 0; i < path.points.length; i += stride) {
       picked.push(path.points[i]!);
@@ -234,12 +259,12 @@ const PathRibbon = memo(function PathRibbon({
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const material = new THREE.LineBasicMaterial({
-      color: selected ? "#ffffff" : color,
+      color: emphasisColor(selected, hovered, color),
       transparent: true,
-      opacity: selected ? 1 : 0.85,
+      opacity: selected ? 1 : hovered ? 0.92 : 0.85,
     });
     return new THREE.Line(geometry, material);
-  }, [path.points, color, selected, groundHeightAt]);
+  }, [path.points, color, selected, hovered, groundHeightAt]);
 
   useEffect(
     () => () => {
@@ -275,16 +300,19 @@ const PathRibbon = memo(function PathRibbon({
 const NotePin = memo(function NotePin({
   note,
   selected,
+  hovered,
   onSelect,
   groundHeightAt,
 }: {
   note: EditorNote;
   selected: boolean;
+  hovered: boolean;
   onSelect: (id: string) => void;
   groundHeightAt?: (x: number, z: number) => number;
 }) {
   const color = colorFor("note", note.color);
   const baseY = groundHeightAt !== undefined ? groundHeightAt(note.position.x, note.position.z) : note.position.y;
+  const fill = emphasisColor(selected, hovered, color);
   return (
     <group
       position={[note.position.x, baseY + 1, note.position.z]}
@@ -294,10 +322,16 @@ const NotePin = memo(function NotePin({
         onSelect(note.id);
       }}
     >
-      <mesh scale={selected ? 1.3 : 1}>
+      <mesh scale={selected ? 1.32 : hovered ? 1.15 : 1}>
         <octahedronGeometry args={[0.6]} />
-        <meshBasicMaterial color={selected ? "#ffffff" : color} />
+        <meshBasicMaterial color={fill} transparent opacity={selected ? 1 : hovered ? 0.9 : 1} />
       </mesh>
+      {selected || hovered ? (
+        <mesh scale={1.22}>
+          <octahedronGeometry args={[0.6]} />
+          <meshBasicMaterial color={fill} transparent opacity={selected ? 0.28 : 0.16} depthWrite={false} />
+        </mesh>
+      ) : null}
       <Html center distanceFactor={40} style={{ pointerEvents: "none" }}>
         <div
           style={{
@@ -363,6 +397,7 @@ export function EditorLayerOverlays({
   document,
   visibility,
   selection,
+  hoverId = null,
   onSelect,
   activePathPoint,
   groundHeightAt,
@@ -370,11 +405,14 @@ export function EditorLayerOverlays({
   document: EditorDocument;
   visibility: EditorKindVisibility;
   selection: readonly string[];
+  /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */
+  hoverId?: string | null;
   onSelect: (id: string) => void;
   activePathPoint?: { pathId: string; index: number } | null;
   groundHeightAt?: (x: number, z: number) => number;
 }) {
   const selected = useMemo(() => new Set(selection), [selection]);
+  const isHovered = (id: string) => hoverId === id && !selected.has(id);
   const sharedSphere = useMemo(
     () => new THREE.SphereGeometry(0.85, MARKER_SEGMENTS, MARKER_SEGMENTS),
     [],
@@ -413,6 +451,7 @@ export function EditorLayerOverlays({
           key={volume.id}
           volume={volume}
           selected={selected.has(volume.id)}
+          hovered={isHovered(volume.id)}
           onSelect={onSelect}
         />
       ))}
@@ -421,6 +460,7 @@ export function EditorLayerOverlays({
           key={path.id}
           path={path}
           selected={selected.has(path.id)}
+          hovered={isHovered(path.id)}
           activePointIndex={
             activePathPoint != null && activePathPoint.pathId === path.id ? activePathPoint.index : null
           }
@@ -433,6 +473,7 @@ export function EditorLayerOverlays({
           key={marker.id}
           marker={marker}
           selected={selected.has(marker.id)}
+          hovered={isHovered(marker.id)}
           onSelect={onSelect}
           sharedSphere={sharedSphere}
           sharedCone={sharedCone}
@@ -444,6 +485,7 @@ export function EditorLayerOverlays({
           key={note.id}
           note={note}
           selected={selected.has(note.id)}
+          hovered={isHovered(note.id)}
           onSelect={onSelect}
           groundHeightAt={groundHeightAt}
         />
