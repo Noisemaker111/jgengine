@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
+import { escapeHtml } from "./escapeHtml";
 import { flag, hasFlag, readPackageJson } from "./pkg";
 import { displayNameFromId, GAME_ID_PATTERN } from "./templates";
 
@@ -594,14 +595,6 @@ export function writeStaging(plan: DesktopPlan): StageResult {
     frontendDist: plan.frontendDist,
     mode: plan.mode,
   };
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 /** @internal */

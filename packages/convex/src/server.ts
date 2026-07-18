@@ -26,6 +26,7 @@ import {
 } from "@jgengine/core/multiplayer/feedWriteGate";
 import { normalizeJoinCode } from "@jgengine/core/multiplayer/matchmaking";
 import {
+  DEFAULT_POSE_SYNC_RULES,
   decidePoseSync,
   spawnPresenceState,
   type PoseSyncRules,
@@ -167,13 +168,7 @@ type ServerDoc = DocumentByName<JGDataModel, "jgGameServers">;
 
 export type JgAuthMode = "anonymous" | "required";
 
-export const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules = {
-  maxSpeed: 12,
-  maxVerticalOffset: 3,
-  minElapsedSec: 0.05,
-  maxElapsedSec: 0.5,
-  keepAliveRefreshMs: 10_000,
-};
+export const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules = DEFAULT_POSE_SYNC_RULES;
 
 /** Resolve the acting user id under a {@link JgAuthMode}: the Convex identity when signed in (rejecting a mismatched claim), the claimed external id under `"anonymous"`, else `null`.
  * @internal
@@ -229,6 +224,39 @@ async function requireServerMember(
   if (!server) return null;
   if (!server.memberUserIds.includes(actorUserId)) return null;
   return server;
+}
+
+/** Resolve the acting user for a mutation, throwing the standard error when unauthenticated.
+ * @internal
+ */
+async function requireActor(
+  ctx: { auth: Auth },
+  externalId: string | undefined,
+  mode: JgAuthMode,
+): Promise<string> {
+  const actorUserId = await resolveActor(ctx, externalId, mode);
+  if (!actorUserId) throw new ConvexError("Not authenticated");
+  return actorUserId;
+}
+
+/**
+ * Resolve the actor and confirm server membership, invoking `fn` only when both hold and yielding
+ * `deniedResult` for every denial (unauthenticated or non-member). The uniform-denial path shared by
+ * the read handlers whose not-authenticated and not-member cases return the same value.
+ * @internal
+ */
+async function withMember<T>(
+  ctx: JGQueryCtx | JGMutationCtx,
+  mode: JgAuthMode,
+  args: { serverId: string; externalId?: string },
+  deniedResult: T,
+  fn: (server: ServerDoc, actorUserId: string) => Promise<T> | T,
+): Promise<T> {
+  const actorUserId = await resolveActor(ctx, args.externalId, mode);
+  if (!actorUserId) return deniedResult;
+  const server = await requireServerMember(ctx, args.serverId, actorUserId);
+  if (server === null) return deniedResult;
+  return fn(server, actorUserId);
 }
 
 const builtinRuntimeCommands: Record<string, CommandDef> = {
@@ -482,10 +510,7 @@ export function createGameServerFunctions(options?: {
       isNew: v.boolean(),
     }),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) {
-        throw new ConvexError("Not authenticated");
-      }
+      const actorUserId = await requireActor(ctx, args.externalId, mode);
 
       const now = Date.now();
       const runtime = resolveRuntime(registry, args.gameId);
@@ -595,14 +620,10 @@ export function createGameServerFunctions(options?: {
     },
     returns: v.null(),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) {
-        throw new ConvexError("Not authenticated");
-      }
+      const actorUserId = await requireActor(ctx, args.externalId, mode);
 
-      const server = await ctx.db.get("jgGameServers", args.serverId);
-      if (!server) return null;
-      if (!server.memberUserIds.includes(actorUserId)) return null;
+      const server = await requireServerMember(ctx, args.serverId, actorUserId);
+      if (server === null) return null;
 
       const now = Date.now();
       const runtime = resolveRuntime(registry, server.gameId);
@@ -645,10 +666,7 @@ export function createGameServerFunctions(options?: {
       v.object({ ok: v.literal(false), reason: v.string() }),
     ),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) {
-        throw new ConvexError("Not authenticated");
-      }
+      const actorUserId = await requireActor(ctx, args.externalId, mode);
 
       const server = await ctx.db.get("jgGameServers", args.serverId);
       if (!server) {
@@ -695,14 +713,10 @@ export function createGameServerFunctions(options?: {
     },
     returns: v.boolean(),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) {
-        throw new ConvexError("Not authenticated");
-      }
+      const actorUserId = await requireActor(ctx, args.externalId, mode);
 
-      const server = await ctx.db.get("jgGameServers", args.serverId);
-      if (!server) return false;
-      if (!server.memberUserIds.includes(actorUserId)) return false;
+      const server = await requireServerMember(ctx, args.serverId, actorUserId);
+      if (server === null) return false;
 
       const runtime = resolveRuntime(registry, server.gameId);
       const snapshot = await loadServerSnapshot(ctx, server, runtime);
@@ -732,31 +746,25 @@ export function createGameServerFunctions(options?: {
       }),
       v.null(),
     ),
-    handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) return null;
+    handler: (ctx, args) =>
+      withMember(ctx, mode, args, null, (server, actorUserId) => {
+        const sessionPlayers = server.sessionPlayers as Record<string, unknown>;
+        const ownSession = sessionPlayers[actorUserId];
 
-      const server = await ctx.db.get("jgGameServers", args.serverId);
-      if (!server) return null;
-      if (!server.memberUserIds.includes(actorUserId)) return null;
-
-      const sessionPlayers = server.sessionPlayers as Record<string, unknown>;
-      const ownSession = sessionPlayers[actorUserId];
-
-      return {
-        _id: server._id,
-        gameId: server.gameId,
-        status: server.status,
-        mode: server.mode,
-        memberUserIds: server.memberUserIds,
-        slotsPerServer: server.slotsPerServer,
-        save: server.save,
-        revision: server.revision,
-        serverState: server.serverState,
-        sessionPlayers: ownSession === undefined ? {} : { [actorUserId]: ownSession },
-        updatedAt: server.updatedAt,
-      };
-    },
+        return {
+          _id: server._id,
+          gameId: server.gameId,
+          status: server.status,
+          mode: server.mode,
+          memberUserIds: server.memberUserIds,
+          slotsPerServer: server.slotsPerServer,
+          save: server.save,
+          revision: server.revision,
+          serverState: server.serverState,
+          sessionPlayers: ownSession === undefined ? {} : { [actorUserId]: ownSession },
+          updatedAt: server.updatedAt,
+        };
+      }),
   });
 
   const getPlayerProfile = query({
@@ -802,18 +810,14 @@ export function createGameServerFunctions(options?: {
     },
     returns: v.array(v.any()),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) return [];
+      return withMember(ctx, mode, args, [] as unknown[], async () => {
+        const row = await ctx.db
+          .query("jgFeedBuffers")
+          .withIndex("by_server_and_action", (q) => q.eq("serverId", args.serverId).eq("action", args.action))
+          .unique();
 
-      const server = await ctx.db.get("jgGameServers", args.serverId);
-      if (!server || !server.memberUserIds.includes(actorUserId)) return [];
-
-      const row = await ctx.db
-        .query("jgFeedBuffers")
-        .withIndex("by_server_and_action", (q) => q.eq("serverId", args.serverId).eq("action", args.action))
-        .unique();
-
-      return row?.entries ?? [];
+        return row?.entries ?? [];
+      });
     },
   });
 
@@ -826,10 +830,7 @@ export function createGameServerFunctions(options?: {
     },
     returns: v.null(),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) {
-        throw new ConvexError("Not authenticated");
-      }
+      const actorUserId = await requireActor(ctx, args.externalId, mode);
 
       const allowed = validateFeedWrite(feedWriteGate, args.action);
       if (!allowed.ok) {
@@ -1076,25 +1077,35 @@ export function createPresenceFunctions(options?: {
       }),
     ),
     handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) return [];
-      if ((await requireServerMember(ctx, args.serverId, actorUserId)) === null) return [];
+      return withMember(
+        ctx,
+        mode,
+        args,
+        [] as {
+          userId: string;
+          position: { x: number; y: number; z: number };
+          rotationY: number;
+          rotationPitch: number;
+          lastSeenAt: number;
+        }[],
+        async () => {
+          const threshold = Date.now() - freshWindowMs;
+          const rows = await ctx.db
+            .query("jgPoses")
+            .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
+            .collect();
 
-      const threshold = Date.now() - freshWindowMs;
-      const rows = await ctx.db
-        .query("jgPoses")
-        .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-        .collect();
-
-      return rows
-        .filter((row) => row.updatedAt >= threshold)
-        .map((row) => ({
-          userId: row.userId,
-          position: { x: row.x, y: row.y, z: row.z },
-          rotationY: row.rotationY,
-          rotationPitch: row.rotationPitch,
-          lastSeenAt: row.updatedAt,
-        }));
+          return rows
+            .filter((row) => row.updatedAt >= threshold)
+            .map((row) => ({
+              userId: row.userId,
+              position: { x: row.x, y: row.y, z: row.z },
+              rotationY: row.rotationY,
+              rotationPitch: row.rotationPitch,
+              lastSeenAt: row.updatedAt,
+            }));
+        },
+      );
     },
   });
 
@@ -1111,57 +1122,54 @@ export function createPresenceFunctions(options?: {
       externalId: v.optional(v.string()),
     },
     returns: v.null(),
-    handler: async (ctx, args) => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) return null;
-      if ((await requireServerMember(ctx, args.serverId, actorUserId)) === null) return null;
+    handler: (ctx, args) =>
+      withMember(ctx, mode, args, null, async (_server, actorUserId) => {
+        const now = Date.now();
+        const existing = await ctx.db
+          .query("jgPoses")
+          .withIndex("by_server_and_user", (q) => q.eq("serverId", args.serverId).eq("userId", actorUserId))
+          .unique();
 
-      const now = Date.now();
-      const existing = await ctx.db
-        .query("jgPoses")
-        .withIndex("by_server_and_user", (q) => q.eq("serverId", args.serverId).eq("userId", actorUserId))
-        .unique();
+        const current: PresencePoseState =
+          existing === null
+            ? spawnPresenceState(undefined, now, poseRules)
+            : {
+                position: { x: existing.x, y: existing.y, z: existing.z },
+                rotationY: existing.rotationY,
+                rotationPitch: existing.rotationPitch,
+                lastSeenAtMs: existing.updatedAt,
+              };
 
-      const current: PresencePoseState =
-        existing === null
-          ? spawnPresenceState(undefined, now, poseRules)
-          : {
-              position: { x: existing.x, y: existing.y, z: existing.z },
-              rotationY: existing.rotationY,
-              rotationPitch: existing.rotationPitch,
-              lastSeenAtMs: existing.updatedAt,
-            };
+        const decision = decidePoseSync(
+          current,
+          {
+            position: { x: args.pose.x, y: args.pose.y, z: args.pose.z },
+            rotationY: args.pose.rotationY,
+            rotationPitch: args.pose.rotationPitch,
+          },
+          poseRules,
+          now,
+        );
 
-      const decision = decidePoseSync(
-        current,
-        {
-          position: { x: args.pose.x, y: args.pose.y, z: args.pose.z },
-          rotationY: args.pose.rotationY,
-          rotationPitch: args.pose.rotationPitch,
-        },
-        poseRules,
-        now,
-      );
+        const patch = {
+          x: decision.position.x,
+          y: decision.position.y,
+          z: decision.position.z,
+          rotationY: decision.rotationY,
+          rotationPitch: decision.rotationPitch,
+          updatedAt: now,
+        };
 
-      const patch = {
-        x: decision.position.x,
-        y: decision.position.y,
-        z: decision.position.z,
-        rotationY: decision.rotationY,
-        rotationPitch: decision.rotationPitch,
-        updatedAt: now,
-      };
-
-      if (existing) {
-        if (decision.changed || decision.refreshKeepAlive) {
-          await ctx.db.patch(existing._id, patch);
+        if (existing) {
+          if (decision.changed || decision.refreshKeepAlive) {
+            await ctx.db.patch(existing._id, patch);
+          }
+        } else {
+          await ctx.db.insert("jgPoses", { serverId: args.serverId, userId: actorUserId, ...patch });
         }
-      } else {
-        await ctx.db.insert("jgPoses", { serverId: args.serverId, userId: actorUserId, ...patch });
-      }
 
-      return null;
-    },
+        return null;
+      }),
   });
 
   const leave = mutation({
@@ -1214,28 +1222,25 @@ export function createChatFunctions(options?: {
         at: v.number(),
       }),
     ),
-    handler: async (ctx, args): Promise<ChatMessage[]> => {
-      const actorUserId = await resolveActor(ctx, args.externalId, mode);
-      if (!actorUserId) return [];
-      if ((await requireServerMember(ctx, args.serverId, actorUserId)) === null) return [];
+    handler: (ctx, args): Promise<ChatMessage[]> =>
+      withMember(ctx, mode, args, [] as ChatMessage[], async () => {
+        const rows = await ctx.db
+          .query("jgChatMessages")
+          .withIndex("by_server_channel", (q) => q.eq("serverId", args.serverId).eq("channelId", args.channelId))
+          .order("desc")
+          .take(historyLimit);
 
-      const rows = await ctx.db
-        .query("jgChatMessages")
-        .withIndex("by_server_channel", (q) => q.eq("serverId", args.serverId).eq("channelId", args.channelId))
-        .order("desc")
-        .take(historyLimit);
-
-      return rows
-        .slice()
-        .reverse()
-        .map((row) => ({
-          id: row._id,
-          channelId: row.channelId,
-          fromUserId: row.userId,
-          body: row.body,
-          at: row.at,
-        }));
-    },
+        return rows
+          .slice()
+          .reverse()
+          .map((row) => ({
+            id: row._id,
+            channelId: row.channelId,
+            fromUserId: row.userId,
+            body: row.body,
+            at: row.at,
+          }));
+      }),
   });
 
   const sendMessage = mutation({
