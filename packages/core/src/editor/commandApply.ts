@@ -530,6 +530,14 @@ const mutationHandlers: MutationHandlers = {
   }),
   setTerrain: (state, command) => ({ ...state, document: { ...state.document, terrain: command.terrain } }),
   setMinimapBake: (state, command) => ({ ...state, document: { ...state.document, minimap: command.minimap } }),
+  setEnvironment: (state, command) => {
+    if (command.environment === undefined) {
+      const { environment: _removed, ...rest } = state.document;
+      void _removed;
+      return { ...state, document: rest };
+    }
+    return { ...state, document: { ...state.document, environment: command.environment } };
+  },
   clearTerrain: (state) => {
     const nextDoc: EditorDocument = {
       version: 1,
@@ -542,6 +550,9 @@ const mutationHandlers: MutationHandlers = {
       catalogs: state.document.catalogs,
       ...(state.document.grids === undefined ? {} : { grids: state.document.grids }),
       ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
+      ...(state.document.directives === undefined ? {} : { directives: state.document.directives }),
+      ...(state.document.minimap === undefined ? {} : { minimap: state.document.minimap }),
+      ...(state.document.environment === undefined ? {} : { environment: state.document.environment }),
     };
     return { ...state, document: nextDoc };
   },

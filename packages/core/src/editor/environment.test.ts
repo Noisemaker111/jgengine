@@ -1,6 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { createEmptyEditorDocument } from "./document";
-import { environmentContentFromDocument, lakebedFromWaterVolumes, terrainBoundsFromDocument } from "./environment";
+import {
+  environmentContentFromDocument,
+  lakebedFromWaterVolumes,
+  skyFromDocument,
+  terrainBoundsFromDocument,
+} from "./environment";
 import type { EditorDocument, EditorMarker } from "./types";
 
 function marker(id: string, kind: string, x: number, z: number): EditorMarker {
@@ -105,5 +110,26 @@ describe("lakebedFromWaterVolumes", () => {
     const content = environmentContentFromDocument(waterDoc());
     expect(content.sculpt).toBeDefined();
     expect(content.sculpt!.offsets.some((offset) => offset < -1)).toBe(true);
+  });
+
+  it("carries document.environment as sky when authored", () => {
+    const empty = environmentContentFromDocument(createEmptyEditorDocument());
+    expect(empty.sky).toBeUndefined();
+    expect(skyFromDocument(createEmptyEditorDocument())).toBeUndefined();
+
+    const doc: EditorDocument = {
+      ...createEmptyEditorDocument(),
+      environment: {
+        preset: "night",
+        fog: { near: 50, far: 200, color: "#001122" },
+        sunIntensity: 0.2,
+      },
+    };
+    expect(skyFromDocument(doc)).toEqual({
+      preset: "night",
+      fog: { near: 50, far: 200, color: "#001122" },
+      sunIntensity: 0.2,
+    });
+    expect(environmentContentFromDocument(doc).sky).toEqual(skyFromDocument(doc));
   });
 });

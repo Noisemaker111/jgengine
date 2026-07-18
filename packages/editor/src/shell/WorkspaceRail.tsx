@@ -19,7 +19,7 @@ export const WORKSPACES: readonly RailEntry[] = [
   { id: "scripting", label: "Scripting", icon: "script", supported: false },
   { id: "animation", label: "Animation", icon: "film", supported: false },
   { id: "audio", label: "Audio", icon: "audio", supported: false },
-  { id: "lighting", label: "Lighting", icon: "bulb", supported: false },
+  { id: "lighting", label: "Lighting", icon: "bulb", supported: true },
   { id: "ai", label: "AI", icon: "sparkle", supported: true },
   /** Presence/session inspection over host-supplied snapshot + game adapter config — never fabricated. */
   { id: "multiplayer", label: "Network", icon: "network", supported: true },

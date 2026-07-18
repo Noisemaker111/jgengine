@@ -982,3 +982,70 @@ describe("minimap bake persistence (#1036)", () => {
     expect(session.getState().document.minimap).toEqual(second);
   });
 });
+
+describe("document.environment (#1110 lighting)", () => {
+  const envBag = {
+    preset: "dusk" as const,
+    timeOfDay: true,
+    sunIntensity: 0.7,
+    ambientIntensity: 0.4,
+    horizonColor: "#ff8a5c",
+    zenithColor: "#1a2b4a",
+    fog: { color: "#ffb37a", near: 40, far: 220 },
+  };
+
+  test("decode/export round-trip keeps the environment bag", () => {
+    const doc = { ...createEmptyEditorDocument(), environment: envBag };
+    const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(doc)));
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error("expected ok");
+    expect(decoded.document.environment).toEqual(envBag);
+    expect(normalizeEditorLayers(doc).environment).toEqual(envBag);
+  });
+
+  test("malformed preset/intensity surface diagnostics", () => {
+    const badPreset = decodeEditorDocument({
+      ...createEmptyEditorDocument(),
+      environment: { preset: "sunset" },
+    });
+    expect(badPreset.ok).toBe(false);
+    if (badPreset.ok) throw new Error("expected failure");
+    expect(badPreset.errors.some((e) => e.path === "$.environment.preset")).toBe(true);
+
+    const badIntensity = decodeEditorDocument({
+      ...createEmptyEditorDocument(),
+      environment: { sunIntensity: Number.NaN },
+    });
+    expect(badIntensity.ok).toBe(false);
+    if (badIntensity.ok) throw new Error("expected failure");
+    expect(badIntensity.errors.some((e) => e.path === "$.environment.sunIntensity")).toBe(true);
+  });
+
+  test("setEnvironment is undoable, clearable, and survives unrelated removes", () => {
+    const session = createEditorSession({
+      ...createEmptyEditorDocument(),
+      markers: [{ id: "m", kind: "prop", position: { x: 0, y: 0, z: 0 } }],
+      environment: { preset: "day" },
+    });
+    session.dispatch({ type: "setEnvironment", environment: envBag });
+    expect(session.getState().document.environment).toEqual(envBag);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.environment).toEqual({ preset: "day" });
+    session.dispatch({ type: "redo" });
+    expect(session.getState().document.environment).toEqual(envBag);
+
+    session.dispatch({ type: "removeMany", ids: ["m"] });
+    expect(session.getState().document.environment).toEqual(envBag);
+
+    session.dispatch({ type: "setEnvironment", environment: undefined });
+    expect(session.getState().document.environment).toBeUndefined();
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.environment).toEqual(envBag);
+  });
+
+  test("overlay keeps base environment when overlay has none", () => {
+    const base = { ...createEmptyEditorDocument(), environment: envBag };
+    const overlaid = applyEditorDocumentOverlay(base, createEmptyEditorDocument());
+    expect(overlaid.environment).toEqual(envBag);
+  });
+});
