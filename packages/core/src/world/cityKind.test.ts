@@ -228,3 +228,36 @@ describe("resolveCityObject v2 quality", () => {
     for (const lot of onCliff.lots) expect(lot.center[0]).toBeLessThan(10);
   });
 });
+
+describe("bridges", () => {
+  // A narrow "river" strip at x in [20, 44]: ground dives below the default minElevation (-2).
+  const river = { sampleHeight: (x: number) => (x > 20 && x < 44 ? -8 : 2) };
+
+  test("streets crossing water gain bridge decks from bank to bank", () => {
+    const city = resolveCityObject(cityVolume({ seed: "riv", gridness: 1, curviness: 0, branching: 0 }), river)!;
+    expect(city.bridges.length).toBeGreaterThan(0);
+    for (const bridge of city.bridges) {
+      const first = bridge.points[0]!;
+      const last = bridge.points[bridge.points.length - 1]!;
+      expect(river.sampleHeight(first[0])).toBeGreaterThanOrEqual(-2);
+      expect(river.sampleHeight(last[0])).toBeGreaterThanOrEqual(-2);
+    }
+    // No land street keeps an underwater point.
+    for (const street of city.streets) {
+      for (const [x] of street.points) expect(river.sampleHeight(x)).toBeGreaterThanOrEqual(-2);
+    }
+  });
+
+  test("bridges toggle off clips streets at the shore instead", () => {
+    const city = resolveCityObject(cityVolume({ seed: "riv", gridness: 1, curviness: 0, branching: 0, bridges: false }), river)!;
+    expect(city.bridges.length).toBe(0);
+    for (const street of city.streets) {
+      for (const [x] of street.points) expect(river.sampleHeight(x)).toBeGreaterThanOrEqual(-2);
+    }
+  });
+
+  test("sidewalks rule parses", () => {
+    expect(readCityRules({ sidewalks: false }).sidewalks).toBe(false);
+    expect(readCityRules({}).sidewalks).toBe(true);
+  });
+});

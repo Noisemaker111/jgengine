@@ -54,6 +54,10 @@ export interface CityRules {
   maxSlope: number;
   /** Lots below this ground height are skipped — keeps buildings out of rivers/lakes/canyons floors. */
   minElevation: number;
+  /** Streets crossing ground below `minElevation` span it on a bridge deck instead of clipping. */
+  bridges: boolean;
+  /** Render sidewalks flanking every street. */
+  sidewalks: boolean;
   /** Building style palette id (see {@link BUILDING_STYLE_PALETTES}). */
   style: BuildingStyle;
   /** Seed string; same seed reproduces the same city. Empty falls back to the volume id. */
@@ -74,6 +78,8 @@ export const CITY_DEFAULTS: CityRules = {
   floorHeight: 3,
   maxSlope: 0.5,
   minElevation: -2,
+  bridges: true,
+  sidewalks: true,
   style: DEFAULT_BUILDING_STYLE,
   seed: "",
 };
@@ -91,6 +97,8 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "blockSize", label: "block size", group: "layout", min: 20, max: 140, step: 1, default: CITY_DEFAULTS.blockSize, unit: "m" },
     { type: "range", key: "openSpace", label: "open space", group: "layout", min: 0, max: 0.9, step: 0.01, default: CITY_DEFAULTS.openSpace },
     { type: "range", key: "streetWidth", label: "street width", group: "layout", min: 3, max: 16, step: 0.5, default: CITY_DEFAULTS.streetWidth, unit: "m" },
+    { type: "bool", key: "bridges", label: "bridges over water", group: "layout", default: CITY_DEFAULTS.bridges },
+    { type: "bool", key: "sidewalks", label: "sidewalks", group: "layout", default: CITY_DEFAULTS.sidewalks },
     { type: "action", key: "layoutRandomize", label: "randomize layout", group: "layout", action: "randomize" },
     { type: "range", key: "buildingDensity", label: "density", group: "buildings", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.buildingDensity },
     { type: "range", key: "floorsMin", label: "floors min", group: "buildings", min: 1, max: 30, step: 1, default: CITY_DEFAULTS.floorsMin },
@@ -128,6 +136,8 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     floorHeight: params["floorHeight"] as number,
     maxSlope: params["maxSlope"] as number,
     minElevation: params["minElevation"] as number,
+    bridges: params["bridges"] as boolean,
+    sidewalks: params["sidewalks"] as boolean,
     style: params["style"] as BuildingStyle,
     seed: params["seed"] as string,
   };
@@ -151,6 +161,13 @@ export interface CityLot {
   jitter: number;
 }
 
+/** One bridge deck spanning water: a world-space XZ polyline from bank to bank. */
+export interface CityBridge {
+  id: string;
+  points: readonly RoadPoint[];
+  width: number;
+}
+
 /** One park/plaza block left unbuilt. */
 export interface CityPark {
   id: string;
@@ -166,6 +183,7 @@ export interface ResolvedCity {
   rotationY: number;
   rules: CityRules;
   streets: readonly CityStreet[];
+  bridges: readonly CityBridge[];
   lots: readonly CityLot[];
   parks: readonly CityPark[];
 }
@@ -587,7 +605,7 @@ export function resolveCityObject(object: SceneKindObject, context?: SceneKindRe
   const rules = readCityRules(object.meta);
   const rotationY = object.rotationY ?? 0;
   if (hx < rules.blockSize * 0.75 || hz < rules.blockSize * 0.75) {
-    return { center: [center.x, center.y, center.z], size: [hx * 2, hz * 2], rotationY, rules, streets: [], lots: [], parks: [] };
+    return { center: [center.x, center.y, center.z], size: [hx * 2, hz * 2], rotationY, rules, streets: [], bridges: [], lots: [], parks: [] };
   }
   const cos = Math.cos(rotationY);
   const sin = Math.sin(rotationY);
@@ -617,21 +635,45 @@ export function resolveCityObject(object: SceneKindObject, context?: SceneKindRe
   const xs = built.xs;
   const zs = built.zs;
   // Streets stop at the water's edge instead of running on under a lake/canyon river: split each
-  // polyline into the runs whose ground stays above the district's minimum elevation.
+  // polyline into the runs whose ground stays above the district's minimum elevation. A short
+  // underwater run bounded by land on both sides becomes a BRIDGE deck (bank point to bank point)
+  // when the district allows them — lanes never bridge, and spans longer than a few blocks clip.
+  const localBridges: { points: [number, number][]; width: number }[] = [];
+  const maxBridgeSpan = rules.blockSize * 2.5;
   const clipToLand = (streets: LocalStreet[]): LocalStreet[] => {
     if (heightAt === null) return streets;
     const out: LocalStreet[] = [];
     for (const street of streets) {
       let run: [number, number][] = [];
-      const flush = () => {
+      let wet: [number, number][] = [];
+      const flushLand = () => {
         if (run.length >= 2) out.push({ ...street, points: run });
-        run = [];
       };
       for (const point of street.points) {
-        if (heightAt(point[0], point[1]) >= rules.minElevation) run.push(point);
-        else flush();
+        if (heightAt(point[0], point[1]) >= rules.minElevation) {
+          if (wet.length > 0) {
+            // Land after water: bridge it when short enough and there was land before.
+            const bank = run.length > 0 ? run[run.length - 1]! : null;
+            let span = 0;
+            const deck: [number, number][] = bank === null ? [...wet] : [bank, ...wet];
+            deck.push(point);
+            for (let i = 1; i < deck.length; i += 1) span += Math.hypot(deck[i]![0] - deck[i - 1]![0], deck[i]![1] - deck[i - 1]![1]);
+            if (rules.bridges && bank !== null && street.level !== "lane" && span <= maxBridgeSpan) {
+              // Record the deck, then split the land street at the banks so the draped road ends
+              // at the shore instead of sagging underwater beneath the deck.
+              localBridges.push({ points: deck, width: street.width });
+            }
+            wet = [];
+            flushLand();
+            run = [point];
+            continue;
+          }
+          run.push(point);
+        } else {
+          wet.push(point);
+        }
       }
-      flush();
+      flushLand();
     }
     return out;
   };
@@ -640,6 +682,7 @@ export function resolveCityObject(object: SceneKindObject, context?: SceneKindRe
   mains.forEach((street, i) => index.addStreet(i, street.points, street.width));
   const branches = clipToLand(buildBranches(rules, streams, mains, index, hx, hz));
   branches.forEach((street, i) => index.addStreet(mains.length + i, street.points, street.width));
+  localBridges.forEach((bridge, i) => index.addStreet(mains.length + branches.length + i, bridge.points, bridge.width));
   const local = [...mains, ...branches].slice(0, MAX_STREETS);
   const parks = buildParks(rules, streams, xs, zs);
   const lots = buildLots(rules, streams, local, index, parks, hx, hz, slopeAt, heightAt);
@@ -654,6 +697,11 @@ export function resolveCityObject(object: SceneKindObject, context?: SceneKindRe
       points: street.points.map(([x, z]) => toWorld(x, z)),
       width: street.width,
       level: street.level,
+    })),
+    bridges: localBridges.map((bridge, i) => ({
+      id: `bridge:${i}`,
+      points: bridge.points.map(([x, z]) => toWorld(x, z)),
+      width: bridge.width,
     })),
     lots: lots.map((lot) => ({ ...lot, center: toWorld(lot.center[0], lot.center[1]), rotationY: lot.rotationY - rotationY })),
     parks: parks.map((park) => ({ ...park, center: toWorld(park.center[0], park.center[1]), rotationY: -rotationY })),

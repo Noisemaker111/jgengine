@@ -193,7 +193,8 @@
         "floorsMax": 3,
         "floorHeight": 3,
         "style": "village",
-        "seed": "laurel-canyon-3"
+        "seed": "laurel-canyon-3",
+        "sidewalks": false
       }
     },
     {

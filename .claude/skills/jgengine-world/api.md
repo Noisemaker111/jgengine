@@ -2192,6 +2192,7 @@
 - `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a mid-size mixed downtown.
 - `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
 - `CITY_SCHEMA` (const): const CITY_SCHEMA: ParamSchema — The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam.
+- `CityBridge` (interface): interface CityBridge — One bridge deck spanning water: a world-space XZ polyline from bank to bank.
 - `CityLot` (interface): interface CityLot — One building lot: footprint center/size (XZ), yaw, seeded floors, and a 0..1 color-jitter token.
 - `CityPark` (interface): interface CityPark — One park/plaza block left unbuilt.
 - `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
