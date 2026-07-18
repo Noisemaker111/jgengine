@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { EditorHostApi } from "../session";
-import { BTN, INPUT, MICRO } from "../chromeStyles";
+import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL, PANEL_BG } from "../shell/theme";
+
+const BTN = `${CONTROL} px-2 py-1 text-[11px] disabled:opacity-40`;
+const INPUT = `px-2 py-1 ${INPUT_CLS}`;
+const MICRO = MICRO_LABEL;
 import {
   createDefaultAgentEndpoint,
   createHttpAgentEndpoint,
@@ -148,10 +152,10 @@ export function AgentPanel({
       className={
         embedded
           ? "pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden"
-          : "pointer-events-auto flex w-80 min-w-64 max-w-[48vw] resize-x flex-col overflow-hidden border-l border-white/[0.08] bg-[#0d0f13]/95 backdrop-blur-md"
+          : `pointer-events-auto flex w-80 min-w-64 max-w-[48vw] resize-x flex-col overflow-hidden border-l ${BORDER} ${PANEL_BG}/95 backdrop-blur-md`
       }
     >
-      <div className="flex items-center gap-2 border-b border-white/[0.08] px-2 py-2">
+      <div className={`flex items-center gap-2 border-b ${BORDER} px-2 py-2`}>
         <div className={MICRO}>Agent</div>
         <span
           className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${
@@ -167,15 +171,15 @@ export function AgentPanel({
           Config
         </button>
         {onClose !== undefined ? (
-          <button type="button" className="rounded-md px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={onClose} aria-label="Close agent panel">
+          <button type="button" className={`rounded-[5px] px-2 py-1 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200 ${FOCUS_RING}`} onClick={onClose} aria-label="Close agent panel">
             ×
           </button>
         ) : null}
       </div>
 
       {showConfig ? (
-        <div className="space-y-2 border-b border-white/[0.08] p-2">
-          <div className={`${MICRO} text-neutral-500`}>Endpoint</div>
+        <div className={`space-y-2 border-b ${BORDER} p-2`}>
+          <div className={MICRO}>Endpoint</div>
           <input
             className={`w-full text-[11px] ${INPUT}`}
             placeholder={`${EDITOR_AGENT_URL_ENV} or https://…`}
@@ -214,7 +218,7 @@ export function AgentPanel({
         </div>
       ) : null}
 
-      <div className="border-b border-white/[0.08] px-2 py-1.5 text-[10px] text-neutral-500">
+      <div className={`border-b ${BORDER} px-2 py-1.5 text-[10px] text-neutral-500`}>
         <span className="text-neutral-400">{context.mode}</span>
         <span className="mx-1.5 text-neutral-700">·</span>
         <span>
@@ -229,7 +233,7 @@ export function AgentPanel({
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-auto p-2">
         {transcript.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-white/10 bg-black/20 p-3 text-[11px] leading-relaxed text-neutral-500">
+          <div className={`rounded-[6px] border border-dashed ${BORDER} bg-black/20 p-3 text-[11px] leading-relaxed text-neutral-500`}>
             Chat drives the live scene through the same RPC verbs as the MCP bridge. Edits share undo
             with the toolbar. Local: try <code className="text-cyan-300">/status</code>,{" "}
             <code className="text-cyan-300">/help</code>, or{" "}
@@ -243,7 +247,7 @@ export function AgentPanel({
       </div>
 
       {patches.some((p) => !p.undone) ? (
-        <div className="max-h-28 overflow-auto border-t border-white/[0.08] p-2">
+        <div className={`max-h-28 overflow-auto border-t ${BORDER} p-2`}>
           <div className={`${MICRO} mb-1`}>Agent patches</div>
           <ul className="space-y-1">
             {patches
@@ -269,7 +273,7 @@ export function AgentPanel({
         </div>
       ) : null}
 
-      <div className="flex gap-1 border-t border-white/[0.08] p-2">
+      <div className={`flex gap-1 border-t ${BORDER} p-2`}>
         <input
           className={`min-w-0 flex-1 text-[12px] ${INPUT}`}
           placeholder={endpoint.id === "local" ? "/help · /status · move id x y z" : "Ask the agent to edit the scene…"}
