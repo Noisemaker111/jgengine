@@ -17,8 +17,17 @@ import {
   type SceneKindObject,
 } from "@jgengine/core/scene/sceneKinds";
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import { useGameContext } from "@jgengine/react/provider";
 
+import {
+  canAuthorTrigger,
+  clearMaterialAssignmentPatch,
+  clearTriggerInstallPatch,
+  defaultTriggerInstallPatch,
+  hasAuthoredTrigger,
+  hasMaterialAssignment,
+} from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 import { TriggerInspector } from "./TriggerInspector";
 import type { EditorHostApi } from "./session";
@@ -278,6 +287,70 @@ interface SectionState {
   toggle: (id: string) => void;
 }
 
+/**
+ * Add/remove bar for optional authored components (trigger, material). Only offers real
+ * data-model seams — no invented component system.
+ */
+function ComponentAddBar({
+  target,
+  meta,
+  onMeta,
+  api,
+  selectionIds,
+}: {
+  target: TriggerSourceKind;
+  meta: Record<string, unknown> | undefined;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+  api?: EditorHostApi;
+  selectionIds: readonly string[];
+}) {
+  const offerTrigger = canAuthorTrigger(target) && !hasAuthoredTrigger(meta);
+  const offerMaterial = api !== undefined && selectionIds.length > 0 && !hasMaterialAssignment(meta);
+  if (!offerTrigger && !offerMaterial) return null;
+  return (
+    <div className="space-y-1.5 rounded-[6px] border border-dashed border-white/[0.1] bg-white/[0.02] p-2">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">Add component</div>
+      <div className="flex flex-wrap gap-1.5">
+        {offerTrigger ? (
+          <button
+            type="button"
+            className={`rounded-[5px] border border-amber-400/25 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-100 transition-colors hover:bg-amber-500/20 ${FOCUS_RING}`}
+            onClick={() => {
+              const patch = defaultTriggerInstallPatch(target, meta);
+              if (patch !== null) onMeta(patch, "component:add-trigger");
+            }}
+          >
+            + Trigger
+          </button>
+        ) : null}
+        {offerMaterial ? (
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+            <span className="sr-only">Add material</span>
+            <select
+              className={`h-7 max-w-[10rem] px-1.5 ${INPUT_CLS}`}
+              defaultValue=""
+              aria-label="Add material component"
+              onChange={(event) => {
+                const materialId = event.target.value;
+                if (materialId.length === 0) return;
+                api.handle({ method: "assign_material", ids: [...selectionIds], materialId });
+                event.currentTarget.value = "";
+              }}
+            >
+              <option value="">+ Material…</option>
+              {TERRAIN_MATERIALS.map((material) => (
+                <option key={material.id} value={material.id}>
+                  {material.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function Section({
   id,
   title,
@@ -527,22 +600,68 @@ export function InspectorPanel({
     const marker = selectedMarker;
     const onMeta = (patch: Record<string, unknown>, coalesce: string) =>
       session.dispatch({ type: "setMarker", id: marker.id, patch: { meta: { ...marker.meta, ...patch } } }, { coalesce: `${coalesce}:${marker.id}` });
+    const hasTrigger = hasAuthoredTrigger(marker.meta);
+    const hasMaterial = hasMaterialAssignment(marker.meta);
+    const hasGenerator = typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined;
+    const hasKindParams = isSceneKind(marker.kind);
     const componentCards = (
       <>
-        {isSceneKind(marker.kind) ? (
+        <ComponentAddBar
+          target="marker"
+          meta={marker.meta}
+          onMeta={onMeta}
+          api={api}
+          selectionIds={[marker.id]}
+        />
+        {hasKindParams ? (
           <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
             <KindInspector object={markerObject(marker)} meta={marker.meta} onMeta={onMeta} />
           </Section>
         ) : null}
-        <Section id="trigger" title="Trigger" icon="target" sections={sections}>
-          <TriggerInspector target="marker" meta={marker.meta} onMeta={onMeta} />
-        </Section>
-        <Section id="generator" title="Generator" icon="cube" sections={sections}>
-          <GeneratorInspector meta={marker.meta} onMeta={onMeta} />
-          {typeof marker.meta?.["assetId"] !== "string" ? (
-            <div className="text-[10px] text-neutral-600">Not a generated asset.</div>
-          ) : null}
-        </Section>
+        {hasTrigger ? (
+          <Section
+            id="trigger"
+            title="Trigger"
+            icon="target"
+            sections={sections}
+            trailing={
+              <SectionAction label="Remove trigger component" onClick={() => onMeta(clearTriggerInstallPatch(), "component:remove-trigger")}>
+                remove
+              </SectionAction>
+            }
+          >
+            <TriggerInspector target="marker" meta={marker.meta} onMeta={onMeta} />
+          </Section>
+        ) : null}
+        {hasMaterial ? (
+          <Section
+            id="material"
+            title="Material"
+            icon="sphere"
+            sections={sections}
+            trailing={
+              <SectionAction label="Remove material assignment" onClick={() => onMeta(clearMaterialAssignmentPatch(), "component:remove-material")}>
+                remove
+              </SectionAction>
+            }
+          >
+            <div className="text-[11px] text-neutral-300">
+              materialId: <span className={NUMERIC}>{String(marker.meta?.["materialId"])}</span>
+            </div>
+          </Section>
+        ) : null}
+        {hasGenerator ? (
+          <Section id="generator" title="Generator" icon="cube" sections={sections}>
+            <GeneratorInspector meta={marker.meta} onMeta={onMeta} />
+          </Section>
+        ) : null}
+        {!hasKindParams && !hasTrigger && !hasMaterial && !hasGenerator && !canAuthorTrigger("marker") ? (
+          <EmptyState
+            icon="settings"
+            title="No components"
+            description="This marker has no optional components. Games that register trigger actions enable Add trigger here."
+          />
+        ) : null}
       </>
     );
     body = (
@@ -644,20 +763,70 @@ export function InspectorPanel({
         : { ...current, [axis]: Math.max(0.5, value) };
       session.dispatch({ type: "setVolume", id: volume.id, patch: { halfExtents: next } }, { coalesce: `he:${linkedExtents ? "all" : axis}:${volume.id}` });
     };
+    const hasTrigger = hasAuthoredTrigger(volume.meta);
+    const hasMaterial = hasMaterialAssignment(volume.meta);
+    const hasVegetation = readVegetationSettings(volume) !== null;
+    const hasKindParams = isSceneKind(volume.kind);
     const componentCards = (
       <>
-        {isSceneKind(volume.kind) ? (
+        <ComponentAddBar
+          target="volume"
+          meta={volume.meta}
+          onMeta={onMeta}
+          api={api}
+          selectionIds={[volume.id]}
+        />
+        {hasKindParams ? (
           <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
             <KindInspector object={volumeObject(volume)} meta={volume.meta} onMeta={onMeta} />
           </Section>
         ) : null}
-        <Section id="trigger" title="Trigger" icon="target" sections={sections}>
-          <TriggerInspector target="volume" meta={volume.meta} onMeta={onMeta} />
-        </Section>
-        {readVegetationSettings(volume) !== null ? (
+        {hasTrigger ? (
+          <Section
+            id="trigger"
+            title="Trigger"
+            icon="target"
+            sections={sections}
+            trailing={
+              <SectionAction label="Remove trigger component" onClick={() => onMeta(clearTriggerInstallPatch(), "component:remove-trigger")}>
+                remove
+              </SectionAction>
+            }
+          >
+            <TriggerInspector target="volume" meta={volume.meta} onMeta={onMeta} />
+          </Section>
+        ) : null}
+        {hasMaterial ? (
+          <Section
+            id="material"
+            title="Material"
+            icon="sphere"
+            sections={sections}
+            trailing={
+              <SectionAction label="Remove material assignment" onClick={() => onMeta(clearMaterialAssignmentPatch(), "component:remove-material")}>
+                remove
+              </SectionAction>
+            }
+          >
+            <div className="text-[11px] text-neutral-300">
+              materialId: <span className={NUMERIC}>{String(volume.meta?.["materialId"])}</span>
+            </div>
+          </Section>
+        ) : null}
+        {hasVegetation ? (
           <Section id="vegetation" title="Vegetation" icon="terrain" sections={sections}>
+            <div className="mb-1.5 text-[10px] text-neutral-500">
+              Owned by volume kind <span className={NUMERIC}>vegetation</span> — change kind in Inspector to remove.
+            </div>
             <VegetationFields volume={volume} onMeta={onMeta} />
           </Section>
+        ) : null}
+        {!hasKindParams && !hasTrigger && !hasMaterial && !hasVegetation && !canAuthorTrigger("volume") ? (
+          <EmptyState
+            icon="settings"
+            title="No components"
+            description="This volume has no optional components. Games that register trigger actions enable Add trigger here."
+          />
         ) : null}
       </>
     );
