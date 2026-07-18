@@ -109,7 +109,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
 
-## city-district — resolve a `city` volume into deterministic streets, building lots, and parks
+## city-district — resolve a `city` volume into deterministic streets, zoned lots, parks, and furniture
 
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 

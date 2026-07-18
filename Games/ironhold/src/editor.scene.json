@@ -375,7 +375,7 @@
         "blockSize": 24,
         "blockAspect": 1,
         "openSpace": 0.15,
-        "buildingDensity": 0.75,
+        "buildingDensity": 0.85,
         "streetWidth": 3.5,
         "boulevards": 0,
         "gravelLanes": true,
@@ -434,7 +434,8 @@
         "fields": false,
         "sidewalks": false,
         "style": "ruin",
-        "seed": "ashfall-3"
+        "seed": "ashfall-3",
+        "surface": "gravel"
       }
     }
   ],
