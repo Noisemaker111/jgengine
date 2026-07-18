@@ -27,31 +27,43 @@ describe("shoot daemon CLI routing", () => {
 
 describe("shoot daemon state file", () => {
   test("write/read/clear round-trip on the per-checkout path", () => {
-    const path = daemonStatePath();
-    if (existsSync(path)) unlinkSync(path);
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-state-"));
+    try {
+      const path = daemonStatePath(cwd);
+      if (existsSync(path)) unlinkSync(path);
 
-    const state: ShootDaemonState = {
-      identity: "test-checkout",
-      chromePort: 9223,
-      devPort: 4517,
-      devBase: "http://127.0.0.1:4517",
-      chromePid: 1,
-      startedAt: new Date().toISOString(),
-    };
-    writeDaemonState(state);
-    expect(existsSync(path)).toBe(true);
-    const loaded = readDaemonState();
-    expect(loaded?.chromePort).toBe(9223);
-    expect(loaded?.devBase).toBe("http://127.0.0.1:4517");
-    clearDaemonState();
-    expect(readDaemonState()).toBeNull();
+      const state: ShootDaemonState = {
+        identity: "test-checkout",
+        chromePort: 9223,
+        devPort: 4517,
+        devBase: "http://127.0.0.1:4517",
+        chromePid: 1,
+        startedAt: new Date().toISOString(),
+      };
+      writeDaemonState(state, cwd);
+      expect(existsSync(path)).toBe(true);
+      const loaded = readDaemonState(cwd);
+      expect(loaded?.chromePort).toBe(9223);
+      expect(loaded?.devBase).toBe("http://127.0.0.1:4517");
+      clearDaemonState(cwd);
+      expect(readDaemonState(cwd)).toBeNull();
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 
   test("corrupt state file yields null", () => {
-    const path = daemonStatePath();
-    writeFileSync(path, "{not-json");
-    expect(readDaemonState()).toBeNull();
-    clearDaemonState();
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-corrupt-"));
+    try {
+      const path = daemonStatePath(cwd);
+      writeFileSync(path, "{not-json");
+      expect(readDaemonState(cwd)).toBeNull();
+      clearDaemonState(cwd);
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 });
 

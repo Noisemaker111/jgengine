@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 
 import {
   checkoutIdentity,
+  closePageTarget,
   resolveDevPort,
   resolveWarmChromePort,
 } from "./browser-lib";
@@ -46,5 +49,31 @@ describe("worktree-scoped ports", () => {
     // Extremely small collision chance across 483 buckets; flaky only if both collide.
     expect(here === other || here !== other).toBe(true);
     expect(typeof other).toBe("number");
+  });
+});
+
+describe("page target cleanup", () => {
+  test("closes the owned target through Chrome's debugger endpoint", async () => {
+    let requestedUrl = "";
+    const server = createServer((request, response) => {
+      requestedUrl = request.url ?? "";
+      response.writeHead(200);
+      response.end("Target is closing");
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+    try {
+      const address = server.address() as AddressInfo;
+      await expect(closePageTarget(address.port, "target-123")).resolves.toBe(true);
+      expect(requestedUrl).toBe("/json/close/target-123");
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error === undefined ? resolve() : reject(error)));
+      });
+    }
+  });
+
+  test("reports an unreachable debugger without throwing", async () => {
+    await expect(closePageTarget(1, "missing")).resolves.toBe(false);
   });
 });
