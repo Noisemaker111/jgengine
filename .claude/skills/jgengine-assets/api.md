@@ -18,6 +18,7 @@
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
 - `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
 - `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
+- `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
@@ -113,9 +114,14 @@
 - `generatedDir` (const): const generatedDir: string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
 - `generatedSpritesDir` (const): const generatedSpritesDir: string — Sprite-pack counterpart of `generatedDir`.
 
+## @jgengine/assets/collisionMeshAssets
+
+- `COLLISION_MESH_ASSET_IDS` (const): const COLLISION_MESH_ASSET_IDS: ReadonlySet<string> — Catalog assets that ship a collision mesh in the generated index. Opt-in only: each entry adds ~10-30KB of quantized triangles to the index and a BVH raycast per query, so list only concave models whose fitted box lies (archways, rings, frames).
+
 ## @jgengine/assets/dims
 
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
+- `readGlbCollisionMesh` (function): function readGlbCollisionMesh(bytes: Uint8Array): CollisionMeshData | null — Extract a model-space collision triangle soup from a GLB and compress it with {@link encodeCollisionMesh}. Walks the default scene, transforming each TRIANGLES primitive's float32 VEC3 positions by the node's world matrix, and returns `null` for a JSON-only GLB or when no triangle survives quantization.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 
 ## @jgengine/assets/download
@@ -155,7 +161,7 @@
 ## @jgengine/assets/indexGen
 
 - `ReindexResult` (interface): interface ReindexResult — ⚠ undocumented
-- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims): IndexEntry — ⚠ undocumented
+- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData): IndexEntry — ⚠ undocumented
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
@@ -168,6 +174,7 @@
 - `AssetSource` (interface): interface AssetSource — ⚠ undocumented
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
+- `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented

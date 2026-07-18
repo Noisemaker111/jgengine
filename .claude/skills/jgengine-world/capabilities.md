@@ -231,6 +231,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## mesh-hitboxes — shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
+
+- `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
+
 ## minimap-bake — rasterize authored terrain + zones into a top-down minimap image
 
 - `bakeMinimapImage` (function) · `import { bakeMinimapImage } from "@jgengine/core/world"`

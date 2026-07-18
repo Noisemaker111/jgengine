@@ -46,6 +46,7 @@ export interface PreparedCollisionMesh {
   readonly triOrder: Uint32Array;
 }
 
+/** Nearest triangle impact from {@link raycastCollisionMesh}: world distance along the ray and the world-space geometric normal facing the ray. */
 export interface CollisionMeshHit {
   distance: number;
   normal: EntityPosition;

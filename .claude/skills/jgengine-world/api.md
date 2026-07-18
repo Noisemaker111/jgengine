@@ -928,7 +928,7 @@
 
 - `ColliderDef` (interface): interface ColliderDef — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
-- `ColliderShape` (type): type ColliderShape = | { kind: "sphere"; radius: number; offset?: EntityPosition } | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition } — ⚠ undocumented
+- `ColliderShape` (type): type ColliderShape = | { kind: "sphere"; radius: number; offset?: EntityPosition } | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition } | { kind: "mesh"; /** Prepared triangle mesh in model space — engine-derived from an opted-in catalog asset, never hand-authored. */ mesh: Prepa… — Collision geometry in entity-local space. `sphere` and `aabb` are analytic; `mesh` carries a prepared triangle mesh so opted-in concave models raycast their real surface while bounds and broadphase keep reading the conservative `halfExtents`.
 - `DEFAULT_ENTITY_BODY_HALF_EXTENTS` (const): const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition — Matches the shell's fallback actor capsule (~0.7m wide, feet at y=0 to head at ~1.8m).
 - `DEFAULT_ENTITY_BODY_OFFSET` (const): const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition — Entity-local center of the default body hitbox (half its height above the feet).
 - `DEFAULT_ENTITY_HIT_RADIUS` (const): const DEFAULT_ENTITY_HIT_RADIUS: 0.5 — ⚠ undocumented
@@ -936,6 +936,16 @@
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
 - `ModelBodySource` (interface): interface ModelBodySource — The render-config subset collider fitting reads — structurally satisfied by a resolved `ModelConfig`, so the shell can hand its render config straight to the fitting math without a conversion step.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+
+## @jgengine/core/scene/collisionMesh
+
+- `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
+- `CollisionMeshHit` (interface): interface CollisionMeshHit — Nearest triangle impact from {@link raycastCollisionMesh}: world distance along the ray and the world-space geometric normal facing the ray.
+- `CollisionMeshSource` (interface): interface CollisionMeshSource — Raw triangle soup for {@link encodeCollisionMesh}: model-space xyz triples plus triangle indices.
+- `PreparedCollisionMesh` (interface): interface PreparedCollisionMesh — Decoded, BVH-indexed triangles ready for per-ray queries — build once per asset via {@link prepareCollisionMesh}. Treat the fields as opaque; they exist so the raycast hot path can run allocation-free over flat arrays.
+- `encodeCollisionMesh` (function): function encodeCollisionMesh(source: CollisionMeshSource): CollisionMeshData | null — Quantize a triangle soup onto the 16-bit grid, weld coincident vertices, and drop triangles that collapse — the reindex-time compressor producing {@link CollisionMeshData}. Returns `null` when no finite, non-degenerate triangle survives.
+- `prepareCollisionMesh` (function): function prepareCollisionMesh(data: CollisionMeshData): PreparedCollisionMesh | null — Decode a stored collision mesh and index it with a BVH. Memoized per data object, so the shell and a headless host preparing the same catalog entry share one build. Returns `null` (also memoized) when the payload is malformed.
+- `raycastCollisionMesh` (function): function raycastCollisionMesh(mesh: PreparedCollisionMesh, origin: EntityPosition, direction: EntityPosition, maxDistance: number, position: EntityPosition, rotationY: number, scale: number, translate: EntityPosition): CollisionMeshHit | null — Nearest triangle hit for a world-space ray against a prepared mesh placed like its rendered model: model space scaled uniformly by `scale`, translated by entity-local `translate`, yaw-rotated by `rotationY`, and moved to `position` — the same composition {@link "scene/colliders".ModelBodySource} fitting applies to the AABB. Allocation-free until the returned hit. `distance` is world distance along `direction` (callers pass `direction` normalized); `normal` is the world-space geometric triangle normal facing the ray.
 
 ## @jgengine/core/scene/companion
 
