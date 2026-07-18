@@ -1740,10 +1740,11 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       for (const spot of spots) {
         if (trees.length >= MAX_TREES) break;
         if (treeRng() > rules.treeDensity * 0.85 + 0.15) continue;
-        const x = spot.position[0] + (treeRng() - 0.5) * 1.6;
-        const z = spot.position[1] + (treeRng() - 0.5) * 1.6;
-        if (!insideBounds(x, z) || nearIntersection(x, z, 1)) continue;
-        if (index.clearance(x, z, 1.2) < 0) continue;
+        const x = spot.position[0] + (treeRng() - 0.5) * 1.2;
+        const z = spot.position[1] + (treeRng() - 0.5) * 1.2;
+        // Keep canopies out of the crossing sight-triangle and off the carriageway edge.
+        if (!insideBounds(x, z) || nearIntersection(x, z, 5)) continue;
+        if (index.clearance(x, z, 2.6) < 0) continue;
         if (lotResult.placed.overlapsAny({ x, z, hw: 0.5, hd: 0.5, angle: 0 }, 0.5)) continue;
         trees.push({ x, z, species: pickSpecies(rules.treeMix, treeRng()), scale: 0.85 + treeRng() * 0.5, jitter: treeRng() });
       }
