@@ -46,6 +46,7 @@ import type {
   EditorDocument,
   EditorFragmentContent,
   EditorMarker,
+  EditorMinimapBake,
   EditorNote,
   EditorPath,
   EditorPrefab,
@@ -90,6 +91,7 @@ export type EditorCommand =
   | { type: "setTerrainLayers"; layers: readonly TerrainMaterialLayer[] }
   | { type: "blendTerrain"; delta: WeightDelta }
   | { type: "clearTerrain" }
+  | { type: "setMinimapBake"; minimap: EditorMinimapBake }
   | { type: "convertScatterToObjects"; pathId: string; markers: readonly EditorMarker[] }
   | { type: "createPrefab"; id: string; name: string; ids: readonly string[] }
   | { type: "insertPrefab"; prefabId: string; at: EditorVec3; instanceId?: string }
@@ -605,6 +607,7 @@ const mutationHandlers: MutationHandlers = {
     selection: [],
   }),
   setTerrain: (state, command) => ({ ...state, document: { ...state.document, terrain: command.terrain } }),
+  setMinimapBake: (state, command) => ({ ...state, document: { ...state.document, minimap: command.minimap } }),
   clearTerrain: (state) => {
     const nextDoc: EditorDocument = {
       version: 1,

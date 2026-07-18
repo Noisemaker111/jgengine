@@ -86,6 +86,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   set_terrain_layers: [req(oa("layers", [req(s("id")), req(s("surface")), n("roughness"), n("tiling"), b("triplanar"), s("tint"), n("opacity")]))],
   blend_terrain: [req(s("surface")), req(n("x")), req(n("z")), n("radius"), n("strength"), s("shape", SHAPE)],
   convert_scatter: [req(s("pathId"))],
+  bake_minimap: [n("padding"), n("resolution"), n("waterLevel")],
   add_foliage: [req(oa("points", [req(n("x")), req(n("z"))])), n("density"), s("item"), s("seed"), n("minSpacing")],
   scatter_summary: [],
   set_parent: [req(sa("ids")), req(sn("parentId"))],

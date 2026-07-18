@@ -69,6 +69,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "set_terrain_layers", description: "Replace the reorderable terrain material layer stack; a params-only edit keeps painted blends." },
   { name: "blend_terrain", description: "Blend-paint a material layer's weight at x/z (weighted multi-layer blend); auto-adds the layer." },
   { name: "convert_scatter", description: "Detach a foliage/scatter region into individually-editable placed prop markers, removing the region." },
+  { name: "bake_minimap", description: "Rasterize the authored terrain into a stored minimap PNG on the document (runtime reads it as the Minimap background). Live-editor only — needs the mounted viewport's terrain sampler, not a headless CLI." },
   { name: "add_foliage", description: "Add a foliage/scatter region from a closed polygon (≥3 x/z points) with density and item." },
   { name: "scatter_summary", description: "Count foliage/scatter regions and their total deterministic instance placements." },
   { name: "set_parent", description: "Parent objects under another (or null to unparent); cycles are refused. Moving a parent moves its subtree." },

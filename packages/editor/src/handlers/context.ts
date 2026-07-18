@@ -5,6 +5,7 @@ import type {
   EditorSession,
   EditorSessionState,
 } from "@jgengine/core/editor/index";
+import type { TerrainField } from "@jgengine/core/world/terrain";
 import type { EditorBridgeRequest, EditorBridgeResponse, EditorHostApi } from "../session";
 
 /** Outcome of a guarded dispatch: whether it mutated the session, plus the resulting state. */
@@ -27,6 +28,8 @@ export interface HandlerContext {
   catalogDefinitions: readonly EditorCatalogDefinition[];
   catalogById: ReadonlyMap<string, EditorCatalogDefinition>;
   dispatchGuarded: (command: EditorCommand) => DispatchOutcome;
+  /** The live composed ground field from the mounted viewport (null when headless). Used by `bake_minimap`. */
+  getTerrainSampler: () => TerrainField | null;
 }
 
 /** One method's handler, with `request` narrowed to that method's union member. */

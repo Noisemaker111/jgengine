@@ -877,3 +877,67 @@ describe("convertScatterToObjects command", () => {
     expect(session.getState().document.markers.length).toBe(0);
   });
 });
+
+describe("minimap bake persistence (#1036)", () => {
+  const bake = () => ({
+    background: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    bounds: { minX: -10, minZ: -20, maxX: 30, maxZ: 40 },
+  });
+
+  test("minimap survives decode/clone/normalize/overlay and a delete pass", () => {
+    const doc = { ...createEmptyEditorDocument(), minimap: bake() };
+
+    // Decode round-trip through JSON keeps the PNG + bounds.
+    const decoded = decodeEditorDocument(JSON.parse(exportEditorDocumentJson(doc)));
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) throw new Error("expected ok");
+    expect(decoded.document.minimap).toEqual(bake());
+
+    // normalizeEditorLayers (the game load path) carries it.
+    expect(normalizeEditorLayers(doc).minimap).toEqual(bake());
+
+    // Overlay: base bake shows through when the overlay has none.
+    const overlaid = applyEditorDocumentOverlay(doc, createEmptyEditorDocument());
+    expect(overlaid.minimap).toEqual(bake());
+
+    // The removeMany strip trap: unrelated deletes must not wipe the stored bake.
+    const session = createEditorSession({
+      ...createEmptyEditorDocument(),
+      markers: [{ id: "m", kind: "prop", position: { x: 0, y: 0, z: 0 } }],
+      minimap: bake(),
+    });
+    session.dispatch({ type: "removeMany", ids: ["m"] });
+    expect(session.getState().document.markers.length).toBe(0);
+    expect(session.getState().document.minimap).toEqual(bake());
+  });
+
+  test("malformed background/bounds surface a diagnostic", () => {
+    const badBackground = decodeEditorDocument({
+      ...createEmptyEditorDocument(),
+      minimap: { background: "not-a-data-uri", bounds: { minX: 0, minZ: 0, maxX: 1, maxZ: 1 } },
+    });
+    expect(badBackground.ok).toBe(false);
+    if (badBackground.ok) throw new Error("expected failure");
+    expect(badBackground.errors.some((e) => e.path === "$.minimap.background")).toBe(true);
+
+    const badBounds = decodeEditorDocument({
+      ...createEmptyEditorDocument(),
+      minimap: { background: "data:image/png;base64,AAAA", bounds: { minX: 0, minZ: 0, maxX: Infinity } },
+    });
+    expect(badBounds.ok).toBe(false);
+    if (badBounds.ok) throw new Error("expected failure");
+    expect(badBounds.errors.some((e) => e.path === "$.minimap.bounds")).toBe(true);
+  });
+
+  test("setMinimapBake is undoable and restores the prior minimap", () => {
+    const first = bake();
+    const second = { background: "data:image/png;base64,AAAA", bounds: { minX: 1, minZ: 2, maxX: 3, maxZ: 4 } };
+    const session = createEditorSession({ ...createEmptyEditorDocument(), minimap: first });
+    session.dispatch({ type: "setMinimapBake", minimap: second });
+    expect(session.getState().document.minimap).toEqual(second);
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.minimap).toEqual(first);
+    session.dispatch({ type: "redo" });
+    expect(session.getState().document.minimap).toEqual(second);
+  });
+});

@@ -70,8 +70,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
 - `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
 
-## minimap-bake — bake a minimap PNG + bounds from the authored scene document
+## minimap-bake — persist a baked minimap PNG + bounds on the scene document
 
+- `EditorMinimapBake` (interface) · `import { EditorMinimapBake } from "@jgengine/core/editor"`
 - `bakeMinimapFromDocument` (function) · `import { bakeMinimapFromDocument } from "@jgengine/core/editor"`
 - `documentBakeZones` (function) · `import { documentBakeZones } from "@jgengine/core/editor"`
 

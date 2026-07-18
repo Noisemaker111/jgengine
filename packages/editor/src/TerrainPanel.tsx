@@ -10,7 +10,7 @@ import {
   type TerrainSurfaceRule,
 } from "@jgengine/core/world/terraform";
 
-import type { EditorSession } from "./session";
+import type { EditorHostApi, EditorSession } from "./session";
 import { TERRAIN_MATERIALS, type EditorUiStore, type TerrainBrushKind } from "./uiStore";
 import { INPUT } from "./chromeStyles";
 import { SliderRow } from "./chromeFields";
@@ -139,8 +139,9 @@ function PaintControls({ session, ui }: { session: EditorSession; ui: EditorUiSt
 }
 
 /** The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls. */
-export function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }) {
+export function TerrainPanel({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }) {
   const [, setTick] = useState(0);
+  const [bakeStatus, setBakeStatus] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
   const uiState = ui.getState();
@@ -151,11 +152,23 @@ export function TerrainPanel({ session, ui }: { session: EditorSession; ui: Edit
     session.dispatch({ type: "setTerrain", terrain: createTerrainSnapshot({ bounds: defaultTerrainBounds(document), cellSize: 2 }) });
   };
 
+  const bakeMinimap = () => {
+    const response = api.handle({ method: "bake_minimap" });
+    if (response.ok) setBakeStatus({ tone: "ok", text: "Minimap baked onto the scene." });
+    else setBakeStatus({ tone: "error", text: response.error ?? "Bake failed." });
+  };
+
   return (
     <div className="pointer-events-auto absolute right-3 top-3 z-40 max-h-[calc(100%-1.5rem)] w-64 space-y-2.5 overflow-auto rounded-xl border border-amber-400/20 bg-[#0d0f13]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-md">
       <div className="flex items-center">
         <div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-amber-300">Terrain</div>
         <button type="button" className="ml-auto rounded-md px-2 py-0.5 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-200" onClick={() => ui.setTool("select")} title="Back to select tool">×</button>
+      </div>
+      <div className="space-y-1 border-b border-white/[0.06] pb-2">
+        <button type="button" className="w-full rounded-md bg-white/[0.04] px-2 py-1 text-[11px] text-neutral-200 ring-1 ring-inset ring-white/[0.06] transition-colors hover:bg-white/10" onClick={bakeMinimap} title="Rasterize the authored terrain into a stored minimap PNG the game reads at runtime">Bake minimap</button>
+        {bakeStatus !== null ? (
+          <div className={`text-[10px] leading-snug ${bakeStatus.tone === "error" ? "text-rose-300" : "text-emerald-300"}`}>{bakeStatus.text}</div>
+        ) : null}
       </div>
       {!hasTerrain ? (
         <div className="space-y-2">

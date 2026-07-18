@@ -40,6 +40,7 @@
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
+- `EditorMinimapBake` (interface): interface EditorMinimapBake — A baked top-down minimap stored on the scene document (#1036): the PNG the editor rasterized from the authored terrain (a `data:image/png;base64,…` URI) plus the world bounds it spans. Runtime feeds these straight into the `Minimap`/`WorldMap` `background`/`mapBounds` props — no re-raster.
 - `EditorNote` (interface): interface EditorNote — A free-text annotation pinned to a world position for designers.
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
 - `EditorPopulationDirective` (interface): interface EditorPopulationDirective extends EditorDirectiveBase — Populates a region with weighted, capped mob spawns — config for `ai/populationDirector`.
@@ -295,6 +296,7 @@
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorLayersInput` (type): type EditorLayersInput = | EditorDocument | Partial<Omit<EditorDocument, "version">> | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>) — Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory.
 - `EditorMarker` (interface): interface EditorMarker — A placeable point object in the scene — spawn, mob, chest, POI, etc.
+- `EditorMinimapBake` (interface): interface EditorMinimapBake — A baked top-down minimap stored on the scene document (#1036): the PNG the editor rasterized from the authored terrain (a `data:image/png;base64,…` URI) plus the world bounds it spans. Runtime feeds these straight into the `Minimap`/`WorldMap` `background`/`mapBounds` props — no re-raster.
 - `EditorNote` (interface): interface EditorNote — A free-text annotation pinned to a world position for designers.
 - `EditorPath` (interface): interface EditorPath — A polyline of points — road, corridor, patrol route — placed in the scene.
 - `EditorPopulationDirective` (interface): interface EditorPopulationDirective extends EditorDirectiveBase — Populates a region with weighted, capped mob spawns — config for `ai/populationDirector`.
@@ -490,7 +492,7 @@
 
 ## @jgengine/editor/TerrainPanel
 
-- `TerrainPanel` (function): function TerrainPanel({ session, ui }: { session: EditorSession; ui: EditorUiStore }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
+- `TerrainPanel` (function): function TerrainPanel({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
 
 ## @jgengine/editor/TerrainReadout
 
@@ -580,6 +582,10 @@
 ## @jgengine/editor/handlers/hierarchy
 
 - `hierarchyHandlers` (const): const hierarchyHandlers: Pick< HandlerTable, | "set_parent" | "hierarchy" | "list_prefabs" | "create_prefab" | "insert_prefab" | "detach_prefab_instance" | "delete_prefab" > — Parent/child hierarchy and prefab library verbs.
+
+## @jgengine/editor/handlers/minimap
+
+- `minimapHandlers` (const): const minimapHandlers: Pick<HandlerTable, "bake_minimap"> — Bake the authored terrain into a stored minimap PNG (#1036). Composes the live viewport's base ground field with the document's sculpt snapshot, rasterizes it top-down via the pure core bake, and stores `{ background, bounds }` on `document.minimap` as an undoable edit — runtime then feeds those straight into the `Minimap`/`WorldMap` props with no re-raster. Needs the mounted viewport's composed sampler, so it is a live-editor-only action, not a headless CLI verb.
 
 ## @jgengine/editor/handlers/runtime
 

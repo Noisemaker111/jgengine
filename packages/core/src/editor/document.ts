@@ -18,6 +18,7 @@ import type {
   EditorFragmentContent,
   EditorLayersInput,
   EditorMarker,
+  EditorMinimapBake,
   EditorNote,
   EditorPath,
   EditorPopulationSpecies,
@@ -27,6 +28,11 @@ import type {
   EditorVolume,
   EditorVolumeShape,
 } from "./types";
+
+/** Copies a baked minimap so a document's PNG + bounds are never shared by reference across rebuilds. */
+function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
+  return { background: minimap.background, bounds: { ...minimap.bounds } };
+}
 
 function cloneDirective(directive: EditorDirective): EditorDirective {
   const area =
@@ -80,6 +86,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
   terrain?: EditorTerrain;
   ui?: EditorDocument["ui"];
   directives?: EditorDirective[];
+  minimap?: EditorMinimapBake;
 } {
   return {
     prefabs: doc.prefabs,
@@ -89,6 +96,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(doc.ui === undefined ? {} : { ui: doc.ui }),
     ...(doc.directives === undefined ? {} : { directives: doc.directives }),
+    ...(doc.minimap === undefined ? {} : { minimap: doc.minimap }),
   };
 }
 
@@ -170,6 +178,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
+    ...(doc.minimap === undefined ? {} : { minimap: cloneMinimapBake(doc.minimap) }),
   };
 }
 
@@ -221,6 +230,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
+    ...(resolved.minimap === undefined ? {} : { minimap: cloneMinimapBake(resolved.minimap) }),
   };
 }
 
@@ -270,6 +280,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     const mergedGrids = upsertGrids(out.grids, doc.grids);
     if (mergedGrids !== undefined) out.grids = mergedGrids;
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
+    if (doc.minimap !== undefined) out.minimap = cloneMinimapBake(doc.minimap);
     if (doc.directives !== undefined) {
       out.directives = upsertById(out.directives ?? [], doc.directives);
     }
@@ -857,6 +868,41 @@ function decodeDirective(item: unknown, path: string, errors: EditorDocumentDiag
   return { ...base, kind: "population", species };
 }
 
+/**
+ * Validates a baked minimap arriving from outside this process: `background` must be a
+ * `data:image/…` URI and `bounds` must be four finite numbers, so a malformed bake is rejected with a
+ * path-specific diagnostic instead of feeding a broken `<image href>` to the runtime minimap.
+ */
+function decodeMinimapBake(
+  value: unknown,
+  path: string,
+  errors: EditorDocumentDiagnostic[],
+): EditorMinimapBake | undefined {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  const backgroundOk = typeof value.background === "string" && value.background.startsWith("data:image/");
+  if (!backgroundOk) {
+    errors.push({ path: `${path}.background`, message: "expected a data:image/… string" });
+  }
+  const bounds = value.bounds;
+  const boundsOk =
+    isPlainObject(bounds) &&
+    (["minX", "minZ", "maxX", "maxZ"] as const).every(
+      (key) => typeof bounds[key] === "number" && Number.isFinite(bounds[key]),
+    );
+  if (!boundsOk) {
+    errors.push({ path: `${path}.bounds`, message: "expected {minX,minZ,maxX,maxZ} finite numbers" });
+  }
+  if (!backgroundOk || !boundsOk) return undefined;
+  const b = bounds as Record<"minX" | "minZ" | "maxX" | "maxZ", number>;
+  return {
+    background: value.background as string,
+    bounds: { minX: b.minX, minZ: b.minZ, maxX: b.maxX, maxZ: b.maxZ },
+  };
+}
+
 const GRID_AXES: ReadonlySet<string> = new Set(["xz", "xy"]);
 
 function decodeGridPaletteEntry(
@@ -963,6 +1009,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
+  const minimap = raw.minimap === undefined ? undefined : decodeMinimapBake(raw.minimap, "$.minimap", errors);
   // Placeable object ids form one document-global namespace (selection, parenting, and removal all
   // treat them that way), so a document that reuses an id — even across two different collections —
   // is malformed and rejected here with the offending path, rather than silently loading a scene
@@ -1001,6 +1048,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       ...(terrain === undefined ? {} : { terrain }),
       ...(ui === undefined ? {} : { ui }),
       ...(directives === undefined ? {} : { directives }),
+      ...(minimap === undefined ? {} : { minimap }),
     },
   };
 }
@@ -1034,6 +1082,7 @@ export function applyEditorDocumentOverlay(
   overlay: EditorDocument,
 ): EditorDocument {
   const terrain = overlay.terrain ?? base.terrain;
+  const minimap = overlay.minimap ?? base.minimap;
   const ui =
     overlay.ui === undefined
       ? cloneEditorUiDocument(base.ui)
@@ -1056,6 +1105,7 @@ export function applyEditorDocumentOverlay(
     ...(grids === undefined ? {} : { grids }),
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),
+    ...(minimap === undefined ? {} : { minimap: cloneMinimapBake(minimap) }),
     ...(base.directives === undefined && overlay.directives === undefined
       ? {}
       : { directives: upsertById(base.directives ?? [], overlay.directives ?? []) }),

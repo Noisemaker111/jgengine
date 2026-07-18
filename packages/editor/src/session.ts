@@ -20,6 +20,7 @@ import {
   type RuntimePlayControl,
 } from "@jgengine/core/editor/index";
 import type { TerraformMode, TerrainMaterialLayer } from "@jgengine/core/world/terraform";
+import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 
@@ -103,6 +104,7 @@ export type EditorBridgeRequest =
       shape?: "circle" | "square";
     }
   | { method: "convert_scatter"; pathId: string }
+  | { method: "bake_minimap"; padding?: number; resolution?: number; waterLevel?: number }
   | {
       method: "add_foliage";
       points: { x: number; z: number }[];
@@ -258,6 +260,13 @@ export interface EditorHostApi {
   getCatalogDefinitions(): readonly EditorCatalogDefinition[];
   getPerf(): EditorPerfSample | null;
   setPerf(sample: EditorPerfSample): void;
+  /**
+   * The live composed ground field (base procedural terrain + document sculpt) from the mounted
+   * viewport, or null when no viewport is mounted. `bake_minimap` reads it to rasterize authored
+   * terrain; it exists only while the editor world is mounted, so headless CLIs get a null here.
+   */
+  getTerrainSampler(): TerrainField | null;
+  setTerrainSampler(field: TerrainField | null): void;
   getMode(): EditorRunMode;
   setMode(mode: EditorRunMode): void;
   subscribeMode(listener: (mode: EditorRunMode) => void): () => void;
@@ -315,6 +324,7 @@ export function createEditorHost(options: {
   let focusTarget: { x: number; y: number; z: number } | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
   let perf: EditorPerfSample | null = null;
+  let terrainSampler: TerrainField | null = null;
   let mode: EditorRunMode = "edit";
   let playControl: RuntimePlayControl = createRuntimePlayControl(false);
   const visibilityListeners = new Set<() => void>();
@@ -382,6 +392,10 @@ export function createEditorHost(options: {
     setPerf(sample) {
       perf = sample;
     },
+    getTerrainSampler: () => terrainSampler,
+    setTerrainSampler(field) {
+      terrainSampler = field;
+    },
     getMode: () => mode,
     setMode(next) {
       if (next === mode) return;
@@ -426,6 +440,7 @@ export function createEditorHost(options: {
         catalogDefinitions,
         catalogById,
         dispatchGuarded,
+        getTerrainSampler: api.getTerrainSampler,
       };
       try {
         return EDITOR_RPC_HANDLERS[request.method](ctx, request as never);
