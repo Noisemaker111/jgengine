@@ -69,6 +69,10 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
 
+2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
+
+recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
+
 2026-07-18T20:23:57.542Z — gpt-5.6-sol — NoisemakerJon
 
 creating the required isolated worktree under C:\tmp -> Bun returned EPERM/No package.json there, and a nested ignored worktree then resolved scripts against the parent checkout; worktrees need a documented Bun-safe location outside the repository

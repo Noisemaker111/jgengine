@@ -4,7 +4,7 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## action-bar — drop-in cooldown/cost/hotkey action bar over the headless action model
+## action-bar — optional skinned action-bar composition over the headless model — games own chrome
 
 - `ActionBar` (function) · `import { ActionBar } from "@jgengine/react"`
 
@@ -77,11 +77,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Coins` (function) · `import { Coins } from "@jgengine/react"`
 
-## hud-frame — shared framed HUD chrome — glass/plate/retro skins, optional title/aside header, reused across every widget instead of a bespoke panel per widget
+## hud-frame — optional framed panel skins (glass/plate/retro/themed) — games own product chrome
 
 - `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
 
-## hud-hotbar — inventory hotbar widget with keybind slots and icons
+## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
 - `Hotbar` (function) · `import { Hotbar } from "@jgengine/react"`
 
@@ -109,15 +109,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SlotItem` (interface) · `import { SlotItem } from "@jgengine/react"`
 
-## hud-stat-bar — self-styled bar widget bound to a stat (health, mana, stamina)
+## hud-stat-bar — optional stat-bound bar building block (health, mana, stamina) — prefer game-owned chrome
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
-## hud-theme — one token object + genre presets driving bars, frames, slots, and minimap ring
+## hud-theme — game-authored token object for bars, frames, slots, and minimap ring
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`
 
-## hud-vitals — atomic purpose-named health/shield/mana/stamina/xp/soul/ammo/boss bars themed from shared tokens
+## hud-vitals — atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
 
 - `BarTokens` (interface) · `import { BarTokens } from "@jgengine/react"`
 - `barTokens` (function) · `import { barTokens } from "@jgengine/react"`
@@ -182,7 +182,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useSelectionView` (function) · `import { useSelectionView } from "@jgengine/react"`
 
-## selection-panel — drop-in selection panel: primary summary beside a portrait strip / group chips
+## selection-panel — optional selection-panel composition: summary + portrait strip / group chips
 
 - `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/react"`
 

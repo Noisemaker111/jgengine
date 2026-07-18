@@ -4,10 +4,9 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 /**
- * Showcase for the opt-in HUD component library (`@jgengine/react`) — every widget is a drop-in, self
- * styled, and reads the local player by default. This game reuses the demo's gameplay DATA (a hero
- * with health/mana, a hotbar, gold, a clock) purely so the widgets have something to display; the
- * engine imposes none of them — a game picks the pieces it wants and places them in `HudPanel`s.
+ * Dev showcase of optional HUD building blocks (`@jgengine/react`) — not a template for shipped
+ * game UI. Every real game owns custom chrome and art direction; this page only exercises the
+ * stock widgets against demo gameplay data so layout/hooks stay testable in isolation.
  */
 function HudShowcaseUI() {
   const layout = useHudLayout({ storageKey: "hud-showcase" });
