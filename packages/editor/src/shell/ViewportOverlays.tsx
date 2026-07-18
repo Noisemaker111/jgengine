@@ -137,8 +137,8 @@ export const OrientationWidget = memo(function OrientationWidget() {
 });
 
 /**
- * Top-right collapsible viewport utility panel: real per-kind object counts from the live document
- * plus camera framing actions. Deliberately not a minimap — no fake imagery.
+ * Top-right collapsible viewport utility panel: real minimap from `document.minimap` when baked
+ * (via `bake_minimap` RPC — never a fake image), plus per-kind object counts and framing actions.
  */
 export function ViewportUtilityPanel({
   document,
@@ -150,6 +150,8 @@ export function ViewportUtilityPanel({
   selectionCount: number;
 }) {
   const [open, setOpen] = useState(true);
+  const [bakeBusy, setBakeBusy] = useState(false);
+  const [bakeError, setBakeError] = useState<string | null>(null);
   const counts = useMemo(() => {
     const byKind = new Map<string, number>();
     const bump = (kind: string) => byKind.set(kind, (byKind.get(kind) ?? 0) + 1);
@@ -160,8 +162,20 @@ export function ViewportUtilityPanel({
     return [...byKind.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
   }, [document]);
 
+  const minimap = document.minimap;
+  const bake = () => {
+    setBakeBusy(true);
+    setBakeError(null);
+    // bake_minimap is synchronous; yield so the button can show a busy state for one frame.
+    requestAnimationFrame(() => {
+      const result = api.handle({ method: "bake_minimap", resolution: 128 });
+      setBakeBusy(false);
+      if (!result.ok) setBakeError(result.error ?? "bake failed");
+    });
+  };
+
   return (
-    <div className={`pointer-events-auto absolute right-2.5 top-2.5 z-30 w-44 ${OVERLAY_CARD}`}>
+    <div className={`pointer-events-auto absolute right-2.5 top-2.5 z-30 w-48 ${OVERLAY_CARD}`}>
       <div className="flex h-7 items-center gap-1.5 px-2">
         <Icon name="layers" size={12} className="text-neutral-500" />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Scene overview</span>
@@ -177,6 +191,30 @@ export function ViewportUtilityPanel({
       </div>
       {open ? (
         <div className="border-t border-white/[0.06] p-2">
+          <div className="mb-2 overflow-hidden rounded-[5px] border border-white/[0.07] bg-black/40">
+            {minimap !== undefined ? (
+              <img
+                src={minimap.background}
+                alt="Baked scene minimap"
+                className="block h-28 w-full object-cover"
+                draggable={false}
+              />
+            ) : (
+              <div className="flex h-28 flex-col items-center justify-center gap-1 px-2 text-center">
+                <span className="text-[10px] text-neutral-500">No minimap baked yet</span>
+                <span className="text-[9px] text-neutral-600">Uses live terrain — not a placeholder image</span>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={bakeBusy}
+            onClick={bake}
+            className={`mb-2 w-full rounded-[5px] border border-white/[0.07] bg-[#191d24] px-2 py-1 text-[10px] text-neutral-300 transition-colors hover:bg-[#1f242d] disabled:opacity-50 ${FOCUS_RING}`}
+          >
+            {bakeBusy ? "Baking…" : minimap !== undefined ? "Rebake minimap" : "Bake minimap"}
+          </button>
+          {bakeError !== null ? <div className="mb-2 text-[9px] text-rose-300">{bakeError}</div> : null}
           {counts.length === 0 ? (
             <div className="py-1 text-[10px] text-neutral-600">No authored objects yet.</div>
           ) : (
