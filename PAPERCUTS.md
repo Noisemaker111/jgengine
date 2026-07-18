@@ -24,3 +24,7 @@ capturing editor screenshots via drive: camera_goto only pans the orbit target w
 2026-07-18T16:20:39.762Z — claude-fable-5 — Claude
 
 Rebasing a feature branch via stash/rebase/stash-pop → pop left conflict markers in a file I'd already verified; ship:preflight passed anyway (it checks tree/base/diff, not compilation), so the broken file reached CI. A cheap conflict-marker grep or tsc-on-changed-files in agent-preflight --ship would have caught it locally.
+
+2026-07-18T16:59:02.348Z — cloud-agent — Claude
+
+Running bun run gate on a fresh cloud container → agent:preflight fails on missing node_modules before build's ensure-ready --install-only can run; had to bun install manually first. Preflight could auto-install or point at ensure-ready.
