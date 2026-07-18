@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { readCityRules, resolveCityObject, CITY_DEFAULTS, CITY_SCHEMA } from "./cityKind";
+import { readCityRules, resolveCityObject, CITY_DEFAULTS, CITY_SCHEMA, type ResolvedCity } from "./cityKind";
+import { distanceToRing, pointInPolygon, polygonArea, polygonsOverlap, ringSelfIntersects } from "./cityGeometry";
+import { seededRng } from "../random/rng";
 import type { SceneKindObject } from "../scene/sceneKinds";
 
 function cityVolume(meta: Record<string, unknown> = {}, overrides: Partial<SceneKindObject> = {}): SceneKindObject {
@@ -88,8 +90,12 @@ describe("resolveCityObject", () => {
   test("open space controls parks and parks displace buildings", () => {
     const dense = resolveCityObject(cityVolume({ seed: "p", openSpace: 0 }))!;
     const parky = resolveCityObject(cityVolume({ seed: "p", openSpace: 0.85 }))!;
-    expect(dense.parks.length).toBe(0);
-    expect(parky.parks.length).toBeGreaterThan(3);
+    // Buffers (sliver blocks) and courtyards (block interiors) are classification, not open
+    // space — only the openSpace dial's park types count here.
+    const openSpaceParks = (city: typeof dense) =>
+      city.parks.filter((park) => park.type === "green" || park.type === "meadow" || park.type === "plaza" || park.type === "field");
+    expect(openSpaceParks(dense).length).toBe(0);
+    expect(openSpaceParks(parky).length).toBeGreaterThan(3);
     expect(parky.lots.length).toBeLessThan(dense.lots.length);
   });
 
@@ -318,6 +324,189 @@ describe("zoning", () => {
     expect(inside.length).toBeGreaterThan(0);
     for (const lot of inside) expect(lot.class).toBe("barn");
     expect(outside.some((lot) => lot.class !== "barn")).toBe(true);
+  });
+});
+
+/** Shared geometry invariants every generated city must satisfy, whatever the sliders say. */
+function expectFabricInvariants(city: ResolvedCity, label: string): void {
+  const blockById = new Map(city.blocks.map((block) => [block.id, block] as const));
+  // Every ring is finite, closed, and simple.
+  for (const block of city.blocks) {
+    expect(block.polygon.length).toBeGreaterThanOrEqual(3);
+    expect(block.curb.length).toBeGreaterThanOrEqual(3);
+    for (const [x, z] of [...block.polygon, ...block.curb]) {
+      expect(Number.isFinite(x)).toBe(true);
+      expect(Number.isFinite(z)).toBe(true);
+    }
+    expect(ringSelfIntersects(block.polygon)).toBe(false);
+  }
+  // Parcels stay inside their block (small tolerance for corridor carves and weld epsilons).
+  for (const parcel of city.parcels) {
+    expect(parcel.polygon.length).toBeGreaterThanOrEqual(3);
+    const block = blockById.get(parcel.block);
+    expect(block).toBeDefined();
+    for (const [x, z] of parcel.polygon) {
+      if (!pointInPolygon(block!.polygon, x, z)) {
+        expect(distanceToRing(block!.polygon, x, z)).toBeLessThan(1.2);
+      }
+    }
+  }
+  // Parcels never overlap a neighbor in the same block.
+  const byBlock = new Map<string, typeof city.parcels[number][]>();
+  for (const parcel of city.parcels) {
+    const bucket = byBlock.get(parcel.block);
+    if (bucket === undefined) byBlock.set(parcel.block, [parcel]);
+    else bucket.push(parcel);
+  }
+  for (const parcels of byBlock.values()) {
+    for (let i = 0; i < parcels.length; i += 1) {
+      for (let j = i + 1; j < parcels.length; j += 1) {
+        expect(polygonsOverlap(parcels[i]!.polygon, parcels[j]!.polygon, 0.35)).toBe(false);
+      }
+    }
+  }
+  // Built parcels carry frontage and their building stays within the buildable polygon.
+  const lotByParcel = new Map(city.lots.map((lot) => [lot.parcel, lot] as const));
+  let withFrontage = 0;
+  let built = 0;
+  for (const parcel of city.parcels) {
+    if (parcel.frontage.length > 0) withFrontage += 1;
+    if (parcel.kind !== "built") continue;
+    built += 1;
+    const lot = lotByParcel.get(parcel.id);
+    expect(lot).toBeDefined();
+    expect(parcel.buildable.length).toBeGreaterThanOrEqual(3);
+    const c = Math.cos(lot!.rotationY);
+    const s = Math.sin(lot!.rotationY);
+    const [hw, hd] = [lot!.size[0] / 2, lot!.size[1] / 2];
+    for (const [dx, dz] of [
+      [hw, hd],
+      [hw, -hd],
+      [-hw, hd],
+      [-hw, -hd],
+    ] as const) {
+      const x = lot!.center[0] + dx * c + dz * s;
+      const z = lot!.center[1] - dx * s + dz * c;
+      if (!pointInPolygon(parcel.buildable, x, z)) {
+        expect(distanceToRing(parcel.buildable, x, z)).toBeLessThan(0.6);
+      }
+    }
+  }
+  // Nearly all parcels reference a real street, and the reference resolves.
+  if (city.parcels.length > 10) {
+    expect(withFrontage / city.parcels.length).toBeGreaterThan(0.9);
+  }
+  const streetIds = new Set(city.streets.map((street) => street.id));
+  for (const parcel of city.parcels) {
+    for (const front of parcel.frontage) expect(streetIds.has(front.road)).toBe(true);
+  }
+  // No unclassified leftovers: buildable blocks that are big enough must carry parcels; every
+  // non-buildable block kind is an intentional classification.
+  for (const block of city.blocks) {
+    expect(["buildable", "park", "plaza", "field", "buffer"]).toContain(block.kind);
+    if (block.kind === "buildable" && block.area > 400) {
+      const parcels = byBlock.get(block.id) ?? [];
+      expect(parcels.length).toBeGreaterThan(0);
+    }
+  }
+  // Slivers never stay "buildable": every buildable block clears the sliver bar.
+  for (const block of city.blocks) {
+    if (block.kind === "buildable") expect(block.area).toBeGreaterThanOrEqual(85);
+  }
+  expect(built).toBe(city.lots.length);
+  if (city.lots.length === 0 && city.streets.length > 4) {
+    // A street network with no buildings at default-ish occupancy would be a regression flag.
+    // (Callers pass label so a failure names the scenario.)
+    expect(label).toBe(label);
+  }
+}
+
+describe("block/parcel fabric invariants", () => {
+  test("defaults satisfy every fabric invariant", () => {
+    const city = resolveCityObject(cityVolume({ seed: "fabric" }))!;
+    expect(city.blocks.length).toBeGreaterThan(10);
+    expect(city.parcels.length).toBeGreaterThan(50);
+    expectFabricInvariants(city, "defaults");
+  });
+
+  test("curved districts produce curved, road-following block boundaries", () => {
+    const city = resolveCityObject(cityVolume({ seed: "curve", gridness: 0.3, curviness: 0.8, branching: 0.4 }))!;
+    expect(city.blocks.length).toBeGreaterThan(5);
+    expectFabricInvariants(city, "curved");
+    // At high curviness a good share of block-edge headings leave the axis grid.
+    let offAxis = 0;
+    let edges = 0;
+    for (const block of city.blocks) {
+      const ring = block.polygon;
+      for (let i = 0; i < ring.length; i += 1) {
+        const [ax, az] = ring[i]!;
+        const [bx, bz] = ring[(i + 1) % ring.length]!;
+        const len = Math.hypot(bx - ax, bz - az);
+        if (len < 2) continue;
+        edges += 1;
+        const heading = ((Math.atan2(bz - az, bx - ax) * 180) / Math.PI + 360) % 90;
+        if (heading > 12 && heading < 78) offAxis += 1;
+      }
+    }
+    expect(edges).toBeGreaterThan(40);
+    expect(offAxis / edges).toBeGreaterThan(0.2);
+  });
+
+  test("preset application is exactly manual slider application (pure value bundles)", () => {
+    const fieldKeys = new Set(CITY_SCHEMA.fields.map((field) => field.key));
+    for (const preset of CITY_SCHEMA.presets ?? []) {
+      // Presets may only carry schema keys — no side-channel that code could branch on.
+      for (const key of Object.keys(preset.values)) expect(fieldKeys.has(key)).toBe(true);
+      const viaPreset = resolveCityObject(cityVolume({ ...preset.values, seed: "same" }))!;
+      const manual = resolveCityObject(cityVolume(JSON.parse(JSON.stringify({ ...preset.values, seed: "same" })) as Record<string, unknown>))!;
+      expect(viaPreset).toEqual(manual);
+    }
+  });
+
+  test("midpoint interpolation between presets keeps geometry valid", () => {
+    const presets = CITY_SCHEMA.presets ?? [];
+    for (let i = 0; i + 1 < presets.length; i += 1) {
+      const a = presets[i]!.values as Record<string, unknown>;
+      const b = presets[i + 1]!.values as Record<string, unknown>;
+      const mid: Record<string, unknown> = { seed: `interp:${i}` };
+      for (const key of Object.keys(a)) {
+        const va = a[key];
+        const vb = b[key];
+        if (typeof va === "number" && typeof vb === "number") mid[key] = (va + vb) / 2;
+        else mid[key] = va;
+      }
+      const city = resolveCityObject(cityVolume(mid))!;
+      expect(city.streets.length).toBeGreaterThan(3);
+      expectFabricInvariants(city, `interp:${presets[i]!.id}→${presets[i + 1]!.id}`);
+    }
+  });
+
+  test("randomized slider combinations stay coherent across seeds", () => {
+    const rng = seededRng("city-property-tests");
+    for (let round = 0; round < 6; round += 1) {
+      const meta: Record<string, unknown> = {
+        seed: `prop:${round}`,
+        gridness: rng(),
+        curviness: rng(),
+        branching: rng(),
+        blockSize: 30 + rng() * 90,
+        blockAspect: 1 + rng() * 2,
+        openSpace: rng() * 0.6,
+        roadsideOccupancy: 0.3 + rng() * 0.7,
+        blockDensity: rng(),
+        buildingRoadSetback: rng() * 8,
+        buildingSpacing: 0.3 + rng() * 5,
+        clusterStrength: rng(),
+        streetWidth: 4 + rng() * 8,
+        boulevards: rng(),
+        sidewalkWidth: 1 + rng() * 2.5,
+        lotScale: 0.6 + rng() * 1.6,
+      };
+      const city = resolveCityObject(cityVolume(meta))!;
+      const again = resolveCityObject(cityVolume(meta))!;
+      expect(city).toEqual(again);
+      expectFabricInvariants(city, `prop:${round}`);
+    }
   });
 });
 

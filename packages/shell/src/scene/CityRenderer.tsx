@@ -17,6 +17,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { roundPathCorners, buildRoadRibbon, dashSegments, type RoadPoint } from "@jgengine/core/world/roads";
+import { triangulatePolygon, triangulateRingBand } from "@jgengine/core/world/cityGeometry";
 import {
   resolveCityObject,
   CITY_KIND,
@@ -41,7 +42,7 @@ const PAVEMENT_COLOR = "#a8a49a";
 const CONCRETE_COLOR = "#b0aba1";
 const STEEL_COLOR = "#4c505a";
 const HEDGE_COLOR = "#3d6631";
-const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a" } as const;
+const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
@@ -119,6 +120,26 @@ class MeshAccumulator {
     }
     for (let i = 0; i < segments; i += 1) this.indices.push(base, base + 1 + i, base + 2 + i);
     this.pushColor(segments + 2, color);
+  }
+
+  /** A ground-draped polygon patch: ear-clipped, one terrain sample per ring vertex. */
+  addPolygon(ring: readonly RoadPoint[], sample: Sampler, elevation: number, color: THREE.Color | null = null): void {
+    const { positions, indices } = triangulatePolygon(ring);
+    if (indices.length === 0) return;
+    const base = this.positions.length / 3;
+    for (const [x, z] of positions) this.positions.push(x, sample(x, z) + elevation, z);
+    for (const index of indices) this.indices.push(index + base);
+    this.pushColor(positions.length, color);
+  }
+
+  /** A ground-draped band between two nested rings (curb outer, land inner) — the sidewalk. */
+  addRingBand(outer: readonly RoadPoint[], inner: readonly RoadPoint[], sample: Sampler, elevation: number, color: THREE.Color | null = null): void {
+    const { positions, indices } = triangulateRingBand(outer, inner);
+    if (indices.length === 0) return;
+    const base = this.positions.length / 3;
+    for (const [x, z] of positions) this.positions.push(x, sample(x, z) + elevation, z);
+    for (const index of indices) this.indices.push(index + base);
+    this.pushColor(positions.length, color);
   }
 
   build(): THREE.BufferGeometry | null {
@@ -489,6 +510,9 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     const parks = new MeshAccumulator(true);
     const crops = new MeshAccumulator(true);
     const parkColor = new THREE.Color();
+    // Sidewalks now come from block curb→land bands; only pre-block documents fall back to the old
+    // per-street widened ribbon.
+    const useBlockSidewalks = resolved.blocks.length > 0;
 
     const addMarkQuad = (center: RoadPoint, along: readonly [number, number], length: number, width: number) => {
       const perp: readonly [number, number] = [-along[1], along[0]];
@@ -511,7 +535,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const rounded = roundPathCorners(street.points, Math.max(1.5, street.width * 0.9), 4);
       const surface = street.surface === "gravel" ? gravel : asphalt;
       surface.addRibbon(rounded, street.width, sample, 0.16);
-      if (street.sidewalk) sidewalks.addRibbon(rounded, street.width + 3.6, sample, 0.1);
+      if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, 0.1);
       if (street.bulb !== undefined) {
         (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, 0.16);
         if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, 0.1);
@@ -546,15 +570,30 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         }
       }
     }
-    // Junctions: corner curb-return apron (sidewalk ring peeking out under the asphalt patch),
-    // the patch itself, and a zebra crossing on every REAL arm.
+    // Sidewalk band per block: the region between the curb ring (outer) and the land ring (inner).
+    // Blocks whose two rings coincide (no sidewalk) drop out — every band triangle is degenerate,
+    // so `addRingBand` emits nothing.
+    if (useBlockSidewalks) {
+      for (const block of resolved.blocks) {
+        sidewalks.addRingBand(block.curb, block.polygon, sample, 0.1);
+      }
+    }
+    // Junctions: corner curb-return apron (sidewalk ring peeking out under the asphalt patch), the
+    // patch itself, and a zebra crossing on every REAL arm — but only where the crossing warrants
+    // it. Avenue-and-up arms (or a boulevard/avenue junction) get zebra stripes and the apron;
+    // small residential crossings get just the asphalt patch.
     for (const cross of resolved.intersections) {
-      if (resolved.rules.sidewalks && cross.level !== "lane") {
+      const bigLevel = cross.level === "boulevard" || cross.level === "avenue";
+      const armZebra = (width: number): boolean => bigLevel || width >= resolved.rules.streetWidth * 1.4;
+      const anyZebra = bigLevel || cross.arms.some((arm) => arm.width >= resolved.rules.streetWidth * 1.4);
+      const paved = resolved.rules.sidewalks && cross.level !== "lane";
+      if (paved && anyZebra) {
         sidewalks.addDisc([cross.x, cross.z], cross.radius + 2.1, sample, 0.1);
       }
       patches.addDisc([cross.x, cross.z], cross.radius, sample, 0.2);
-      if (resolved.rules.sidewalks && cross.level !== "lane") {
+      if (paved) {
         for (const arm of cross.arms) {
+          if (!armZebra(arm.width)) continue;
           const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
           const perp: readonly [number, number] = [-dir[1], dir[0]];
           for (let stripe = 0; stripe < 4; stripe += 1) {
@@ -584,7 +623,10 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     for (const park of resolved.parks) {
       parkColor.set(PARK_COLORS[park.type]);
       parkColor.multiplyScalar(0.92 + park.jitter * 0.16);
-      parks.addPatch(park.center, park.size, park.rotationY, sample, park.type === "plaza" ? 0.14 : 0.12, parkColor);
+      const elevation = park.type === "plaza" ? 0.14 : 0.12;
+      // Block-pipeline parks carry a real road-derived polygon; the rect is only a coarse proxy.
+      if (park.polygon !== undefined) parks.addPolygon(park.polygon, sample, elevation, parkColor);
+      else parks.addPatch(park.center, park.size, park.rotationY, sample, elevation, parkColor);
       if (park.rows !== undefined) {
         const crop = new THREE.Color(CROP_COLORS[Math.floor(park.jitter * CROP_COLORS.length) % CROP_COLORS.length]);
         crop.multiplyScalar(0.9 + park.jitter * 0.2);

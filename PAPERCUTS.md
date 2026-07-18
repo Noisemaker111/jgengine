@@ -52,3 +52,15 @@ Fresh branch off origin/main can't pass its own gate: check-content-gate fails b
 2026-07-18T17:39:17.470Z — cloud-agent — Claude
 
 gen:capabilities has no encoding guard: the container's non-UTF-8 locale (LANG=, LC_CTYPE=POSIX) let mojibake em/en-dashes get committed into core JSDoc (gameContext.ts, commandApply.ts). check-capabilities then only reported 'stale — run gen:capabilities', and running that FIX faithfully copies the corruption into the committed skill docs. A cheap grep for the mojibake byte-signature in the gate (or in gen-capability-index) would catch corruption at the source instead of laundering it through the generator. (Locale now pinned to C.UTF-8 in .claude/settings.json to stop new corruption.)
+
+2026-07-18T17:25:53.270Z — claude-fable-5 — Claude
+
+Capturing baseline city screenshots on a fresh cloud container → bun run shoot failed with 'Dev server failed to start on :4715' because node_modules was missing; the error never hints that vite is absent / bun install is needed
+
+2026-07-18T18:14:30.036Z — claude-fable-5 — Claude
+
+Running bun run gate on a fresh branch off main → check-capabilities failed because jgengine-multiplayer/jgengine-ui capabilities.md were already stale on main (host-join-code-gate, hud-layout-persist rows missing); had to fold unrelated regenerated rows into my PR to get the gate green
+
+2026-07-18T18:15:30.730Z — claude-fable-5 — Claude
+
+bun run gate on fresh branch off main → check-content-gate failed on a stale coordinate-literal-baseline.json entry (Games/the-robots zones.ts no longer trips the lint); main ships with a red gate until someone reseeds

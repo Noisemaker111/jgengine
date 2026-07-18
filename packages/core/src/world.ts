@@ -397,12 +397,15 @@ export {
   CITY_ZONE_KIND,
   CITY_ZONE_SCHEMA,
   resolveCityObject,
+  type CityBlock,
   type CityBridge,
   type CityDriveway,
   type CityHedge,
   type CityIntersection,
   type CityLight,
   type CityLot,
+  type CityParcel,
+  type CityParcelFrontageOut,
   type CityPark,
   type CityParking,
   type CityResolveContext,
@@ -411,6 +414,7 @@ export {
   type CityTree,
   type ResolvedCity,
 } from "./world/cityKind";
+export { type CityBlockKind } from "./world/cityBlocks";
 export { snapToNearest, socketWorldPosition, socketsCompatible, worldSockets } from "./world/connectors";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";

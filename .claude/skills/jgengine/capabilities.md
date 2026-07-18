@@ -4,7 +4,7 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## collider-autofit — hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
+## collider-autofit — hitboxes and physical bodies fit each kind's rendered model bounds automatically â€” no hand-tuned sizes
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`
 
