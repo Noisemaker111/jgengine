@@ -192,7 +192,8 @@ export function createShellLayoutStore(gameId: string): ShellLayoutStore {
         partial.bottomOpen = true;
         partial.bottomTab = "assistant";
       }
-      if (workspace === "multiplayer") {
+      // Network owns the left dock; lighting is a viewport panel but keeps hierarchy open for context.
+      if (workspace === "multiplayer" || workspace === "lighting") {
         partial.leftOpen = true;
       }
       state = { ...state, ...partial };

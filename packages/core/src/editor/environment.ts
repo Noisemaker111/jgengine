@@ -1,9 +1,9 @@
-import type { WorldBounds } from "../world/features";
+import type { SkyEnvironmentConfig, WorldBounds } from "../world/features";
 import type { AvoidZone } from "../world/geometry";
 import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } from "../world/scatterRegion";
 import type { TerraformSnapshot } from "../world/terraform";
 import { editorDocumentBounds } from "./document";
-import type { EditorDocument } from "./types";
+import type { EditorDocument, EditorEnvironment } from "./types";
 
 /**
  * World-authoring convergence (#1018, epic #1006 Phase 4): derive the **coordinate/placement**
@@ -31,6 +31,36 @@ export interface EnvironmentContent {
   clearings: AvoidZone[];
   /** The document's authored sculpt snapshot, when it has one — feed `environment({ sculpt })`. */
   sculpt?: TerraformSnapshot;
+  /**
+   * Scene-document sky/fog/lighting (#1110), when authored. Feed into `environment({ sky: sky(sky) })`
+   * so the lighting workspace owns the look without hardcoding coordinates in world.ts.
+   */
+  sky?: SkyEnvironmentConfig;
+}
+
+/**
+ * Maps the scene document's serializable environment bag onto the runtime sky config consumed by
+ * `sky()` / `environment({ sky })`. Returns `undefined` when the document has no environment field
+ * so callers can fall back to a world.ts default without inventing values.
+ * @capability editor-environment project document lighting onto the runtime sky descriptor
+ */
+export function skyFromDocument(doc: EditorDocument): SkyEnvironmentConfig | undefined {
+  const env = doc.environment;
+  if (env === undefined) return undefined;
+  return skyConfigFromEnvironment(env);
+}
+
+/** Projects a validated {@link EditorEnvironment} bag onto {@link SkyEnvironmentConfig}. */
+export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironmentConfig {
+  return {
+    ...(env.preset === undefined ? {} : { preset: env.preset }),
+    ...(env.timeOfDay === undefined ? {} : { timeOfDay: env.timeOfDay }),
+    ...(env.horizonColor === undefined ? {} : { horizonColor: env.horizonColor }),
+    ...(env.zenithColor === undefined ? {} : { zenithColor: env.zenithColor }),
+    ...(env.sunIntensity === undefined ? {} : { sunIntensity: env.sunIntensity }),
+    ...(env.ambientIntensity === undefined ? {} : { ambientIntensity: env.ambientIntensity }),
+    ...(env.fog === undefined ? {} : { fog: { ...env.fog } }),
+  };
 }
 
 /**
@@ -169,9 +199,11 @@ export function environmentContentFromDocument(
   // The authored sculpt snapshot wins outright when the document carries one (the author owns the
   // ground); otherwise water volumes derive their own lake-bed depression.
   const sculpt = doc.terrain ?? lakebedFromWaterVolumes(doc);
+  const sky = skyFromDocument(doc);
   return {
     bounds: terrainBoundsFromDocument(doc, options),
     clearings: clearanceZonesFrom(doc, clearanceOptions),
     ...(sculpt === undefined ? {} : { sculpt }),
+    ...(sky === undefined ? {} : { sky }),
   };
 }

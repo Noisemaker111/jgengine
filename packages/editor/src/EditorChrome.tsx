@@ -34,6 +34,7 @@ import {
 import { newPlacementId, type EditorUiStore, type PlacementTool } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { TerrainPanel } from "./TerrainPanel";
+import { LightingPanel } from "./LightingPanel";
 import { InspectorPanel } from "./InspectorPanel";
 import { BottomDock } from "./shell/BottomDock";
 import { CommandPalette } from "./shell/CommandPalette";
@@ -695,7 +696,7 @@ export function EditorChrome({
     layout.setWorkspace(workspace);
     if (workspace === "materials") layout.patch({ rightOpen: true, inspectorTab: "materials" });
     if (workspace === "terrain") ui.setTool("terrain");
-    else if (workspace !== "terrain" && ui.getState().tool === "terrain") ui.setTool("select");
+    else if (ui.getState().tool === "terrain") ui.setTool("select");
   };
 
   const paletteObjects = useMemo(() => {
@@ -916,6 +917,8 @@ export function EditorChrome({
             <PerformanceOverlay api={api} />
             {uiState.tool === "terrain" ? (
               <TerrainPanel session={session} ui={ui} api={api} />
+            ) : layoutState.workspace === "lighting" ? (
+              <LightingPanel session={session} />
             ) : (
               <ViewportUtilityPanel document={state.document} api={api} selectionCount={state.selection.length} />
             )}

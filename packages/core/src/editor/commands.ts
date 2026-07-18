@@ -21,6 +21,7 @@ import type { ParamSchema } from "../scene/sceneKinds";
 import type {
   EditorCatalogEntry,
   EditorDocument,
+  EditorEnvironment,
   EditorMarker,
   EditorMinimapBake,
   EditorNote,
@@ -71,6 +72,12 @@ export type EditorCommand =
   | { type: "blendTerrain"; delta: WeightDelta }
   | { type: "clearTerrain" }
   | { type: "setMinimapBake"; minimap: EditorMinimapBake }
+  /**
+   * Replace the scene-document environment/lighting bag. Pass `undefined` to clear authored sky/fog
+   * so world.ts fallbacks apply again. The lighting workspace writes the full merged bag so
+   * undo restores the previous snapshot as one step (use `coalesce` while scrubbing sliders).
+   */
+  | { type: "setEnvironment"; environment: EditorEnvironment | undefined }
   | { type: "convertScatterToObjects"; pathId: string; markers: readonly EditorMarker[] }
   | { type: "createPrefab"; id: string; name: string; ids: readonly string[] }
   | { type: "insertPrefab"; prefabId: string; at: EditorVec3; instanceId?: string }
