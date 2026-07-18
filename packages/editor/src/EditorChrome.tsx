@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   editorDocumentSize,
+  editorParentOf,
   extractEditorFragment,
   type EditorDocument,
   type EditorSession,
@@ -278,6 +279,13 @@ export function EditorChrome({
             notify(`Created prefab “${name}”`);
           }
           return;
+        case "unparent": {
+          const ids = selection.length > 0 ? selection : menu?.hitId !== null && menu?.hitId !== undefined ? [menu.hitId] : [];
+          if (ids.length === 0) return;
+          api.handle({ method: "set_parent", ids: [...ids], parentId: null });
+          notify(ids.length === 1 ? "Unparented object" : `Unparented ${ids.length} objects`);
+          return;
+        }
         case "addMarker":
           if (ground !== null) {
             session.dispatch({
@@ -757,7 +765,23 @@ export function EditorChrome({
               ) : layoutState.leftPage === "catalogs" ? (
                 <CatalogsPanel session={session} definitions={api.getCatalogDefinitions()} />
               ) : (
-                <HierarchyPanel session={session} api={api} onAdd={() => setPaletteQuery("add ")} />
+                <HierarchyPanel
+                  session={session}
+                  api={api}
+                  onAdd={() => setPaletteQuery("add ")}
+                  onRowContextMenu={(point, id) => {
+                    const current = session.getState().selection;
+                    if (!current.includes(id)) session.dispatch({ type: "select", ids: [id] });
+                    ui.patch({
+                      contextMenu: {
+                        clientX: point.clientX,
+                        clientY: point.clientY,
+                        hitId: id,
+                        ground: null,
+                      },
+                    });
+                  }}
+                />
               )}
             </aside>
             <PanelResizer orientation="vertical" label="Resize hierarchy panel" onResize={(delta) => layout.resize("leftWidth", delta)} />
@@ -807,6 +831,15 @@ export function EditorChrome({
                   hitId: uiState.contextMenu.hitId,
                   selection: state.selection,
                   canPaste: clipboardFragment !== null,
+                  canUnparent: (() => {
+                    const ids =
+                      state.selection.length > 0
+                        ? state.selection
+                        : uiState.contextMenu.hitId !== null
+                          ? [uiState.contextMenu.hitId]
+                          : [];
+                    return ids.some((id) => editorParentOf(state.document, id) !== undefined);
+                  })(),
                 })}
                 onPick={runContextAction}
                 onClose={closeContextMenu}

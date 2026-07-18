@@ -33,19 +33,22 @@ function selectableIds(rows: readonly OutlinerFlatRow[]): string[] {
  * Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live
  * document. Group headers carry real per-kind visibility toggles (the editor's layer system);
  * rows locked through a locked collection show a lock indicator. Tree view supports drag-and-drop
- * reparenting through the existing `set_parent` RPC. Keyboard navigation (arrows / Enter / F2)
- * and double-click rename are supported. Selector-subscribed and memoized, so UI-only churn never
- * rerenders it.
+ * reparenting through the existing `set_parent` RPC. Keyboard navigation (arrows / Enter / F2),
+ * double-click rename, and row context menus (frame / duplicate / delete / prefab / unparent) are
+ * supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
  */
 export const HierarchyPanel = memo(function HierarchyPanel({
   session,
   api,
   onAdd,
+  onRowContextMenu,
 }: {
   session: EditorSession;
   api: EditorHostApi;
   /** Opens the add flow (command palette pre-filtered to Add commands). */
   onAdd: () => void;
+  /** Right-click a row — host opens the shared editor context menu at the pointer. */
+  onRowContextMenu?: (event: { clientX: number; clientY: number }, id: string) => void;
 }) {
   const document = useStoreSelector(session, (state) => state.document);
   const selection = useStoreSelector(session, (state) => state.selection, shallowArrayEqual);
@@ -177,7 +180,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
   const [reparentDropTarget, setReparentDropTarget] = useState<string | null>(null);
   const [draggingObjectId, setDraggingObjectId] = useState<string | null>(null);
 
-  const acceptMaterialDrop = (event: DragEvent, ids: readonly string[], key: string) => {
+  const acceptMaterialDrop = (event: DragEvent, _ids: readonly string[], key: string) => {
     if (!dataTransferHas(event.dataTransfer.types, MATERIAL_DRAG_MIME)) return false;
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
@@ -346,6 +349,14 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                       onDoubleClick={() => {
                         if (row.ids.length === 1) beginRename(primaryId, row.label);
                       }}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setActiveId(primaryId);
+                        onRowContextMenu?.(
+                          { clientX: event.clientX, clientY: event.clientY },
+                          primaryId,
+                        );
+                      }}
                       onDragOver={(event) => {
                         acceptMaterialDrop(event, row.ids, row.key);
                       }}
@@ -428,7 +439,15 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                         selectRow(row.id, event.ctrlKey || event.metaKey || event.shiftKey);
                       }}
                       onDoubleClick={() => beginRename(row.id, row.label)}
-                      title={`${row.id} — drag to reparent · F2 rename · Enter frame`}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setActiveId(row.id);
+                        onRowContextMenu?.(
+                          { clientX: event.clientX, clientY: event.clientY },
+                          row.id,
+                        );
+                      }}
+                      title={`${row.id} — drag to reparent · F2 rename · Enter frame · right-click menu`}
                       onDragStart={(event) => {
                         event.dataTransfer.setData(OBJECT_DRAG_MIME, row.id);
                         event.dataTransfer.effectAllowed = "move";
