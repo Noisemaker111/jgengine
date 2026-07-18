@@ -12,7 +12,7 @@ export interface EditorAssetEntry {
   url?: string;
 }
 
-/** Custom drag mime carrying a material id — read by `OutlinerPanel` rows and the viewport drop zone. */
+/** Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone. */
 export const MATERIAL_DRAG_MIME = "application/x-jgengine-material";
 
 /** Materials palette: drag a chip onto an outliner row (assign to that object) or the viewport (paint terrain / assign to the object under the cursor). */
