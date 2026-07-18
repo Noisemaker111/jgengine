@@ -182,3 +182,19 @@ Building a WoW-like on the SDK: on a lethal ctx.scene.entity.effect() hit the en
 2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
 
 verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <path> run <script>' (space form) mis-parses and prints bun-run help instead of running; only 'bun --cwd=<path> run <script>' (equals form) works. Docs/skills should switch to the = form or bun --filter.
+
+2026-07-18T23:54:36.026Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim verdict: a scaffolded WoW-like shipped with primitive-marker enemies and box props because nothing in the intake/create flow gates completion on entityModels/objectModels being set; the assets skill and npx jgengine assets pull (Quaternius sci-fi robots) were installed and never triggered. Make an asset pass a required step in the jgengine skill build phase
+
+2026-07-18T23:54:36.178Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: player death had no designed moment — lethal hit silently teleports to spawn. createDownedState exists but no skill step says 'player death must be a visible designed flow (death/downed screen, respawn)'. Add it to game-design/jgengine-ui checklists
+
+2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: WoW-like needed overhead enemy nameplates/healthbars; jgengine-ui has bars but no floating world-anchored entity-frame seam or recipe, so it drops off agent plans
+
+2026-07-18T23:54:36.442Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive are monorepo scripts — so the AGENTS.md rule 'visual claims are screenshot-judged harshly by you' is unenforceable for exactly the outside users it targets; ship a jgengine shoot CLI verb
