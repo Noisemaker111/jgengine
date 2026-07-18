@@ -12,11 +12,19 @@ import { IconButton, Segmented } from "./ui";
 
 const ROW_HEIGHT = 26;
 
+/** HTML5 drag payload for hierarchy reparenting via `set_parent`. */
+export const OBJECT_DRAG_MIME = "application/x-jgengine-editor-object";
+
+function dataTransferHas(types: readonly string[], mime: string): boolean {
+  return types.includes(mime);
+}
+
 /**
  * Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live
  * document. Group headers carry real per-kind visibility toggles (the editor's layer system);
- * rows locked through a locked collection show a lock indicator. Selector-subscribed and
- * memoized, so UI-only churn never rerenders it.
+ * rows locked through a locked collection show a lock indicator. Tree view supports drag-and-drop
+ * reparenting through the existing `set_parent` RPC. Selector-subscribed and memoized, so UI-only
+ * churn never rerenders it.
  */
 export const HierarchyPanel = memo(function HierarchyPanel({
   session,
@@ -76,22 +84,47 @@ export const HierarchyPanel = memo(function HierarchyPanel({
   };
 
   const [materialDropTarget, setMaterialDropTarget] = useState<string | null>(null);
-  const materialDropProps = (ids: readonly string[], key: string) => ({
-    onDragOver: (event: DragEvent) => {
-      if (!event.dataTransfer.types.includes(MATERIAL_DRAG_MIME)) return;
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "copy";
-      if (materialDropTarget !== key) setMaterialDropTarget(key);
-    },
-    onDragLeave: () => setMaterialDropTarget((current) => (current === key ? null : current)),
-    onDrop: (event: DragEvent) => {
-      const materialId = event.dataTransfer.getData(MATERIAL_DRAG_MIME);
-      if (materialId.length === 0) return;
-      event.preventDefault();
-      setMaterialDropTarget(null);
-      api.handle({ method: "assign_material", ids: [...ids], materialId });
-    },
-  });
+  const [reparentDropTarget, setReparentDropTarget] = useState<string | null>(null);
+  const [draggingObjectId, setDraggingObjectId] = useState<string | null>(null);
+
+  const acceptMaterialDrop = (event: DragEvent, ids: readonly string[], key: string) => {
+    if (!dataTransferHas(event.dataTransfer.types, MATERIAL_DRAG_MIME)) return false;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    if (materialDropTarget !== key) setMaterialDropTarget(key);
+    return true;
+  };
+
+  const commitMaterialDrop = (event: DragEvent, ids: readonly string[]) => {
+    const materialId = event.dataTransfer.getData(MATERIAL_DRAG_MIME);
+    if (materialId.length === 0) return false;
+    event.preventDefault();
+    setMaterialDropTarget(null);
+    api.handle({ method: "assign_material", ids: [...ids], materialId });
+    return true;
+  };
+
+  const acceptReparentDrop = (event: DragEvent, key: string) => {
+    if (!dataTransferHas(event.dataTransfer.types, OBJECT_DRAG_MIME)) return false;
+    if (dataTransferHas(event.dataTransfer.types, MATERIAL_DRAG_MIME)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = "move";
+    if (reparentDropTarget !== key) setReparentDropTarget(key);
+    return true;
+  };
+
+  const commitReparentDrop = (event: DragEvent, parentId: string | null) => {
+    const objectId = event.dataTransfer.getData(OBJECT_DRAG_MIME);
+    if (objectId.length === 0) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    setReparentDropTarget(null);
+    setDraggingObjectId(null);
+    if (parentId === objectId) return true;
+    api.handle({ method: "set_parent", ids: [objectId], parentId });
+    return true;
+  };
 
   const rowLocked = (ids: readonly string[]) => ids.some((id) => isEditorObjectLocked(document, id));
 
@@ -124,11 +157,35 @@ export const HierarchyPanel = memo(function HierarchyPanel({
           />
           <span className={`ml-auto text-[10px] text-neutral-600 ${NUMERIC}`}>{total} objects</span>
         </div>
+        {view === "tree" ? (
+          <p className="px-0.5 text-[10px] text-neutral-600">Drag rows to reparent · drop on empty list to unparent</p>
+        ) : null}
       </div>
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-auto px-1.5 py-1"
+        className={`min-h-0 flex-1 overflow-auto px-1.5 py-1 ${
+          reparentDropTarget === "__root__" ? "bg-cyan-500/10 ring-1 ring-inset ring-cyan-400/30" : ""
+        }`}
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        onDragOver={
+          view === "tree"
+            ? (event) => {
+                acceptReparentDrop(event, "__root__");
+              }
+            : undefined
+        }
+        onDragLeave={
+          view === "tree"
+            ? () => setReparentDropTarget((current) => (current === "__root__" ? null : current))
+            : undefined
+        }
+        onDrop={
+          view === "tree"
+            ? (event) => {
+                commitReparentDrop(event, null);
+              }
+            : undefined
+        }
       >
         {rows.length === 0 ? (
           <div className="p-4 text-center text-[11px] text-neutral-600">
@@ -186,7 +243,13 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                             : "text-neutral-300 hover:bg-white/[0.05]"
                       }`}
                       onClick={(event) => selectRow(row.ids[0]!, event.ctrlKey || event.metaKey || event.shiftKey)}
-                      {...materialDropProps(row.ids, row.key)}
+                      onDragOver={(event) => {
+                        acceptMaterialDrop(event, row.ids, row.key);
+                      }}
+                      onDragLeave={() => setMaterialDropTarget((current) => (current === row.key ? null : current))}
+                      onDrop={(event) => {
+                        commitMaterialDrop(event, row.ids);
+                      }}
                     >
                       <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected ? "text-cyan-300" : "text-neutral-500"}`} />
                       <span className="min-w-0 flex-1 truncate">
@@ -205,8 +268,10 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                   );
                 }
                 const rowSelected = selection.includes(row.id);
-                const dropActive = materialDropTarget === row.key;
+                const materialDrop = materialDropTarget === row.key;
+                const reparentDrop = reparentDropTarget === row.key && draggingObjectId !== row.id;
                 const locked = isEditorObjectLocked(document, row.id);
+                const dragging = draggingObjectId === row.id;
                 return (
                   <div key={row.key} style={{ height: ROW_HEIGHT, paddingLeft: `${row.depth * 12}px` }} className="flex items-center">
                     {row.hasChildren ? (
@@ -223,16 +288,37 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                     )}
                     <button
                       type="button"
+                      draggable
                       className={`flex h-full min-w-0 flex-1 items-center gap-1.5 truncate rounded-[5px] px-1.5 text-left text-[11px] transition-colors ${FOCUS_RING} ${
-                        dropActive
+                        materialDrop || reparentDrop
                           ? "bg-cyan-500/25 ring-1 ring-inset ring-cyan-300/50"
                           : rowSelected
                             ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-inset ring-cyan-400/25"
                             : "text-neutral-300 hover:bg-white/[0.05]"
-                      }`}
+                      } ${dragging ? "opacity-50" : ""}`}
                       onClick={(event) => selectRow(row.id, event.ctrlKey || event.metaKey || event.shiftKey)}
-                      title={row.id}
-                      {...materialDropProps([row.id], row.key)}
+                      title={`${row.id} — drag to reparent`}
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData(OBJECT_DRAG_MIME, row.id);
+                        event.dataTransfer.effectAllowed = "move";
+                        setDraggingObjectId(row.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingObjectId(null);
+                        setReparentDropTarget(null);
+                      }}
+                      onDragOver={(event) => {
+                        if (acceptMaterialDrop(event, [row.id], row.key)) return;
+                        acceptReparentDrop(event, row.key);
+                      }}
+                      onDragLeave={() => {
+                        setMaterialDropTarget((current) => (current === row.key ? null : current));
+                        setReparentDropTarget((current) => (current === row.key ? null : current));
+                      }}
+                      onDrop={(event) => {
+                        if (commitMaterialDrop(event, [row.id])) return;
+                        commitReparentDrop(event, row.id);
+                      }}
                     >
                       <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected ? "text-cyan-300" : "text-neutral-500"}`} />
                       <span className="min-w-0 flex-1 truncate">{row.label}</span>
