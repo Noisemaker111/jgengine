@@ -600,7 +600,7 @@
 
 ## @jgengine/editor/mcp/cli
 
-- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSource: RpcPayloadSource | null; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
+- `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
 
 ## @jgengine/editor/mcp/fieldSpec
 

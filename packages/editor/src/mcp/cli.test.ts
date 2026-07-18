@@ -49,18 +49,35 @@ describe("parseEditorCliArgs", () => {
     const opts = parseEditorCliArgs(["--game", "demo", "--rpc", '{"method":"scene_summary"}']);
     expect(opts.gameId).toBe("demo");
     expect(opts.serve).toBe(false);
-    expect(opts.rpcSource).toEqual({ kind: "inline", raw: '{"method":"scene_summary"}' });
+    expect(opts.rpcSources).toEqual([{ kind: "inline", raw: '{"method":"scene_summary"}' }]);
   });
 
   test("--rpc - selects stdin", () => {
     const opts = parseEditorCliArgs(["--rpc", "-"]);
-    expect(opts.rpcSource).toEqual({ kind: "stdin" });
+    expect(opts.rpcSources).toEqual([{ kind: "stdin" }]);
     expect(opts.serve).toBe(false);
   });
 
   test("--rpc-file selects a file source", () => {
     const opts = parseEditorCliArgs(["--rpc-file", "payload.json"]);
-    expect(opts.rpcSource).toEqual({ kind: "file", path: "payload.json" });
+    expect(opts.rpcSources).toEqual([{ kind: "file", path: "payload.json" }]);
+    expect(opts.serve).toBe(false);
+  });
+
+  test("repeated --rpc flags are kept in order", () => {
+    const opts = parseEditorCliArgs([
+      "--rpc",
+      '{"method":"scene_summary"}',
+      "--rpc",
+      '{"method":"scene_apply"}',
+      "--rpc-file",
+      "payload.json",
+    ]);
+    expect(opts.rpcSources).toEqual([
+      { kind: "inline", raw: '{"method":"scene_summary"}' },
+      { kind: "inline", raw: '{"method":"scene_apply"}' },
+      { kind: "file", path: "payload.json" },
+    ]);
     expect(opts.serve).toBe(false);
   });
 });
