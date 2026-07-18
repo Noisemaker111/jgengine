@@ -927,7 +927,6 @@ export function EditorChrome({
                   }}
                 />
               )}
-              )}
             </aside>
             <PanelResizer orientation="vertical" label="Resize hierarchy panel" onResize={(delta) => layout.resize("leftWidth", delta)} />
           </>
