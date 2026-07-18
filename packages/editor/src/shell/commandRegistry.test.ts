@@ -79,6 +79,27 @@ test("filterPaletteCommands matches all terms across title, group, and keywords"
   expect(filterPaletteCommands(commands, "zzz-nothing")).toHaveLength(0);
 });
 
+test("filterPaletteCommands floats recent ids to the top when the query is empty", () => {
+  const { ctx } = recordingContext();
+  const commands = buildPaletteCommands(ctx);
+  const filtered = filterPaletteCommands(commands, "", ["doc.save", "view.grid"]);
+  expect(filtered[0]?.id).toBe("doc.save");
+  expect(filtered[0]?.group).toBe("Recent");
+  expect(filtered[1]?.id).toBe("view.grid");
+  expect(filtered.filter((command) => command.id === "doc.save")).toHaveLength(1);
+});
+
+test("buildPaletteCommands adds jump-to-object rows when objects are provided", () => {
+  const { ctx, calls } = recordingContext();
+  ctx.objects = [{ id: "boss", label: "Boss spawn", kind: "enemy_spawn" }];
+  ctx.gotoObject = (id) => void calls.push(`goto:${id}`);
+  const commands = buildPaletteCommands(ctx);
+  const jump = commands.find((command) => command.id === "goto.object.boss");
+  expect(jump?.title).toBe("Boss spawn");
+  jump!.run();
+  expect(calls).toContain("goto:boss");
+});
+
 test("workspace rail declares support honestly — staged modes are disabled", () => {
   const supported = WORKSPACES.filter((entry) => entry.supported).map((entry) => entry.id);
   const staged = WORKSPACES.filter((entry) => !entry.supported).map((entry) => entry.id);
