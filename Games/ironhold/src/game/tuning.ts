@@ -26,7 +26,6 @@ export const FORMATION_SPACING = 2.3;
 export const HARVEST_RANGE = 2.6;
 export const DEPOT_RANGE = 4.5;
 export const HARVEST_SECONDS = 2.2;
-export const GOLD_PER_TRIP = 12;
 export const LUMBER_PER_TRIP = 8;
 export const GOLD_MINE_BUDGET = 600;
 export const LUMBER_NODE_BUDGET = 500;

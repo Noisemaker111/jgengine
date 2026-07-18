@@ -1,4 +1,5 @@
 import type { Moodle, MoodleSeverity } from "./moodle";
+import { clamp } from "../math/scalar";
 
 export interface MeterThreshold {
   /** Moodle id raised while the meter is on the wrong side of `at`. */
@@ -68,10 +69,6 @@ export type DecayMeterValues = Record<string, number>;
  * `1` / omitted leaves the base rates unscaled.
  */
 export type DecayModifier = number | Record<string, number>;
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
-}
 
 function meterMin(def: DecayMeterConfig): number {
   return def.min ?? 0;

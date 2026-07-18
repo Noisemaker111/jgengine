@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 export type MassingComposition =
   | "bar"
   | "split"
@@ -70,8 +72,6 @@ export type MassingBody = {
   branch?: boolean;
   crown?: boolean;
 };
-
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export const hashMassingSeed = (text: string): number =>
   [...text].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);

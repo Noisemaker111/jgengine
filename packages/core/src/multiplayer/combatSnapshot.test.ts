@@ -70,6 +70,22 @@ describe("replayCombat determinism and parity", () => {
     expect(first.blows.map((x) => x.crit)).toEqual(second.blows.map((x) => x.crit));
   });
 
+  test("crit sequence stays byte-identical to the pre-refactor inline mulberry32 (replay RNG guard)", () => {
+    // The per-replay PRNG was moved off an inline mulberry32 onto the shared
+    // randomSeedFrom/stepRandomSeed primitives (combatSnapshot.ts). That construction
+    // is proven sequence-identical, and this golden pins it: any future drift in the
+    // RNG would desync multiplayer replays across peers and must fail here.
+    const rules: CombatRules = { ...RULES, critChance: 0.5, critMultiplier: 3, maxRounds: 100 };
+    const a = board("p1", [["a1", 1, 200], ["a2", 1, 200]], 12345);
+    const b = board("p2", [["b1", 1, 200]], 6789);
+    const result = replayCombat(a, b, rules);
+    expect(result.winner).toBe("draw");
+    expect(result.rounds).toBe(100);
+    expect(result.blows.map((blow) => (blow.crit ? "1" : "0")).join("")).toBe(
+      "00110001010000010000100011000000000111101000000110011010000001000101111111001110111110111111110110110010110000101000001001010101110111100011111001011110000110100001011111111011001001001000010010011111",
+    );
+  });
+
   test("maxRounds bounds an unkillable stalemate", () => {
     const a = board("p1", [["a1", 0, 10]]);
     const b = board("p2", [["b1", 0, 10]]);

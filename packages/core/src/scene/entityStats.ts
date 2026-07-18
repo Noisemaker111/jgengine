@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 export interface StatValue {
   current: number;
   max: number;
@@ -17,10 +19,6 @@ export type StatCatalog = Record<string, { max: number; min?: number; current?: 
 export type PoolDeltaResult =
   | { status: "ok"; map: StatValueMap; stat: StatValue; hitMin: boolean; hitMax: boolean }
   | { status: "rejected"; reason: string };
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 /** @internal */
 export function getStatValue(map: StatValueMap, statId: string): StatValue | null {

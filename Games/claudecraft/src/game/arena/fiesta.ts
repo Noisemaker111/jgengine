@@ -169,10 +169,6 @@ export function fiestaRecordKey(userId: string): string {
   return `arenaFiesta:${userId}`;
 }
 
-export function fiestaActive(ctx: GameContext, userId: string): boolean {
-  return sessionsOf(ctx).has(userId);
-}
-
 function say(ctx: GameContext, userId: string, text: string): void {
   ctx.scene.entity.floatText({ instanceId: userId, text, kind: "info" });
 }

@@ -1,3 +1,5 @@
+import { editorMarkerPosition, findEditorMarker } from "@jgengine/core/editor/index";
+
 import { editorLayers } from "../../editorLayers";
 
 export const WORLD_W = 640;
@@ -24,9 +26,9 @@ export interface AuthoredVehicleSpawn {
 }
 
 function markerXYZ(id: string): readonly [number, number, number] {
-  const marker = editorLayers.markers.find((m) => m.id === id);
+  const marker = findEditorMarker(editorLayers, id);
   if (marker === undefined) throw new Error(`vice-isle scene is missing marker "${id}"`);
-  return [marker.position.x, marker.position.y, marker.position.z];
+  return editorMarkerPosition(marker);
 }
 
 export const DISTRICTS: readonly District[] = editorLayers.volumes
@@ -59,7 +61,7 @@ export const AUTHORED_VEHICLE_SPAWNS: readonly AuthoredVehicleSpawn[] = editorLa
       : [{
           id: marker.id,
           catalogId,
-          position: [marker.position.x, marker.position.y, marker.position.z] as const,
+          position: editorMarkerPosition(marker),
           rotationY: marker.rotationY ?? 0,
         }];
   });
@@ -86,7 +88,7 @@ export const BOUNTY_SPOTS: readonly BountySpot[] = editorLayers.markers
   .map((marker) => ({
     id: marker.id,
     label: marker.label ?? marker.id,
-    position: [marker.position.x, marker.position.y, marker.position.z] as const,
+    position: editorMarkerPosition(marker),
   }));
 
 export function districtAt(x: number, z: number): District | null {

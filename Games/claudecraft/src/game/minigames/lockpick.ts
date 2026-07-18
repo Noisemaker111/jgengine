@@ -225,11 +225,6 @@ function sync(ctx: GameContext, userId: string): void {
   if (session.result !== "playing") sessions.delete(userId);
 }
 
-export function resetLockboxes(): void {
-  sessions.clear();
-  boxes.clear();
-}
-
 export function lockboxCount(): number {
   return boxes.size;
 }

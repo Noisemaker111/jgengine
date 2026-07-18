@@ -3,7 +3,6 @@ dist/
 *.log
 .DS_Store
 shots/
-.turbo/
 **/public/models/*
 !apps/dev/public/models/claudecraft/
 !apps/dev/public/models/kaykit-adventurers/
@@ -13,6 +12,9 @@ shots/
 !apps/dev/public/models/quaternius-stylized-nature/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
+
+# Orphaned per-package API JSON dumped under the web app — build output, not source.
+apps/web/src/generated/
 
 # CHANGELOG.md is authored once at the repo root and copied into each package
 # at publish time (see publish.yml) — the per-package copies are build artifacts.

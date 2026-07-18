@@ -1,4 +1,5 @@
 import { type Aabb, type Vec2, expandAabb, pointInAabb } from "./geometry";
+import { seededRng } from "../random/rng";
 
 export interface ScatterArea {
   w: number;
@@ -44,27 +45,6 @@ export function scatterAabb(area: ScatterArea | Aabb): Aabb {
   return { minX: cx - halfW, minZ: cz - halfD, maxX: cx + halfW, maxZ: cz + halfD };
 }
 
-function hashSeed(seed: string | number): number {
-  const text = typeof seed === "number" ? seed.toString() : seed;
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i++) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function mulberry32(state: number): () => number {
-  let a = state >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 export function scatter(config: ScatterConfig): ScatterPoint[] {
   const aabb = scatterAabb(config.area);
   const width = aabb.maxX - aabb.minX;
@@ -78,7 +58,7 @@ export function scatter(config: ScatterConfig): ScatterPoint[] {
   const jitter = config.jitter ?? 1;
   const maxAttempts = config.maxAttempts ?? target * 30;
   const avoid = (config.avoid ?? []).map((a) => (avoidMargin !== 0 ? expandAabb(a, avoidMargin) : a));
-  const rng = mulberry32(hashSeed(config.seed ?? "scatter"));
+  const rng = seededRng(config.seed ?? "scatter");
 
   const useDistance = minDistance > 0;
   const buckets = new Map<string, Vec2[]>();

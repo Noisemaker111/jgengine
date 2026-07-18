@@ -446,7 +446,3 @@ export function tickMobs(ctx: GameContext, dt: number): void {
 export function mobCount(ctx: GameContext): number {
   return runtimesOf(ctx).size;
 }
-
-export function resetMobs(ctx: GameContext): void {
-  runtimesOf(ctx).clear();
-}

@@ -1,5 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import { editorMarkerXZ } from "@jgengine/core/editor/index";
+
 import { editorLayers } from "../../editorLayers";
 import { registerBuildCommands } from "../build/commands";
 import { placeObject } from "../build/placement";
@@ -34,7 +36,8 @@ export function seedPlacements(): SeedPlacement[] {
     const catalogId = markerCatalogId(marker.meta);
     const category = buildableDef(catalogId).category;
     const target = category === "ride" || category === "stall" ? rides : rest;
-    target.push({ catalogId, x: marker.position.x, z: marker.position.z });
+    const [x, z] = editorMarkerXZ(marker);
+    target.push({ catalogId, x, z });
   }
   const track = editorLayers.paths.find((path) => path.id === TRACK_PATH_ID);
   const trackPieces: SeedPlacement[] = (track?.points ?? []).map((point) => ({

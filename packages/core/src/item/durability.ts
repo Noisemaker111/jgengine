@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 export interface RepairMaterial {
   item: string;
   perPoint: number;
@@ -33,10 +35,6 @@ export interface RepairQuote {
   materials: readonly RepairCost[];
   restored: number;
   state: DurabilityState;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
 }
 
 export function createDurability(spec: DurabilitySpec): DurabilityState {

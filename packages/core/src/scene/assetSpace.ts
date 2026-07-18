@@ -1,4 +1,5 @@
 import type { Aabb, Footprint, Vec2 } from "../world/geometry";
+import { clamp } from "../math/scalar";
 
 /**
  * Asset-space metadata + placement rotation policy: the catalog-owned description of how a model sits
@@ -14,10 +15,6 @@ import type { Aabb, Footprint, Vec2 } from "../world/geometry";
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 const FULL_TURN = 360;
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
-}
 
 /**
  * Wrap `degrees` into `[0, 360)` — the canonical heading range every policy and conversion here works

@@ -1,4 +1,10 @@
-import { normalizeEditorLayers, type EditorDocument, type EditorLayersInput } from "@jgengine/core/editor/index";
+import {
+  editorMarkerXZ,
+  findEditorMarker,
+  normalizeEditorLayers,
+  type EditorDocument,
+  type EditorLayersInput,
+} from "@jgengine/core/editor/index";
 
 import sceneJson from "./editor.scene.json";
 
@@ -12,15 +18,14 @@ import sceneJson from "./editor.scene.json";
 export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
 
 function requireMarker(id: string) {
-  const marker = editorLayers.markers.find((m) => m.id === id);
+  const marker = findEditorMarker(editorLayers, id);
   if (marker === undefined) throw new Error(`editor.scene.json: missing marker "${id}"`);
   return marker;
 }
 
 /** XZ of an authored marker, the single source for a placed point. */
 export function sceneMarkerXZ(id: string): readonly [number, number] {
-  const { position } = requireMarker(id);
-  return [position.x, position.z];
+  return editorMarkerXZ(requireMarker(id));
 }
 
 /** Authored `meta.radius` of a marker (hub / landmark discs). */
