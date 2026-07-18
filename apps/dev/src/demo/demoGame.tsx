@@ -1,4 +1,4 @@
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import type {
   GameContext,
@@ -45,7 +45,7 @@ const itemCatalog: Record<string, GameContextItemEntry> = {
   zap: { use: "castZap", weapon: { damage: 35, manaCost: 12, range: 18 } },
 };
 
-const game = defineGame({
+const game = defineGameDefinition({
   name: "gameplayer-demo",
   assets: createAssetCatalog(),
   multiplayer: null,

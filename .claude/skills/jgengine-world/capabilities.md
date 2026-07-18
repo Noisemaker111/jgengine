@@ -454,3 +454,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## volumetric-clouds — raymarched cloud layer sky option
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
+
+## world-environment — declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+
+- `environment` (function) · `import { environment } from "@jgengine/core/world"`

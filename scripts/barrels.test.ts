@@ -33,7 +33,7 @@ function parseReexports(src: string): { module: string; names: string[] }[] {
 const KEY_SYMBOL: Record<string, string> = {
   world: "createNavGrid",
   combat: "createAbilityKit",
-  gameplay: "defineGame",
+  gameplay: "defineSystem",
   multiplayer: "ChatTransport",
   ui: "formatDuration",
 };

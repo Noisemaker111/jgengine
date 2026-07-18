@@ -23,7 +23,7 @@ function Cables({ cables }: { cables: readonly Cable[] }) {
     for (const cable of cables) {
       if (cable.points.length < 2) continue;
       const curve = new THREE.CatmullRomCurve3(cable.points.map((point) => new THREE.Vector3(point[0], point[1], point[2])));
-      parts.push(new THREE.TubeGeometry(curve, Math.max(2, cable.points.length - 1), cable.radius, 5, false));
+      parts.push(new THREE.TubeGeometry(curve, Math.max(2, (cable.points.length - 1) * 2), cable.radius, 6, false));
     }
     if (parts.length === 0) return null;
     const merged = mergePositionGeometries(parts);
@@ -32,11 +32,79 @@ function Cables({ cables }: { cables: readonly Cable[] }) {
   }, [cables]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
   if (geometry === null) return null;
+  // Dark warm rubber-sheath tone with a hint of sheen — pitch black tubes read as ink scribbles
+  // against the sky, real cable catches a little light along its top.
   return (
     <mesh geometry={geometry} castShadow>
-      <meshStandardMaterial color="#1a1a1f" roughness={0.7} metalness={0.1} />
+      <meshStandardMaterial color="#31281f" roughness={0.55} metalness={0.15} />
     </mesh>
   );
+}
+
+/**
+ * Weathered wood for the proxy poles: vertical grain streaks + broad tonal banding driven by the
+ * pole's own cylindrical coordinates, offset per instance so no two poles share a pattern, and a
+ * sun-bleach lift toward the top. Injected via `onBeforeCompile`, instancing-aware.
+ */
+function createWeatheredWoodMaterial(color: string, grainAlong: "y" | "x" = "y"): THREE.MeshStandardMaterial {
+  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.92, metalness: 0 });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+varying vec3 vJgWoodLocal;
+varying vec2 vJgWoodSeed;`,
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+vJgWoodLocal = position;
+#ifdef USE_INSTANCING
+vJgWoodSeed = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xz;
+#else
+vJgWoodSeed = vec2(0.0);
+#endif`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+varying vec3 vJgWoodLocal;
+varying vec2 vJgWoodSeed;
+float jgWoodHash(vec2 p){
+  uvec2 q = uvec2(ivec2(floor(p)));
+  uint x = q.x * 1664525u + q.y * 1013904223u;
+  x = (x ^ (x >> 16u)) * 2246822519u;
+  x = (x ^ (x >> 13u)) * 3266489917u;
+  return float(x ^ (x >> 16u)) * (1.0 / 4294967296.0);
+}
+float jgWoodNoise(vec2 p){
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = jgWoodHash(i); float b = jgWoodHash(i + vec2(1.0, 0.0));
+  float c = jgWoodHash(i + vec2(0.0, 1.0)); float d = jgWoodHash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}`,
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+${
+          grainAlong === "y"
+            ? `vec2 jgWoodUv = vec2(atan(vJgWoodLocal.x, vJgWoodLocal.z) * 1.4, vJgWoodLocal.y * 0.55);`
+            : `vec2 jgWoodUv = vec2(vJgWoodLocal.y * 9.0 + vJgWoodLocal.z * 7.0, vJgWoodLocal.x * 0.8);`
+        }
+vec2 jgWoodOff = vec2(dot(vJgWoodSeed, vec2(0.73, 1.31)), dot(vJgWoodSeed, vec2(1.17, 0.41)));
+float jgWoodBand = jgWoodNoise(jgWoodUv * vec2(2.0, 1.0) + jgWoodOff);
+float jgWoodStreak = jgWoodNoise(jgWoodUv * vec2(7.0, 0.35) + jgWoodOff * 1.7);
+diffuseColor.rgb *= mix(0.74, 1.14, jgWoodBand * 0.45 + jgWoodStreak * 0.55);
+${grainAlong === "y" ? `// Sun-bleached crown, damp-darkened foot — reads as years outdoors, not fresh paint.
+diffuseColor.rgb = mix(diffuseColor.rgb * 0.82, diffuseColor.rgb * vec3(1.08, 1.05, 0.98), smoothstep(-3.5, 3.0, vJgWoodLocal.y));` : ""}`,
+      );
+  };
+  material.customProgramCacheKey = () => `jgengine-weathered-wood-${grainAlong}`;
+  return material;
 }
 
 /** Minimal position/normal/index merge — avoids depending on a specific BufferGeometryUtils path. */
@@ -96,13 +164,16 @@ function ProxyPoles({
   const braceRef = useRef<THREE.InstancedMesh>(null);
   const insulatorRef = useRef<THREE.InstancedMesh>(null);
   const armLength = wireCount > 1 ? (wireCount - 1) * wireSpacing + 0.6 : 0.8;
-  const trunkGeometry = useMemo(() => new THREE.CylinderGeometry(0.1, 0.17, height, 8), [height]);
-  const armGeometry = useMemo(() => new THREE.BoxGeometry(armLength, 0.14, 0.12), [armLength]);
+  // Chunkier members than a real-scale pole: stylized worlds read thin cylinders as wire, not wood.
+  const trunkGeometry = useMemo(() => new THREE.CylinderGeometry(0.13, 0.22, height, 10), [height]);
+  const armGeometry = useMemo(() => new THREE.BoxGeometry(armLength, 0.17, 0.14), [armLength]);
   const braceGeometry = useMemo(() => {
     const braceSpan = Math.hypot(armLength * 0.32, 0.7);
-    return new THREE.BoxGeometry(0.06, braceSpan, 0.05);
+    return new THREE.BoxGeometry(0.07, braceSpan, 0.06);
   }, [armLength]);
-  const insulatorGeometry = useMemo(() => new THREE.CylinderGeometry(0.055, 0.075, 0.22, 6), []);
+  const insulatorGeometry = useMemo(() => new THREE.CylinderGeometry(0.06, 0.085, 0.24, 8), []);
+  const trunkMaterial = useMemo(() => createWeatheredWoodMaterial("#6b533a"), []);
+  const armMaterial = useMemo(() => createWeatheredWoodMaterial("#59452e", "x"), []);
   useEffect(
     () => () => {
       trunkGeometry.dispose();
@@ -111,6 +182,13 @@ function ProxyPoles({
       insulatorGeometry.dispose();
     },
     [trunkGeometry, armGeometry, braceGeometry, insulatorGeometry],
+  );
+  useEffect(
+    () => () => {
+      trunkMaterial.dispose();
+      armMaterial.dispose();
+    },
+    [trunkMaterial, armMaterial],
   );
   useEffect(() => {
     const trunk = trunkRef.current;
@@ -191,23 +269,17 @@ function ProxyPoles({
   }, [poles, height, wireCount, wireSpacing]);
   return (
     <>
-      <instancedMesh ref={trunkRef} args={[trunkGeometry, undefined, Math.max(1, poles.length)]} castShadow receiveShadow>
-        <meshStandardMaterial color="#5d4a30" roughness={0.92} metalness={0} />
-      </instancedMesh>
+      <instancedMesh ref={trunkRef} args={[trunkGeometry, trunkMaterial, Math.max(1, poles.length)]} castShadow receiveShadow />
       {wireCount > 0 ? (
         <>
-          <instancedMesh ref={armRef} args={[armGeometry, undefined, Math.max(1, poles.length)]} castShadow receiveShadow>
-            <meshStandardMaterial color="#4e3d27" roughness={0.9} metalness={0} />
-          </instancedMesh>
-          <instancedMesh ref={braceRef} args={[braceGeometry, undefined, Math.max(1, poles.length * 2)]} castShadow>
-            <meshStandardMaterial color="#4e3d27" roughness={0.9} metalness={0} />
-          </instancedMesh>
+          <instancedMesh ref={armRef} args={[armGeometry, armMaterial, Math.max(1, poles.length)]} castShadow receiveShadow />
+          <instancedMesh ref={braceRef} args={[braceGeometry, armMaterial, Math.max(1, poles.length * 2)]} castShadow />
           <instancedMesh
             ref={insulatorRef}
             args={[insulatorGeometry, undefined, Math.max(1, poles.length * wireCount)]}
             castShadow
           >
-            <meshStandardMaterial color="#9aa7ad" roughness={0.35} metalness={0.15} />
+            <meshStandardMaterial color="#a8a18c" roughness={0.32} metalness={0.12} />
           </instancedMesh>
         </>
       ) : null}

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext } from "../runtime/gameContext";
 import { flat } from "../world/features";
-import { createDisposer, defineGame } from "./defineGame";
+import { createDisposer, defineGameDefinition } from "./defineGame";
 
 const VALID = {
   name: "TestGame",
@@ -11,9 +11,9 @@ const VALID = {
   multiplayer: "off" as const,
 };
 
-describe("defineGame", () => {
+describe("defineGameDefinition", () => {
   test("keeps the definition and attaches a scene entity store", () => {
-    const game = defineGame(VALID);
+    const game = defineGameDefinition(VALID);
     expect(game.name).toBe(VALID.name);
     expect(game.assets).toBe(VALID.assets);
     expect(game.multiplayer).toBe(VALID.multiplayer);
@@ -22,14 +22,14 @@ describe("defineGame", () => {
   });
 
   test("each definition owns its own scene store", () => {
-    const first = defineGame(VALID);
-    const second = defineGame(VALID);
+    const first = defineGameDefinition(VALID);
+    const second = defineGameDefinition(VALID);
     first.scene.spawn("bench");
     expect(second.scene.list()).toEqual([]);
   });
 
   test("two contexts from one definition own isolated entity stores (#632)", () => {
-    const definition = defineGame(VALID);
+    const definition = defineGameDefinition(VALID);
     const world1 = createGameContext({ definition, content: {}, player: { userId: "a", isNew: true } });
     const world2 = createGameContext({ definition, content: {}, player: { userId: "b", isNew: true } });
 
@@ -40,21 +40,21 @@ describe("defineGame", () => {
   });
 
   test("omitted assets resolve to an empty catalog", () => {
-    const game = defineGame({ name: "NoAssets", multiplayer: "off" as const });
+    const game = defineGameDefinition({ name: "NoAssets", multiplayer: "off" as const });
     expect(game.assets.ids()).toEqual([]);
     expect(game.assets.resolve("anything")).toBeNull();
     game.assets.register("crate", { url: "crate.glb" });
     expect(game.assets.ids()).toEqual(["crate"]);
-    expect(defineGame({ name: "Other", multiplayer: "off" as const }).assets.ids()).toEqual([]);
+    expect(defineGameDefinition({ name: "Other", multiplayer: "off" as const }).assets.ids()).toEqual([]);
   });
 
   test("rejects empty names", () => {
-    expect(() => defineGame({ ...VALID, name: "  " })).toThrow("name");
+    expect(() => defineGameDefinition({ ...VALID, name: "  " })).toThrow("name");
   });
 
   test("defaults to an empty asset catalog when assets is omitted", () => {
     const { assets: _assets, ...withoutAssets } = VALID;
-    const game = defineGame(withoutAssets);
+    const game = defineGameDefinition(withoutAssets);
     expect(game.assets.ids()).toEqual([]);
     expect(game.assets.has("anything")).toBe(false);
     game.assets.register("sword", { url: "sword.glb" });
@@ -63,7 +63,7 @@ describe("defineGame", () => {
 
   test("carries platform config through untouched", () => {
     const loop = { onInit: () => {} };
-    const game = defineGame({
+    const game = defineGameDefinition({
       ...VALID,
       world: flat(),
       physics: { gravity: -32 },

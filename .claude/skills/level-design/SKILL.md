@@ -11,7 +11,7 @@ Own the spatial realization of game design: player metrics, topology, routes, la
 
 All authorable world content belongs in `editor.scene.json`, changed through the editor GUI or RPC/CLI. Never hand-edit the document or keep geometry, paths, spawns, zones, objectives, terrain, foliage, encounters, or coordinate arrays in code. File an editor `[FEATURE]` issue before any fallback.
 
-Read [references/application-playbook.md](references/application-playbook.md) whenever creating, auditing, or improving spatial play. Read [references/live-editor-loop.md](references/live-editor-loop.md) whenever live captures, an editor-agent handoff, or iterative scene improvement is involved. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
+Read [references/application-playbook.md](references/application-playbook.md) only when the task explicitly calls for spatial design depth — a level/world design brief, an audit or redesign, or "make this fun/better" work; it is not a mandatory step of creating a game. Read [references/live-editor-loop.md](references/live-editor-loop.md) whenever live captures, an editor-agent handoff, or iterative scene improvement is involved. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
 
 ## Choose the mode
 

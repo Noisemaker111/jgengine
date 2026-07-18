@@ -570,7 +570,10 @@ function bandWeatherDescriptors(
   return out;
 }
 
-/** Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads. */
+/** Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+ *
+ * @capability world-environment declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+ */
 export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature {
   const explicitWeather = list(config.weather);
   const bandWeather = bandWeatherDescriptors(config.terrain);

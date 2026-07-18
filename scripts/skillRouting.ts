@@ -1,4 +1,7 @@
-import { API_SKILL_DIRS } from "../packages/jgengine/src/skills";
+import { API_SKILL_DIRS, MINIMAL_GAME_SKILLS } from "../packages/jgengine/src/skills";
+
+/** The enforced external default: what `jgengine create` actually installs (see packages/jgengine/src/skills.ts). Full domains are opt-in via `jgengine skills --all`. */
+export { MINIMAL_GAME_SKILLS };
 
 export const MAIN = "jgengine";
 
@@ -45,6 +48,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   session: "jgengine-gameplay",
   settings: "jgengine-ui",
   stats: "jgengine-combat",
+  store: "jgengine-gameplay",
   survival: "jgengine-gameplay",
   tactics: "jgengine-gameplay",
   time: "jgengine-world",
@@ -55,7 +59,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   world: "jgengine-world",
 };
 
-export const CORE_INTERNAL_DOMAINS = new Set(["assets", "store"]);
+export const CORE_INTERNAL_DOMAINS = new Set(["assets"]);
 
 export const PACKAGE_SKILLS: Record<string, string> = {
   editor: "jgengine-editor",
@@ -70,7 +74,11 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   // leave generated game-authoring API docs (still published; agents use CLI help).
 };
 
-export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {};
+export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {
+  // The public authoring trio lives with the router skill so the minimal install
+  // (jgengine + editor + verify) already carries defineGame/gameKit/GameHost.
+  shell: { defineGame: MAIN, gameKit: MAIN, GameHost: MAIN },
+};
 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
@@ -105,6 +113,7 @@ export const INTAKE_ROUTES = {
   multiplayer: ["jgengine-multiplayer"],
 } as const;
 
+/** In-repo intake yardstick for `report:skill-intake` — what a normal game task loads inside this monorepo. The external install policy is {@link MINIMAL_GAME_SKILLS}; domains beyond it load on demand, not by default. */
 export const NORMAL_GAME_INTAKE = [
   MAIN,
   "game-design",

@@ -12,6 +12,8 @@ export interface SceneKindRenderContext {
   field: TerrainField;
   /** Catalog for kinds that instance real GLBs (pole assets, etc.). */
   assets?: AssetCatalog;
+  /** Terrain surface color at a world XZ — lets kind geometry (grass roots, soil borders) blend into the ground it sits on. */
+  groundColorAt?: (x: number, z: number) => string;
 }
 
 /** A registered renderer: given every document object of its kind, returns the render tree for them. */

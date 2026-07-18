@@ -65,13 +65,33 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`
 
+## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
+
+- `HudCanvas` (function) · `import { HudCanvas } from "@jgengine/react"`
+
+## hud-clock — in-game time-of-day readout bound to the sim clock
+
+- `Clock` (function) · `import { Clock } from "@jgengine/react"`
+
+## hud-coins — currency counter widget bound to a currency id
+
+- `Coins` (function) · `import { Coins } from "@jgengine/react"`
+
 ## hud-frame — shared framed HUD chrome — glass/plate/retro skins, optional title/aside header, reused across every widget instead of a bespoke panel per widget
 
 - `HudFrame` (function) · `import { HudFrame } from "@jgengine/react"`
 
+## hud-hotbar — inventory hotbar widget with keybind slots and icons
+
+- `Hotbar` (function) · `import { Hotbar } from "@jgengine/react"`
+
 ## hud-icons — painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
 
 - `IconSchool` (type) · `import { IconSchool } from "@jgengine/react"`
+
+## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
+
+- `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/react"`
 
 ## hud-layout-persist — inject a host callback so canvas HUD edits commit into the scene document
 
@@ -81,9 +101,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useHudLayoutPersist` (function) · `import { useHudLayoutPersist } from "@jgengine/react"`
 
+## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
+
+- `HudPanel` (function) · `import { HudPanel } from "@jgengine/react"`
+
 ## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
 
 - `SlotItem` (interface) · `import { SlotItem } from "@jgengine/react"`
+
+## hud-stat-bar — self-styled bar widget bound to a stat (health, mana, stamina)
+
+- `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
 ## hud-theme — one token object + genre presets driving bars, frames, slots, and minimap ring
 

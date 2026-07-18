@@ -45,6 +45,10 @@ gate/test:all in the cloud container → 7 pre-existing failures identical on or
 
 Running bun run gate on a fresh cloud container → agent:preflight fails on missing node_modules before build's ensure-ready --install-only can run; had to bun install manually first. Preflight could auto-install or point at ensure-ready.
 
+2026-07-18T17:17:53.370Z — claude-fable-5 — Claude
+
+Cold cloud container: 'bun run shoot' fails with 'Dev server failed to start' until 'bun scripts/ensure-ready.ts' has run once — shoot should bootstrap deps itself or say to run ensure-ready
+
 2026-07-18T17:39:17.438Z — cloud-agent — Claude
 
 Fresh branch off origin/main can't pass its own gate: check-content-gate fails because coordinate-literal-baseline.json lists Games/the-robots/src/game/world/zones.ts which no longer trips the lint (baselines only shrink). Every session that runs the gate hits this red before touching any real work — the shrinking baselines need reseeding on main (bun run check-content-gate --update) or a CI job that keeps them trimmed.
@@ -64,3 +68,7 @@ Running bun run gate on a fresh branch off main → check-capabilities failed be
 2026-07-18T18:15:30.730Z — claude-fable-5 — Claude
 
 bun run gate on fresh branch off main → check-content-gate failed on a stale coordinate-literal-baseline.json entry (Games/the-robots zones.ts no longer trips the lint); main ships with a red gate until someone reseeds
+2026-07-18T18:05:04.668Z — claude — Claude
+
+Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
+

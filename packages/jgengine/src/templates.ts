@@ -1,8 +1,5 @@
 import {
   agentsMd,
-  contentTs,
-  editorCatalogsTest,
-  editorCatalogsTs,
   editorLayersTest,
   editorLayersTestFor,
   editorLayersTs,
@@ -15,15 +12,12 @@ import {
   indexHtml,
   indexTsx,
   inRepoPackageJson,
-  keybindsTs,
   loopTs,
   mainTsx,
   standalonePackageJson,
   styleCss,
   tsconfigJson,
-  tuningTs,
   viteConfig,
-  worldTest,
   worldTs,
 } from "./templates/gameFiles";
 import { GAME_ID_PATTERN } from "./templates/names";
@@ -51,6 +45,8 @@ export type {
 /** @internal */
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   const { id, name, variant, engineVersion, scene } = options;
+  const editor = options.editor ?? true;
+  const world = options.world ?? false;
   if (!GAME_ID_PATTERN.test(id)) {
     throw new Error(`game id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`);
   }
@@ -67,22 +63,24 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "AGENTS.md", contents: agentsMd(name, variant) },
     { path: "src/index.css", contents: indexCss(variant) },
     { path: "src/style.css", contents: styleCss },
-    { path: "src/main.tsx", contents: mainTsx(id) },
-    { path: "src/index.tsx", contents: indexTsx },
-    { path: "src/editor.scene.json", contents: sceneContents },
-    { path: "src/editorLayers.ts", contents: editorLayersTs },
-    { path: "src/editorLayers.test.ts", contents: sceneTest },
-    { path: "src/editorCatalogs.ts", contents: editorCatalogsTs },
-    { path: "src/editorCatalogs.test.ts", contents: editorCatalogsTest },
-    { path: "src/game.config.ts", contents: gameConfigTs(name) },
-    { path: "src/loop.ts", contents: loopTs },
-    { path: "src/world.ts", contents: worldTs(id) },
-    { path: "src/game/assets.ts", contents: gameAssetsTs },
-    { path: "src/game/models.ts", contents: gameModelsTs },
-    { path: "src/game/tuning.ts", contents: tuningTs },
-    { path: "src/game/content.ts", contents: contentTs },
-    { path: "src/game/keybinds.ts", contents: keybindsTs },
-    { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(id, name) },
-    { path: "src/game/world.world.test.ts", contents: worldTest(id) },
+    { path: "src/main.tsx", contents: mainTsx(editor) },
+    { path: "src/index.tsx", contents: indexTsx(editor) },
+    ...(editor
+      ? [
+          { path: "src/editor.scene.json", contents: sceneContents },
+          { path: "src/editorLayers.ts", contents: editorLayersTs },
+          { path: "src/editorLayers.test.ts", contents: sceneTest },
+        ]
+      : []),
+    { path: "src/game.config.ts", contents: gameConfigTs(name, { world, editor }) },
+    { path: "src/loop.ts", contents: loopTs(editor) },
+    ...(world
+      ? [
+          { path: "src/world.ts", contents: worldTs(id) },
+          { path: "src/game/assets.ts", contents: gameAssetsTs },
+          { path: "src/game/models.ts", contents: gameModelsTs },
+        ]
+      : []),
+    { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(id, name, editor) },
   ];
 }

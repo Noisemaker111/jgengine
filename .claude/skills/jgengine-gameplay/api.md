@@ -283,6 +283,30 @@
 - `maturationStage` (function): function maturationStage(elapsed: number, duration: number, stages: readonly MaturationStage[]): string — Resolve the maturation stage for an elapsed time against a duration. Computes the clamped `elapsed / duration` fraction and returns the id of the last stage whose `at` threshold has been reached (boundaries inclusive). Stages need not be pre-sorted. Returns `""` when no stage qualifies (e.g. an empty list or all thresholds above the current fraction).
 - `tickIncubation` (function): function tickIncubation(state: IncubationState, temperature: number, dt: number, config: IncubationConfig): IncubationState — Advance incubation one tick. While `temperature` is within `[minTemp, maxTemp]` the embryo makes progress (`elapsed += dt`) and keeps its health; outside the range it makes no progress and loses `healthLossPerTick * dt` health (clamped at `0`). Pure — returns a new state, never mutates the input.
 
+## @jgengine/core/game/cameraConfig
+
+- `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
+- `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
+- `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
+- `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
+- `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
+- `CameraShakeConfig` (interface): interface CameraShakeConfig — Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`.
+- `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
+- `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
+- `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
+- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
+- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
+- `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
+- `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
+- `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
+- `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
+- `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
+- `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
+- `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
+
 ## @jgengine/core/game/chat
 
 - `Chat` (interface): interface Chat — ⚠ undocumented
@@ -335,17 +359,17 @@
 
 ## @jgengine/core/game/defineGame
 
-- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems.
-- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional.
+- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
+- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional.
 - `GameFeatures` (interface): interface GameFeatures — Opt-in `ctx.game.*` subsystems. Absent = off: the game doesn't carry (or expose) it, and `ctx.game.<name>` is `undefined`. Present (`true`) builds it. The universal base — `commands`, `events`, `store`, `feed` — is always on and not listed here. This is what keeps core genre-agnostic: a puzzle game isn't handed an MMO's leaderboard/roster/turn plumbing it never asked for.
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `LifecycleConfig` (interface): interface LifecycleConfig<TState = unknown> — Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats (title screen → live run → live run → title screen again), expressed as pure functions over one typed {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`, never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct phase-sync for free.
 - `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
-- `PersistConfig` (interface): interface PersistConfig — Tunes offline whole-world save (`defineGame({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version.
+- `PersistConfig` (interface): interface PersistConfig — Tunes offline whole-world save (`defineGameDefinition({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
+- `defineGameDefinition` (function): function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks. Games author through `defineGame` from `@jgengine/shell/defineGame`, which calls this and adds the presentation layer; call this directly only from headless hosts that mount no shell.
 
 ## @jgengine/core/game/defineSystem
 
@@ -565,7 +589,7 @@
 - `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
-- `GameCameraConfig` (interface): interface GameCameraConfig — ⚠ undocumented
+- `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `GameCaptureConfig` (interface): interface GameCaptureConfig — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.
 - `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig — ⚠ undocumented
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
@@ -933,9 +957,9 @@
 - `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
 - `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
 - `Friends` (interface): interface Friends — ⚠ undocumented
-- `GameCameraConfig` (interface): interface GameCameraConfig — ⚠ undocumented
-- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGame} — assets, scene, and opted-in subsystems.
-- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGame} — a `GameDefinition` with `scene` derived and `assets` optional.
+- `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
+- `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
+- `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & { assets?: AssetCatalog<TAssetRef>; } — Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional.
 - `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
@@ -1261,7 +1285,6 @@
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
 - `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Task-first entry point for authoring a game: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks.
 - `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
@@ -1731,6 +1754,16 @@
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
+
+## @jgengine/core/store/defineKeyedStore
+
+- `KeyedStoreHandle` (interface): interface KeyedStoreHandle<T> — A typed, cast-free handle onto a per-owner keyed family of slots on the reactive game store (`ctx.game.store`) — the {@link StoreHandle} shape widened with an `id` (userId, instanceId, …) so one definition covers every owner instead of one `defineStore` call per key. `keyFor` composes the underlying store key from the id; call sites never see it. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `` `prefix:${id}` `` string plus `store.get(key) as T` gives up.
+- `defineKeyedStore` (function): function defineKeyedStore<T>(keyFor: (id: string) => string, initial: T | (() => T)): KeyedStoreHandle<T> — Define a typed per-owner keyed family on the game store: game code expresses `read(ctx, userId)`/`write(ctx, userId, v)`/`update(...)` with the value type it means, and both the `` `prefix:${id}` `` key composition and the `unknown → T` cast live once, here, behind the boundary. Reach for this over N separate `defineStore` calls whenever the owning id varies at runtime (per-user class, per-instance auras) — `defineStore` stays the right call for a single fixed slot.
+
+## @jgengine/core/store/defineStore
+
+- `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
+- `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path).
 
 ## @jgengine/core/survival/decayMeter
 

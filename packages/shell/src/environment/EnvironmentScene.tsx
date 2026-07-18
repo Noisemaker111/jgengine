@@ -28,6 +28,7 @@ import {
 
 import { GroundPad } from "./GroundPad";
 import { RoadRibbons } from "./RoadRibbons";
+import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
@@ -163,7 +164,15 @@ function areaCenter(area: { position?: readonly [number, number] }): readonly [n
   return area.position ?? [0, 0];
 }
 
-function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field: TerrainField }) {
+function Vegetation({
+  grass,
+  field,
+  groundColor,
+}: {
+  grass: GrassEnvironmentDescriptor;
+  field: TerrainField;
+  groundColor?: string;
+}) {
   const [cx, cz] = areaCenter(grass.area);
   const heightAt = useMemo(
     () =>
@@ -188,11 +197,25 @@ function Vegetation({ grass, field }: { grass: GrassEnvironmentDescriptor; field
         heightAt={heightAt}
         colorBase={colorBase}
         colorTip={colorTip}
+        colorGround={groundColor}
         wind={wind}
+        edgeFeather={Math.min(8, Math.max(1.5, Math.min(grass.area.w, grass.area.d) * 0.12))}
         frustumCulled
       />
     </group>
   );
+}
+
+/** Terrain color under a grass patch center — so blade roots blend into the ground they stand on. */
+function vegetationGroundColor(
+  terrain: Omit<TerrainEnvironmentDescriptor, "kind"> | undefined,
+  field: TerrainField,
+  grass: GrassEnvironmentDescriptor,
+): string | undefined {
+  const sampler = terrainGroundColorSampler(terrain, field);
+  if (sampler === undefined) return undefined;
+  const [cx, cz] = areaCenter(grass.area);
+  return sampler(cx, cz);
 }
 
 function weatherVolume(area: { w: number; d: number; h?: number }): readonly [number, number, number] {
@@ -329,7 +352,12 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
         <GroundPad key={`pad-${index}`} pad={entry} field={field} />
       ))}
       {vegetation.map((grass, index) => (
-        <Vegetation key={`grass-${index}`} grass={grass} field={field} />
+        <Vegetation
+          key={`grass-${index}`}
+          grass={grass}
+          field={field}
+          groundColor={vegetationGroundColor(feature.terrain, field, grass)}
+        />
       ))}
       {feature.weather !== undefined && feature.weather.length > 0 ? (
         <Weather weather={feature.weather} />

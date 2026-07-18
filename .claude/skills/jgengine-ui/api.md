@@ -325,7 +325,7 @@
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
-- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.
+- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips (bearing to each `MarkerSet` entry).
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
@@ -530,7 +530,7 @@
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — ⚠ undocumented
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
@@ -756,7 +756,7 @@
 ## @jgengine/react/hud
 
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
-- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.
+- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `Crosshair` (function): function Crosshair({ size = 18, gap = 5, thickness = 2, color = "rgba(255,255,255,0.85)", style, className, }: { size?: number; gap?: number; thickness?: number; color?: string; style?: CSSProperties; className?: string; }): React.JSX.Element — A minimal center crosshair reticle — four ticks around a gap. Purely presentational.
 - `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: … — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
 - `Speedometer` (function): function Speedometer({ entityId, scale = 3.6, unit = "km/h", max = 60, size = 96, style, className, }: { entityId?: string; scale?: number; unit?: string; max?: number; size?: number; style?: CSSProperties; className?: string; }): React.JSX.Element — A speedometer for an entity (defaults to the local player) — an SVG arc gauge + a digital readout. `scale` converts world units/second to your display unit (3.6 → km/h, 2.237 → mph); `max` sets the gauge's top of scale.
@@ -778,7 +778,7 @@
 - `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — ⚠ undocumented
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 
 ## @jgengine/react/hudLayoutPersist
 
@@ -975,23 +975,16 @@
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
-## @jgengine/shell/GameHost
-
-- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer }: GameHostProps): React.JSX.Element — ⚠ undocumented
-- `GameHostProps` (interface): interface GameHostProps — ⚠ undocumented
-
 ## @jgengine/shell/GamePhaseStamp
 
 - `GamePhaseStamp` (function): function GamePhaseStamp(): null — ⚠ undocumented
 
 ## @jgengine/shell/GamePlayer
 
-- `GamePlayer` (function): function GamePlayer({ gameId, registry, fallbackGameId, loading = null, multiplayer = null }: GamePlayerProps): React.JSX.Element — ⚠ undocumented
 - `GamePlayerProps` (type): type GamePlayerProps = { gameId: string; registry: GameRegistry; fallbackGameId?: string; loading?: ReactNode; multiplayer?: ShellMultiplayer | null; } — ⚠ undocumented
 
 ## @jgengine/shell/GamePlayerShell
 
-- `GamePlayerShell` (function): function GamePlayerShell({ playable, multiplayer: rawMultiplayer = null, poster = false, onContextReady, }: { playable: PlayableGame; multiplayer?: ShellMultiplayer | null; poster?: boolean; /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots,… — ⚠ undocumented
 - `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 
 ## @jgengine/shell/GameUiPreview
@@ -1172,11 +1165,6 @@
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
-
-## @jgengine/shell/defineGame
-
-- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
-- `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(config: GameConfig<TAssetRef>): PlayableGame — ⚠ undocumented
 
 ## @jgengine/shell/devtools/ColPanel
 
@@ -1416,7 +1404,7 @@
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — ⚠ undocumented
+- `PlayableGame` (type): type PlayableGame = EnginePlayableGame< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle.
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
@@ -1477,7 +1465,7 @@
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 
 ## @jgengine/shell/scene/AuthoredScene
@@ -1486,7 +1474,7 @@
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 
 ## @jgengine/shell/scene/GeneratedAssetRenderer
@@ -1619,7 +1607,7 @@
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
-- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
+- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
@@ -1656,7 +1644,7 @@
 - `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
-- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
+- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
@@ -1697,7 +1685,8 @@
 
 - `DEFAULT_GRASS_COUNT` (const): const DEFAULT_GRASS_COUNT: 1500 — ⚠ undocumented
 - `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
-- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, heightAt, colorBase, colorTip, colorVariation, wind, roughness, castShadow = false, receiveShadow = true, frustumCulled = true, ...meshPr… — ⚠ undocumented
+- `GRASS_TUFT_BLADES` (const): const GRASS_TUFT_BLADES: 5 — Blades baked into each tuft instance — one instance reads as a clump, not a lone blade.
+- `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
 - `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/terrain/ProceduralGround
@@ -1717,13 +1706,17 @@
 
 ## @jgengine/shell/terrain/grassGeometry
 
+- `GRASS_TUFT_BLADES` (const): const GRASS_TUFT_BLADES: 5 — Blades baked into each tuft instance — one instance reads as a clump, not a lone blade.
 - `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
+- `GrassExclusion` (interface): interface GrassExclusion — A rectangle (patch-local XZ) the grass bake keeps clear — soil patches, water, plazas.
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
 - `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
 
 ## @jgengine/shell/terrain/grassMaterial
 
+- `DEFAULT_GRASS_DISTANCE_FADE` (const): const DEFAULT_GRASS_DISTANCE_FADE: Required<GrassDistanceFadeOptions> — Default camera-distance fade band: tufts start thinning at 35 m and are gone by 95 m.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
+- `GrassDistanceFadeOptions` (interface): interface GrassDistanceFadeOptions — Camera-distance fade band: tufts thin out between `start` and `end` meters, so the instance budget spends where the camera lives.
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
 - `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
 - `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
@@ -1813,7 +1806,7 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
 - `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
 - `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
@@ -1837,7 +1830,7 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
 - `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
 - `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
@@ -1857,7 +1850,7 @@
 
 ## @jgengine/shell/water/Ocean
 
-- `Ocean` (function): function Ocean({ config, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanConfig
@@ -1887,8 +1880,8 @@
 
 ## @jgengine/shell/water/OceanShader
 
-- `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\n\nvarying vec3 vWorldPosition;\nvarying vec… — ⚠ undocumented
-- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nvarying vec3 vWorldPosition;\nvarying vec3 vNormal;\nvarying floa… — ⚠ undocumented
+- `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform float uTime;\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\nuniform float uDepthR… — ⚠ undocumented
+- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nattribute float aDepth;\n\nvarying vec3 vWorldPosition;\nvarying … — ⚠ undocumented
 
 ## @jgengine/shell/weather
 

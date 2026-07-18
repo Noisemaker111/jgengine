@@ -60,6 +60,11 @@ export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
 export { hasEnvironmentTerrain } from "@jgengine/core/world/terrain";
 
+/**
+ * The shell body `GameHost` renders after resolving multiplayer. Hosts that resolve their own
+ * sessions (the dev runner) render it directly; games mount through `GameHost`.
+ * @internal
+ */
 export function GamePlayerShell({
   playable,
   multiplayer: rawMultiplayer = null,

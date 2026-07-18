@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { defineGame } from "@jgengine/core/game/defineGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { tick as tickQueue } from "@jgengine/core/gameplay";
@@ -12,7 +12,7 @@ import { resetSession, session, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, resolveDamage, upgradeRank } from "./upgrades";
 
 function boot(): GameContext {
-  const definition = defineGame({ name: "IronholdResearchTest", multiplayer: "off" });
+  const definition = defineGameDefinition({ name: "IronholdResearchTest", multiplayer: "off" });
   return createGameContext({ definition, content, player: { userId: "commander", isNew: true } });
 }
 

@@ -268,6 +268,8 @@ export interface AuthoredSceneProps {
    * props itself in onInit with `placeAuthoredObjects`.
    */
   placeObjects?: boolean | { verticalOffset?: number };
+  /** Terrain surface color sampler forwarded to studio renderers (see `SceneKindRenderContext.groundColorAt`). */
+  groundColorAt?: (x: number, z: number) => string;
 }
 
 /**
@@ -288,6 +290,7 @@ export function AuthoredScene({
   assets,
   live = true,
   placeObjects,
+  groundColorAt,
 }: AuthoredSceneProps) {
   const liveDocument = useLiveEditorDocument(document, live);
   const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
@@ -303,7 +306,12 @@ export function AuthoredScene({
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
       <AuthoredStudios
         document={liveDocument}
-        context={{ document: liveDocument, field, ...(assets === undefined ? {} : { assets }) }}
+        context={{
+          document: liveDocument,
+          field,
+          ...(assets === undefined ? {} : { assets }),
+          ...(groundColorAt === undefined ? {} : { groundColorAt }),
+        }}
       />
       <AuthoredGenerators document={liveDocument} field={field} />
       {shouldPlaceObjects ? (

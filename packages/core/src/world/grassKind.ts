@@ -53,7 +53,7 @@ export const GRASS_DEFAULTS: GrassRules = {
 /** The grass parameter schema — drives the inspector and `meta` parse via the studio seam. */
 export const GRASS_SCHEMA: ParamSchema = {
   fields: [
-    { type: "range", key: "density", label: "density", min: 0.5, max: 80, step: 0.5, default: GRASS_DEFAULTS.density, unit: "/m²" },
+    { type: "range", key: "density", label: "density", min: 0.5, max: 160, step: 0.5, default: GRASS_DEFAULTS.density, unit: "/m²" },
     { type: "range", key: "bladeHeight", label: "blade height", min: 0.1, max: 2, step: 0.05, default: GRASS_DEFAULTS.bladeHeight, unit: "m" },
     { type: "color", key: "colorBase", label: "base color", default: GRASS_DEFAULTS.colorBase },
     { type: "color", key: "colorTip", label: "tip color", default: GRASS_DEFAULTS.colorTip },

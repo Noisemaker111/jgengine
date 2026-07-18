@@ -27,6 +27,10 @@ export interface TemplateOptions {
    * scene test is tailored to what this document actually ships.
    */
   scene?: EditorSceneDoc;
+  /** Additionally scaffold world.ts + game/assets.ts + game/models.ts (`create --world`). Default false. */
+  world?: boolean;
+  /** Ship the authored scene document + editor wiring. Default true; `create --no-editor` drops it. */
+  editor?: boolean;
 }
 
 export interface TemplateFile {

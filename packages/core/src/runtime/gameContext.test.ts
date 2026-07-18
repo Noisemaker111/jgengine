@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGame";
 import type { CombatVfxEvent, EntityFloatTextEvent, ProjectileSettledEvent } from "../game/events";
 import { gamePhase } from "../game/gamePhase";
 import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
@@ -55,7 +55,7 @@ const CONTENT: GameContextContent = {
 
 function makeContext() {
   return createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "TestGame",
       assets: createAssetCatalog(),
       multiplayer: "off",
@@ -70,7 +70,7 @@ function makeContext() {
 describe("opt-in features", () => {
   test("omitted features leave their ctx.game slots undefined", () => {
     const ctx = createGameContext({
-      definition: defineGame({ name: "Slim", assets: createAssetCatalog(), multiplayer: "off" }),
+      definition: defineGameDefinition({ name: "Slim", assets: createAssetCatalog(), multiplayer: "off" }),
       content: CONTENT,
       player: { userId: "user_a", isNew: true },
     });
@@ -93,7 +93,7 @@ describe("opt-in features", () => {
 
   test("opted-in features are built", () => {
     const ctx = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "Full",
         assets: createAssetCatalog(),
         multiplayer: "off",
@@ -129,7 +129,7 @@ describe("opt-in features", () => {
 
   test("chat opts in social implicitly (chat depends on it)", () => {
     const ctx = createGameContext({
-      definition: defineGame({ name: "ChatOnly", assets: createAssetCatalog(), multiplayer: "off", features: { chat: true } }),
+      definition: defineGameDefinition({ name: "ChatOnly", assets: createAssetCatalog(), multiplayer: "off", features: { chat: true } }),
       content: CONTENT,
       player: { userId: "user_a", isNew: true },
     });
@@ -143,7 +143,7 @@ describe("createGameContext", () => {
   test("world.groundHeightAt samples the declared environment terrain and is flat without one", () => {
     const descriptor = terrain({ height: 2.4, seed: "ctx-ground" });
     const ctx = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "GroundGame",
         assets: createAssetCatalog(),
         multiplayer: "off",
@@ -245,7 +245,7 @@ describe("createGameContext", () => {
 
   test("occluder blocks entity LoS and position-origin AoE through walls", () => {
     const ctx = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "LosGame",
         assets: createAssetCatalog(),
         multiplayer: "off",
@@ -429,7 +429,7 @@ describe("createGameContext", () => {
 
   test("feed.limit config caps entries retained per action", () => {
     const ctx = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "FeedLimitGame",
         assets: createAssetCatalog(),
         multiplayer: "off",
@@ -734,7 +734,7 @@ describe("lifecycle", () => {
   const runStore = defineStore<RunState>("run", () => ({ phase: "menu", runs: 0 }));
 
   function lifecycleContext() {
-    const definition = defineGame({
+    const definition = defineGameDefinition({
       name: "LifecycleGame",
       multiplayer: "off",
       lifecycle: {
@@ -782,7 +782,7 @@ describe("lifecycle", () => {
 
   test("honors overridden command names", () => {
     const namedStore = defineStore<RunState>("namedRun", () => ({ phase: "menu", runs: 0 }));
-    const definition = defineGame({
+    const definition = defineGameDefinition({
       name: "NamedLifecycleGame",
       multiplayer: "off",
       lifecycle: {
@@ -1002,7 +1002,7 @@ describe("ctx.game.race.state", () => {
 describe("ctx.snapshot / ctx.hydrate", () => {
   function fullContext(userId: string) {
     return createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "Replicated",
         assets: createAssetCatalog(),
         multiplayer: "off",
@@ -1015,7 +1015,7 @@ describe("ctx.snapshot / ctx.hydrate", () => {
 
   test("snapshot only carries opted-in modules plus always-on live state", () => {
     const slim = createGameContext({
-      definition: defineGame({ name: "Slim", assets: createAssetCatalog(), multiplayer: "off" }),
+      definition: defineGameDefinition({ name: "Slim", assets: createAssetCatalog(), multiplayer: "off" }),
       content: CONTENT,
       player: { userId: "user_a", isNew: true },
     });
@@ -1074,7 +1074,7 @@ describe("model-fitted colliders", () => {
 
   function makeFittedContext() {
     return createGameContext({
-      definition: defineGame({ name: "Fitted", assets: createAssetCatalog(), multiplayer: "off" }),
+      definition: defineGameDefinition({ name: "Fitted", assets: createAssetCatalog(), multiplayer: "off" }),
       content: {
         entityById(catalogId) {
           if (catalogId === "rat") return { stats: { health: { max: 5 } } };
@@ -1209,7 +1209,7 @@ describe("mesh-accurate colliders", () => {
 
   function makeMeshContext() {
     return createGameContext({
-      definition: defineGame({ name: "Mesh", assets: createAssetCatalog(), multiplayer: "off" }),
+      definition: defineGameDefinition({ name: "Mesh", assets: createAssetCatalog(), multiplayer: "off" }),
       content: {
         entityById(catalogId) {
           if (catalogId === "torus") return { stats: { health: { max: 5 } } };

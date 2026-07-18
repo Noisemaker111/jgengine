@@ -12,6 +12,8 @@ export interface PrototypeLookSignals {
   hasCustomRender: boolean;
   /** presentation: "hud" or no world — not a 3D scene game. */
   hudOnly: boolean;
+  /** `defineGame({ editorLayers })` — the shell auto-mounts the authored scene's placed content. */
+  hasAuthoredScene: boolean;
   /** Explicit lighting or postProcessing config present. */
   hasAuthoredGraphics: boolean;
 }
@@ -54,6 +56,7 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     /\blighting\s*:/.test(text) ||
     /\bpostProcessing\s*:/.test(text) ||
     /\bbackdrop\s*:/.test(text);
+  const hasAuthoredScene = /\beditorLayers\s*[,:]/.test(text);
 
   const signals: PrototypeLookSignals = {
     flatLook,
@@ -61,6 +64,7 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     hasCustomRender,
     hudOnly,
     hasAuthoredGraphics,
+    hasAuthoredScene,
   };
 
   if (hudOnly) {
@@ -68,7 +72,7 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
   }
 
   const flagFlat = flatLook && !hasAuthoredGraphics;
-  const flagBoxes = !hasModelSeams && !hasCustomRender;
+  const flagBoxes = !hasModelSeams && !hasCustomRender && !hasAuthoredScene;
   const isPrototype = flagFlat || flagBoxes;
 
   const reasons: string[] = [];

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGame } from "../game/defineGame";
+import { defineGameDefinition } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import type { SceneEntity } from "../scene/entityStore";
 import { createGameContext, type GameContext } from "./gameContext";
@@ -75,7 +75,7 @@ describe("composeWorldSnapshot projection", () => {
 
 function hostContext(): GameContext {
   return createGameContext({
-    definition: defineGame({
+    definition: defineGameDefinition({
       name: "Projected",
       assets: createAssetCatalog(),
       multiplayer: "off",
@@ -113,7 +113,7 @@ describe("ctx.snapshot per-viewer projection (through the descriptor contract)",
 
   test("with no replication policy the viewer argument is a no-op — every client sees the whole world", () => {
     const ctx = createGameContext({
-      definition: defineGame({
+      definition: defineGameDefinition({
         name: "Plain",
         assets: createAssetCatalog(),
         multiplayer: "off",

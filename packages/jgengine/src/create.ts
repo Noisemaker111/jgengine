@@ -13,8 +13,9 @@ export function writeGame(
   name: string,
   variant: TemplateVariant,
   scene?: EditorSceneDoc,
+  options?: { world?: boolean; editor?: boolean },
 ): void {
-  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), scene })) {
+  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), scene, ...options })) {
     const dest = join(targetDir, file.path);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.contents);
@@ -117,7 +118,7 @@ export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {
     console.error(
-      'usage: jgengine create "<Game Name>" [--from-scene <folder>] [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]',
+      'usage: jgengine create "<Game Name>" [--from-scene <folder>] [--world] [--no-editor] [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]',
     );
     return 1;
   }
@@ -128,6 +129,12 @@ export function runCreate(argv: string[]): number {
   try {
     const sceneArg = flag(argv, "from-scene");
     const scene = sceneArg !== undefined ? readPromotedScene(sceneArg) : undefined;
+    const world = hasFlag(argv, "world");
+    const editor = !hasFlag(argv, "no-editor");
+    if (!editor && scene !== undefined) {
+      console.error("error: --from-scene needs the editor scaffold — drop --no-editor");
+      return 1;
+    }
 
     const { parentHint, titlePart } = splitCreateArg(nameArg);
     ({ displayName, folderName, id } = parseCreateName(titlePart));
@@ -170,7 +177,7 @@ export function runCreate(argv: string[]): number {
       return 1;
     }
 
-    writeGame(targetDir, id, displayName, variant, scene);
+    writeGame(targetDir, id, displayName, variant, scene, { world, editor });
     console.log(`created ${displayName} (${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
     if (scene !== undefined) {
@@ -212,8 +219,10 @@ export function runCreate(argv: string[]): number {
     console.log("\nnext steps:");
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
-    console.log("  bun dev       # walkable base: grass world, authored scene, WASD + jump, HUD canvas");
-    console.log("  # F2+E in the browser opens the scene editor on src/editor.scene.json (Ctrl+S saves)");
+    console.log("  bun dev       # walkable base: WASD + jump, HUD canvas");
+    if (editor) {
+      console.log("  # F2+E in the browser opens the scene editor on src/editor.scene.json (Ctrl+S saves)");
+    }
     console.log(`  # agent: make ${displayName} with jgengine  (skills already in the project)`);
     return 0;
   } catch (error) {

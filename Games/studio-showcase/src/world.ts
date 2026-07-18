@@ -1,6 +1,6 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
-import { environment, grass, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import { environment, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";
 
@@ -29,24 +29,21 @@ export const world: EnvironmentWorldFeature = environment({
     height: 26,
     heightField: relief,
     waterLevel: -3.5,
-    // Sandy low ground so shorelines read as beach/riverbed, not flooded lawn.
-    colors: { low: "#8f7f58", high: "#7f8b50", waterline: "#4b6d4e" },
+    // Living prairie greens — the ground itself must read as grass so blade gaps blend into
+    // turf instead of exposing bare khaki. Waterline stays sandy for the canyon river.
+    colors: { low: "#47673a", high: "#94b556", waterline: "#8a7f52" },
+    // Procedural detail layer: noise-mottled hue patches + blade-scale flecks (see
+    // terrainDetailMaterial) turn the flat vertex-colour ground into readable meadow.
+    detail: { detailScale: 3.2, macroScale: 60, strength: 0.85, rockSlopeStart: 0.5 },
+    // ~2.5 m ground mesh cells: the default 96 segments over this footprint is ~10 m per cell,
+    // which swallows the carved lake-bed shoreline whole.
+    segments: 384,
     seed: "studio-showcase",
   }),
   clearings: content.clearings,
   ...(content.sculpt === undefined ? {} : { sculpt: content.sculpt }),
-  // A sparse base grass layer over the whole map so the ground reads alive, with the authored
-  // grass_field volume as the dense hero meadow on top of it.
-  // Dense short turf near the play space (blade spacing ~0.2 m); the far field past 90 m stays
-  // plain ground so the instance budget goes where the camera lives.
-  vegetation: grass({
-    area: { w: 90, d: 90 },
-    density: 30,
-    bladeHeight: [0.18, 0.42],
-    bladeWidth: 0.035,
-    colors: ["#4a7a38", "#77a94e"],
-    seed: "showcase-ground",
-  }),
+  // No code-side vegetation: the yard turf and the hero meadow are both authored grass_field
+  // volumes in editor.scene.json, so grass coverage/density is a slider in the editor, not code.
   sky: sky({
     preset: "day",
     // The city districts span hundreds of meters; the default 260m fog would swallow them whole.
