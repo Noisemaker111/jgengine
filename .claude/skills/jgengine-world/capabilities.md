@@ -313,6 +313,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `parseRotationPolicy` (function) · `import { parseRotationPolicy } from "@jgengine/core/world"`
 - `snapHeading` (function) · `import { snapHeading } from "@jgengine/core/world"`
 
+## pole-line — editor-authorable poles + sagging cables along a path
+
+- `POLE_LINE_KIND` (const) · `import { POLE_LINE_KIND } from "@jgengine/core/world/poleLineKind"`
+
 ## population-director — ambient per-region creature population manager with timed weighted respawns and caps
 
 - `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`

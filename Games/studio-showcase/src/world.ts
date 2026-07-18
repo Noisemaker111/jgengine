@@ -1,6 +1,6 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
-import { environment, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import { environment, grass, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";
 
@@ -35,13 +35,26 @@ export const world: EnvironmentWorldFeature = environment({
   }),
   clearings: content.clearings,
   ...(content.sculpt === undefined ? {} : { sculpt: content.sculpt }),
+  // A sparse base grass layer over the whole map so the ground reads alive, with the authored
+  // grass_field volume as the dense hero meadow on top of it.
+  // Dense short turf near the play space (blade spacing ~0.2 m); the far field past 90 m stays
+  // plain ground so the instance budget goes where the camera lives.
+  vegetation: grass({
+    area: { w: 90, d: 90 },
+    density: 30,
+    bladeHeight: [0.18, 0.42],
+    bladeWidth: 0.035,
+    colors: ["#4a7a38", "#77a94e"],
+    seed: "showcase-ground",
+  }),
   sky: sky({
     preset: "day",
     // The city districts span hundreds of meters; the default 260m fog would swallow them whole.
     fog: { near: 500, far: 2500 },
+    hazeStrength: 0.3,
     volumetricClouds: {
-      coverage: 0.4,
-      density: 1.6,
+      coverage: 0.25,
+      density: 1.2,
       height: 110,
       thickness: 58,
       speed: 1.1,

@@ -67,19 +67,32 @@ function hashSeed(text: string): number {
   return (h >>> 0) % 100000;
 }
 
+/** Optional noise-eroded edge-fade config for {@link createSoilPatchMaterial} — the patch dissolves into the ground at its border. */
+export interface SoilPatchEdge {
+  /** Patch center on XZ, world units — with `halfSize`, drives the noise-eroded edge fade. */
+  center: readonly [number, number];
+  /** Patch half extents on XZ, world units. */
+  halfSize: readonly [number, number];
+  /** Fade band width in meters from the patch border inward. Default 1.6. */
+  fade?: number;
+}
+
 /**
  * A `MeshStandardMaterial` for one authored `soil` volume: a base dirt tint with a Worley crack-line
  * network and an FBM moss-patch overlay injected via `onBeforeCompile`, seeded from `rules.seed`. Full
  * PBR — lit, shadowed, fogged — like the terrain detail material it borrows its noise machinery from.
- * A game never calls this directly — author a soil patch via the editor's `soil` studio kind.
+ * Pass `edge` to add a noise-eroded alpha fade at the patch border (the draped scene-kind renderer
+ * does) so the patch blends into the surrounding ground. A game never calls this directly — author a
+ * soil patch via the editor's `soil` studio kind.
  * @internal
  */
-export function createSoilPatchMaterial(rules: SoilRules): THREE.MeshStandardMaterial {
+export function createSoilPatchMaterial(rules: SoilRules, edge?: SoilPatchEdge): THREE.MeshStandardMaterial {
   const seedOffset = hashSeed(rules.seed);
   const material = new THREE.MeshStandardMaterial({
     color: rules.baseColor,
     roughness: 0.92,
     metalness: 0,
+    ...(edge === undefined ? {} : { transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
   });
 
   material.onBeforeCompile = (shader) => {
@@ -89,6 +102,11 @@ export function createSoilPatchMaterial(rules: SoilRules): THREE.MeshStandardMat
     shader.uniforms.uSoilMossColor = { value: new THREE.Color(rules.mossColor) };
     shader.uniforms.uSoilMossCoverage = { value: rules.mossCoverage };
     shader.uniforms.uSoilSeed = { value: seedOffset };
+    if (edge !== undefined) {
+      shader.uniforms.uSoilCenter = { value: new THREE.Vector2(edge.center[0], edge.center[1]) };
+      shader.uniforms.uSoilHalfSize = { value: new THREE.Vector2(edge.halfSize[0], edge.halfSize[1]) };
+      shader.uniforms.uSoilEdgeFade = { value: edge.fade ?? 1.6 };
+    }
 
     shader.vertexShader = shader.vertexShader.replace(
       "#include <common>",
@@ -110,7 +128,7 @@ uniform float uSoilCrackIntensity;
 uniform vec3 uSoilMossColor;
 uniform float uSoilMossCoverage;
 uniform float uSoilSeed;
-${SOIL_NOISE_GLSL}`,
+${edge === undefined ? "" : "uniform vec2 uSoilCenter;\nuniform vec2 uSoilHalfSize;\nuniform float uSoilEdgeFade;\n"}${SOIL_NOISE_GLSL}`,
     ).replace(
       "#include <color_fragment>",
       `#include <color_fragment>
@@ -121,12 +139,21 @@ vec3 jgSoilCol = mix(diffuseColor.rgb, uSoilCrackColor, jgSoilCrack * uSoilCrack
 float jgSoilMossN = jgSoilFbm(jgSoilP / 2.4);
 float jgSoilMossMask = smoothstep(1.0 - uSoilMossCoverage, 1.0 - uSoilMossCoverage + 0.18, jgSoilMossN);
 jgSoilCol = mix(jgSoilCol, uSoilMossColor, jgSoilMossMask);
-diffuseColor.rgb = jgSoilCol;`,
+diffuseColor.rgb = jgSoilCol;${
+        edge === undefined
+          ? ""
+          : `
+// Noise-eroded edge fade: the patch dissolves into the ground instead of ending at a hard rectangle.
+vec2 jgSoilEdgeD = uSoilHalfSize - abs(vJgSoilWorldPos.xz - uSoilCenter);
+float jgSoilEdgeDist = min(jgSoilEdgeD.x, jgSoilEdgeD.y);
+float jgSoilEdgeNoise = jgSoilFbm(jgSoilP * 0.9) * uSoilEdgeFade;
+diffuseColor.a *= clamp((jgSoilEdgeDist - jgSoilEdgeNoise) / max(uSoilEdgeFade, 0.001) + 0.55, 0.0, 1.0);`
+      }`,
     );
   };
 
   material.customProgramCacheKey = () =>
-    `jgengine-soil-${rules.crackScale}-${rules.crackIntensity}-${rules.mossCoverage}-${seedOffset}`;
+    `jgengine-soil-${rules.crackScale}-${rules.crackIntensity}-${rules.mossCoverage}-${seedOffset}-${edge === undefined ? "solid" : "faded"}`;
 
   return material;
 }

@@ -5,9 +5,9 @@ import { registerExampleStudios } from "@jgengine-examples/studios";
 
 import { editorLayers } from "../../editorLayers";
 
-// Register the example studio adopters (pole_line + bookcase) from the dev runner / game only — they
-// live in examples/studios and touch no engine package. The engine environment kinds (water,
-// grass_field) register themselves inside AuthoredScene. This one call lights up the whole seam.
+// Register the example studio adopters (bookcase) from the dev runner / game only — they live in
+// examples/studios and touch no engine package. The engine environment kinds (water, grass_field,
+// soil, pole_line) register themselves inside AuthoredScene. This one call lights up the whole seam.
 registerExampleStudios();
 
 /**

@@ -11,6 +11,7 @@ import { registerGrassFieldRenderer } from "./GrassFieldRenderer";
 import { registerWaterRenderer } from "./WaterRenderer";
 import { registerSoilPatchRenderer } from "./SoilPatchRenderer";
 import { registerCityRenderer } from "./CityRenderer";
+import { registerPoleLineRenderer } from "./PoleLineRenderer";
 
 let registered = false;
 
@@ -23,4 +24,5 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerGrassFieldRenderer();
   registerSoilPatchRenderer();
   registerCityRenderer();
+  registerPoleLineRenderer();
 }

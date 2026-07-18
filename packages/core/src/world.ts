@@ -496,6 +496,7 @@ export {
   type PlacementPreview,
   type SnapMode,
 } from "./world/placementController";
+export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
 export { buildRoadRibbon, dashSegments } from "./world/roads";

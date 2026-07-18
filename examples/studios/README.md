@@ -1,16 +1,18 @@
 # @jgengine-examples/studios — build your own editor studio
 
 Copyable proof that the jgengine editor is an **extension seam**, not a fixed tool. Each module here
-turns the editor into a bespoke "studio" — a pole/wire tool, a bookcase generator — using **only
-public APIs and one register call, with zero edits to any engine file**. Copy a module, swap the
+turns the editor into a bespoke "studio" — a bookcase generator, and whatever you copy it into — using
+**only public APIs and one register call, with zero edits to any engine file**. Copy a module, swap the
 schema and resolver, and you have a fence / streetlight / zipline / lamppost / crate studio.
 
 There are two seams, matching the two ways content lives in a scene:
 
 ## 1. A scene kind — geometry authored as a path / volume / marker (`registerSceneKind`)
 
-`poleLineStudio.ts` owns the `pole_line` path kind: poles sampled along the line, sagging cables
-between them. The whole studio is:
+The engine's own environment studios (water, grass, soil, scatter, **pole line / cables**) are all
+registered through this same public seam — `packages/core/src/world/poleLineKind.ts` is the reference
+adopter for a path-target kind: poles sampled along the drawn line, sagging cables between them. A
+third-party studio is the identical shape:
 
 ```ts
 import { registerSceneKind } from "@jgengine/core/scene/sceneKinds";
@@ -18,14 +20,13 @@ import { placeAlongPath } from "@jgengine/core/world/pathInstances"; // generic 
 import { sagCurve } from "@jgengine/core/world/catenary";            // generic engine primitive
 
 registerSceneKind({
-  kind: "pole_line",
+  kind: "zipline",
   target: "path",          // "path" | "volume" | "marker"
-  label: "Pole line / cables",
+  label: "Zipline",
   pathShape: "line",
   addCategory: "Studios",  // shows under "+ Add → Studios"
   schema: { fields: [       // the editor auto-generates the whole slider inspector from this
     { type: "range", key: "spacing", label: "spacing", min: 2, max: 40, step: 0.5, default: 8, unit: "m" },
-    { type: "range", key: "wireCount", label: "wires", min: 0, max: 8, step: 1, default: 3 },
     { type: "seed", key: "seed", label: "seed", default: "" },
     // range | number | bool | select | color | text | seed | weightedList
   ] },
@@ -34,12 +35,12 @@ registerSceneKind({
 });
 ```
 
-The paired runtime renderer (`poleLineRenderer.tsx`) registers with the shell seam — `AuthoredScene`
-mounts it for every `pole_line` path automatically:
+The paired runtime renderer registers with the shell seam — `AuthoredScene` mounts it for every
+matching path automatically:
 
 ```ts
 import { registerSceneKindRenderer } from "@jgengine/shell/scene/sceneKindRenderers";
-registerSceneKindRenderer("pole_line", ({ objects, context }) => /* three.js render tree */);
+registerSceneKindRenderer("zipline", ({ objects, context }) => /* three.js render tree */);
 ```
 
 Generic engine primitives you compose (never re-implement): `placeAlongPath` (instances-along-path),
@@ -82,3 +83,5 @@ registerExampleStudios(); // once at startup — now "+ Add → Studios" lists t
 
 If adding a studio ever needs an engine-file edit, the seam is missing something — **fix the seam,
 not the adopter** (`scripts/studioSeam.test.ts` enforces zero engine references to these modules).
+Studios that prove genre-agnostic and broadly useful graduate *into* the engine builtins — the pole
+line did exactly that (#1101) — so anything a studio can do stays possible in every editor session.
