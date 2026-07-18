@@ -14,7 +14,7 @@ import { GamePhaseStamp } from "./GamePhaseStamp";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
-/** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport. */
+/** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport. @internal */
 export function ShellGameUiChrome({
   ctx,
   playable,
@@ -46,7 +46,7 @@ export function ShellGameUiChrome({
   );
 }
 
-/** Devtools + diagnostic overlays shared by HUD and 3D presentation paths. */
+/** Devtools + diagnostic overlays shared by HUD and 3D presentation paths. @internal */
 export function ShellDebugOverlays({
   ctx,
   playable,
@@ -76,13 +76,14 @@ export function ShellDebugOverlays({
   );
 }
 
+/** Key handler bundle shared by HUD and 3D presentation paths. @internal */
 export type ShellKeyHandlers = {
   onKeyDown: (event: { code: string; preventDefault: () => void }) => void;
   onKeyUp: (event: { code: string }) => void;
   onBlur: () => void;
 };
 
-/** F2 chord + gameplay action tracker key handlers shared by both presentation paths. */
+/** F2 chord + gameplay action tracker key handlers shared by both presentation paths. @internal */
 export function createShellKeyHandlers({
   f2HeldRef,
   tracker,

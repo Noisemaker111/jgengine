@@ -93,6 +93,7 @@ import {
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
 
+/** 3D play surface: canvas, world overlays, and shared chrome. @internal */
 export function Shell3dPresentation({
   playable,
   ctx,

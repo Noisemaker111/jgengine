@@ -1,7 +1,10 @@
 import { normalizeJoinCode } from "../multiplayer/matchmaking";
 import type { GameServerStatus, SessionVisibility } from "./hostPersistence";
 
-/** True when a server's `visibility` should surface in public listings / browse results. */
+/**
+ * True when a server's `visibility` should surface in public listings / browse results.
+ * @capability host-listing-filter exclude private sessions from public browse results
+ */
 export function isListablePublicly(visibility: SessionVisibility | undefined): boolean {
   return (visibility ?? "public") !== "private";
 }
@@ -10,6 +13,7 @@ export function isListablePublicly(visibility: SessionVisibility | undefined): b
  * Private-server join-code gate. Existing members always pass; non-members must present a
  * matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide
  * whether the server is private — this only answers the code/membership half.
+ * @capability host-join-code-gate membership-or-code gate for private hosted servers
  */
 export function canJoinPrivateServer(args: {
   isMember: boolean;

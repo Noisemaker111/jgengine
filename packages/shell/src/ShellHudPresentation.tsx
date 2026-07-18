@@ -14,6 +14,7 @@ import type { PlayableGame } from "./registry";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { TouchPlaySurface } from "./touch/TouchControlsOverlay";
 
+/** HUD-only play surface for non-3D shells. @internal */
 export function ShellHudPresentation({
   playable,
   ctx,

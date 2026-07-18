@@ -1,7 +1,7 @@
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import type { PresentationEffectsConfig } from "@jgengine/core/game/playableGame";
 
-/** Resolved world-bar / nameplate config, or `null` when the feature is off. */
+/** Resolved world-bar / nameplate config, or `null` when the feature is off. @internal */
 export interface ResolvedWorldOverlayBars {
   statId: string;
   roles?: readonly CatalogEntityRole[];
@@ -12,6 +12,7 @@ export interface ResolvedWorldOverlayBars {
  * Normalize `worldHealthBars` / `nameplates` (`boolean | object | undefined`) into a
  * single resolved shape. `undefined` / `false` → `null` (off); `true` → default stat `"health"`;
  * object → explicit fields with `statId` defaulting to `"health"`.
+ * @internal
  */
 export function resolveWorldOverlayBars(
   config: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number } | undefined,
@@ -25,7 +26,7 @@ export function resolveWorldOverlayBars(
   };
 }
 
-/** Resolved combat presentation channels (each boolean is whether that stack piece mounts). */
+/** Resolved combat presentation channels (each boolean is whether that stack piece mounts). @internal */
 export interface ResolvedPresentationEffects {
   telegraphs: boolean;
   vfx: boolean;
@@ -55,6 +56,7 @@ const ALL_OFF: ResolvedPresentationEffects = {
  * - `undefined` / `true` → all channels on (historical default).
  * - `false` → none.
  * - object → per-channel; missing keys default to on so games can disable one channel.
+ * @internal
  */
 export function resolvePresentationEffects(
   config: boolean | PresentationEffectsConfig | undefined,
