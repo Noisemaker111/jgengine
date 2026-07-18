@@ -101,9 +101,9 @@
         "z": 12
       },
       "halfExtents": {
-        "x": 10,
+        "x": 5,
         "y": 0.3,
-        "z": 9
+        "z": 4.5
       },
       "label": "Cracked yard (soil studio)",
       "meta": {
@@ -112,7 +112,7 @@
         "crackColor": "#3a2818",
         "crackIntensity": 0.75,
         "mossColor": "#5c7a3a",
-        "mossCoverage": 0.3,
+        "mossCoverage": 0.45,
         "seed": "cracked"
       }
     },

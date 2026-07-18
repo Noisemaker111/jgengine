@@ -123,7 +123,8 @@ describe("built-in kinds", () => {
     registerBuiltinSceneKinds();
     expect(getSceneKind("scatter")?.target).toBe("path");
     expect(getSceneKind("water")?.target).toBe("volume");
-    // Domain studios (pole_line, bookcase) are NOT built in — proven by scripts/studioSeam.test.ts
+    expect(getSceneKind("pole_line")?.target).toBe("path");
+    // Domain studios (bookcase, …) are NOT built in — proven by scripts/studioSeam.test.ts
     // (no engine file references them); they register from example/game code via the public seam.
   });
 

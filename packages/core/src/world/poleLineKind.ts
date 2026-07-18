@@ -1,23 +1,25 @@
 /**
- * EXAMPLE STUDIO ADOPTER — poles + sagging cables along a path (a PoleGeneratorThreeJS-style tool).
- *
- * This is NOT engine code. It is a self-contained module that turns the jgengine editor into a
- * pole/wire studio using ONLY public seam APIs — one `registerSceneKind` call + the generic core
- * primitives `placeAlongPath` and `sagCurve`. Zero edits to any engine file. Copy this file, swap the
- * schema/resolve, and you have a fence / streetlight / zipline / bridge-cable studio. The paired
- * renderer lives in `poleLineRenderer.tsx`; register both from your game via `registerStudios()`.
+ * `pole_line` studio: poles + sagging cables strung along an editor-drawn path — power lines, fences,
+ * streetlight runs, ziplines. Pure config here (spacing/height/wire params + a resolver built from the
+ * generic `placeAlongPath` and `sagCurve` primitives); the instanced pole/cable meshes live in the
+ * `shell` renderer. An engine environment kind (like water/grass_field/soil) so wire runs are
+ * drawable and slider-authorable in every editor session and persisted in `editor.scene.json` —
+ * promoted from `examples/studios` for studio/editor parity (#1101).
  */
-import { placeAlongPath } from "@jgengine/core/world/pathInstances";
-import { sagCurve, type Vec3 } from "@jgengine/core/world/catenary";
+import { placeAlongPath } from "./pathInstances";
+import { sagCurve, type Vec3 } from "./catenary";
 import {
   registerSceneKind,
   type ParamSchema,
   type ParsedParams,
   type SceneKindObject,
   type SceneKindResolveContext,
-} from "@jgengine/core/scene/sceneKinds";
+} from "../scene/sceneKinds";
 
-/** The path kind this studio owns. Free string — pick anything unique to your studio. */
+/**
+ * The editor path kind marking a polyline as a pole/cable run.
+ * @capability pole-line editor-authorable poles + sagging cables along a path
+ */
 export const POLE_LINE_KIND = "pole_line";
 
 /** One placed pole: grounded base position plus facing yaw along the run. */
@@ -34,7 +36,7 @@ export interface Cable {
   radius: number;
 }
 
-/** The renderable payload the resolver returns and the renderer consumes. */
+/** The renderable payload the resolver returns and the shell renderer consumes. */
 export interface ResolvedPoleLine {
   poles: Pole[];
   cables: Cable[];
@@ -42,7 +44,7 @@ export interface ResolvedPoleLine {
   poleAsset: string;
 }
 
-/** The slider schema — the editor auto-generates the whole inspector from this. */
+/** The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam. */
 export const POLE_LINE_SCHEMA: ParamSchema = {
   fields: [
     { type: "text", key: "poleAsset", label: "pole asset", default: "", group: "poles" },
@@ -110,8 +112,8 @@ export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, c
   return { poles, cables, poleHeight, poleAsset: params["poleAsset"] as string };
 }
 
-/** Register the pole-line scene kind (schema + resolver + inspector note). One call — no engine edits. */
-export function registerPoleLineStudio(): void {
+/** Registers the pole-line scene kind (schema + resolver + inspector note). Called by `registerBuiltinSceneKinds`. @internal */
+export function registerPoleLineKind(): void {
   registerSceneKind<ResolvedPoleLine>({
     kind: POLE_LINE_KIND,
     target: "path",

@@ -527,7 +527,9 @@ export function EditorChrome({
     [kinds, state.document.annotations.length],
   );
 
-  const studioKinds = useMemo(() => listSceneKinds().filter((definition) => definition.addCategory !== undefined), []);
+  // Recomputed each time the Add menu opens: studios may register after the chrome mounts
+  // (game modules load lazily), and a once-on-mount snapshot would silently hide them.
+  const studioKinds = useMemo(() => listSceneKinds().filter((definition) => definition.addCategory !== undefined), [addOpen]);
 
   const placeAsset = (entry: EditorAssetEntry) => {
     const focus = api.getFocusTarget();

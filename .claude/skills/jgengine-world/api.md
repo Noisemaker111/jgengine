@@ -1605,6 +1605,7 @@
 - `OrderTargeting` (interface): interface OrderTargeting — Narrow targeting adapter for engagement verbs. `acquire` returns the id of a hostile within `radius` (nearest, or whatever policy the game injects), and `positionOf` locates a known target. Actual damage/effects stay game-side.
 - `OrderTickReport` (interface): interface OrderTickReport<TPayload = unknown> — What one `tick` did this frame, for tests and game reactions (play a bark on activation, flash on completion). Bounded per tick.
 - `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
+- `POLE_LINE_SCHEMA` (const): const POLE_LINE_SCHEMA: ParamSchema — The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `POSE_HITBOX` (const): const POSE_HITBOX: Record<MovementPose, PoseHitbox> — ⚠ undocumented
 - `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented
 - `PadSize` (type): type PadSize = readonly [number, number] | { radius: number } — ⚠ undocumented
@@ -1644,6 +1645,7 @@
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space streets, building lots, and parks plus the parsed rules.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+- `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
 - `RevealHit` (interface): interface RevealHit — ⚠ undocumented
@@ -1986,6 +1988,7 @@
 - `resolveLocalAvoidance` (function): function resolveLocalAvoidance(agents: AvoidanceAgent[], options: LocalAvoidanceOptions = {}): number — Resolve overlaps in `agents` in place and return how many overlapping pairs remained on the final pass (`0` = fully separated). Uses a bounded uniform hash grid sized to the largest agent, so only nearby agents are ever compared. Deterministic: corrections are accumulated then applied per pass, independent of agent order. Pass `weights` to pin or differentially push agents.
 - `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
+- `resolvePoleLine` (function): function resolvePoleLine(object: SceneKindObject, params: ParsedParams, context?: SceneKindResolveContext): ResolvedPoleLine — Resolve poles + cables from a document object's points and parsed params. Poles come from the generic `placeAlongPath` sampler; between each consecutive pair, `wireCount` parallel cables are strung with lateral offset and quadratic-Bézier `sag` (deeper on longer spans). Pure data.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] — ⚠ undocumented
@@ -2504,6 +2507,15 @@
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
+
+## @jgengine/core/world/poleLineKind
+
+- `Cable` (interface): interface Cable — One resolved cable span: a point string to loft into a tube, plus its radius.
+- `POLE_LINE_KIND` (const): const POLE_LINE_KIND: "pole_line" — The editor path kind marking a polyline as a pole/cable run.
+- `POLE_LINE_SCHEMA` (const): const POLE_LINE_SCHEMA: ParamSchema — The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `Pole` (interface): interface Pole — One placed pole: grounded base position plus facing yaw along the run.
+- `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
+- `resolvePoleLine` (function): function resolvePoleLine(object: SceneKindObject, params: ParsedParams, context?: SceneKindResolveContext): ResolvedPoleLine — Resolve poles + cables from a document object's points and parsed params. Poles come from the generic `placeAlongPath` sampler; between each consecutive pair, `wireCount` parallel cables are strung with lateral offset and quadratic-Bézier `sag` (deeper on longer spans). Pure data.
 
 ## @jgengine/core/world/polyline
 

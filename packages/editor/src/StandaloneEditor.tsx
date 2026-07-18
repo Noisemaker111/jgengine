@@ -33,7 +33,9 @@ export interface BlankPlayableOptions {
 export function blankWorld(seed = "standalone"): EnvironmentWorldFeature {
   return environment({
     terrain: terrain({ bounds: { w: 128, d: 128 }, height: 0, material: "grass" }),
-    sky: sky({ preset: "day" }),
+    // Fog pushed past the world edge: the engine's default (near 70 / far 260) soaks most of a
+    // 128 m authoring canvas in haze — the editor should open on a clear world.
+    sky: sky({ preset: "day", fog: { near: 220, far: 700 } }),
     vegetation: grass({ area: { w: 100, d: 100 }, density: 1.5, colors: ["#3f7d2d", "#6bbf4a"], seed }),
   });
 }

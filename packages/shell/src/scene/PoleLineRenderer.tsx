@@ -1,8 +1,9 @@
 /**
- * EXAMPLE STUDIO RENDERER for the pole-line adopter. Registered via the public
- * `registerSceneKindRenderer` seam — `AuthoredScene` mounts it for every `pole_line` path with no
- * engine edit. Uses the generic core primitive `readNamedSockets` to hang wires off a GLB pole's
- * authored crossarm empties (falling back to computed offsets). Plain three.js — examples may.
+ * Runtime renderer for the built-in `pole_line` scene kind: instanced poles (proxy cylinders, or a
+ * GLB pole asset when one is named) plus merged tube geometry for the sagging cables. Registered by
+ * `registerBuiltinSceneKindRenderers` so any document with a `pole_line` path renders with no game
+ * wiring. Uses the generic core primitive `readNamedSockets` to hang wires off a GLB pole's authored
+ * crossarm empties (falling back to computed offsets).
  */
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
@@ -11,10 +12,10 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import { parseParams } from "@jgengine/core/scene/sceneKinds";
 import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSockets";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/shell/scene/sceneKindRenderers";
+import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "./poleLineStudio";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
 function Cables({ cables }: { cables: readonly Cable[] }) {
   const geometry = useMemo(() => {
@@ -172,7 +173,7 @@ function OnePoleLine({ object, context }: { object: SceneKindObject; context: Sc
   );
 }
 
-/** Register the pole-line runtime renderer. One call — no engine edits. */
+/** Registers the built-in pole-line runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
 export function registerPoleLineRenderer(): void {
   registerSceneKindRenderer(POLE_LINE_KIND, ({ objects, context }) => (
     <>
