@@ -131,6 +131,7 @@ function cloneCatalogs(catalogs: readonly EditorCatalogData[] | undefined): Edit
   */
 export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
   const ui = cloneEditorUiDocument(doc.ui);
+  const directives = cloneDirectives(doc.directives);
   return {
     version: 1,
     markers: doc.markers.map((marker) => ({
@@ -168,7 +169,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     ...(doc.grids === undefined ? {} : { grids: doc.grids.map(cloneGridLayer) }),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(ui === undefined ? {} : { ui }),
-    ...(cloneDirectives(doc.directives) === undefined ? {} : { directives: cloneDirectives(doc.directives) }),
+    ...(directives === undefined ? {} : { directives }),
   };
 }
 
@@ -205,6 +206,8 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
   if (input === undefined || input === null) return createEmptyEditorDocument();
   const resolved = typeof input === "function" ? input() : input;
   const ui = cloneEditorUiDocument(resolved.ui);
+  const grids = migrateGrids(resolved.grids);
+  const directives = cloneDirectives(resolved.directives);
   return {
     version: 1,
     markers: asArray(resolved.markers),
@@ -214,10 +217,10 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     prefabs: asArray(resolved.prefabs),
     collections: asArray(resolved.collections),
     catalogs: cloneCatalogs(resolved.catalogs),
-    ...(migrateGrids(resolved.grids) === undefined ? {} : { grids: migrateGrids(resolved.grids) }),
+    ...(grids === undefined ? {} : { grids }),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
     ...(ui === undefined ? {} : { ui }),
-    ...(cloneDirectives(resolved.directives) === undefined ? {} : { directives: cloneDirectives(resolved.directives) }),
+    ...(directives === undefined ? {} : { directives }),
   };
 }
 
@@ -1040,6 +1043,7 @@ export function applyEditorDocumentOverlay(
             ...Object.fromEntries(Object.entries(overlay.ui.panels).map(([id, panel]) => [id, { ...panel }])),
           },
         };
+  const grids = upsertGrids(base.grids, overlay.grids);
   return {
     version: 1,
     markers: upsertById(base.markers, overlay.markers),
@@ -1049,7 +1053,7 @@ export function applyEditorDocumentOverlay(
     prefabs: upsertById(base.prefabs, overlay.prefabs),
     collections: upsertById(base.collections, overlay.collections),
     catalogs: upsertCatalogs(base.catalogs, overlay.catalogs),
-    ...(upsertGrids(base.grids, overlay.grids) === undefined ? {} : { grids: upsertGrids(base.grids, overlay.grids) }),
+    ...(grids === undefined ? {} : { grids }),
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),
     ...(base.directives === undefined && overlay.directives === undefined
