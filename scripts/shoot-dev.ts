@@ -51,6 +51,7 @@ type Args = {
   preview?: string;
   run?: string[];
   settle?: number;
+  spawn?: string;
   out?: string;
   url?: string;
   connect?: number;
@@ -71,6 +72,9 @@ const HELP = `bun run shoot [game] [options]
   --preview [key]     preview.tsx state instead of the full shell
   --run <cmd[,cmd]>   script past a start screen before capture
   --settle <ms>       wait past an intro before capture
+  --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
+                      ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
+                      Accepts x,y,z or x,y,z,yaw (yaw radians)
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
@@ -139,6 +143,7 @@ function parseArgs(argv: string[]): Args {
         .filter((name) => name.length > 0);
       args.run = list.length > 0 ? list : args.run;
     } else if (value === "--settle") args.settle = Number(argv[++index]);
+    else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") args.url = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
@@ -194,6 +199,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
+  if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
   return url.toString();
 }
 

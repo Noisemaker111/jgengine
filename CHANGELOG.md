@@ -32,6 +32,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Per-capture player-spawn override** (`@jgengine/core/world/spawnOverride`, #1255) — `installSpawnOverride`/`clearSpawnOverride`/`readSpawnOverride` and the pure `parseSpawnOverride("x,y,z"|"x,y,z,yaw")` install a session-scoped spawn that `authoredSpawnPosition`/`authoredSpawnRotation` honor for the *default* player-spawn resolution only (an explicit marker `id` or non-`player_spawn` kind still reads the document), so a close-up capture can relocate the player without editing `editor.scene.json`. The dev runner installs one from a `?spawn=` URL overlay (mirroring `?cam=`), and `bun run shoot`/`bun run drive` gain a `--spawn x,y,z` flag. Default is no override, so nothing changes until one is installed.
+- **Aerial editor camera in one call** (`@jgengine/editor`, #1256) — `camera_goto` and `camera_frame` take optional `distance`, `pitch` (degrees above the horizon; 90 = straight-down), `yaw`, and `height`, and the `EditorFocusTarget` carries them so the orbit camera repositions instead of only panning. `camera_frame` with a `pitch` but no `distance` auto-fits the document bounds into view (`orbitCameraPosition`/`frameDistanceForBounds` are exported and unit-tested), so composing a district aerial no longer takes many guess-the-y-offset round-trips or buries the camera in terrain.
 - **Achievements / trophies** — `@jgengine/core/game/achievements`' `createAchievementTracker`
   is a serializable tracker for counter-goal (`progress`/`setProgress`) and boolean (`unlock`)
   achievements, with `score()`, `completion()`, an `onUnlock` seam (wire to a toast queue, feed,

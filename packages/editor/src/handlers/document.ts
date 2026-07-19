@@ -9,7 +9,31 @@ import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAss
 import { findSchemaPreset, getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
 
 import { EDITOR_RUN_MODES } from "../session";
+import { boundsCenter, frameDistanceForBounds } from "../camera/orbitFraming";
 import type { HandlerTable } from "./context";
+
+/** Optional orbit-camera placement fields a `camera_goto`/`camera_frame` request may carry. */
+interface CameraPlacementRequest {
+  distance?: number;
+  pitch?: number;
+  yaw?: number;
+  height?: number;
+}
+
+/** Collect the finite placement fields present on a camera request into a focus-target patch. */
+function cameraPlacement(request: CameraPlacementRequest): {
+  distance?: number;
+  pitch?: number;
+  yaw?: number;
+  height?: number;
+} {
+  const placement: { distance?: number; pitch?: number; yaw?: number; height?: number } = {};
+  if (typeof request.distance === "number" && Number.isFinite(request.distance)) placement.distance = request.distance;
+  if (typeof request.pitch === "number" && Number.isFinite(request.pitch)) placement.pitch = request.pitch;
+  if (typeof request.yaw === "number" && Number.isFinite(request.yaw)) placement.yaw = request.yaw;
+  if (typeof request.height === "number" && Number.isFinite(request.height)) placement.height = request.height;
+  return placement;
+}
 
 /** True when any of `ids` names a placeable object (marker/volume/path/note) in the document — used
  * to reject batch mutations that would match nothing, so the caller hears an honest `ok:false`. */
@@ -271,31 +295,39 @@ export const documentHandlers: Pick<
     return { ok: true, result: { selection: [] } };
   },
   camera_goto: (ctx, request) => {
+    const placement = cameraPlacement(request);
     if (request.id !== undefined) {
       const state = ctx.session.getState();
       const marker = state.document.markers.find((m) => m.id === request.id);
       const volume = state.document.volumes.find((v) => v.id === request.id);
       const point = marker?.position ?? volume?.center;
       if (point === undefined) return { ok: false, error: `id not found: ${request.id}` };
-      ctx.api.setFocusTarget({ ...point });
+      const target = { x: point.x, y: point.y, z: point.z, ...placement };
+      ctx.api.setFocusTarget(target);
       ctx.session.dispatch({ type: "select", ids: [request.id] });
-      return { ok: true, result: { target: point } };
+      return { ok: true, result: { target } };
     }
     if (request.x === undefined || request.z === undefined) {
       return { ok: false, error: "camera_goto requires id or x/z" };
     }
-    const target = { x: request.x, y: request.y ?? 0, z: request.z };
+    const target = { x: request.x, y: request.y ?? 0, z: request.z, ...placement };
     ctx.api.setFocusTarget(target);
     return { ok: true, result: { target } };
   },
-  camera_frame: (ctx) => {
+  camera_frame: (ctx, request) => {
     const bounds = editorDocumentBounds(ctx.session.getState().document);
     if (bounds === null) return { ok: false, error: "document is empty" };
-    const target = {
-      x: (bounds.min.x + bounds.max.x) / 2,
-      y: (bounds.min.y + bounds.max.y) / 2,
-      z: (bounds.min.z + bounds.max.z) / 2,
-    };
+    const center = boundsCenter(bounds);
+    const placement = cameraPlacement(request);
+    // An aerial is requested when the caller supplies any camera placement. Fit the region into the
+    // camera's FOV when no explicit distance is given, so one call frames a whole district from
+    // above instead of burying the camera at the last-used distance.
+    const wantsAerial = Object.keys(placement).length > 0;
+    const resolved =
+      wantsAerial && placement.distance === undefined
+        ? { ...placement, distance: frameDistanceForBounds(bounds, { fovDeg: 50 }) }
+        : placement;
+    const target = { ...center, ...resolved };
     ctx.api.setFocusTarget(target);
     return { ok: true, result: { target, bounds } };
   },
