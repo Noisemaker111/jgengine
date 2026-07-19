@@ -29,4 +29,4 @@ Group surviving issues by `workflow` PR-boundary rules, then for each group:
 ## Report
 
 One line per issue: PR link plus verification evidence, or why it was skipped.
-Park every PR unmerged — the user owns merge timing.
+In the `Noisemaker111` repo, enable squash auto-merge on every PR so it lands once CI is green — the user never merges by hand; for any other owner/repo, park the PR unmerged. The user still owns release and npm-publish timing.
