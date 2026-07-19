@@ -121,10 +121,6 @@ Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive
 
 Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
 
-2026-07-18T23:42:10.479Z — fable — Claude
-
-drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
-
 2026-07-19T01:16:07.023Z — opus — Claude
 
 PR #1220: Vercel preview *deployment* reported FAILED on the PR while GitHub CI (quick/ci) was green and a local 'vite build' of apps/web passed clean (17 pages prerendered) — the red Vercel status is environmental/deploy-config, not caused by the diff, but it looks like a blocking failure and invites chasing a non-issue. Would help to either not surface non-blocking Vercel deploy status as a PR failure signal, or document that it's independent of CI.
