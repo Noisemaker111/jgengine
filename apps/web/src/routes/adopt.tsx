@@ -204,7 +204,7 @@ function Adopt() {
         <div className="space-y-16 py-4 sm:space-y-20">
           {ADOPTIONS.map((cap, i) => (
             <section key={cap.title} className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12">
-              <div className={i % 2 === 1 ? "lg:order-2" : ""}>
+              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
                 <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/90">
                   <span className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-sm">
                     {cap.glyph}
@@ -224,7 +224,7 @@ function Adopt() {
                   </div>
                 </dl>
               </div>
-              <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-1" : ""}`}>
                 <CodeBlock code={cap.code} filename={cap.filename} />
               </div>
             </section>
