@@ -343,7 +343,12 @@ export interface PresentationEffectsConfig {
   vfx?: boolean;
   /** Floating combat text (damage numbers, etc.). Default true. */
   floatText?: boolean;
-  /** Projectile tracer lines. Default true. */
+  /**
+   * Straight muzzle→impact tracer lines for direct-fire shots. Opt-in (default false): unlike the
+   * other channels, a missing `tracers` key leaves them OFF, because `fireProjectile` is a generic
+   * seam and a tracer is only meaningful for a game that fires direct, bullet-like projectiles.
+   * Arced/exploding shots (grenades, launchers) never draw a tracer even when this is on.
+   */
   tracers?: boolean;
   /** Trauma-driven combat camera shake. Default true. */
   shake?: boolean;
