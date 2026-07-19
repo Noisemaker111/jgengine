@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Modal / confirmation dialog system + reskinnable pause menu.** `@jgengine/core/ui/modalStack`'s
+  `createModalStack` is a genre-agnostic, serializable stack of opaque modal records (`push`/`pop`/`resolve` with a
+  free-form result, `top`/`isOpen`/`depth`, optional injected-clock auto-dismiss via `tick`/`timeRemaining`,
+  `subscribe`, `snapshot`/`restore`) that never interprets a modal's `kind` or result. `@jgengine/react`'s `ModalHost`
+  renders the top modal over a dimmed backdrop with a focus trap and Esc/backdrop-to-cancel, `ConfirmDialog` is a
+  generic two-button confirm/cancel dialog, and `PauseMenu` is a drop-in Resume + game-filled Settings/Quit slot list.
+  All `HudTheme`-token-driven common parts — the game owns final layout, terminology, and skin. Demo: `pause-menu`.
 - **Coach-marks / tutorial hints.** `@jgengine/core/ui/coachMarks`' `createCoachMarkSequence` is a genre-agnostic
   onboarding model: an ordered list of `CoachMarkStep`s (title, body, optional `anchor`/`placement`, and a data-first
   string `condition`), a persisted "seen" set so completed hints never re-show, condition-gating via `satisfy`/
