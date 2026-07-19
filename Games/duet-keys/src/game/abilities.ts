@@ -2,14 +2,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { ROOMS } from "./rooms/catalog";
 import { advanceRoom, activeHero, levelSeq, loadCurrentRoom, resetRoom, swapHero } from "./runtime";
-import { duetStore, withAnchor, withPrism } from "./stores";
+import { duetStore, raiseToast, withAnchor, withPrism } from "./stores";
 import { type Dir, sameCell, type V2, yawToDir } from "./types";
-
-const TOAST_TICKS = 2.2;
-
-function toast(ctx: GameContext, text: string): void {
-  duetStore.update(ctx, (state) => ({ ...state, toast: text, toastTimer: TOAST_TICKS }));
-}
 
 function heroCell(ctx: GameContext, id: string): V2 | null {
   const entity = ctx.scene.entity.get(id);
@@ -30,14 +24,14 @@ export function useAbility(ctx: GameContext, userId: string, dirOverride?: Dir):
   if (hero === "lumen") {
     const dir = dirOverride ?? heroFacing(ctx, "lumen");
     duetStore.update(ctx, (state) => ({ ...state, latch: withPrism(state.latch, { cell, dir }) }));
-    toast(ctx, `Prism planted, beaming ${dir}.`);
+    raiseToast(ctx, `Prism planted, beaming ${dir}.`);
   } else {
     duetStore.update(ctx, (state) => {
       const lifted = state.latch.anchorCell !== null && sameCell(state.latch.anchorCell, cell);
       return { ...state, latch: withAnchor(state.latch, lifted ? null : cell) };
     });
     const lifted = duetStore.read(ctx).latch.anchorCell === null;
-    toast(ctx, lifted ? "Weight lifted." : "Weight dropped.");
+    raiseToast(ctx, lifted ? "Weight lifted." : "Weight dropped.");
   }
 }
 
@@ -45,7 +39,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("swap", {
     apply(state, input) {
       const userId = commandUser(state, input);
-      if (!swapHero(state, userId)) toast(state, "You only control one hero here.");
+      if (!swapHero(state, userId)) raiseToast(state, "You only control one hero here.");
     },
   });
 
@@ -58,7 +52,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("reset", {
     apply(state) {
       resetRoom(state);
-      toast(state, "Room reset.");
+      raiseToast(state, "Room reset.");
     },
   });
 

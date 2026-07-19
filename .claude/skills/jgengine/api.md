@@ -6,7 +6,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.11.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.12.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/authoring
 
@@ -35,14 +35,14 @@
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
 - `TransientProvenance` (interface): interface TransientProvenance — An ephemeral simulation object — a spawned agent, projectile, or particle that never persists.
-- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `auditManifest` (function): function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagnostic[] — Audit every declaration in a manifest, keying diagnostics by each object's provenance id. An empty result means the manifest declares all of its content cleanly — every object is authored, generated, bakeable, or a reasoned runtime/transient object.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
-- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`.
 - `classifyOwnership` (function): function classifyOwnership(declaration: SceneOwnershipDeclaration): OwnershipVerdict — Resolve one declaration into a single boundary verdict.
 - `collectOwnershipDiagnostics` (function): function collectOwnershipDiagnostics(entries: Iterable<readonly [string, SceneOwnershipDeclaration]>): OwnershipDiagnostic[] — Audit a keyed set of declarations and return one diagnostic per object that breaks the boundary contract (a `reject` verdict carrying a `violation`). Deterministic: diagnostics come back in the iteration order of `entries`.
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
-- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `isSceneOwnershipManifest` (function): function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest — Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only — verifies the version, the declarations array, and each declaration's provenance shape; it does not judge whether declarations satisfy the boundary (use {@link auditManifest} for that).
@@ -213,7 +213,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.11.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.12.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/runtime/adapter
 
@@ -276,7 +276,7 @@
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
 - `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
 - `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
-- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
+- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `createGameContext` (function): function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(options: GameContextOptions<TAssetRef, TMultiplayer>): GameContext — ⚠ undocumented
 
@@ -307,7 +307,7 @@
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
 - `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
 - `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
-- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
+- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 
 ## @jgengine/core/runtime/gameRuntime
@@ -322,6 +322,7 @@
 
 ## @jgengine/core/runtime/headlessRunner
 
+- `HeadlessCommandInterface` (interface): interface HeadlessCommandInterface — Canvas-free command/intent surface for {@link HeadlessRunner} — invoke a game's registered UI commands and read the resulting reactive state off `ctx`.
 - `HeadlessInput` (interface): interface HeadlessInput — One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame.
 - `HeadlessRunner` (interface): interface HeadlessRunner — A renderer-free driver for a game loop: builds a {@link GameContext} from a {@link GameDefinition}, runs the init hooks, then advances the simulation one step at a time from injected input. No React, R3F, or three.js — the whole play path (time, input, `onTick`, behaviour nav, optional player movement) runs from `core` primitives alone, so a non-React host (a server tick, a test, a CLI replay) can play a real game and read its world snapshot. The shell's FrameDriver is one such driver bolted to `useFrame`; this is the same step distilled out of the render tree.
 - `HeadlessRunnerOptions` (interface): interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — ⚠ undocumented
@@ -520,7 +521,7 @@
 - `defineKeyedStore` (function): function defineKeyedStore<T>(keyFor: (id: string) => string, initial: T | (() => T)): KeyedStoreHandle<T> — Define a typed per-owner keyed family on the game store: game code expresses `read(ctx, userId)`/`write(ctx, userId, v)`/`update(...)` with the value type it means, and both the `` `prefix:${id}` `` key composition and the `unknown → T` cast live once, here, behind the boundary. Reach for this over N separate `defineStore` calls whenever the owning id varies at runtime (per-user class, per-instance auras) — `defineStore` stays the right call for a single fixed slot.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path).
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
-- `environment` (function): function environment(config?: EnvironmentWorldConfig): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `environment` (function): function environment(config?: EnvironmentWorldConfig): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `environmentContentFromDocument` (function): function environmentContentFromDocument(doc: EditorDocument, options?: EnvironmentContentOptions): EnvironmentContent — Derives the coordinate/placement content of an `environment()` world from its scene document: terrain footprint (via {@link terrainBoundsFromDocument}), ground clearings under authored spawns/POIs (via `clearanceZonesFrom`), and the document's sculpt snapshot. This is the seam that lets a game author its world footprint and flatten regions in the editor instead of hardcoding them — the `world.ts` that consumes it carries only engine tuning.
 - `offline` (function): function offline(): MultiplayerAdapterConfig — Explicit single-player adapter. Solo games never need this — omitting `multiplayer` in the shell `defineGame` already defaults to offline; pass it only where an adapter value is structurally required.
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.

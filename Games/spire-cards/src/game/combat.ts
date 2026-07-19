@@ -1,4 +1,9 @@
 import { createCardPile, type CardPile } from "@jgengine/core/cards/cardPile";
+import {
+  resolveDamage,
+  type DamageInterceptor,
+  type PendingDamage,
+} from "@jgengine/core/combat/damageInterceptors";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { createTurnLoop, type TurnLoop } from "@jgengine/core/turn/turnLoop";
@@ -124,11 +129,68 @@ function decayStatus(ctx: GameContext, id: string): void {
   }
 }
 
-export function scaleDamage(base: number, attackerWeak: number, defenderVulnerable: number): number {
-  let amount = Math.max(0, base);
-  if (attackerWeak > 0) amount = Math.floor(amount * 0.75);
-  if (defenderVulnerable > 0) amount = Math.floor(amount * 1.5);
-  return Math.max(0, amount);
+const WEAK_MULTIPLIER = 0.75;
+const VULNERABLE_MULTIPLIER = 1.5;
+
+/**
+ * Weak reduces the attacker's outgoing hit before Vulnerable amplifies it.
+ * Installed ahead of Vulnerable so the flooring order matches Slay-the-Spire:
+ * floor(base * 0.75) THEN floor(that * 1.5). Passes through untouched when the
+ * attacker carries no Weak stacks.
+ */
+function weakInterceptor(attackerWeak: number): DamageInterceptor {
+  return {
+    id: "spire.weak",
+    intercept(pending) {
+      if (attackerWeak <= 0) return { kind: "pass" };
+      return {
+        kind: "transform",
+        amount: Math.floor(pending.amount * WEAK_MULTIPLIER),
+        note: `weak x${WEAK_MULTIPLIER}`,
+      };
+    },
+  };
+}
+
+/**
+ * Vulnerable amplifies the incoming hit against the defender, applied AFTER Weak
+ * so the two floors compose in the historical order. Passes through untouched
+ * when the defender carries no Vulnerable stacks.
+ */
+function vulnerableInterceptor(defenderVulnerable: number): DamageInterceptor {
+  return {
+    id: "spire.vulnerable",
+    intercept(pending) {
+      if (defenderVulnerable <= 0) return { kind: "pass" };
+      return {
+        kind: "transform",
+        amount: Math.floor(pending.amount * VULNERABLE_MULTIPLIER),
+        note: `vulnerable x${VULNERABLE_MULTIPLIER}`,
+      };
+    },
+  };
+}
+
+/**
+ * Resolve a strike's final impact through the shared `@jgengine/core` damage
+ * interception pipeline: Weak then Vulnerable, each an ordered, inspectable
+ * interceptor with provenance rather than an inline multiplier. `source`/`target`
+ * are threaded purely for provenance readability and do not affect the number.
+ */
+export function scaleDamage(
+  base: number,
+  attackerWeak: number,
+  defenderVulnerable: number,
+  source = "attacker",
+  target = "defender",
+): number {
+  const pending: PendingDamage = { source, target, amount: Math.max(0, base), tag: "strike" };
+  const resolution = resolveDamage(
+    [weakInterceptor(attackerWeak), vulnerableInterceptor(defenderVulnerable)],
+    pending,
+    { nowMs: 0 },
+  );
+  return resolution.applications.reduce((sum, application) => sum + application.amount, 0);
 }
 
 function statusLabel(status: "weak" | "vulnerable"): string {
@@ -229,7 +291,7 @@ export function createCombatStore(): CombatStore {
     }
     if (effects.damage !== undefined) {
       const base = effects.damage + strengthOf(ctx, hero);
-      const amount = scaleDamage(base, weakOf(ctx, hero), vulnerableOf(ctx, ENEMY_ID));
+      const amount = scaleDamage(base, weakOf(ctx, hero), vulnerableOf(ctx, ENEMY_ID), hero, ENEMY_ID);
       const hits = effects.hits ?? 1;
       for (let hit = 0; hit < hits; hit += 1) {
         if ((ctx.scene.entity.stats.get(ENEMY_ID, "health")?.current ?? 0) <= 0) break;
@@ -253,7 +315,7 @@ export function createCombatStore(): CombatStore {
     const hero = heroId(ctx);
     const enemyName = current.enemy.name;
     if (intent.kind === "attack") {
-      const amount = scaleDamage(intent.value, weakOf(ctx, ENEMY_ID), vulnerableOf(ctx, hero));
+      const amount = scaleDamage(intent.value, weakOf(ctx, ENEMY_ID), vulnerableOf(ctx, hero), ENEMY_ID, hero);
       const hits = intent.hits ?? 1;
       for (let hit = 0; hit < hits; hit += 1) {
         if ((ctx.scene.entity.stats.get(hero, "health")?.current ?? 0) <= 0) break;

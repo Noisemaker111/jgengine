@@ -5,6 +5,8 @@ import {
   defaultObjectColliders,
   fittedEntityColliders,
   fittedObjectColliders,
+  measuredEntityColliders,
+  measuredObjectColliders,
   resolveColliders,
   scaledEntityColliders,
   scaledObjectColliders,
@@ -70,6 +72,44 @@ describe("colliders", () => {
 
   test("scaledEntityColliders(1) equals the humanoid default", () => {
     expect(scaledEntityColliders(1)).toEqual(defaultEntityColliders());
+  });
+
+  test("measuredEntityColliders wraps the reported bounds exactly", () => {
+    const set = measuredEntityColliders({ min: [-0.4, 0.1, -0.3], max: [0.4, 0.9, 0.3] });
+    const resolved = resolveColliders(set);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]!.purpose).toBe("damage");
+    expect(resolved[0]!.damageEligible).toBe(true);
+    expect(resolved[0]!.blocks).toBe(false);
+    const bounds = colliderBounds(resolved[0]!, [10, 0, 10], 0);
+    expect(bounds.min[0]).toBeCloseTo(9.6);
+    expect(bounds.min[1]).toBeCloseTo(0.1);
+    expect(bounds.max[1]).toBeCloseTo(0.9);
+    expect(bounds.max[2]).toBeCloseTo(10.3);
+  });
+
+  test("measuredObjectColliders emits a blocking physical body", () => {
+    const set = measuredObjectColliders({ min: [-1, 0, -2], max: [1, 3, 2] });
+    const resolved = resolveColliders(set);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]!.purpose).toBe("physical");
+    expect(resolved[0]!.blocks).toBe(true);
+    const shape = resolved[0]!.shape;
+    if (shape.kind !== "aabb") throw new Error("expected aabb");
+    expect(shape.halfExtents).toEqual([1, 1.5, 2]);
+    expect(shape.offset).toEqual([0, 1.5, 0]);
+  });
+
+  test("measured colliders keep thin axes hittable and reject degenerate bounds", () => {
+    // A flat panel keeps a minimum thickness so rays can still land on it.
+    const flat = measuredEntityColliders({ min: [-1, 0, 0], max: [1, 2, 0] });
+    const shape = flat!.hitboxes![0]!.shape;
+    if (shape.kind !== "aabb") throw new Error("expected aabb");
+    expect(shape.halfExtents[2]).toBeCloseTo(0.01);
+    // A point, an inverted axis, and non-finite bounds all reject.
+    expect(measuredEntityColliders({ min: [0, 0, 0], max: [0, 0, 0] })).toBeNull();
+    expect(measuredEntityColliders({ min: [1, 0, 0], max: [0, 1, 1] })).toBeNull();
+    expect(measuredObjectColliders({ min: [0, 0, 0], max: [Number.NaN, 1, 1] })).toBeNull();
   });
 
   test("scaledEntityColliders scales the body box uniformly and stays grounded", () => {

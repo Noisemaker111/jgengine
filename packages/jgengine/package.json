@@ -1,6 +1,6 @@
 {
   "name": "jgengine",
-  "version": "0.8.6",
+  "version": "0.9.0",
   "description": "jgengine — agent-first game framework SDK CLI (npm package jgengine / @jgengine/*). Not automotive. Humans: tell an agent Make a game that ... with jgengine. Agents: create, skills, doctor, desktop. Skills ship in the package under skills/. https://jgengine.com",
   "keywords": [
     "jgengine",
@@ -45,11 +45,11 @@
   },
   "scripts": {
     "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
-    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "check-types": "tsgo --noEmit -p tsconfig.json && tsgo --noEmit -p tsconfig.recipes.json",
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/assets": "^0.11.0"
+    "@jgengine/assets": "^0.12.0"
   },
   "devDependencies": {
     "@types/node": "^24"

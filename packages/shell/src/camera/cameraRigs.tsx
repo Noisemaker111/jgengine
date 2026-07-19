@@ -31,6 +31,7 @@ import {
   resolveSideScroll,
   resolveSideScrollPose,
   resolveTopDown,
+  rtsPanWorldDir,
   seatPose,
   shoulderPose,
   sideScrollFollowBlend,
@@ -366,13 +367,9 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean }) {
 
     const center = centerRef.current;
     if (panX !== 0 || panZ !== 0) {
-      const cos = Math.cos(yawRef.current);
-      const sin = Math.sin(yawRef.current);
-      const worldX = panX * cos + panZ * sin;
-      const worldZ = panZ * cos - panX * sin;
-      const len = Math.hypot(worldX, worldZ) || 1;
-      center.x += (worldX / len) * panSpeed * dt;
-      center.z += (worldZ / len) * panSpeed * dt;
+      const dir = rtsPanWorldDir(panX, panZ, yawRef.current);
+      center.x += dir.x * panSpeed * dt;
+      center.z += dir.z * panSpeed * dt;
     } else {
       const follow = readFollow(ctx, followId);
       if (follow !== null) {

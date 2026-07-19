@@ -57,6 +57,7 @@ import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { DevtoolsRendererProbe } from "./devtools/DevtoolsOverlay";
 import {
+  CAMERA_TRANSPARENT_USERDATA,
   GameCameraRig,
   PlayerFovProvider,
   PlayerFovSlider,
@@ -72,6 +73,7 @@ import { MarqueeBox, ContextMenuView } from "./pointer/PointerOverlays";
 import { createPointerService } from "./pointer/pointerService";
 import { Reticle, WorldEntityBars, WorldNameplates } from "./world/WorldHud";
 import { GridWorldScene } from "./world/GridWorldScene";
+import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -200,9 +202,11 @@ export function Shell3dPresentation({
     playable.environment ??
     (world?.kind === "environment"
       ? () => <EnvironmentScene feature={world} />
-      : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
-        ? () => <GridWorldScene feature={world} />
-        : undefined);
+      : world?.kind === "place"
+        ? () => <PlaceScene feature={world} />
+        : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
+          ? () => <GridWorldScene feature={world} />
+          : undefined);
   const resolvedLook = resolveGameLook({
     look: playable.look,
     lighting: playable.lighting,
@@ -517,7 +521,14 @@ export function Shell3dPresentation({
                       hideLocalActor={firstPerson}
                     />
                   </CullingProvider>
-                  {WorldOverlay !== undefined ? <WorldOverlay ctx={ctx} /> : null}
+                  {WorldOverlay !== undefined ? (
+                    // Author decor is presentation dressing, not collision geometry — mark it
+                    // camera-transparent so the orbit spring-arm never yanks toward it. A child
+                    // that should block the camera opts back in with userData.jgCameraCollide.
+                    <group userData={CAMERA_TRANSPARENT_USERDATA}>
+                      <WorldOverlay ctx={ctx} />
+                    </group>
+                  ) : null}
                   {bars !== null ? (
                     <WorldEntityBars
                       statId={bars.statId}
@@ -532,6 +543,7 @@ export function Shell3dPresentation({
                       roles={nameplates.roles}
                       resolveRole={resolveEntityRole}
                       {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
+                      {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
                     />
                   ) : null}
                   <WorldItems config={playable.worldItem} />

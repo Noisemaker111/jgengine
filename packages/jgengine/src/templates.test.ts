@@ -30,6 +30,8 @@ const THIN_FILES = [
   "vite.config.ts",
   "package.json",
   "tsconfig.json",
+  ".gitignore",
+  "scripts/shoot.mjs",
   "AGENTS.md",
   "src/index.css",
   "src/style.css",
@@ -98,6 +100,21 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(pkg.scripts?.desktop).toBe("jgengine desktop");
       expect(pkg.scripts?.build).toBe("vite build");
     });
+
+    test(`${variant}: ships a dependency-free WebGL screenshot script wired to a shoot command`, () => {
+      const files = render(variant);
+      const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
+      expect(pkg.scripts?.shoot).toBe("node scripts/shoot.mjs");
+      const script = fileOf(files, "scripts/shoot.mjs");
+      // No npm deps — only node: builtins and web globals.
+      expect(script).not.toContain("playwright");
+      expect(script).not.toContain("puppeteer");
+      // The two things that make WebGL capture reliable: a forced viewport and an honest-frame wait.
+      expect(script).toContain("Emulation.setDeviceMetricsOverride");
+      expect(script).toContain("Page.captureScreenshot");
+      // shots/ output is ignored so generated screenshots are never committed.
+      expect(fileOf(files, ".gitignore")).toContain("shots/");
+    });
   }
 
   test("in-repo: tsconfig paths match the exact map check-game-shape requires", () => {
@@ -112,7 +129,10 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const pkg = JSON.parse(fileOf(files, "package.json")) as { name: string; dependencies: Record<string, string> };
     expect(pkg.name).toBe("@games/probe-game");
     expect(pkg.dependencies["@jgengine/core"]).toBe("workspace:*");
-    expect(fileOf(files, "src/index.css")).toContain('@source "../../../packages/react/src"');
+    const css = fileOf(files, "src/index.css");
+    expect(css).toContain('@source "../../../packages/react/src"');
+    // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
+    expect(css).toContain('@source "../../../packages/editor/src"');
   });
 
   test("standalone: no workspace protocol, no monorepo paths, css @source points at node_modules", () => {
@@ -126,6 +146,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const css = fileOf(files, "src/index.css");
     expect(css).toContain('@source "../node_modules/@jgengine/react/dist"');
     expect(css).toContain('@source "../node_modules/@jgengine/shell/dist"');
+    // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
+    expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');
   });
 
   test("standalone: engine deps pin the CLI's own version", () => {
@@ -180,10 +202,17 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     for (const extra of ["src/world.ts", "src/game/assets.ts", "src/game/models.ts"]) {
       expect(paths).toContain(extra);
     }
-    expect(fileOf(files, "src/world.ts")).toContain("environment(");
+    const worldFile = fileOf(files, "src/world.ts");
+    expect(worldFile).toContain("place(");
+    expect(worldFile).toContain('mode: "flat"');
+    expect(worldFile).toContain("x: Infinity");
+    expect(worldFile).not.toContain("environment(");
+    expect(worldFile).not.toContain("sky(");
+    expect(worldFile).not.toContain("grass(");
+    expect(worldFile).not.toContain("seed");
     const config = fileOf(files, "src/game.config.ts");
     expect(config).toContain("world,");
-    expect(config).toContain("physics,");
+    expect(config).not.toContain("physics,");
     expect(config).toContain("entityModels,");
     expect(config).toContain("objectModels,");
   });
@@ -199,6 +228,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game.config.ts")).not.toContain("editorLayers");
     expect(fileOf(files, "src/loop.ts")).not.toContain("editorLayers");
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
+    // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
+    expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
   });
 
   test("templates carry the gameKit-first agent onboarding", () => {
@@ -210,6 +241,11 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(agents).toContain("recipes/minimal-game.md");
     expect(agents).toContain("npx jgengine skills -p");
     expect(agents).toContain("--all");
+    // Every new game is briefed to file engine bugs/gaps upstream instead of burying a workaround.
+    expect(agents).toContain("File it upstream");
+    expect(agents).toContain("https://github.com/Noisemaker111/jgengine/issues");
+    expect(agents).toContain("[BUG]");
+    expect(agents).toContain("[FEATURE]");
     expect(agents).not.toContain("full export surface");
     expect(agents).not.toContain("full game not a slice");
   });

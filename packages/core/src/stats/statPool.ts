@@ -82,10 +82,13 @@ export function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool {
  */
 export function changeStatPool(pool: StatPool, amount: number): StatPoolChange {
   const next = patchStatPool(pool, { current: pool.current + amount });
+  const applied = next.current - pool.current;
   return {
     previous: pool,
-    pool: next,
-    applied: next.current - pool.current,
+    // Preserve the input reference on a no-op change (regen at max, damage at 0,
+    // clamp to a bound) so reference-equality guards in HUD hooks don't churn.
+    pool: applied === 0 ? pool : next,
+    applied,
     hitMin: next.current === next.min,
     hitMax: next.current === next.max,
   };

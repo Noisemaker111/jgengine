@@ -1,5 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { VfxKind } from "@jgengine/core/game/events";
+import type { VfxPresetName } from "@jgengine/core/combat";
 
 import type { AbilityDef, AbilitySchool } from "../model";
 
@@ -13,16 +13,21 @@ export const SCHOOL_COLORS: Record<AbilitySchool, number> = {
   nature: 0x86e86a,
 };
 
-export function vfxArchetype(ability: AbilityDef): VfxKind {
+/**
+ * The shared-SDK visual flavor this ability reads as. We route through `@jgengine/core`'s
+ * named `vfxPresets` for the archetype (bolt / aura / ground burst) and keep the per-school
+ * tint as a color override, so a fire HoT still glows orange rather than the preset green.
+ */
+export function vfxPreset(ability: AbilityDef): VfxPresetName {
   switch (ability.kind) {
     case "heal":
     case "hot":
     case "buff":
-      return "glow";
+      return "buff";
     case "aoe":
-      return "nova";
+      return "explosion";
     default:
-      return ability.school === "physical" ? "spark" : "projectile";
+      return ability.school === "physical" ? "slash" : "firebolt";
   }
 }
 
@@ -34,21 +39,21 @@ interface SpellVfxAnchors {
 }
 
 export function playSpellVfx(ctx: GameContext, ability: AbilityDef, anchors: SpellVfxAnchors): void {
-  const kind = vfxArchetype(ability);
+  const preset = vfxPreset(ability);
   const color = SCHOOL_COLORS[ability.school];
-  if (kind === "nova") {
+  if (preset === "explosion") {
     if (anchors.at === undefined) return;
-    ctx.scene.entity.vfx({ kind, color, from: anchors.at, ...(anchors.radius === undefined ? {} : { radius: anchors.radius }) });
+    ctx.scene.entity.vfx({ preset, color, from: anchors.at, ...(anchors.radius === undefined ? {} : { radius: anchors.radius }) });
     return;
   }
-  if (kind === "glow") {
-    ctx.scene.entity.vfx({ kind, color, from: anchors.targetId ?? anchors.casterId });
+  if (preset === "buff") {
+    ctx.scene.entity.vfx({ preset, color, from: anchors.targetId ?? anchors.casterId });
     return;
   }
   if (anchors.targetId === undefined) return;
-  ctx.scene.entity.vfx({ kind, color, from: anchors.casterId, to: anchors.targetId });
+  ctx.scene.entity.vfx({ preset, color, from: anchors.casterId, to: anchors.targetId });
 }
 
 export function playMeleeVfx(ctx: GameContext, casterId: string, targetId: string): void {
-  ctx.scene.entity.vfx({ kind: "spark", color: SCHOOL_COLORS.physical, from: casterId, to: targetId });
+  ctx.scene.entity.vfx({ preset: "slash", from: casterId, to: targetId });
 }

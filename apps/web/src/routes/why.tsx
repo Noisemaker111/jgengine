@@ -121,16 +121,18 @@ frame();
 
 // …and you rewrite all of it for the next game.`;
 
-const WORLD_AFTER = `import { environment, terrain, sky, grass } from "@jgengine/core/world/features";
+const WORLD_AFTER = `import { world } from "@jgengine/core/world/place";
 
-export const world = environment({
-  terrain: terrain({ bounds: { w: 256, d: 256 }, height: 8, material: "grass" }),
-  sky: sky({ preset: "day" }),
-  vegetation: grass({ area: { w: 200, d: 200 }, density: 2, seed: "meadow" }),
+// The world is the place you play in: substrate + laws.
+export const overworld = world({
+  id: "overworld",
+  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
+  physics: { gravity: -24 },
 });
 
-// Rendered mesh, GPU-instanced grass, fog, lighting, and the
-// collision heightfield all read this one field. Reusable next game.`;
+// The meadow itself — sky look, terrain sculpt, scattered grass — is
+// authored in the 3D editor and saved to editor.scene.json. Rendering,
+// GPU-instanced grass, fog, and collision all read that one document.`;
 
 const PROS = [
   {
@@ -203,14 +205,14 @@ function Why() {
           <SectionHeading
             eyebrow="Hand-rolled vs. authored"
             title="Same meadow. One of these you maintain forever."
-            blurb="Building a world by hand means owning the noise, the instancing, the culling, and the collision — then rebuilding it for the next game. On the SDK it's a few lines of intent, and every consumer reads the same field."
+            blurb="Building a world by hand means owning the noise, the instancing, the culling, and the collision — then rebuilding it for the next game. On the SDK the world is a thin place declaration, the meadow is content you author in the 3D editor, and every consumer reads the same document."
           />
           <div className="mt-10">
             <VersusBlock
               before={WORLD_BEFORE}
               after={WORLD_AFTER}
               beforeNote="~90 lines — the whole thing, nothing elided"
-              afterNote="8 lines, reusable"
+              afterNote="a place declaration + an authored scene, reusable"
             />
           </div>
         </div>

@@ -18,9 +18,12 @@ import { createForms, type Forms } from "../../scene/form";
 import {
   fittedEntityColliders,
   fittedObjectColliders,
+  measuredEntityColliders,
+  measuredObjectColliders,
   scaledEntityColliders,
   scaledObjectColliders,
   type EntityColliderSet,
+  type MeasuredBounds,
 } from "../../scene/colliders";
 import { raycastObjects, raycastObjectsAll } from "../../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../../scene/objectStore";
@@ -73,6 +76,7 @@ export interface SceneSubsystem {
   objectColliders: Map<string, EntityColliderSet>;
   entityCollidersOf: (instanceId: string) => EntityColliderSet | null;
   objectCollidersOf: (instanceId: string) => EntityColliderSet | null;
+  reportEntityBounds: (kind: string, bounds: MeasuredBounds | null) => boolean;
   entityVisualScaleOf: (instanceId: string) => number;
   forms: Forms;
   paintLayer: PaintLayer;
@@ -176,6 +180,35 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     return fitted;
   }
 
+  const measuredEntityByKind = new Map<string, EntityColliderSet>();
+  const measuredObjectByCatalogId = new Map<string, EntityColliderSet>();
+
+  function reportEntityBounds(kind: string, bounds: MeasuredBounds | null): boolean {
+    if (bounds === null) {
+      const existed = measuredEntityByKind.delete(kind);
+      if (existed) signalNotify();
+      return existed;
+    }
+    const measured = measuredEntityColliders(bounds);
+    if (measured === null) return false;
+    measuredEntityByKind.set(kind, measured);
+    signalNotify();
+    return true;
+  }
+
+  function reportObjectBounds(catalogId: string, bounds: MeasuredBounds | null): boolean {
+    if (bounds === null) {
+      const existed = measuredObjectByCatalogId.delete(catalogId);
+      if (existed) signalNotify();
+      return existed;
+    }
+    const measured = measuredObjectColliders(bounds);
+    if (measured === null) return false;
+    measuredObjectByCatalogId.set(catalogId, measured);
+    signalNotify();
+    return true;
+  }
+
   function entityCollidersOf(instanceId: string): EntityColliderSet | null {
     const override = entityColliders.get(instanceId);
     if (override !== undefined) return override;
@@ -185,6 +218,8 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     if (kind !== undefined) {
       const fitted = fittedEntitySetFor(kind);
       if (fitted !== null) return fitted;
+      const measured = measuredEntityByKind.get(kind);
+      if (measured !== undefined) return measured;
     }
     const scale = entry?.scale;
     if (scale !== undefined && scale !== 1) return scaledEntityColliders(scale);
@@ -205,6 +240,8 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     if (object === null) return null;
     const fitted = fittedObjectSetFor(object.catalogId);
     if (fitted !== null) return fitted;
+    const measured = measuredObjectByCatalogId.get(object.catalogId);
+    if (measured !== undefined) return measured;
     if (object.visual?.scale === undefined) return null;
     return scaledObjectColliders(objectVisualScale(object.visual));
   }
@@ -353,6 +390,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
       signalNotify();
     },
     collidersOf: objectCollidersOf,
+    reportBounds: reportObjectBounds,
     selection: objectSelection,
   };
 
@@ -372,6 +410,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     objectColliders,
     entityCollidersOf,
     objectCollidersOf,
+    reportEntityBounds,
     entityVisualScaleOf,
     forms,
     paintLayer,

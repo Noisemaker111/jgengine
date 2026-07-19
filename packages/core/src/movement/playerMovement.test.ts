@@ -264,6 +264,20 @@ describe("stepPlayerMovement object collision (mesh-accurate)", () => {
     driveWith(ctx, "a", ["moveForward"], 120, FLAT, 0);
     expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(2);
   });
+
+  test("a runtime-reported wide prop blocks across its real span, not the phantom unit box", () => {
+    // Without a report, the object obstructs as the default unit box at its centre — x=1.5 walks past.
+    const unreported = collisionContext(1.5);
+    unreported.scene.object.place("platform", 0, 0, 2);
+    driveWith(unreported, "a", ["moveForward"], 120, COLLIDE, 0);
+    expect(unreported.scene.entity.get("a")!.position[2]).toBeGreaterThan(2);
+    // With the renderer's measured 5m span reported, the same walk is stopped by the real footprint.
+    const reported = collisionContext(1.5);
+    reported.scene.object.reportBounds("platform", { min: [-2.5, 0, -0.5], max: [2.5, 1.2, 0.5] });
+    reported.scene.object.place("platform", 0, 0, 2);
+    driveWith(reported, "a", ["moveForward"], 120, COLLIDE, 0);
+    expect(reported.scene.entity.get("a")!.position[2]).toBeLessThan(2);
+  });
 });
 
 describe("per-player motion queues", () => {

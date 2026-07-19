@@ -109,6 +109,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
 
+## building-lots — derive street-facing building lots from road frontage
+
+- `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`
+
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
@@ -281,10 +285,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
 
-## path-network — build a deterministic road/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
-
-- `buildPathNetwork` (function) · `import { buildPathNetwork } from "@jgengine/core/world/pathNetwork"`
-
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
 - `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
@@ -415,6 +415,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
 
+## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
+
+- `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/world/streetGenerator"`
+
 ## surface-drape — lift an XZ polyline onto sculpted terrain
 
 - `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/world"`
@@ -463,6 +467,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
 
-## world-environment — declare an outdoor 3D world — terrain, sky, weather, vegetation, water, structures — in one feature
+## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
+
+## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
+
+- `world` (function) · `import { world } from "@jgengine/core/world"`
+
+## world-seed — derive a deterministic generator/scatter seed from world id + save/run seed
+
+- `seedForPlace` (function) · `import { seedForPlace } from "@jgengine/core/world"`

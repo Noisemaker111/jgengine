@@ -2,9 +2,35 @@
 
 Reference module for the [`jgengine-world` API](SKILL.md) skill. Load this when you need the renderer-free world surface.
 
-## World features
+## World = place (the definition of a world)
 
-Descriptors from `@jgengine/core/world/features` — config data the runner/world layer interprets:
+A world is the place a game happens in — substrate + laws — declared with `world()` from
+`@jgengine/core/world/place`. It is never a coded diorama: sky look, foliage scatter, props, and
+sculpt are scene content authored in the editor (`jgengine-editor`), and the engine renders its
+default sky when the document has none.
+
+```ts
+import { world } from "@jgengine/core/world/place";
+
+export const overworld = world({
+  id: "overworld",                                      // place identity: saves, seeds, switching
+  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
+  physics: { gravity: -24 },                            // laws of THIS place
+});
+```
+
+- `ground.mode` discriminates `size`: `flat` takes `{ x, z }` (or `{ x, y, z }`; `Infinity` = unbounded axis), `round` takes `{ radius }` only, `voxel` takes the generator domain `{ x, y, z }` (axes may be `Infinity`), `board` takes `{ x, y }` in cells/layout units (2D surface you look at — grid games, solitaire, tabletop; `stage` is a `board` alias). TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `ground.surface` is optional matter/feel law (`{ matter?, friction?, restitution?, traits? }`) systems and audio read — metal vs slime vs felt changes the feel of the *same* rule systems, never forks them. Not a theme kit.
+- `ground.generator` (procedural modes) is algorithm params only — never a seed, never a genre/franchise preset.
+- **No `seed` in a world definition, ever.** The engine derives seeds from world `id` + save/run via `seedForPlace(id, runSeed)` and injects them into generators and scatter.
+- Multiple worlds per game are first-class: one `world()` per place, each with its own ground + physics (`defineGameDefinition` resolves the active place's physics over the game default). Pure UI/rules games omit `world` entirely.
+- Thin defaults: `flat` + infinite axes + default physics for 3D, `board` for 2D, or no world at all. Never scaffold a "meadow with sky preset and seeded grass" — that is editor content.
+
+## Legacy world features
+
+Descriptors from `@jgengine/core/world/features` — legacy code-declared world shapes kept for
+existing games. Do not start new worlds here; `environment()` is now the consumption target for
+editor/preset-written scene data (`environmentContentFromDocument`), not a world definition:
 
 | Feature | Use |
 |---------|-----|
@@ -89,7 +115,7 @@ Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/F
 
 **Body shape: box or sphere.** `AddBodyOptions` is a discriminated union — `{ shape?: "box", halfExtents }` (box is the default, `shape` omittable) or `{ shape: "sphere", radius }` (the radius fills all three half-extent columns, so broadphase/bounds see the sphere's enclosing AABB). `world.shape[i]` (`SHAPE_BOX` / `SHAPE_SPHERE`) reports a live body's shape for a consumer walking the raw SoA arrays. Sphere-sphere and sphere-box pairs resolve with a proper radial normal (not the axis-aligned box/box path) — balls, projectile bodies, and rolling debris collide correctly against both boxes and each other.
 
-**Collision shapes are box/sphere/voxel — plus opt-in triangle meshes for raycasts and mesh-accurate walk obstruction.** Every collider in the engine — `PhysicsWorld` bodies (box `halfExtents` or sphere `radius`), object/entity picking (`scene/objectQuery` raycasts against unit boxes), and `world/voxelField`/`world/carve` blocks — is an axis-aligned box, a sphere, or a voxel cell. The one exception is opted-in catalog assets: an asset listed in `@jgengine/assets` `COLLISION_MESH_ASSET_IDS` ships a compact quantized triangle mesh in the generated index (`scene/collisionMesh` `CollisionMeshData`, extracted from the GLB at reindex — never from the rendered scene, so a headless host resolves the same shape) **plus a deterministic compound-box decomposition** (`voxelizeToBoxes` → `CollisionMeshData.boxes`, a voxel-rasterize + column-fill + greedy-merge of the model's solid volume). Collider auto-fit then (a) raycasts the actual triangles through a precomputed BVH — shots pass through a torus hole or an archway instead of hitting the fitted box; and (b) exposes the compound boxes on the fitted `mesh` `ColliderShape` (`ColliderShape.mesh.boxes`, scaled/translated onto the placement like the mesh). The `collideObjects` walk controller consumes these in `stepPlayerMovement` (host and client alike, so parity is automatic): it gathers obstacles from resolved blocking physical colliders via a bounded `object.inBox` broadphase (reach ≥ radius + max half-extent, so a wide wall's full span blocks, not a phantom 1 m box), carries each collider's real `halfExtents`/`offset` — or, for a mesh collider, the compound sub-boxes — yaw-rotated onto the obstacle, and slides the capsule against **each** sub-box (`resolveObstacleStep`), so a capsule walks THROUGH an archway opening and is stopped by its pillars/lintel/sill. `PhysicsWorld` and overlap tests still see the conservative fitted AABB; objects with no resolved collider keep today's default box, objects whose colliders don't block stop obstructing, and non-opted assets keep the fitted box everywhere. The seams for custom *walk* collision remain `movement.beforeCommit` and object raycasts.
+**Collision shapes are box/sphere/voxel — plus opt-in triangle meshes for raycasts and mesh-accurate walk obstruction.** Every collider in the engine — `PhysicsWorld` bodies (box `halfExtents` or sphere `radius`), object/entity picking (`scene/objectQuery` raycasts against unit boxes), and `world/voxelField`/`world/carve` blocks — is an axis-aligned box, a sphere, or a voxel cell. The one exception is opted-in catalog assets: an asset listed in `@jgengine/assets` `COLLISION_MESH_ASSET_IDS` ships a compact quantized triangle mesh in the generated index (`scene/collisionMesh` `CollisionMeshData`, extracted from the GLB at reindex — never from the rendered scene, so a headless host resolves the same shape) **plus a deterministic compound-box decomposition** (`voxelizeToBoxes` → `CollisionMeshData.boxes`, a voxel-rasterize + column-fill + greedy-merge of the model's solid volume). Collider auto-fit then (a) raycasts the actual triangles through a precomputed BVH — shots pass through a torus hole or an archway instead of hitting the fitted box; and (b) exposes the compound boxes on the fitted `mesh` `ColliderShape` (`ColliderShape.mesh.boxes`, scaled/translated onto the placement like the mesh). The `collideObjects` walk controller consumes these in `stepPlayerMovement` (host and client alike, so parity is automatic): it gathers obstacles from resolved blocking physical colliders via a bounded `object.inBox` broadphase (reach ≥ radius + max half-extent, so a wide wall's full span blocks, not a phantom 1 m box), carries each collider's real `halfExtents`/`offset` — or, for a mesh collider, the compound sub-boxes — yaw-rotated onto the obstacle, and slides the capsule against **each** sub-box (`resolveObstacleStep`), so a capsule walks THROUGH an archway opening and is stopped by its pillars/lintel/sill. `PhysicsWorld` and overlap tests still see the conservative fitted AABB; objects whose colliders don't block stop obstructing, and non-opted assets keep the fitted box everywhere. Objects with no index `dims` are not stuck with the default unit box either: the shell measures what `renderObject`/dims-less models actually mount and reports it through `ctx.scene.object.reportBounds`, so a custom-rendered prop obstructs (and raycasts) as its real rendered footprint; only objects with nothing measurable keep the default box. The seams for custom *walk* collision remain `movement.beforeCommit` and object raycasts.
 
 **Ballistic collision sweep (`physics/ballisticSweep`).** `createBallisticSweep(world, { step?, radius? })` → `BallisticSweep`, a `(origin, velocity, gravity, maxTime) => BallisticSweepHit | null` function that marches the closed-form arc (constant gravity, straight lateral) through a `PhysicsWorld` and reports the first sample inside any live body's AABB (sleeping bodies included), refined by one bisection step; `null` means the whole arc is clear. `step` (default 1/60) is the march interval in seconds, `radius` (default 0) inflates every body's AABB before the point test — pass the projectile's own radius. Wire it into `combat/projectiles` via `ProjectileSystemDeps.sweepBallistic`: when set, a ballistic shot settles at the swept impact point instead of the closed-form landing; omitted or `null` falls back to that closed-form arc.
 

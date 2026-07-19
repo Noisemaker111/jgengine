@@ -651,6 +651,36 @@ describe("float text and projectile events", () => {
     expect(events[1]!.radius).toBe(6);
   });
 
+  test("the vfx verb renders a named preset with zero color/kind tuning", () => {
+    const ctx = makeContext();
+    const events: CombatVfxEvent[] = [];
+    ctx.game.events.on("combat.vfx", (event) => events.push(event));
+    const caster = ctx.scene.entity.spawn("caster", { position: [0, 0, 0] });
+    const target = ctx.scene.entity.spawn("target", { position: [5, 0, 1] });
+
+    ctx.scene.entity.vfx({ preset: "arrow", from: caster, to: target });
+    expect(events[0]!.kind).toBe("projectile");
+    expect(events[0]!.color).toBe(0xd8c9a0);
+    expect(events[0]!.from).toEqual([0, 0, 0]);
+    expect(events[0]!.to).toEqual([5, 0, 1]);
+
+    ctx.scene.entity.vfx({ preset: "lightning", from: caster, to: target });
+    expect(events[1]!.kind).toBe("beam");
+
+    ctx.scene.entity.vfx({ preset: "explosion", from: [2, 0, 2] });
+    expect(events[2]!.kind).toBe("nova");
+    expect(events[2]!.radius).toBe(3);
+
+    // An explicit field overrides the preset.
+    ctx.scene.entity.vfx({ preset: "fireball", color: 0x00ff00, from: caster, to: target });
+    expect(events[3]!.kind).toBe("projectile");
+    expect(events[3]!.color).toBe(0x00ff00);
+
+    // An unknown flavor still shows something rather than nothing.
+    ctx.scene.entity.vfx({ preset: "totally-made-up", from: caster, to: target });
+    expect(events[4]!.kind).toBe("spark");
+  });
+
   test("settling a projectile emits projectile.settled with origin and hit flag", () => {
     const ctx = makeContext();
     const shots: ProjectileSettledEvent[] = [];
@@ -1297,5 +1327,108 @@ describe("mesh-accurate colliders", () => {
     // default box from halfExtentsOf is used, never the mesh.
     const boxed = ctx.scene.object.place("boxed", 0, 0, 0);
     expect(ctx.scene.object.collidersOf(boxed)).toBeNull();
+  });
+});
+
+describe("runtime-measured bounds colliders", () => {
+  function makeMeasuredContext() {
+    return createGameContext({
+      definition: defineGameDefinition({ name: "Measured", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {
+        entityById(catalogId) {
+          if (catalogId === "scrapbot") return { stats: { health: { max: 5 } } };
+          if (catalogId === "armored") {
+            return {
+              colliders: {
+                hitboxes: [{ name: "body", purpose: "damage", shape: { kind: "sphere", radius: 3 } }],
+              },
+            };
+          }
+          if (catalogId === "giant") return { scale: 2 };
+          if (catalogId === "modeled") return {};
+          return null;
+        },
+        objectById(catalogId) {
+          if (catalogId === "pylon") return {};
+          return null;
+        },
+      },
+      player: { userId: "user_a", isNew: true },
+      models: {
+        entity: (kind) =>
+          kind === "modeled"
+            ? {
+                dims: { footprint: { w: 0.6, d: 0.9 }, center: { x: 0, z: 0 }, minY: -0.05, maxY: 0.25 },
+                targetHeight: 0.6,
+              }
+            : undefined,
+      },
+    });
+  }
+
+  test("a reported render measurement becomes the kind's tight hitbox", () => {
+    const ctx = makeMeasuredContext();
+    expect(ctx.scene.entity.reportBounds("scrapbot", { min: [-0.4, 0, -0.3], max: [0.4, 0.9, 0.3] })).toBe(true);
+    const bot = ctx.scene.entity.spawn("scrapbot", { position: [0, 0, 0] });
+    const box = ctx.scene.entity.collidersOf(bot)!.hitboxes![0]!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    expect(box.halfExtents).toEqual([0.4, 0.45, 0.3]);
+    expect(box.offset).toEqual([0, 0.45, 0]);
+  });
+
+  test("raycasts respect the measured box where the humanoid default would have ghost-hit", () => {
+    const ctx = makeMeasuredContext();
+    ctx.scene.entity.reportBounds("scrapbot", { min: [-0.4, 0, -0.3], max: [0.4, 0.9, 0.3] });
+    ctx.scene.entity.spawn("scrapbot", { position: [0, 0, 0] });
+    const low = ctx.scene.raycast({ origin: [-5, 0.5, 0], direction: [1, 0, 0], maxDistance: 20 });
+    expect(low?.targetKind).toBe("entity");
+    // 1.4 is inside the old 1.8-tall humanoid rectangle but above the real 0.9m mesh — must miss now.
+    const high = ctx.scene.raycast({ origin: [-5, 1.4, 0], direction: [1, 0, 0], maxDistance: 20 });
+    expect(high).toBeNull();
+  });
+
+  test("authored colliders and index-fitted models beat measured; measured beats catalog scale", () => {
+    const ctx = makeMeasuredContext();
+    ctx.scene.entity.reportBounds("armored", { min: [-1, 0, -1], max: [1, 2, 1] });
+    const armored = ctx.scene.entity.spawn("armored", { position: [0, 0, 0] });
+    expect(ctx.scene.entity.collidersOf(armored)!.hitboxes![0]!.shape.kind).toBe("sphere");
+
+    ctx.scene.entity.reportBounds("modeled", { min: [-9, 0, -9], max: [9, 9, 9] });
+    const modeled = ctx.scene.entity.spawn("modeled", { position: [0, 0, 0] });
+    const fitted = ctx.scene.entity.collidersOf(modeled)!.hitboxes![0]!.shape;
+    if (fitted.kind !== "aabb") throw new Error("expected aabb");
+    // The deterministic index-dims fit (targetHeight 0.6 → half-height 0.3) wins over the 9-unit report.
+    expect(fitted.halfExtents[1]).toBeCloseTo(0.3);
+
+    ctx.scene.entity.reportBounds("giant", { min: [-2, 0, -2], max: [2, 5, 2] });
+    const giant = ctx.scene.entity.spawn("giant", { position: [0, 0, 0] });
+    const measured = ctx.scene.entity.collidersOf(giant)!.hitboxes![0]!.shape;
+    if (measured.kind !== "aabb") throw new Error("expected aabb");
+    // Measured render truth wins over the scale-2 humanoid guess.
+    expect(measured.halfExtents).toEqual([2, 2.5, 2]);
+  });
+
+  test("clearing a report restores the previous fallback; degenerate reports are rejected", () => {
+    const ctx = makeMeasuredContext();
+    const bot = ctx.scene.entity.spawn("scrapbot", { position: [0, 0, 0] });
+    expect(ctx.scene.entity.reportBounds("scrapbot", { min: [0, 0, 0], max: [0, 0, 0] })).toBe(false);
+    expect(ctx.scene.entity.reportBounds("scrapbot", { min: [1, 0, 0], max: [0, 1, 1] })).toBe(false);
+    expect(ctx.scene.entity.collidersOf(bot)).toBeNull();
+    expect(ctx.scene.entity.reportBounds("scrapbot", { min: [-0.4, 0, -0.3], max: [0.4, 0.9, 0.3] })).toBe(true);
+    expect(ctx.scene.entity.collidersOf(bot)).not.toBeNull();
+    expect(ctx.scene.entity.reportBounds("scrapbot", null)).toBe(true);
+    expect(ctx.scene.entity.collidersOf(bot)).toBeNull();
+  });
+
+  test("a reported object measurement becomes a blocking physical body", () => {
+    const ctx = makeMeasuredContext();
+    expect(ctx.scene.object.reportBounds("pylon", { min: [-0.2, 0, -0.2], max: [0.2, 3, 0.2] })).toBe(true);
+    const pylon = ctx.scene.object.place("pylon", 5, 0, 5);
+    const set = ctx.scene.object.collidersOf(pylon);
+    expect(set!.body!.purpose).toBe("physical");
+    const box = set!.body!.shape;
+    if (box.kind !== "aabb") throw new Error("expected aabb");
+    expect(box.halfExtents).toEqual([0.2, 1.5, 0.2]);
+    expect(box.offset).toEqual([0, 1.5, 0]);
   });
 });

@@ -33,6 +33,7 @@ import {
   type LayoutOrientation,
 } from "@jgengine/core/ui/orientation";
 import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams";
+import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
@@ -54,6 +55,9 @@ import { ShellHudPresentation } from "./ShellHudPresentation";
 import { Shell3dPresentation } from "./Shell3dPresentation";
 
 const DEV_USER_ID = "dev-player";
+
+/** The query param that mirrors the devtools overlay into the URL — present = open. */
+const DEBUG_PARAM = "debug";
 
 export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
@@ -83,9 +87,18 @@ export function GamePlayerShell({
   );
   const devtoolsEnabled = playable.devtools !== false && !poster;
   armFallbackSeams(devtoolsEnabled);
-  const [devtoolsOpen, setDevtoolsOpen] = useState(false);
+  // `?debug` mirrors the devtools overlay into the URL: open with a link, strip the param to close.
+  const [devtoolsOpen, setDevtoolsOpen] = useState(() => devtoolsEnabled && readUrlFlag(DEBUG_PARAM));
   const devtoolsOpenRef = useRef(false);
   devtoolsOpenRef.current = devtoolsOpen;
+  useEffect(() => {
+    if (!devtoolsEnabled) return;
+    writeUrlParam(DEBUG_PARAM, devtoolsOpen ? "1" : null);
+  }, [devtoolsEnabled, devtoolsOpen]);
+  useEffect(() => {
+    if (!devtoolsEnabled) return;
+    return subscribeUrlChange(() => setDevtoolsOpen(readUrlFlag(DEBUG_PARAM)));
+  }, [devtoolsEnabled]);
   useEffect(
     () =>
       installAgentBridge({

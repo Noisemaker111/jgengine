@@ -95,6 +95,12 @@ export interface GeneratedBuilding {
   floorHeight: number;
   bounds: Aabb;
   parts: readonly BuildingPartPlacement[];
+  /**
+   * Optional building yaw (radians) about `center`, applied by the renderer to the whole massing —
+   * used by street-aware placement to turn a building's front to face its road. Absent/0 keeps the
+   * axis-aligned grid orientation.
+   */
+  rotationY?: number;
 }
 
 export interface BuildingLot {

@@ -23,6 +23,16 @@ describe("resolveWorldOverlayBars", () => {
     });
     expect(resolveWorldOverlayBars({ statId: "armor" })).toEqual({ statId: "armor" });
   });
+
+  test("showHealth is carried through only when set (nameplate name-only opt-out)", () => {
+    expect(resolveWorldOverlayBars({ maxDistance: 40 })).toEqual({ statId: "health", maxDistance: 40 });
+    expect(resolveWorldOverlayBars({ maxDistance: 40, showHealth: false })).toEqual({
+      statId: "health",
+      maxDistance: 40,
+      showHealth: false,
+    });
+    expect(resolveWorldOverlayBars({ showHealth: true })).toEqual({ statId: "health", showHealth: true });
+  });
 });
 
 describe("resolvePresentationEffects", () => {

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { join } from "node:path";
 
 import { COLLISION_MESH_ASSET_IDS } from "./collisionMeshAssets";
-import { readGlbCollisionMesh, readGlbDims } from "./dims";
+import { readGlbClips, readGlbCollisionMesh, readGlbDims } from "./dims";
 import type { AssetSource, CollisionMeshData, IndexEntry, ModelDims } from "./manifest";
 import { sourceById } from "./sources";
 
@@ -15,6 +15,7 @@ export function entryForFile(
   file: string,
   dims?: ModelDims,
   collisionMesh?: CollisionMeshData,
+  clips?: readonly string[],
 ): IndexEntry {
   return {
     id: `${source.id}/${keyFromFile(file)}`,
@@ -23,6 +24,7 @@ export function entryForFile(
     file,
     ...(dims === undefined ? {} : { dims }),
     ...(collisionMesh === undefined ? {} : { collisionMesh }),
+    ...(clips === undefined ? {} : { clips }),
   };
 }
 
@@ -55,6 +57,14 @@ function measureCollisionMesh(bytes: Uint8Array): CollisionMeshData | undefined 
   }
 }
 
+function measureClips(bytes: Uint8Array): readonly string[] | undefined {
+  try {
+    return readGlbClips(bytes) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function entryFromGlb(source: AssetSource, file: string, full: string): IndexEntry {
   let bytes: Uint8Array;
   try {
@@ -64,7 +74,7 @@ function entryFromGlb(source: AssetSource, file: string, full: string): IndexEnt
   }
   const id = `${source.id}/${keyFromFile(file)}`;
   const collisionMesh = COLLISION_MESH_ASSET_IDS.has(id) ? measureCollisionMesh(bytes) : undefined;
-  return entryForFile(source, file, measureDims(bytes), collisionMesh);
+  return entryForFile(source, file, measureDims(bytes), collisionMesh, measureClips(bytes));
 }
 
 export function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] {
