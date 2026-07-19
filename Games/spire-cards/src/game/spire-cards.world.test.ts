@@ -61,6 +61,23 @@ describe("spire-cards status math", () => {
     expect(scaleDamage(9, 1, 1)).toBe(9);
     expect(scaleDamage(0, 1, 1)).toBe(0);
   });
+
+  test("pipeline scaleDamage reproduces the inline weak/vulnerable math exactly", () => {
+    // Reference: the pre-adoption inline math (weak floor first, then vulnerable floor).
+    const inlineScale = (base: number, attackerWeak: number, defenderVulnerable: number): number => {
+      let amount = Math.max(0, base);
+      if (attackerWeak > 0) amount = Math.floor(amount * 0.75);
+      if (defenderVulnerable > 0) amount = Math.floor(amount * 1.5);
+      return Math.max(0, amount);
+    };
+    for (let base = -3; base <= 60; base += 1) {
+      for (const weak of [0, 1, 2]) {
+        for (const vulnerable of [0, 1, 2]) {
+          expect(scaleDamage(base, weak, vulnerable)).toBe(inlineScale(base, weak, vulnerable));
+        }
+      }
+    }
+  });
 });
 
 describe("spire-cards combat", () => {

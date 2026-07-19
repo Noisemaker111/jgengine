@@ -184,6 +184,41 @@ Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstal
 
 bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
 
+2026-07-18T23:38:11.226Z — claude-fable-5 — NoisemakerJon
+
+Outside-repo user sim: the staged jgengine intake skill installed into a scaffolded game says 'Read the repository README (../../../README.md)' and mentions bun run new:game — both are monorepo-only; in a standalone project the link is dead and the command wrong. Stage a consumer variant or reword.
+
+2026-07-18T23:38:11.716Z — claude-fable-5 — NoisemakerJon
+
+Outside-repo user sim: jgengine-multiplayer reference.md (shipped in the skills tarball) points to examples/convex-host, examples/HOSTED.md, and apps/dev/src/main.tsx — none exist in a consumer project; the inline factory docs saved the day but the pointers should be repo-relative-free
+
+2026-07-18T23:38:11.857Z — claude-fable-5 — NoisemakerJon
+
+Building a WoW-like on the SDK: on a lethal ctx.scene.entity.effect() hit the engine death system despawns the target before game code can read its identity, so kill credit/XP needs a game-side spawn-time registry; EffectResult could carry the slain entity's catalogId/name
+
+2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
+
+verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <path> run <script>' (space form) mis-parses and prints bun-run help instead of running; only 'bun --cwd=<path> run <script>' (equals form) works. Docs/skills should switch to the = form or bun --filter.
+
+2026-07-18T23:54:36.026Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim verdict: a scaffolded WoW-like shipped with primitive-marker enemies and box props because nothing in the intake/create flow gates completion on entityModels/objectModels being set; the assets skill and npx jgengine assets pull (Quaternius sci-fi robots) were installed and never triggered. Make an asset pass a required step in the jgengine skill build phase
+
+2026-07-18T23:54:36.178Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: player death had no designed moment — lethal hit silently teleports to spawn. createDownedState exists but no skill step says 'player death must be a visible designed flow (death/downed screen, respawn)'. Add it to game-design/jgengine-ui checklists
+
+2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: WoW-like needed overhead enemy nameplates/healthbars; jgengine-ui has bars but no floating world-anchored entity-frame seam or recipe, so it drops off agent plans
+
+2026-07-18T23:54:36.442Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive are monorepo scripts — so the AGENTS.md rule 'visual claims are screenshot-judged harshly by you' is unenforceable for exactly the outside users it targets; ship a jgengine shoot CLI verb
+
+2026-07-19T00:10:56.438Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
