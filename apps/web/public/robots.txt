@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 
 Sitemap: https://jgengine.com/sitemap.xml
+
+# Coding agents / LLMs: start at https://jgengine.com/llms.txt

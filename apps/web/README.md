@@ -4,6 +4,7 @@ The landing page for JGengine and the front door for agents. TanStack Start (SSR
 
 - **Humans** get a marketing-plus-docs site: the landing (`/`), **Why JGengine** (`/why` — the honest pitch, pros/cons, a hand-rolled-vs-authored diff), **Capabilities** (`/capabilities` — every system shown as the real code you write), and **Editor** (`/editor` — the standalone 3D scene editor).
 - **Humans** have one interface: `Make a game that … with jgengine` (to any coding agent). The site shows that prompt; the CLI is for agents underneath. Each page markets *and* documents — code snippets are real API, not decoration.
+- **Agents** get a machine-readable front door: `/llms.txt` (llmstxt.org index — what JGengine is, the `npx jgengine create` quickstart, the never-clone-the-repo rule) and `/llms-full.txt` (the full brief: CLI commands, packages, layering, verification). Both are server routes built from [`src/lib/agentDocs.ts`](src/lib/agentDocs.ts) over the same [`site.ts`](src/lib/site.ts) constants the marketing pages use, so they cannot drift; `robots.txt` points crawlers at `/llms.txt`. (They are `.txt` routes because Vite's dev static middleware intercepts `.md` URLs before SSR.)
 
 ## Pages market and document at once
 
