@@ -48,7 +48,7 @@ const DEFAULTS: Dials = {
   lotW: 12,
   lotD: 10,
   setback: 3,
-  landmarks: 0.06,
+  landmarks: 0.08,
 };
 
 const CIRCUIT_RULES: Omit<StreetNetworkRules, "seed"> = {

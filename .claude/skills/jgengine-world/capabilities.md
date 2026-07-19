@@ -536,6 +536,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-intersections — trim streets at junctions and weld curb-return crossing surfaces in one call
 
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
+- `trimBandAtJunctions` (function) · `import { trimBandAtJunctions } from "@jgengine/core/world"`
 
 ## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
 

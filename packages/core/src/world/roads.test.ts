@@ -12,7 +12,9 @@ import {
   nearestOnPath,
   pathLength,
   roundPathCorners,
+  trimBandAtJunctions,
   trimPathAtJunctions,
+  type JunctionApproach,
   type RoadJunctionInput,
 } from "./roads";
 
@@ -360,5 +362,367 @@ describe("roundPathCorners", () => {
     // A tiny middle segment clamps the fillet so arcs never cross past the neighbours.
     const rounded = roundPathCorners([[0, 0], [4, 0], [4, 1], [8, 1]], 10, 4);
     expect(rounded.every((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Geometry test helpers (2-D, XZ plane)
+// ---------------------------------------------------------------------------------------------
+
+const orient = (
+  ax: number,
+  az: number,
+  bx: number,
+  bz: number,
+  cx: number,
+  cz: number,
+): number => (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
+
+/** True only when segments (p1,p2) and (p3,p4) PROPERLY cross (interiors intersect; touching is ignored). */
+function segmentsProperlyCross(
+  p1: readonly number[],
+  p2: readonly number[],
+  p3: readonly number[],
+  p4: readonly number[],
+): boolean {
+  const e = 1e-9;
+  const d1 = orient(p3[0]!, p3[1]!, p4[0]!, p4[1]!, p1[0]!, p1[1]!);
+  const d2 = orient(p3[0]!, p3[1]!, p4[0]!, p4[1]!, p2[0]!, p2[1]!);
+  const d3 = orient(p1[0]!, p1[1]!, p2[0]!, p2[1]!, p3[0]!, p3[1]!);
+  const d4 = orient(p1[0]!, p1[1]!, p2[0]!, p2[1]!, p4[0]!, p4[1]!);
+  const opposite = (a: number, b: number) => (a > e && b < -e) || (a < -e && b > e);
+  return opposite(d1, d2) && opposite(d3, d4);
+}
+
+/** Count self-crossings in a polyline (skips adjacent and zero-length segments). */
+function selfCrossings(poly: readonly (readonly number[])[]): number {
+  let count = 0;
+  for (let i = 0; i < poly.length - 1; i += 1) {
+    const a = poly[i]!;
+    const b = poly[i + 1]!;
+    if (Math.hypot(b[0]! - a[0]!, b[1]! - a[1]!) < 1e-9) continue;
+    for (let j = i + 2; j < poly.length - 1; j += 1) {
+      if (j === i) continue;
+      const c = poly[j]!;
+      const d = poly[j + 1]!;
+      if (Math.hypot(d[0]! - c[0]!, d[1]! - c[1]!) < 1e-9) continue;
+      if (segmentsProperlyCross(a, b, c, d)) count += 1;
+    }
+  }
+  return count;
+}
+
+/** Left (side 0) or right (side 1) offset edge of a ribbon as an XZ polyline. */
+function ribbonEdge(pos: Float32Array, side: 0 | 1): number[][] {
+  const out: number[][] = [];
+  const count = pos.length / 6;
+  for (let i = 0; i < count; i += 1) {
+    const base = i * 6 + side * 3;
+    out.push([pos[base]!, pos[base + 2]!]);
+  }
+  return out;
+}
+
+/** Ring vertices of a junction surface (skips the fan apex at index 0) as an XZ polygon. */
+function surfaceRing(pos: Float32Array): number[][] {
+  const out: number[][] = [];
+  for (let v = 1; v * 3 + 2 < pos.length; v += 1) out.push([pos[v * 3]!, pos[v * 3 + 2]!]);
+  return out;
+}
+
+/** True if a closed polygon (implicit last→first edge) has no properly-crossing edge pair. */
+function polygonIsSimple(ring: readonly (readonly number[])[]): boolean {
+  const closed = [...ring, ring[0]!];
+  const m = ring.length;
+  for (let i = 0; i < m; i += 1) {
+    const a = closed[i]!;
+    const b = closed[i + 1]!;
+    if (Math.hypot(b[0]! - a[0]!, b[1]! - a[1]!) < 1e-9) continue;
+    for (let j = i + 1; j < m; j += 1) {
+      if (j === i || (i === 0 && j === m - 1) || Math.abs(i - j) === 1) continue;
+      const c = closed[j]!;
+      const d = closed[j + 1]!;
+      if (Math.hypot(d[0]! - c[0]!, d[1]! - c[1]!) < 1e-9) continue;
+      if (segmentsProperlyCross(a, b, c, d)) return false;
+    }
+  }
+  return true;
+}
+
+/** Signed shoelace area (XZ) of a polygon. */
+function shoelaceArea(ring: readonly (readonly number[])[]): number {
+  let area = 0;
+  for (let i = 0; i < ring.length; i += 1) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % ring.length]!;
+    area += a[0]! * b[1]! - b[0]! * a[1]!;
+  }
+  return area / 2;
+}
+
+/** Build one draped junction approach from an arm spec (mirrors buildRoadRibbon's corner convention). */
+function makeApproach(
+  angle: number,
+  width: number,
+  apron: number,
+  sample: (x: number, z: number) => number,
+): JunctionApproach {
+  const ux = Math.sin(angle);
+  const uz = Math.cos(angle);
+  const cx = ux * apron;
+  const cz = uz * apron;
+  const half = width / 2;
+  const nx = -uz; // left normal of the outward tangent
+  const nz = ux;
+  const lx = cx + nx * half;
+  const lz = cz + nz * half;
+  const rx = cx - nx * half;
+  const rz = cz - nz * half;
+  return {
+    center: [cx, cz],
+    left: [lx, sample(lx, lz), lz],
+    right: [rx, sample(rx, rz), rz],
+  };
+}
+
+describe("buildRoadRibbon join handling (defect 1: bend self-intersection)", () => {
+  test("straight ribbons are byte-identical to the naive per-vertex offset (regression guard)", () => {
+    // Replicate the pre-join algorithm exactly for a subdivided diagonal straight line.
+    const path: readonly [number, number][] = [
+      [0, 0],
+      [30, 30],
+    ];
+    const sample = (x: number, z: number) => x * 0.03 - z * 0.017;
+    const maxSegmentLength = 4;
+    // Naive reference: subdivide, offset each vertex by the segment-chord normal, drape.
+    const pts: number[][] = [];
+    const segLen = Math.hypot(30, 30);
+    const steps = Math.max(1, Math.ceil(segLen / maxSegmentLength));
+    for (let s = 0; s < steps; s += 1) pts.push([30 * (s / steps), 30 * (s / steps)]);
+    pts.push([30, 30]);
+    const half = 4;
+    const naive = new Float32Array(pts.length * 6);
+    for (let i = 0; i < pts.length; i += 1) {
+      const prev = pts[Math.max(0, i - 1)]!;
+      const next = pts[Math.min(pts.length - 1, i + 1)]!;
+      const dx = next[0]! - prev[0]!;
+      const dz = next[1]! - prev[1]!;
+      const len = Math.hypot(dx, dz) || 1;
+      const nx = -dz / len;
+      const nz = dx / len;
+      const lx = pts[i]![0]! + nx * half;
+      const lz = pts[i]![1]! + nz * half;
+      const rx = pts[i]![0]! - nx * half;
+      const rz = pts[i]![1]! - nz * half;
+      naive[i * 6] = lx;
+      naive[i * 6 + 1] = sample(lx, lz) + GROUND_DECAL_LAYERS.road;
+      naive[i * 6 + 2] = lz;
+      naive[i * 6 + 3] = rx;
+      naive[i * 6 + 4] = sample(rx, rz) + GROUND_DECAL_LAYERS.road;
+      naive[i * 6 + 5] = rz;
+    }
+    const ribbon = buildRoadRibbon(path, 8, sample, { maxSegmentLength });
+    expect(ribbon.positions.length).toBe(naive.length);
+    for (let k = 0; k < naive.length; k += 1) expect(ribbon.positions[k]).toBe(naive[k]);
+  });
+
+  test("terminal cross-sections of a BENT ribbon match the naive endpoint formula bit-for-bit", () => {
+    const path: readonly [number, number][] = [
+      [-40, 0],
+      [0, 0],
+      [0, 40],
+    ];
+    const ribbon = buildRoadRibbon(path, 16, flatH, { maxSegmentLength: 4 });
+    const count = ribbon.positions.length / 6;
+    // First cross-section: perpendicular of the first segment (+x) → left = (-40, +8), right = (-40, -8).
+    expect(ribbon.positions[0]).toBe(-40);
+    expect(ribbon.positions[2]).toBe(8);
+    expect(ribbon.positions[3]).toBe(-40);
+    expect(ribbon.positions[5]).toBe(-8);
+    // Last cross-section: perpendicular of the last segment (+z) → left = (-8, 40), right = (+8, 40).
+    const lb = (count - 1) * 6;
+    expect(ribbon.positions[lb]).toBe(-8);
+    expect(ribbon.positions[lb + 2]).toBe(40);
+    expect(ribbon.positions[lb + 3]).toBe(8);
+    expect(ribbon.positions[lb + 5]).toBe(40);
+  });
+
+  test("a densely-sampled 90° bend produces no self-intersecting edge and no flipped triangles", () => {
+    // A 90° turn sampled densely as an arc (spacing ~1.6 << half-width 8): the classic bowtie regime
+    // the naive per-vertex offset failed on. (A single sharp vertex is a quad-strip limitation the
+    // pipeline avoids by rounding corners first — see roundPathCorners.)
+    const path: [number, number][] = [[-40, 0]];
+    const radius = 10;
+    for (let s = 0; s <= 16; s += 1) {
+      const a = (s / 16) * (Math.PI / 2);
+      path.push([-radius + Math.sin(a) * radius, radius - Math.cos(a) * radius]);
+    }
+    path.push([0, 40]);
+    const ribbon = buildRoadRibbon(path, 16, flatH, { maxSegmentLength: 100 });
+    expect(selfCrossings(ribbonEdge(ribbon.positions, 0))).toBe(0);
+    expect(selfCrossings(ribbonEdge(ribbon.positions, 1))).toBe(0);
+    for (let t = 0; t < ribbon.indices.length; t += 3) {
+      const ny = triNormalY(ribbon.positions, ribbon.indices[t]!, ribbon.indices[t + 1]!, ribbon.indices[t + 2]!);
+      expect(ny).toBeLessThan(1e-6); // ribbon tris wind −Y; a positive value would be a flip
+    }
+  });
+
+  test("a densely-sampled tight bend (spacing < half-width) does not self-intersect or flip", () => {
+    // Straight tails with a rounded corner whose radius (6) is below the half-width (8): the inner
+    // offset folds hard through the bend, but the straight ends keep the terminals clean. This is the
+    // real regime — trimmed sub-paths run straight into junctions and bend only in between.
+    const path = roundPathCorners([[-40, 0], [0, 0], [0, 40]], 6, 10);
+    const ribbon = buildRoadRibbon(path, 16, flatH, { maxSegmentLength: 100 });
+    expect(selfCrossings(ribbonEdge(ribbon.positions, 0))).toBe(0);
+    expect(selfCrossings(ribbonEdge(ribbon.positions, 1))).toBe(0);
+    // Consistent winding: every triangle keeps the ribbon's native −Y sign (a positive value = flip).
+    for (let t = 0; t < ribbon.indices.length; t += 3) {
+      const ny = triNormalY(ribbon.positions, ribbon.indices[t]!, ribbon.indices[t + 1]!, ribbon.indices[t + 2]!);
+      expect(ny).toBeLessThan(1e-6);
+    }
+  });
+
+  test("a gentle dense bend (radius > half-width) also stays clean", () => {
+    const path = roundPathCorners([[-40, 0], [0, 0], [0, 40]], 14, 12);
+    const ribbon = buildRoadRibbon(path, 16, flatH, { maxSegmentLength: 2 });
+    expect(selfCrossings(ribbonEdge(ribbon.positions, 0))).toBe(0);
+    expect(selfCrossings(ribbonEdge(ribbon.positions, 1))).toBe(0);
+    for (let t = 0; t < ribbon.indices.length; t += 3) {
+      const ny = triNormalY(ribbon.positions, ribbon.indices[t]!, ribbon.indices[t + 1]!, ribbon.indices[t + 2]!);
+      expect(ny).toBeLessThan(1e-6);
+    }
+  });
+});
+
+describe("buildJunctionSurface simple-boundary triangulation (defect 2: shards)", () => {
+  const slope = (x: number, z: number) => x * 0.05 - z * 0.03;
+
+  interface Arm {
+    angle: number;
+    width: number;
+    apron: number;
+  }
+  const repros: { name: string; arms: Arm[] }[] = [
+    {
+      name: "3-way unequal",
+      arms: [
+        { angle: 0, width: 8, apron: 9 },
+        { angle: 2.2, width: 20, apron: 15 },
+        { angle: 4.3, width: 6, apron: 8 },
+      ],
+    },
+    {
+      name: "4-way unequal (wide boulevard + narrow streets)",
+      arms: [
+        { angle: 0, width: 20, apron: 15 },
+        { angle: 1.3, width: 8, apron: 9 },
+        { angle: 3.0, width: 14, apron: 12 },
+        { angle: 4.6, width: 6, apron: 8 },
+      ],
+    },
+    {
+      name: "5-way unequal",
+      arms: [
+        { angle: 0, width: 8, apron: 9 },
+        { angle: 1.1, width: 20, apron: 16 },
+        { angle: 2.4, width: 6, apron: 8 },
+        { angle: 3.6, width: 16, apron: 13 },
+        { angle: 5.0, width: 10, apron: 10 },
+      ],
+    },
+  ];
+
+  for (const repro of repros) {
+    test(`${repro.name}: simple boundary, all +Y triangles, area matches shoelace`, () => {
+      const approaches = repro.arms.map((a) => makeApproach(a.angle, a.width, a.apron, slope));
+      const surf = buildJunctionSurface({ x: 0, z: 0 }, approaches, slope, {
+        curbReturnRadius: 4,
+        filletSegments: 4,
+      });
+      expect(surf.indices.length).toBeGreaterThan(0);
+
+      // (a) The boundary polygon is strictly simple.
+      const ring = surfaceRing(surf.positions);
+      expect(polygonIsSimple(ring)).toBe(true);
+
+      // (b) Every emitted triangle winds +Y with real area.
+      let triArea = 0;
+      for (let t = 0; t < surf.indices.length; t += 3) {
+        const ny = triNormalY(surf.positions, surf.indices[t]!, surf.indices[t + 1]!, surf.indices[t + 2]!);
+        expect(ny).toBeGreaterThan(1e-6);
+        triArea += ny / 2;
+      }
+
+      // (c) Total covered area equals the boundary's shoelace area (no double-covered slivers/gaps).
+      const boundaryArea = Math.abs(shoelaceArea(ring));
+      expect(triArea).toBeGreaterThan(0);
+      expect(Math.abs(triArea - boundaryArea) / boundaryArea).toBeLessThan(1e-4);
+
+      // Every approach corner appears on the ring (seam weld intact; ring is float32-stored).
+      const onRing = (x: number, z: number) =>
+        ring.some((p) => Math.hypot(p[0]! - x, p[1]! - z) < 1e-3);
+      for (const ap of approaches) {
+        expect(onRing(ap.left[0], ap.left[2])).toBe(true);
+        expect(onRing(ap.right[0], ap.right[2])).toBe(true);
+      }
+    });
+  }
+});
+
+describe("trimBandAtJunctions (defect 3: sidewalk/parallel-band trimming)", () => {
+  test("a band parallel to a through-road is cut into two sub-paths around a 4-way junction", () => {
+    // apron radius = maxHalf(4) + curbReturn(4) + margin(1) + bandHalf(1.5) = 10.5.
+    const band: [number, number][] = [
+      [-40, 6],
+      [40, 6],
+    ];
+    const subs = trimBandAtJunctions(band, 3, [crossJunction(8)]);
+    expect(subs.length).toBe(2);
+    // Cut where x² + 6² = 10.5² → |x| = sqrt(110.25 − 36) ≈ 8.617.
+    const boundaryX = Math.sqrt(10.5 * 10.5 - 36);
+    const near = subs.find((s) => s[0]![0] < 0)!;
+    const far = subs.find((s) => s[0]![0] >= 0)!;
+    expect(near[near.length - 1]![0]).toBeCloseTo(-boundaryX, 6);
+    expect(far[0]![0]).toBeCloseTo(boundaryX, 6);
+    // No surviving point sits inside the apron circle.
+    for (const sub of subs) {
+      for (const p of sub) expect(Math.hypot(p[0], p[1])).toBeGreaterThan(10.5 - 1e-6);
+    }
+  });
+
+  test("a band far from every junction passes through untouched", () => {
+    const band: [number, number][] = [
+      [-40, 100],
+      [40, 100],
+    ];
+    const subs = trimBandAtJunctions(band, 3, [crossJunction(8)]);
+    expect(subs.length).toBe(1);
+    expect(subs[0]).toEqual([
+      [-40, 100],
+      [40, 100],
+    ]);
+  });
+
+  test("clearance widens the apron, moving the cut farther out", () => {
+    const band: [number, number][] = [
+      [-40, 6],
+      [40, 6],
+    ];
+    const tight = trimBandAtJunctions(band, 3, [crossJunction(8)]);
+    const wide = trimBandAtJunctions(band, 3, [crossJunction(8)], { clearance: 5 });
+    const tightGap = tight.find((s) => s[0]![0] >= 0)![0]![0];
+    const wideGap = wide.find((s) => s[0]![0] >= 0)![0]![0];
+    expect(wideGap).toBeGreaterThan(tightGap);
+  });
+
+  test("no junctions leaves the band intact", () => {
+    const band: [number, number][] = [
+      [0, 0],
+      [10, 0],
+      [20, 5],
+    ];
+    const subs = trimBandAtJunctions(band, 3, []);
+    expect(subs.length).toBe(1);
+    expect(subs[0]!.length).toBe(3);
   });
 });

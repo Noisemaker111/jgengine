@@ -156,6 +156,43 @@ describe("arc-fillet corners (#1364)", () => {
     }
   });
 
+  // Defect: round-1 fillets sampled so coarsely (up to ~28°/vertex on the playground circuit) that a
+  // filleted corner rendered as a hard polygon and the ribbon extrusion self-intersected. Every arc
+  // sample must now cap the per-vertex turn at ~9° (well under the looser maxTurnAngle ceiling), for
+  // BOTH open street nets and closed circuit loops, wherever the corner had room for the fillet.
+  test("filleted corners cap the per-vertex turn at ~10° even with a loose maxTurnAngle", () => {
+    const cases: Partial<StreetNetworkRules>[] = [
+      // The exact playground circuit rules the user measured (28° in round 1).
+      { seed: "vice-isle", loopiness: 1, connectivity: 0, branching: 0, gridness: 0.5, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 },
+      { seed: "vice-isle-2", loopiness: 1, connectivity: 0, branching: 0, winding: 0.6, minCurveRadius: 18, maxTurnAngle: 140 },
+      // Open net with a wide ceiling — fillets must still self-cap the sample step.
+      { seed: "net-wide", winding: 1, minCurveRadius: 20, maxTurnAngle: 160, loopiness: 0.3 },
+      { seed: "net-wide-2", gridness: 0.4, winding: 0.8, minCurveRadius: 26, maxTurnAngle: 120, loopiness: 0.4 },
+    ];
+    for (const c of cases) {
+      const hx = c.seed === "vice-isle" ? 260 : 260;
+      const hz = c.seed === "vice-isle" ? 260 : 220;
+      const net = generateStreets(rules(c), hx, hz);
+      for (const street of net.streets) {
+        for (let i = 1; i < street.points.length - 1; i += 1) {
+          // 10° + epsilon: the arc step cap is 9°, plus a hair for float/rare no-room fallbacks.
+          expect(turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!)).toBeLessThanOrEqual(10.5);
+        }
+      }
+    }
+  });
+
+  test("a tight fillet with too-short legs is still sampled finely, not left near-sharp", () => {
+    // Legs far shorter than the requested radius: the fillet shrinks to fit but must still be a curve
+    // (many samples, each turn ≤ ~9°), never a single near-sharp bevel vertex.
+    const R = 40; // much larger than the ~10-unit legs
+    const out = clampTurns([[0, 0], [10, 0], [10, 10]], 0, (120 * Math.PI) / 180, R, false);
+    expect(out.length).toBeGreaterThan(6); // finely sampled despite the leg clamp
+    for (let i = 1; i < out.length - 1; i += 1) {
+      expect(turnDeg(out[i - 1]!, out[i]!, out[i + 1]!)).toBeLessThanOrEqual(10.5);
+    }
+  });
+
   test("a closed loop stays welded (first === last) after filleting", () => {
     const ring: StreetVec2[] = [[0, 0], [40, 0], [40, 40], [0, 40], [0, 0]];
     const out = clampTurns(ring, 0, (30 * Math.PI) / 180, 8, true);
@@ -349,6 +386,115 @@ describe("circuit synthesis (#1365)", () => {
   });
 });
 
+describe("circuit shape variety (#1365 round-2)", () => {
+  // Round-1 circuits read as a mostly-convex hull loop with a single twisty zone. A real circuit folds:
+  // multiple concave lobes (reflex regions), a hairpin, an ess/chicane, all popping against straights.
+  const circuitRules = (o: Partial<StreetNetworkRules> = {}) =>
+    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.55, minCurveRadius: 14, maxTurnAngle: 120, ...o });
+  const SEEDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
+
+  function signedTurnDeg(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
+    const ux = b[0] - a[0], uz = b[1] - a[1];
+    const vx = c[0] - b[0], vz = c[1] - b[1];
+    const lu = Math.hypot(ux, uz), lv = Math.hypot(vx, vz);
+    if (lu < 1e-6 || lv < 1e-6) return 0;
+    return (Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz) * 180) / Math.PI;
+  }
+
+  // Measure a loop street: reflex-region count (arc spans turning AGAINST the winding by ≥25°, robust to
+  // fillet sampling noise), hairpin presence (≥150° of turn over a short arc), ess presence (a sign
+  // change between significant corners), and straight-share (length fraction with near-zero curvature).
+  function measure(net: ReturnType<typeof generateStreets>) {
+    const loop = net.streets.find((s) => s.loop)!;
+    const poly = loop.points.slice(0, -1);
+    const n = poly.length;
+    let area = 0;
+    const segLen: number[] = [];
+    let perim = 0;
+    for (let i = 0; i < n; i += 1) {
+      const a = poly[i]!, b = poly[(i + 1) % n]!;
+      area += a[0] * b[1] - b[0] * a[1];
+      const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      segLen.push(l);
+      perim += l;
+    }
+    const sign = area > 0 ? 1 : -1;
+    const st: number[] = [];
+    for (let i = 0; i < n; i += 1) st.push(signedTurnDeg(poly[(i - 1 + n) % n]!, poly[i]!, poly[(i + 1) % n]!) * sign);
+    // Reflex regions: maximal runs of contrary (concave) turn accumulating ≥25°, anchored at a convex vertex.
+    let anchor = 0;
+    for (let i = 0; i < n; i += 1) if (st[i]! > 2) { anchor = i; break; }
+    let regions = 0, run = 0;
+    for (let k = 0; k <= n; k += 1) {
+      const i = (anchor + k) % n;
+      if (st[i]! < -0.5) run += -st[i]!;
+      else { if (run >= 25) regions += 1; run = 0; }
+    }
+    if (run >= 25) regions += 1;
+    // Hairpin: a short arc window with ≥150° summed direction change.
+    const win = loop.width * 14;
+    let hairpin = false;
+    for (let start = 0; start < n && !hairpin; start += 1) {
+      let acc = 0, arc = 0;
+      for (let k = 0; k < n; k += 1) {
+        const i = (start + k) % n;
+        acc += Math.abs(signedTurnDeg(poly[(i - 1 + n) % n]!, poly[i]!, poly[(i + 1) % n]!));
+        arc += segLen[i]!;
+        if (arc > win) break;
+        if (acc >= 150) { hairpin = true; break; }
+      }
+    }
+    // Ess: a direction-sign change between significant corners.
+    const signs: number[] = [];
+    for (let i = 0; i < n; i += 1) {
+      const s = signedTurnDeg(poly[(i - 1 + n) % n]!, poly[i]!, poly[(i + 1) % n]!);
+      if (Math.abs(s) > 8) signs.push(Math.sign(s));
+    }
+    let ess = false;
+    for (let i = 1; i < signs.length; i += 1) if (signs[i] !== signs[i - 1]) { ess = true; break; }
+    // Straight-share: fraction of lap length in near-zero-curvature segments.
+    let straight = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (Math.abs(st[i]!) < 4) straight += segLen[i]!;
+    }
+    return { regions, hairpin, ess, straightShare: straight / perim, hairpinButNoTemplate: !hairpin };
+  }
+
+  test("≥2 reflex regions for most seeds at winding 0.55, fallbacks rare", () => {
+    const results = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220)));
+    const withReflex = results.filter((r) => r.regions >= 2).length;
+    expect(withReflex).toBeGreaterThanOrEqual(4);
+    // Fallback (the safe convex layout has no corner templates → no hairpin) must be rare.
+    const fallbackLike = results.filter((r) => !r.hairpin && r.regions < 2).length;
+    expect(fallbackLike).toBeLessThanOrEqual(1);
+  });
+
+  test("hairpin + ess corner variety present for most seeds at winding 0.55", () => {
+    const results = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220)));
+    expect(results.filter((r) => r.hairpin).length).toBeGreaterThanOrEqual(4);
+    expect(results.filter((r) => r.ess).length).toBeGreaterThanOrEqual(4);
+    expect(results.filter((r) => r.hairpin && r.ess).length).toBeGreaterThanOrEqual(4);
+  });
+
+  test("straight-share floor: real straights survive for corners to pop against", () => {
+    for (const seed of SEEDS) {
+      const m = measure(generateStreets(circuitRules({ seed }), 260, 220));
+      expect(m.straightShare).toBeGreaterThanOrEqual(0.25);
+    }
+  });
+
+  test("the playground circuit rules fold into a varied, finely-sampled loop", () => {
+    // seed vice-isle, the exact rules the orchestrator measures.
+    const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 });
+    const net = generateStreets(play, 260, 260);
+    const m = measure(net);
+    expect(m.regions).toBeGreaterThanOrEqual(2);
+    expect(m.hairpin).toBe(true);
+    expect(m.ess).toBe(true);
+    expect(m.straightShare).toBeGreaterThanOrEqual(0.25);
+  });
+});
+
 describe("structural hierarchy (#1368)", () => {
   test("arterial (avenue/boulevard) chains form a connected skeleton — no interior arterial dead-ends", () => {
     const net = generateStreets(rules({ seed: "art", connectivity: 0.5, loopiness: 0.3, branching: 0.2 }), 300, 300);
@@ -379,27 +525,80 @@ describe("structural hierarchy (#1368)", () => {
 });
 
 describe("sidewalks (#1368)", () => {
-  test("paved streets carry parallel left/right bands offset by width/2 + sidewalkWidth", () => {
+  // Nearest distance from a point to a polyline (the centerline).
+  function pointPolylineDist(px: number, pz: number, line: StreetVec2[]): number {
+    let best = Infinity;
+    for (let i = 0; i + 1 < line.length; i += 1) {
+      const a = line[i]!;
+      const b = line[i + 1]!;
+      const abx = b[0] - a[0];
+      const abz = b[1] - a[1];
+      const l2 = abx * abx + abz * abz;
+      const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - a[0]) * abx + (pz - a[1]) * abz) / l2));
+      best = Math.min(best, Math.hypot(px - (a[0] + abx * t), pz - (a[1] + abz * t)));
+    }
+    return best;
+  }
+  function segCross(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
+    const d = (a: StreetVec2, b: StreetVec2, c: StreetVec2): number => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const d1 = d(p3, p4, p1), d2 = d(p3, p4, p2), d3 = d(p1, p2, p3), d4 = d(p1, p2, p4);
+    return (d1 > 0) !== (d2 > 0) && (d3 > 0) !== (d4 > 0);
+  }
+
+  test("straight paved streets carry parallel left/right bands offset by width/2 + sidewalkWidth", () => {
     const net = generateStreets(rules({ seed: "sw", winding: 0, gridness: 1, branching: 0.3, sidewalkWidth: 3 }), 240, 240);
     const paved = net.streets.filter((s) => s.level !== "lane");
     expect(paved.length).toBeGreaterThan(0);
     for (const s of paved) {
       expect(s.sidewalks).toBeDefined();
-      expect(s.sidewalks!.left.length).toBe(s.points.length);
-      expect(s.sidewalks!.right.length).toBe(s.points.length);
       // Sample a mid vertex: left and right sit ~width/2 + 3 off the centerline, on opposite sides.
       const want = s.width / 2 + 3;
-      const i = Math.floor(s.points.length / 2);
-      const c = s.points[i]!;
-      const dl = Math.hypot(s.sidewalks!.left[i]![0] - c[0], s.sidewalks!.left[i]![1] - c[1]);
-      const dr = Math.hypot(s.sidewalks!.right[i]![0] - c[0], s.sidewalks!.right[i]![1] - c[1]);
-      expect(dl).toBeCloseTo(want, 5);
-      expect(dr).toBeCloseTo(want, 5);
+      for (const band of [s.sidewalks!.left, s.sidewalks!.right]) {
+        const i = Math.floor(band.length / 2);
+        expect(pointPolylineDist(band[i]![0], band[i]![1], s.points)).toBeCloseTo(want, 5);
+      }
     }
     // Lanes get no sidewalks.
     for (const s of net.streets.filter((s) => s.level === "lane")) {
       expect(s.sidewalks).toBeUndefined();
     }
+  });
+
+  // Defect: round-1 sidewalks were naive per-vertex normal offsets that, on inside corners, pinched and
+  // swung INSIDE the road surface (same decal layer → z-fighting) and self-intersected. The offsetter
+  // now welds pinched inside corners and arcs the outside, so every band vertex stays in a parallel
+  // band clear of the road, and no consecutive band segments cross.
+  test("sidewalk vertices stay in a parallel band clear of the road, with no self-intersections", () => {
+    const configs: Partial<StreetNetworkRules>[] = [
+      { seed: "sw-a", winding: 1, minCurveRadius: 8, maxTurnAngle: 150, sidewalkWidth: 3 },
+      { seed: "sw-b", winding: 0.8, minCurveRadius: 6, maxTurnAngle: 170, sidewalkWidth: 2, gridness: 0.3 },
+      { seed: "sw-c", winding: 1, minCurveRadius: 10, gridness: 0, branching: 1, loopiness: 0.5, sidewalkWidth: 2.5 },
+    ];
+    let checkedStreets = 0;
+    for (const cfg of configs) {
+      const sw = cfg.sidewalkWidth ?? 2;
+      const net = generateStreets(rules(cfg), 260, 240);
+      for (const s of net.streets) {
+        if (!s.sidewalks) continue;
+        checkedStreets += 1;
+        const lower = s.width / 2 + sw * 0.45;
+        const upper = s.width / 2 + sw * 1.6;
+        for (const band of [s.sidewalks.left, s.sidewalks.right]) {
+          for (const v of band) {
+            const d = pointPolylineDist(v[0], v[1], s.points);
+            expect(d).toBeGreaterThanOrEqual(lower);
+            expect(d).toBeLessThanOrEqual(upper);
+          }
+          // No consecutive band segment pair crosses (and no local self-loop within a small window).
+          for (let i = 0; i + 1 < band.length; i += 1) {
+            for (let j = i + 2; j + 1 < band.length && j <= i + 6; j += 1) {
+              expect(segCross(band[i]!, band[i + 1]!, band[j]!, band[j + 1]!)).toBe(false);
+            }
+          }
+        }
+      }
+    }
+    expect(checkedStreets).toBeGreaterThan(20);
   });
 });
 

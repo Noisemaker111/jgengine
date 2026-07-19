@@ -55,8 +55,9 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
 
   handle.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   handle.scene.fog = new THREE.FogExp2(INK, PALETTE.fogDensity);
-  const hemisphere = new THREE.HemisphereLight(0x5f7590, 0x0a0e18, 1.25);
-  const moon = new THREE.DirectionalLight(0xa8bcd8, 1.3);
+  // Slightly brighter sky term so night silhouettes (gables, domes, cylinders) read off the fog.
+  const hemisphere = new THREE.HemisphereLight(0x6f88a6, 0x0c1120, 1.7);
+  const moon = new THREE.DirectionalLight(0xb6c8e0, 1.5);
   moon.position.set(180, 320, -140);
   handle.scene.add(hemisphere, moon);
 

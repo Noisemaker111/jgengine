@@ -10,11 +10,17 @@
 import * as THREE from "three";
 
 import type { GeneratedCity } from "@jgengine/core/world/cityGenerator";
-import type { CityLotPiece, CityPieceRole } from "@jgengine/core/world/cityContent";
+import type {
+  CityLotPiece,
+  CityPieceRole,
+  CityLotClass,
+  CityLandmarkClass,
+} from "@jgengine/core/world/cityContent";
 import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
 import {
   buildTrimmedIntersections,
   GROUND_DECAL_LAYERS,
+  trimBandAtJunctions,
   type IntersectionStreet,
   type RoadRibbon,
 } from "@jgengine/core/world/roads";
@@ -76,6 +82,90 @@ const ROOF_V = 0.5 / TEX_CELLS;
 /** Street hierarchy order, widest first, for a stable draw/sweep sequence. */
 const LEVEL_ORDER: StreetLevel[] = ["boulevard", "avenue", "street", "lane"];
 
+/**
+ * Per-class visual identity. This is THE extension point: to give a new building or landmark class
+ * its own look, add a row here. `wall/roof/trim/accent` are the four palette-role tints (hex) — the
+ * renderer jitters each per building around the class family, so two towers differ but both read as
+ * towers. `windowTint` colors lit windows; `windowDensity` (0..1) is the share of window cells that
+ * light up (dense towers vs. a house with a few warm windows); `windowIntensity` is the emissive
+ * punch of each lit window. `storefront` lights the ground floor of banded walls as a bright shop
+ * band. `flood` (hex, 0 = off) is a whole-body glow that makes block-scale landmarks unmissable.
+ * Roof/trim/accent are deliberately NOT derived from the wall color — they are their own hues so
+ * gable roofs, silo caps, barn trim, and civic domes read as distinct materials at night.
+ */
+interface ClassStyle {
+  wall: number;
+  roof: number;
+  trim: number;
+  accent: number;
+  windowTint: number;
+  windowDensity: number;
+  windowIntensity: number;
+  storefront: boolean;
+  flood: number;
+}
+
+type AnyCityClass = CityLotClass | CityLandmarkClass;
+
+const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
+  // --- ordinary building classes -------------------------------------------------
+  tower: {
+    wall: 0x14223a, roof: 0x0c1424, trim: 0x3a5c84, accent: 0x22d3ee,
+    windowTint: 0x6ec6ff, windowDensity: 0.6, windowIntensity: 1.55, storefront: false, flood: 0,
+  }, // glassy blue-black high-rise: dark glass wall reads between cool-lit windows
+  slab: {
+    wall: 0x585560, roof: 0x2e2c34, trim: 0x82808c, accent: 0xb4a488,
+    windowTint: 0xffca7c, windowDensity: 0.4, windowIntensity: 1.25, storefront: false, flood: 0,
+  }, // concrete warm-grey block, sparse warm windows
+  shop: {
+    wall: 0x452f42, roof: 0x241a22, trim: 0xa05a38, accent: 0xff9d4d,
+    windowTint: 0xffb060, windowDensity: 0.48, windowIntensity: 1.4, storefront: true, flood: 0,
+  }, // plum-brick shop, bright ground-floor storefront glow
+  rowhouse: {
+    wall: 0x743d2d, roof: 0x2c1c16, trim: 0x93604a, accent: 0xd98a5a,
+    windowTint: 0xffab5a, windowDensity: 0.36, windowIntensity: 1.15, storefront: false, flood: 0,
+  }, // brick terrace, small warm windows
+  house: {
+    wall: 0x77705c, roof: 0x9a4e38, trim: 0x9c9686, accent: 0xc6b492,
+    windowTint: 0xffcf7a, windowDensity: 0.22, windowIntensity: 1.0, storefront: false, flood: 0,
+  }, // pale plaster, terracotta gable roof, few warm windows
+  mansion: {
+    wall: 0x817c6a, roof: 0x3f5266, trim: 0xaf9f7d, accent: 0xdcc48a,
+    windowTint: 0xffd88a, windowDensity: 0.26, windowIntensity: 1.05, storefront: false, flood: 0,
+  }, // pale stone, slate-blue roof
+  farmhouse: {
+    wall: 0x77644a, roof: 0x6a4630, trim: 0x9d8763, accent: 0xcbab73,
+    windowTint: 0xffc270, windowDensity: 0.2, windowIntensity: 0.95, storefront: false, flood: 0,
+  }, // warm cream farmhouse, gable roof
+  barn: {
+    wall: 0x8a231a, roof: 0x2a1210, trim: 0xe4d4ac, accent: 0xe8d8b0,
+    windowTint: 0xffb060, windowDensity: 0.14, windowIntensity: 0.9, storefront: false, flood: 0,
+  }, // deep barn-red with cream trim
+  silo: {
+    wall: 0x969ca4, roof: 0xa2a8b0, trim: 0xb4bac2, accent: 0xd2d8e0,
+    windowTint: 0xbcd6f0, windowDensity: 0.08, windowIntensity: 0.85, storefront: false, flood: 0,
+  }, // pale galvanized metal, almost no windows
+  // --- block-scale landmarks (flood-lit so they pop out of the skyline) ----------
+  hall: {
+    wall: 0x6c6672, roof: 0xb58a48, trim: 0xffcf70, accent: 0xffd27a,
+    windowTint: 0xffd27a, windowDensity: 0.5, windowIntensity: 1.9, storefront: false, flood: 0x6e4a16,
+  }, // civic hall, gilded dome, warm floodlight
+  arena: {
+    wall: 0x3a4658, roof: 0x5a80a4, trim: 0x66e0ff, accent: 0x66e0ff,
+    windowTint: 0x9ae4ff, windowDensity: 0.6, windowIntensity: 2.0, storefront: false, flood: 0x184a5e,
+  }, // cool-lit arena bowl
+  market: {
+    wall: 0x5a3a48, roof: 0xb2604a, trim: 0xff9d4d, accent: 0xffb85c,
+    windowTint: 0xffb060, windowDensity: 0.62, windowIntensity: 1.9, storefront: true, flood: 0x5e3410,
+  }, // covered market, warm storefront glow
+  campus: {
+    wall: 0x3a5248, roof: 0x2a3a34, trim: 0x6ee7a8, accent: 0x6ee7a8,
+    windowTint: 0xa8ffcc, windowDensity: 0.5, windowIntensity: 1.8, storefront: false, flood: 0x1c5238,
+  }, // green-lit civic campus
+};
+
+const FALLBACK_STYLE: ClassStyle = CLASS_STYLE.slab;
+
 /** Street ribbon strip along a polyline; used for the additive glow + sidewalk bands. */
 function pushRibbon(
   positions: number[],
@@ -127,8 +217,14 @@ function appendRibbon(
   for (let i = 0; i < ind.length; i += 1) indices.push(base + ind[i]!);
 }
 
-/** One shared emissive window texture: a grid of lit/dark cells; cell (0,0) stays dark for roofs. */
-function windowTexture(seedRng: () => number, warm: number, cool: number): THREE.CanvasTexture {
+/**
+ * One shared window MASK (not a colored texture). Each cell's window rectangle is filled with a
+ * grayscale "lit rank" in (0,1]; gaps and the reserved roof cell stay 0. The building shader gates
+ * lit windows per building by `rank > 1 - windowDensity`, so ONE mask drives everything from a
+ * near-blank house to a fully-lit tower — and colors the survivors with the class's window tint.
+ * Kept in linear color space so the rank the shader reads is exactly the value written here.
+ */
+function windowMaskTexture(seedRng: () => number): THREE.CanvasTexture {
   const size = 256;
   const cell = size / TEX_CELLS;
   const canvas = document.createElement("canvas");
@@ -137,18 +233,14 @@ function windowTexture(seedRng: () => number, warm: number, cool: number): THREE
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, size, size);
-  const warmColor = new THREE.Color(warm);
-  const coolColor = new THREE.Color(cool);
   for (let row = 0; row < TEX_CELLS; row += 1) {
     for (let col = 0; col < TEX_CELLS; col += 1) {
-      if (row === TEX_CELLS - 1 && col === 0) continue; // roof cell (uv origin) stays dark
-      const roll = seedRng();
-      if (roll > 0.4) continue;
-      const tint = roll > 0.32 ? coolColor : warmColor;
-      const bright = 0.7 + seedRng() * 0.3;
-      ctx.fillStyle = `rgb(${Math.round(tint.r * 255 * bright)},${Math.round(tint.g * 255 * bright)},${Math.round(
-        tint.b * 255 * bright,
-      )})`;
+      if (row === TEX_CELLS - 1 && col === 0) continue; // reserved dark cell — non-window faces sample here
+      if (seedRng() < 0.12) continue; // a few structural gaps even at full density
+      // Rank in [0.12, 1]: high ranks survive low densities, so sparse buildings keep a few windows.
+      const rank = 0.12 + seedRng() * 0.88;
+      const v = Math.round(rank * 255);
+      ctx.fillStyle = `rgb(${v},${v},${v})`;
       const x = col * cell;
       const y = row * cell;
       ctx.fillRect(x + cell * 0.22, y + cell * 0.16, cell * 0.56, cell * 0.68);
@@ -157,8 +249,9 @@ function windowTexture(seedRng: () => number, warm: number, cool: number): THREE
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.LinearFilter;
-  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.colorSpace = THREE.NoColorSpace;
   return texture;
 }
 
@@ -168,11 +261,42 @@ interface BoxWriter {
   uvs: number[];
   colors: number[];
   grow: number[];
+  /** Per-vertex window emissive tint (rgb). */
+  winTint: number[];
+  /** Per-vertex lit-window share (0..1). */
+  winDensity: number[];
+  /** Per-vertex lit-window emissive punch. */
+  winIntensity: number[];
+  /** Per-vertex ground-floor storefront flag (0/1). */
+  storefront: number[];
+  /** Per-vertex whole-body flood glow (rgb, 0 = off). */
+  flood: number[];
   indices: number[];
 }
 
 function makeWriter(): BoxWriter {
-  return { positions: [], normals: [], uvs: [], colors: [], grow: [], indices: [] };
+  return {
+    positions: [],
+    normals: [],
+    uvs: [],
+    colors: [],
+    grow: [],
+    winTint: [],
+    winDensity: [],
+    winIntensity: [],
+    storefront: [],
+    flood: [],
+    indices: [],
+  };
+}
+
+/** Per-building window/flood parameters threaded into the geometry writers. */
+interface EmitStyle {
+  winTint: THREE.Color;
+  winDensity: number;
+  winIntensity: number;
+  storefront: number;
+  flood: THREE.Color;
 }
 
 /**
@@ -192,6 +316,7 @@ function pushBuildingBox(
   shade: THREE.Color,
   growDelay: number,
   banded: boolean,
+  style: EmitStyle,
 ): void {
   const cos = Math.cos(ry);
   const sin = Math.sin(ry);
@@ -215,6 +340,7 @@ function pushBuildingBox(
     const lit = banded && !roof;
     const uRepeat = uWorld / WINDOW_W / TEX_CELLS;
     const vRepeat = vWorld / WINDOW_H / TEX_CELLS;
+    const store = roof ? 0 : style.storefront;
     for (let i = 0; i < 4; i += 1) {
       const [x, y, z] = corners[i]!;
       out.positions.push(rotX(x, z), y, rotZ(x, z));
@@ -223,6 +349,11 @@ function pushBuildingBox(
       else out.uvs.push(ROOF_U, ROOF_V);
       out.colors.push(shade.r, shade.g, shade.b);
       out.grow.push(growDelay);
+      out.winTint.push(style.winTint.r, style.winTint.g, style.winTint.b);
+      out.winDensity.push(style.winDensity);
+      out.winIntensity.push(style.winIntensity);
+      out.storefront.push(store);
+      out.flood.push(style.flood.r, style.flood.g, style.flood.b);
     }
     out.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
   };
@@ -249,6 +380,7 @@ function emitTri(
   nLocal: readonly [number, number, number],
   shade: THREE.Color,
   grow: number,
+  flood: THREE.Color,
 ): void {
   const base = out.positions.length / 3;
   const nx = nLocal[0] * cos + nLocal[2] * sin;
@@ -259,6 +391,11 @@ function emitTri(
     out.uvs.push(ROOF_U, ROOF_V);
     out.colors.push(shade.r, shade.g, shade.b);
     out.grow.push(grow);
+    out.winTint.push(0, 0, 0);
+    out.winDensity.push(0);
+    out.winIntensity.push(0);
+    out.storefront.push(0);
+    out.flood.push(flood.r, flood.g, flood.b);
   }
   out.indices.push(base, base + 1, base + 2);
 }
@@ -276,9 +413,10 @@ function emitQuad(
   nLocal: readonly [number, number, number],
   shade: THREE.Color,
   grow: number,
+  flood: THREE.Color,
 ): void {
-  emitTri(out, cos, sin, cx, cz, a, b, c, nLocal, shade, grow);
-  emitTri(out, cos, sin, cx, cz, a, c, d, nLocal, shade, grow);
+  emitTri(out, cos, sin, cx, cz, a, b, c, nLocal, shade, grow, flood);
+  emitTri(out, cos, sin, cx, cz, a, c, d, nLocal, shade, grow, flood);
 }
 
 /** Triangular-prism gable roof; ridge along local x, base spanning local z. */
@@ -293,6 +431,7 @@ function pushGable(
   ry: number,
   shade: THREE.Color,
   grow: number,
+  flood: THREE.Color,
 ): void {
   const cos = Math.cos(ry);
   const sin = Math.sin(ry);
@@ -305,10 +444,10 @@ function pushGable(
   const D: [number, number, number] = [hw, y0, -hd];
   const E: [number, number, number] = [hw, y0, hd];
   const F: [number, number, number] = [hw, y1, 0];
-  emitTri(out, cos, sin, cx, cz, A, C, B, [-1, 0, 0], shade, grow); // left end
-  emitTri(out, cos, sin, cx, cz, D, E, F, [1, 0, 0], shade, grow); // right end
-  emitQuad(out, cos, sin, cx, cz, A, D, F, C, [0, hd, -h], shade, grow); // -z slope
-  emitQuad(out, cos, sin, cx, cz, B, C, F, E, [0, hd, h], shade, grow); // +z slope
+  emitTri(out, cos, sin, cx, cz, A, C, B, [-1, 0, 0], shade, grow, flood); // left end
+  emitTri(out, cos, sin, cx, cz, D, E, F, [1, 0, 0], shade, grow, flood); // right end
+  emitQuad(out, cos, sin, cx, cz, A, D, F, C, [0, hd, -h], shade, grow, flood); // -z slope
+  emitQuad(out, cos, sin, cx, cz, B, C, F, E, [0, hd, h], shade, grow, flood); // +z slope
 }
 
 /** Low-segment elliptical cylinder with a top cap. */
@@ -323,6 +462,7 @@ function pushCylinder(
   ry: number,
   shade: THREE.Color,
   grow: number,
+  flood: THREE.Color,
 ): void {
   const cos = Math.cos(ry);
   const sin = Math.sin(ry);
@@ -343,8 +483,8 @@ function pushCylinder(
     const p1t: [number, number, number] = [rx * c1, y1, rz * s1];
     const mc = Math.cos((t0 + t1) / 2);
     const ms = Math.sin((t0 + t1) / 2);
-    emitQuad(out, cos, sin, cx, cz, p0b, p1b, p1t, p0t, [mc, 0, ms], shade, grow);
-    emitTri(out, cos, sin, cx, cz, [0, y1, 0], p0t, p1t, [0, 1, 0], shade, grow); // top cap
+    emitQuad(out, cos, sin, cx, cz, p0b, p1b, p1t, p0t, [mc, 0, ms], shade, grow, flood);
+    emitTri(out, cos, sin, cx, cz, [0, y1, 0], p0t, p1t, [0, 1, 0], shade, grow, flood); // top cap
   }
 }
 
@@ -360,6 +500,7 @@ function pushDome(
   ry: number,
   shade: THREE.Color,
   grow: number,
+  flood: THREE.Color,
 ): void {
   const cos = Math.cos(ry);
   const sin = Math.sin(ry);
@@ -385,7 +526,7 @@ function pushDome(
       const c = at(j + 1, i + 1);
       const dd = at(j + 1, i);
       const n = nrm(j + 0.5, i + 0.5);
-      emitQuad(out, cos, sin, cx, cz, a, b, c, dd, n, shade, grow);
+      emitQuad(out, cos, sin, cx, cz, a, b, c, dd, n, shade, grow, flood);
     }
   }
 }
@@ -440,6 +581,31 @@ function roleColor(
   }
 }
 
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/**
+ * Seeded hue/saturation/lightness jitter around a class base color, so buildings of one class read
+ * as a family (a street of towers) yet no two are the identical box. Writes into `out`.
+ */
+function jitterColor(
+  out: THREE.Color,
+  base: number,
+  rng: () => number,
+  hueJitter: number,
+  lightJitter: number,
+  lightBias: number,
+): THREE.Color {
+  out.set(base);
+  const hsl = { h: 0, s: 0, l: 0 };
+  out.getHSL(hsl);
+  out.setHSL(
+    (hsl.h + (rng() - 0.5) * hueJitter + 1) % 1,
+    clamp01(hsl.s + (rng() - 0.5) * 0.14),
+    clamp01(hsl.l * lightBias + (rng() - 0.5) * lightJitter),
+  );
+  return out;
+}
+
 export function buildCityModel(
   city: GeneratedCity,
   palette: CityPalette,
@@ -491,11 +657,15 @@ export function buildCityModel(
   for (const i of order) {
     appendRibbon(streetPos, streetCol, streetIdx, trimmed.ribbons[i]!, levelColors[ribbonLevel(trimmed.trimmed[i]!.path)]);
   }
-  // Sidewalk bands flanking the arterials, at the road layer, a touch lighter.
+  // Sidewalk bands flanking the arterials, at the road layer, a touch lighter — clipped out of every
+  // junction apron so they end at the crossing instead of sailing through it.
   for (const s of streets) {
     if (s.level === "lane" || s.sidewalks === undefined) continue;
-    pushRibbon(streetPos, streetCol, streetIdx, s.sidewalks.left, 2.2, ROAD_Y, sidewalkColor);
-    pushRibbon(streetPos, streetCol, streetIdx, s.sidewalks.right, 2.2, ROAD_Y, sidewalkColor);
+    for (const band of [s.sidewalks.left, s.sidewalks.right]) {
+      for (const sub of trimBandAtJunctions(band, 2.2, city.network.junctions)) {
+        pushRibbon(streetPos, streetCol, streetIdx, sub, 2.2, ROAD_Y, sidewalkColor);
+      }
+    }
   }
   // Welded junction surfaces last (they read as one clean crossing patch).
   const streetSweepCount = streetIdx.length;
@@ -541,9 +711,6 @@ export function buildCityModel(
   const boxWriter = makeWriter(); // windowed walls + flat boxes
   const shapeWriter = makeWriter(); // gable/cylinder/dome, DoubleSide, window-free
   const baseWall = new THREE.Color(palette.building);
-  const roofBase = new THREE.Color(palette.roof ?? baseWall.clone().multiplyScalar(0.55).getHex());
-  const trimBase = new THREE.Color(palette.trim ?? baseWall.clone().lerp(new THREE.Color(0xffffff), 0.28).getHex());
-  const accentBase = new THREE.Color(palette.accent ?? baseWall.clone().lerp(new THREE.Color(0xff8a5c), 0.35).getHex());
   const shades = rng("shades");
   const heightsRng = rng("heights");
   const scratchShade = new THREE.Color();
@@ -551,19 +718,42 @@ export function buildCityModel(
 
   const lotContent = city.lotContent;
   if (lotContent !== undefined && lotContent.length > 0) {
-    // Real massing pieces per lot: walls windowed when banded, everything else flat.
+    // Real massing pieces per lot, colored by the class's family identity (CLASS_STYLE), jittered
+    // per building. Banded walls window per the class; roof/trim/accent take their own hues.
+    const wall = new THREE.Color();
+    const roof = new THREE.Color();
+    const trim = new THREE.Color();
+    const accent = new THREE.Color();
+    const winTint = new THREE.Color();
+    const flood = new THREE.Color();
+    const noFlood = new THREE.Color(0, 0, 0);
     for (const resolved of lotContent) {
       const [cx, cz] = resolved.center;
       const lotRot = resolved.rotationY;
       const lc = Math.cos(lotRot);
       const ls = Math.sin(lotRot);
       const dist = Math.hypot(cx, cz) / Math.max(1, radius);
-      const dim = 0.82 + shades() * 0.35;
       const delay = dist * 1.5 + heightsRng() * 0.3;
-      const wall = scratchShade.copy(baseWall).multiplyScalar(dim).clone();
-      const roof = roofBase.clone().multiplyScalar(dim);
-      const trim = trimBase.clone().multiplyScalar(dim);
-      const accent = accentBase.clone().multiplyScalar(dim);
+      const style = CLASS_STYLE[resolved.class as AnyCityClass] ?? FALLBACK_STYLE;
+      // Far buildings recede gently into the fog; keep enough to still read the class color.
+      const distBias = 1 - dist * 0.18;
+      // One jitter seed per building drives the whole family shift so all its pieces agree — enough
+      // spread that a street of towers reads as many buildings, not a mirrored box.
+      jitterColor(wall, style.wall, shades, 0.06, 0.1, distBias);
+      jitterColor(roof, style.roof, shades, 0.05, 0.08, distBias);
+      jitterColor(trim, style.trim, shades, 0.05, 0.08, distBias);
+      jitterColor(accent, style.accent, shades, 0.05, 0.08, distBias);
+      jitterColor(winTint, style.windowTint, shades, 0.03, 0.06, 1);
+      if (style.flood !== 0) flood.set(style.flood);
+      else flood.copy(noFlood);
+      const emit: EmitStyle = {
+        winTint,
+        // Per-building density/intensity wobble so neighboring towers light up differently.
+        winDensity: clamp01(style.windowDensity + (shades() - 0.5) * 0.16),
+        winIntensity: style.windowIntensity * (0.85 + shades() * 0.3),
+        storefront: style.storefront ? 1 : 0,
+        flood,
+      };
       resolved.pieces.forEach((piece: CityLotPiece, pi) => {
         // Lot-local piece center → world (rotate offset by lot yaw, add to lot center).
         const ox = piece.offset[0];
@@ -579,22 +769,30 @@ export function buildCityModel(
         tallest = Math.max(tallest, top);
         switch (piece.shape) {
           case "box":
-            pushBuildingBox(boxWriter, wx, wz, piece.size[0], piece.size[2], y0, top, ry, color, g, piece.banded);
+            pushBuildingBox(boxWriter, wx, wz, piece.size[0], piece.size[2], y0, top, ry, color, g, piece.banded, emit);
             break;
           case "gable":
-            pushGable(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g);
+            pushGable(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g, flood);
             break;
           case "cylinder":
-            pushCylinder(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g);
+            pushCylinder(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g, flood);
             break;
           case "dome":
-            pushDome(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g);
+            pushDome(shapeWriter, wx, wz, piece.size[0], sh, piece.size[2], y0, ry, color, g, flood);
             break;
         }
       });
     }
   } else {
-    // Fallback (no resolved content, e.g. the hero world): windowed boxes on bare lots.
+    // Fallback (no resolved content, e.g. the hero world): windowed boxes on bare lots. One shared
+    // window behavior tinted by the palette's warm window color — the hero scene has no class data.
+    const fallbackEmit: EmitStyle = {
+      winTint: new THREE.Color(palette.windowWarm).lerp(new THREE.Color(palette.windowCool), 0.4),
+      winDensity: 0.5,
+      winIntensity: 1.7,
+      storefront: 0,
+      flood: new THREE.Color(0, 0, 0),
+    };
     const frontage = streets.filter((street) => street.level !== "lane");
     const heightRange: Record<StreetLevel, readonly [number, number]> = {
       boulevard: [18, 58],
@@ -620,27 +818,49 @@ export function buildCityModel(
           const frac = t === tiers - 1 ? 1 : 0.45 + heightsRng() * 0.25;
           const topY = t === tiers - 1 ? h : y + (h - y) * frac;
           const scale = 1 - t * (0.16 + heightsRng() * 0.12);
-          pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w * scale, d * scale, y, topY, lot.rotationY, scratchShade, delay + t * 0.12, true);
+          pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w * scale, d * scale, y, topY, lot.rotationY, scratchShade, delay + t * 0.12, true, fallbackEmit);
           y = topY;
         }
       } else {
-        pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w, d, 0, h, lot.rotationY, scratchShade, delay, true);
+        pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w, d, 0, h, lot.rotationY, scratchShade, delay, true, fallbackEmit);
       }
     }
   }
 
-  const windows = windowTexture(rng("windows"), palette.windowWarm, palette.windowCool);
+  const windows = windowMaskTexture(rng("windows"));
   const growUniform = { value: options.instant === true ? 99 : -0.35 };
+  // Vertex prelude: grow-in animation + forward the per-building window/flood attrs. `vY` carries the
+  // grown local height so the fragment shader can light only a shop's ground floor as a storefront.
   const growVertex = (shader: THREE.WebGLProgramParametersWithUniforms) => {
     shader.uniforms.uGrow = growUniform;
-    shader.vertexShader = `attribute float aGrow;\nuniform float uGrow;\nvarying float vGrown;\n${shader.vertexShader.replace(
-      "#include <begin_vertex>",
-      `#include <begin_vertex>
+    shader.vertexShader = `attribute float aGrow;
+      attribute vec3 aWinTint;
+      attribute float aWinDensity;
+      attribute float aWinIntensity;
+      attribute float aStorefront;
+      attribute vec3 aFlood;
+      uniform float uGrow;
+      varying float vGrown;
+      varying float vY;
+      varying vec3 vWinTint;
+      varying float vWinDensity;
+      varying float vWinIntensity;
+      varying float vStorefront;
+      varying vec3 vFlood;
+      ${shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
       float growT = clamp((uGrow - aGrow) / 0.8, 0.0, 1.0);
       float grown = 1.0 - pow(1.0 - growT, 3.0);
       vGrown = grown;
-      transformed.y *= grown;`,
-    )}`;
+      transformed.y *= grown;
+      vY = transformed.y;
+      vWinTint = aWinTint;
+      vWinDensity = aWinDensity;
+      vWinIntensity = aWinIntensity;
+      vStorefront = aStorefront;
+      vFlood = aFlood;`,
+      )}`;
   };
 
   const buildingMesh = buildMeshFromWriter(boxWriter);
@@ -650,15 +870,29 @@ export function buildCityModel(
     metalness: 0.08,
     emissive: new THREE.Color(0xffffff),
     emissiveMap: windows,
-    emissiveIntensity: 1.7,
+    emissiveIntensity: 1.0,
   });
   buildingMat.onBeforeCompile = (shader) => {
     growVertex(shader);
-    shader.fragmentShader = `varying float vGrown;\n${shader.fragmentShader.replace(
-      "#include <emissivemap_fragment>",
-      `#include <emissivemap_fragment>
-      totalEmissiveRadiance *= vGrown * vGrown;`,
-    )}`;
+    // The emissive map is a grayscale "lit rank"; gate windows per building by density, color the
+    // survivors with the class window tint, and add a ground-floor storefront band + landmark flood.
+    shader.fragmentShader = `varying float vGrown;
+      varying float vY;
+      varying vec3 vWinTint;
+      varying float vWinDensity;
+      varying float vWinIntensity;
+      varying float vStorefront;
+      varying vec3 vFlood;
+      ${shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        `#include <emissivemap_fragment>
+      float winRank = totalEmissiveRadiance.r;
+      float lit = step(0.001, winRank) * step(1.0 - vWinDensity, winRank);
+      vec3 win = lit * vWinTint * vWinIntensity;
+      float band = vStorefront * (1.0 - smoothstep(2.5, 7.0, vY));
+      win += band * vWinTint * 2.4;
+      totalEmissiveRadiance = (win + vFlood) * vGrown * vGrown;`,
+      )}`;
   };
   buildingMesh.material = buildingMat;
   group.add(buildingMesh);
@@ -672,6 +906,14 @@ export function buildCityModel(
   });
   shapeMat.onBeforeCompile = (shader) => {
     growVertex(shader);
+    // Non-windowed shapes (gable/cylinder/dome) still glow when they belong to a flood-lit landmark.
+    shader.fragmentShader = `varying float vGrown;
+      varying vec3 vFlood;
+      ${shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        `#include <emissivemap_fragment>
+      totalEmissiveRadiance += vFlood * vGrown * vGrown;`,
+      )}`;
   };
   shapeMesh.material = shapeMat;
   group.add(shapeMesh);
@@ -793,6 +1035,11 @@ function buildMeshFromWriter(writer: BoxWriter): THREE.Mesh {
   geo.setAttribute("uv", new THREE.Float32BufferAttribute(writer.uvs, 2));
   geo.setAttribute("color", new THREE.Float32BufferAttribute(writer.colors, 3));
   geo.setAttribute("aGrow", new THREE.Float32BufferAttribute(writer.grow, 1));
+  geo.setAttribute("aWinTint", new THREE.Float32BufferAttribute(writer.winTint, 3));
+  geo.setAttribute("aWinDensity", new THREE.Float32BufferAttribute(writer.winDensity, 1));
+  geo.setAttribute("aWinIntensity", new THREE.Float32BufferAttribute(writer.winIntensity, 1));
+  geo.setAttribute("aStorefront", new THREE.Float32BufferAttribute(writer.storefront, 1));
+  geo.setAttribute("aFlood", new THREE.Float32BufferAttribute(writer.flood, 3));
   geo.setIndex(writer.indices);
   return new THREE.Mesh(geo);
 }

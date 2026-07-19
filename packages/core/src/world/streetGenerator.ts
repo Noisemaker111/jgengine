@@ -14,26 +14,31 @@
  *   — chicanes, esses, hairpins — get carved), capped so curvature never exceeds `1 / minCurveRadius`;
  *   `minTurnAngle`/`maxTurnAngle` are HARD clamps on the corner a street may take at any vertex —
  *   shallow wiggles are straightened, and every real corner is replaced with a sampled circular-arc
- *   fillet of radius `minCurveRadius` so corners read as CURVES, never single bevels, and no discrete
- *   turn between consecutive samples exceeds `maxTurnAngle`.
+ *   fillet of radius `minCurveRadius` so corners read as CURVES, never single bevels, sampled fine
+ *   enough that no discrete turn between consecutive samples exceeds ~9° (well under `maxTurnAngle`).
  * - `bridges` / `tunnels` (with a ground sampler) — a span that dives under `minElevation` becomes a
  *   BRIDGE deck; a span buried under a ridge becomes a TUNNEL bore. Both are path FEATURES on a
  *   continuous edge, so a circuit stays closed as it crosses water or pierces a hill.
  * - `sidewalkWidth` — pedestrian band paved on both edges of every boulevard/avenue/street (not lanes),
- *   emitted as offset polylines on each {@link Street}.
+ *   emitted as proper parallel offset polylines on each {@link Street} — arced on the outside of a bend,
+ *   welded on the inside so the band never pinches or dips inside the road surface.
  *
  * Hierarchy is STRUCTURAL, not a length percentile: an approximate edge-betweenness centrality over the
  * grown graph elects a connected arterial skeleton (avenues/boulevards) that never dead-ends at an
  * interior junction of lesser roads; everything else is a local street, spurs are lanes.
  *
  * Circuit mode is REAL track synthesis, not a wobbly ellipse: seeded points are scattered, hulled, and
- * their hull-edge midpoints displaced inward (the classic random-track method) into a self-avoiding,
- * non-star-shaped closed polygon that can fold inward; at least one start/finish straight is guaranteed;
- * selected vertices grow chicane/ess/hairpin corner templates; `minCurveRadius` is enforced by the arc
- * fillets and self-clearance (the centerline never runs within ~1.5 track widths of a non-adjacent part
- * of itself) by bounded deterministic reject-and-retry, falling back to a safe simple layout; and when
- * branching is meaningful a lane-level PIT LANE offsets parallel to the start/finish straight, leaving
- * the loop at one node and rejoining at another (two degree-3 junctions, never a dead-end stub).
+ * a random subset of hull-edge midpoints displaced DEEP inward (the classic random-track method, but
+ * pushed far enough to fold the loop into several concave lobes) while the rest stay straight, so the
+ * result is a self-avoiding, non-star-shaped closed polygon with real corners popping against real
+ * straights; at least one start/finish straight is guaranteed; a corner-VARIETY quota then carves at
+ * least one hairpin (a genuine ~180° U-turn) and one ess plus further chicane/ess/hairpin templates
+ * scaling with `winding`; `minCurveRadius` is enforced by the arc fillets and self-clearance (the
+ * centerline never runs within ~1.5 track widths of a non-adjacent part of itself) by bounded
+ * deterministic reject-and-retry with decaying fold aggression, falling back to a safe simple layout
+ * only when every retry crosses; and when branching is meaningful a lane-level PIT LANE offsets parallel
+ * to the start/finish straight, leaving the loop at one node and rejoining at another (two degree-3
+ * junctions, never a dead-end stub).
  *
  * Output is two coupled views of the graph: atomic node-to-node {@link StreetEdge}s (fed straight into
  * the block/parcel fabric — a race circuit is many edges between distinct nodes, never one fragile
@@ -212,9 +217,12 @@ const MAX_NODES = 900;
 const MAX_STREETS = 360;
 const MAX_EDGES = 1400;
 const MAX_LANES = 260;
-const MAX_CIRCUIT_TRIES = 12;
+const MAX_CIRCUIT_TRIES = 20;
 const BETWEENNESS_SOURCES = 40;
 const DEFAULT_SIDEWALK_WIDTH = 2;
+/** Hard cap on the direction change between consecutive arc-fillet samples (≈9°) so filleted corners
+ *  render as smooth curves, not chunky polygons, regardless of the (looser) `maxTurnAngle` ceiling. */
+const MAX_ARC_STEP_RAD = (9 * Math.PI) / 180;
 const LEVEL_RANK: Record<StreetLevel, number> = { boulevard: 3, avenue: 2, street: 1, lane: 0 };
 const WIDTH_MULT: Record<StreetLevel, number> = { boulevard: 2.2, avenue: 1.5, street: 1, lane: 0.65 };
 
@@ -279,9 +287,10 @@ export function clampTurns(
  * Round the corners of a polyline into sampled circular arcs. Each interior corner sharper than a
  * small threshold (or above the `maxRad` ceiling) is replaced by an arc tangent to both legs of radius
  * `curveRadius` (clamped to half the shorter leg; a non-positive radius rounds as large as the legs
- * allow). The arc is sampled uniformly in angle so the turn between consecutive samples is exactly the
- * sweep divided by the sample count — kept at or below `maxRad`. Open endpoints are preserved exactly;
- * a `closed` ring keeps `first === last`.
+ * allow). The arc is sampled uniformly in angle so the turn between consecutive samples is the sweep
+ * divided by the sample count — kept at or below the smaller of `maxRad` and a fixed ~9° smoothness cap
+ * ({@link MAX_ARC_STEP_RAD}) so bends read as curves, not chunky polygons. Open endpoints are preserved
+ * exactly; a `closed` ring keeps `first === last`.
  * @internal
  */
 function filletCorners(points: StreetVec2[], curveRadius: number, maxRad: number, closed: boolean): StreetVec2[] {
@@ -295,7 +304,9 @@ function filletCorners(points: StreetVec2[], curveRadius: number, maxRad: number
   // Fillet corners above this deflection; clamp to the ceiling so anything over `maxRad` is always
   // rounded (and anything left un-filleted is already under the ceiling).
   const fmin = Math.min(0.14, Math.max(1e-4, maxRad));
-  const step = maxRad > 1e-3 ? maxRad : Math.PI;
+  // Sample each arc so no discrete turn exceeds the smaller of the (looser) `maxRad` ceiling and the
+  // fixed smoothness cap — the latter is what keeps a filleted corner from reading as a hard polygon.
+  const step = Math.min(maxRad > 1e-3 ? maxRad : Math.PI, MAX_ARC_STEP_RAD);
   const out: StreetVec2[] = [];
   for (let i = 0; i < n; i += 1) {
     const v = verts[i]!;
@@ -358,7 +369,9 @@ function filletCorners(points: StreetVec2[], curveRadius: number, maxRad: number
     let delta = a1 - a0;
     while (delta > Math.PI) delta -= TAU;
     while (delta < -Math.PI) delta += TAU;
-    const segs = Math.max(4, Math.min(48, Math.ceil(Math.abs(delta) / step)));
+    // At least 3 samples so even a tiny fillet is a curve, never a bevel; capped so a full sweep can
+    // still be sampled finely (a near-U hairpin at ~9°/step needs ~20 samples).
+    const segs = Math.max(3, Math.min(96, Math.ceil(Math.abs(delta) / step)));
     out.push([p0[0], p0[1]]);
     for (let s = 1; s < segs; s += 1) {
       const ang = a0 + (delta * s) / segs;
@@ -701,12 +714,21 @@ function longestEdge(poly: StreetVec2[]): { index: number; length: number } {
 }
 
 /**
- * Synthesize one closed track polygon: scatter seeded points, take their convex hull, displace
- * hull-edge midpoints inward (keeping the longest edge straight for a start/finish), then carve a few
- * chicane/ess/hairpin corner templates. Returns the polygon vertices (not duplicated), or null if the
- * hull was degenerate.
+ * Synthesize one closed track polygon: scatter seeded points, take their convex hull, then fold it into
+ * a real circuit by displacing hull-edge midpoints INWARD toward the centroid — a random subset pushed
+ * DEEP (each deep push is a reflex vertex / concave lobe), the rest left straight so corners pop against
+ * straights — keeping the longest edge straight for a start/finish, then carving guaranteed
+ * chicane/ess/hairpin corner templates. `aggression` (1 = full depth, decaying on retries) scales fold
+ * depth and template count so a clearing layout is found before the safe fallback. Returns the polygon
+ * vertices (not duplicated), or null if the hull was degenerate.
  */
-function synthTrack(rules: StreetNetworkRules, hx: number, hz: number, rng: () => number): StreetVec2[] | null {
+function synthTrack(
+  rules: StreetNetworkRules,
+  hx: number,
+  hz: number,
+  rng: () => number,
+  aggression = 1,
+): StreetVec2[] | null {
   const rx = hx * 0.9;
   const rz = hz * 0.9;
   const perimeter = Math.PI * (rx + rz);
@@ -729,6 +751,9 @@ function synthTrack(rules: StreetNetworkRules, hx: number, hz: number, rng: () =
   cx /= hull.length;
   cz /= hull.length;
   const straightEdge = longestEdge(hull).index;
+  // Probability an edge gets a DEEP inward fold (a real concave lobe) vs a shallow dent vs left straight.
+  const pDeep = 0.2 + rules.winding * 0.4;
+  const pDent = pDeep + 0.3;
   const poly: StreetVec2[] = [];
   for (let k = 0; k < hull.length; k += 1) {
     const p = hull[k]!;
@@ -741,16 +766,21 @@ function synthTrack(rules: StreetNetworkRules, hx: number, hz: number, rng: () =
     const dz = cz - mz;
     const d = Math.hypot(dx, dz);
     const edgeLen = Math.hypot(q[0] - p[0], q[1] - p[1]);
-    // Push the midpoint inward by a seeded amount — this is what folds the hull into a real track.
-    // Kept modest so dents create concavities without pinching the loop into a self-crossing.
-    const amt = Math.min(edgeLen * (0.08 + rng() * (0.14 + rules.winding * 0.14)), d * 0.28);
+    // Fold class for this edge. DEEP pushes travel a large fraction of the way to the centroid so the
+    // loop genuinely folds (multiple reflex lobes); DENT is a shallow concavity; STRAIGHT leaves the
+    // edge alone so real straights survive. Depth scales with `aggression` so retries relax to clear.
+    const roll = rng();
+    let frac = 0;
+    if (roll < pDeep) frac = (0.4 + rng() * 0.3) * aggression;
+    else if (roll < pDent) frac = (0.1 + rng() * 0.16) * aggression;
+    const amt = Math.min(edgeLen * 0.7, d * Math.min(0.72, frac));
     if (d > 1e-3 && amt > 1e-3) {
       poly.push([mx + (dx / d) * amt, mz + (dz / d) * amt]);
     } else {
       poly.push([mx, mz]);
     }
   }
-  applyCornerTemplates(poly, rules, rng);
+  applyCornerTemplates(poly, rules, rng, aggression);
   // Clamp everything back inside the footprint.
   for (let i = 0; i < poly.length; i += 1) {
     poly[i] = [Math.max(-hx + 1, Math.min(hx - 1, poly[i]![0])), Math.max(-hz + 1, Math.min(hz - 1, poly[i]![1]))];
@@ -759,45 +789,72 @@ function synthTrack(rules: StreetNetworkRules, hx: number, hz: number, rng: () =
 }
 
 /**
- * Carve chicane/ess/hairpin corner templates into a track polygon in place. Templates are seeded and
- * their count scales with `winding`; hairpins only appear when `maxTurnAngle` admits a tight reversal.
- * Each template offsets an edge midpoint perpendicular to travel (chicane/ess) or deepens a vertex
- * inward (hairpin) — all local, so self-clearance is preserved for the reject-and-retry check.
+ * Carve chicane/ess/hairpin corner templates into a track polygon in place — the corner-VARIETY quota.
+ * When `winding ≥ 0.4` the first two templates are a guaranteed HAIRPIN (a deep, narrow inward finger
+ * that reverses direction over a short arc — a genuine ~180° U-turn, not a shallow apex) and a
+ * guaranteed ESS (alternating left/right corners); further templates (count scaling with `winding` and
+ * `aggression`) are random hairpin/ess/chicane. Every template is a LOCAL edit — an inward finger or a
+ * pair of opposite perpendicular offsets — so the loop's global self-clearance survives for the
+ * reject-and-retry check. Fingers point inward (toward the centroid) so the track folds without leaving
+ * the footprint.
  */
-function applyCornerTemplates(poly: StreetVec2[], rules: StreetNetworkRules, rng: () => number): void {
-  const count = Math.round(rules.winding * 3);
+function applyCornerTemplates(poly: StreetVec2[], rules: StreetNetworkRules, rng: () => number, aggression = 1): void {
+  const forceVariety = rules.winding >= 0.4;
+  const count = Math.max(forceVariety ? 2 : 0, Math.round(rules.winding * 3 * aggression));
   if (count <= 0 || poly.length < 6) return;
-  const allowHairpin = rules.maxTurnAngle >= 110;
   const step = rules.segmentLength;
+  let cx = 0;
+  let cz = 0;
+  for (const p of poly) {
+    cx += p[0];
+    cz += p[1];
+  }
+  cx /= poly.length;
+  cz /= poly.length;
   for (let c = 0; c < count; c += 1) {
     const n = poly.length;
     const i = 1 + Math.floor(rng() * (n - 2));
     const a = poly[i]!;
     const b = poly[(i + 1) % n]!;
-    const mx = (a[0] + b[0]) / 2;
-    const mz = (a[1] + b[1]) / 2;
     const dx = b[0] - a[0];
     const dz = b[1] - a[1];
     const l = Math.hypot(dx, dz);
-    if (l < 1e-3) continue;
-    const nx = -dz / l;
-    const nz = dx / l;
+    if (l < step * 0.35) continue; // too little room for a legible corner
+    const ux = dx / l;
+    const uz = dz / l;
+    // Inward normal (points toward the loop centroid so fingers fold in, never out of the footprint).
+    const mx = (a[0] + b[0]) / 2;
+    const mz = (a[1] + b[1]) / 2;
+    let nx = -uz;
+    let nz = ux;
+    if ((cx - mx) * nx + (cz - mz) * nz < 0) {
+      nx = -nx;
+      nz = -nz;
+    }
     const at = (i + 1) % n === 0 ? n : i + 1;
     const roll = rng();
-    if (allowHairpin && roll < 0.3) {
-      // Hairpin: a single deep outward apex → the tight turn `maxTurnAngle` permits.
-      const off = step * (0.6 + rng() * 0.3);
-      poly.splice(at, 0, [mx + nx * off, mz + nz * off]);
-    } else if (roll < 0.65) {
-      // Chicane: two opposite offsets flanking the midpoint (an S).
-      const off = step * (0.18 + rng() * 0.22);
-      const t1: StreetVec2 = [a[0] + dx * 0.33 + nx * off, a[1] + dz * 0.33 + nz * off];
-      const t2: StreetVec2 = [a[0] + dx * 0.66 - nx * off, a[1] + dz * 0.66 - nz * off];
+    const kind = forceVariety && c === 0 ? "hairpin" : forceVariety && c === 1 ? "ess" : roll < 0.34 ? "hairpin" : roll < 0.67 ? "ess" : "chicane";
+    if (kind === "hairpin") {
+      // Deep, narrow inward finger: enter, cross a short tip, exit → a real U-turn over a short arc.
+      const depth = Math.min(l * 0.85, step * (0.6 + rng() * 0.35) * aggression + step * 0.28);
+      const tip = Math.min(l * 0.45, Math.max(step * 0.1, rules.width * 1.4));
+      const base = l * (0.34 + rng() * 0.12);
+      const t1: StreetVec2 = [a[0] + ux * base + nx * depth, a[1] + uz * base + nz * depth];
+      const t2: StreetVec2 = [a[0] + ux * (base + tip) + nx * depth, a[1] + uz * (base + tip) + nz * depth];
+      poly.splice(at, 0, t1, t2);
+    } else if (kind === "ess") {
+      // Ess: two opposite offsets flanking the edge — alternating corners.
+      const off = step * (0.2 + rng() * 0.26) * aggression;
+      const t1: StreetVec2 = [a[0] + ux * l * 0.32 + nx * off, a[1] + uz * l * 0.32 + nz * off];
+      const t2: StreetVec2 = [a[0] + ux * l * 0.68 - nx * off, a[1] + uz * l * 0.68 - nz * off];
       poly.splice(at, 0, t1, t2);
     } else {
-      // Ess: a single gentle perpendicular nudge at the midpoint.
-      const off = step * (0.14 + rng() * 0.18) * (rng() < 0.5 ? 1 : -1);
-      poly.splice(at, 0, [mx + nx * off, mz + nz * off]);
+      // Chicane: a quick left-right-left kink (3 points).
+      const off = step * (0.16 + rng() * 0.2) * aggression;
+      const t1: StreetVec2 = [a[0] + ux * l * 0.25 + nx * off, a[1] + uz * l * 0.25 + nz * off];
+      const t2: StreetVec2 = [a[0] + ux * l * 0.5 - nx * off, a[1] + uz * l * 0.5 - nz * off];
+      const t3: StreetVec2 = [a[0] + ux * l * 0.75 + nx * off, a[1] + uz * l * 0.75 + nz * off];
+      poly.splice(at, 0, t1, t2, t3);
     }
   }
 }
@@ -844,7 +901,10 @@ function buildCircuit(
 
   let poly: StreetVec2[] | null = null;
   for (let attempt = 0; attempt < MAX_CIRCUIT_TRIES; attempt += 1) {
-    const candidate = synthTrack(rules, hx, hz, streams(`circuit:try:${attempt}`));
+    // Fold aggression decays over retries: early attempts push deep folds (a cool, folded circuit);
+    // if none clear, later attempts relax toward a gentler layout so the safe fallback stays rare.
+    const aggression = Math.max(0.42, 1 - attempt * 0.075);
+    const candidate = synthTrack(rules, hx, hz, streams(`circuit:try:${attempt}`), aggression);
     if (candidate === null || candidate.length < 6) continue;
     if (longestEdge(candidate).length < straightMin) continue;
     if (!loopSelfClearing(candidate, clearance, gapMin)) continue;
@@ -1055,24 +1115,161 @@ function levelForStreets(
   return levels;
 }
 
-/** Offset a polyline sideways by `dist` (positive = left of travel) with a per-vertex miter, clamped
- *  so sharp corners don't blow the offset out into a self-intersecting spike. */
-function offsetPolyline(points: readonly StreetVec2[], dist: number): StreetVec2[] {
-  const n = points.length;
-  if (n < 2) return points.map((p) => [p[0], p[1]] as StreetVec2);
-  const out: StreetVec2[] = [];
-  for (let i = 0; i < n; i += 1) {
-    const prev = points[Math.max(0, i - 1)]!;
-    const next = points[Math.min(n - 1, i + 1)]!;
-    const tx = next[0] - prev[0];
-    const tz = next[1] - prev[1];
-    const l = Math.hypot(tx, tz) || 1;
-    // Left normal of the local tangent.
-    const nx = -tz / l;
-    const nz = tx / l;
-    out.push([points[i]![0] + nx * dist, points[i]![1] + nz * dist]);
+/** Nearest distance from a point to a polyline (for keeping sidewalk vertices off the road surface). */
+function pointPolylineDist(px: number, pz: number, line: readonly StreetVec2[]): number {
+  let best = Infinity;
+  for (let i = 0; i + 1 < line.length; i += 1) {
+    const a = line[i]!;
+    const b = line[i + 1]!;
+    const abx = b[0] - a[0];
+    const abz = b[1] - a[1];
+    const l2 = abx * abx + abz * abz;
+    const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - a[0]) * abx + (pz - a[1]) * abz) / l2));
+    const d = Math.hypot(px - (a[0] + abx * t), pz - (a[1] + abz * t));
+    if (d < best) best = d;
   }
-  return out;
+  return best;
+}
+
+/** 2D segment/segment proper-intersection test (shared endpoints don't count). */
+function segmentsCross(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
+  const d = (a: StreetVec2, b: StreetVec2, c: StreetVec2): number =>
+    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const d1 = d(p3, p4, p1);
+  const d2 = d(p3, p4, p2);
+  const d3 = d(p1, p2, p3);
+  const d4 = d(p1, p2, p4);
+  return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+}
+
+/**
+ * Offset a road centerline sideways into a clean, parallel SIDEWALK polyline (positive `dist` = left of
+ * travel). This is a real polyline offset, not a naive per-vertex normal push: on the OUTSIDE of a bend
+ * it inserts arc samples around the corner so the band stays parallel; on the INSIDE it clamps the miter
+ * to the offset distance (never blowing out into a spike). A cleanup pass then WELDS pinched inside
+ * corners — dropping any vertex that lands closer than `dist·0.9` to the road, and any vertex whose two
+ * incident offset segments cross — so the sidewalk can never dip inside the road surface or self-loop
+ * (the z-fighting/pinch defect). Endpoints are preserved.
+ */
+function offsetPolyline(points: readonly StreetVec2[], dist: number): StreetVec2[] {
+  // Deduplicate coincident vertices so segment directions are well-defined.
+  const src: StreetVec2[] = [];
+  for (const p of points) {
+    const last = src[src.length - 1];
+    if (last === undefined || Math.hypot(last[0] - p[0], last[1] - p[1]) > 1e-6) src.push([p[0], p[1]]);
+  }
+  const m = src.length;
+  const absd = Math.abs(dist);
+  if (m < 2) return src.map((p) => [p[0] + dist, p[1]] as StreetVec2);
+  // Per-segment unit direction + left normal.
+  const nrm: StreetVec2[] = [];
+  for (let i = 0; i + 1 < m; i += 1) {
+    const dx = src[i + 1]![0] - src[i]![0];
+    const dz = src[i + 1]![1] - src[i]![1];
+    const l = Math.hypot(dx, dz) || 1;
+    nrm.push([-dz / l, dx / l]);
+  }
+  const out: StreetVec2[] = [];
+  out.push([src[0]![0] + dist * nrm[0]![0], src[0]![1] + dist * nrm[0]![1]]);
+  for (let i = 1; i + 1 < m; i += 1) {
+    const P = src[i]!;
+    const nP = nrm[i - 1]!;
+    const nN = nrm[i]!;
+    // Turn sign from the two segment directions (left normal rotated back gives the tangent).
+    const dPx = nP[1];
+    const dPz = -nP[0];
+    const dNx = nN[1];
+    const dNz = -nN[0];
+    const cross = dPx * dNz - dPz * dNx; // >0 = left turn
+    if (Math.abs(cross) < 1e-5) {
+      out.push([P[0] + dist * nN[0], P[1] + dist * nN[1]]);
+      continue;
+    }
+    const inside = cross * dist > 0; // offset side is the concave (inside) side of the bend
+    if (inside) {
+      // Miter clamped to the offset distance so the inside never spikes past `absd` from the corner.
+      let bx = nP[0] + nN[0];
+      let bz = nP[1] + nN[1];
+      const bl = Math.hypot(bx, bz) || 1;
+      bx /= bl;
+      bz /= bl;
+      out.push([P[0] + bx * dist, P[1] + bz * dist]);
+    } else {
+      // Outside: arc of radius `absd` around the corner from the prev band edge to the next.
+      const aPrev: StreetVec2 = [P[0] + dist * nP[0], P[1] + dist * nP[1]];
+      const aNext: StreetVec2 = [P[0] + dist * nN[0], P[1] + dist * nN[1]];
+      const a0 = Math.atan2(aPrev[1] - P[1], aPrev[0] - P[0]);
+      const a1 = Math.atan2(aNext[1] - P[1], aNext[0] - P[0]);
+      let delta = a1 - a0;
+      while (delta > Math.PI) delta -= TAU;
+      while (delta < -Math.PI) delta += TAU;
+      const segs = Math.max(1, Math.ceil(Math.abs(delta) / MAX_ARC_STEP_RAD));
+      for (let s = 0; s <= segs; s += 1) {
+        const ang = a0 + (delta * s) / segs;
+        out.push([P[0] + absd * Math.cos(ang), P[1] + absd * Math.sin(ang)]);
+      }
+    }
+  }
+  out.push([src[m - 1]![0] + dist * nrm[m - 2]![0], src[m - 1]![1] + dist * nrm[m - 2]![1]]);
+  return weldOffset(out, src, absd);
+}
+
+/** Cleanup pass over a raw offset polyline: WELD pinched inside corners — drop any interior vertex that
+ *  lands nearer than `absd·0.9` to the road, that spikes back on itself (a sharp consecutive backtrack),
+ *  or whose incident segments cross — so the sidewalk stays a clean parallel band. Endpoints stay. */
+function weldOffset(raw: StreetVec2[], centerline: readonly StreetVec2[], absd: number): StreetVec2[] {
+  let pts = raw;
+  const floor = absd * 0.9;
+  // Pass 1: drop road-pinching interior vertices.
+  const kept: StreetVec2[] = [];
+  for (let i = 0; i < pts.length; i += 1) {
+    if (i === 0 || i === pts.length - 1) {
+      kept.push(pts[i]!);
+      continue;
+    }
+    if (pointPolylineDist(pts[i]![0], pts[i]![1], centerline) < floor) continue; // welded away
+    kept.push(pts[i]!);
+  }
+  pts = kept;
+  // Pass 2: remove backtrack spikes and collapse local self-loops. A backtrack (interior turn > ~100°)
+  // is a fold the naive offset leaves inside the road band; a windowed crossing is a small self-loop.
+  const spikeCos = Math.cos((100 * Math.PI) / 180); // turn sharper than this folds back
+  const WINDOW = 6; // collapse self-loops spanning up to this many segments
+  let guard = 0;
+  let changed = true;
+  while (changed && guard < pts.length * 2 + 8) {
+    changed = false;
+    guard += 1;
+    // Collapse the nearest self-loop (segment i crossing a segment up to WINDOW ahead).
+    for (let i = 0; i + 1 < pts.length && !changed; i += 1) {
+      for (let j = i + 2; j + 1 < pts.length && j <= i + WINDOW; j += 1) {
+        if (segmentsCross(pts[i]!, pts[i + 1]!, pts[j]!, pts[j + 1]!)) {
+          pts.splice(i + 1, j - i); // drop the looped vertices i+1..j, welding i to j+1
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) continue;
+    // Drop backtrack spikes.
+    for (let i = 1; i + 1 < pts.length; i += 1) {
+      const a = pts[i - 1]!;
+      const v = pts[i]!;
+      const b = pts[i + 1]!;
+      const ux = v[0] - a[0];
+      const uz = v[1] - a[1];
+      const vx = b[0] - v[0];
+      const vz = b[1] - v[1];
+      const lu = Math.hypot(ux, uz);
+      const lv = Math.hypot(vx, vz);
+      if (lu > 1e-6 && lv > 1e-6 && (ux * vx + uz * vz) / (lu * lv) < spikeCos) {
+        pts.splice(i, 1);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return pts;
 }
 
 /**

@@ -32,6 +32,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`trimBandAtJunctions`** (`@jgengine/core/world/roads`) — clip a sidewalk/parallel band polyline out of every junction apron (arm-derived radius widened by the band's half-width + clearance), returning the surviving sub-paths — so sidewalks end at crossings instead of sailing through them. The playground consumes it for `Street.sidewalks`.
 - **Photo mode.** `@jgengine/core/ui/photoMode`'s `createPhotoModeStore` is a serializable, observable
   photo-mode state (active + hide-HUD) a game binds its capture flow to. New `@jgengine/react`
   `usePhotoMode` + `PhotoModeControls` (hide-HUD toggle, capture, exit). New `@jgengine/shell/render/
@@ -136,6 +137,11 @@ At publish, rename this heading to the new version and mirror the entries into
   like `set_path`, and a colliding `id` re-ids in the document-global namespace.
 
 ### Changed
+
+- **Road ribbons no longer self-intersect at bends** (`@jgengine/core/world/roads`) — `buildRoadRibbon` now miter-joins the inner edge of a bend and welds any residual fold when the local turn radius drops under the half-width, so dense arc-sampled corners render as one clean surface instead of a doubled bowtie. Straight ribbons and terminal cross-sections stay byte-identical (junction welds unaffected).
+- **Junction surfaces stopped emitting sliver triangles** (`@jgengine/core/world/roads`) — `buildJunctionSurface` grouped approach corners globally by angle, which interleaved unequal-width approaches and produced shard/sliver fans; corners now stay grouped per approach with wrap-safe ordering and outward curb-return arcs, and the fan runs over an angle-monotonic simple boundary.
+- **Street corner arcs sample at ≤~9° per vertex** (`@jgengine/core/world/streetGenerator`) — corner fillets previously stepped up to `maxTurnAngle` (~28°) per vertex and read as hard polygons at road width; both net and circuit corners now sample finely, and sidewalk offsets became true parallel offsets (outside arcs, inside miter-clamp + weld) that never pinch into the road surface.
+- **Circuit layouts fold like real tracks** (`@jgengine/core/world/streetGenerator`) — track synthesis now displaces hull midpoints deep inward for multiple concave lobes and guarantees a hairpin and an ess at `winding ≥ 0.4`, against a preserved start/finish straight and self-clearance — replacing the near-convex polygon loops the first synthesis produced.
 
 - **Chase camera yaw is smoothed by default** (`camera.chase.yawResponse`, `@jgengine/shell` chase rig, #1370) — the boom now eases toward the followed body's facing with `1-exp(-response*dt)` smoothing (default response 5) instead of rigidly equaling it every frame, so a strafe-flipped facing arcs the camera around the character rather than teleporting it to the far side. Set `yawResponse: Infinity` to restore the legacy rigid follow; drift-lag (`velocityYaw`) keeps its own response as before.
 - **Editor content-browser thumbnails no longer crash the editor when a GLB's textures fail** (`@jgengine/editor`, #1270) — `getGlbThumbnailState` (the `getSnapshot` behind `useGlbThumbnail`/`AssetThumbnail`) returned a fresh object literal on every call, violating the `useSyncExternalStore` stable-snapshot contract; React's post-commit consistency check then forced a re-render every commit ("Maximum update depth exceeded"), and the `GameUiErrorBoundary` blanked the whole editor chrome. It now reuses the prior snapshot object while a URL's observable state (idle/loading/ready/error) is unchanged, so a permanently-failing asset settles to a stable error/glyph fallback instead of looping. No API change; behavior only.
