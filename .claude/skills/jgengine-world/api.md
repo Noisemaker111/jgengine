@@ -1348,6 +1348,17 @@
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
 
+## @jgengine/core/vfx/particles
+
+- `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
+- `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
+- `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
+- `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
+- `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
+- `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D vector `[x, y, z]`.
+- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
+
 ## @jgengine/core/visibility/assetStreaming
 
 - `AssetLoadResult` (interface): interface AssetLoadResult — ⚠ undocumented
@@ -1555,6 +1566,7 @@
 - `ControlGroupInput` (interface): interface ControlGroupInput — A decoded control-group key press plus the memory needed to detect a double-tap.
 - `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Digit: recall the set saved under `key` into the active selection. */ | { kind: "recall"; key: string } /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */ | { kind: "focus"; key: string } — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
+- `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
 - `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
@@ -1567,6 +1579,7 @@
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
 - `ElevationSummary` (interface): interface ElevationSummary — Aggregate elevation statistics over a region — the selection min/max/mean and legend range.
+- `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
 - `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
 - `EngagementKindConfig` (interface): interface EngagementKindConfig extends OrderKindConfig — Move + engagement config carrying the default radii the payload may override.
@@ -1720,6 +1733,9 @@
 - `ParamPreset` (interface): interface ParamPreset — A named slider/weight bundle for a kind — a saved set of field values the inspector (or the `apply_preset` verb) writes into an object's `meta` in one patch, ready to tweak afterwards. Presets are plain data on the schema, so kinds ship archetypes and games can override the registration with their own.
 - `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
 - `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
+- `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
+- `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
+- `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
 - `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
 - `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
@@ -1747,6 +1763,7 @@
 - `QteStep` (interface): interface QteStep — ⚠ undocumented
 - `RadialDistribution` (type): type RadialDistribution = "area" | "radial" — Fill policy for a circle/ring: `"area"` = area-uniform (even density); `"radial"` = radius-uniform (clumps toward center).
 - `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
+- `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
 - `RecallBookmarkOptions` (interface): interface RecallBookmarkOptions — Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned.
 - `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
@@ -1990,6 +2007,7 @@
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
+- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.

@@ -2139,6 +2139,12 @@
 
 - `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>): void — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 
+## @jgengine/shell/vfx/ParticleField
+
+- `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite: `additive` for fire/sparks/magic glow, `normal` for smoke/dust.
+- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, }: ParticleFieldProps): ReactElement — Renders a core `ParticleSystem` as a GPU point cloud: one draw call, per-particle size / color / alpha via a soft-round shader, and a `drawRange` clamped to the live count so dead particles cost nothing. The simulation stays engine-side and genre-agnostic; this is purely how it reaches the screen. By default it advances the sim with the frame delta — pass `advance={false}` to drive it from your own fixed loop instead.
+- `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for {@link ParticleField}.
+
 ## @jgengine/shell/visibility/CullingProvider
 
 - `CullingProvider` (function): function CullingProvider({ config, children }: { config: VisibilityConfig | undefined; children: ReactNode }): ReactNode — Drives automatic frustum + distance culling for every entity and placed object. It reads the live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the entity/object markers consult to toggle `group.visible` — objects fully outside the view (plus a conservative preload margin) are never submitted to the renderer, without unmounting them or touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.

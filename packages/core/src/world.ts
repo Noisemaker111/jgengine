@@ -362,6 +362,15 @@ export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/reco
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
+export {
+  createParticleSystem,
+  type Curve,
+  type EmitterConfig,
+  type ParticleBuffers,
+  type ParticleSnapshot,
+  type ParticleSystem,
+  type Range,
+} from "./vfx/particles";
 export { type BoundsSpec, type Vec3 } from "./visibility/bounds";
 export { type CameraVisibilityContext } from "./visibility/camera";
 export { type VisibilityConfig } from "./visibility/config";
