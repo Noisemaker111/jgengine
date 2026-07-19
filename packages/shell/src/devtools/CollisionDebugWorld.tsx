@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import * as THREE from "three";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
+import { POSTFX_OVERLAY_USERDATA } from "../postfx/postfxOverlay";
 import {
   aimProbeNeeded,
   anyCollisionLayerOn,
@@ -302,7 +303,7 @@ export function CollisionDebugWorld() {
   if (!anyCollisionLayerOn(state.layers)) return null;
 
   return (
-    <group>
+    <group userData={POSTFX_OVERLAY_USERDATA}>
       {shapes.map((entry) => (
         <ColliderShapeMesh key={entry.key} entry={entry} />
       ))}

@@ -10,6 +10,47 @@ import type { PostProcessingConfig, ToneMappingMode } from "@jgengine/core/rende
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { createGradePass } from "./gradeShader";
+import { hidePostfxOverlays, restorePostfxOverlays } from "./postfxOverlay";
+
+/**
+ * GTAO renders the scene with an `overrideMaterial` normal/depth prepass, which stamps
+ * transparent overlay quads (additive VFX sprites, telegraphs, debug gizmos) into the AO
+ * buffers as opaque squares — the AO composite then multiplies them toward black. Hide
+ * marked overlay subtrees for the whole pass: the beauty buffer it composites over was
+ * already rendered with them in.
+ */
+class OverlayAwareGTAOPass extends GTAOPass {
+  private readonly hiddenOverlays: THREE.Object3D[] = [];
+
+  override render(
+    renderer: THREE.WebGLRenderer,
+    writeBuffer: THREE.WebGLRenderTarget,
+    readBuffer: THREE.WebGLRenderTarget,
+    deltaTime: number,
+    maskActive: boolean,
+  ): void {
+    hidePostfxOverlays(this.scene, this.hiddenOverlays);
+    super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+    restorePostfxOverlays(this.hiddenOverlays);
+  }
+}
+
+/** DOF's depth prepass has the same `overrideMaterial` overlay-stamping problem as GTAO. */
+class OverlayAwareBokehPass extends BokehPass {
+  private readonly hiddenOverlays: THREE.Object3D[] = [];
+
+  override render(
+    renderer: THREE.WebGLRenderer,
+    writeBuffer: THREE.WebGLRenderTarget,
+    readBuffer: THREE.WebGLRenderTarget,
+    deltaTime: number,
+    maskActive: boolean,
+  ): void {
+    hidePostfxOverlays(this.scene, this.hiddenOverlays);
+    super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+    restorePostfxOverlays(this.hiddenOverlays);
+  }
+}
 
 const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
   aces: THREE.ACESFilmicToneMapping,
@@ -75,7 +116,7 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
 
     const heavyPasses = quality === "high";
     if (heavyPasses && config.ao !== undefined && config.ao !== false) {
-      const ao = new GTAOPass(scene, camera, width, height);
+      const ao = new OverlayAwareGTAOPass(scene, camera, width, height);
       ao.blendIntensity = config.ao.blend ?? 1;
       ao.updateGtaoMaterial({
         radius: config.ao.radius ?? 1.8,
@@ -102,7 +143,7 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
     let dof: BokehPass | null = null;
     if (heavyPasses && config.dof !== undefined && config.dof !== false) {
       const d = config.dof;
-      dof = new BokehPass(scene, camera, {
+      dof = new OverlayAwareBokehPass(scene, camera, {
         focus: d.focus ?? 18,
         aperture: d.aperture ?? 0.00025,
         maxblur: d.maxBlur ?? 0.01,

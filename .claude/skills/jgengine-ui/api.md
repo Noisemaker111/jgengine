@@ -1494,6 +1494,13 @@
 
 - `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass (lift/gain/gamma, saturation, vignette, grain). Advance `uniforms.uTime.value` each frame to animate the grain.
 
+## @jgengine/shell/postfx/postfxOverlay
+
+- `POSTFX_OVERLAY_USERDATA` (const): const POSTFX_OVERLAY_USERDATA: { readonly jgPostfxOverlay: true } — Spread onto a group's `userData` to mark its subtree as a screen/world overlay effect — additive glows, telegraphs, tracers, debug gizmos — that post-processing scene prepasses (GTAO's normal/depth render, DOF's depth render) must skip. Those prepasses render the scene with `overrideMaterial`, which turns transparent overlay quads into opaque stamps in the AO/DOF buffers (visible as black squares over hit sparks). The shell marks its own combat VFX and collision-debug mounts; games mark custom overlay effects the same way.
+- `hidePostfxOverlays` (function): function hidePostfxOverlays(scene: THREE.Object3D, out: THREE.Object3D[]): void — Hide every currently visible marked object under `scene`, recording what was hidden into `out` (cleared first, no allocation on the hot path) so {@link restorePostfxOverlays} can undo exactly that set.
+- `isPostfxOverlay` (function): function isPostfxOverlay(object: { userData?: Record<string, unknown> }): boolean — True when the object opted out of postfx scene prepasses via {@link POSTFX_OVERLAY_USERDATA}.
+- `restorePostfxOverlays` (function): function restorePostfxOverlays(hidden: THREE.Object3D[]): void — Restore visibility for the objects hidden by {@link hidePostfxOverlays} and clear the list.
+
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
