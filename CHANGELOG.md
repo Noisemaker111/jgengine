@@ -32,6 +32,16 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Accessibility options.** `@jgengine/core/ui/accessibility`'s `createAccessibilityStore` is a
+  serializable, observable store of genre-agnostic accessibility preferences — reduced motion, high
+  contrast, `textScale` (clamped), colorblind mode, and captions — with `snapshot`/`restore`. Ships the
+  `COLORBLIND_MATRICES` (`feColorMatrix` values for protanopia/deuteranopia/tritanopia/grayscale),
+  `clampTextScale`, and a `reducedMotionDuration` animation gate. New `@jgengine/react` layer:
+  `AccessibilityProvider` (exposes a `--jg-text-scale` CSS var, sets `data-reduced-motion` /
+  `data-high-contrast` / `data-colorblind` / `data-captions`, and wraps the subtree in the selected
+  colorblind filter), `useAccessibility`, `usePrefersReducedMotion` (OS `prefers-reduced-motion`), and
+  `ColorblindFilters`. Input rebinding already existed; this fills the rest of the a11y surface. First
+  adopter: the apps/dev `accessibility` demo.
 - **Localization / i18n.** `@jgengine/core/i18n` (also on the `@jgengine/core/ui` barrel)'s `createI18n`
   translates a message `Catalog` with active-locale lookup, a fallback-locale chain, `{param}`
   interpolation, and `Intl.PluralRules`-based `plural(key, count)`; it's observable so `setLocale` re-renders

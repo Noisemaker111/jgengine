@@ -45,6 +45,18 @@ export {
   type SettingsVariant,
 } from "./settings/settingsModel";
 export {
+  COLORBLIND_MATRICES,
+  DEFAULT_ACCESSIBILITY,
+  TEXT_SCALE_MAX,
+  TEXT_SCALE_MIN,
+  clampTextScale,
+  createAccessibilityStore,
+  reducedMotionDuration,
+  type AccessibilityState,
+  type AccessibilityStore,
+  type ColorblindMode,
+} from "./ui/accessibility";
+export {
   actionByHotkey,
   actionCooldown,
   actionCooldownFromFraction,
