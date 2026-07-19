@@ -28,7 +28,11 @@ A game's catalog is `buildCatalog(...)` over the generated pack index, singles, 
 
 At load time the shell classifies a model fetch before parsing via `classifyAssetResponse` (`@jgengine/core/scene/assetDiagnostics`), so a missing file, a dev-server HTML fallback, corrupt bytes, or a non-model format surface as an actionable diagnostic naming the URL — not an opaque GLTF parse error.
 
-Reindex measures every GLB's `dims`; assets listed in `COLLISION_MESH_ASSET_IDS` (`collisionMeshAssets.ts`) additionally ship a compact quantized triangle mesh (`collisionMesh` on the index entry) that collider auto-fit raycasts instead of the fitted box — opt in only concave models whose box lies (archways, rings, frames), because each entry adds real index bytes and per-ray BVH cost.
+Reindex measures every GLB's `dims`; assets listed in `COLLISION_MESH_ASSET_IDS` (`collisionMeshAssets.ts`) additionally ship a compact quantized triangle mesh (`collisionMesh` on the index entry) that collider auto-fit raycasts instead of the fitted box — opt in only concave models whose box lies (archways, rings, frames), because each entry adds real index bytes and per-ray BVH cost. Reindex also records every GLB's animation `clips` (names read from the JSON chunk via `readGlbClips`), which flow through `buildCatalog` onto the resolved `ModelAssetRef` — the editor's browser badges rigged assets from it.
+
+## Rigged assets animate by default
+
+A model resolved from a catalog string id is stamped `animation: "auto"`: the shell derives speed-driven `idle`/`walk`/`run` states plus `hit`/`death`/`attack` one-shots from the loaded GLB's own clip names via semantic clip roles (`@jgengine/core/game/clipRoles` — `classifyClip`, `defaultAnimationForClips`, exported `DEFAULT_CLIP_ROLE_TABLE` covering KayKit/Quaternius/Mixamo naming). No game-side clip strings needed; a clipless model is unaffected. An explicit `ModelConfig.animation`/`style.animation` always wins, and `animation: "none"` opts a placement back to the bind pose. Games rendering cloned scenes themselves get the same driver from `@jgengine/shell/render/useModelAnimation` instead of hand-rolling an `AnimationMixer`.
 
 ## Source rules
 

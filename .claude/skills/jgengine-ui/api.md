@@ -1453,6 +1453,10 @@
 
 - `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
 
+## @jgengine/shell/render/useModelAnimation
+
+- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp.
+
 ## @jgengine/shell/replay/useSessionRecorder
 
 - `RecordedPose` (interface): interface RecordedPose — ⚠ undocumented

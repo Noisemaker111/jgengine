@@ -12,8 +12,10 @@ const CHAR = "kaykit-adventurers";
 const SKEL = "kaykit-skeletons";
 
 const RAIDER_HEIGHT = 1.8;
-const RAIDER_CLIPS = { idle: "idle", walk: "walk" } as const;
 
+// No animation override: catalog resolution stamps `animation: "auto"`, deriving Idle/Walking_A/
+// Running_A states plus hit/death one-shots from the rig's own clips. (The old hardcoded
+// `idle`/`walk`/`die` names never matched KayKit's clips, so raiders looped the first clip.)
 function raiderPick(def: CreepDef): ModelPick {
   return {
     model: `${CHAR}/Rogue`,
@@ -21,7 +23,6 @@ function raiderPick(def: CreepDef): ModelPick {
     style: {
       targetHeight: RAIDER_HEIGHT * def.scale,
       material: { color: def.color },
-      animation: { states: { ...RAIDER_CLIPS }, oneShots: { death: "die" } },
     },
   };
 }

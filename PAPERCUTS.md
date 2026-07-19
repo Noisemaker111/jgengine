@@ -188,6 +188,10 @@ bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails 
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
 
+2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
+
+verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
+
 2026-07-19T01:23:41.909Z — claude-opus-4-8 — NoisemakerJon
 
 adding an apps/web route → bun --cwd apps/web run check-types is red on origin/main: playground.tsx can't resolve @jgengine/core/world/cityGenerator & streetGenerator even though their dist files exist, so a new page's typecheck is noisy with unrelated pre-existing errors

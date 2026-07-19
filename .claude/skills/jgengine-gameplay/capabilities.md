@@ -36,6 +36,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `totalLoad` (function) · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
 
+## clip-roles — map a rigged asset's pack-specific clip name to its semantic animation role
+
+- `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`
+- `defaultAnimationForClips` (function) · `import { defaultAnimationForClips } from "@jgengine/core/game/clipRoles"`
+
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
 - `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
