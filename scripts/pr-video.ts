@@ -62,8 +62,15 @@ function fail(message: string): never {
 }
 
 async function repositoryId(owner: string, repo: string): Promise<number> {
+  // Unauthenticated calls 403 from shared egress IPs (cloud proxies, Actions
+  // runners) — authenticate with whatever CI token is around when one is set.
+  const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
   const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-    headers: { accept: "application/vnd.github+json", "user-agent": "jgengine-pr-video" },
+    headers: {
+      accept: "application/vnd.github+json",
+      "user-agent": "jgengine-pr-video",
+      ...(token !== undefined && token.length > 0 ? { authorization: `Bearer ${token}` } : {}),
+    },
   });
   if (!response.ok) fail(`could not resolve repository id for ${owner}/${repo} (HTTP ${response.status})`);
   const body = (await response.json()) as { id?: number };

@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { existsSync, openSync } from "node:fs";
 import { join } from "node:path";
 
 const git = (...args) => {
@@ -128,20 +128,52 @@ if (branch === defaultBranch) {
   }
 }
 
+// Cold tree → start bootstrap ourselves, detached, so the agent never has to.
+// The bootstrap script is lock-guarded, so a spawn that races another session's
+// run just joins it. The agent only ever *checks* readiness; it never starts,
+// backgrounds, or babysits an install.
+const startBootstrap = () => {
+  try {
+    const fd = openSync(join(process.cwd(), ".agent-bootstrap.log"), "a");
+    const child = spawn("bun", ["scripts/agent-bootstrap.ts"], {
+      cwd: process.cwd(),
+      detached: true,
+      stdio: ["ignore", fd, fd],
+    });
+    child.unref();
+    return child.pid ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const cold =
   !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo")) &&
   !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo.exe"));
 if (cold) {
-  notes.push(
-    `Cold checkout: node_modules incomplete. FIRST ACTION: start \`bun run agent:bootstrap\` as a ` +
-      `background Bash task and do recon/edits while it runs (~2-3 min: install + package build). ` +
-      `NEVER kill or re-run-over a slow install — a killed \`bun install\` leaves half-hardlinked ` +
-      `node_modules, and cleaning that up is what turns 3 minutes into 15. Bootstrap is ` +
-      `lock-guarded (re-invoking joins the running one) and self-heals a partial tree. ` +
-      `Do not open issues or create worktrees before it succeeds. If cold starts annoy the user, ` +
-      `suggest setting this cloud environment's setup script to \`bash scripts/cloud-setup.sh\` ` +
-      `(claude.ai/code environment settings) so sessions start from a warm snapshot.`,
-  );
+  const pid = startBootstrap();
+  if (pid) {
+    notes.push(
+      `Cold checkout: \`bun run agent:bootstrap\` (install + package build, ~2-3 min) was ` +
+        `auto-started in the background by this hook (log: .agent-bootstrap.log). Do NOT start ` +
+        `it again and NEVER kill it — a killed \`bun install\` corrupts node_modules. Recon and ` +
+        `edits are fine right away; before the first command that needs node_modules or package ` +
+        `dist (tests, builds, gate), run \`bun run agent:bootstrap --check\` and wait until it ` +
+        `reports ready. If cold starts annoy the user, suggest setting this cloud environment's ` +
+        `setup script to \`bash scripts/cloud-setup.sh\` (claude.ai/code environment settings) ` +
+        `so sessions start from a warm snapshot with zero cold-start.`,
+    );
+  } else {
+    notes.push(
+      `Cold checkout: node_modules incomplete, and auto-start failed. FIRST ACTION: start ` +
+        `\`bun run agent:bootstrap\` as a background Bash task and do recon/edits while it runs ` +
+        `(~2-3 min: install + package build). NEVER kill or re-run-over a slow install — a killed ` +
+        `\`bun install\` leaves half-hardlinked node_modules. Bootstrap is lock-guarded ` +
+        `(re-invoking joins the running one) and self-heals a partial tree. If cold starts annoy ` +
+        `the user, suggest setting this cloud environment's setup script to ` +
+        `\`bash scripts/cloud-setup.sh\` (claude.ai/code environment settings).`,
+    );
+  }
 }
 
 const originUrl = git("remote", "get-url", "origin") ?? "";
