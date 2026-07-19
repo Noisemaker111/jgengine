@@ -66,6 +66,7 @@ export const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> = {
   enemy: { id: "enemy", color: "#f87171", glyph: "✖", priority: 80 },
   danger: { id: "danger", color: "#fb923c", glyph: "⚠", priority: 85 },
   ping: { id: "ping", color: "#22d3ee", glyph: "◎", priority: 65 },
+  waypoint: { id: "waypoint", color: "#f59e0b", glyph: "⚑", priority: 95 },
 };
 
 export function markerKindStyle(

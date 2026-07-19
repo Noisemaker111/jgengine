@@ -471,6 +471,7 @@
     "./world/walls",
     "./world/water",
     "./world/waterKind",
+    "./world/waypoints",
     "./world/weather",
     "./world/wind",
     "./world/windZones"

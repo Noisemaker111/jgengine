@@ -516,6 +516,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
 
+## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
+
+- `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`
+
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
