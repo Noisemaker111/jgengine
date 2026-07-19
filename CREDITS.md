@@ -22,6 +22,13 @@ A related nod: JGengine's grass field
 ([`shell/terrain/GrassField.tsx`](packages/shell/src/terrain/GrassField.tsx))
 took cues from his [GrassSystemThreeJS](https://github.com/achrefelouafi/GrassSystemThreeJS).
 
+The website carries the same debt on its face: the live capability specimens on
+[jgengine.com/capabilities](https://jgengine.com/capabilities) credit him beside
+the demos — the wind-grass meadow's look nods to
+[GrassSystemThreeJS](https://github.com/achrefelouafi/GrassSystemThreeJS), and
+the pole-and-festoon catenary demo to his
+[PoleGeneratorThreeJS](https://github.com/achrefelouafi/PoleGeneratorThreeJS).
+
 These are ports and re-implementations, not copies: JGengine's versions are
 renderer-agnostic (the wave math and building generator live in dependency-free
 `@jgengine/core`), prop-driven, and stripped of the reference projects' GUI,

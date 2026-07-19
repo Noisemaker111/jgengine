@@ -132,3 +132,7 @@ Adding an /agents.md server route to apps/web → Vite dev static middleware int
 2026-07-19T04:20:12.828Z — claude-fable-5 — Claude
 
 Fixing production 404 for quaternius-modular-scifi models → content gate accepts 'provisioned' pack refs, but the Vercel /play build only ships committed packs, so games can merge referencing packs production can never serve (the-robots, tower-guard hit this); also kaykit-space-base was committed without a .gitignore whitelist entry
+
+2026-07-19T07:37:41.988Z — claude-fable-5 — Claude
+
+screenshotting the website: 'bun run shoot --url http://localhost:3000/...' errors 'nothing is listening' even when our dev server owns that port — only http://127.0.0.1:... passes the allowlist, and the error message doesn't mention that 127.0.0.1 URLs are accepted
