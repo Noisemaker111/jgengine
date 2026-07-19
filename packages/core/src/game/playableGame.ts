@@ -411,9 +411,13 @@ export interface PlayableGame<
    * declares one of the given roles (default: all); `maxDistance` hides nameplates beyond this many
    * world units from the player (default 40). Headless: skin every part via `className`/`data-*` hooks
    * on `WorldNameplates` (`@jgengine/shell/world/WorldHud`) — this flag only turns the readout on and
-   * scopes which entities it covers.
+   * scopes which entities it covers. Set `showHealth: false` for a name-only plate when a game already
+   * draws the HP bar itself (its own HUD, or `worldHealthBars`) — otherwise the nameplate's built-in bar
+   * stacks a second health bar over every entity.
    */
-  nameplates?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
+  nameplates?:
+    | boolean
+    | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number; showHealth?: boolean };
   /**
    * Combat presentation stack mounted inside the 3D canvas (telegraphs, spell VFX, retained VFX,
    * float text, projectile tracers, camera shake). Default `true` preserves historical always-on

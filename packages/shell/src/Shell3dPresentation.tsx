@@ -535,6 +535,7 @@ export function Shell3dPresentation({
                       roles={nameplates.roles}
                       resolveRole={resolveEntityRole}
                       {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
+                      {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
                     />
                   ) : null}
                   <WorldItems config={playable.worldItem} />
