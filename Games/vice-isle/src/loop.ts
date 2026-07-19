@@ -337,9 +337,11 @@ export function normalizeAfterRestore(ctx: GameContext): void {
   handrollOf(ctx).clearWanted(ctx);
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player !== null) {
-    ctx.scene.entity.update(ctx.player.userId, { movement: { ...(player.movement ?? {}), frozen: false } });
+    // A save written mid-drive persists the seated rider state — restore on foot, rendered (#1299).
+    ctx.scene.entity.update(ctx.player.userId, { movement: { ...(player.movement ?? {}), frozen: false }, hidden: false });
   }
   ctx.camera.follow(ctx.player.userId);
+  ctx.camera.setChaseTuning(null);
   continueStore.write(ctx, true);
 }
 

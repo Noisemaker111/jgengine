@@ -24,6 +24,8 @@ export interface SceneEntity<TMeta = unknown> {
   role: EntityRole;
   movement: EntityMovement;
   behaviors: readonly BehaviorDescriptor[];
+  /** Render-only visibility: `true` skips the entity's visual entirely (seated vehicle riders, cutscene actors, stealth cloaks) while the entity keeps simulating — position, stats, AI targeting, and queries are untouched. Absent/`false` renders normally. */
+  hidden?: boolean;
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }
@@ -63,6 +65,7 @@ export interface SpawnOptions<TMeta = unknown> {
   role?: EntityRole;
   movement?: EntityMovement;
   behaviors?: readonly BehaviorDescriptor[];
+  hidden?: boolean;
   meta?: TMeta;
   /** When `id` is already spawned: `"throw"` (default), `"replace"` (fresh spawn over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
   onExisting?: "throw" | "replace" | "keep";
@@ -99,7 +102,7 @@ export interface PoseConstraintFrame {
 export type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void;
 
 export type EntityUpdatePatch<TMeta = unknown> = Partial<
-  Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta">
+  Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "meta">
 > & {
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
@@ -221,6 +224,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
         role: options.role ?? "prop",
         movement: options.movement ?? {},
         behaviors: options.behaviors ?? [],
+        ...(options.hidden === undefined ? {} : { hidden: options.hidden }),
         meta: options.meta as TMeta,
       });
       spawnPoses.set(id, { position, rotationY });
@@ -245,6 +249,7 @@ export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
       if (patch.role !== undefined) current.role = patch.role;
       if (patch.movement !== undefined) current.movement = patch.movement;
       if (patch.behaviors !== undefined) current.behaviors = patch.behaviors;
+      if (patch.hidden !== undefined) current.hidden = patch.hidden;
       if (patch.meta !== undefined) current.meta = patch.meta;
       store.set(id, current);
       return true;
