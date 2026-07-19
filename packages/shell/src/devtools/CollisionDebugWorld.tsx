@@ -93,6 +93,47 @@ function WireAabb({
   );
 }
 
+function WireTriangleMesh({
+  entry,
+  shape,
+  color,
+}: {
+  entry: DebugShapeEntry;
+  shape: Extract<DebugShapeEntry["shape"], { kind: "mesh" }>;
+  color: string;
+}) {
+  const geometry = useMemo(() => {
+    const built = new THREE.BufferGeometry();
+    built.setAttribute("position", new THREE.BufferAttribute(shape.mesh.positions, 3));
+    built.setIndex(new THREE.BufferAttribute(shape.mesh.indices, 1));
+    return built;
+  }, [shape.mesh]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <group>
+      <group position={[entry.position[0], entry.position[1], entry.position[2]]} rotation={[0, entry.rotationY, 0]}>
+        <group
+          position={[shape.meshTranslate[0], shape.meshTranslate[1], shape.meshTranslate[2]]}
+          scale={shape.meshScale}
+        >
+          <mesh geometry={geometry}>
+            <meshBasicMaterial color={color} wireframe transparent opacity={0.85} depthTest={false} />
+          </mesh>
+        </group>
+      </group>
+      <Html
+        position={[shape.center[0], shape.center[1] + shape.halfExtents[1] + 0.15, shape.center[2]]}
+        center
+        distanceFactor={14}
+        zIndexRange={[25, 0]}
+        style={{ pointerEvents: "none" }}
+      >
+        <span className="rounded bg-black/70 px-1 text-[9px] font-medium text-white/90">{entry.label}</span>
+      </Html>
+    </group>
+  );
+}
+
 function ColliderShapeMesh({ entry }: { entry: DebugShapeEntry }) {
   const color = entry.style === "hitbox" ? HITBOX_WIRE_COLOR : BODY_WIRE_COLOR;
   if (entry.shape.kind === "sphere") {
@@ -104,6 +145,9 @@ function ColliderShapeMesh({ entry }: { entry: DebugShapeEntry }) {
         label={entry.label}
       />
     );
+  }
+  if (entry.shape.kind === "mesh") {
+    return <WireTriangleMesh entry={entry} shape={entry.shape} color={color} />;
   }
   return (
     <WireAabb

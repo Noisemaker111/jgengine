@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { EntityColliderSet } from "@jgengine/core/scene/colliders";
+import { prepareCollisionMeshSource } from "@jgengine/core/scene/collisionMesh";
 import { createSceneRaycast, firstImpact, hitsUntilBlocked } from "@jgengine/core/scene/sceneRaycast";
 import { createProjectileSystem } from "@jgengine/core/combat/projectiles";
 import { createEffectSystem, type CombatSpatialDeps, type ReceiveMap } from "@jgengine/core/combat/effects";
@@ -178,6 +179,43 @@ describe("collider debug shapes (#432)", () => {
     expect(shapes[0]!.shape.center[1]).toBeCloseTo(expected[1], 5);
     expect(shapes[0]!.shape.center[2]).toBeCloseTo(expected[2], 5);
     expect(shapes[0]!.shape.center[1]).toBeCloseTo(1.5, 5);
+  });
+
+  test("a mesh collider surfaces its triangles for wireframe rendering, not just the box", () => {
+    const prepared = prepareCollisionMeshSource({
+      positions: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+      indices: [0, 1, 2, 0, 2, 3],
+    })!;
+    const colliders: EntityColliderSet = {
+      hitboxes: [
+        {
+          name: "body",
+          purpose: "damage",
+          shape: {
+            kind: "mesh",
+            mesh: prepared,
+            meshScale: 2,
+            meshTranslate: [0, 0.5, 0],
+            halfExtents: [0.5, 0.5, 0.5],
+            offset: [0, 0.5, 0],
+          },
+        },
+      ],
+    };
+    const layers = { ...createDefaultCollisionDebugState().layers, hitboxes: true };
+    const shapes = collectDebugShapes({
+      layers,
+      entities: [{ id: "bot", position: [3, 0, 4], rotationY: 0.5 }],
+      entityCollidersOf: () => colliders,
+    });
+    expect(shapes).toHaveLength(1);
+    const shape = shapes[0]!.shape;
+    if (shape.kind !== "mesh") throw new Error("expected mesh debug shape");
+    expect(shape.mesh).toBe(prepared);
+    expect(shape.meshScale).toBe(2);
+    expect(shape.meshTranslate).toEqual([0, 0.5, 0]);
+    expect(shape.center[1]).toBeCloseTo(0.5, 5);
+    expect(shapes[0]!.style).toBe("hitbox");
   });
 
   test("lifecycle: spawn and despawn change shape set", () => {

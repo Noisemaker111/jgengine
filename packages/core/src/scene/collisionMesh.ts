@@ -541,6 +541,47 @@ function buildBvh(
   };
 }
 
+/**
+ * Build a prepared BVH mesh straight from a runtime triangle soup (float positions + indices) —
+ * the renderer-fed counterpart to {@link prepareCollisionMesh}, feeding
+ * `ctx.scene.entity.reportCollisionMesh` / `ctx.scene.object.reportCollisionMesh` without a
+ * quantize/encode round-trip. Copies and sanitizes the input: triangles referencing out-of-range,
+ * non-finite, or repeated vertices are dropped. Returns `null` when no triangle survives.
+ */
+export function prepareCollisionMeshSource(source: CollisionMeshSource): PreparedCollisionMesh | null {
+  const raw = source.positions;
+  const rawIndices = source.indices;
+  if (raw.length < 9 || raw.length % 3 !== 0) return null;
+  if (rawIndices.length < 3 || rawIndices.length % 3 !== 0) return null;
+  const vertexCount = raw.length / 3;
+  const positions = new Float32Array(raw.length);
+  const finite = new Uint8Array(vertexCount);
+  for (let v = 0; v < vertexCount; v += 1) {
+    const x = raw[v * 3]!;
+    const y = raw[v * 3 + 1]!;
+    const z = raw[v * 3 + 2]!;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+    positions[v * 3] = x;
+    positions[v * 3 + 1] = y;
+    positions[v * 3 + 2] = z;
+    finite[v] = 1;
+  }
+  const triangles: number[] = [];
+  for (let t = 0; t + 2 < rawIndices.length; t += 3) {
+    const a = rawIndices[t]!;
+    const b = rawIndices[t + 1]!;
+    const c = rawIndices[t + 2]!;
+    if (!Number.isInteger(a) || a < 0 || a >= vertexCount || finite[a] === 0) continue;
+    if (!Number.isInteger(b) || b < 0 || b >= vertexCount || finite[b] === 0) continue;
+    if (!Number.isInteger(c) || c < 0 || c >= vertexCount || finite[c] === 0) continue;
+    if (a === b || b === c || a === c) continue;
+    triangles.push(a, b, c);
+  }
+  if (triangles.length === 0) return null;
+  const indices = new Uint32Array(triangles);
+  return { positions, indices, ...buildBvh(positions, indices) };
+}
+
 const preparedCache = new WeakMap<CollisionMeshData, PreparedCollisionMesh | null>();
 
 /**

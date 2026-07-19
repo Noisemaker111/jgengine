@@ -8,6 +8,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
+import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelAnimation } from "./useModelAnimation";
 import { PartMotionRig } from "./PartMotion";
 import { applyMaterialOverride } from "../materialOverride";
@@ -227,6 +228,17 @@ export function EntityModel({
       meshCount: raw.meshCount,
     });
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey, dimsMaxY]);
+
+  // Runs with or without index dims: the loaded geometry upgrades whatever box the kind resolved
+  // (fitted or measured) to a hitbox that raycasts the model's own triangles.
+  useEffect(() => {
+    if (measureTarget === undefined || measureKey === undefined) return;
+    const triangles = measureLocalCollisionTriangles(scene, {
+      scale,
+      offset: [positionX, positionY, positionZ],
+    });
+    if (triangles !== null) reportMeasuredCollisionMesh(ctx, measureTarget, measureKey, triangles);
+  }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
 
   useModelAnimation(scene, gltf.animations, model.animation, instanceId);
 

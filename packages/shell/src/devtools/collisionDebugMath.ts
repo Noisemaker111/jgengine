@@ -8,6 +8,7 @@ import {
   type EntityColliderSet,
   type ResolvedCollider,
 } from "@jgengine/core/scene/colliders";
+import type { PreparedCollisionMesh } from "@jgengine/core/scene/collisionMesh";
 import {
   firstImpact,
   hitsUntilBlocked,
@@ -34,7 +35,15 @@ export interface DebugShapeEntry {
   rotationY: number;
   shape:
     | { kind: "sphere"; radius: number; center: EntityPosition }
-    | { kind: "aabb"; halfExtents: EntityPosition; center: EntityPosition };
+    | { kind: "aabb"; halfExtents: EntityPosition; center: EntityPosition }
+    | {
+        kind: "mesh";
+        mesh: PreparedCollisionMesh;
+        meshScale: number;
+        meshTranslate: EntityPosition;
+        halfExtents: EntityPosition;
+        center: EntityPosition;
+      };
   label: string;
   style: "hitbox" | "body";
 }
@@ -128,11 +137,20 @@ function pushResolved(
     const shape =
       collider.shape.kind === "sphere"
         ? { kind: "sphere" as const, radius: collider.shape.radius, center }
-        : {
-            kind: "aabb" as const,
-            halfExtents: collider.shape.halfExtents,
-            center,
-          };
+        : collider.shape.kind === "mesh"
+          ? {
+              kind: "mesh" as const,
+              mesh: collider.shape.mesh,
+              meshScale: collider.shape.meshScale,
+              meshTranslate: collider.shape.meshTranslate,
+              halfExtents: collider.shape.halfExtents,
+              center,
+            }
+          : {
+              kind: "aabb" as const,
+              halfExtents: collider.shape.halfExtents,
+              center,
+            };
     out.push({
       key: `${targetKind}:${instanceId}:${collider.purpose}:${collider.name}`,
       targetKind,

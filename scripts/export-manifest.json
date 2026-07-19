@@ -660,6 +660,7 @@
     "./render/assetBase",
     "./render/defaultSurface",
     "./render/measureBounds",
+    "./render/measureCollisionMesh",
     "./render/modelLoad",
     "./render/modelRender",
     "./render/resolveModel",
@@ -921,6 +922,7 @@
     "./templates/editorWorkspace",
     "./templates/gameFiles",
     "./templates/names",
-    "./templates/types"
+    "./templates/types",
+    "./upgrade"
   ]
 }
