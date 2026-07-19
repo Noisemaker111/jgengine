@@ -2139,6 +2139,7 @@
 
 ## @jgengine/core/world/authoredObjects
 
+- `AuthoredAnimation` (type): type AuthoredAnimation = ModelAnimationConfig | "auto" | "none" — A placement's authored rig animation override — the stored `marker.meta.animation` contract (#1274).
 - `AuthoredObject` (interface): interface AuthoredObject — One authored catalog prop resolved from an editor marker — grounded at `x`/`z` with yaw, ready for `ctx.scene.object.place` or {@link placeAuthoredObjects}.
 - `AuthoredObjectMarkerLike` (interface): interface AuthoredObjectMarkerLike extends SceneMarkerLike — Minimal marker shape {@link resolveAuthoredObjects} reads; any `EditorMarker` satisfies it.
 - `AuthoredObjectPlaceTarget` (interface): interface AuthoredObjectPlaceTarget — Structural place target — any `ObjectStore` satisfies it.
@@ -2146,6 +2147,7 @@
 - `ENTITY_MARKER_KINDS` (const): const ENTITY_MARKER_KINDS: readonly string[] — Marker kinds that are spawnable entities (materialized by `authoredEntitySpawns`), not static catalog props. {@link resolveAuthoredObjects} skips them by default so a placed `mob`/`boss` is spawned once as an entity and never also placed as a static mesh.
 - `PlaceAuthoredObjectsOptions` (interface): interface PlaceAuthoredObjectsOptions — Options for {@link placeAuthoredObjects}.
 - `ResolveAuthoredObjectsOptions` (interface): interface ResolveAuthoredObjectsOptions — Options for {@link resolveAuthoredObjects}.
+- `markerAnimation` (function): function markerAnimation(marker: AuthoredObjectMarkerLike): AuthoredAnimation | undefined — The authored per-placement rig animation override stored at `marker.meta.animation` (#1274), or `undefined` when absent/malformed. `"auto"` / `"none"` pass through as the string modes; any other object is a `ModelAnimationConfig` the shell applies verbatim (validated at author time in the editor). Runtime trusts the persisted document here exactly like it trusts position and rotation.
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.

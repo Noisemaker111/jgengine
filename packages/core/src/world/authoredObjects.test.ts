@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createObjectStore } from "../scene/objectStore";
 import {
+  markerAnimation,
   markerCatalogId,
   placeAuthoredObjects,
   placeAuthoredObjectsFromDocument,
@@ -140,5 +141,67 @@ describe("placeAuthoredObjects", () => {
     expect(store.list().map((o) => o.instanceId).sort()).toEqual(["barrel_b", "crate_a"]);
     placeAuthoredObjectsFromDocument(store, doc, () => 9, { onExisting: "keep" });
     expect(store.get("crate_a")!.position[1]).toBe(2);
+  });
+});
+
+describe("authored animation (marker.meta.animation → placed ModelConfig.animation, #1276)", () => {
+  const animConfig = { states: { idle: "Idle", walk: "Walk" }, oneShots: { attack: "Attack" } };
+  const animDoc = {
+    markers: [
+      {
+        id: "guard",
+        kind: "prop",
+        position: { x: 5, y: 0, z: 5 },
+        catalogId: "knight",
+        meta: { animation: animConfig },
+      },
+      {
+        id: "statue",
+        kind: "prop",
+        position: { x: 6, y: 0, z: 6 },
+        catalogId: "knight",
+        meta: { animation: "none" },
+      },
+      {
+        id: "plain",
+        kind: "prop",
+        position: { x: 7, y: 0, z: 7 },
+        catalogId: "knight",
+      },
+    ],
+  };
+
+  test("markerAnimation reads the override, passing string modes and configs, else undefined", () => {
+    expect(markerAnimation({ id: "a", kind: "prop", position: { x: 0, y: 0, z: 0 }, meta: { animation: "auto" } })).toBe(
+      "auto",
+    );
+    expect(markerAnimation({ id: "a", kind: "prop", position: { x: 0, y: 0, z: 0 }, meta: { animation: "none" } })).toBe(
+      "none",
+    );
+    expect(
+      markerAnimation({ id: "a", kind: "prop", position: { x: 0, y: 0, z: 0 }, meta: { animation: animConfig } }),
+    ).toEqual(animConfig);
+    expect(markerAnimation({ id: "a", kind: "prop", position: { x: 0, y: 0, z: 0 } })).toBeUndefined();
+    // Malformed values (array / non-record) are ignored — no override.
+    expect(
+      markerAnimation({ id: "a", kind: "prop", position: { x: 0, y: 0, z: 0 }, meta: { animation: ["Idle"] } }),
+    ).toBeUndefined();
+  });
+
+  test("resolveAuthoredObjects carries the authored animation; a marker without it omits the field", () => {
+    const [guard, statue, plain] = resolveAuthoredObjects(animDoc);
+    expect(guard!.animation).toEqual(animConfig);
+    expect(statue!.animation).toBe("none");
+    expect(plain!.animation).toBeUndefined();
+    expect("animation" in plain!).toBe(false);
+  });
+
+  test("placeAuthoredObjects lands the override on the placed object's ModelConfig.animation", () => {
+    const store = createObjectStore();
+    placeAuthoredObjects(store, resolveAuthoredObjects(animDoc), () => 0);
+    expect(store.get("guard")!.animation).toEqual(animConfig);
+    expect(store.get("statue")!.animation).toBe("none");
+    // Absent override → catalog-resolved default (no per-placement animation stored) unchanged.
+    expect(store.get("plain")!.animation).toBeUndefined();
   });
 });

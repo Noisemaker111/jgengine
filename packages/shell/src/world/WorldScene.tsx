@@ -331,11 +331,17 @@ function WorldActors({
         const object = ctx.scene.object.get(instanceId);
         if (object === null) return null;
         const custom = renderObject?.(object);
-        const model =
+        const resolved =
           resolveModel(objectModels?.[object.catalogId], assets, {
             seam: "objectModels",
             key: object.catalogId,
           }) ?? tryResolveCatalogModel(object.catalogId, assets);
+        // An authored per-placement animation override (marker.meta.animation → SceneObject.animation,
+        // #1276) wins over catalog resolution's default "auto"; absent, the resolved config is untouched.
+        const model =
+          resolved !== undefined && object.animation !== undefined
+            ? { ...resolved, animation: object.animation }
+            : resolved;
         const style = objectStyles?.[object.catalogId];
         // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
         // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.

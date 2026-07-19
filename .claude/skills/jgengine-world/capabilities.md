@@ -70,6 +70,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## authored-objects — marker kinds resolved as entity spawns, not static props
 
 - `ENTITY_MARKER_KINDS` (const) · `import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects"`
+- `markerAnimation` (function) · `import { markerAnimation } from "@jgengine/core/world/authoredObjects"`
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
