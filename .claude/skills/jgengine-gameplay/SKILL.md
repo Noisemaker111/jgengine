@@ -11,6 +11,10 @@ This skill owns non-combat rules and state: systems, catalogs, inventory/items, 
 
 Use [capabilities.md](capabilities.md) for intent discovery, [api.md](api.md) for signatures, and [reference-systems.md](reference-systems.md) for scheduling details before hand-rolling a subsystem.
 
+Existing projects can keep player state and saves behind `LevelingStatAccess`.
+Follow the [portable XP/leveling recipe](recipes/portable-xp-leveling.md) for
+custom stat ids, immutable store writes, multiple level events, and JSON resume.
+
 ## Canonical workflow
 
 1. Define plain serializable state and stable ids.

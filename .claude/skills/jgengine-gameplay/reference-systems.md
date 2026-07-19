@@ -2,6 +2,15 @@
 
 Single public authoring path: `defineGame({ systems, loop?, … })` from `@jgengine/shell/defineGame`. Systems are meaningful capabilities — not micro-ticks.
 
+## Portable XP and leveling
+
+`leveling` (`@jgengine/core/game/progression`) is usable without a scheduled
+system or game context. Its `LevelingStatAccess` reads and replaces two
+caller-named pools in an existing store; `grantXp` writes settled XP/threshold
+and level state, then emits every reached level in ascending order. State stays
+in the caller's save format and round-trips as ordinary JSON. See the
+[portable XP/leveling recipe](recipes/portable-xp-leveling.md).
+
 ## API
 
 ```ts

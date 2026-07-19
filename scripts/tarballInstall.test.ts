@@ -84,12 +84,18 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     try {
       const script = [
         "import { VERSION } from '@jgengine/core';",
+        "import { leveling } from '@jgengine/core/game/progression';",
         "import { applyStatPoolDelta, createStatPool } from '@jgengine/core/stats/statPool';",
         "if (typeof VERSION !== 'string') throw new Error('VERSION not exported');",
         "const resources = { rover: { energy: createStatPool({ current: 8, max: 10 }) } };",
         "const access = { get: (owner, stat) => resources[owner]?.[stat] ?? null, set: (owner, stat, next) => { resources[owner][stat] = next; } };",
         "const changed = applyStatPoolDelta(access, 'rover', 'energy', -3);",
         "if (changed.status !== 'ok' || resources.rover.energy.current !== 5) throw new Error('portable stat pool failed');",
+        "const progress = { player: { xp: { current: 0, max: 100 }, level: { current: 1, max: 10 } } };",
+        "const levelAccess = { get: (owner, stat) => progress[owner]?.[stat] ?? null, set: (owner, stat, patch) => { progress[owner][stat] = { ...progress[owner][stat], ...patch }; } };",
+        "const levels = [];",
+        "const gained = leveling({ xpForLevel: { kind: 'const', value: 100 }, maxLevel: 10 }).grantXp(levelAccess, 'player', 250, (level) => levels.push(level));",
+        "if (gained !== 2 || progress.player.level.current !== 3 || progress.player.xp.current !== 50 || levels.join(',') !== '2,3') throw new Error('portable leveling failed');",
         "const { createWeaponRuntime } = await import('@jgengine/core/combat');",
         "const weapon = createWeaponRuntime({ cadenceMs: 0, resolveHits: () => [{ id: 'e1' }], damageFor: (h) => ({ channel: 'kinetic', impact: 7, target: h.id }) });",
         "const shot = weapon.fire(null);",
