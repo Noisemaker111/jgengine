@@ -11,6 +11,7 @@ import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
 import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
 import { runSkills } from "../skills";
+import { runUpgrade } from "../upgrade";
 import { editorScaffold } from "../templates";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets", "editor"];
@@ -48,6 +49,8 @@ usage: jgengine <command> [...args]
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
+  upgrade [dir]         diff installed @jgengine/* against the latest release and print every
+                        Migrate step and Adopt-worthy addition in between [--json]
   versions              CLI + installed @jgengine/* versions
   help                  this map
 `;
@@ -185,6 +188,9 @@ switch (command) {
     break;
   case "editor-mcp":
     process.exit(runEditorMcp(rest));
+    break;
+  case "upgrade":
+    process.exit(await runUpgrade(rest));
     break;
   case "versions":
     process.exit(runVersions());

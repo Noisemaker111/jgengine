@@ -10,7 +10,10 @@ let consumers pick up the better stuff, not just to list what moved.
 Agents building on the published SDK can also read this programmatically:
 `import { VERSION, CHANGELOG } from "@jgengine/core/meta/changelog"` gives the
 same data as typed values, so an updater can diff its installed version against
-the latest and surface the migration steps.
+the latest and surface the migration steps. Easier still: `npx jgengine upgrade`
+run inside a game project diffs the installed `@jgengine/*` versions against the
+latest release and prints every Migrate step and Adopt-worthy addition in
+between (`--json` for structured output).
 
 ## 0.13.0
 
