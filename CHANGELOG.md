@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Talent / skill-tree widget.** `@jgengine/react`'s `TalentTree` is a drop-in widget over the existing
+  talent model (`@jgengine/core/game/talents`): pass the node definitions plus a live `createTalentTree`
+  instance and it lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite
+  edges, styles each node learned/available/locked/maxed with an icon + rank badge, and fires
+  `onLearn(nodeId)` on allocatable clicks. A new thin core selector `@jgengine/core/game/talentTreeView`
+  (`talentTreeView`) flattens the model into a serializable per-node render view (tier, state, met/unmet
+  edges) so the widget never re-derives topology or eligibility. HudTheme-token skinned; node ids and
+  branches stay opaque game data.
 - **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
   serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
   (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a

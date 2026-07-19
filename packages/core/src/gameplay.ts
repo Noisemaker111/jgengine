@@ -285,6 +285,13 @@ export {
   compileSystemSchedule,
   type CompiledSystemSchedule,
 } from "./game/systemSchedule";
+export {
+  talentTreeView,
+  type TalentEdgeView,
+  type TalentNodeState,
+  type TalentNodeView,
+  type TalentTreeView,
+} from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
