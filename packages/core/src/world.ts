@@ -512,6 +512,27 @@ export {
   type TerrainPathProfile,
 } from "./world/pathTerrain";
 export {
+  isPlaceWorld,
+  resolveWorldPhysics,
+  seedForPlace,
+  world,
+  type BoardGround,
+  type BoardGroundSize,
+  type FlatGround,
+  type FlatGroundSize,
+  type GroundConfig,
+  type GroundGenerator,
+  type GroundMode,
+  type PlaceConfig,
+  type PlaceWorldFeature,
+  type ResolvedGround,
+  type RoundGround,
+  type RoundGroundSize,
+  type SurfaceLaws,
+  type VoxelGround,
+  type VoxelGroundSize,
+} from "./world/place";
+export {
   placeAssetFromCommit,
   resolvePlaceAsset,
   toEditorMarker,

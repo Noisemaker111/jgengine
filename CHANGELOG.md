@@ -12,6 +12,32 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
+## 0.12.0
+
+### Migrate
+
+- **Author games through `defineGame` from `@jgengine/shell`** — it is the single public authoring entry (and carries the define-game capability tag). Core's constructor was renamed `defineGame` → `defineGameDefinition` (`@jgengine/core/game/defineGame`); only hosts and tooling call it. If you imported `defineGame` from core, switch the import to `@jgengine/shell`. `GamePlayer`/`GamePlayerShell` are `@internal` now — `GameHost` is the documented mount, and it owns the editor summon (`?mode=editor`, F2+E, dev save endpoint), so delete any per-game editor bootstrap.
+- **Declare your world with `world()`** (`@jgengine/core/world/place`): `world({ id, ground: { mode, size, surface? }, physics? })` with `flat` / `round` / `voxel` / `board` ground. New scaffolds emit a thin infinite flat place instead of the old 96 m meadow. `environment()` still works but is demoted to the legacy consumption path for editor-written scene data — **nothing required** for existing games; new worlds should use `world()` and author all dressing in the editor.
+- Everything else is additive — stat pools, minimap marker sources, auction house, city/path generation, editor workspaces require no changes to existing games.
+
+### Added
+
+- **World = place: `world()` API** (#1178) — a world is substrate + laws, not a coded diorama. `@jgengine/core/world/place` ships `world({ id, ground: { mode, size, surface?, generator? }, physics? })`; size is discriminated by mode (flat `{x,z}` with `Infinity` axes, round `{radius}`, voxel generator domain, board `{x,y}` cells — TS and runtime both reject mismatches). `ground.surface` carries matter/feel laws (metal vs slime vs felt) read by the same rule systems; per-place `physics` resolves over the game default; multiple worlds per game are first-class. The shell renders place substrates (`PlaceScene`) under the engine default sky; seeds derive from world id + save via `seedForPlace`.
+- **`@jgengine/shell/gameKit`** — happy-path authoring surface: authoring, mount, stores, systems, authored-scene helpers, HUD primitives, seeded rng in one import.
+- **Portable generic stat pools** — `@jgengine/core/stats/statPool`: bounded named pools (health, energy, heat, ammo…) with the entity-stats integration rebuilt on them; recipe in skill `jgengine-combat`.
+- **Auction-house economy primitives** (#1086) — `@jgengine/core/economy/auctionBook` (timed bid auctions, escrowed bids, outbid refunds, optional buyout, anti-snipe close extension, seller settlement minus house cut) plus market price history.
+- **Portable minimap marker sources** — core world seam feeding game minimaps; recipe in skill `jgengine-ui`.
+- **Unified seed-driven path network + city generation v2** (#1103, #1106) — streets/blocks/buildings with grid-ness, curviness, branching and block-size dials; zone bands, weighted building-class mixes, massing pieces, balance presets, junction-centered clustering, road-derived block polygons and parcels. Shell renders realistic roads: real intersections, curbs, lane lines, tunnels, and roads riding bridge decks.
+- **Physical fidelity** — mesh-accurate hitboxes (shots pass through holes in concave models, #1075), auto-fit entity/object colliders from measured model bounds (#1072), movement obstruction reading fitted boxes + compound-box openings (#1077).
+- **Editor overhaul** (#1110) — materials / lighting / scripting / animation-timeline / multiplayer workspaces, command palette, minimap bake wired end-to-end (#1036), real offscreen GLB thumbnails in the content browser, hierarchy drag-drop + keyboard + context menus + per-object visibility/lock, multi-select inspector, console RPC, asset drag-place, ortho projection, pivot modes, play chrome.
+- **Editor authoring pipeline** — author entity definitions and starter catalogs (#1012), author catalogs/schema fields in the Data tab (#1043), promote an authored scene folder into a runnable game (#1011), authored triggers promoted to a shared primitive with goal/win rules (#1013), asset import rewrites the game's `game/assets.ts` (#1042).
+- **Skills** — research-backed `game-design` and `level-design` skills (#962); every-game-owns-custom-UI invariant codified (#1148).
+
+### Changed
+
+- `npx jgengine create` scaffolds a thin infinite flat `world()` place; the editor `blankWorld` no longer pre-bakes seeded grass. Dressing belongs in `editor.scene.json`.
+- Environment studio visual-quality pass — turf tufts, depth-aware water, relief soil, weathered poles; grass fields no longer rebuild geometry per frame (#1090).
+
 ## 0.11.0
 
 ### Migrate

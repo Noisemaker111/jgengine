@@ -1442,11 +1442,13 @@
 - `BehaviorSnapshot` (type): type BehaviorSnapshot = | { readonly kind: "patrol"; readonly state: PathFollowState } | { readonly kind: "wander"; readonly origin: Waypoint; readonly target: Waypoint | null } — Serializable snapshot of one behavior instance — round-trips exactly through {@link BehaviorControl.serialize}/{@link BehaviorControl.restore}.
 - `BehaviorStatus` (type): type BehaviorStatus = "active" | "paused" | "disabled" — Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining state (`paused`), or is held off until re-enabled (`disabled`).
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
+- `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
+- `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
 - `BookmarkRecallMode` (type): type BookmarkRecallMode = "replace" | "merge" — How a recalled bookmark folds into the active selection.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along"> — ⚠ undocumented
 - `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
@@ -1519,6 +1521,8 @@
 - `FactionDef` (interface): interface FactionDef — ⚠ undocumented
 - `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
 - `FireGrid` (interface): interface FireGrid — ⚠ undocumented
+- `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
+- `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
 - `FlightControlRates` (interface): interface FlightControlRates — Angular authority, response, damping, and self-leveling configuration.
 - `FlightVector` (type): type FlightVector = readonly [number, number, number] — Three-dimensional world-space vector used by the flight model.
@@ -1543,6 +1547,9 @@
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — ⚠ undocumented
+- `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
+- `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
 - `GroundPoint` (type): type GroundPoint = readonly [number, number] — A world-space point on the ground plane as an `[x, z]` pair.
 - `GuideRegion` (interface): interface GuideRegion — An axis-aligned XZ rectangle to generate terrain-readability guides within.
 - `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
@@ -1654,6 +1661,8 @@
 - `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
+- `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
+- `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
 - `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
 - `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
 - `PlacementController` (interface): interface PlacementController — ⚠ undocumented
@@ -1675,6 +1684,7 @@
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+- `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
@@ -1684,6 +1694,8 @@
 - `RoadSurfaceOptions` (interface): interface RoadSurfaceOptions — Grip levels and blend width for {@link roadSurfaceSampler}; each field is optional and defaulted.
 - `RoofPlan` (interface): interface RoofPlan — ⚠ undocumented
 - `RosterEntry` (interface): interface RosterEntry — ⚠ undocumented
+- `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
+- `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
 - `SHAPE_BOX` (const): const SHAPE_BOX: 0 — ⚠ undocumented
 - `SHAPE_SPHERE` (const): const SHAPE_SPHERE: 1 — ⚠ undocumented
@@ -1737,6 +1749,7 @@
 - `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
 - `SurfaceGridLine` (interface): interface SurfaceGridLine — One draped grid line from {@link surfaceGridLines}: its axis, emphasis, and draped vertices.
 - `SurfaceGridOptions` (interface): interface SurfaceGridOptions — Shaping for {@link surfaceGridLines}: region, spacing, emphasis cadence, and draping.
+- `SurfaceLaws` (interface): interface SurfaceLaws — The place model: a world is the place you play in — substrate (ground) plus laws (physics, surface) — never a dressed diorama. Sky look, foliage scatter, props, and sculpt are content: they are authored in the editor (or by a content preset that writes into the scene document) and consumed through the authored-scene seams, not declared on the world.
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `SynthPatch` (interface): interface SynthPatch — A procedural sound cue: a set of voices triggered together, each with its own `delay`, summed into one one-shot. Pure serialisable data — the shell realises it on Web Audio, so the same catalog runs headless in tests with no `AudioContext`.
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
@@ -1792,6 +1805,8 @@
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 - `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
+- `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
+- `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
 - `VoxelMaterial` (interface): interface VoxelMaterial — ⚠ undocumented
 - `VoxelVolume` (class): class VoxelVolume — A runtime-editable dense voxel grid — the carve/deposit op behind destructible dig worlds (Deep Rock Galactic tunnels, Astroneer terrain). Cells hold a material id (0 = empty); `carve` clears a sphere of solid cells that a tool is strong enough to break and returns how many it removed (feed that to a loot roll), `deposit` fills a sphere with a material. World↔cell mapping is `origin`+`scale`.
 - `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
@@ -1806,7 +1821,7 @@
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
 - `WindField` (interface): interface WindField — ⚠ undocumented
-- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
@@ -1834,7 +1849,7 @@
 - `boxRegion` (function): function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> — An axis-aligned box `[min..max]` in 3D. Uniform density; draws x, y, z in order.
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
-- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`.
 - `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
 - `cappedStacks` (function): function cappedStacks<P>(limit: number, magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most `limit` memberships per `stackKey` (the highest-magnitude ones when `magnitudeOf` is given, else the first-seen). Models capped stacks — e.g. a poison that stacks up to 5 times.
 - `carrySpeedMultiplier` (function): function carrySpeedMultiplier(mass: number, carryCapacity: number, owners: number): number — Movement multiplier (1 = unhindered, →0 = crushed) for a body of `mass` carried by `owners`. Pure — the HUD/movement kit reads it to slow a laden hauler (Lethal Company) and to gate items that need 2+ people (R.E.P.O.).
@@ -1906,7 +1921,7 @@
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 - `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
 - `customRegion` (function): function customRegion<P extends SamplePoint>(spec: { dimensions: 2 | 3; sample: (rng: () => number) => P; contains: (point: P) => boolean; isEmpty?: boolean; }): SampleRegion<P> — Wrap a caller-defined sampler and bounds test as a {@link SampleRegion} — the escape hatch for regions the built-ins do not cover (a navmesh cell, a heightfield mask, a spline tube).
-- `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
+- `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3, exclude: readonly DashExclusion[] = []): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes. Pass `exclude` circles (junction patches) to interrupt the center line through intersections — any dash whose midpoint lands inside an exclusion is dropped.
 - `defineAttackMoveOrder` (function): function defineAttackMoveOrder<TCtx extends OrderMover & OrderTargeting>(config: EngagementKindConfig = {}): OrderKind<TCtx, AttackMoveOrderPayload> — Attack-move: advance toward a destination but break off to engage any hostile acquired within `aggroRadius`, pursuing it to `attackRange` and writing the engagement intent into `order.state` for the game to act on. Completes on reaching the destination with nothing to engage.
 - `defineHoldOrder` (function): function defineHoldOrder<TCtx extends OrderMover>(config: OrderKindConfig = {}): OrderKind<TCtx, EmptyOrderPayload> — Hold position: stand ground indefinitely (never completes on its own) until preempted or canceled — the "guard here" verb.
 - `defineMoveOrder` (function): function defineMoveOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, MoveOrderPayload> — The plain "go here" verb: step toward a point each tick, complete on arrival, fail if the entity despawns. The completion predicate is arrival within `arriveRadius`.
@@ -1923,7 +1938,7 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `encodeBakePng` (function): function encodeBakePng(bake: MinimapBake): Uint8Array — Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
 - `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
-- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
 - `extractContours` (function): function extractContours(sampleHeight: HeightSampler, options: ContourOptions): ContourLine[] — Traces surface-following contour lines from a height field via marching squares: samples a bounded grid over the region, then for every multiple of `interval` strictly inside the sampled height range emits the iso-line as XZ segments (saddle cells disambiguated by the cell-center average). Because a contour is exact constant elevation, drawing each segment at `y = level` makes it hug the terrain — the readable, scale-bearing overlay a flat ground grid cannot give. Pure math, renderer-agnostic.
@@ -1948,6 +1963,7 @@
 - `independentStacks` (function): function independentStacks<P>(): AreaStackPolicy<P> — Every overlapping membership applies independently (no deduplication) — the default for hazards, fields, and lights where two sources genuinely stack.
 - `interestPhase` (function): function interestPhase(seed: string | number): number — A deterministic `[0,1)` cadence phase derived from a stable id, for staggering sibling gates so a batch of agents spawned together does not fire their first active tick on the same frame. Pass the result as the `phase` argument to {@link createInterestGateState}.
 - `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
+- `isPlaceWorld` (function): function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature — Type guard for the place-model world feature.
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
 - `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
@@ -2025,6 +2041,7 @@
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] — ⚠ undocumented
 - `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — ⚠ undocumented
+- `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
 - `revertDeltaFromSnapshot` (function): function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot — Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo).
 - `revertSurfaceDeltaFromSnapshot` (function): function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot — Returns a new snapshot with a surface delta's `before` ids restored (copy-on-write undo).
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
@@ -2043,6 +2060,7 @@
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
 - `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
 - `screenRect` (function): function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect — Normalize two drag corners (in any order) into a rectangle.
+- `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
 - `selectWithinRect` (function): function selectWithinRect(candidates: readonly ScreenPoint[], rect: ScreenRect): string[] — Ids of the projected candidates whose screen point falls inside the marquee.
 - `shellRegion` (function): function shellRegion(center: Point3, innerRadius: number, outerRadius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even density; `"radial"` spreads uniformly in radius. Direction first, then radius.
@@ -2093,6 +2111,7 @@
 - `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
+- `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
 - `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
 ## @jgengine/core/world/authoredEntities
@@ -2170,6 +2189,14 @@
 - `BuildingHit` (interface): interface BuildingHit — ⚠ undocumented
 - `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
 - `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
+
+## @jgengine/core/world/buildingLots
+
+- `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
+- `LotArea` (interface): interface LotArea — Rectangular clip region lots must fall within (world center + half-extents).
+- `PlacedBuildingLot` (interface): interface PlacedBuildingLot — One placed building lot: where a building stands and how it is turned to face its road.
+- `RoadFrontage` (interface): interface RoadFrontage — One road the frontage placer lines with buildings: a centerline polyline and its full width.
+- `deriveBuildingLots` (function): function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] — Derive street-aligned building lots from road frontage. Lots are stepped along each road at `footprint.w + spacing`, offset to each side by `width / 2 + setback + footprint.d / 2`, and turned to face the road. Cross-road overlaps are rejected by a bounded nearest-neighbour test, so two roads meeting at a corner don't stack buildings. Deterministic: identical inputs (including seed) always yield the identical list.
 
 ## @jgengine/core/world/buildings
 
@@ -2255,6 +2282,12 @@
 - `CityTreeSpecies` (type): type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress" — Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species.
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
 - `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
+
+## @jgengine/core/world/cityGenerator
+
+- `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and lot pass-through options.
+- `GeneratedCity` (interface): interface GeneratedCity — A generated city: the street network and the building lots lining its frontage.
+- `generateCity` (function): function generateCity(options: CityGeneratorOptions, hx: number, hz: number): GeneratedCity — Grow a street network inside the `hx`/`hz` half-extents and line its frontage with building lots. Deterministic: identical options ⇒ identical city.
 
 ## @jgengine/core/world/cityGeometry
 
@@ -2358,7 +2391,9 @@
 - `BiomeSky` (interface): interface BiomeSky — Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky.
 - `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette"> — ⚠ undocumented
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along"> — ⚠ undocumented
+- `BuildingFrontageConfig` (interface): interface BuildingFrontageConfig — Street-aware placement for `building()`: instead of a grid scattered around `position`, lots are stepped along each road's frontage, offset by a consistent setback (a curb + sidewalk strip), and turned so every building FRONT faces its road. `footprint` (`w` = frontage width, `d` = depth) and `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
+- `BuildingFrontageRoad` (interface): interface BuildingFrontageRoad — One road a `building({ along })` frontage lines with buildings: centerline + full width.
 - `EnvironmentArea` (interface): interface EnvironmentArea extends WorldBounds — ⚠ undocumented
 - `EnvironmentDescriptorList` (type): type EnvironmentDescriptorList<T> = T | readonly T[] — ⚠ undocumented
 - `EnvironmentVec2` (type): type EnvironmentVec2 = readonly [number, number] — ⚠ undocumented
@@ -2402,12 +2437,12 @@
 - `WaterEnvironmentDescriptor` (type): type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor — ⚠ undocumented
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WorldBounds` (interface): interface WorldBounds — ⚠ undocumented
-- `WorldFeature` (type): type WorldFeature = | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape — biomes, voxel grid, plots, tilemap, environment, or flat — passed to `defineGame`.
+- `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
-- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
-- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` world feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`.
+- `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `island` (function): function island(config: TerrainIslandConfig): TerrainIslandDescriptor — ⚠ undocumented
@@ -2569,30 +2604,35 @@
 - `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
 
-## @jgengine/core/world/pathNetwork
-
-- `PathDeadEnd` (interface): interface PathDeadEnd — One dangling street end kept as a cul-de-sac: node position plus the heading pointing off the road.
-- `PathEdge` (interface): interface PathEdge — One atomic node-to-node edge — the fabric graph consumes these (welds at shared node coords).
-- `PathFeature` (interface): interface PathFeature — A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline.
-- `PathFeatureKind` (type): type PathFeatureKind = "bridge" | "tunnel" — A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge.
-- `PathFeatureSpan` (interface): interface PathFeatureSpan — A feature span carried by a street: a `[from, to]` index window into the street's `points`.
-- `PathJunction` (interface): interface PathJunction — One crossing of three or more streets: patch center/radius plus outgoing arm directions.
-- `PathLevel` (type): type PathLevel = "boulevard" | "avenue" | "street" | "lane" — Road hierarchy, widest to narrowest — shared by the city fabric and the renderer.
-- `PathNetwork` (interface): interface PathNetwork — The fully-resolved network in volume-local coords.
-- `PathNetworkContext` (interface): interface PathNetworkContext — Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network.
-- `PathNetworkMode` (type): type PathNetworkMode = "net" | "circuit" — The generator's chosen topology family: an open street `net`, or a closed `circuit` loop.
-- `PathNetworkRules` (interface): interface PathNetworkRules — Fully-defaulted slider set the generator reads.
-- `PathNode` (interface): interface PathNode — One graph node: a junction, a dead end, or a mid-street bend, with its connection count.
-- `PathStreet` (interface): interface PathStreet — One chained through-street: a maximal run of edges through degree-2 nodes, for rendering + furniture.
-- `PathVec2` (type): type PathVec2 = readonly [number, number] — A path vertex in the volume-local XZ frame.
-- `buildPathNetwork` (function): function buildPathNetwork(rules: PathNetworkRules, hx: number, hz: number, context: PathNetworkContext = {}): PathNetwork — Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic per `(rules.seed, hx, hz, context)`. Pass a {@link PathNetworkContext} with a ground sampler to turn water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to world space.
-
 ## @jgengine/core/world/pathTerrain
 
 - `PathHeightPolicy` (type): type PathHeightPolicy = | { readonly kind: "sample" } | { readonly kind: "fixed"; readonly height: number } | { readonly kind: "grade"; readonly start: number; readonly end: number } — Where a path corridor drives its centerline height: - `sample` — follow the base terrain under the centerline, so the corridor drapes level across its width while still tracking the hills the path crosses (the natural policy for a road or trail). - `fixed` — hold one constant height for the whole corridor (a level causeway, runway, or dam crest). - `grade` — interpolate linearly from `start` to `end` height along the path's arc length, a constant-slope ramp between two anchors (a switchback, a graded rail bed, an accessibility ramp).
 - `PathRetaining` (interface): interface PathRetaining — Retaining behavior for a path corridor's shoulders. A wall rises only where the corridor already cuts or fills into the surrounding ground by at least `threshold` — gentle stretches stay open — so a road through a canyon gets held banks while the same profile on flat ground does not. The wall fades in smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
 - `TerrainPathProfile` (interface): interface TerrainPathProfile — A serializable path-driven terrain modifier. The `points` centerline reshapes the heightfield across a corridor of `width`, feathering back to the surrounding ground across `shoulder`. `height` sets the centerline target (sample / fixed / grade); `depth` carves a channel below it (deepest at the centerline, easing to zero at the core edge — rivers and trenches); `retaining` raises walls where the cut/fill exceeds a threshold; `maxCut`/`maxFill` cap how far the ground may move from its base height. All fields are plain data (numbers, string enums, point arrays) so a profile round-trips through the scene document and evaluates identically at author time and runtime.
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
+
+## @jgengine/core/world/place
+
+- `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
+- `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
+- `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
+- `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
+- `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
+- `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
+- `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
+- `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
+- `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
+- `ResolvedBoardGround` (type): type ResolvedBoardGround = Omit<BoardGround, "mode"> & { mode: "board" } — {@link BoardGround} with the `stage` alias resolved away.
+- `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
+- `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
+- `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
+- `SurfaceLaws` (interface): interface SurfaceLaws — The place model: a world is the place you play in — substrate (ground) plus laws (physics, surface) — never a dressed diorama. Sky look, foliage scatter, props, and sculpt are content: they are authored in the editor (or by a content preset that writes into the scene document) and consumed through the authored-scene seams, not declared on the world.
+- `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
+- `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
+- `isPlaceWorld` (function): function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature — Type guard for the place-model world feature.
+- `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
+- `seedForPlace` (function): function seedForPlace(worldId: string, runSeed = ""): string — The engine-side seed derivation for a place: a stable string from the world `id` plus the save/run seed. Generators and scatter receive this — never a `seed` field in the world definition — so a save replays its world deterministically and a fresh run can vary by `runSeed` alone.
+- `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
 
 ## @jgengine/core/world/placeAsset
 
@@ -2689,12 +2729,14 @@
 
 ## @jgengine/core/world/roads
 
+- `DashExclusion` (interface): interface DashExclusion — A circular exclusion zone: dashes whose midpoint falls inside are dropped (e.g. junction patches).
 - `RoadPoint` (type): type RoadPoint = readonly [number, number] — A road centerline vertex in world XZ.
 - `RoadRibbon` (interface): interface RoadRibbon — Renderer-ready triangle ribbon: flat position triples plus triangle indices.
 - `RoadRibbonOptions` (interface): interface RoadRibbonOptions — Options for {@link buildRoadRibbon}.
 - `RoadSample` (interface): interface RoadSample — Result of {@link nearestOnPath}: closest point on the centerline plus distance and tangent.
+- `buildJunctionPatch` (function): function buildJunctionPatch(center: RoadPoint, radius: number, sampleHeight: (x: number, z: number) => number, options: { elevation?: number; segments?: number } = {}): RoadRibbon — Build a flat, ground-draped disc patch centered on `center` — the welded junction surface that covers crossing road ribbons so they read as one intersection instead of stacking/z-fighting. A triangle fan of `segments` sides (default 16), every vertex draped at `sampleHeight + elevation`. Pure geometry; the shell meshes the result with the asphalt material.
 - `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
-- `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes.
+- `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3, exclude: readonly DashExclusion[] = []): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes. Pass `exclude` circles (junction patches) to interrupt the center line through intersections — any dash whose midpoint lands inside an exclusion is dropped.
 - `isOnRoad` (function): function isOnRoad(path: readonly RoadPoint[], width: number, x: number, z: number): boolean — True when the query point lies within half the road `width` of the centerline.
 - `nearestOnPath` (function): function nearestOnPath(path: readonly RoadPoint[], x: number, z: number): RoadSample | null — Closest-point query against a road centerline — the seam traffic AI, spawn placement, and "am I on the road" checks share. Returns null for a degenerate path.
 - `pathLength` (function): function pathLength(path: readonly RoadPoint[]): number — Total arc length of a centerline in world units.
@@ -2795,16 +2837,43 @@
 - `sphereRegion` (function): function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A filled ball. `"volume"` is volume-uniform (∛-corrected radius); `"radial"` is radius-uniform. Direction is drawn first (two draws), then radius.
 - `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 
+## @jgengine/core/world/streetGenerator
+
+- `Street` (interface): interface Street — One chained through-street: a maximal run of edges through degree-2 nodes, for rendering + furniture.
+- `StreetDeadEnd` (interface): interface StreetDeadEnd — One dangling street end kept as a cul-de-sac: node position plus the heading pointing off the road.
+- `StreetEdge` (interface): interface StreetEdge — One atomic node-to-node edge — the fabric graph consumes these (welds at shared node coords).
+- `StreetFeature` (interface): interface StreetFeature — A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline.
+- `StreetFeatureKind` (type): type StreetFeatureKind = "bridge" | "tunnel" — A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge.
+- `StreetFeatureSpan` (interface): interface StreetFeatureSpan — A feature span carried by a street: a `[from, to]` index window into the street's `points`.
+- `StreetJunction` (interface): interface StreetJunction — One crossing of three or more streets: patch center/radius plus outgoing arm directions.
+- `StreetLevel` (type): type StreetLevel = "boulevard" | "avenue" | "street" | "lane" — Road hierarchy, widest to narrowest — shared by the city fabric and the renderer.
+- `StreetNetwork` (interface): interface StreetNetwork — The fully-resolved network in volume-local coords.
+- `StreetNetworkContext` (interface): interface StreetNetworkContext — Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network.
+- `StreetNetworkMode` (type): type StreetNetworkMode = "net" | "circuit" — The generator's chosen topology family: an open street `net`, or a closed `circuit` loop.
+- `StreetNetworkRules` (interface): interface StreetNetworkRules — Fully-defaulted slider set the generator reads.
+- `StreetNode` (interface): interface StreetNode — One graph node: a junction, a dead end, or a mid-street bend, with its connection count.
+- `StreetVec2` (type): type StreetVec2 = readonly [number, number] — A path vertex in the volume-local XZ frame.
+- `generateStreets` (function): function generateStreets(rules: StreetNetworkRules, hx: number, hz: number, context: StreetNetworkContext = {}): StreetNetwork — Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic per `(rules.seed, hx, hz, context)`. Pass a {@link StreetNetworkContext} with a ground sampler to turn water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to world space.
+
 ## @jgengine/core/world/streets
 
 - `FurnitureSpot` (interface): interface FurnitureSpot — A placement anchor on the curb line: position, outward-facing heading, and which side it sits on.
 - `FurnitureSpotOptions` (interface): interface FurnitureSpotOptions — Options for {@link furnitureSpots}.
+- `JunctionMarkingOptions` (interface): interface JunctionMarkingOptions — Options for {@link junctionMarkings}.
+- `JunctionMarkings` (interface): interface JunctionMarkings — Thin marking polylines for a junction: stop-line bars and crosswalk bars, ready for {@link buildRoadRibbon}.
 - `ParkingSpot` (interface): interface ParkingSpot — A curbside parking anchor: position at the road edge and a heading parallel to the street.
 - `ParkingSpotOptions` (interface): interface ParkingSpotOptions — Options for {@link parkingSpots}.
+- `RoadApproach` (interface): interface RoadApproach — A single arm of a junction: the road width plus the outward direction the road leaves the center.
+- `RoadJunction` (interface): interface RoadJunction — A welded road intersection: a patch center/radius plus the arms that feed it.
+- `RoadJunctionOptions` (interface): interface RoadJunctionOptions — Options for {@link findRoadJunctions}.
 - `RoadSurfaceOptions` (interface): interface RoadSurfaceOptions — Grip levels and blend width for {@link roadSurfaceSampler}; each field is optional and defaulted.
 - `StreetLane` (interface): interface StreetLane — A directed lane derived from a road: an offset centerline plus its direction of travel.
+- `curbPaths` (function): function curbPaths(road: RoadEnvironmentDescriptor, inset = 0): readonly [readonly RoadPoint[], readonly RoadPoint[]] — The two curb lines of a road — offset polylines running along the outer edge of the asphalt on each side. Mesh these with a thin darker ribbon to give the road a curb/edge strip instead of a hard asphalt-to-terrain seam. `inset` (default 0) nudges the line inward off the raw edge so the strip straddles the border.
 - `distanceToRoadEdge` (function): function distanceToRoadEdge(roads: readonly RoadEnvironmentDescriptor[], x: number, z: number): number — Signed planar distance from `(x, z)` to the nearest road *surface edge* across every segment of every road (#1051): negative inside the asphalt (magnitude = how far in from the closest edge, so `-width/2` on the centerline), `~0` right at the curb, and positive off the road (the gap to the nearest edge). Point-to-segment distance minus the road's half width, minimised over all segments — the "am I on the road, and by how much" seam driving grip, tyre audio, and off-road penalties.
+- `findRoadJunctions` (function): function findRoadJunctions(roads: readonly RoadEnvironmentDescriptor[], options: RoadJunctionOptions = {}): readonly RoadJunction[] — Detect welded intersections across a set of roads: wherever two road centerlines cross (or a road terminates on another) within the same elevation band, emit a {@link RoadJunction} whose patch covers the crossing ribbons. Nearby crossings merge into one junction. Deterministic and bounded — O(roads² · segments²) with a `maxJunctions` cap — so a scene builds its intersections once.
 - `furnitureSpots` (function): function furnitureSpots(road: RoadEnvironmentDescriptor, options: FurnitureSpotOptions = {}): readonly FurnitureSpot[] — Evenly spaced street-furniture anchors along a road's curb lines — streetlights, palms, signs, hydrants, benches. Each spot sits just outside the asphalt (plus `outset`), faces away from the street, and alternates sides by default so lights stagger like a real avenue. This is the answer to "where do I put it": furniture is an asset of the street, never a hand-typed coordinate.
+- `junctionExclusions` (function): function junctionExclusions(junctions: readonly RoadJunction[], pad = 0.5): readonly DashExclusion[] — Circular marking-exclusion zones for the junctions, sized to hide the center line under each patch.
+- `junctionMarkings` (function): function junctionMarkings(junction: RoadJunction, options: JunctionMarkingOptions = {}): JunctionMarkings — Data-driven junction entry markings: a stop-line bar across each approach and a band of crosswalk bars just outside the welded patch. Each returned polyline is a thin centerline meant to be meshed with {@link buildRoadRibbon} at a small width. Fully skippable per-feature via the options.
 - `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
 - `offsetPath` (function): function offsetPath(path: readonly RoadPoint[], offset: number): readonly RoadPoint[] — Offset a centerline sideways by a signed distance along its local perpendicular — the building block for lanes, curb lines, and sidewalk paths. Positive offsets fall on the left of the direction of travel, negative on the right.
 - `parkingSpots` (function): function parkingSpots(road: RoadEnvironmentDescriptor, options: ParkingSpotOptions = {}): readonly ParkingSpot[] — Curbside parking anchors along a road: hugging the edge of the asphalt, headed parallel to the street in that side's direction of travel. Spawn parked vehicles here instead of eyeballing coordinates in the middle of the carriageway.

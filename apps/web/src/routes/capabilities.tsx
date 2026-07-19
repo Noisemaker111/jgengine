@@ -48,17 +48,18 @@ export const game = defineGame({
   {
     glyph: "⛰️",
     domain: "World & procedural",
-    title: "Terrain, sky, and weather from intent",
+    title: "A world is a place: substrate + laws",
     blurb:
-      "Describe the world; the SDK generates the mesh, GPU-instanced vegetation, fog, and a collision heightfield every consumer reads from one field.",
+      "Declare the place you play in — flat, round, voxel, or board ground with its own physics. Sky look, foliage, and props are authored in the editor's scene document, not coded onto the world.",
     filename: "world.ts",
-    code: `import { environment, terrain, sky, grass } from "@jgengine/core/world/features";
+    code: `import { world } from "@jgengine/core/world/place";
 
-export const world = environment({
-  terrain: terrain({ bounds: { w: 256, d: 256 }, height: 8, material: "grass" }),
-  sky: sky({ preset: "dusk" }),
-  vegetation: grass({ area: { w: 200, d: 200 }, density: 2, seed: "meadow" }),
-});`,
+export const moon = world({
+  id: "moon",
+  ground: { mode: "round", size: { radius: 300 } },
+  physics: { gravity: -4 },
+});
+// Sky + scatter live in editor.scene.json; seeds derive from id + save.`,
   },
   {
     glyph: "🧩",

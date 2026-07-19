@@ -69,6 +69,9 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
 
+2026-07-18T22:43:40.443Z — claude-fable-5 — Claude
+
+world redesign PR: main is broken — packages/editor/src/EditorChrome.tsx had a duplicate ')}' (merge #1176) that fails 'bun run build'; agent:bootstrap earlier reported success anyway, so the breakage only surfaced mid-task at gen:skill-api
 2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
 
 recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
@@ -172,3 +175,15 @@ shoot daemon: after editing a game's scene/code while daemon is live, play captu
 2026-07-18T23:09:33.687Z — fable — Claude
 
 vice-isle drive rpc editor_summon: editor host mounts then React 'Maximum update depth exceeded' loop in editor shell ContentBrowser/AssetThumbnail — page goes black, editor verbs unreachable (wanted an editor-view screenshot of authored paths)
+
+2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
+
+Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstall.test.ts fails 3 tests because GNU tar treats C:\... as a remote host (Cannot connect to C: resolve failed); needs --force-local or forward-slash paths on win32
+
+2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
+
+bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
+
+2026-07-18T23:42:10.479Z — fable — Claude
+
+drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures

@@ -8,6 +8,7 @@ import {
 } from "./GamePlayerShell";
 import { heldActionsFor, shouldFireBoundAction } from "./boundActionDispatch";
 import { resolveWorldSky } from "./worldSky";
+import { world } from "@jgengine/core/world/place";
 import { advanceVoxelPlayer, createVoxelPlayerBody } from "@jgengine/core/movement/voxelController";
 import { resolveMovementIntent, createEmptyMovementKeys } from "@jgengine/core/movement/movementModel";
 
@@ -95,6 +96,13 @@ describe("resolveWorldSky", () => {
   test("returns the sky descriptor when the environment declares one", () => {
     const sky = { kind: "sky" as const, preset: "day" as const, timeOfDay: true };
     expect(resolveWorldSky({ kind: "environment", sky })).toBe(sky);
+  });
+
+  test("place worlds get the engine default sky for 3D grounds and none for boards", () => {
+    const flat = world({ id: "plain", ground: { mode: "flat", size: { x: Infinity, z: Infinity } } });
+    expect(resolveWorldSky(flat)).toEqual({ kind: "sky", preset: "day", timeOfDay: false });
+    const board = world({ id: "table", ground: { mode: "board", size: { x: 4, y: 4 } } });
+    expect(resolveWorldSky(board)).toBeUndefined();
   });
 });
 

@@ -63,7 +63,7 @@ Screenshots come from the game's own dev server. Read every screenshot adversari
 - One visible bug is a fail. If any defect is present in the shot, the claim is not proven — report the defect and its pixel location, do not average it away, talk yourself out of it, or call the overall look acceptable "apart from" it. Fix it or narrow the claim and re-capture.
 - Never write "all good", "looks good", "ships", or an equivalent sign-off without an accompanying list of what you inspected and what, if anything, you found. A bare approval with no itemized pass is not a review.
 - Use deterministic preview states for HUD/menu captures; use live play for integration and scene look.
-- Menu-gated games declare capture commands/states rather than hand-driving setup repeatedly.
+- Menu-gated games declare `capture.play`/`capture.states` (see `GameCaptureConfig`) rather than hand-driving setup repeatedly. `capture.play` dispatches once at context-ready; if a play-mode shot fails with "a start menu still on screen" while `play` *is* declared, an async boot step (whole-world save restore, hydration) is resetting the start gate after those commands ran — fix the game so the restore preserves an already-live session, not the capture command.
 - Inspect desktop and mobile when responsive UI changes.
 - Run pixel inspection for blank/sparse/contrast regressions, then open the PNG and judge it against the UI scorecard.
 - If a WebGL capture hangs once, do not repeat the same foreground command; fall back to deterministic scene evidence and report the capture failure.
