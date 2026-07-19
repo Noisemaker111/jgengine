@@ -36,9 +36,11 @@ Run checks proportional to risk while iterating. Before shipping, run supported 
 
 Inspect `git status`, the full diff, and acceptance criteria before staging. Stage only the intended files and commit once the cohesive change is complete.
 
+For a bugfix, write the root-cause reinforcement paragraph before shipping: name the seam, default, or missing contract that allowed the bug; state whether other games or consumers can hit the same class and, if so, land the upstream hardening (`packages/*` contract, safe default, dev-mode warning, or a gate check) in this PR or file the `[FEATURE]` issue for it first. Wrong-state-unrepresentable beats process; one paragraph is the ceiling.
+
 ## Ship
 
-Check whether the branch already has a PR. Push with a standalone `git push -u origin <branch>` command, open one ready-for-review PR, and include validation plus `Closes #N`. In the `Noisemaker111` repo, enable squash auto-merge on the PR (`enable_pr_auto_merge`, or `gh pr merge --squash --auto`) so GitHub lands it itself once CI is green. Subscribe to PR activity when supported, report the link, and stop.
+Check whether the branch already has a PR. Push with a standalone `git push -u origin <branch>` command, open one ready-for-review PR, and include validation, `Closes #N`, and (for bugfixes) the root-cause reinforcement paragraph. In the `Noisemaker111` repo, enable squash auto-merge on the PR (`enable_pr_auto_merge`, or `gh pr merge --squash --auto`) so GitHub lands it itself once CI is green. Subscribe to PR activity when supported, report the link, and stop.
 
 Enable auto-merge only in the `Noisemaker111` repo — the user never merges by hand there. For any other owner/repo, park the PR unmerged and never enable auto-merge. Never bump a version or publish an npm release to force release unless the user explicitly asks; the user owns release and publish timing. CI failure feedback is fixed on the same branch and pushed to the same PR (auto-merge stays armed and lands the fixed run).
 

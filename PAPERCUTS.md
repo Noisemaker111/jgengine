@@ -132,3 +132,11 @@ Adding an /agents.md server route to apps/web → Vite dev static middleware int
 2026-07-19T04:20:12.828Z — claude-fable-5 — Claude
 
 Fixing production 404 for quaternius-modular-scifi models → content gate accepts 'provisioned' pack refs, but the Vercel /play build only ships committed packs, so games can merge referencing packs production can never serve (the-robots, tower-guard hit this); also kaykit-space-base was committed without a .gitignore whitelist entry
+
+2026-07-19T17:09:58.949Z — claude-fable-5 — Claude
+
+bun run gate → packages/assets src/cli/pull.test.ts failed once in the full test:all run (offline pull found empty /tmp dir) but passes in isolation; flaky network/tmpdir-dependent test forced a full gate re-run
+
+2026-07-19T17:14:06.870Z — claude-fable-5 — Claude
+
+bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — computed manifest has ./previewFixtures and ./harness subpaths missing from the committed manifest (likely #1336 landed without regenerating it); gate is red for every branch until regenerated
