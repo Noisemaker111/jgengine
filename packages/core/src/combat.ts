@@ -145,6 +145,13 @@ export {
   type ThresholdTracker,
   type ThresholdTrackerSnapshot,
 } from "./combat/thresholdCrossings";
+export {
+  DEFAULT_VFX_PRESET,
+  resolveVfxPreset,
+  vfxPresets,
+  type VfxPreset,
+  type VfxPresetName,
+} from "./combat/vfxPresets";
 export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";

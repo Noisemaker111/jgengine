@@ -1,6 +1,7 @@
 import type { EffectInput, EffectResult } from "../../combat/effects";
 import { resolveHitReaction, type HitReaction } from "../../combat/hitReaction";
 import { pointInTelegraph, type TelegraphConfig } from "../../combat/telegraph";
+import { resolveVfxPreset } from "../../combat/vfxPresets";
 import type { GameEventMap, GameEvents, VfxKind } from "../../game/events";
 import type { EntityPosition, EntityStore } from "../../scene/entityStore";
 import type { SimClock } from "../../time/simClock";
@@ -72,15 +73,24 @@ export function createCombatFx(d: CombatFxDeps): CombatFx {
     const to = resolveVfxPoint(input.to);
     const from = resolveVfxPoint(input.from) ?? to;
     if (from === undefined) return;
+    // A named preset fills in kind/color/defaults; any field on the call still wins. With no
+    // preset and no explicit kind/color the resolver falls back to a visible spark rather than
+    // emitting an invalid (blank) burst — so a bare `vfx({ from, to })` still shows something.
+    const resolved = resolveVfxPreset(input.preset, {
+      ...(input.kind === undefined ? {} : { kind: input.kind }),
+      ...(input.color === undefined ? {} : { color: input.color }),
+      ...(input.durationMs === undefined ? {} : { durationMs: input.durationMs }),
+      ...(input.radius === undefined ? {} : { radius: input.radius }),
+    });
     const event: GameEventMap["combat.vfx"] = {
       id: vfxSeq++,
-      kind: input.kind,
-      color: input.color,
+      kind: resolved.kind,
+      color: resolved.color,
       from,
-      durationMs: input.durationMs ?? vfxDefaultDurationMs[input.kind],
+      durationMs: resolved.durationMs ?? vfxDefaultDurationMs[resolved.kind],
     };
     if (to !== undefined) event.to = to;
-    if (input.radius !== undefined) event.radius = input.radius;
+    if (resolved.radius !== undefined) event.radius = resolved.radius;
     events.emit("combat.vfx", event);
   }
 
