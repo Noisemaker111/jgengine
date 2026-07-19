@@ -1036,7 +1036,9 @@
 
 ## @jgengine/shell/camera
 
+- `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
+- `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
@@ -1053,6 +1055,7 @@
 - `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
+- `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
@@ -1090,6 +1093,12 @@
 ## @jgengine/shell/camera/cameraBlendMath
 
 - `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
+
+## @jgengine/shell/camera/cameraCollision
+
+- `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
+- `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
+- `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 
 ## @jgengine/shell/camera/cameraRigs
 
@@ -1305,7 +1314,7 @@
 
 ## @jgengine/shell/environment/RoadRibbons
 
-- `RoadRibbons` (function): function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; field: TerrainField }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon plus optional dashed centerline, draped on the terrain.
+- `RoadRibbons` (function): function RoadRibbons({ road, field, exclusions = [], }: { road: RoadEnvironmentDescriptor; field: TerrainField; exclusions?: readonly DashExclusion[]; }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon, a curb/edge strip along each border, plus an optional dashed centerline (draped on the terrain, and interrupted through any `exclusions` — the welded junction patches — so the center line does not paint across intersections).
 
 ## @jgengine/shell/environment/VolumetricClouds
 
@@ -1409,6 +1418,10 @@
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
 
+## @jgengine/shell/render/PartMotion
+
+- `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
+
 ## @jgengine/shell/render/SceneLighting
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
@@ -1439,6 +1452,10 @@
 ## @jgengine/shell/render/useEntityRenderCues
 
 - `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
+
+## @jgengine/shell/render/useModelAnimation
+
+- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp.
 
 ## @jgengine/shell/replay/useSessionRecorder
 
@@ -1975,7 +1992,7 @@
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from the player (world… — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, tickMs = 120, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, tickMs = 120, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
 - `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
 - `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
 - `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.

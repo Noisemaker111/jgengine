@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  buildPathNetwork,
+  generateStreets,
   clampTurns,
-  pathNetworkMode,
-  type PathNetworkRules,
-  type PathVec2,
-} from "./pathNetwork";
+  streetNetworkMode,
+  type StreetNetworkRules,
+  type StreetVec2,
+} from "./streetGenerator";
 
-const BASE: PathNetworkRules = {
+const BASE: StreetNetworkRules = {
   seed: "seed",
   gridness: 0.9,
   loopiness: 0.2,
@@ -25,11 +25,11 @@ const BASE: PathNetworkRules = {
   boulevards: 0.3,
 };
 
-function rules(overrides: Partial<PathNetworkRules> = {}): PathNetworkRules {
+function rules(overrides: Partial<StreetNetworkRules> = {}): StreetNetworkRules {
   return { ...BASE, ...overrides };
 }
 
-function turnDeg(a: PathVec2, b: PathVec2, c: PathVec2): number {
+function turnDeg(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
   const ux = b[0] - a[0];
   const uz = b[1] - a[1];
   const vx = c[0] - b[0];
@@ -41,18 +41,18 @@ function turnDeg(a: PathVec2, b: PathVec2, c: PathVec2): number {
   return (Math.acos(Math.max(-1, Math.min(1, dot))) * 180) / Math.PI;
 }
 
-describe("buildPathNetwork determinism", () => {
+describe("generateStreets determinism", () => {
   test("same rules + volume resolve identically", () => {
-    const a = buildPathNetwork(rules({ seed: "x" }), 240, 240);
-    const b = buildPathNetwork(rules({ seed: "x" }), 240, 240);
+    const a = generateStreets(rules({ seed: "x" }), 240, 240);
+    const b = generateStreets(rules({ seed: "x" }), 240, 240);
     expect(a).toEqual(b);
     expect(a.streets.length).toBeGreaterThan(0);
     expect(a.edges.length).toBeGreaterThan(0);
   });
 
   test("different seeds diverge", () => {
-    const a = buildPathNetwork(rules({ seed: "alpha" }), 240, 240);
-    const b = buildPathNetwork(rules({ seed: "beta" }), 240, 240);
+    const a = generateStreets(rules({ seed: "alpha" }), 240, 240);
+    const b = generateStreets(rules({ seed: "beta" }), 240, 240);
     expect(JSON.stringify(a.edges)).not.toBe(JSON.stringify(b.edges));
   });
 });
@@ -60,8 +60,8 @@ describe("buildPathNetwork determinism", () => {
 describe("topology mode", () => {
   test("circuit corner of the slider space picks circuit mode with a closed loop", () => {
     const r = rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.4 });
-    expect(pathNetworkMode(r)).toBe("circuit");
-    const net = buildPathNetwork(r, 240, 200);
+    expect(streetNetworkMode(r)).toBe("circuit");
+    const net = generateStreets(r, 240, 200);
     expect(net.mode).toBe("circuit");
     expect(net.loops).toBeGreaterThanOrEqual(1);
     const loop = net.streets.find((s) => s.loop);
@@ -73,19 +73,19 @@ describe("topology mode", () => {
 
   test("city corner picks net mode", () => {
     const r = rules({ loopiness: 0.2, branching: 0.4, connectivity: 0.6 });
-    expect(pathNetworkMode(r)).toBe("net");
-    expect(buildPathNetwork(r, 240, 240).mode).toBe("net");
+    expect(streetNetworkMode(r)).toBe("net");
+    expect(generateStreets(r, 240, 240).mode).toBe("net");
   });
 
   test("net is fully connected — no orphan nodes", () => {
-    const net = buildPathNetwork(rules({ connectivity: 0.1, loopiness: 0.1 }), 240, 240);
+    const net = generateStreets(rules({ connectivity: 0.1, loopiness: 0.1 }), 240, 240);
     for (const node of net.nodes) expect(node.degree).toBeGreaterThanOrEqual(1);
   });
 });
 
 describe("geometry sliders", () => {
   test("gridness 1 + zero winding gives axis-aligned atomic edges", () => {
-    const net = buildPathNetwork(rules({ gridness: 1, winding: 0, branching: 0 }), 240, 240);
+    const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 240, 240);
     for (const edge of net.edges) {
       const xs = edge.points.map((p) => p[0]);
       const zs = edge.points.map((p) => p[1]);
@@ -96,7 +96,7 @@ describe("geometry sliders", () => {
   });
 
   test("winding makes streets wander off-axis", () => {
-    const net = buildPathNetwork(rules({ gridness: 1, winding: 1, minCurveRadius: 8, maxTurnAngle: 170 }), 240, 240);
+    const net = generateStreets(rules({ gridness: 1, winding: 1, minCurveRadius: 8, maxTurnAngle: 170 }), 240, 240);
     const spreads = net.streets.map((s) => {
       const xs = s.points.map((p) => p[0]);
       const zs = s.points.map((p) => p[1]);
@@ -106,7 +106,7 @@ describe("geometry sliders", () => {
   });
 
   test("maxTurnAngle is a hard ceiling on every street corner", () => {
-    const net = buildPathNetwork(rules({ winding: 1, minCurveRadius: 6, maxTurnAngle: 45, loopiness: 0.3 }), 260, 260);
+    const net = generateStreets(rules({ winding: 1, minCurveRadius: 6, maxTurnAngle: 45, loopiness: 0.3 }), 260, 260);
     for (const street of net.streets) {
       for (let i = 1; i < street.points.length - 1; i += 1) {
         expect(turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!)).toBeLessThanOrEqual(46);
@@ -115,7 +115,7 @@ describe("geometry sliders", () => {
   });
 
   test("minTurnAngle straightens shallow wiggles", () => {
-    const net = buildPathNetwork(rules({ winding: 0.6, minTurnAngle: 15, maxTurnAngle: 160 }), 260, 260);
+    const net = generateStreets(rules({ winding: 0.6, minTurnAngle: 15, maxTurnAngle: 160 }), 260, 260);
     for (const street of net.streets) {
       for (let i = 1; i < street.points.length - 1; i += 1) {
         const t = turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!);
@@ -128,14 +128,14 @@ describe("geometry sliders", () => {
 
 describe("branching + dead ends", () => {
   test("branching adds lane-level streets; zero branching has none", () => {
-    const none = buildPathNetwork(rules({ seed: "b", branching: 0 }), 240, 240);
-    const many = buildPathNetwork(rules({ seed: "b", branching: 1 }), 240, 240);
+    const none = generateStreets(rules({ seed: "b", branching: 0 }), 240, 240);
+    const many = generateStreets(rules({ seed: "b", branching: 1 }), 240, 240);
     expect(none.streets.filter((s) => s.level === "lane").length).toBe(0);
     expect(many.streets.filter((s) => s.level === "lane").length).toBeGreaterThan(0);
   });
 
   test("keeping dead ends yields cul-de-sac bulbs", () => {
-    const kept = buildPathNetwork(rules({ seed: "d", branching: 0.8, deadEnds: 1, loopiness: 0 }), 240, 240);
+    const kept = generateStreets(rules({ seed: "d", branching: 0.8, deadEnds: 1, loopiness: 0 }), 240, 240);
     expect(kept.deadEnds.length).toBeGreaterThan(0);
     expect(kept.streets.some((s) => s.bulb !== undefined)).toBe(true);
   });
@@ -143,7 +143,7 @@ describe("branching + dead ends", () => {
 
 describe("footprint bounds", () => {
   test("all geometry stays inside the volume", () => {
-    const net = buildPathNetwork(rules({ winding: 1, gridness: 0, branching: 1, loopiness: 0.5, minCurveRadius: 6, maxTurnAngle: 170 }), 200, 160);
+    const net = generateStreets(rules({ winding: 1, gridness: 0, branching: 1, loopiness: 0.5, minCurveRadius: 6, maxTurnAngle: 170 }), 200, 160);
     for (const street of net.streets) {
       for (const [x, z] of street.points) {
         expect(Math.abs(x)).toBeLessThanOrEqual(200.5);
@@ -162,7 +162,7 @@ describe("bridges and tunnels", () => {
   const ridge = (x: number): number => (x > -85 && x < -65 ? 20 : 2);
 
   test("a span diving under water becomes a bridge", () => {
-    const net = buildPathNetwork(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
+    const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
       heightAt: (x) => river(x),
       minElevation: -2,
       bridges: true,
@@ -177,7 +177,7 @@ describe("bridges and tunnels", () => {
   });
 
   test("a span buried under a ridge becomes a tunnel", () => {
-    const net = buildPathNetwork(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
+    const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 200, 200, {
       heightAt: (x) => ridge(x),
       minElevation: -2,
       tunnels: true,
@@ -187,7 +187,7 @@ describe("bridges and tunnels", () => {
   });
 
   test("no features without a ground sampler", () => {
-    const net = buildPathNetwork(rules(), 200, 200);
+    const net = generateStreets(rules(), 200, 200);
     expect(net.bridges.length).toBe(0);
     expect(net.tunnels.length).toBe(0);
   });
@@ -195,7 +195,7 @@ describe("bridges and tunnels", () => {
 
 describe("clampTurns", () => {
   test("straightens a shallow kink and keeps endpoints", () => {
-    const line: PathVec2[] = [[0, 0], [10, 0.3], [20, 0]];
+    const line: StreetVec2[] = [[0, 0], [10, 0.3], [20, 0]];
     const out = clampTurns(line, (10 * Math.PI) / 180, Math.PI);
     expect(out[0]).toEqual([0, 0]);
     expect(out[out.length - 1]).toEqual([20, 0]);
@@ -203,7 +203,7 @@ describe("clampTurns", () => {
   });
 
   test("bevels a hairpin below the ceiling", () => {
-    const hairpin: PathVec2[] = [[0, 0], [10, 0], [10.2, 10]];
+    const hairpin: StreetVec2[] = [[0, 0], [10, 0], [10.2, 10]];
     const maxRad = (60 * Math.PI) / 180;
     const out = clampTurns(hairpin, 0, maxRad);
     for (let i = 1; i < out.length - 1; i += 1) {

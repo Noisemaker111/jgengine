@@ -3,8 +3,9 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { bestRaceStore, safehouseStore } from "./commands";
+import { bestRaceStore, continueStore, safehouseStore, startedStore } from "./commands";
 import { content } from "./content";
+import { normalizeAfterRestore } from "../loop";
 import { grantCred } from "./progression/cred";
 import { QUESTS } from "./quests/catalog";
 
@@ -56,5 +57,23 @@ describe("vice-isle whole-world save", () => {
   test("an empty slot loads nothing", async () => {
     const fresh = bootContext(memorySaveBackend());
     expect(await fresh.game.save!.load()).toBe(false);
+  });
+
+  test("a restore drops a fresh boot at the title screen", () => {
+    const ctx = bootContext(memorySaveBackend());
+    ctx.scene.entity.spawn("street_runner", { id: "p1", position: [0, 0, 0], role: "player" });
+    normalizeAfterRestore(ctx);
+    expect(startedStore.read(ctx)).not.toBe(true);
+    expect(continueStore.read(ctx)).toBe(true);
+  });
+
+  test("a restore keeps an already-live session live so shoot --mode play does not bounce to the menu", () => {
+    const ctx = bootContext(memorySaveBackend());
+    ctx.scene.entity.spawn("street_runner", { id: "p1", position: [0, 0, 0], role: "player" });
+    // capture.play dispatches game.start before the async restore resolves.
+    startedStore.write(ctx, true);
+    normalizeAfterRestore(ctx);
+    expect(startedStore.read(ctx)).toBe(true);
+    expect(continueStore.read(ctx)).toBe(true);
   });
 });

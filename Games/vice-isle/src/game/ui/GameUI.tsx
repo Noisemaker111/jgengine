@@ -3,6 +3,7 @@ import { ToastStack } from "@jgengine/react/components";
 import { useActivePrompt, useGameStore } from "@jgengine/react/hooks";
 import { ITEM_LABELS } from "../content";
 import { prompts as buildPrompts } from "../prompts";
+import { RACE_ROUTES } from "../world/districts";
 import { CityMinimap } from "./components/CityMinimap";
 import { DialoguePanel } from "./components/DialoguePanel";
 import { GaragePanel } from "./components/GaragePanel";
@@ -26,7 +27,7 @@ function PromptHint() {
       : active.id.startsWith("garage:")
         ? "Browse Sunset Motors"
         : active.id.startsWith("race:")
-          ? "Start the Ocean Loop ($200 entry)"
+          ? `Race ${RACE_ROUTES.find((r) => `race:${r.id}` === active.id)?.label ?? "the streets"} ($200 entry)`
           : active.id === "safehouse:buy"
             ? "Buy Palmview Bungalow ($5,000)"
             : active.id === "safehouse:rest"

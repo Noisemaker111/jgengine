@@ -31,8 +31,10 @@ Classify each acceptance claim before scheduling proof. A plan that uses screens
 - Generated worlds assert resolved counts, finite/non-flat terrain where expected, palettes, bounds, and required features.
 - Authored worlds assert required layers, objects, paths, markers, and ids from `editor.scene.json`.
 - Gameplay tests prove the observable acceptance scenario, including save/restore or multi-client behavior when changed.
+- Time-based headless tests: `HeadlessRunner.step(dt)` clamps every step to `maxStepSeconds` (default 0.05 s) no matter what dt you pass — `step(5)` advances the sim by 0.05 s, not 5 s, so a timer that "never fires" is usually this clamp, not a bug. Advance game time with many small steps (~20 per second of game time, e.g. `for (…) runner.step(1 / 60)`), or raise `maxStepSeconds` in the runner options when coarse fixed steps are intended.
 - For interactive softlock/progress proof, run `bun dev`, open the game page in a browser tool, drive input, and interrogate `window.__jgengineAgent.handle({ method: ... })` — `agent_status`, `debug_snapshot`, and the editor verbs work headlessly on any running game page.
 - Placeholder-vs-authored: `debug_snapshot().probes.fallbacks` reports which render seams resolved to fallbacks (green ground, primitive actors, proxy scatter) and why — a non-empty count proves content is unauthored/misconfigured rather than an intended placeholder.
+- UI-flow logic (a command/intent handler, not its pixels): drive it canvas-free with `createHeadlessRunner(...).ui.invoke("intent.name", input)`, then assert the resulting reactive state off `ctx` (store, stats, scene). No renderer, no pointer simulation — leave pixels to `shoot`; prove the logic headlessly.
 
 ## Performance proof
 
@@ -45,7 +47,9 @@ When a game is reported slow, play it and pull the debug menu's perf data instea
 
 ## Visual proof
 
-Start one managed capture session before the first visual shot:
+**Created standalone game (outside the monorepo):** run `bun run shoot` (or `node scripts/shoot.mjs`, shipped in the scaffold). It starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at R3F's 300×150 default, waits for an honest frame, and captures headless to `shots/shot.png` — no daemon, no npm deps. Flags: `--device desktop|mobile|mobile-landscape`, `--url`, `--out`, `--settle`, `--timeout`; `--help` for all. The daemon workflow below is the richer engine-monorepo path; the single-shot script is the portable rung the created game ships.
+
+Inside the engine monorepo, start one managed capture session before the first visual shot:
 
 1. Run `bun run shoot daemon start`. The command must report a live Chrome/Vite pair; a non-zero exit means visual capture is unavailable, not permission to repeat cold foreground launches.
 2. Iterate with `bun run shoot <game> --mode play --size half --inspect`. Plain `shoot` auto-attaches to the live daemon; reuse it for every state or viewport in the loop.
@@ -63,7 +67,7 @@ Screenshots come from the game's own dev server. Read every screenshot adversari
 - One visible bug is a fail. If any defect is present in the shot, the claim is not proven — report the defect and its pixel location, do not average it away, talk yourself out of it, or call the overall look acceptable "apart from" it. Fix it or narrow the claim and re-capture.
 - Never write "all good", "looks good", "ships", or an equivalent sign-off without an accompanying list of what you inspected and what, if anything, you found. A bare approval with no itemized pass is not a review.
 - Use deterministic preview states for HUD/menu captures; use live play for integration and scene look.
-- Menu-gated games declare capture commands/states rather than hand-driving setup repeatedly.
+- Menu-gated games declare `capture.play`/`capture.states` (see `GameCaptureConfig`) rather than hand-driving setup repeatedly. `capture.play` dispatches once at context-ready; if a play-mode shot fails with "a start menu still on screen" while `play` *is* declared, an async boot step (whole-world save restore, hydration) is resetting the start gate after those commands ran — fix the game so the restore preserves an already-live session, not the capture command.
 - Inspect desktop and mobile when responsive UI changes.
 - Run pixel inspection for blank/sparse/contrast regressions, then open the PNG and judge it against the UI scorecard.
 - If a WebGL capture hangs once, do not repeat the same foreground command; fall back to deterministic scene evidence and report the capture failure.
@@ -79,4 +83,4 @@ These guarded repository scripts exist only in the jgengine monorepo — never e
 - `bun run gate` is the full local verdict before shipping; `bun run ship:preflight` is the final check immediately before commit/push.
 - Use guarded scripts (`bun run test`, `bun run test:all`, `bun run gate`), not an unbounded bare `bun test` across the repository.
 - `bun run drive <game> --wait ... --rpc ... --key ...` scripts the browser drive headlessly; `drive --playtest` with a declared capture probe is the softlock/progress rung for interactive loops, and the perf sequence above becomes one command: `bun run drive <game> --wait <load+warmup> --rpc '{"method":"debug_perf_reset"}' --key KeyW:4000 --wait 10000 --rpc '{"method":"debug_snapshot"}'`. Drive's `--mode play` captures live integration; preview states capture deterministic HUD/menus.
-- Visual PRs embed final screenshots with `bun run pr-shots`; do not send binary images through GitHub content APIs.
+- Visual PRs embed final screenshots with `bun run pr-shots`; do not send binary images through GitHub content APIs. Any change to a map, world, or scene document counts as visual: attach captures of the changed content (in-game shots, or a map render derived from the authored document) to the PR and share them in the conversation, not just test assertions.

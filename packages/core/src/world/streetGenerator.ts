@@ -1,5 +1,5 @@
 /**
- * The unified, seed-driven procedural PATH NETWORK — one generator that grows an entire road/track
+ * The unified, seed-driven procedural STREET GENERATOR — one engine that grows an entire street/track
  * graph inside a box volume and answers to sliders instead of hardcoded geometry. It is deliberately
  * genre-agnostic: a city street net and a closed race circuit are the *same* engine at opposite
  * slider extremes, not two code paths. Drop a volume, pick a seed, and turn the dials:
@@ -16,31 +16,31 @@
  *   BRIDGE deck; a span buried under a ridge becomes a TUNNEL bore. Both are path FEATURES on a
  *   continuous edge, so a circuit stays closed as it crosses water or pierces a hill.
  *
- * Output is two coupled views of the graph: atomic node-to-node {@link PathEdge}s (fed straight into
+ * Output is two coupled views of the graph: atomic node-to-node {@link StreetEdge}s (fed straight into
  * the block/parcel fabric — a race circuit is many edges between distinct nodes, never one fragile
- * self-loop) and chained {@link PathStreet}s (through-streets for rendering, furniture, and
+ * self-loop) and chained {@link Street}s (through-streets for rendering, furniture, and
  * junctions). Pure deterministic math — same rules + seed + volume ⇒ identical network — with bounded
  * work caps so a huge volume can never generate unbounded content. Local (volume-centered) coords;
  * the caller rotates/translates into world space.
  *
- * @capability path-network seed-driven procedural roads and race circuits from one slider-driven engine
+ * @capability street-generator seed-driven procedural streets and race circuits from one slider-driven engine
  */
 import { seededStreams } from "../random/rng";
 
 /** A path vertex in the volume-local XZ frame. */
-export type PathVec2 = readonly [number, number];
+export type StreetVec2 = readonly [number, number];
 
 /** Road hierarchy, widest to narrowest — shared by the city fabric and the renderer. */
-export type PathLevel = "boulevard" | "avenue" | "street" | "lane";
+export type StreetLevel = "boulevard" | "avenue" | "street" | "lane";
 
 /** A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge. */
-export type PathFeatureKind = "bridge" | "tunnel";
+export type StreetFeatureKind = "bridge" | "tunnel";
 
 /** The generator's chosen topology family: an open street `net`, or a closed `circuit` loop. */
-export type PathNetworkMode = "net" | "circuit";
+export type StreetNetworkMode = "net" | "circuit";
 
 /** One graph node: a junction, a dead end, or a mid-street bend, with its connection count. */
-export interface PathNode {
+export interface StreetNode {
   id: number;
   x: number;
   z: number;
@@ -48,22 +48,22 @@ export interface PathNode {
 }
 
 /** One atomic node-to-node edge — the fabric graph consumes these (welds at shared node coords). */
-export interface PathEdge {
+export interface StreetEdge {
   id: number;
   /** Endpoint node ids. */
   a: number;
   b: number;
   /** Sampled centerline; `points[0]` sits exactly on node `a`, the last on node `b`. */
-  points: PathVec2[];
+  points: StreetVec2[];
   width: number;
-  level: PathLevel;
+  level: StreetLevel;
   /** True when this edge belongs to the main closed loop (circuit mode). */
   loop: boolean;
 }
 
 /** A feature span carried by a street: a `[from, to]` index window into the street's `points`. */
-export interface PathFeatureSpan {
-  kind: PathFeatureKind;
+export interface StreetFeatureSpan {
+  kind: StreetFeatureKind;
   from: number;
   to: number;
   /** Ground height at each bank/portal — the deck/floor reference the renderer drapes to. */
@@ -71,34 +71,34 @@ export interface PathFeatureSpan {
 }
 
 /** One chained through-street: a maximal run of edges through degree-2 nodes, for rendering + furniture. */
-export interface PathStreet {
+export interface Street {
   id: number;
   /** Ordered node ids the chain visits; first === last when `loop`. */
   nodes: number[];
   /** Smoothed, turn-clamped centerline. */
-  points: PathVec2[];
+  points: StreetVec2[];
   width: number;
-  level: PathLevel;
+  level: StreetLevel;
   /** Closed chain (a circuit lap or an inner ring). */
   loop: boolean;
   /** Cul-de-sac turning bulb when the street ends at a dangling node. */
-  bulb?: PathVec2;
+  bulb?: StreetVec2;
   /** Bridge/tunnel spans along this street, if any. */
-  features: PathFeatureSpan[];
+  features: StreetFeatureSpan[];
 }
 
 /** One crossing of three or more streets: patch center/radius plus outgoing arm directions. */
-export interface PathJunction {
+export interface StreetJunction {
   x: number;
   z: number;
   radius: number;
-  level: PathLevel;
+  level: StreetLevel;
   /** Outgoing arm directions (radians) with the crossing street width, for crosswalks/patches. */
   arms: { angle: number; width: number }[];
 }
 
 /** One dangling street end kept as a cul-de-sac: node position plus the heading pointing off the road. */
-export interface PathDeadEnd {
+export interface StreetDeadEnd {
   node: number;
   x: number;
   z: number;
@@ -108,31 +108,31 @@ export interface PathDeadEnd {
 }
 
 /** A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline. */
-export interface PathFeature {
-  kind: PathFeatureKind;
-  points: PathVec2[];
+export interface StreetFeature {
+  kind: StreetFeatureKind;
+  points: StreetVec2[];
   width: number;
   bankHeight: number;
 }
 
 /** The fully-resolved network in volume-local coords. */
-export interface PathNetwork {
-  mode: PathNetworkMode;
-  nodes: PathNode[];
+export interface StreetNetwork {
+  mode: StreetNetworkMode;
+  nodes: StreetNode[];
   /** Atomic edges — feed to the block/parcel fabric. */
-  edges: PathEdge[];
+  edges: StreetEdge[];
   /** Chained through-streets — feed to the renderer, furniture, and analysis. */
-  streets: PathStreet[];
-  junctions: PathJunction[];
-  deadEnds: PathDeadEnd[];
-  bridges: PathFeature[];
-  tunnels: PathFeature[];
+  streets: Street[];
+  junctions: StreetJunction[];
+  deadEnds: StreetDeadEnd[];
+  bridges: StreetFeature[];
+  tunnels: StreetFeature[];
   /** Independent cycle count (E − V + components): 0 = pure tree, ≥1 = has loops. */
   loops: number;
 }
 
 /** Fully-defaulted slider set the generator reads. */
-export interface PathNetworkRules {
+export interface StreetNetworkRules {
   seed: string;
   /** 1 = regular lattice nodes; 0 = organic scatter. */
   gridness: number;
@@ -163,7 +163,7 @@ export interface PathNetworkRules {
 }
 
 /** Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network. */
-export interface PathNetworkContext {
+export interface StreetNetworkContext {
   /** Volume-local ground height sampler. */
   heightAt?: (x: number, z: number) => number;
   /** Ground below this (local) height is a gap streets bridge over. */
@@ -181,11 +181,11 @@ const MAX_NODES = 900;
 const MAX_STREETS = 360;
 const MAX_EDGES = 1400;
 const MAX_LANES = 260;
-const LEVEL_RANK: Record<PathLevel, number> = { boulevard: 3, avenue: 2, street: 1, lane: 0 };
-const WIDTH_MULT: Record<PathLevel, number> = { boulevard: 2.2, avenue: 1.5, street: 1, lane: 0.65 };
+const LEVEL_RANK: Record<StreetLevel, number> = { boulevard: 3, avenue: 2, street: 1, lane: 0 };
+const WIDTH_MULT: Record<StreetLevel, number> = { boulevard: 2.2, avenue: 1.5, street: 1, lane: 0.65 };
 
 /** Turn angle (radians, 0..π) at `b` going a→b→c; 0 = straight, π = full reversal. */
-function turnAngle(a: PathVec2, b: PathVec2, c: PathVec2): number {
+function turnAngle(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
   const ux = b[0] - a[0];
   const uz = b[1] - a[1];
   const vx = c[0] - b[0];
@@ -204,17 +204,17 @@ function turnAngle(a: PathVec2, b: PathVec2, c: PathVec2): number {
  * strictly reduces the angle. Endpoints never move, so a graph node stays welded.
  * @internal
  */
-export function clampTurns(points: readonly PathVec2[], minRad: number, maxRad: number): PathVec2[] {
-  if (points.length < 3) return points.map((p) => [p[0], p[1]] as PathVec2);
+export function clampTurns(points: readonly StreetVec2[], minRad: number, maxRad: number): StreetVec2[] {
+  if (points.length < 3) return points.map((p) => [p[0], p[1]] as StreetVec2);
   // 1. straighten pass — drop interior vertices whose corner is shallower than the minimum.
-  let pts: PathVec2[] = points.map((p) => [p[0], p[1]] as PathVec2);
+  let pts: StreetVec2[] = points.map((p) => [p[0], p[1]] as StreetVec2);
   if (minRad > 0) {
     let changed = true;
     let guard = 0;
     while (changed && guard < 40) {
       changed = false;
       guard += 1;
-      const out: PathVec2[] = [pts[0]!];
+      const out: StreetVec2[] = [pts[0]!];
       for (let i = 1; i < pts.length - 1; i += 1) {
         const angle = turnAngle(out[out.length - 1]!, pts[i]!, pts[i + 1]!);
         if (angle > 1e-4 && angle < minRad) {
@@ -247,8 +247,8 @@ export function clampTurns(points: readonly PathVec2[], minRad: number, maxRad: 
     const la = Math.hypot(a[0] - v[0], a[1] - v[1]) || 1;
     const lb = Math.hypot(b[0] - v[0], b[1] - v[1]) || 1;
     const cut = 0.42;
-    const p0: PathVec2 = [v[0] + ((a[0] - v[0]) / la) * la * cut, v[1] + ((a[1] - v[1]) / la) * la * cut];
-    const p1: PathVec2 = [v[0] + ((b[0] - v[0]) / lb) * lb * cut, v[1] + ((b[1] - v[1]) / lb) * lb * cut];
+    const p0: StreetVec2 = [v[0] + ((a[0] - v[0]) / la) * la * cut, v[1] + ((a[1] - v[1]) / la) * la * cut];
+    const p1: StreetVec2 = [v[0] + ((b[0] - v[0]) / lb) * lb * cut, v[1] + ((b[1] - v[1]) / lb) * lb * cut];
     pts.splice(worst, 1, p0, p1);
   }
   return pts;
@@ -264,7 +264,7 @@ function makeWander(rng: () => number, amplitude: number, wavelength: number): (
 }
 
 /** The wander amplitude for a segment, capped so peak curvature never dips under `minCurveRadius`. */
-function windingAmplitude(rules: PathNetworkRules, wavelength: number): number {
+function windingAmplitude(rules: StreetNetworkRules, wavelength: number): number {
   const want = rules.winding * rules.segmentLength * 0.34;
   // Peak curvature of A·sin(2πt/λ) is A·(2π/λ)²; keep radius ≥ minCurveRadius (0.35 covers the octave mix).
   const cap = (0.35 * wavelength * wavelength) / (4 * Math.PI * Math.PI * Math.max(1, rules.minCurveRadius));
@@ -272,7 +272,7 @@ function windingAmplitude(rules: PathNetworkRules, wavelength: number): number {
 }
 
 /** Sample a straight chord a→b into a wandered polyline (endpoints pinned exactly on the nodes). */
-function wanderEdge(a: PathVec2, b: PathVec2, rng: () => number, rules: PathNetworkRules): PathVec2[] {
+function wanderEdge(a: StreetVec2, b: StreetVec2, rng: () => number, rules: StreetNetworkRules): StreetVec2[] {
   const dx = b[0] - a[0];
   const dz = b[1] - a[1];
   const len = Math.hypot(dx, dz);
@@ -285,7 +285,7 @@ function wanderEdge(a: PathVec2, b: PathVec2, rng: () => number, rules: PathNetw
   const amp = windingAmplitude(rules, wavelength);
   const wander = makeWander(rng, amp, wavelength);
   const steps = Math.max(1, Math.ceil(len / Math.min(Math.max(rules.segmentLength / 3, 6), 16)));
-  const out: PathVec2[] = [];
+  const out: StreetVec2[] = [];
   for (let s = 0; s <= steps; s += 1) {
     const t = s / steps;
     // Window the wander to zero at both ends so the node coords stay exact for graph welding.
@@ -297,14 +297,14 @@ function wanderEdge(a: PathVec2, b: PathVec2, rng: () => number, rules: PathNetw
 }
 
 interface Lattice {
-  nodes: PathVec2[];
+  nodes: StreetVec2[];
   cols: number;
   rows: number;
   index: (i: number, j: number) => number;
 }
 
 /** Lay seed nodes: a regular lattice at `gridness` 1, jittered toward organic scatter as it drops. */
-function seedLattice(rules: PathNetworkRules, hx: number, hz: number, rng: () => number): Lattice {
+function seedLattice(rules: StreetNetworkRules, hx: number, hz: number, rng: () => number): Lattice {
   const spacingX = rules.segmentLength * Math.max(1, rules.aspect);
   const spacingZ = rules.segmentLength;
   const cols = Math.max(2, Math.min(Math.round((hx * 2) / spacingX), 30));
@@ -312,7 +312,7 @@ function seedLattice(rules: PathNetworkRules, hx: number, hz: number, rng: () =>
   const dx = (hx * 2) / cols;
   const dz = (hz * 2) / rows;
   const jitter = (1 - rules.gridness) * 0.42;
-  const nodes: PathVec2[] = [];
+  const nodes: StreetVec2[] = [];
   for (let j = 0; j <= rows; j += 1) {
     for (let i = 0; i <= cols; i += 1) {
       if (nodes.length >= MAX_NODES) break;
@@ -377,11 +377,11 @@ interface RawEdge {
 /** Grow the open street NET: lattice nodes, a spanning tree (guaranteed connectivity), then chords,
  *  loop-closing reconnections, and spur lanes — all driven by the sliders. */
 function buildNet(
-  rules: PathNetworkRules,
+  rules: StreetNetworkRules,
   hx: number,
   hz: number,
   streams: (s: string) => () => number,
-): { nodes: PathVec2[]; edges: RawEdge[] } {
+): { nodes: StreetVec2[]; edges: RawEdge[] } {
   const lattice = seedLattice(rules, hx, hz, streams("lattice"));
   const nodes = lattice.nodes;
   const { cols, rows, index } = lattice;
@@ -481,11 +481,11 @@ function buildNet(
 /** Grow a closed CIRCUIT: nodes ordered around the volume centroid into one loop, radii smoothed so
  *  no corner exceeds the turn ceiling, with an optional pit-lane spur when branching is up. */
 function buildCircuit(
-  rules: PathNetworkRules,
+  rules: StreetNetworkRules,
   hx: number,
   hz: number,
   streams: (s: string) => () => number,
-): { nodes: PathVec2[]; edges: RawEdge[] } {
+): { nodes: StreetVec2[]; edges: RawEdge[] } {
   const rng = streams("circuit");
   const rx = hx * 0.86;
   const rz = hz * 0.86;
@@ -509,7 +509,7 @@ function buildCircuit(
     }
     for (let i = 0; i < k; i += 1) radii[i] = next[i]!;
   }
-  const nodes: PathVec2[] = [];
+  const nodes: StreetVec2[] = [];
   for (let i = 0; i < k; i += 1) {
     const angle = (i / k) * TAU;
     const f = radii[i]!;
@@ -537,7 +537,7 @@ function buildCircuit(
 /** Decide which topology family the sliders call for. Circuit wins when loops dominate and both
  *  branching and mesh connectivity are low — exactly the "race track" corner of the slider space.
  *  @internal */
-export function pathNetworkMode(rules: PathNetworkRules): PathNetworkMode {
+export function streetNetworkMode(rules: StreetNetworkRules): StreetNetworkMode {
   const score = rules.loopiness * (1 - rules.branching * 0.7) * (1 - rules.connectivity * 0.7);
   return score >= 0.45 ? "circuit" : "net";
 }
@@ -546,13 +546,13 @@ export function pathNetworkMode(rules: PathNetworkRules): PathNetworkMode {
  *  and a share of those upgrade to boulevards. */
 function levelForStreets(
   chains: { nodes: number[]; length: number; lane: boolean }[],
-  rules: PathNetworkRules,
+  rules: StreetNetworkRules,
   rng: () => number,
-): PathLevel[] {
+): StreetLevel[] {
   const order = chains
     .map((c, i) => ({ i, length: c.length, lane: c.lane }))
     .sort((a, b) => b.length - a.length);
-  const levels = new Array<PathLevel>(chains.length).fill("street");
+  const levels = new Array<StreetLevel>(chains.length).fill("street");
   const avenueCut = Math.max(1, Math.ceil(order.filter((o) => !o.lane).length * 0.28));
   let ranked = 0;
   for (const o of order) {
@@ -570,20 +570,20 @@ function levelForStreets(
 
 /**
  * Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic
- * per `(rules.seed, hx, hz, context)`. Pass a {@link PathNetworkContext} with a ground sampler to turn
+ * per `(rules.seed, hx, hz, context)`. Pass a {@link StreetNetworkContext} with a ground sampler to turn
  * water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to
  * world space.
  *
- * @capability path-network build a deterministic road/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
+ * @capability street-generator build a deterministic street/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
  */
-export function buildPathNetwork(
-  rules: PathNetworkRules,
+export function generateStreets(
+  rules: StreetNetworkRules,
   hx: number,
   hz: number,
-  context: PathNetworkContext = {},
-): PathNetwork {
+  context: StreetNetworkContext = {},
+): StreetNetwork {
   const streams = seededStreams(`pathnet:${rules.seed}:${Math.round(hx)}:${Math.round(hz)}`);
-  const mode = pathNetworkMode(rules);
+  const mode = streetNetworkMode(rules);
   const raw = mode === "circuit" ? buildCircuit(rules, hx, hz, streams) : buildNet(rules, hx, hz, streams);
   const rawNodes = raw.nodes;
   const rawEdges = raw.edges.filter((e) => e.a !== e.b);
@@ -599,10 +599,10 @@ export function buildPathNetwork(
   });
 
   // --- level per edge: chain length drives the hierarchy, so compute chains first (topology only). ---
-  const edgeWander: PathVec2[][] = rawEdges.map((e) =>
+  const edgeWander: StreetVec2[][] = rawEdges.map((e) =>
     // Clamp wander crests to the footprint so a curve near the rim never bulges outside the volume.
     wanderEdge(rawNodes[e.a]!, rawNodes[e.b]!, streams(`edge:${e.a}:${e.b}`), rules).map(
-      ([x, z]) => [Math.max(-hx, Math.min(hx, x)), Math.max(-hz, Math.min(hz, z))] as PathVec2,
+      ([x, z]) => [Math.max(-hx, Math.min(hx, x)), Math.max(-hz, Math.min(hz, z))] as StreetVec2,
     ),
   );
   const edgeLength = rawEdges.map(
@@ -687,7 +687,7 @@ export function buildPathNetwork(
   for (let i = 0; i < rawEdges.length; i += 1) walkFrom(i); // leftover pure loops
 
   const levels = levelForStreets(chains, rules, streams("levels"));
-  const edgeLevel = new Array<PathLevel>(rawEdges.length).fill("street");
+  const edgeLevel = new Array<StreetLevel>(rawEdges.length).fill("street");
   chains.forEach((chain, ci) => {
     for (const ei of chain.edges) edgeLevel[ei] = levels[ci]!;
   });
@@ -695,7 +695,7 @@ export function buildPathNetwork(
   // --- assemble atomic edges ---
   const minRad = (rules.minTurnAngle * Math.PI) / 180;
   const maxRad = (rules.maxTurnAngle * Math.PI) / 180;
-  const edges: PathEdge[] = rawEdges.map((e, i) => ({
+  const edges: StreetEdge[] = rawEdges.map((e, i) => ({
     id: i,
     a: e.a,
     b: e.b,
@@ -707,13 +707,13 @@ export function buildPathNetwork(
 
   // --- assemble chained streets (smoothed geometry for rendering) ---
   const heightAt = context.heightAt;
-  const streets: PathStreet[] = [];
+  const streets: Street[] = [];
   chains.forEach((chain, ci) => {
     if (streets.length >= MAX_STREETS) return;
     const level = levels[ci]!;
     const width = rules.width * WIDTH_MULT[level];
     // Concatenate the chain's atomic wander polylines (dropping duplicated shared vertices).
-    const pts: PathVec2[] = [];
+    const pts: StreetVec2[] = [];
     chain.edges.forEach((ei, k) => {
       const e = rawEdges[ei]!;
       let seg = edgeWander[ei]!;
@@ -726,7 +726,7 @@ export function buildPathNetwork(
       }
     });
     const smooth = clampTurns(pts, minRad, maxRad);
-    const street: PathStreet = {
+    const street: Street = {
       id: streets.length,
       nodes: chain.nodes,
       points: smooth,
@@ -750,12 +750,12 @@ export function buildPathNetwork(
   });
 
   // --- junctions from degree≥3 nodes; arms from incident edge tangents ---
-  const junctions: PathJunction[] = [];
+  const junctions: StreetJunction[] = [];
   for (let n = 0; n < rawNodes.length; n += 1) {
     if (degree[n] < 3) continue;
     const arms: { angle: number; width: number }[] = [];
     let radius = 0;
-    let level: PathLevel = "lane";
+    let level: StreetLevel = "lane";
     for (const c of adj[n]!) {
       const e = rawEdges[c.edge]!;
       const pts = edgeWander[c.edge]!;
@@ -771,7 +771,7 @@ export function buildPathNetwork(
   }
 
   // --- dead ends from degree-1 nodes ---
-  const deadEnds: PathDeadEnd[] = [];
+  const deadEnds: StreetDeadEnd[] = [];
   for (let n = 0; n < rawNodes.length; n += 1) {
     if (degree[n] !== 1) continue;
     const c = adj[n]![0]!;
@@ -784,13 +784,13 @@ export function buildPathNetwork(
   }
 
   // --- resolve feature spans into world-of-volume feature centerlines ---
-  const bridges: PathFeature[] = [];
-  const tunnels: PathFeature[] = [];
+  const bridges: StreetFeature[] = [];
+  const tunnels: StreetFeature[] = [];
   for (const street of streets) {
     for (const span of street.features) {
       const slice = street.points.slice(span.from, span.to + 1);
       if (slice.length < 2) continue;
-      const feature: PathFeature = { kind: span.kind, points: slice, width: street.width, bankHeight: span.bankHeight };
+      const feature: StreetFeature = { kind: span.kind, points: slice, width: street.width, bankHeight: span.bankHeight };
       (span.kind === "bridge" ? bridges : tunnels).push(feature);
     }
   }
@@ -799,7 +799,7 @@ export function buildPathNetwork(
   const loops = Math.max(0, rawEdges.length - rawNodes.length + components);
 
   // Compact node list with final degrees.
-  const nodes: PathNode[] = rawNodes.map((p, i) => ({ id: i, x: p[0], z: p[1], degree: degree[i]! }));
+  const nodes: StreetNode[] = rawNodes.map((p, i) => ({ id: i, x: p[0], z: p[1], degree: degree[i]! }));
 
   return { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops };
 }
@@ -819,16 +819,16 @@ function countComponents(n: number, edges: RawEdge[]): number {
  * mountain range. Returns index windows into `points`.
  */
 function detectFeatures(
-  points: readonly PathVec2[],
+  points: readonly StreetVec2[],
   heightAt: (x: number, z: number) => number,
-  context: PathNetworkContext,
-): PathFeatureSpan[] {
+  context: StreetNetworkContext,
+): StreetFeatureSpan[] {
   const minEl = context.minElevation ?? -2;
   const clearance = context.tunnelClearance ?? 6;
   const wantBridge = context.bridges === true;
   const wantTunnel = context.tunnels === true;
   if (!wantBridge && !wantTunnel) return [];
-  const spans: PathFeatureSpan[] = [];
+  const spans: StreetFeatureSpan[] = [];
   const heights = points.map((p) => heightAt(p[0], p[1]));
   let i = 0;
   while (i < points.length) {

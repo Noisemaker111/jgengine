@@ -12,6 +12,7 @@
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@jgengine/core": "workspace:*",
     "@jgengine/github": "workspace:*",
     "@tanstack/react-router": "^1.121.0",
     "@tanstack/react-start": "^1.121.0",

@@ -15,6 +15,7 @@ import {
   MARCO_POS,
   PLAYER_SPAWN,
   RACE_CHECKPOINTS,
+  RACE_ROUTES,
   roadPoints,
   ROADS,
   SAFEHOUSE_POS,
@@ -38,7 +39,7 @@ describe("vice-isle authored scene parity", () => {
     expect(ROADS[8]).toEqual({ from: [-180, 240], to: [180, 240] });
   });
 
-  test("the ten race checkpoints match the authored loop", () => {
+  test("the eleven race checkpoints match the authored loop", () => {
     expect(RACE_CHECKPOINTS).toEqual([
       [-60, 120],
       [60, 120],
@@ -46,11 +47,27 @@ describe("vice-isle authored scene parity", () => {
       [180, 0],
       [180, -240],
       [60, -240],
+      [-60, -240],
       [-60, -120],
       [-180, -120],
       [-180, 120],
       [-68, 122],
     ]);
+  });
+
+  test("four authored race circuits ride the street grid", () => {
+    expect(RACE_ROUTES.map((route) => route.id)).toEqual(["race-loop", "race-harbor", "race-heights", "race-coast"]);
+    const avenues = new Set([-180, -60, 60, 180]);
+    const streets = new Set([-240, -120, 0, 120, 240]);
+    for (const route of RACE_ROUTES.filter((r) => r.id !== "race-loop")) {
+      expect(route.checkpoints.length).toBeGreaterThanOrEqual(5);
+      const start = route.checkpoints[route.checkpoints.length - 1]!;
+      const first = route.checkpoints[0]!;
+      expect(Math.hypot(start[0] - first[0], start[1] - first[1])).toBeLessThan(12);
+      for (const [x, z] of route.checkpoints) {
+        expect(avenues.has(x) || streets.has(z) || Math.min(...[...avenues].map((a) => Math.abs(x - a))) <= 8).toBe(true);
+      }
+    }
   });
 
   test("every gameplay POI resolves to its exact position", () => {

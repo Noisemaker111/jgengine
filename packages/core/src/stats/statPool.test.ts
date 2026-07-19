@@ -48,6 +48,20 @@ describe("portable stat pools", () => {
     expect(repaired.hitMax).toBe(true);
   });
 
+  test("returns the same pool reference on a clamped no-op change", () => {
+    const full = createStatPool({ current: 10, max: 10 });
+    const gained = changeStatPool(full, 5);
+    expect(gained.pool).toBe(full);
+    expect(gained.applied).toBe(0);
+    expect(gained.hitMax).toBe(true);
+
+    const empty = createStatPool({ current: 0, max: 10 });
+    const drained = changeStatPool(empty, -5);
+    expect(drained.pool).toBe(empty);
+    expect(drained.applied).toBe(0);
+    expect(drained.hitMin).toBe(true);
+  });
+
   test("round-trips through JSON as caller-owned save data", () => {
     const save = {
       units: {
@@ -101,6 +115,27 @@ describe("stat pool access conformance", () => {
       reason: 'unknown stat "mana"',
     });
     expect(writes).toBe(0);
+  });
+
+  test("keeps map and stat references identical on a no-op pool delta", () => {
+    const native = seedStatValues({ energy: { current: 10, max: 10 } });
+    const existing = native.energy;
+    const result = applyPoolDelta(native, "energy", 5);
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.map).toBe(native);
+      expect(result.stat).toBe(existing);
+    }
+  });
+
+  test("leaves the store reference-identical when delta is a no-op", () => {
+    const maps = new Map<string, StatValueMap>([
+      ["turret", seedStatValues({ heat: { current: 0, max: 100 } })],
+    ]);
+    const api = createEntityStatsApi((ownerId) => maps.get(ownerId));
+    const before = maps.get("turret")!.heat;
+    expect(api.delta("turret", "heat", -20)).toBeNull();
+    expect(maps.get("turret")!.heat).toBe(before);
   });
 
   test("keeps native entity-stat transitions behaviorally aligned", () => {

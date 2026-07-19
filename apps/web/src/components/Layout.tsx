@@ -102,6 +102,13 @@ export function Header() {
             Capabilities
           </Link>
           <Link
+            to="/adopt"
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+          >
+            Adopt
+          </Link>
+          <Link
             to="/editor"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
@@ -114,6 +121,13 @@ export function Header() {
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
           >
             Games
+          </Link>
+          <Link
+            to="/playground"
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+          >
+            Playground
           </Link>
           <a
             href={REPO_URL}
@@ -156,6 +170,11 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/adopt" className="transition hover:text-emerald-300">
+                    Drop-in adoption
+                  </Link>
+                </li>
+                <li>
                   <Link to="/editor" className="transition hover:text-emerald-300">
                     Editor
                   </Link>
@@ -163,6 +182,11 @@ export function Footer() {
                 <li>
                   <Link to="/games" className="transition hover:text-emerald-300">
                     Games
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/playground" className="transition hover:text-emerald-300">
+                    Playground
                   </Link>
                 </li>
                 <li>

@@ -436,7 +436,7 @@
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
-- `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
+- `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `blankWorld` (function): function blankWorld(_seed = "standalone"): EnvironmentWorldFeature — The default flat-ground authoring canvas the standalone editor opens on when the host supplies none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look, foliage scatter, props) is what the author adds here, written into the scene document; it is never pre-baked into the canvas. The `seed` parameter is legacy and unused.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
@@ -461,7 +461,7 @@
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone.
-- `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
+- `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 
 ## @jgengine/editor/DebugDraw
 
@@ -612,6 +612,10 @@
 ## @jgengine/editor/handlers/runtime
 
 - `runtimeHandlers` (const): const runtimeHandlers: Pick< HandlerTable, | "push_document_patch" | "pull_document_patches" | "document_revision" | "push_runtime_delta" | "pull_runtime_deltas" | "runtime_snapshot" | "runtime_summary" | "runtime_get" | "runtime_set" | "runtime_pause" | "runtime_resume" | "runtime_step" | "set_runt… — Live-sync document patches, the ephemeral runtime reverse channel, and play-mode poke verbs.
+
+## @jgengine/editor/handlers/streets
+
+- `streetsHandlers` (const): const streetsHandlers: Pick<HandlerTable, "generate_streets"> — Document, selection, camera, mode, asset placement, and status verbs.
 
 ## @jgengine/editor/handlers/terrain
 

@@ -47,6 +47,10 @@ interface GltfScene {
   nodes?: number[];
 }
 
+interface GltfAnimation {
+  name?: string;
+}
+
 interface GltfJson {
   scene?: number;
   scenes?: GltfScene[];
@@ -54,6 +58,7 @@ interface GltfJson {
   meshes?: GltfMesh[];
   accessors?: GltfAccessor[];
   bufferViews?: GltfBufferView[];
+  animations?: GltfAnimation[];
 }
 
 const GLB_MAGIC = 0x46546c67;
@@ -191,6 +196,26 @@ export function readGlbDims(bytes: Uint8Array): ModelDims | null {
     minY: bounds.min[1],
     maxY: bounds.max[1],
   };
+}
+
+/**
+ * Animation clip names read from a GLB's JSON chunk, de-duplicated and order-preserving;
+ * `null` for an unreadable GLB or one with no (named) animations.
+ *
+ * @capability clip-metadata read a GLB's animation clip names for the asset index at reindex
+ */
+export function readGlbClips(bytes: Uint8Array): string[] | null {
+  const gltf = readJsonChunk(bytes);
+  if (gltf === null) return null;
+  const clips: string[] = [];
+  const seen = new Set<string>();
+  for (const animation of gltf.animations ?? []) {
+    const name = animation.name;
+    if (name === undefined || name.length === 0 || seen.has(name)) continue;
+    seen.add(name);
+    clips.push(name);
+  }
+  return clips.length === 0 ? null : clips;
 }
 
 const COMPONENT_FLOAT = 5126;
