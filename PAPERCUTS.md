@@ -37,56 +37,17 @@ capturing editor screenshots in the dev runner → 'assets pull' run from repo r
 
 gate/test:all in the cloud container → 7 pre-existing failures identical on origin/main: msys tar parses 'C:\...' as a remote host (Cannot connect to C: resolve failed) in tarball clean-consumer tests, plus 3 model-pack texture-URI tests; gate can never pass locally on Windows containers — needs tar --force-local or bsdtar and a look at the pack tests
 
-2026-07-18T16:59:02.348Z — cloud-agent — Claude
-
-Running bun run gate on a fresh cloud container → agent:preflight fails on missing node_modules before build's ensure-ready --install-only can run; had to bun install manually first. Preflight could auto-install or point at ensure-ready.
-
-2026-07-18T17:17:53.370Z — claude-fable-5 — Claude
-
-Cold cloud container: 'bun run shoot' fails with 'Dev server failed to start' until 'bun scripts/ensure-ready.ts' has run once — shoot should bootstrap deps itself or say to run ensure-ready
-
-2026-07-18T17:39:17.438Z — cloud-agent — Claude
-
-Fresh branch off origin/main can't pass its own gate: check-content-gate fails because coordinate-literal-baseline.json lists Games/the-robots/src/game/world/zones.ts which no longer trips the lint (baselines only shrink). Every session that runs the gate hits this red before touching any real work — the shrinking baselines need reseeding on main (bun run check-content-gate --update) or a CI job that keeps them trimmed.
-
-2026-07-18T17:39:17.470Z — cloud-agent — Claude
-
-gen:capabilities has no encoding guard: the container's non-UTF-8 locale (LANG=, LC_CTYPE=POSIX) let mojibake em/en-dashes get committed into core JSDoc (gameContext.ts, commandApply.ts). check-capabilities then only reported 'stale — run gen:capabilities', and running that FIX faithfully copies the corruption into the committed skill docs. A cheap grep for the mojibake byte-signature in the gate (or in gen-capability-index) would catch corruption at the source instead of laundering it through the generator. (Locale now pinned to C.UTF-8 in .claude/settings.json to stop new corruption.)
-
-2026-07-18T17:25:53.270Z — claude-fable-5 — Claude
-
-Capturing baseline city screenshots on a fresh cloud container → bun run shoot failed with 'Dev server failed to start on :4715' because node_modules was missing; the error never hints that vite is absent / bun install is needed
-
-2026-07-18T18:14:30.036Z — claude-fable-5 — Claude
-
-Running bun run gate on a fresh branch off main → check-capabilities failed because jgengine-multiplayer/jgengine-ui capabilities.md were already stale on main (host-join-code-gate, hud-layout-persist rows missing); had to fold unrelated regenerated rows into my PR to get the gate green
-
-2026-07-18T18:15:30.730Z — claude-fable-5 — Claude
-
-bun run gate on fresh branch off main → check-content-gate failed on a stale coordinate-literal-baseline.json entry (Games/the-robots zones.ts no longer trips the lint); main ships with a red gate until someone reseeds
 2026-07-18T18:05:04.668Z — claude — Claude
 
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
-
-2026-07-18T22:43:40.443Z — claude-fable-5 — Claude
-
-world redesign PR: main is broken — packages/editor/src/EditorChrome.tsx had a duplicate ')}' (merge #1176) that fails 'bun run build'; agent:bootstrap earlier reported success anyway, so the breakage only surfaced mid-task at gen:skill-api
 2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
 
 recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
 
-2026-07-18T20:23:57.542Z — gpt-5.6-sol — NoisemakerJon
-
-creating the required isolated worktree under C:\tmp -> Bun returned EPERM/No package.json there, and a nested ignored worktree then resolved scripts against the parent checkout; worktrees need a documented Bun-safe location outside the repository
-
 2026-07-18T20:24:06.560Z — gpt-5.6-sol — NoisemakerJon
 
 locating API adoption routing for the minimap slice -> the expected scripts/api-adoption.json path does not exist, so generator ownership was not discoverable by filename
-
-2026-07-18T20:24:14.469Z — gpt-5.6-sol — NoisemakerJon
-
-running a focused package typecheck from a nested worktree -> 'bun run --cwd packages/core check-types' resolved as the parent checkout's root build/check, wrote ignored dist output there, and failed on unrelated stale editor API artifacts; package-cwd syntax and worktree discovery were dangerously ambiguous
 
 2026-07-18T20:30:09.213Z — gpt-5.6-sol — NoisemakerJon
 
@@ -95,22 +56,6 @@ running affected-package typechecks after a clean frozen install -> react/shell 
 2026-07-18T20:41:24.709Z — gpt-5.6-sol — NoisemakerJon
 
 verifying the standalone portable-minimap dev server with the required agent-browser skill -> the agent-browser CLI is not installed or on PATH, so verification had to fall back to the repository's Chrome/CDP shoot --url path
-
-2026-07-18T20:43:17.752Z — gpt-5.6-sol — NoisemakerJon
-
-capturing an arbitrary standalone React URL with bun run shoot --url -> the documented command timed out because shoot silently requires the page to set data-jg-capture=ready, a contract missing from --help
-
-2026-07-18T20:54:16.196Z — gpt-5.6-sol — NoisemakerJon
-
-running bun run build on the fresh portable-capability branch -> unrelated packages/editor/src/shell/HierarchyPanel.tsx failed TS6133 because an ids parameter is unused on the branch's origin/main base
-
-2026-07-18T20:56:08.573Z — gpt-5.6-sol — NoisemakerJon
-
-regenerating skill API on current origin/main for the portable marker exports -> check-skill-api fails on 11 unrelated newly exported editor helpers with no consumer import or capability tag, so main's generated API gate is red after the editor follow-up merges
-
-2026-07-18T21:07:01.236Z — gpt-5.6-sol — NoisemakerJon
-
-running the full suite on current origin/main for the portable minimap slice -> exportManifest.test.ts fails because six newly exposed editor subpaths are absent from scripts/export-manifest.json, so main's published-export gate is red independently of this change
 
 2026-07-18T21:07:45.656Z — gpt-5.6-sol — NoisemakerJon
 
@@ -132,68 +77,25 @@ rerunning scripts/tarballInstall.test.ts after one timeout adjustment -> repeate
 
 staging the reviewed worktree diff -> git could not create the linked-worktree index.lock under the main checkout's .git directory without escalation, despite the worktree itself being the authorized writable root
 
-2026-07-18T21:45:58.260Z — gpt-5.6-sol — NoisemakerJon
-
-running a focused core typecheck with bun --cwd packages/core run check-types -> Bun exited 0 after printing help instead of executing the script; invalid command ordering should not report success
-
-2026-07-18T21:57:19.685Z — gpt-5.6-sol — NoisemakerJon
-
-regenerating scripts/export-manifest.json for the new core/stats/statPool subpath -> current origin/main also injects six unrelated stale editor subpaths, so the scoped change had to remove those generated rows and the baseline manifest gate remains red
-
 2026-07-18T21:58:37.034Z — gpt-5.6-sol — NoisemakerJon
 
 running the isolated packed-core stat-pool import smoke test -> Windows tar extraction was killed at the explicit 30s test budget after a dangling process warning; real-tarball tests need a Windows-safe extractor or a larger filesystem budget
-
-2026-07-18T22:08:50.506Z — gpt-5.6-sol — NoisemakerJon
-
-running bun run gate for the stat-pool slice -> the build phase exited 255 immediately after launching the editor package build with no compiler diagnostic, so the full gate did not identify a failing source or check
 
 2026-07-18T22:13:40.362Z — gpt-5.6-sol — NoisemakerJon
 
 retrying the full gate after the isolated editor build passed -> 6337 tests passed, but five unchanged tarball-content cases and installPackagedSkills exceeded Bun's default 5s timeout under Windows filesystem contention, alongside the known six-subpath editor export-manifest drift
 
-2026-07-18T22:23:17.244Z — claude — Claude
-
-ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
-
-2026-07-18T22:31:58.957Z — gpt-5.6-sol — NoisemakerJon
-
-regenerating combat API docs for runtime snapshots on current origin/main -> generator also rewrote jgengine-editor/api.md and failed on 25 unrelated newly merged editor exports, so the scoped runtime PR must exclude those artifacts while main's skill API gate remains red
-
 2026-07-18T22:32:42.003Z — gpt-5.6-sol — NoisemakerJon
 
 logging a required repository papercut from this worktree -> bun run papercut reported the declared script missing, then direct Bun execution hit an EPERM sandbox read and required escalation
-
-2026-07-18T22:33:56.842Z — gpt-5.6-sol — NoisemakerJon
-
-checking capability docs for the runtime-state slice on fresh origin/main -> check-capabilities failed only because jgengine-editor/capabilities.md is already stale from unrelated merged editor exports
-
-2026-07-18T22:34:48.177Z — gpt-5.6-sol — NoisemakerJon
-
-running all-workspace type checks for the runtime-state slice on fresh origin/main -> 8 workspaces fail on the same unrelated duplicate JSX close at packages/editor/src/EditorChrome.tsx:930, while @jgengine/core typecheck and all 4,608 core tests pass
-
-2026-07-18T22:36:15.816Z — gpt-5.6-sol — NoisemakerJon
-
-running the final full gate for the runtime-state PR -> agent preflight and seven package builds passed, then the unchanged duplicate JSX close at packages/editor/src/EditorChrome.tsx:930 stopped the editor build on current main
 
 2026-07-18T22:37:19.095Z — gpt-5.6-sol — NoisemakerJon
 
 running ship preflight immediately after the verified runtime-state commit -> origin/main advanced during the slice, so the branch must be rebased and verification refreshed before the PR can open
 
-2026-07-18T22:40:28.980Z — gpt-5.6-sol — NoisemakerJon
-
-refreshing verification after rebasing runtime snapshots onto current main -> all 4,637 core tests, recipes, and capabilities pass, but shell typecheck is already red on missing MarkerCollection plus ResolvedCity.tunnels drift; skill API generation also reports two undocumented glbThumbnailCache exports
-
-2026-07-18T22:41:34.732Z — gpt-5.6-sol — NoisemakerJon
-
-running the final rebased gate for runtime snapshots -> every package build and artifact/skill-sync check passed, then check-skill-api stopped on current-main glbThumbnailCache JSDoc plus stale editor/UI API inventories unrelated to this PR
-
 2026-07-18T22:46:09.366Z — gpt-5.6-sol — NoisemakerJon
 
 opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead
-2026-07-18T23:02:42.440Z — fable — Claude
-
-drive --shot <value>: passing an absolute path breaks (script builds shots/<game>-<path>.png → ENOENT); only bare names work, flag docs don't say so
 
 2026-07-18T23:02:42.473Z — fable — Claude
 
@@ -218,14 +120,6 @@ Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstal
 2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
 
 bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
-
-2026-07-18T23:38:11.226Z — claude-fable-5 — NoisemakerJon
-
-Outside-repo user sim: the staged jgengine intake skill installed into a scaffolded game says 'Read the repository README (../../../README.md)' and mentions bun run new:game — both are monorepo-only; in a standalone project the link is dead and the command wrong. Stage a consumer variant or reword.
-
-2026-07-18T23:38:11.716Z — claude-fable-5 — NoisemakerJon
-
-Outside-repo user sim: jgengine-multiplayer reference.md (shipped in the skills tarball) points to examples/convex-host, examples/HOSTED.md, and apps/dev/src/main.tsx — none exist in a consumer project; the inline factory docs saved the day but the pointers should be repo-relative-free
 
 2026-07-18T23:38:11.857Z — claude-fable-5 — NoisemakerJon
 
@@ -254,6 +148,7 @@ Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive
 2026-07-19T00:10:56.438Z — claude-fable-5 — NoisemakerJon
 
 Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
+
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
@@ -261,6 +156,7 @@ drive vice-isle --key KeyW:12000: player never moves (three identical shots from
 2026-07-19T01:16:07.023Z — opus — Claude
 
 PR #1220: Vercel preview *deployment* reported FAILED on the PR while GitHub CI (quick/ci) was green and a local 'vite build' of apps/web passed clean (17 pages prerendered) — the red Vercel status is environmental/deploy-config, not caused by the diff, but it looks like a blocking failure and invites chasing a non-issue. Would help to either not surface non-blocking Vercel deploy status as a PR failure signal, or document that it's independent of CI.
+
 2026-07-18T23:04:31.014Z — gpt-5.6-sol — NoisemakerJon
 
 running independent recipe/surface/test/type checks for portable damage in parallel -> automatic permission review timed out after several minutes before commands ran, so verification had to be retried as one bounded sequence
@@ -268,47 +164,31 @@ running independent recipe/surface/test/type checks for portable damage in paral
 2026-07-18T23:09:23.301Z — gpt-5.6-sol — NoisemakerJon
 
 running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh
+
 2026-07-19T00:30:01.147Z — claude-opus-4-8 — NoisemakerJon
 
 Opened the-robots/loopline editor (?mode=editor) → infinite React 'Maximum update depth exceeded' loop in useGlbThumbnail/AssetThumbnail (ContentBrowser/BottomDock), triggered when GLB model textures fail to load; the GameUiErrorBoundary then blanks the whole editor chrome. Standalone/spire-cards editors (no failing model assets) are unaffected.
+
 2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
 
 PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
+
 2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
 
 verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
-
-2026-07-19T01:23:41.909Z — claude-opus-4-8 — NoisemakerJon
-
-adding an apps/web route → bun --cwd apps/web run check-types is red on origin/main: playground.tsx can't resolve @jgengine/core/world/cityGenerator & streetGenerator even though their dist files exist, so a new page's typecheck is noisy with unrelated pre-existing errors
 
 2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
 
 Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
 
-2026-07-19T01:55:01.074Z — claude-fable-5 — NoisemakerJon
-
-adding new tagged shell exports → first gen:skill-api run printed 'skill-api: generated files kept; gate failures above still need fixing' listing the new symbols, but an immediate identical re-run reported 'skill-api ok' — the transient failure message doesn't say the fix is just regenerating capabilities first (or the script should run gen:capabilities itself), so it reads like a real gate break
-
 2026-07-19T01:58:14.989Z — claude-fable-5 — NoisemakerJon
 
 regenerating scripts/export-manifest.json → gen-export-manifest reads dist, so orphaned dist files from incremental builds (deleted/renamed source never cleaned from dist) leak phantom public subpaths into the manifest and can mask real removals — found packages/core/dist/devtools/urlFlags.js orphaned with no src counterpart, and main's committed manifest still lists the deleted ./handlers/pathNetwork; the generator should cross-check dist entries against src (or builds should clean orphans)
+
 2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
 
 switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop
 
-2026-07-19T02:05:06.289Z — claude-fable-5 — Claude
+2026-07-19T03:47:57.282Z — claude-opus-4-8 — Claude
 
-pushing a restarted branch after its PR squash-merged + remote branch auto-deleted: push --force-with-lease rejects with 'stale info' and fetch of the branch says no remote ref — needed git fetch --prune before push; workflow skill could mention prune in the merged-branch restart recipe
-
-2026-07-19T03:00:51.246Z — claude-fable-5 — Claude
-
-Running bun run gate as a Claude background Bash task → the task harness reported 'completed (exit 0)' while guard.ts subprocesses were still running, so the output file was truncated mid-run and the verdict untrustworthy; had to kill overlapping runs and re-run with an explicit exit-code marker file
-
-2026-07-19T03:45:07.086Z — claude-opus-4-8 — Claude
-
-shipping a UI boundary check → check-export-manifest fails on main: scripts/export-manifest.json was stale (missing @jgengine/jgengine ./upgrade subpath), forcing an unrelated regen into my PR
-
-2026-07-19T03:57:16.316Z — fable — Claude
-
-Adding an /agents.md server route to apps/web → Vite dev static middleware intercepts .md URLs and 404s before TanStack SSR sees them, while .txt/.xml server routes work; had to ship the brief as /llms-full.txt instead
+Wiring in-game before/after screenshots for HudTheme/IconTreatment adoption -> the deterministic engine preview fixtures (hudThemePreview/iconsPreview/barsPreview) render the REAL components but the shoot harness only auto-discovers Games/*/src/preview.tsx, so exported @jgengine/react previews have no capture route without a hand-rolled --url mount; games' own preview.tsx are static posters, not the real HUD, so painted-icon adoption can't be screenshotted without booting full --mode play.

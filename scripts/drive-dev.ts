@@ -68,7 +68,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --click "<text>"    click the first visible element containing this text
   --wait <ms>         pause before the next step
   --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
-  --shot <name>       screenshot to shots/<game>-<name>.png (default step if none given)
+  --shot <name>       screenshot to shots/<game>-<name>.png — pass a bare name,
+                      not a path (a path/slash yields shots/<game>-<path>.png and ENOENTs)
   --rpc <json>        call the page's agent/editor bridge with this JSON payload
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
@@ -125,8 +126,13 @@ function parseArgs(argv: string[]): Args {
       const code = colon > 0 ? spec.slice(0, colon) : spec;
       const holdMs = colon > 0 ? Number(spec.slice(colon + 1)) : 1000;
       args.steps.push({ kind: "key", code, holdMs });
-    } else if (value === "--shot") args.steps.push({ kind: "shot", name: argv[++index] ?? "drive" });
-    else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
+    } else if (value === "--shot") {
+      const name = argv[++index] ?? "drive";
+      if (name.includes("/") || name.includes("\\")) {
+        throw new Error(`drive: --shot takes a bare name, not a path (got "${name}") — output always lands in shots/<game>-<name>.png`);
+      }
+      args.steps.push({ kind: "shot", name });
+    } else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
     else if (value === "--playtest") args.playtest = true;
