@@ -333,6 +333,61 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   };
 }
 
+/** One objective as a tracker/HUD reads it — label + progress toward its count. */
+export interface TrackedObjectiveView {
+  id: string;
+  /** Human label (e.g. "Defeat 3 wraiths"); falls back to the objective id. */
+  label: string;
+  count: number;
+  progress: number;
+  complete: boolean;
+}
+
+/** A quest as a tracker/HUD reads it — title, status, and per-objective progress. */
+export interface TrackedQuestView {
+  id: string;
+  title: string;
+  status: QuestStatus;
+  objectives: TrackedObjectiveView[];
+}
+
+/** Default objective label: a readable "verb count noun" from a {@link QuestObjective}. */
+export function defaultObjectiveLabel(objective: QuestObjective): string {
+  const noun = objective.target ?? objective.item ?? objective.id;
+  const verb = objective.kind === "kill" ? "Defeat" : objective.kind === "collect" ? "Collect" : objective.kind;
+  return `${verb} ${objective.count} ${noun}`;
+}
+
+/**
+ * Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance}
+ * into a flat, renderer-free view a HUD tracker draws (title, status, labelled
+ * objective progress). Pass `label` to override the derived objective text.
+ *
+ * @capability quest-tracker-view join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
+ */
+export function describeTrackedQuest(
+  def: QuestDef,
+  instance: QuestInstance,
+  label: (objective: QuestObjective) => string = defaultObjectiveLabel,
+): TrackedQuestView {
+  const defs = new Map(def.objectives.map((objective) => [objective.id, objective]));
+  return {
+    id: def.id,
+    title: def.title,
+    status: instance.status,
+    objectives: instance.objectives.map((progress) => {
+      const source = defs.get(progress.id);
+      return {
+        id: progress.id,
+        label: source === undefined ? progress.id : label(source),
+        count: progress.count,
+        progress: progress.progress,
+        complete: progress.complete,
+      };
+    }),
+  };
+}
+
 export interface QuestAcceptOptions {
   hasUnlock?(id: string): boolean;
 }

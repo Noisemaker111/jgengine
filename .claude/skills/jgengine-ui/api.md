@@ -22,6 +22,17 @@
 - `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
+## @jgengine/core/i18n/i18n
+
+- `Catalog` (type): type Catalog = Readonly<Record<Locale, Messages>> — All locales' message tables, keyed by locale.
+- `I18n` (interface): interface I18n — Runtime translator over a message {@link Catalog} — active locale, lookup with fallback, interpolation, and pluralization.
+- `I18nOptions` (interface): interface I18nOptions — Configuration for {@link createI18n}.
+- `Locale` (type): type Locale = string — A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}.
+- `Messages` (type): type Messages = Readonly<Record<string, string>> — Flat message table for one locale: key → template string with `{param}` slots.
+- `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
+- `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
+- `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
+
 ## @jgengine/core/render/lookPreset
 
 - `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
@@ -55,7 +66,7 @@
 - `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
 - `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; readonly touchJoystick: "controls.touchJoystick"; } — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
@@ -75,11 +86,17 @@
 
 ## @jgengine/core/ui
 
+- `AccessibilityState` (interface): interface AccessibilityState — Serializable accessibility preferences a game reads to adapt its presentation.
+- `AccessibilityStore` (interface): interface AccessibilityStore — Observable, serializable accessibility-preferences store.
 - `ActionCooldown` (interface): interface ActionCooldown — Cooldown state for an action, expressed so a radial sweep or countdown can render directly.
 - `ActionCost` (interface): interface ActionCost — Headless view model for a contextual action collection — the data layer behind an RTS command card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean* (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The React renderers in `@jgengine/react/actionHud` consume this; a game can swap either without forking the logic here.
 - `ActionDef` (interface): interface ActionDef — A caller-authored contextual action — the DATA input to the model. Every field except `id` is optional so a build button, a stance toggle, and a cooldown ability all use the same shape. Catalog-id mapping (turning `icon`/`label` into art and copy) stays caller-owned.
 - `ActionReason` (interface): interface ActionReason — A single blocking reason: a stable machine `code` plus caller-facing `message`.
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
+- `COLORBLIND_MATRICES` (const): const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> — `feColorMatrix` `values` strings for each colorblind mode — simulate how a viewer with that condition perceives color (and a grayscale mode). `"none"` maps to `null` (no filter). Consumed by the React `ColorblindFilters` defs.
+- `Catalog` (type): type Catalog = Readonly<Record<Locale, Messages>> — All locales' message tables, keyed by locale.
+- `ColorblindMode` (type): type ColorblindMode = "none" | "protanopia" | "deuteranopia" | "tritanopia" | "grayscale" — Colorblind simulation/daltonization modes the engine ships matrices for.
+- `DEFAULT_ACCESSIBILITY` (const): const DEFAULT_ACCESSIBILITY: AccessibilityState — The out-of-the-box accessibility state (all assistance off, `textScale` 1).
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
 - `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
 - `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
@@ -107,13 +124,17 @@
 - `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
 - `HudSize` (interface): interface HudSize — ⚠ undocumented
 - `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
+- `I18n` (interface): interface I18n — Runtime translator over a message {@link Catalog} — active locale, lookup with fallback, interpolation, and pluralization.
+- `I18nOptions` (interface): interface I18nOptions — Configuration for {@link createI18n}.
 - `Insets` (interface): interface Insets — Edge insets in CSS pixels (safe areas, reservations).
 - `LayoutCollision` (interface): interface LayoutCollision — One detected forbidden/warned overlap between two regions.
 - `LayoutCollisionPolicy` (type): type LayoutCollisionPolicy = "forbid" | "allow" | "warn" — How a region participates in collision reporting.
 - `LayoutOrientation` (type): type LayoutOrientation = "portrait" | "landscape" — A concrete device orientation.
 - `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
 - `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
+- `Locale` (type): type Locale = string — A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}.
 - `LookPreset` (type): type LookPreset = "cinematic" | "flat" — Named default-look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `Messages` (type): type Messages = Readonly<Record<string, string>> — Flat message table for one locale: key → template string with `{param}` slots.
 - `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
 - `PanelDef` (interface): interface PanelDef — A caller-authored panel/window declaration — the DATA input to the model. Only `id` is required so a bag, a character sheet, and a one-off dialog all share the shape.
 - `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/react/panels` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
@@ -122,8 +143,11 @@
 - `PopoverPlacement` (interface): interface PopoverPlacement — The resolved popover position — the side it actually opened on and its clamped top-left.
 - `PopoverSide` (type): type PopoverSide = "top" | "bottom" | "left" | "right" — Which side of its anchor a popover opens toward.
 - `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `RadialArc` (interface): interface RadialArc — Arc the slices span. Omit for a full wheel (index 0 at the top). A partial `sweep` (e.g. `Math.PI` for a bottom half, `Math.PI / 2` for a quarter) packs the slices evenly inside `[startAngle, startAngle + sweep]` — the arc/quick-bar forms. Angles are radians from "up" (−Y), clockwise.
+- `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
+- `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
 - `ResolvedAction` (interface): interface ResolvedAction — A resolved action view model — availability computed once from cooldown, cost, `disabled`, and any caller reasons. `enabled` is the single truth a renderer gates interaction on; `reasons` is the ordered explanation (cooldown, then unmet costs, then caller reasons, then a generic disable).
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; readonly touchJoystick: "controls.touchJoystick"; } — ⚠ undocumented
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `SelectionFocusDirection` (type): type SelectionFocusDirection = "next" | "prev" | "first" | "last" — A 1-D focus move within the selection member strip.
 - `SelectionGroup` (interface): interface SelectionGroup — A bucket of same-`kind` entities in a large selection — the RTS "12 Marines" control chip.
@@ -140,6 +164,9 @@
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `SummarizeSelectionOptions` (interface): interface SummarizeSelectionOptions — Options for {@link summarizeSelection}.
 - `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `TEXT_SCALE_MAX` (const): const TEXT_SCALE_MAX: 2 — Maximum UI text scale.
+- `TEXT_SCALE_MIN` (const): const TEXT_SCALE_MIN: 0.75 — Minimum UI text scale.
+- `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 - `TooltipContent` (interface): interface TooltipContent — Structured tooltip content — a renderer lays these fields out; the model owns what is shown.
 - `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
@@ -152,8 +179,11 @@
 - `actionCost` (function): function actionCost(resourceId: string, amount: number, available?: number): ActionCost — Build an {@link ActionCost}. `met` is true unless `available` is provided and below `amount`.
 - `actionTooltip` (function): function actionTooltip(action: ResolvedAction): TooltipContent — Build {@link TooltipContent} from a {@link ResolvedAction}: title from the label, the group as a subtitle, the description as the body, and the blocking reasons as warning notes. The single place an action's tooltip copy is assembled, so every renderer shows the same thing.
 - `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
+- `clampTextScale` (function): function clampTextScale(scale: number): number — Clamp a text-scale multiplier into the supported `[TEXT_SCALE_MIN, TEXT_SCALE_MAX]` range.
 - `closePanel` (function): function closePanel(state: PanelState, id: string): PanelState — Close panel `id`. No-op if it is already closed. Its position override is kept so reopening restores the last placement.
 - `closeTopPanel` (function): function closeTopPanel(state: PanelState): PanelState — Close the topmost closable open panel — the ESC handler. Skips panels pinned with `closable: false` and returns the same state when nothing closable is open.
+- `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
+- `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `createPanelState` (function): function createPanelState(defs: readonly PanelDef[]): PanelState — Build the initial {@link PanelState} from the panel defs: panels flagged `initial` start open (in declaration order, respecting group exclusivity), and every def's group/closable is captured into the state so later reducers need no defs.
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `focusPanel` (function): function focusPanel(state: PanelState, id: string): PanelState — Raise open panel `id` to the top of the focus stack (assign it the highest z). No-op if it is closed or already on top, so a pointer-down that refocuses the top window returns the same state.
@@ -163,6 +193,7 @@
 - `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 - `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
+- `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 - `isOpen` (function): function isOpen(state: PanelState, id: string): boolean — Whether panel `id` is currently open.
 - `listHudPanelTypes` (function): function listHudPanelTypes(): HudPanelTypeDef[] — Every registered panel type, sorted by id — editor palette / agent listing.
 - `moveGridFocus` (function): function moveGridFocus(current: number, count: number, columns: number, dir: FocusDirection, options?: GridFocusOptions): number — Pure grid focus math for keyboard and controller navigation of an action card laid out in `columns`-wide rows. Given the current index (`-1` for none) it returns the next index, clamped to `[0, count)` — or wrapped when `wrap` is set. `left/right` move within/across columns, `up/down` across rows, `next/prev` walk the flat order, `first/last` jump to the ends. Renderer-agnostic: radial and list layouts pass `columns: 1` (or `count`) to get sensible 1-D stepping.
@@ -175,6 +206,11 @@
 - `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate. A rect is only reported when it is partly visible *and* crosses an edge; a fully off-screen (closed/hidden) surface is skipped, so parked drawers and unopened menus never raise a false alarm.
 - `panelByHotkey` (function): function panelByHotkey(defs: readonly PanelDef[], code: string): string | null — Find the panel whose `hotkey` matches `code`, case-insensitively — the keybind router. `code` may be a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`); it is compared verbatim to each def's `hotkey`, so author the hotkey in whichever form the caller feeds in. Returns the first match's id, or null.
 - `placePopover` (function): function placePopover(anchor: UiRect, content: UiSize, viewport: UiSize, options?: PopoverOptions): PopoverPlacement — Position a popover/tooltip of `content` size against its `anchor` rectangle inside `viewport`: open on the `preferred` side, flip to the opposite when that side lacks room and the opposite has more, then clamp the top-left so the box stays fully on screen (respecting `margin`). Pure and deterministic — no DOM reads — so it is SSR-safe and unit-testable, and the React tooltip is a thin shell over it.
+- `radialIndexFromAngle` (function): function radialIndexFromAngle(angle: number, count: number, arc?: RadialArc): number — Map an angle to a slice index; returns -1 when the angle falls outside a partial `arc`.
+- `radialIndexFromVector` (function): function radialIndexFromVector(dx: number, dy: number, count: number, options: RadialVectorOptions = {}): number | null — Pick the slice a pointer/stick vector points at. `dx`/`dy` are screen-space (y down): up is `(0, -1)`. Returns null inside `deadZone` or (for a partial `arc`) outside the arc, so a centered stick or a click off the arc selects nothing.
+- `radialSlicePosition` (function): function radialSlicePosition(index: number, count: number, radius: number, arc?: RadialArc): { x: number; y: number } — Unit-circle position of a slice center (up = `(0, -1)`), scaled by `radius` — where to place a wedge's icon/label.
+- `radialSlices` (function): function radialSlices(count: number, arc?: RadialArc): RadialSlice[] — Divide a ring (or `arc`) into `count` wedges — the geometry a radial/quick menu (weapon wheel, emote arc, ping bar) renders. A full wheel centers index 0 at the top; a partial `arc` packs the slices inside its sweep.
+- `reducedMotionDuration` (function): function reducedMotionDuration(state: AccessibilityState, ms: number, reduced = 0): number — Return `ms` when motion is allowed, or `reduced` (default 0) when `reducedMotion` is set — the animation-duration gate.
 - `registerHudPanelType` (function): function registerHudPanelType(def: HudPanelTypeDef): void — Register a HUD panel type so the editor can list/add/configure it and canvas resize knows axes.
 - `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
 - `resolveAction` (function): function resolveAction(def: ActionDef): ResolvedAction — Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`, and order the blocking `reasons`. Pure — the same input always yields the same view model.
@@ -187,6 +223,19 @@
 - `summarizeSelection` (function): function summarizeSelection(members: readonly EntitySummaryDef[], options?: SummarizeSelectionOptions): SelectionView — Summarize a selected-entity list into a {@link SelectionView}: resolve the primary focus, keep the ordered members, and bucket them by `kind`. Pure and stable — deterministic group ordering and a clamped focus index, so it is safe to call every render and to assert on in a test.
 - `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
 - `togglePanel` (function): function togglePanel(state: PanelState, id: string): PanelState — Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key behavior behind a keybind like `B` for the bag.
+
+## @jgengine/core/ui/accessibility
+
+- `AccessibilityState` (interface): interface AccessibilityState — Serializable accessibility preferences a game reads to adapt its presentation.
+- `AccessibilityStore` (interface): interface AccessibilityStore — Observable, serializable accessibility-preferences store.
+- `COLORBLIND_MATRICES` (const): const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> — `feColorMatrix` `values` strings for each colorblind mode — simulate how a viewer with that condition perceives color (and a grayscale mode). `"none"` maps to `null` (no filter). Consumed by the React `ColorblindFilters` defs.
+- `ColorblindMode` (type): type ColorblindMode = "none" | "protanopia" | "deuteranopia" | "tritanopia" | "grayscale" — Colorblind simulation/daltonization modes the engine ships matrices for.
+- `DEFAULT_ACCESSIBILITY` (const): const DEFAULT_ACCESSIBILITY: AccessibilityState — The out-of-the-box accessibility state (all assistance off, `textScale` 1).
+- `TEXT_SCALE_MAX` (const): const TEXT_SCALE_MAX: 2 — Maximum UI text scale.
+- `TEXT_SCALE_MIN` (const): const TEXT_SCALE_MIN: 0.75 — Minimum UI text scale.
+- `clampTextScale` (function): function clampTextScale(scale: number): number — Clamp a text-scale multiplier into the supported `[TEXT_SCALE_MIN, TEXT_SCALE_MAX]` range.
+- `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
+- `reducedMotionDuration` (function): function reducedMotionDuration(state: AccessibilityState, ms: number, reduced = 0): number — Return `ms` when motion is allowed, or `reduced` (default 0) when `reducedMotion` is set — the animation-duration gate.
 
 ## @jgengine/core/ui/actionModel
 
@@ -288,6 +337,16 @@
 - `panelByHotkey` (function): function panelByHotkey(defs: readonly PanelDef[], code: string): string | null — Find the panel whose `hotkey` matches `code`, case-insensitively — the keybind router. `code` may be a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`); it is compared verbatim to each def's `hotkey`, so author the hotkey in whichever form the caller feeds in. Returns the first match's id, or null.
 - `togglePanel` (function): function togglePanel(state: PanelState, id: string): PanelState — Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key behavior behind a keybind like `B` for the bag.
 
+## @jgengine/core/ui/radialMenu
+
+- `RadialArc` (interface): interface RadialArc — Arc the slices span. Omit for a full wheel (index 0 at the top). A partial `sweep` (e.g. `Math.PI` for a bottom half, `Math.PI / 2` for a quarter) packs the slices evenly inside `[startAngle, startAngle + sweep]` — the arc/quick-bar forms. Angles are radians from "up" (−Y), clockwise.
+- `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
+- `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
+- `radialIndexFromAngle` (function): function radialIndexFromAngle(angle: number, count: number, arc?: RadialArc): number — Map an angle to a slice index; returns -1 when the angle falls outside a partial `arc`.
+- `radialIndexFromVector` (function): function radialIndexFromVector(dx: number, dy: number, count: number, options: RadialVectorOptions = {}): number | null — Pick the slice a pointer/stick vector points at. `dx`/`dy` are screen-space (y down): up is `(0, -1)`. Returns null inside `deadZone` or (for a partial `arc`) outside the arc, so a centered stick or a click off the arc selects nothing.
+- `radialSlicePosition` (function): function radialSlicePosition(index: number, count: number, radius: number, arc?: RadialArc): { x: number; y: number } — Unit-circle position of a slice center (up = `(0, -1)`), scaled by `radius` — where to place a wedge's icon/label.
+- `radialSlices` (function): function radialSlices(count: number, arc?: RadialArc): RadialSlice[] — Divide a ring (or `arc`) into `count` wedges — the geometry a radial/quick menu (weapon wheel, emote arc, ping bar) renders. A full wheel centers index 0 at the top; a partial `arc` packs the slices inside its sweep.
+
 ## @jgengine/core/ui/selectionModel
 
 - `EntitySummaryDef` (interface): interface EntitySummaryDef — A caller-provided summary of one selectable entity — the DATA input. `kind` is the grouping key used to bucket a large selection (unit type, catalog id); `icon` is a portrait id the renderer resolves. Only `id` is required.
@@ -324,6 +383,7 @@
 ## @jgengine/react
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to, and wraps the tree in the selected colorblind `feColorMatrix` filter. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
 - `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
 - `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
 - `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
@@ -361,6 +421,7 @@
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
+- `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
@@ -403,7 +464,7 @@
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
 - `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
+- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
 - `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
 - `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): React.JSX.Element — Re-provide a captured {@link GameContext} across a nested React reconciler boundary. The `<Canvas>` of `@react-three/fiber` renders its children in a *separate* React root, so a `GameProvider` in the outer tree does NOT reach inside it — hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
 - `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -434,6 +495,7 @@
 - `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
+- `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
 - `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
 - `IconTreatment` (function): function IconTreatment({ icon, glyph, school = "neutral", size = 44, count, keycap, active = false, className, style, }: IconTreatmentProps): React.JSX.Element — A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges.
 - `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
@@ -485,8 +547,17 @@
 - `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
+- `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `QuickMenu` (function): function QuickMenu({ items, layout = "list", onSelect, onClose, title, columns = 3, arc = { startAngle: Math.PI / 2, sweep: Math.PI }, radialSize = 300, accent = "var(--jg-accent, #38bdf8)", className, style, }: QuickMenuProps): ReactNode — Versatile quick menu that takes many forms — a `radial` wheel, a partial `arc`, a vertical `list`, or a `grid` — over one item model with icons, labels, hotkeys, count badges, cooldowns, section headers, and nested submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu}; list and grid render sectioned rows/tiles. The game supplies content and skin.
+- `QuickMenuItem` (interface): interface QuickMenuItem extends RadialMenuOption — An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu.
+- `QuickMenuLayout` (type): type QuickMenuLayout = "radial" | "arc" | "list" | "grid" — The forms a {@link QuickMenu} can take.
+- `QuickMenuProps` (interface): interface QuickMenuProps — Props for {@link QuickMenu}.
 - `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
+- `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
+- `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
+- `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 - `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
@@ -529,6 +600,7 @@
 - `StatTone` (type): type StatTone = keyof typeof TONES — A stat tone — picks the bar's color ramp.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
+- `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
 - `UseActionBarOptions` (interface): interface UseActionBarOptions — Options for {@link useActionBar}.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UsePanelsOptions` (interface): interface UsePanelsOptions — Options for {@link usePanels}.
@@ -581,6 +653,7 @@
 - `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
+- `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
@@ -613,6 +686,7 @@
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
+- `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useInventoryGrid` (function): function useInventoryGrid(inventoryId: string): InventoryGridBinding — Binds a live inventory to a HUD grid: `slots` from {@link useInventory}, and `move`/`split` that run the built-in `inventory.move`/`inventory.split` commands (which notify, so the grid re-renders).
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
@@ -620,6 +694,7 @@
 - `useLeaderboard` (function): function useLeaderboard(stat: string, options: { scope: LeaderboardScope; limit?: number }): { userId: string; value: number }[] — ⚠ undocumented
 - `useLiveMarkers` (function): function useLiveMarkers(rebuild: (markers: MarkerSet, ctx: GameContext) => void, options?: { intervalMs?: number; deps?: DependencyList }): MarkerSet — A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set and calls `rebuild(markers, ctx)` to repopulate it from the current scene, so a HUD map never hand-rolls a `setInterval` + `markers.clear()` + rescan. Each heartbeat also re-renders the calling component, so player-centered props derived from the live scene each tick (`center`, `facingYaw`, zone name) stay fresh — this fully subsumes the hand-rolled ticker, not just the marker rebuild. The set is stable across renders and re-seeded whenever `ctx`, `intervalMs`, or the supplied `deps` change. SSR-safe: the heartbeat only arms when `window` is available.
 - `useLocalPlayerDead` (function): function useLocalPlayerDead(healthStatId = "health"): boolean — ⚠ undocumented
+- `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 - `useNearestWorldItem` (function): function useNearestWorldItem(radius: number): WorldItemRecord | null — Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
@@ -629,6 +704,8 @@
 - `useParty` (function): function useParty(): PartyMemberEntry[] — ⚠ undocumented
 - `usePartyInvites` (function): function usePartyInvites(): PartyInviteEntry[] — ⚠ undocumented
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
+- `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
+- `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
 - `usePresence` (function): function usePresence(userId: string): PresenceInfo — ⚠ undocumented
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
 - `useRafLoop` (function): function useRafLoop(onFrame: (deltaSeconds: number) => void, active = true): void — Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame. The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for DOM-side animation outside the renderer.
@@ -646,6 +723,7 @@
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
+- `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
@@ -653,6 +731,13 @@
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+
+## @jgengine/react/accessibility
+
+- `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to, and wraps the tree in the selected colorblind `feColorMatrix` filter. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
+- `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
+- `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
+- `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
 
 ## @jgengine/react/achievements
 
@@ -934,6 +1019,15 @@
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 
+## @jgengine/react/i18n
+
+- `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
+- `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
+- `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
+- `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
+- `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
+- `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
+
 ## @jgengine/react/iconTreatment
 
 - `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
@@ -986,7 +1080,7 @@
 
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
-- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
+- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
 - `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
 - `MapBounds` (interface): interface MapBounds — ⚠ undocumented
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
@@ -1041,6 +1135,24 @@
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
+
+## @jgengine/react/questTracker
+
+- `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
+- `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
+
+## @jgengine/react/quickMenu
+
+- `QuickMenu` (function): function QuickMenu({ items, layout = "list", onSelect, onClose, title, columns = 3, arc = { startAngle: Math.PI / 2, sweep: Math.PI }, radialSize = 300, accent = "var(--jg-accent, #38bdf8)", className, style, }: QuickMenuProps): ReactNode — Versatile quick menu that takes many forms — a `radial` wheel, a partial `arc`, a vertical `list`, or a `grid` — over one item model with icons, labels, hotkeys, count badges, cooldowns, section headers, and nested submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu}; list and grid render sectioned rows/tiles. The game supplies content and skin.
+- `QuickMenuItem` (interface): interface QuickMenuItem extends RadialMenuOption — An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu.
+- `QuickMenuLayout` (type): type QuickMenuLayout = "radial" | "arc" | "list" | "grid" — The forms a {@link QuickMenu} can take.
+- `QuickMenuProps` (interface): interface QuickMenuProps — Props for {@link QuickMenu}.
+
+## @jgengine/react/radialMenu
+
+- `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
+- `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
+- `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 
 ## @jgengine/react/rotateDevice
 
@@ -1417,7 +1529,7 @@
 
 ## @jgengine/shell/drivers/FrameDriver
 
-- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker<string>; y… — ⚠ undocumented
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker… — ⚠ undocumented
 - `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
 
 ## @jgengine/shell/drivers/HudOnlyDriver
@@ -1969,7 +2081,7 @@
 ## @jgengine/shell/touch/TouchControlsOverlay
 
 - `TouchCodeSink` (interface): interface TouchCodeSink — ⚠ undocumented
-- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; }): React.JSX.Element — ⚠ undocumented
+- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; /** Player-selected joystick behavior (Settings → Contro… — ⚠ undocumented
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
 - `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) that *bottom-docked* clusters occupy above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls. Side rails and top clusters reserve their own rectangles through the layout registry instead of this scalar.

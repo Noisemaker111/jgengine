@@ -248,7 +248,7 @@
 ## @jgengine/core/runtime/cameraDirector
 
 - `CameraDirector` (interface): interface CameraDirector — ⚠ undocumented
-- `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw"> > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), or a whole driving-feel overlay (speed→FOV, lead, bank, speed shake, drift-lag) applied only while a vehicle is piloted (#1299).
+- `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse"> > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), or a whole driving-feel overlay (speed→FOV, lead, bank, speed shake, drift-lag) applied only while a vehicle is piloted (#1299).
 
 ## @jgengine/core/runtime/commandRunner
 

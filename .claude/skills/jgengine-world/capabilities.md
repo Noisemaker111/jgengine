@@ -289,6 +289,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
+
+- `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
+
 ## mesh-hitboxes — shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
@@ -508,8 +512,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `raycastHeightField` (function) · `import { raycastHeightField } from "@jgengine/core/world/terrain"`
 
-## touch-controls — default on-screen button silhouette for a touch action
+## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 
+- `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
 
 ## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure

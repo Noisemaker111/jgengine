@@ -1,6 +1,16 @@
 export { formatDistance } from "./format/distance";
 export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
 export { formatSpeed } from "./format/speed";
+export {
+  createI18n,
+  interpolate,
+  type Catalog,
+  type I18n,
+  type I18nOptions,
+  type Locale,
+  type Messages,
+  type TParams,
+} from "./i18n/i18n";
 export { resolveGameLook, type LookPreset } from "./render/lookPreset";
 export {
   STUDIO_STAGE_POST,
@@ -34,6 +44,18 @@ export {
   type SettingsSurface,
   type SettingsVariant,
 } from "./settings/settingsModel";
+export {
+  COLORBLIND_MATRICES,
+  DEFAULT_ACCESSIBILITY,
+  TEXT_SCALE_MAX,
+  TEXT_SCALE_MIN,
+  clampTextScale,
+  createAccessibilityStore,
+  reducedMotionDuration,
+  type AccessibilityState,
+  type AccessibilityStore,
+  type ColorblindMode,
+} from "./ui/accessibility";
 export {
   actionByHotkey,
   actionCooldown,
@@ -105,6 +127,15 @@ export {
   type PanelPosition,
   type PanelState,
 } from "./ui/panelModel";
+export {
+  radialIndexFromAngle,
+  radialIndexFromVector,
+  radialSlicePosition,
+  radialSlices,
+  type RadialArc,
+  type RadialSlice,
+  type RadialVectorOptions,
+} from "./ui/radialMenu";
 export {
   moveSelectionFocus,
   selectionWindow,

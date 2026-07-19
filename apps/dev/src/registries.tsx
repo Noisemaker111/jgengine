@@ -132,6 +132,10 @@ export const gameRegistry: GameRegistry = {
   "bookcase-stage": () =>
     import("./demo/bookcaseStageDemo").then((module) => module.bookcaseStageGame),
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
+  "radial-menu": () => import("./demo/radialDemo").then((module) => module.radialDemoGame),
+  "accessibility": () => import("./demo/accessibilityDemo").then((module) => module.accessibilityDemoGame),
+  "quest-tracker": () => import("./demo/questDemo").then((module) => module.questDemoGame),
+  "localization": () => import("./demo/localizationDemo").then((module) => module.localizationDemoGame),
   "world-pings": () => import("./demo/worldPingDemo").then((module) => module.worldPingDemoGame),
   "sensor-showcase": () =>
     import("./demo/sensorShowcase").then((module) => module.sensorShowcaseGame),

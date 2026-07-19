@@ -20,7 +20,7 @@ import {
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
-import type { TouchScheme, TouchStyle } from "@jgengine/core/input/touchScheme";
+import type { TouchJoystickVariant, TouchScheme, TouchStyle } from "@jgengine/core/input/touchScheme";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import {
   createSelectionSet,
@@ -77,7 +77,7 @@ import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
-import { TouchControlsDock, TouchPlaySurface, touchDockClearance } from "./touch/TouchControlsOverlay";
+import { TouchControlsDock, TouchPlaySurface, touchDockClearance, type TouchCodeSink } from "./touch/TouchControlsOverlay";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
 import { AudioSettingsBridge } from "./settings/appliedSettings";
@@ -114,6 +114,8 @@ export function Shell3dPresentation({
   touchScheme,
   touchSink,
   touchStyle,
+  touchJoystickVariant,
+  analogRef,
   orientationGate,
   orientationGateEl,
   coarsePointer,
@@ -150,8 +152,10 @@ export function Shell3dPresentation({
   serverIdRef: MutableRefObject<string | null>;
   remotePlayers: PresencePoseRow[];
   touchScheme: TouchScheme | null;
-  touchSink: { onCodeDown: (code: string) => void; onCodeUp: (code: string) => void };
+  touchSink: TouchCodeSink;
   touchStyle: TouchStyle;
+  touchJoystickVariant: TouchJoystickVariant;
+  analogRef: MutableRefObject<Readonly<Record<string, number>> | null>;
   orientationGate: boolean;
   orientationGateEl: React.ReactNode;
   coarsePointer: boolean;
@@ -575,6 +579,7 @@ export function Shell3dPresentation({
                   pitchRef={pitchRef}
                   primaryClickRef={primaryClickRef}
                   pointerAxisRef={pointerAxisRef}
+                  analogRef={analogRef}
                   gateRef={gateRef}
                   onRuntimeError={reportRuntimeError}
                   multiplayer={multiplayer}
@@ -617,7 +622,13 @@ export function Shell3dPresentation({
               />
               {!poster && !orientationGate && showReticle ? <Reticle /> : null}
               {dockMounted && touchScheme !== null ? (
-                <TouchControlsDock scheme={touchScheme} sink={touchSink} style={touchStyle} scale={touchScale} />
+                <TouchControlsDock
+                  scheme={touchScheme}
+                  sink={touchSink}
+                  style={touchStyle}
+                  scale={touchScale}
+                  joystickVariant={touchJoystickVariant}
+                />
               ) : null}
               {orientationGateEl}
               {marquee !== null ? <MarqueeBox rect={marquee} /> : null}

@@ -208,7 +208,16 @@ export {
   type LevelingConfig,
   type LevelingTrack,
 } from "./game/progression";
-export { createQuestJournal, type QuestDef, type QuestInstance, type QuestRewards } from "./game/quest";
+export {
+  createQuestJournal,
+  defaultObjectiveLabel,
+  describeTrackedQuest,
+  type QuestDef,
+  type QuestInstance,
+  type QuestRewards,
+  type TrackedObjectiveView,
+  type TrackedQuestView,
+} from "./game/quest";
 export {
   RaceState,
   createLapTimer,
@@ -299,6 +308,7 @@ export {
 export { createGestureSurfaceTracker } from "./input/gestureSurface";
 export { aimToPoint, type PointerHit, type PointerVec3 } from "./input/pointer";
 export { normalizePointerToAxis, type PointerAxisState } from "./input/pointerAxis";
+export { activeTouchControlsMode, setTouchControlsMode } from "./input/touchControlsMode";
 export { createTouchGestureTracker } from "./input/touchGestures";
 export {
   DEFAULT_TOUCH_STYLE,
@@ -311,6 +321,8 @@ export {
   type TouchAnchor,
   type TouchButton,
   type TouchButtonShape,
+  type TouchControlsConfig,
+  type TouchControlsModeConfig,
   type TouchJoystick,
   type TouchScheme,
   type TouchStyle,

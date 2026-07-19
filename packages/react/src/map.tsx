@@ -25,6 +25,7 @@ import {
 import {
   mapLayerColor,
   type MapCellStates,
+  type MapLayerTone,
   type MapRoute,
   type MapZone,
 } from "@jgengine/core/world/mapLayers";
@@ -1184,6 +1185,18 @@ export interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWi
   maxScale?: number;
   title?: string;
   onClose?: () => void;
+  /**
+   * Interaction mode. `"pan"` (default) drags to pan and click-to-place fires
+   * `onWorldClick`; `"draw"` drags to paint a freehand stroke, committed to
+   * `onStrokeComplete` (panning and click-to-place are suppressed).
+   */
+  tool?: "pan" | "draw";
+  /** Called with a finished freehand stroke (world-XZ points) in `"draw"` mode — wire to an annotation layer's `addStroke`. */
+  onStrokeComplete?: (points: readonly WorldXZ[]) => void;
+  /** Tone of the in-progress stroke while drawing. Default `"info"`. */
+  drawTone?: MapLayerTone;
+  /** Width (map px) of the in-progress stroke. Default 3. */
+  drawWidth?: number;
   /** Overlay chrome drawn above the map (legend, tool palette, hints). */
   children?: ReactNode;
   overlayClassName?: string;
@@ -1193,12 +1206,13 @@ export interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWi
 /**
  * Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to
  * zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick`
- * to a waypoint/annotation store). Reuses {@link WorldMapSurface} for rendering,
- * so terrain bake, fog, routes, zones, markers, and the player arrow all appear;
- * a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette
- * via `children`.
+ * to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw
+ * strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`).
+ * Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes,
+ * zones, markers, and the player arrow all appear; a drag never fires
+ * `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
  *
- * @capability fullscreen-map fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, and click-to-place without firing a click after a pan
+ * @capability fullscreen-map fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
  */
 export function FullscreenMap({
   open = true,
@@ -1209,6 +1223,10 @@ export function FullscreenMap({
   title = "Map",
   onClose,
   onWorldClick,
+  tool = "pan",
+  onStrokeComplete,
+  drawTone = "info",
+  drawWidth = 3,
   children,
   overlayClassName,
   overlayStyle,
@@ -1220,6 +1238,10 @@ export function FullscreenMap({
   const [viewport, setViewport] = useState<MapViewport>(IDENTITY_VIEWPORT);
   const drag = useRef<{ x: number; y: number; vp: MapViewport } | null>(null);
   const moved = useRef(false);
+  const draftRef = useRef<WorldXZ[] | null>(null);
+  const [draft, setDraft] = useState<readonly WorldXZ[] | null>(null);
+  const drawing = tool === "draw";
+  const minSpacing = (worldW + worldD) / 400;
 
   if (!open) return null;
 
@@ -1239,6 +1261,35 @@ export function FullscreenMap({
     const ky = contentHeight / rect.height;
     return { x: (event.clientX - rect.left) * kx, y: (event.clientY - rect.top) * ky, kx, ky };
   };
+
+  const screenToWorld = (
+    event: { currentTarget: { getBoundingClientRect(): DOMRect }; clientX: number; clientY: number },
+  ): WorldXZ => {
+    const at = canvasPoint(event);
+    const cx = (at.x - viewport.tx) / viewport.scale;
+    const cy = (at.y - viewport.ty) / viewport.scale;
+    return [bounds.minX + (cx / contentWidth) * worldW, bounds.minZ + (cy / contentHeight) * worldD];
+  };
+
+  const pushDraftPoint = (point: WorldXZ): void => {
+    const points = draftRef.current ?? [];
+    const last = points[points.length - 1];
+    if (last !== undefined && Math.hypot(last[0] - point[0], last[1] - point[1]) < minSpacing) return;
+    draftRef.current = [...points, point];
+    setDraft(draftRef.current);
+  };
+
+  const commitDraft = (): void => {
+    const points = draftRef.current;
+    draftRef.current = null;
+    setDraft(null);
+    if (points !== null && points.length >= 2) onStrokeComplete?.(points);
+  };
+
+  const draftRoute: MapRoute | null =
+    draft !== null && draft.length >= 2 ? { id: "__draft-stroke", points: draft, tone: drawTone, width: drawWidth } : null;
+  const forwardedRoutes =
+    draftRoute === null ? surfaceProps.routes : [...(surfaceProps.routes ?? []), draftRoute];
 
   const controlButton: CSSProperties = {
     width: 30,
@@ -1298,18 +1349,35 @@ export function FullscreenMap({
       </div>
       <div
         data-fullscreen-map-viewport
-        style={{ position: "relative", flex: 1, minHeight: 0, overflow: "hidden", touchAction: "none", cursor: drag.current !== null ? "grabbing" : "grab" }}
+        data-map-tool={tool}
+        style={{
+          position: "relative",
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          touchAction: "none",
+          cursor: drawing ? "crosshair" : drag.current !== null ? "grabbing" : "grab",
+        }}
         onWheel={(event) => {
           const at = canvasPoint(event);
           zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15, at.x, at.y);
         }}
         onPointerDown={(event) => {
           if (event.button !== 0) return;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          if (drawing) {
+            draftRef.current = [screenToWorld(event)];
+            setDraft(draftRef.current);
+            return;
+          }
           drag.current = { x: event.clientX, y: event.clientY, vp: viewport };
           moved.current = false;
-          event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
+          if (drawing) {
+            if (draftRef.current !== null) pushDraftPoint(screenToWorld(event));
+            return;
+          }
           const state = drag.current;
           if (state === null) return;
           const rect = event.currentTarget.getBoundingClientRect();
@@ -1321,12 +1389,17 @@ export function FullscreenMap({
           setViewport({ scale: state.vp.scale, tx: state.vp.tx + dx, ty: state.vp.ty + dy });
         }}
         onPointerUp={(event) => {
-          drag.current = null;
           if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          if (drawing) {
+            commitDraft();
+            return;
+          }
+          drag.current = null;
         }}
       >
         <WorldMapSurface
           {...surfaceProps}
+          routes={forwardedRoutes}
           bounds={bounds}
           width={contentWidth}
           height={contentHeight}
@@ -1335,7 +1408,7 @@ export function FullscreenMap({
           viewport={viewport}
           style={{ width: "100%", height: "100%", borderRadius: 0, display: "block" }}
           onWorldClick={
-            onWorldClick === undefined
+            onWorldClick === undefined || drawing
               ? undefined
               : (world) => {
                   if (moved.current) {

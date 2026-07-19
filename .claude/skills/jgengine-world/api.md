@@ -327,6 +327,11 @@
 - `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `pointerAxisValue` (function): function pointerAxisValue(binding: PointerAxisBinding, state: PointerAxisState | null | undefined): number | null — Resolve a pointer binding against the current pointer state: `null` when no pointer is active (callers fall back to their digital target), otherwise the deadzone/curve-shaped value in `[-1, 1]`.
 
+## @jgengine/core/input/touchControlsMode
+
+- `activeTouchControlsMode` (function): function activeTouchControlsMode(ctx: GameContext): string | null — The active touch control mode, `null` when the base config applies.
+- `setTouchControlsMode` (function): function setTouchControlsMode(ctx: GameContext, mode: string | null): void — Activate a named touch control mode, or `null` to return to the base config.
+
 ## @jgengine/core/input/touchGestures
 
 - `TouchGestureEnd` (type): type TouchGestureEnd = "tap" | "hold-end" | null — ⚠ undocumented
@@ -336,10 +341,13 @@
 
 ## @jgengine/core/input/touchScheme
 
+- `DEFAULT_TOUCH_JOYSTICK_VARIANT` (const): const DEFAULT_TOUCH_JOYSTICK_VARIANT: TouchJoystickVariant — Variant used when the player has not picked one.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
 - `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions — ⚠ undocumented
 - `ResolvedTouchLayout` (interface): interface ResolvedTouchLayout — The dock zone each cluster resolved to, after applying game config over the bottom-layout defaults.
 - `TOUCH_CODE_PREFIX` (const): const TOUCH_CODE_PREFIX: "touch:" — ⚠ undocumented
+- `TOUCH_JOYSTICK_VARIANTS` (const): const TOUCH_JOYSTICK_VARIANTS: readonly TouchJoystickVariant[] — Every joystick variant id, in menu order.
+- `TOUCH_JOYSTICK_VARIANT_OPTIONS` (const): const TOUCH_JOYSTICK_VARIANT_OPTIONS: readonly { value: TouchJoystickVariant; label: string }[] — Joystick variants as `{ value, label }` rows for the Settings → Controls selector.
 - `TOUCH_STYLES` (const): const TOUCH_STYLES: readonly TouchStyle[] — Every touch skin id, in menu order.
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
@@ -347,15 +355,17 @@
 - `TouchButtonKind` (type): type TouchButtonKind = "primary" | "utility" — ⚠ undocumented
 - `TouchButtonShape` (type): type TouchButtonShape = "circle" | "square" | "pedal" | "lever" | "trigger" | "wheel" | "tab" — Physical silhouette a touch button wears. The capture layer draws each as its own shape — a `pedal` reads as a foot pedal, a `lever` as a pull handle, a `trigger` as a firing paddle — so a control looks like the thing it does instead of a labelled circle. `circle`/`square` are the neutral fallbacks.
 - `TouchButtonSpec` (interface): interface TouchButtonSpec — ⚠ undocumented
-- `TouchControlsConfig` (interface): interface TouchControlsConfig — ⚠ undocumented
+- `TouchControlsConfig` (interface): interface TouchControlsConfig — Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`.
+- `TouchControlsModeConfig` (type): type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes"> — One named control context's touch config — the same shape as the base config, minus nested modes.
 - `TouchDragBinding` (interface): interface TouchDragBinding — ⚠ undocumented
 - `TouchGestureBindings` (interface): interface TouchGestureBindings — ⚠ undocumented
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
+- `TouchJoystickVariant` (type): type TouchJoystickVariant = "fixed" | "floating" — How the movement joystick behaves — the two shipped variants, player-selectable in Settings → Controls. `fixed` is the classic always-visible stick in its dock corner; `floating` keeps the corner as an empty capture zone and spawns the stick centered under wherever the thumb lands, so the hand never has to find a fixed target mid-play.
 - `TouchLayoutConfig` (interface): interface TouchLayoutConfig — Where each touch cluster docks; unset falls back to the classic bottom layout.
 - `TouchMovementConfig` (interface): interface TouchMovementConfig — Restricts the virtual joystick to one axis — a `horizontal` zone reads as a steering control, freeing throttle/brake to become pedal buttons.
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
-- `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
+- `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config: rawConfig, mode }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `touchActionLabel` (function): function touchActionLabel(action: string): string — ⚠ undocumented
 - `touchButtonKind` (function): function touchButtonKind(action: string): TouchButtonKind — ⚠ undocumented
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
@@ -498,6 +508,7 @@
 
 ## @jgengine/core/movement/movementModel
 
+- `AnalogMoveIntent` (interface): interface AnalogMoveIntent — Analog movement vector (camera-relative, each axis in [-1, 1]) from a continuous source — a virtual joystick or gamepad stick. When present it replaces the digital WASD axes so a slight tilt walks slightly instead of slamming a full strafe.
 - `CollisionObstacle` (interface): interface CollisionObstacle — A placed scene object the walking player collides against as a circle-vs-AABB obstacle.
 - `MAX_JUMP_OFFSET` (const): const MAX_JUMP_OFFSET: 1.15 — Peak jump height from MOVEMENT_TUNING.jumpVelocity + gravity, with small buffer.
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
@@ -1442,6 +1453,9 @@
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
 - `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
 - `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
+- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
+- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
+- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
 - `AreaDistribution` (type): type AreaDistribution = "uniform" | "edge" — Fill policy for a rect/box: `"uniform"` = even coverage; `"edge"` = biased to a boundary band.
 - `AreaEffectEvent` (interface): interface AreaEffectEvent<P> — One membership edge emitted by `step`, `removeSource`, or `clear`.
 - `AreaEffectField` (interface): interface AreaEffectField<P> — Runtime handle tracking continuous area membership across ticks.
@@ -1638,7 +1652,10 @@
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
 - `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
+- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
 - `MapRoute` (interface): interface MapRoute — ⚠ undocumented
+- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
+- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
 - `MapZone` (interface): interface MapZone — ⚠ undocumented
 - `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
@@ -1938,6 +1955,7 @@
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
 - `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
 - `createAircraftDynamics` (function): function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
+- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
 - `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 - `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
@@ -2612,6 +2630,16 @@
 - `LodScheduler` (interface): interface LodScheduler — ⚠ undocumented
 - `LodSchedulerConfig` (interface): interface LodSchedulerConfig — ⚠ undocumented
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
+
+## @jgengine/core/world/mapAnnotations
+
+- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
+- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
+- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
+- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
+- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
+- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
+- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
 
 ## @jgengine/core/world/mapLayers
 

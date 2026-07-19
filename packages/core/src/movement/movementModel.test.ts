@@ -264,3 +264,38 @@ describe("snapPositionToGrid", () => {
     expect(snapPositionToGrid(-0.1, -2.1, 1)).toEqual([-0.5, -2.5]);
   });
 });
+
+describe("analog movement intent (#1370)", () => {
+  test("an analog vector replaces the digital axes and keeps fractional magnitudes", () => {
+    const intent = resolveMovementIntent(createEmptyMovementKeys(), true, { forward: 0.3, right: -0.2 });
+    expect(intent.forward).toBeCloseTo(0.3);
+    expect(intent.right).toBeCloseTo(-0.2);
+    expect(intent.moving).toBe(true);
+  });
+
+  test("tiny analog noise reads as idle and values clamp to ±1", () => {
+    const idle = resolveMovementIntent(createEmptyMovementKeys(), true, { forward: 0.01, right: -0.005 });
+    expect(idle.moving).toBe(false);
+    const clamped = resolveMovementIntent(createEmptyMovementKeys(), true, { forward: 1.7, right: -1.7 });
+    expect(clamped.forward).toBe(1);
+    expect(clamped.right).toBe(-1);
+  });
+
+  test("half deflection targets half speed; digital diagonals still normalize to full speed", () => {
+    const motion = createPlayerMotionState();
+    const half = resolveMovementIntent(createEmptyMovementKeys(), true, { forward: 0.5, right: 0 });
+    // Long dt so the exponential acceleration blend effectively reaches the target velocity.
+    for (let i = 0; i < 200; i += 1) advancePlayerMotion(motion, half, 0, 1, 2, 0.05);
+    const halfSpeed = Math.hypot(motion.horizontalVelocityX, motion.horizontalVelocityZ);
+
+    const diagonalKeys = createEmptyMovementKeys();
+    diagonalKeys.w = true;
+    diagonalKeys.d = true;
+    const full = resolveMovementIntent(diagonalKeys, true);
+    const motionFull = createPlayerMotionState();
+    for (let i = 0; i < 200; i += 1) advancePlayerMotion(motionFull, full, 0, 1, 2, 0.05);
+    const fullSpeed = Math.hypot(motionFull.horizontalVelocityX, motionFull.horizontalVelocityZ);
+
+    expect(halfSpeed).toBeCloseTo(fullSpeed / 2, 1);
+  });
+});

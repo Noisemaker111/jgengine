@@ -483,6 +483,15 @@ export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { createLodScheduler } from "./world/lod";
+export {
+  createAnnotationLayer,
+  type AnnotationLayer,
+  type AnnotationLayerOptions,
+  type AnnotationSnapshot,
+  type MapNote,
+  type MapShapeAnnotation,
+  type MapStroke,
+} from "./world/mapAnnotations";
 export { mapLayerColor, type MapCellStates, type MapRoute, type MapZone } from "./world/mapLayers";
 export {
   DEFAULT_MARKER_KINDS,

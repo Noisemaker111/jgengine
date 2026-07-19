@@ -44,17 +44,35 @@ const IDLE_INTENT: MovementIntent = {
   moving: false,
 };
 
+/** Analog movement vector (camera-relative, each axis in [-1, 1]) from a continuous source — a virtual joystick or gamepad stick. When present it replaces the digital WASD axes so a slight tilt walks slightly instead of slamming a full strafe. */
+export interface AnalogMoveIntent {
+  forward: number;
+  right: number;
+}
+
+/** Below this deflection an analog stick reads as centered — filters sensor noise without eating small deliberate tilts (the shell applies its own radial deadzone before publishing). */
+const ANALOG_MOVE_EPSILON = 0.02;
+
 /**
  * Translate the set of held keys into an intent. When `canMove` is false (a
  * menu is open, the world is paused) the avatar is fully idle so it never
- * drifts behind an overlay.
+ * drifts behind an overlay. An `analog` vector (virtual joystick, gamepad
+ * stick) replaces the digital WASD axes with its fractional deflection (#1370).
   * @internal
   */
-export function resolveMovementIntent(keys: MovementKeysState, canMove: boolean): MovementIntent {
+export function resolveMovementIntent(
+  keys: MovementKeysState,
+  canMove: boolean,
+  analog?: AnalogMoveIntent | null,
+): MovementIntent {
   if (!canMove) return IDLE_INTENT;
 
-  const forward = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
-  const right = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+  let forward = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+  let right = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+  if (analog !== undefined && analog !== null) {
+    forward = Math.abs(analog.forward) < ANALOG_MOVE_EPSILON ? 0 : Math.max(-1, Math.min(1, analog.forward));
+    right = Math.abs(analog.right) < ANALOG_MOVE_EPSILON ? 0 : Math.max(-1, Math.min(1, analog.right));
+  }
   const crouching = keys.control || keys.c;
   const running = keys.shift && !crouching;
 
@@ -221,7 +239,10 @@ export function advancePlayerMotion(
     targetVelocityZ = fz * intent.forward + rightZ * intent.right;
     const lengthSq = targetVelocityX * targetVelocityX + targetVelocityZ * targetVelocityZ;
     if (lengthSq > 1e-6) {
-      const scale = targetSpeed / Math.sqrt(lengthSq);
+      // Analog sticks walk at their deflection: speed scales with the intent magnitude, capped at
+      // 1 so digital diagonals (length √2) still normalize to exactly full speed.
+      const length = Math.sqrt(lengthSq);
+      const scale = (targetSpeed * Math.min(1, length)) / length;
       targetVelocityX *= scale;
       targetVelocityZ *= scale;
     } else {

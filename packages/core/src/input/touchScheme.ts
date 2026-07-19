@@ -103,6 +103,26 @@ export const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[
 /** Skin used when neither the game nor the player picks one. */
 export const DEFAULT_TOUCH_STYLE: TouchStyle = "glass";
 
+/**
+ * How the movement joystick behaves — the two shipped variants, player-selectable in
+ * Settings → Controls. `fixed` is the classic always-visible stick in its dock corner;
+ * `floating` keeps the corner as an empty capture zone and spawns the stick centered under
+ * wherever the thumb lands, so the hand never has to find a fixed target mid-play.
+ */
+export type TouchJoystickVariant = "fixed" | "floating";
+
+/** Every joystick variant id, in menu order. */
+export const TOUCH_JOYSTICK_VARIANTS: readonly TouchJoystickVariant[] = ["fixed", "floating"];
+
+/** Joystick variants as `{ value, label }` rows for the Settings → Controls selector. */
+export const TOUCH_JOYSTICK_VARIANT_OPTIONS: readonly { value: TouchJoystickVariant; label: string }[] = [
+  { value: "floating", label: "Floating (under your thumb)" },
+  { value: "fixed", label: "Fixed" },
+];
+
+/** Variant used when the player has not picked one. */
+export const DEFAULT_TOUCH_JOYSTICK_VARIANT: TouchJoystickVariant = "floating";
+
 /** Where each touch cluster docks; unset falls back to the classic bottom layout. */
 export interface TouchLayoutConfig {
   /** Virtual joystick / movement zone. Default `bottom-left`. */
@@ -140,6 +160,10 @@ export interface TouchMovementConfig {
   axis?: "both" | "horizontal" | "vertical";
 }
 
+/** One named control context's touch config — the same shape as the base config, minus nested modes. */
+export type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes">;
+
+/** Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`. */
 export interface TouchControlsConfig {
   /** `false` removes the virtual joystick even when movement actions are bound; an object restricts it to one axis. */
   movement?: false | TouchMovementConfig;
@@ -157,6 +181,14 @@ export interface TouchControlsConfig {
   layout?: TouchLayoutConfig;
   /** Suggested default skin; the player's Settings choice overrides it. Default `glass`. */
   style?: TouchStyle;
+  /**
+   * Per-context control sets for games whose verbs change at runtime — on foot vs driving vs
+   * flying. Each key is a mode name whose fields *replace* the matching base fields while that
+   * mode is active (base config = the default mode). Gameplay switches with
+   * `setTouchControlsMode(ctx, "car")` and back with `null`; only the actions a context actually
+   * uses should be visible in it, so a runner on foot never sees flight or vehicle chrome.
+   */
+  modes?: Record<string, TouchControlsModeConfig>;
 }
 
 export interface TouchJoystick {
@@ -334,7 +366,27 @@ export interface DeriveTouchSchemeOptions {
   reserved: ReadonlySet<string>;
   firstPerson: boolean;
   config?: TouchControlsConfig | false;
+  /** Active control context (see {@link TouchControlsConfig.modes}); null/unknown falls back to the base config. */
+  mode?: string | null;
 }
+
+/** Resolve the effective config for a mode: mode fields replace base fields; the base is the default mode. */
+function resolveModeConfig(
+  config: TouchControlsConfig | false | undefined,
+  mode: string | null | undefined,
+): TouchControlsConfig | false | undefined {
+  if (config === false || config === undefined || mode === null || mode === undefined) return config;
+  const active = config.modes?.[mode];
+  if (active === undefined) return config;
+  const { modes: _modes, ...base } = config;
+  return { ...base, ...active };
+}
+
+/**
+ * Auto-derived button count past which the dock stops being playable — two full thumb arcs. A
+ * curated `touch.buttons` list may exceed it deliberately; blind derivation may not.
+ */
+const DERIVED_BUTTON_BUDGET = 8;
 
 /**
  * Null means "render no touch controls" — either the game opted out or there
@@ -342,8 +394,9 @@ export interface DeriveTouchSchemeOptions {
  */
 export function deriveTouchScheme(
   input: ActionCodesMap | undefined,
-  { reserved, firstPerson, config }: DeriveTouchSchemeOptions,
+  { reserved, firstPerson, config: rawConfig, mode }: DeriveTouchSchemeOptions,
 ): TouchScheme | null {
+  const config = resolveModeConfig(rawConfig, mode);
   if (config === false) return null;
   const actions = Object.keys(input ?? {});
   const bound = new Set(actions);
@@ -411,6 +464,13 @@ export function deriveTouchScheme(
         anchor: null,
         image: null,
       }));
+    if (buttons.length > DERIVED_BUTTON_BUDGET) {
+      console.warn(
+        `[jgengine:touch] derived ${buttons.length} on-screen buttons (${buttons
+          .map((button) => button.action)
+          .join(", ")}) — more than a thumb can reach. Curate touch.buttons, hide actions with touch.hidden, or split contexts with touch.modes.`,
+      );
+    }
   }
 
   const look = config?.look ?? firstPerson;

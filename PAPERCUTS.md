@@ -153,6 +153,6 @@ bun run gate → packages/assets src/cli/pull.test.ts failed once in the full te
 
 bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — computed manifest has ./previewFixtures and ./harness subpaths missing from the committed manifest (likely #1336 landed without regenerating it); gate is red for every branch until regenerated
 
-2026-07-19T19:05:42.220Z — claude-fable-5 — Claude
+2026-07-19T18:26:23.894Z — claude-fable-5 — Claude
 
-bun run gate on a city/street-generator branch → check-game-shape fails on main's own Games/vice-isle/src/editorKinds.ts (landed by #1369, not in the allowed top-level extras list) — pre-existing main breakage blocks unrelated branches' gate verdicts
+running bun run gate for a touch-controls PR → gate is red on main itself: check-game-shape flags Games/vice-isle/src/editorKinds.ts(+test) from merged #1369 as off-shape, masking my own results; the offending PR landed without gate catching it

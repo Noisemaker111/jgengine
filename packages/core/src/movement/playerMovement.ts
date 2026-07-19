@@ -196,7 +196,17 @@ export function stepPlayerMovement(
   keys.d = isDown("moveRight");
   keys.shift = isDown("sprint") && (tuning.movement?.canSprint?.(ctx) ?? true);
   keys.space = isDown("jump");
-  const intent = resolveMovementIntent(keys, true);
+  // A frame carrying analog magnitudes (virtual joystick, gamepad stick) walks at its deflection
+  // instead of slamming digital ±1 axes — the fix for "a slight stick tilt reads as a full strafe".
+  const analog = input.analog ?? null;
+  const analogMove =
+    analog === null
+      ? null
+      : {
+          forward: (analog.moveForward ?? 0) - (analog.moveBack ?? 0),
+          right: (analog.moveRight ?? 0) - (analog.moveLeft ?? 0),
+        };
+  const intent = resolveMovementIntent(keys, true, analogMove);
   const motionBatch = ctx.player.motionFor(userId).takePending();
   const walkSpeed = player.movement?.walkSpeed ?? DEFAULT_WALK_SPEED;
 

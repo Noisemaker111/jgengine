@@ -623,3 +623,15 @@ describe("helpers", () => {
     expect(near(smoothstep(0.5), 0.5)).toBe(true);
   });
 });
+
+describe("chase yaw follow response (#1370)", () => {
+  test("defaults to a finite smoothing response so facing flips ease instead of snapping", () => {
+    const resolved = resolveChase(undefined);
+    expect(Number.isFinite(resolved.yawResponse)).toBe(true);
+    expect(resolved.yawResponse).toBeGreaterThan(0);
+  });
+
+  test("yawResponse: Infinity opts back into the legacy rigid follow", () => {
+    expect(resolveChase({ yawResponse: Number.POSITIVE_INFINITY }).yawResponse).toBe(Number.POSITIVE_INFINITY);
+  });
+});

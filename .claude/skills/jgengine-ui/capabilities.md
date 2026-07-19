@@ -4,6 +4,14 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## accessibility-provider — apply accessibility preferences to a subtree — text-scale CSS var, reduced-motion/high-contrast/colorblind/captions data attrs, and the colorblind color-matrix filter
+
+- `AccessibilityProvider` (function) · `import { AccessibilityProvider } from "@jgengine/react"`
+
+## accessibility-store — serializable, observable accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) a game binds to its settings and presentation
+
+- `createAccessibilityStore` (function) · `import { createAccessibilityStore } from "@jgengine/core/ui"`
+
 ## achievement-gallery — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
 
 - `AchievementGallery` (function) · `import { AchievementGallery } from "@jgengine/react"`
@@ -61,6 +69,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
+## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
+
+- `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
+
 ## controls-list — keybind-derived control legend that hides on touch
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
@@ -109,7 +121,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
 
-## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, and click-to-place without firing a click after a pan
+## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`
 
@@ -181,6 +193,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `BarTokens` (interface) · `import { BarTokens } from "@jgengine/react"`
 - `barTokens` (function) · `import { barTokens } from "@jgengine/react"`
+
+## i18n — translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching
+
+- `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
 
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
@@ -270,6 +286,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
 
+## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
+
+- `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/react"`
+
+## quick-menu — multi-form quick menu (radial / arc / list / grid) over one item model with hotkeys, badges, cooldowns, sections, and nested submenus
+
+- `QuickMenu` (function) · `import { QuickMenu } from "@jgengine/react"`
+
+## radial-menu — pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub
+
+- `RadialMenu` (function) · `import { RadialMenu } from "@jgengine/react"`
+
+## radial-select — map a pointer/stick vector to a radial-menu slice index, with a neutral dead zone and optional arc bounds
+
+- `radialIndexFromVector` (function) · `import { radialIndexFromVector } from "@jgengine/core/ui"`
+
 ## raf-loop — run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
@@ -306,6 +338,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
 
+## trans — inline translated-message component bound to the active locale
+
+- `Trans` (function) · `import { Trans } from "@jgengine/react"`
+
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
@@ -313,6 +349,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
+
+- `useT` (function) · `import { useT } from "@jgengine/react"`
 
 ## vital-bar — compact current/max vital meter for an entity summary
 

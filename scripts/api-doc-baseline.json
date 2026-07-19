@@ -923,7 +923,6 @@
   "@jgengine/core/input/touchScheme#TouchButton",
   "@jgengine/core/input/touchScheme#TouchButtonKind",
   "@jgengine/core/input/touchScheme#TouchButtonSpec",
-  "@jgengine/core/input/touchScheme#TouchControlsConfig",
   "@jgengine/core/input/touchScheme#TouchDragBinding",
   "@jgengine/core/input/touchScheme#TouchGestureBindings",
   "@jgengine/core/input/touchScheme#TouchJoystick",
