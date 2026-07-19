@@ -209,6 +209,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
           at: [report.at[0], report.at[1], report.at[2]],
           effect: report.effect,
           hit: report.hit,
+          ballistic: report.ballistic,
         });
       },
     }),

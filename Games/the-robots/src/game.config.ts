@@ -151,6 +151,9 @@ export const game = defineGame({
   objectModels,
   WorldOverlay: FerralonWorldOverlay,
   worldHealthBars: { roles: ["enemy"] },
+  // Direct-fire guns want the muzzle→impact tracer; grenades/launchers are ballistic and
+  // skip it automatically (they arc, so a straight line would be a fake beam).
+  presentationEffects: { tracers: true },
   worldItem: { rarityStyle, pickupRadius: 2.8 },
   prompts,
   hotbarSelection: () => session.selectedSlot(),

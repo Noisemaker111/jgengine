@@ -73,6 +73,15 @@ export {
   type ResolvedAction,
 } from "./ui/actionModel";
 export {
+  createCoachMarkSequence,
+  type CoachMarkPlacement,
+  type CoachMarkSequence,
+  type CoachMarkSequenceOptions,
+  type CoachMarkSnapshot,
+  type CoachMarkStep,
+  type CoachMarkView,
+} from "./ui/coachMarks";
+export {
   type GameLayoutMode,
   type GameViewportLayout,
   type HudPriority,
@@ -106,6 +115,28 @@ export {
   type HudPlatform,
   type HudViewportConfig,
 } from "./ui/hudScale";
+export {
+  MODAL_CANCEL,
+  MODAL_CONFIRM,
+  createModalStack,
+  type ModalInput,
+  type ModalRecord,
+  type ModalResolution,
+  type ModalStack,
+  type ModalStackEntry,
+  type ModalStackOptions,
+  type ModalStackSnapshot,
+} from "./ui/modalStack";
+export {
+  createObjectiveBanner,
+  type ObjectiveBannerAnnouncement,
+  type ObjectiveBannerController,
+  type ObjectiveBannerOptions,
+  type ObjectiveBannerPhase,
+  type ObjectiveBannerSnapshot,
+  type ObjectiveBannerView,
+  type StoredObjectiveBanner,
+} from "./ui/objectiveBanner";
 export {
   orientationGateActive,
   orientationHintActive,

@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
+import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+
 import {
   type SettingsActionView,
   type SettingsCategoryView,
@@ -71,8 +73,10 @@ function RowShell({ label, control }: { label: string; control: ReactNode }) {
 }
 
 function SliderRow({ row }: { row: SettingsRow }) {
-  const value = Number(row.value);
-  const readout = row.format?.(value) ?? String(value);
+  // Mirror the thumb + readout locally; debounce the persisting `set` so a drag doesn't storm the
+  // settings store (and any graphics rebuild it drives), flushing on release/blur (#1372).
+  const { value: local, onInput, flush } = useDebouncedCommit(Number(row.value), (next) => row.set(next));
+  const readout = row.format?.(local) ?? String(local);
   return (
     <RowShell
       label={row.label}
@@ -83,11 +87,14 @@ function SliderRow({ row }: { row: SettingsRow }) {
             min={row.min}
             max={row.max}
             step={row.step}
-            value={value}
+            value={local}
             aria-label={row.label}
             className="h-1.5 flex-1 cursor-pointer"
             style={{ accentColor: accent }}
-            onChange={(event) => row.set(Number(event.target.value))}
+            onChange={(event) => onInput(Number(event.target.value))}
+            onPointerUp={flush}
+            onKeyUp={flush}
+            onBlur={flush}
           />
           <span className="w-12 shrink-0 text-right text-sm tabular-nums" style={{ color: text }}>
             {readout}

@@ -8,6 +8,7 @@ import {
   type ParamSchema,
   type WeightedParamEntry,
 } from "@jgengine/core/scene/sceneKinds";
+import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
 
 import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 
@@ -50,51 +51,202 @@ function labelOf(field: ParamField): string {
   return field.label ?? field.key;
 }
 
+/** Range field: live-mirrored thumb + readout, debounced commit, flush on release/blur/keyup (#1372). */
+function RangeField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "range" }>;
+  value: number;
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  return (
+    <label className="block space-y-1">
+      <span className="flex items-center justify-between">
+        <span className={MICRO}>{labelOf(field)}</span>
+        <span className="text-cyan-200">
+          {local.toFixed(field.step !== undefined && field.step >= 1 ? 0 : 2)}
+          {field.unit ?? ""}
+        </span>
+      </span>
+      <input
+        type="range"
+        min={field.min}
+        max={field.max}
+        step={field.step ?? (field.max - field.min) / 100}
+        value={local}
+        className="w-full accent-emerald-400"
+        onChange={(event) => onInput(Number(event.target.value))}
+        onPointerUp={flush}
+        onKeyUp={flush}
+        onBlur={flush}
+      />
+    </label>
+  );
+}
+
+/** Number field: debounced commit, flush on blur (#1372). */
+function NumberInputField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "number" }>;
+  value: number;
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className={MICRO}>{labelOf(field)}</span>
+      <input
+        type="number"
+        step={field.step ?? 1}
+        className={`w-32 ${INPUT}`}
+        value={local}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          if (Number.isFinite(next)) onInput(next);
+        }}
+        onBlur={flush}
+      />
+    </label>
+  );
+}
+
+/** Color field: debounced commit while the picker drags, flush on blur (#1372). */
+function ColorField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "color" }>;
+  value: string;
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className={MICRO}>{labelOf(field)}</span>
+      <input
+        type="color"
+        className={`h-7 w-14 cursor-pointer rounded-[5px] border border-white/10 bg-black/40 ${FOCUS_RING}`}
+        value={local}
+        onChange={(event) => onInput(event.target.value)}
+        onBlur={flush}
+      />
+    </label>
+  );
+}
+
+/** Text field: debounced commit while typing, flush on blur (#1372). */
+function TextField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "text" }>;
+  value: string;
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className={MICRO}>{labelOf(field)}</span>
+      <input className={`w-32 min-w-0 ${INPUT}`} value={local} onChange={(event) => onInput(event.target.value)} onBlur={flush} />
+    </label>
+  );
+}
+
+/** Seed field: debounced text commit while typing (reroll button commits immediately) (#1372). */
+function SeedField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "seed" }>;
+  value: string;
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  return (
+    <div className="flex items-center gap-2">
+      <label className="flex min-w-0 flex-1 items-center gap-2">
+        <span className={MICRO}>{labelOf(field)}</span>
+        <input className={`w-full min-w-0 ${INPUT}`} value={local} placeholder="reroll…" onChange={(event) => onInput(event.target.value)} onBlur={flush} />
+      </label>
+      <button
+        type="button"
+        className={BTN}
+        title="Reroll seed"
+        onClick={() => {
+          flush();
+          onMeta({ [field.key]: `r${Math.abs(Math.round((local.length + 1) * 2654435761)).toString(36).slice(0, 6)}${local.length}` }, coalesce);
+        }}
+      >
+        ⟳
+      </button>
+    </div>
+  );
+}
+
+/** Weighted-list field: debounced item/weight commits share one mirrored array; add/remove commit now (#1372). */
+function WeightedListField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "weightedList" }>;
+  value: WeightedParamEntry[];
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: list, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  // Add/remove are discrete structural edits — commit them immediately through the same mirror.
+  const setNow = (next: WeightedParamEntry[]) => {
+    onInput(next);
+    flush();
+  };
+  return (
+    <div className="space-y-1">
+      <div className={MICRO}>{labelOf(field)}</div>
+      {list.map((entry, index) => (
+        <div key={index} className="flex items-center gap-1">
+          <input className={`min-w-0 flex-1 ${INPUT}`} value={entry.item} placeholder={field.itemLabel ?? "id"} onChange={(event) => onInput(list.map((e, i) => (i === index ? { ...e, item: event.target.value } : e)))} onBlur={flush} />
+          <input type="number" step={1} min={0} className={`w-14 ${INPUT}`} value={entry.weight} onChange={(event) => onInput(list.map((e, i) => (i === index ? { ...e, weight: Math.max(0, Number(event.target.value)) } : e)))} onBlur={flush} />
+          <button type="button" className={`${CONTROL} px-1.5 py-1 text-neutral-400 hover:bg-rose-500/20 hover:text-rose-200 disabled:opacity-40`} disabled={list.length <= 1} onClick={() => setNow(list.filter((_, i) => i !== index))}>
+            ×
+          </button>
+        </div>
+      ))}
+      <button type="button" className={`w-full ${BTN}`} onClick={() => setNow([...list, { item: "", weight: 1 }])}>
+        + row
+      </button>
+    </div>
+  );
+}
+
 function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
   const params = parseParams({ fields: [field] }, meta);
   const coalesce = `kind:${field.key}`;
   switch (field.type) {
-    case "range": {
-      const value = params[field.key] as number;
-      return (
-        <label className="block space-y-1">
-          <span className="flex items-center justify-between">
-            <span className={MICRO}>{labelOf(field)}</span>
-            <span className="text-cyan-200">
-              {value.toFixed(field.step !== undefined && field.step >= 1 ? 0 : 2)}
-              {field.unit ?? ""}
-            </span>
-          </span>
-          <input
-            type="range"
-            min={field.min}
-            max={field.max}
-            step={field.step ?? (field.max - field.min) / 100}
-            value={value}
-            className="w-full accent-emerald-400"
-            onChange={(event) => onMeta({ [field.key]: Number(event.target.value) }, coalesce)}
-          />
-        </label>
-      );
-    }
-    case "number": {
-      const value = params[field.key] as number;
-      return (
-        <label className="flex items-center justify-between gap-2">
-          <span className={MICRO}>{labelOf(field)}</span>
-          <input
-            type="number"
-            step={field.step ?? 1}
-            className={`w-32 ${INPUT}`}
-            value={value}
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              if (Number.isFinite(next)) onMeta({ [field.key]: next }, coalesce);
-            }}
-          />
-        </label>
-      );
-    }
+    case "range":
+      return <RangeField field={field} value={params[field.key] as number} coalesce={coalesce} onMeta={onMeta} />;
+    case "number":
+      return <NumberInputField field={field} value={params[field.key] as number} coalesce={coalesce} onMeta={onMeta} />;
     case "bool": {
       const value = params[field.key] as boolean;
       return (
@@ -119,69 +271,14 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
         </label>
       );
     }
-    case "color": {
-      const value = params[field.key] as string;
-      return (
-        <label className="flex items-center justify-between gap-2">
-          <span className={MICRO}>{labelOf(field)}</span>
-          <input
-            type="color"
-            className={`h-7 w-14 cursor-pointer rounded-[5px] border border-white/10 bg-black/40 ${FOCUS_RING}`}
-            value={value}
-            onChange={(event) => onMeta({ [field.key]: event.target.value }, coalesce)}
-          />
-        </label>
-      );
-    }
-    case "text": {
-      const value = params[field.key] as string;
-      return (
-        <label className="flex items-center justify-between gap-2">
-          <span className={MICRO}>{labelOf(field)}</span>
-          <input className={`w-32 min-w-0 ${INPUT}`} value={value} onChange={(event) => onMeta({ [field.key]: event.target.value }, coalesce)} />
-        </label>
-      );
-    }
-    case "seed": {
-      const value = params[field.key] as string;
-      return (
-        <div className="flex items-center gap-2">
-          <label className="flex min-w-0 flex-1 items-center gap-2">
-            <span className={MICRO}>{labelOf(field)}</span>
-            <input className={`w-full min-w-0 ${INPUT}`} value={value} placeholder="reroll…" onChange={(event) => onMeta({ [field.key]: event.target.value }, coalesce)} />
-          </label>
-          <button
-            type="button"
-            className={BTN}
-            title="Reroll seed"
-            onClick={() => onMeta({ [field.key]: `r${Math.abs(Math.round((value.length + 1) * 2654435761)).toString(36).slice(0, 6)}${value.length}` }, coalesce)}
-          >
-            ⟳
-          </button>
-        </div>
-      );
-    }
-    case "weightedList": {
-      const list = params[field.key] as WeightedParamEntry[];
-      const set = (next: WeightedParamEntry[]) => onMeta({ [field.key]: next }, coalesce);
-      return (
-        <div className="space-y-1">
-          <div className={MICRO}>{labelOf(field)}</div>
-          {list.map((entry, index) => (
-            <div key={index} className="flex items-center gap-1">
-              <input className={`min-w-0 flex-1 ${INPUT}`} value={entry.item} placeholder={field.itemLabel ?? "id"} onChange={(event) => set(list.map((e, i) => (i === index ? { ...e, item: event.target.value } : e)))} />
-              <input type="number" step={1} min={0} className={`w-14 ${INPUT}`} value={entry.weight} onChange={(event) => set(list.map((e, i) => (i === index ? { ...e, weight: Math.max(0, Number(event.target.value)) } : e)))} />
-              <button type="button" className={`${CONTROL} px-1.5 py-1 text-neutral-400 hover:bg-rose-500/20 hover:text-rose-200 disabled:opacity-40`} disabled={list.length <= 1} onClick={() => set(list.filter((_, i) => i !== index))}>
-                ×
-              </button>
-            </div>
-          ))}
-          <button type="button" className={`w-full ${BTN}`} onClick={() => set([...list, { item: "", weight: 1 }])}>
-            + row
-          </button>
-        </div>
-      );
-    }
+    case "color":
+      return <ColorField field={field} value={params[field.key] as string} coalesce={coalesce} onMeta={onMeta} />;
+    case "text":
+      return <TextField field={field} value={params[field.key] as string} coalesce={coalesce} onMeta={onMeta} />;
+    case "seed":
+      return <SeedField field={field} value={params[field.key] as string} coalesce={coalesce} onMeta={onMeta} />;
+    case "weightedList":
+      return <WeightedListField field={field} value={params[field.key] as WeightedParamEntry[]} coalesce={coalesce} onMeta={onMeta} />;
     case "action":
       return null; // Action buttons are rendered by the group section, which owns the whole schema.
   }

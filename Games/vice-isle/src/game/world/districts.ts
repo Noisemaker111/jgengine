@@ -1,4 +1,5 @@
 import { editorMarkerPosition, findEditorMarker } from "@jgengine/core/editor/index";
+import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../../editorLayers";
 
@@ -82,7 +83,10 @@ export const AUTHORED_VEHICLE_SPAWNS: readonly AuthoredVehicleSpawn[] = editorLa
   });
 
 export const KINGPIN_POS: readonly [number, number, number] = markerXYZ("kingpin");
-export const PLAYER_SPAWN: readonly [number, number, number] = markerXYZ("player_spawn");
+// Resolved through the shared spawn primitive so the capture-time `?spawn=` overlay
+// (shoot/drive `--spawn`) applies; falls back to the authored marker it reads anyway.
+export const PLAYER_SPAWN: readonly [number, number, number] =
+  authoredSpawnPosition(editorLayers) ?? markerXYZ("player_spawn");
 export const MARCO_POS: readonly [number, number, number] = markerXYZ("marco");
 export const GUNSHOP_POS: readonly [number, number, number] = markerXYZ("gunshop");
 export const GARAGE_POS: readonly [number, number, number] = markerXYZ("garage");
