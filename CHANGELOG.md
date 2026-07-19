@@ -32,6 +32,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- Editor: viewport clip preview for rigged assets (Animation dock "Clips" mode — pick a rig or placed instance, play/scrub/loop/speed any catalog clip) and an Inspector "Animation" section that authors a placement's `ModelConfig.animation` (role→clip dropdowns, auto/none, walk/run/fade, one-shot event bindings) as undoable `marker.meta.animation` edits. New subpaths: `@jgengine/editor/shell/clipPreview`, `@jgengine/editor/modelAnimationAuthoring`, `@jgengine/editor/ClipPreviewLayer`.
+
 ### Changed
 
 ### Removed
