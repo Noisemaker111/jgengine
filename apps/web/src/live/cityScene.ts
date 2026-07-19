@@ -14,6 +14,7 @@ import type {
   CityLotPiece,
   CityPieceRole,
   CityLotClass,
+  CityFillerClass,
   CityLandmarkClass,
 } from "@jgengine/core/world/cityContent";
 import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
@@ -105,7 +106,7 @@ interface ClassStyle {
   flood: number;
 }
 
-type AnyCityClass = CityLotClass | CityLandmarkClass;
+type AnyCityClass = CityLotClass | CityFillerClass | CityLandmarkClass;
 
 const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
   // --- ordinary building classes -------------------------------------------------
@@ -145,6 +146,15 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
     wall: 0x969ca4, roof: 0xa2a8b0, trim: 0xb4bac2, accent: 0xd2d8e0,
     windowTint: 0xbcd6f0, windowDensity: 0.08, windowIntensity: 0.85, storefront: false, flood: 0,
   }, // pale galvanized metal, almost no windows
+  // --- interior-only block fillers (garages + depots behind the streetwall) -------
+  garage: {
+    wall: 0x54585e, roof: 0x34383e, trim: 0x6a6e76, accent: 0x8a8f98,
+    windowTint: 0x9fb4c8, windowDensity: 0.5, windowIntensity: 0.7, storefront: false, flood: 0,
+  }, // concrete parking structure: bare grey, banded floors read as sparse cool open-deck strips
+  depot: {
+    wall: 0x3a2c24, roof: 0x1e1712, trim: 0x5a4636, accent: 0x7a5238,
+    windowTint: 0xffb060, windowDensity: 0.06, windowIntensity: 0.8, storefront: false, flood: 0,
+  }, // dark warm brick/metal warehouse: near-windowless low box
   // --- block-scale landmarks (flood-lit so they pop out of the skyline) ----------
   hall: {
     wall: 0x6c6672, roof: 0xb58a48, trim: 0xffcf70, accent: 0xffd27a,

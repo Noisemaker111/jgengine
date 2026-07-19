@@ -34,6 +34,7 @@ interface Dials {
   lotD: number;
   setback: number;
   landmarks: number;
+  blockFill: number;
   elevation: number;
 }
 
@@ -50,6 +51,7 @@ const DEFAULTS: Dials = {
   lotD: 10,
   setback: 3,
   landmarks: 0.08,
+  blockFill: 0.45,
   elevation: 0.35,
 };
 
@@ -386,7 +388,7 @@ function Playground() {
         seed: dials.seed,
         streets: cityStreets,
         lots: { footprint: { w: dials.lotW, d: dials.lotD }, setback: dials.setback },
-        content: { landmarks: dials.landmarks },
+        content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
       },
       dials.size,
       dials.size,
@@ -501,6 +503,7 @@ function Playground() {
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
               <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
+              <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
           ) : null}
           <div className="text-xs leading-relaxed text-slate-500">
