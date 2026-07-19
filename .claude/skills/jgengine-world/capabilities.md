@@ -285,6 +285,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
+
+- `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
+
 ## mesh-hitboxes — shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`

@@ -431,6 +431,7 @@
     "./world/gridInstances",
     "./world/interiors",
     "./world/lod",
+    "./world/mapAnnotations",
     "./world/mapLayers",
     "./world/markers",
     "./world/massing",
