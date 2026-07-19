@@ -62,7 +62,7 @@ function mergeRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
   return toGeometry(positions, indices);
 }
 
-/** Convert a detected {@link RoadJunction} into the structural {@link RoadJunctionInput} the trimmer wants. */
+/** Convert a detected {@link RoadJunction} into the structural {@link RoadJunctionInput} the trimmer wants. @internal */
 export function roadJunctionInput(junction: RoadJunction): RoadJunctionInput {
   return {
     x: junction.center[0],
@@ -80,6 +80,7 @@ export function roadJunctionInput(junction: RoadJunction): RoadJunctionInput {
  * a real vertex so {@link trimPathAtJunctions} (which matches junctions to path vertices) can cut the
  * ribbon back there. Authored road crossings from `findRoadJunctions` land mid-segment, not on the
  * hand-authored vertices, so without this the trimmer would never see them.
+ * @internal
  */
 export function insertJunctionNodes(
   path: readonly RoadPoint[],
@@ -136,6 +137,7 @@ export interface AuthoredRoadNetwork {
  * corners drape at the road's own authored `elevation`, so each welded corner meets the ribbon end at
  * the exact same height (seam-shared, per {@link GROUND_DECAL_LAYERS}); the surface interior drapes at
  * the junction's representative elevation. Pure geometry, so the shell just meshes the result.
+ * @internal
  */
 export function buildAuthoredRoadNetwork(
   roads: readonly RoadEnvironmentDescriptor[],

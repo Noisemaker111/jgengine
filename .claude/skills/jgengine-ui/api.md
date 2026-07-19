@@ -1471,7 +1471,9 @@
 
 ## @jgengine/shell/environment/RoadRibbons
 
-- `RoadRibbons` (function): function RoadRibbons({ road, field, exclusions = [], }: { road: RoadEnvironmentDescriptor; field: TerrainField; exclusions?: readonly DashExclusion[]; }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon, a curb/edge strip along each border, plus an optional dashed centerline (draped on the terrain, and interrupted through any `exclusions` — the welded junction patches — so the center line does not paint across intersections).
+- `AuthoredRoadNetwork` (interface): interface AuthoredRoadNetwork — Trimmed ribbons for every road plus the welded surfaces that fill the crossings between them.
+- `JunctionSurface` (interface): interface JunctionSurface — One welded asphalt junction surface plus the color it should render in.
+- `RoadRibbons` (function): function RoadRibbons({ road, field, paths, }: { road: RoadEnvironmentDescriptor; field: TerrainField; paths: readonly (readonly RoadPoint[])[]; }): React.JSX.Element | null — Renders one `road()` descriptor from its trimmed centerline sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Because the sub-paths already stop at the junction boundary, every layer naturally ends there — no ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip intersections.
 
 ## @jgengine/shell/environment/VolumetricClouds
 
