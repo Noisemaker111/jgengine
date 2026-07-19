@@ -1,0 +1,79 @@
+# Upload a recorded gameplay clip (mp4 on the pr-shots archive branch) to
+# GitHub's user-attachments store and comment the URL on a PR/issue, where it
+# renders with GitHub's NATIVE inline video player.
+#
+# Why a workflow: cloud agent sessions sit behind an egress gateway that only
+# allows repository-scoped GitHub endpoints, so `bun run pr-video` cannot reach
+# the github.com/user-attachments upload flow from there. Actions runners have
+# open egress — agents push the clip with `bun run pr-shots`, then dispatch
+# this workflow (workflow_dispatch / actions_run_trigger MCP).
+#
+# Requires the GH_SESSION_TOKEN repository Actions secret: a github.com
+# `user_session` cookie of an account with write access (dedicated bot account
+# recommended — it is a full-account credential). There is no token API for
+# attachment uploads; the cookie flow is the only way to mint an inline-playing
+# user-attachments URL.
+name: pr-video
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      clip_path:
+        description: "Path of the clip within the pr-shots branch (e.g. pr-shots/claude/foo/game-clip.mp4)"
+        required: true
+        type: string
+      target_number:
+        description: "PR or issue number to comment the inline video on (omit to only print the URL)"
+        required: false
+        type: string
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: pr-shots
+          path: _clips
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - name: Guard secret
+        run: |
+          if [ -z "${{ secrets.GH_SESSION_TOKEN }}" ]; then
+            echo "::error::GH_SESSION_TOKEN Actions secret is not set. Add a github.com user_session cookie (bot account with write access) under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+      - name: Upload clip to user-attachments
+        id: upload
+        env:
+          GH_SESSION_TOKEN: ${{ secrets.GH_SESSION_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CLIP="$GITHUB_WORKSPACE/_clips/${{ inputs.clip_path }}"
+          [ -f "$CLIP" ] || { echo "::error::clip not found on pr-shots branch: ${{ inputs.clip_path }}"; exit 1; }
+          # Minimal isolated install: pr-video.ts needs only the user-attachments
+          # package, not the monorepo's workspace install.
+          mkdir /tmp/pv && cp scripts/pr-video.ts /tmp/pv/
+          cd /tmp/pv && echo '{"type":"module"}' > package.json && bun add user-attachments
+          URL="$(bun pr-video.ts "$CLIP" --repo "${{ github.repository }}")"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Uploaded: $URL"
+      - name: Comment inline video on target
+        if: ${{ inputs.target_number != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf 'Gameplay clip (uploaded by the pr-video workflow — plays inline):\n\n%s\n' "${{ steps.upload.outputs.url }}" > body.md
+          gh issue comment "${{ inputs.target_number }}" --repo "${{ github.repository }}" --body-file body.md
