@@ -14,6 +14,11 @@ import { join } from "node:path";
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
 const lockPath = join(root, ".agent-bootstrap.lock");
+const logPath = join(root, ".agent-bootstrap.log");
+// Present while `bun install` runs; still present on the next run = the install
+// was killed mid-flight and node_modules must be wiped (half-hardlinked trees
+// corrupt the next install).
+const installingPath = join(root, ".agent-bootstrap.installing");
 
 function hasTsgo(): boolean {
   return existsSync(join(root, "node_modules", ".bin", "tsgo"))
@@ -109,6 +114,20 @@ if (checkOnly) {
     console.log("agent-bootstrap: check ok (deps + core dist present)");
     process.exit(0);
   }
+  if (lockAlive()) {
+    const pid = readFileSync(lockPath, "utf8").trim();
+    const elapsed = Math.round((Date.now() - statSync(lockPath).mtimeMs) / 1000);
+    let last = "";
+    try {
+      last = readFileSync(logPath, "utf8").trimEnd().split("\n").filter(Boolean).at(-1) ?? "";
+    } catch {}
+    console.error(
+      `agent-bootstrap: in progress (pid ${pid}, ~${elapsed}s elapsed, whole run ~2-3 min).` +
+        (last ? ` last: ${last}` : "") +
+        ` Do NOT start another or kill it — wait and re-check.`,
+    );
+    process.exit(1);
+  }
   console.error("agent-bootstrap: not ready — run `bun run agent:bootstrap` (missing node_modules and/or packages/core/dist)");
   process.exit(1);
 }
@@ -116,14 +135,17 @@ if (checkOnly) {
 joinOrAcquireLock();
 process.on("exit", releaseLock);
 
-if (!hasTsgo()) {
-  // node_modules present but unusable means a previous install was killed mid-flight
-  // (SIGKILL leaves half-hardlinked packages that corrupt the next install). Wipe first.
+if (!hasTsgo() || existsSync(installingPath)) {
+  // node_modules present but unusable (or a leftover installing marker) means a
+  // previous install was killed mid-flight (SIGKILL leaves half-hardlinked
+  // packages that corrupt the next install). Wipe first.
   if (existsSync(join(root, "node_modules"))) {
     console.log("agent-bootstrap: partial node_modules detected (killed install) — wiping before reinstall");
     rmSync(join(root, "node_modules"), { recursive: true, force: true });
   }
+  writeFileSync(installingPath, String(process.pid));
   run("bun install --frozen-lockfile", ["bun", "install", "--frozen-lockfile"], 600_000);
+  rmSync(installingPath, { force: true });
 } else {
   console.log("agent-bootstrap: node_modules present (tsgo found)");
 }

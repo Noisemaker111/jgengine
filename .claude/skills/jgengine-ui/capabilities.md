@@ -89,9 +89,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
 
+## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
+
+- `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
+
 ## controls-list — keybind-derived control legend that hides on touch
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
+
+## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
+
+- `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
 
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
@@ -250,6 +258,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/react"`
 
+## modal-host — full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog
+
+- `ModalHost` (function) · `import { ModalHost } from "@jgengine/react"`
+
+## modal-stack — serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result
+
+- `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
+
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
@@ -310,6 +326,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
 
+## pause-menu — reskinnable pause-menu building block — Resume plus a game-filled Settings/Quit slot list, HudTheme-driven
+
+- `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/react"`
+
 ## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
 
 - `createPhotoModeStore` (function) · `import { createPhotoModeStore } from "@jgengine/core/ui"`
@@ -353,6 +373,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
+
+## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
+
+- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
 
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 
@@ -402,9 +426,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
 
+## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
+
+- `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
+
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+
+- `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
 
 ## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
 

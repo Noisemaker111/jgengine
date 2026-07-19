@@ -345,6 +345,16 @@ export {
   type SelectionBookmarks,
   type SelectionPruneResult,
 } from "./scene/selectionBookmarks";
+export {
+  createSequenceDirector,
+  type CueListener,
+  type EmittedCue,
+  type SequenceCue,
+  type SequenceDirector,
+  type SequenceDirectorOptions,
+  type SequenceSnapshot,
+  type SequenceState,
+} from "./scene/sequenceDirector";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
@@ -371,6 +381,17 @@ export {
   type ParticleSystem,
   type Range,
 } from "./vfx/particles";
+export {
+  createScreenEffects,
+  type ScreenEffect,
+  type ScreenEffectEasing,
+  type ScreenEffectShape,
+  type ScreenEffectSpec,
+  type ScreenEffectsController,
+  type ScreenEffectsOptions,
+  type ScreenEffectsSnapshot,
+  type StoredScreenEffect,
+} from "./vfx/screenEffects";
 export { type BoundsSpec, type Vec3 } from "./visibility/bounds";
 export { type CameraVisibilityContext } from "./visibility/camera";
 export { type VisibilityConfig } from "./visibility/config";

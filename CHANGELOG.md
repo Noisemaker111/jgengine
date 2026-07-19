@@ -53,6 +53,30 @@ At publish, rename this heading to the new version and mirror the entries into
   adapts live `StatusInstance`s into serializable `StatusEffectView`s (`id`, free-string `kind`, `remainingMs`,
   `durationMs`, `stacks`) so the widget re-derives no ring math or timers. `kind` is never interpreted by the engine —
   the game supplies icon/color/label; icons come from the existing game-icons.net icon system. Demo: `status-effects`.
+- **Cutscene / sequence director.** `@jgengine/core/scene/sequenceDirector`' `createSequenceDirector` is a
+  serializable, genre-agnostic timeline: an ordered list of typed cues (`{ atMs, kind, payload }`) advanced by one
+  injected clock, firing each cue once and in order as its time passes — even across a large `seek` — with
+  `play`/`pause`/`seek`/`skip`/`stop` and `snapshot`/`restore`. The director only schedules and emits cues via
+  `onCue`; it never interprets a `kind`, so the same primitive drives camera moves, dialogue, fades, or any game
+  event without a genre kit. `@jgengine/react`'s `useSequenceDirector` runs the per-frame tick loop and exposes
+  playhead/progress + controls, and `CutsceneLetterbox` is a reskinnable cinematic bars + caption + Skip overlay.
+  See the `cutscene` dev demo.
+- **Modal / confirmation dialog system + reskinnable pause menu.** `@jgengine/core/ui/modalStack`'s
+  `createModalStack` is a genre-agnostic, serializable stack of opaque modal records (`push`/`pop`/`resolve` with a
+  free-form result, `top`/`isOpen`/`depth`, optional injected-clock auto-dismiss via `tick`/`timeRemaining`,
+  `subscribe`, `snapshot`/`restore`) that never interprets a modal's `kind` or result. `@jgengine/react`'s `ModalHost`
+  renders the top modal over a dimmed backdrop with a focus trap and Esc/backdrop-to-cancel, `ConfirmDialog` is a
+  generic two-button confirm/cancel dialog, and `PauseMenu` is a drop-in Resume + game-filled Settings/Quit slot list.
+  All `HudTheme`-token-driven common parts — the game owns final layout, terminology, and skin. Demo: `pause-menu`.
+- **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
+  serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
+  (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a
+  free-string `kind` the game styles, plus color, peak intensity, easing, and duration. It is clock-driven
+  (`advance()` against an injected `now`) and allocation-aware (the `composite()` array and entries are pooled, so
+  steady-state ticking never allocates), with `subscribe` + `snapshot`/`restore`. `@jgengine/shell/postfx`'
+  `ScreenEffectsOverlay` subscribes to the model and paints the composite as pointer-transparent color-grade layers
+  over the canvas. Demo: `screen-effects`. The model never interprets `kind`; flash/vignette/pulse are just
+  parameterizations of the same data (region shape, decay easing, sustained oscillation).
 - **Coach-marks / tutorial hints.** `@jgengine/core/ui/coachMarks`' `createCoachMarkSequence` is a genre-agnostic
   onboarding model: an ordered list of `CoachMarkStep`s (title, body, optional `anchor`/`placement`, and a data-first
   string `condition`), a persisted "seen" set so completed hints never re-show, condition-gating via `satisfy`/

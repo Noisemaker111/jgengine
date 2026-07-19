@@ -17,6 +17,8 @@ export * from "./quickMenu";
 export * from "./questTracker";
 export * from "./notifications";
 export * from "./coachMarks";
+export * from "./cutscene";
+export * from "./modals";
 export * from "./fastTravel";
 export * from "./components";
 export * from "./hud";

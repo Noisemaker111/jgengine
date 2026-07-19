@@ -1191,6 +1191,17 @@
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 
+## @jgengine/core/scene/sequenceDirector
+
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+
 ## @jgengine/core/scene/spatial
 
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
@@ -1358,6 +1369,18 @@
 - `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D vector `[x, y, z]`.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
+
+## @jgengine/core/vfx/screenEffects
+
+- `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.
+- `ScreenEffectEasing` (type): type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut" — How a transient effect's intensity curves from peak to zero over its life.
+- `ScreenEffectShape` (type): type ScreenEffectShape = "full" | "vignette" — The screen region an effect tints. `"full"` grades the whole frame (a flash); `"vignette"` grades only the edges, leaving the center clear (a directional or ambient border tint). Purely a shape hint for the renderer — no genre meaning.
+- `ScreenEffectSpec` (interface): interface ScreenEffectSpec — One screen-feedback effect, fully data-first so a whole controller serializes. `kind` is a free label the game assigns and styles ("damage", "heal", "poison", "boost", …); the model never interprets it. Everything visible is a parameter: color, peak intensity, region shape, easing, and either a transient duration or a sustained (optionally oscillating) hold.
+- `ScreenEffectsController` (interface): interface ScreenEffectsController — A live, clock-driven screen-feedback controller.
+- `ScreenEffectsOptions` (interface): interface ScreenEffectsOptions — Options for {@link createScreenEffects}.
+- `ScreenEffectsSnapshot` (interface): interface ScreenEffectsSnapshot — Serializable state of every active effect, for save/restore and replay.
+- `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
+- `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
 
 ## @jgengine/core/visibility/assetStreaming
 
@@ -1566,6 +1589,7 @@
 - `ControlGroupInput` (interface): interface ControlGroupInput — A decoded control-group key press plus the memory needed to detect a double-tap.
 - `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Digit: recall the set saved under `key` into the active selection. */ | { kind: "recall"; key: string } /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */ | { kind: "focus"; key: string } — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
@@ -1579,6 +1603,7 @@
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
 - `ElevationSummary` (interface): interface ElevationSummary — Aggregate elevation statistics over a region — the selection min/max/mean and legend range.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
 - `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
 - `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
@@ -1813,6 +1838,13 @@
 - `SceneObject` (interface): interface SceneObject — ⚠ undocumented
 - `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
 - `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
+- `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.
+- `ScreenEffectEasing` (type): type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut" — How a transient effect's intensity curves from peak to zero over its life.
+- `ScreenEffectShape` (type): type ScreenEffectShape = "full" | "vignette" — The screen region an effect tints. `"full"` grades the whole frame (a flash); `"vignette"` grades only the edges, leaving the center clear (a directional or ambient border tint). Purely a shape hint for the renderer — no genre meaning.
+- `ScreenEffectSpec` (interface): interface ScreenEffectSpec — One screen-feedback effect, fully data-first so a whole controller serializes. `kind` is a free label the game assigns and styles ("damage", "heal", "poison", "boost", …); the model never interprets it. Everything visible is a parameter: color, peak intensity, region shape, easing, and either a transient duration or a sustained (optionally oscillating) hold.
+- `ScreenEffectsController` (interface): interface ScreenEffectsController — A live, clock-driven screen-feedback controller.
+- `ScreenEffectsOptions` (interface): interface ScreenEffectsOptions — Options for {@link createScreenEffects}.
+- `ScreenEffectsSnapshot` (interface): interface ScreenEffectsSnapshot — Serializable state of every active effect, for save/restore and replay.
 - `ScreenRect` (interface): interface ScreenRect — ⚠ undocumented
 - `SelectionBookmarkSnapshot` (interface): interface SelectionBookmarkSnapshot — The serializable shape of a {@link SelectionBookmarks} store: each key maps to its ordered, deduplicated id list. Plain data — safe to persist in a save file or replicate over the wire, and the exact input {@link createSelectionBookmarks} restores.
 - `SelectionBookmarks` (interface): interface SelectionBookmarks — A generic, keyed store of saved id sets ("bookmarks") over stable string ids — the reusable layer under RTS control groups, camera bookmarks, saved squads, editor selection presets, and accessibility recall. It owns storage only: binding, recall, enumeration, pruning, and serialization. It never touches the active {@link SelectionSet} or the camera — replacement/merge and focus stay caller hooks (see {@link recallSelectionBookmark}) so one store serves any genre, input scheme, or focus policy.
@@ -1820,6 +1852,11 @@
 - `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
 - `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
 - `SensorReading` (interface): interface SensorReading — ⚠ undocumented
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `SimClock` (interface): interface SimClock — ⚠ undocumented
 - `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
 - `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
@@ -1837,6 +1874,7 @@
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
 - `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `Station` (interface): interface Station — ⚠ undocumented
+- `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
 - `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
 - `StructureMaterial` (interface): interface StructureMaterial — ⚠ undocumented
@@ -2016,8 +2054,10 @@
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
