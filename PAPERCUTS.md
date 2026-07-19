@@ -223,6 +223,13 @@ Consumer sim: an 'all robots' game found zero robot/mech character models in the
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
 
+2026-07-18T23:04:31.014Z — gpt-5.6-sol — NoisemakerJon
+
+running independent recipe/surface/test/type checks for portable damage in parallel -> automatic permission review timed out after several minutes before commands ran, so verification had to be retried as one bounded sequence
+
+2026-07-18T23:09:23.301Z — gpt-5.6-sol — NoisemakerJon
+
+running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh
 2026-07-19T00:30:01.147Z — claude-opus-4-8 — NoisemakerJon
 
 Opened the-robots/loopline editor (?mode=editor) → infinite React 'Maximum update depth exceeded' loop in useGlbThumbnail/AssetThumbnail (ContentBrowser/BottomDock), triggered when GLB model textures fail to load; the GameUiErrorBoundary then blanks the whole editor chrome. Standalone/spire-cards editors (no failing model assets) are unaffected.

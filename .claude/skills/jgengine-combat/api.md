@@ -140,7 +140,7 @@
 - `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
 - `createDotField` (function): function createDotField(): DotField — Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
 - `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
-- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
+- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal context.
 - `createEncounterState` (function): function createEncounterState<TData>(config: EncounterConfig<TData>): EncounterState<TData> — Build the initial, serializable state for an encounter from its config. Deep-copies the authored phase tree (so later injection never mutates the config), verifies phase ids are unique, and leaves every node pending. Does not enter the first phase — call {@link startEncounter} for that.
 - `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
 - `createFireCadence` (function): function createFireCadence(config: FireCadenceConfig): FireCadence — Build a {@link FireCadence} rate gate. Reach for this instead of hand-tracking a `lastFiredAt` timestamp and comparing against a fire interval per game.
@@ -359,7 +359,7 @@
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `ReceiveRule` (interface): interface ReceiveRule — ⚠ undocumented
 - `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput — ⚠ undocumented
-- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
+- `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal context.
 - `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
 
 ## @jgengine/core/combat/encounterSequence
