@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   defaultParamMeta,
+  definePlaceableMarkerKind,
   getSceneKind,
   isSceneKind,
   listSceneKinds,
@@ -74,6 +75,31 @@ describe("registry", () => {
 
   test("parseSceneKindParams returns null for unregistered kinds", () => {
     expect(parseSceneKindParams({ id: "x", kind: "not_a_studio" })).toBeNull();
+  });
+
+  test("definePlaceableMarkerKind registers a click-to-place marker kind in one call", () => {
+    const kind = definePlaceableMarkerKind({
+      kind: "test_stash",
+      label: "Test Stash",
+      category: "My Game",
+      accent: "#38d6c4",
+      fields: [{ type: "number", key: "value", label: "Payout", default: 300, min: 0 }],
+    });
+    expect(kind).toBe("test_stash");
+    const definition = getSceneKind("test_stash");
+    expect(definition?.target).toBe("marker");
+    expect(definition?.label).toBe("Test Stash");
+    // addCategory is what surfaces it as a click-to-place tool in the + Add menu.
+    expect(definition?.addCategory).toBe("My Game");
+    expect(definition?.accent).toBe("#38d6c4");
+    // The inspector fields round-trip, so a placed marker gets a payout default in its meta.
+    expect(defaultParamMeta(definition!.schema)).toEqual({ value: 300 });
+  });
+
+  test("definePlaceableMarkerKind defaults the menu category to Custom and needs no fields", () => {
+    definePlaceableMarkerKind({ kind: "test_bare", label: "Bare" });
+    expect(getSceneKind("test_bare")?.addCategory).toBe("Custom");
+    expect(getSceneKind("test_bare")?.schema.fields).toEqual([]);
   });
 
   test("defaultParamMeta produces a fresh, valid patch", () => {

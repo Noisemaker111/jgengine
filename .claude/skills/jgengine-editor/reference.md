@@ -76,6 +76,23 @@ bun packages/editor/src/mcp/cli.ts --game <id> \
 - **Optional:** `color`, `label`, `rotationY`, `meta` — `meta` is validated against the kind's registered schema when one exists (custom kinds skip validation), same as `set_marker`.
 - **Id collisions re-id** exactly as `add_path`; the response's `result` carries the id the marker landed under. Use `place_asset` instead when the marker should carry a mesh (it stamps `catalogId`/`meta.assetId`); `add_marker` is for logical, mesh-free markers.
 
+### Click-to-place custom kinds in the GUI
+
+`add_marker` is the *scripted* path (an agent/CLI types coordinates). To let a **designer click the world to drop** a game's own logical kind (a stash, checkpoint, bounty…), register it as a placeable scene kind with **`definePlaceableMarkerKind`** (`@jgengine/core/scene/sceneKinds`) — the light path that skips a full studio's schema/resolver:
+
+```ts
+// Games/<id>/src/editorKinds.ts — imported for its side effect by the game's editorLayers.ts
+import { definePlaceableMarkerKind } from "@jgengine/core/scene/sceneKinds";
+export const STASH_KIND = definePlaceableMarkerKind({
+  kind: "stash", label: "Stash", category: "My Game", accent: "#38d6c4",
+  fields: [{ type: "number", key: "value", label: "Payout ($)", default: 300, min: 0, step: 50 }],
+});
+```
+
+- The kind then appears as a click-to-place tool in the editor `+ Add` menu, grouped under its `category`: pick it, click the world to drop a marker, Shift-click to keep placing, tune the `fields` in the Inspector. The runtime is unchanged — the game still reads the kind off `editorLayers.markers`.
+- **Load path:** register from a module the editor loads. Importing your `editorKinds.ts` (side effect) from `editorLayers.ts` covers it — `loadGameLayers` imports `editorLayers.ts` for every editor session, and the game runtime imports it too, so one registration serves both.
+- `fields` also gives `add_marker`/`set_marker`/`set_meta` a schema to validate that kind's `meta` against; omit `fields` for a bare placeable marker.
+
 ## Pure API (`@jgengine/editor`)
 
 ```ts
