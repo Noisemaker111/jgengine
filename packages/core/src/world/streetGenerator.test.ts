@@ -602,6 +602,137 @@ describe("sidewalks (#1368)", () => {
   });
 });
 
+describe("per-corner radius mix (#1395 round-3)", () => {
+  const circuitRules = (o: Partial<StreetNetworkRules> = {}) =>
+    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 14, maxTurnAngle: 120, ...o });
+  const SEEDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
+
+  // Fitted radius = circumradius of a consecutive point triple. On a uniformly-sampled arc this equals
+  // the arc radius; on a straight run it blows up (excluded by the mid-turn filter).
+  function circumradius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
+    const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const bc = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    const ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
+    const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2;
+    if (area < 1e-9) return Infinity;
+    return (ab * bc * ca) / (4 * area);
+  }
+  // Circumradii at every apex triple genuinely on an arc (mid-band turn, not a straight, not a near-sharp
+  // hairpin apex where the fit degenerates).
+  function fittedRadii(loopPoints: StreetVec2[]): number[] {
+    const out: number[] = [];
+    for (let i = 1; i < loopPoints.length - 1; i += 1) {
+      const t = turnDeg(loopPoints[i - 1]!, loopPoints[i]!, loopPoints[i + 1]!);
+      if (t > 3 && t < 40) {
+        const r = circumradius(loopPoints[i - 1]!, loopPoints[i]!, loopPoints[i + 1]!);
+        if (Number.isFinite(r)) out.push(r);
+      }
+    }
+    return out;
+  }
+
+  test("a circuit lap mixes ≥3 fitted-radius bands incl. a sweeper ≥4×minCurveRadius (≥4 of 6 seeds)", () => {
+    const minR = 14;
+    let ok = 0;
+    for (const seed of SEEDS) {
+      const net = generateStreets(circuitRules({ seed }), 260, 220);
+      const loop = net.streets.find((s) => s.loop)!;
+      const radii = fittedRadii(loop.points);
+      const hairpin = radii.some((r) => r < 1.8 * minR); // tight
+      const standard = radii.some((r) => r >= 1.8 * minR && r <= 4 * minR); // medium
+      const sweeper = radii.some((r) => r > 4 * minR); // fast sweeper, ≥4×
+      if (hairpin && standard && sweeper) ok += 1;
+    }
+    expect(ok).toBeGreaterThanOrEqual(4);
+  });
+
+  test("the fitted-radius spread is a real MIX — max ≫ min across the lap", () => {
+    // A single-radius fillet (the old behavior, still used by city nets) would cluster every fitted
+    // corner near minCurveRadius; the per-corner mix opens the ratio wide.
+    for (const seed of SEEDS) {
+      const net = generateStreets(circuitRules({ seed }), 260, 220);
+      const loop = net.streets.find((s) => s.loop)!;
+      const radii = fittedRadii(loop.points).filter((r) => r > 0);
+      if (radii.length < 4) continue;
+      expect(Math.max(...radii) / Math.min(...radii)).toBeGreaterThan(3);
+    }
+  });
+
+  test("per-corner radii stay deterministic through the retry/synthesis path", () => {
+    const a = generateStreets(circuitRules({ seed: "det-r" }), 260, 220);
+    const b = generateStreets(circuitRules({ seed: "det-r" }), 260, 220);
+    expect(a).toEqual(b);
+  });
+});
+
+describe("elevation profile (#1395 round-3)", () => {
+  test("elevation dial 0 is byte-identical to a pre-elevation network (regression guard)", () => {
+    const flat = generateStreets(rules({ seed: "flat" }), 260, 260);
+    const dialled = generateStreets(rules({ seed: "flat", elevation: 0 }), 260, 260);
+    expect(JSON.stringify(flat)).toBe(JSON.stringify(dialled));
+    expect(dialled.elevationAt).toBeUndefined();
+    expect(dialled.streets.every((s) => s.heights === undefined)).toBe(true);
+    expect(dialled.edges.every((e) => e.heights === undefined)).toBe(true);
+  });
+
+  test("elevation 0.6 attaches per-point heights, a shared field, and stays deterministic", () => {
+    const r = rules({ seed: "hills", elevation: 0.6 });
+    const a = generateStreets(r, 260, 260);
+    const b = generateStreets(r, 260, 260);
+    // toEqual would compare the elevationAt closures by reference; JSON drops functions, so compare the
+    // serializable state and the field's samples separately.
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(a.elevationAt!(12, -47)).toBe(b.elevationAt!(12, -47));
+    expect(a.elevationAt).toBeDefined();
+    for (const s of a.streets) {
+      expect(s.heights).toBeDefined();
+      expect(s.heights!.length).toBe(s.points.length);
+    }
+    for (const e of a.edges) {
+      expect(e.heights).toBeDefined();
+      expect(e.heights!.length).toBe(e.points.length);
+    }
+    // Real relief present (not flat).
+    const all = a.streets.flatMap((s) => s.heights!);
+    expect(Math.max(...all) - Math.min(...all)).toBeGreaterThan(2);
+    // Edges sample the SAME shared field (continuity for junction welds).
+    for (const e of a.edges) {
+      for (let i = 0; i < e.points.length; i += 1) {
+        expect(e.heights![i]!).toBeCloseTo(a.elevationAt!(e.points[i]![0], e.points[i]![1]), 6);
+      }
+    }
+  });
+
+  test("street grade cap holds everywhere and respects a custom maxGrade", () => {
+    for (const [elevation, maxGrade] of [[0.6, 0.07], [1, 0.04], [0.8, 0.1]] as const) {
+      const net = generateStreets(rules({ seed: `grade-${maxGrade}`, elevation, maxGrade, winding: 0.6, loopiness: 0.4 }), 260, 240);
+      for (const s of net.streets) {
+        if (!s.heights) continue;
+        for (let i = 1; i < s.points.length; i += 1) {
+          const d = Math.hypot(s.points[i]![0] - s.points[i - 1]![0], s.points[i]![1] - s.points[i - 1]![1]);
+          if (d < 1e-6) continue;
+          expect(Math.abs(s.heights[i]! - s.heights[i - 1]!) / d).toBeLessThanOrEqual(maxGrade + 1e-6);
+        }
+      }
+    }
+  });
+
+  test("a circuit lap's elevation is continuous across the start/finish seam and grade-capped", () => {
+    const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, elevation: 0.6 });
+    const net = generateStreets(play, 260, 260);
+    const loop = net.streets.find((s) => s.loop)!;
+    const h = loop.heights!;
+    // First === last around the closed lap.
+    expect(Math.abs(h[0]! - h[h.length - 1]!)).toBeLessThan(1e-9);
+    // Grade cap holds around the seam and everywhere on the lap.
+    for (let i = 1; i < loop.points.length; i += 1) {
+      const d = Math.hypot(loop.points[i]![0] - loop.points[i - 1]![0], loop.points[i]![1] - loop.points[i - 1]![1]);
+      if (d < 1e-6) continue;
+      expect(Math.abs(h[i]! - h[i - 1]!) / d).toBeLessThanOrEqual(0.07 + 1e-6);
+    }
+  });
+});
+
 describe("clampTurns", () => {
   test("straightens a shallow kink and keeps endpoints", () => {
     const line: StreetVec2[] = [[0, 0], [10, 0.3], [20, 0]];

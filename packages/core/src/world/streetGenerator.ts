@@ -22,6 +22,21 @@
  * - `sidewalkWidth` — pedestrian band paved on both edges of every boulevard/avenue/street (not lanes),
  *   emitted as proper parallel offset polylines on each {@link Street} — arced on the outside of a bend,
  *   welded on the inside so the band never pinches or dips inside the road surface.
+ * - `elevation` / `maxGrade` — a seeded smooth 2-D height FIELD draped over the whole network. `elevation`
+ *   (0..1) dials the relief amplitude: 0 is dead flat and BYTE-IDENTICAL to a network authored before
+ *   this field existed (no `heights`, no `elevationAt`); 1 ≈ 22 m of relief across a ~520 m volume,
+ *   scaled to the footprint. The field is 2–3 octaves of sine/cos mixtures with wavelengths scaled to the
+ *   volume, so it is smooth by construction (crests/dips, never cliffs). Every {@link Street} gains a
+ *   per-point `heights[]` grade-LIMITED so no consecutive pair exceeds `maxGrade` (iterative relaxation;
+ *   a circuit loop stays continuous — first height === last — and the cap holds across the start/finish
+ *   seam); {@link StreetEdge}s carry raw (uncapped) field samples for continuity, and the field itself is
+ *   exposed as {@link StreetNetwork.elevationAt} so renderers drape junction welds, sidewalks, and
+ *   building bases off the SAME field for weld-continuous ground.
+ *
+ *   Road elevation is WHOLLY SEPARATE from the `context.heightAt` TERRAIN sampler that drives
+ *   bridges/tunnels: `elevationAt` shapes the road surface itself; `heightAt` is the world ground the
+ *   road bridges over or bores through. They never interact — a flat-elevation network can still span
+ *   bridges, and an elevated network's `heights[]` say nothing about where terrain gaps or ridges are.
  *
  * Hierarchy is STRUCTURAL, not a length percentile: an approximate edge-betweenness centrality over the
  * grown graph elects a connected arterial skeleton (avenues/boulevards) that never dead-ends at an
@@ -33,7 +48,12 @@
  * result is a self-avoiding, non-star-shaped closed polygon with real corners popping against real
  * straights; at least one start/finish straight is guaranteed; a corner-VARIETY quota then carves at
  * least one hairpin (a genuine ~180° U-turn) and one ess plus further chicane/ess/hairpin templates
- * scaling with `winding`; `minCurveRadius` is enforced by the arc fillets and self-clearance (the
+ * scaling with `winding`. Circuit corners are filleted with a PER-CORNER radius drawn from a seeded class
+ * mix scaled to the track extent and CORRELATED with each corner's turn magnitude — sharp direction
+ * changes stay tight (~`minCurveRadius` hairpins), medium corners open to 2–4×, and the gentlest 1–3
+ * corners per lap are designated SWEEPERS at 5–8× (clamped by the available leg length) — so a lap reads
+ * as a MIX of radii instead of one pinched minimum. City (net) streets keep the single-radius
+ * `minCurveRadius` fillet. `minCurveRadius` is enforced by the arc fillets and self-clearance (the
  * centerline never runs within ~1.5 track widths of a non-adjacent part of itself) by bounded
  * deterministic reject-and-retry with decaying fold aggression, falling back to a safe simple layout
  * only when every retry crosses; and when branching is meaningful a lane-level PIT LANE offsets parallel
@@ -49,7 +69,7 @@
  *
  * @capability street-generator seed-driven procedural streets and race circuits from one slider-driven engine
  */
-import { seededStreams } from "../random/rng";
+import { hashString, seededStreams } from "../random/rng";
 
 /** A path vertex in the volume-local XZ frame. */
 export type StreetVec2 = readonly [number, number];
@@ -83,6 +103,10 @@ export interface StreetEdge {
   level: StreetLevel;
   /** True when this edge belongs to the main closed loop (circuit mode). */
   loop: boolean;
+  /** Per-point road-surface height (one per `points`), present only when `elevation > 0`. Raw
+   *  (uncapped) samples of {@link StreetNetwork.elevationAt}; the grade-limited profile lives on the
+   *  owning {@link Street.heights}. */
+  heights?: number[];
 }
 
 /** A feature span carried by a street: a `[from, to]` index window into the street's `points`. */
@@ -119,6 +143,10 @@ export interface Street {
   features: StreetFeatureSpan[];
   /** Flanking pedestrian bands, present on boulevard/avenue/street levels (not lanes). */
   sidewalks?: StreetSidewalks;
+  /** Per-point road-surface height (one per `points`), present only when `elevation > 0`. Grade-limited
+   *  so no consecutive pair exceeds `maxGrade`; a loop stays continuous (`heights[0] === heights.at(-1)`).
+   *  This is ROAD elevation, not the `context.heightAt` terrain that drives bridges/tunnels. */
+  heights?: number[];
 }
 
 /** One crossing of three or more streets: patch center/radius plus outgoing arm directions. */
@@ -163,6 +191,10 @@ export interface StreetNetwork {
   tunnels: StreetFeature[];
   /** Independent cycle count (E − V + components): 0 = pure tree, ≥1 = has loops. */
   loops: number;
+  /** The shared road-surface height FIELD (volume-local), present only when `elevation > 0`. Sample it
+   *  to drape junction welds, sidewalks, and building bases so every surface meets the road continuously
+   *  — the streets/edges sample this exact field. Distinct from the `context.heightAt` terrain sampler. */
+  elevationAt?: (x: number, z: number) => number;
 }
 
 /** Fully-defaulted slider set the generator reads. */
@@ -196,6 +228,11 @@ export interface StreetNetworkRules {
   boulevards: number;
   /** Pedestrian band width paved on each side of boulevard/avenue/street levels. Default ~2. */
   sidewalkWidth?: number;
+  /** Road-surface relief amplitude, 0..1. 0 (default) = dead flat and byte-identical to a pre-elevation
+   *  network; 1 ≈ 22 m of relief across a ~520 m volume (scaled to the footprint). */
+  elevation?: number;
+  /** Maximum road slope (rise/run) the grade cap enforces on every street's height sequence. Default 0.07. */
+  maxGrade?: number;
 }
 
 /** Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network. */
@@ -248,6 +285,10 @@ function turnAngle(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
  * samples exceeds `maxRad` — a corner sharper than the ceiling is still reduced, now to a fillet
  * rather than a bevel. Open-chain endpoints never move (a graph node stays welded); pass `closed` for
  * a ring (first === last) so its wrap corner is filleted too and the loop stays closed.
+ *
+ * Pass `radiusFor` to vary the fillet radius PER CORNER (returning the target radius from the corner's
+ * deflection and adjacent leg lengths) instead of the single `curveRadius` — the circuit loop uses this
+ * to mix hairpins, standard corners, and sweepers; every other caller keeps the scalar radius.
  * @internal
  */
 export function clampTurns(
@@ -256,6 +297,7 @@ export function clampTurns(
   maxRad: number,
   curveRadius = 0,
   closed = false,
+  radiusFor?: (deflection: number, la: number, lb: number) => number,
 ): StreetVec2[] {
   if (points.length < 3) return points.map((p) => [p[0], p[1]] as StreetVec2);
   // 1. straighten pass — drop interior vertices whose corner is shallower than the minimum.
@@ -280,7 +322,13 @@ export function clampTurns(
     }
   }
   // 2. fillet pass — round every remaining corner into a sampled circular arc.
-  return filletCorners(pts, curveRadius, maxRad, closed);
+  return filletCorners(pts, curveRadius, maxRad, closed, radiusFor);
+}
+
+/** Deflection floor above which a corner is filleted (below it the vertex is left straight). Shared by
+ *  {@link filletCorners} and the per-corner radius planner so both detect the SAME corner set. */
+function filletFmin(maxRad: number): number {
+  return Math.min(0.14, Math.max(1e-4, maxRad));
 }
 
 /**
@@ -293,7 +341,13 @@ export function clampTurns(
  * exactly; a `closed` ring keeps `first === last`.
  * @internal
  */
-function filletCorners(points: StreetVec2[], curveRadius: number, maxRad: number, closed: boolean): StreetVec2[] {
+function filletCorners(
+  points: StreetVec2[],
+  curveRadius: number,
+  maxRad: number,
+  closed: boolean,
+  radiusFor?: (deflection: number, la: number, lb: number) => number,
+): StreetVec2[] {
   const n0 = points.length;
   if (n0 < 3) return points.map((p) => [p[0], p[1]] as StreetVec2);
   const isClosed =
@@ -303,7 +357,7 @@ function filletCorners(points: StreetVec2[], curveRadius: number, maxRad: number
   if (n < 3) return points.map((p) => [p[0], p[1]] as StreetVec2);
   // Fillet corners above this deflection; clamp to the ceiling so anything over `maxRad` is always
   // rounded (and anything left un-filleted is already under the ceiling).
-  const fmin = Math.min(0.14, Math.max(1e-4, maxRad));
+  const fmin = filletFmin(maxRad);
   // Sample each arc so no discrete turn exceeds the smaller of the (looser) `maxRad` ceiling and the
   // fixed smoothness cap — the latter is what keeps a filleted corner from reading as a hard polygon.
   const step = Math.min(maxRad > 1e-3 ? maxRad : Math.PI, MAX_ARC_STEP_RAD);
@@ -338,9 +392,11 @@ function filletCorners(points: StreetVec2[], curveRadius: number, maxRad: number
     const dbz = bdz / lb;
     const half = deflection / 2;
     const tanHalf = Math.tan(half);
-    // Tangent length from the corner: `curveRadius·tan(θ/2)`, clamped to half each leg so adjacent
+    // Per-corner target radius (circuit sweeper/hairpin mix) or the single scalar for every other caller.
+    const cornerRadius = radiusFor ? radiusFor(deflection, la, lb) : curveRadius;
+    // Tangent length from the corner: `cornerRadius·tan(θ/2)`, clamped to half each leg so adjacent
     // fillets can meet but never overlap. A non-positive radius rounds as large as the legs allow.
-    let t = curveRadius > 0 ? curveRadius * tanHalf : Math.min(la, lb) * 0.5;
+    let t = cornerRadius > 0 ? cornerRadius * tanHalf : Math.min(la, lb) * 0.5;
     t = Math.min(t, la * 0.5, lb * 0.5);
     if (t < 1e-3) {
       out.push([v[0], v[1]]);
@@ -874,6 +930,60 @@ function fallbackTrack(rules: StreetNetworkRules, hx: number, hz: number): Stree
   return poly;
 }
 
+/** Deterministic 0..1 jitter keyed by a seed hash and a real value (rounded to 0.001) — stable across
+ *  call sites so the radius plan is identical at the clearance check and the final fillet. */
+function stableJitter(seedHash: number, value: number): number {
+  return (hashString(`${seedHash}:${Math.round(value * 1000)}`) % 100000) / 100000;
+}
+
+/**
+ * Plan the PER-CORNER fillet radius for a closed circuit polyline. Classify every real corner (deflection
+ * above the fillet floor) by its turn magnitude and hand back a pure `(deflection, la, lb) => radius`
+ * function: the sharpest corners stay tight (~`minR` hairpins), medium corners open to 2–4×`minR`, and the
+ * gentlest 1–3 corners per lap are designated SWEEPERS at 5–8×`minR` (the leg clamp downstream keeps the
+ * arc inside its legs — gentle corners have small `tan(θ/2)`, so a big radius still fits). The result is a
+ * pure function of the corner-deflection multiset + seed, so it yields IDENTICAL radii whether it runs on
+ * the raw candidate polygon (the self-clearance check) or the chained loop street (final assembly),
+ * regardless of where the ring was rotated or reversed. @internal
+ */
+function circuitRadiusFn(
+  points: readonly StreetVec2[],
+  maxRad: number,
+  minR: number,
+  seed: string,
+): (deflection: number, la: number, lb: number) => number {
+  const fmin = filletFmin(maxRad);
+  const n0 = points.length;
+  const isClosed =
+    n0 >= 2 && Math.hypot(points[0]![0] - points[n0 - 1]![0], points[0]![1] - points[n0 - 1]![1]) < 1e-6;
+  const verts = isClosed ? points.slice(0, n0 - 1) : points;
+  const n = verts.length;
+  const defl: number[] = [];
+  for (let i = 0; i < n; i += 1) {
+    if (!isClosed && (i === 0 || i === n - 1)) continue;
+    const a = verts[(i - 1 + n) % n]!;
+    const b = verts[(i + 1) % n]!;
+    const d = turnAngle(a, verts[i]!, b);
+    if (d > fmin) defl.push(d);
+  }
+  const seedHash = hashString(`${seed}:corner-radii`);
+  const count = defl.length;
+  // 1–3 sweepers per lap (~one per five corners); the cutoff is the deflection of the Nth-gentlest corner.
+  const nSweep = Math.max(1, Math.min(3, Math.round(count / 5)));
+  const sorted = defl.slice().sort((a, b) => a - b);
+  const sweeperCutoff = count > 0 ? sorted[Math.min(nSweep - 1, count - 1)]! + 1e-6 : 0;
+  const hairpinCutoff = (100 * Math.PI) / 180; // ≥100° direction change → hairpin band
+  return (deflection: number): number => {
+    if (deflection <= fmin) return minR;
+    const j = stableJitter(seedHash, deflection);
+    if (deflection <= sweeperCutoff) return minR * (5 + j * 3); // sweeper: 5–8×
+    if (deflection >= hairpinCutoff) return minR * (1 + j * 0.5); // hairpin: ~1–1.5×
+    // Standard: linearly gentler → larger, spanning 2–4×, with a touch of seeded jitter.
+    const gentleness = Math.max(0, Math.min(1, (hairpinCutoff - deflection) / (hairpinCutoff - sweeperCutoff || 1)));
+    return minR * (2 + gentleness * 1.6 + j * 0.4);
+  };
+}
+
 /**
  * Grow a closed race CIRCUIT via real track synthesis: hull-and-inward-displacement layout with
  * corner templates, enforcing `minCurveRadius` (via the downstream arc fillets) and self-clearance by
@@ -893,9 +1003,13 @@ function buildCircuit(
   const minRad = (rules.minTurnAngle * Math.PI) / 180;
   const maxRad = (rules.maxTurnAngle * Math.PI) / 180;
   // A candidate must be self-clearing on the actual FILLETED centerline (what gets driven/rendered),
-  // not just on the raw node polygon — so fillet it the same way the street assembly will.
+  // not just on the raw node polygon — so fillet it the SAME way the street assembly will, including the
+  // per-corner sweeper/hairpin radius mix (bigger sweeper arcs bulge differently, so clearance must see
+  // exactly the geometry that ships).
   const filletedClearing = (candidate: StreetVec2[]): boolean => {
-    const closed = clampTurns([...candidate, candidate[0]!], minRad, maxRad, rules.minCurveRadius, true);
+    const ring = [...candidate, candidate[0]!];
+    const radiusFor = circuitRadiusFn(ring, maxRad, rules.minCurveRadius, rules.seed);
+    const closed = clampTurns(ring, minRad, maxRad, rules.minCurveRadius, true, radiusFor);
     return loopSelfClearing(closed.slice(0, -1), clearance, gapMin);
   };
 
@@ -1273,6 +1387,90 @@ function weldOffset(raw: StreetVec2[], centerline: readonly StreetVec2[], absd: 
 }
 
 /**
+ * Build the seeded smooth 2-D road-surface elevation FIELD: 3 octaves of sine/cos mixtures with
+ * wavelengths scaled to the volume `extent`, normalized so the peak-to-peak relief ≈ `reliefMeters`.
+ * Smooth by construction (no cliffs). Pure and deterministic given `rng`. The returned sampler is the
+ * SHARED field — streets, edges, junctions, sidewalks, and building bases all read it for weld continuity.
+ */
+function makeElevationField(rng: () => number, extent: number, reliefMeters: number): (x: number, z: number) => number {
+  const baseAmps = [1, 0.5, 0.28];
+  const comps = baseAmps.map((amp, k) => {
+    // Longest wavelength ≈ 0.9·extent (≈2 hills across the map), each octave shorter.
+    const wl = extent * (0.9 - k * 0.26) * (0.85 + rng() * 0.3);
+    const f = TAU / Math.max(1, wl);
+    const dir = rng() * TAU;
+    const dir2 = dir + Math.PI / 2 + (rng() - 0.5) * 0.8; // a second, near-perpendicular axis for real 2-D relief
+    return {
+      amp,
+      f,
+      dx: Math.cos(dir),
+      dz: Math.sin(dir),
+      ex: Math.cos(dir2),
+      ez: Math.sin(dir2),
+      ph1: rng() * TAU,
+      ph2: rng() * TAU,
+    };
+  });
+  const ampSum = comps.reduce((s, c) => s + c.amp, 0);
+  const norm = reliefMeters / (2 * ampSum); // each component peaks at ±amp, so Σamp·norm = reliefMeters/2
+  return (x: number, z: number): number => {
+    let h = 0;
+    for (const c of comps) {
+      h += c.amp * (Math.sin((x * c.dx + z * c.dz) * c.f + c.ph1) * 0.6 + Math.cos((x * c.ex + z * c.ez) * c.f + c.ph2) * 0.4);
+    }
+    return h * norm;
+  };
+}
+
+/**
+ * Grade-cap a height sequence so no consecutive pair's slope exceeds `maxGrade`. Guaranteed-feasible
+ * peak-shaving: each violating edge lowers only its HIGHER endpoint to `lower + maxGrade·dist`, a monotone
+ * (strictly-decreasing) propagation that converges within a bounded pass count (the shave travels one edge
+ * per pass; capped at the chain length) and, at a no-change pass, leaves every edge under the cap. A final
+ * constant shift restores the field's mean — a uniform offset changes no slope, so crests are relaxed into
+ * grade-legal ramps without dragging the whole road toward the valleys. For a `closed` loop
+ * (points[0] === points[last]) the ring, INCLUDING the start/finish seam edge, is capped and the shared
+ * vertex re-welded, so the lap stays continuous. Crests/dips read smooth because the sampled field is.
+ */
+function gradeCapHeights(points: readonly StreetVec2[], heights: number[], maxGrade: number, closed: boolean): number[] {
+  const n = heights.length;
+  if (n < 2) return heights.slice();
+  const dist = (i: number, j: number): number => Math.hypot(points[i]![0] - points[j]![0], points[i]![1] - points[j]![1]);
+  // Edge list of (a, b, maxDelta). For a closed ring collapse the duplicate last vertex onto the first.
+  const uniq = closed && dist(0, n - 1) < 1e-6 ? n - 1 : n;
+  const edges: { a: number; b: number; limit: number }[] = [];
+  for (let i = 0; i + 1 < uniq; i += 1) edges.push({ a: i, b: i + 1, limit: maxGrade * dist(i, i + 1) });
+  if (uniq < n) edges.push({ a: uniq - 1, b: 0, limit: maxGrade * dist(uniq - 1, n - 1) }); // seam edge
+  const u = heights.slice(0, uniq);
+  let meanBefore = 0;
+  for (const v of u) meanBefore += v;
+  meanBefore /= uniq;
+  const maxPass = uniq * 2 + 8;
+  let changed = true;
+  for (let pass = 0; pass < maxPass && changed; pass += 1) {
+    changed = false;
+    for (const e of edges) {
+      const diff = u[e.b]! - u[e.a]!;
+      if (diff > e.limit) {
+        u[e.b] = u[e.a]! + e.limit; // b too high → shave it down
+        changed = true;
+      } else if (diff < -e.limit) {
+        u[e.a] = u[e.b]! + e.limit; // a too high → shave it down
+        changed = true;
+      }
+    }
+  }
+  // Restore the mean with a constant offset (slopes are shift-invariant, so the cap still holds).
+  let meanAfter = 0;
+  for (const v of u) meanAfter += v;
+  meanAfter /= uniq;
+  const shift = meanBefore - meanAfter;
+  const out: number[] = u.map((v) => v + shift);
+  if (uniq < n) out.push(out[0]!); // re-weld the closing vertex to keep the loop continuous
+  return out;
+}
+
+/**
  * Resolve a full path network from its rules inside a volume of half-extents `hx`×`hz`. Deterministic
  * per `(rules.seed, hx, hz, context)`. Pass a {@link StreetNetworkContext} with a ground sampler to turn
  * water gaps into bridges and ridges into tunnels. Coordinates are volume-local; the caller maps to
@@ -1417,19 +1615,39 @@ export function generateStreets(
     for (const ei of chain.edges) edgeLevel[ei] = levels[ci]!;
   });
 
+  // --- road-surface elevation field (opt-in; flat + byte-identical when the dial is 0) ---
+  const elevationDial = rules.elevation ?? 0;
+  const maxGrade = rules.maxGrade ?? 0.07;
+  // A seeded smooth field draped over the network. Wholly separate from the `context.heightAt` TERRAIN
+  // sampler that drives bridges/tunnels — this shapes the road surface, that is the world ground.
+  const elevationAt =
+    elevationDial > 0
+      ? makeElevationField(
+          streams("elevation"),
+          Math.max(hx, hz) * 2,
+          // dial 1 ≈ 22 m relief across a ~520 m volume, scaled to this footprint.
+          elevationDial * Math.max(hx, hz) * 2 * (22 / 520),
+        )
+      : undefined;
+
   // --- assemble atomic edges ---
   const minRad = (rules.minTurnAngle * Math.PI) / 180;
   const maxRad = (rules.maxTurnAngle * Math.PI) / 180;
   const sidewalkWidth = rules.sidewalkWidth ?? DEFAULT_SIDEWALK_WIDTH;
-  const edges: StreetEdge[] = rawEdges.map((e, i) => ({
-    id: i,
-    a: e.a,
-    b: e.b,
-    points: edgeWander[i]!,
-    width: rules.width * WIDTH_MULT[edgeLevel[i]!],
-    level: edgeLevel[i]!,
-    loop: mode === "circuit" && !e.lane,
-  }));
+  const edges: StreetEdge[] = rawEdges.map((e, i) => {
+    const edge: StreetEdge = {
+      id: i,
+      a: e.a,
+      b: e.b,
+      points: edgeWander[i]!,
+      width: rules.width * WIDTH_MULT[edgeLevel[i]!],
+      level: edgeLevel[i]!,
+      loop: mode === "circuit" && !e.lane,
+    };
+    // Raw (uncapped) field samples for continuity; the grade-limited profile lives on the owning street.
+    if (elevationAt) edge.heights = edge.points.map((p) => elevationAt(p[0], p[1]));
+    return edge;
+  });
 
   // --- assemble chained streets (smoothed geometry for rendering) ---
   const heightAt = context.heightAt;
@@ -1451,7 +1669,13 @@ export function generateStreets(
         pts.push(seg[s]!);
       }
     });
-    const smooth = clampTurns(pts, minRad, maxRad, rules.minCurveRadius, chain.loop);
+    // Circuit LOOP corners get a per-corner radius mix (hairpins/standard/sweepers); every other street
+    // (city nets, pit lanes) keeps the single `minCurveRadius` fillet.
+    const radiusFor =
+      mode === "circuit" && chain.loop && pts.length >= 3
+        ? circuitRadiusFn(pts, maxRad, rules.minCurveRadius, rules.seed)
+        : undefined;
+    const smooth = clampTurns(pts, minRad, maxRad, rules.minCurveRadius, chain.loop, radiusFor);
     const street: Street = {
       id: streets.length,
       nodes: chain.nodes,
@@ -1461,6 +1685,10 @@ export function generateStreets(
       loop: chain.loop,
       features: [],
     };
+    // Grade-limited road-surface heights sampled from the shared field (loops stay continuous at the seam).
+    if (elevationAt) {
+      street.heights = gradeCapHeights(smooth, smooth.map((p) => elevationAt(p[0], p[1])), maxGrade, chain.loop);
+    }
     // Flanking pedestrian bands on paved streets (not service lanes).
     if (level !== "lane" && smooth.length >= 2) {
       const d = width / 2 + sidewalkWidth;
@@ -1532,7 +1760,10 @@ export function generateStreets(
   // Compact node list with final degrees.
   const nodes: StreetNode[] = rawNodes.map((p, i) => ({ id: i, x: p[0], z: p[1], degree: degree[i]! }));
 
-  return { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops };
+  const network: StreetNetwork = { mode, nodes, edges, streets, junctions, deadEnds, bridges, tunnels, loops };
+  // Expose the shared field only when elevation is on, so a flat network stays byte-identical.
+  if (elevationAt) network.elevationAt = elevationAt;
+  return network;
 }
 
 /** Connected-component count over the atomic graph (for the cycle-rank / loop count). */
