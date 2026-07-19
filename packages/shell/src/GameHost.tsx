@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from
 
 import type { EditorCatalogDefinition } from "@jgengine/core/editor/types";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 import { multiplayerAdapterKind } from "@jgengine/core/runtime/adapter";
 
 import { GamePlayerShell } from "./GamePlayerShell";
@@ -25,8 +26,14 @@ export interface EditorSummonModule {
     gameId: string;
     playable: PlayableGame;
     catalogs?: readonly EditorCatalogDefinition[];
+    /** Passed by the host when the editor was summoned over a game — powers the "Exit to game" control. */
+    onExitEditor?: () => void;
   }>;
 }
+
+/** The query param that mirrors editor mode into the URL — strip it (and reload) to drop back to the game. */
+const EDITOR_MODE_PARAM = "mode";
+const EDITOR_MODE_VALUE = "editor";
 
 /** Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon. */
 export interface GameHostProps {
@@ -48,7 +55,7 @@ export interface GameHostProps {
 
 function initialEditorMode(enabled: boolean): boolean {
   if (!enabled || typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("mode") === "editor";
+  return readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE;
 }
 
 /**
@@ -66,6 +73,23 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
     // Self-guards against production builds; the endpoint just marks where dev saves land.
     return installSaveEndpoint("/__jgengine/save", resolvedGameId);
   }, [editor, resolvedGameId]);
+
+  // Mirror editor mode into the URL so the address bar is the honest record of what's open: sharing
+  // the URL reopens the editor, and stripping `?mode=editor` (then reloading) drops back to the game.
+  // Only ever clear a `mode` we set to editor — never a stray value the app put there.
+  useEffect(() => {
+    if (editor === undefined) return;
+    if (editorOpen) writeUrlParam(EDITOR_MODE_PARAM, EDITOR_MODE_VALUE);
+    else if (readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE) writeUrlParam(EDITOR_MODE_PARAM, null);
+  }, [editor, editorOpen]);
+
+  // Keep in step with browser back/forward: navigating away from `?mode=editor` closes the editor.
+  useEffect(() => {
+    if (editor === undefined) return;
+    return subscribeUrlChange(() => {
+      setEditorOpen(readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE);
+    });
+  }, [editor]);
 
   useEffect(() => {
     if (editor === undefined || editorOpen) return;
@@ -117,7 +141,12 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
   if (editorOpen && EditorLazy !== null) {
     return (
       <Suspense fallback={null}>
-        <EditorLazy gameId={resolvedGameId} playable={playable} catalogs={playable.editorCatalogs} />
+        <EditorLazy
+          gameId={resolvedGameId}
+          playable={playable}
+          catalogs={playable.editorCatalogs}
+          onExitEditor={() => setEditorOpen(false)}
+        />
       </Suspense>
     );
   }

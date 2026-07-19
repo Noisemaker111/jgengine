@@ -322,6 +322,7 @@
 
 ## @jgengine/core/runtime/headlessRunner
 
+- `HeadlessCommandInterface` (interface): interface HeadlessCommandInterface — Canvas-free command/intent surface for {@link HeadlessRunner} — invoke a game's registered UI commands and read the resulting reactive state off `ctx`.
 - `HeadlessInput` (interface): interface HeadlessInput — One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame.
 - `HeadlessRunner` (interface): interface HeadlessRunner — A renderer-free driver for a game loop: builds a {@link GameContext} from a {@link GameDefinition}, runs the init hooks, then advances the simulation one step at a time from injected input. No React, R3F, or three.js — the whole play path (time, input, `onTick`, behaviour nav, optional player movement) runs from `core` primitives alone, so a non-React host (a server tick, a test, a CLI replay) can play a real game and read its world snapshot. The shell's FrameDriver is one such driver bolted to `useFrame`; this is the same step distilled out of the render tree.
 - `HeadlessRunnerOptions` (interface): interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — ⚠ undocumented

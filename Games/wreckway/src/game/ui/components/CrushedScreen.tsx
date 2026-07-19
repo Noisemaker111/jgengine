@@ -1,3 +1,4 @@
+import { formatDuration } from "@jgengine/core/format/duration";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { KeyHint } from "@jgengine/react";
 
@@ -11,12 +12,6 @@ interface CrushedScreenProps {
   onRestart: () => void;
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = (seconds % 60).toFixed(1);
-  return `${m}:${s.padStart(4, "0")}`;
-}
-
 export function CrushedScreen({ snapshot, onRestart }: CrushedScreenProps) {
   const outcome = snapshot.outcome;
   if (outcome === null) return null;
@@ -25,7 +20,7 @@ export function CrushedScreen({ snapshot, onRestart }: CrushedScreenProps) {
       <div className="w-full max-w-lg rounded-lg border-2 border-[#ff3b30] bg-[#241f19] p-6 text-center shadow-[0_0_50px_rgba(255,59,48,0.3)]">
         <p className="text-xs font-black tracking-[0.3em] text-[#ff3b30]">ROW SIX GOT YOU</p>
         <h2 className="mt-1 text-4xl font-black text-[#fef3e0]">CRUSHED</h2>
-        <p className="mt-2 text-sm text-[#c9b8a4]">Caught in {outcome.zoneLabel.toLowerCase()} after {formatTime(outcome.time)}.</p>
+        <p className="mt-2 text-sm text-[#c9b8a4]">Caught in {outcome.zoneLabel.toLowerCase()} after {formatDuration(outcome.time, { decimals: 1 })}.</p>
 
         <div className="mt-5 flex justify-center gap-2">
           {PART_SLOTS.map((slot) => (

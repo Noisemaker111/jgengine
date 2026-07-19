@@ -120,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
 
+## fire-cadence — a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam)
+
+- `createFireCadence` (function) · `import { createFireCadence } from "@jgengine/core/combat"`
+
 ## immunity-window — reject damage during a per-target invulnerability window installed by transitions
 
 - `createImmunityWindow` (function) · `import { createImmunityWindow } from "@jgengine/core/combat"`
@@ -204,7 +208,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
 
-## status-effects — apply and tick timed status effects and buffs on entities
+## status-effects — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
 
@@ -219,3 +223,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vfx-presets — render a named attack visual (arrow, fireball, lightning, web, slash, shield, heal, explosion) in one call
 
 - `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
+## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
+
+- `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`

@@ -19,9 +19,10 @@ describe("resolveModel", () => {
     dims: { footprint: { w: 1, d: 1 }, center: { x: 0.5, z: 0.5 }, minY: 0 },
   });
 
-  test("resolves a known string id to a ModelConfig", () => {
+  test("resolves a known string id to a ModelConfig with auto animation", () => {
     expect(resolveModel("quaternius-modular-scifi/astronautA", assets)).toEqual({
       url: "/models/quaternius-modular-scifi/astronautA.glb",
+      animation: "auto",
     });
   });
 
@@ -72,7 +73,7 @@ describe("tryResolveCatalogModel", () => {
   assets.register("tree", { url: "/models/tree.glb" });
 
   test("resolves when the catalog id is a model asset", () => {
-    expect(tryResolveCatalogModel("tree", assets)).toEqual({ url: "/models/tree.glb" });
+    expect(tryResolveCatalogModel("tree", assets)).toEqual({ url: "/models/tree.glb", animation: "auto" });
   });
 
   test("returns undefined without throwing when the catalog id is not a model", () => {
@@ -86,7 +87,7 @@ describe("resolveEntityModel", () => {
   assets.register("sword", { url: "/models/sword.glb" });
 
   test("passes through a plain catalog id", () => {
-    expect(resolveEntityModel("hero", assets, "player")).toEqual({ url: "/models/hero.glb" });
+    expect(resolveEntityModel("hero", assets, "player")).toEqual({ url: "/models/hero.glb", animation: "auto" });
   });
 
   test("resolves attachment models through the catalog", () => {
@@ -98,7 +99,7 @@ describe("resolveEntityModel", () => {
       assets,
       "player",
     );
-    expect(resolved?.attachments?.[0]?.model).toEqual({ url: "/models/sword.glb" });
+    expect(resolved?.attachments?.[0]?.model).toEqual({ url: "/models/sword.glb", animation: "auto" });
   });
 });
 
@@ -118,7 +119,10 @@ describe("createModelMapResolver", () => {
 
   test("mapped key resolves through the catalog", () => {
     const resolveItem = createModelMapResolver({ pine: "scatter/pine" }, assets, "scatterModels")!;
-    expect(resolveItem("pine")).toEqual({ url: "/models/quaternius-stylized-nature/tree_pine.glb" });
+    expect(resolveItem("pine")).toEqual({
+      url: "/models/quaternius-stylized-nature/tree_pine.glb",
+      animation: "auto",
+    });
   });
 
   test("mapped key with a missing catalog id throws, naming the seam and key", () => {
@@ -144,7 +148,19 @@ describe("pickModel / resolveModelPlan", () => {
     ).toEqual({
       url: "/models/kaykit-adventurers/Rogue.glb",
       targetHeight: 1.8,
+      animation: "auto",
     });
+  });
+
+  test("explicit style.animation overrides the auto stamp", () => {
+    const animation = { states: { idle: "Idle", walk: "Walking_A" } };
+    expect(pickModel(assets, { model: "kaykit-adventurers/Rogue", style: { animation } })?.animation).toBe(animation);
+  });
+
+  test('style.animation "none" opts out of auto animation', () => {
+    expect(pickModel(assets, { model: "kaykit-adventurers/Rogue", style: { animation: "none" } })?.animation).toBe(
+      "none",
+    );
   });
 
   test("falls through to fallbackModel when preferred is missing", () => {
@@ -153,7 +169,7 @@ describe("pickModel / resolveModelPlan", () => {
         model: "missing/pack",
         fallbackModel: "quaternius-modular-scifi/astronautA",
       }),
-    ).toEqual({ url: "/models/quaternius-modular-scifi/astronautA.glb" });
+    ).toEqual({ url: "/models/quaternius-modular-scifi/astronautA.glb", animation: "auto" });
   });
 
   test("returns undefined when neither id is in the catalog (primitive seam)", () => {
@@ -167,7 +183,7 @@ describe("pickModel / resolveModelPlan", () => {
         crate: { model: "missing/box" },
       }),
     ).toEqual({
-      hero: { url: "/models/kaykit-adventurers/Rogue.glb" },
+      hero: { url: "/models/kaykit-adventurers/Rogue.glb", animation: "auto" },
     });
   });
 });

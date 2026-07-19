@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ComponentRef, type MutableRefObject } from "react";
 import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { isCameraOccluderTransparent } from "./cameraCollision";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
 import {
@@ -127,12 +128,17 @@ export function GameOrbitCamera({
         ray.set(collisionOriginRef.current.set(t.x, t.y, t.z), dir);
         ray.near = config.collision.minTargetDistance;
         ray.far = dist;
+        // Sprites (VFX, billboards) live in the scene; three's Sprite.raycast
+        // errors every frame unless the raycaster has a camera, even though we
+        // discard sprite hits below. Setting it silences that per-frame log.
+        ray.camera = camera;
         let blocked = 0;
         for (const hit of ray.intersectObjects(scene.children, true)) {
           const obj = hit.object;
           if (!obj.visible) continue;
           if ((obj as { isSprite?: boolean }).isSprite === true) continue;
-          if (obj.userData.jgCameraTransparent === true) continue;
+          // Inheritable: decor flags a group jgCameraTransparent and all children pass through.
+          if (isCameraOccluderTransparent(obj)) continue;
           blocked = hit.distance;
           break;
         }

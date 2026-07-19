@@ -4,7 +4,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { ROOMS, type RoomDef } from "./rooms/catalog";
 import { applyRoomVisuals, buildRoom, currentRoomState } from "./rooms/setup";
-import { duetStore, freshRoom } from "./stores";
+import { clearToast, duetStore, freshRoom } from "./stores";
 import type { HeroId } from "./types";
 
 export const levelSeq = perContext<LevelSequence<RoomDef>>(() =>
@@ -70,6 +70,7 @@ export function loadCurrentRoom(ctx: GameContext): void {
   if (current === null) return;
   const room = current.config;
   duetStore.update(ctx, (state) => ({ ...state, ...freshRoom(current.index), active: "lumen" }));
+  clearToast(ctx);
   buildRoom(ctx, room);
   applyRoomVisuals(ctx, room, currentRoomState(ctx, room));
   for (const userId of [seats(ctx).lumen, seats(ctx).anchor]) {
