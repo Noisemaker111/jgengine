@@ -32,6 +32,19 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+### Changed
+
+### Removed
+
+## 0.14.0
+
+### Migrate
+
+- **Nothing required** — this release is additive drop-in primitives, editor authoring, CLI discovery, and fixes. Bump `@jgengine/*` pins to `^0.14.0` (CLI `jgengine` is 0.11.0; `@jgengine/github` unchanged at 0.1.0) and rebuild.
+- One behavior fix to know about: in a `rig: "chase"` game, on-foot movement and aim are now camera-relative (the chase rig reports its yaw to the shell like every other rig). If a game somehow relied on world-yaw-0 movement under a chase camera, that was the bug this fixes.
+
+### Added
+
 - One authoring gesture for scatterable coverage: `@jgengine/core/world/scatterCoverage` owns shared density/budget semantics (per-kind unit, requested→count→capped, one clamp-and-warn phrasing) for `grass_field`/`scatter`/`city`; the editor inspector leads each kind with the same Area → Assets → Density coverage section, scatter truncates to the shared 250k instance budget, and city single-sources its 2,600-lot cap.
 - **Created games ship a drive/playtest script** (#1248) — `npx jgengine create` scaffolds now include `scripts/drive.mjs` (`bun run drive`): dependency-free headless play/testing of the running game — ordered `--click`/`--key`/`--wait`/`--shot`/`--rpc` steps against the agent bridge, plus `--playtest --strict` progress/softlock verdicts off `capture.probe`. Shared Chrome/CDP machinery lives in `scripts/browser.mjs`; `scripts/shoot.mjs` is unchanged in behavior, now a thin CLI over it.
 - Editor: viewport clip preview for rigged assets (Animation dock "Clips" mode — pick a rig or placed instance, play/scrub/loop/speed any catalog clip) and an Inspector "Animation" section that authors a placement's `ModelConfig.animation` (role→clip dropdowns, auto/none, walk/run/fade, one-shot event bindings) as undoable `marker.meta.animation` edits. New subpaths: `@jgengine/editor/shell/clipPreview`, `@jgengine/editor/modelAnimationAuthoring`, `@jgengine/editor/ClipPreviewLayer`.
@@ -44,8 +57,6 @@ At publish, rename this heading to the new version and mirror the entries into
 - **Chase rig reports its yaw to the shell** — `ChaseRig` now writes the camera yaw back to the shared yaw ref like every other player-facing rig, so on-foot movement and aim in a `rig: "chase"` game are camera-relative instead of frozen to world yaw 0 (WASD no longer fights the camera the moment it swings behind the player). Interior views (cockpit/hood/rear) report the vehicle heading.
 - **Combat VFX no longer render as black squares under AO/DOF post-processing** (#1247) — GTAO/Bokeh scene prepasses skip overlay effects. Games with custom additive overlay effects opt out the same way: spread `POSTFX_OVERLAY_USERDATA` (`@jgengine/shell/postfx/postfxOverlay`) onto the overlay group's `userData`.
 - **`PanelHost` windows stack above the HUD by default** (`@jgengine/react`) — the host establishes its own stacking context at `zIndexBase` (default 40), so open windows always paint over stat bars / nameplates / frames instead of bleeding through. Overridable per instance.
-
-### Removed
 
 ## 0.13.0
 

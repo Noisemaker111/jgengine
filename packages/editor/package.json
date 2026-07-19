@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/editor",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Scene/world/asset editor for JGengine — loaded lazily by the runner; never import from game entrypoints.",
   "license": "Apache-2.0",
   "type": "module",
@@ -31,9 +31,9 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.13.0",
-    "@jgengine/react": "^0.13.0",
-    "@jgengine/shell": "^0.13.0"
+    "@jgengine/core": "^0.14.0",
+    "@jgengine/react": "^0.14.0",
+    "@jgengine/shell": "^0.14.0"
   },
   "peerDependencies": {
     "@react-three/drei": "^10.0.0",
