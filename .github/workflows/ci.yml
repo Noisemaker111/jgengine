@@ -1,5 +1,10 @@
 name: CI
 
+# Default every job's GITHUB_TOKEN to read-only; jobs that need more (the
+# red-main reporter's issues: write) escalate at the job level.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
