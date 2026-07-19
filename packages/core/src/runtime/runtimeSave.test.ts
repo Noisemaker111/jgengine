@@ -87,6 +87,26 @@ describe("createRuntimeSave", () => {
     expect(await reopened.load()).toBe(true);
   });
 
+  test("a never-idle world still autosaves: continuous change does not starve the timer", async () => {
+    const backend = memorySaveBackend();
+    const timers = manualTimers();
+    const host = fakeWorld({ store: { coins: 0 } });
+    const save = createRuntimeSave({ target: host, backend, mode: "autosave", timers });
+
+    // A living world bumps every frame. A reset-on-change debounce would clear
+    // and re-arm forever (timer never elapses); the trailing timer must survive.
+    for (let frame = 0; frame < 120; frame += 1) {
+      host.hydrate({ store: { coins: frame } });
+      host.bump();
+      expect(timers.pending()).toBe(1);
+    }
+    timers.runAll();
+    await save.save();
+
+    const reopened = createRuntimeSave({ target: fakeWorld(), backend, mode: "manual" });
+    expect(await reopened.load()).toBe(true);
+  });
+
   test("manual mode never schedules an autosave on world change", () => {
     const timers = manualTimers();
     const host = fakeWorld();
