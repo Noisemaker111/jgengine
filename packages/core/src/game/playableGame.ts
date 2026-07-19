@@ -298,8 +298,16 @@ export interface PlayerMovementConfig {
   axis?: "x" | "z";
   /** Cell size for mode "grid". Default 1. */
   cellSize?: number;
-  /** Collide the walking player against placed scene objects (unit-box AABBs) even without `collision.voxel`. Default false. */
+  /**
+   * Collide the walking player against placed scene objects' blocking colliders even without
+   * `collision.voxel`. Default **true** — a placed object with a blocking physical collider stops,
+   * supports, and is stood upon by the player; set `false` to walk through everything (ghost/spectator
+   * modes, pure-board presentations). Objects that should never block should carry non-blocking
+   * colliders instead of relying on this switch.
+   */
   collideObjects?: boolean;
+  /** Tallest object ledge stepped up while walking (and largest drop still snapped down instead of falling). Default 0.4. */
+  stepHeight?: number;
   /** Intercepts each frame's resolved position before the pose commits (and before onTick): return a replacement [x,y,z] to constrain or redirect the step, or nothing to accept it. */
   beforeCommit?: (frame: MovementCommitFrame) => readonly [number, number, number] | undefined | void;
   /** Gates the built-in sprint (`runSpeedMultiplier`) behind live game state — a stamina stat, an encumbrance check (#282.3). Called each frame while sprint is held; `false` walks. */
@@ -335,7 +343,12 @@ export interface PresentationEffectsConfig {
   vfx?: boolean;
   /** Floating combat text (damage numbers, etc.). Default true. */
   floatText?: boolean;
-  /** Projectile tracer lines. Default true. */
+  /**
+   * Straight muzzle→impact tracer lines for direct-fire shots. Opt-in (default false): unlike the
+   * other channels, a missing `tracers` key leaves them OFF, because `fireProjectile` is a generic
+   * seam and a tracer is only meaningful for a game that fires direct, bullet-like projectiles.
+   * Arced/exploding shots (grenades, launchers) never draw a tracer even when this is on.
+   */
   tracers?: boolean;
   /** Trauma-driven combat camera shake. Default true. */
   shake?: boolean;

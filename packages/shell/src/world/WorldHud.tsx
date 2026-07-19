@@ -468,6 +468,10 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   useEffect(() => {
     const unsub = ctx.game.events.on("projectile.settled", (event) => {
+      // fireProjectile is a generic seam (bullets, bolts, grenades, launchers). A straight
+      // muzzle→impact line only reads as a real shot for direct-fire projectiles; drawing one
+      // for an arced/lobbed shot fakes a beam through a path it never flew, so skip those.
+      if (event.ballistic) return;
       const id = nextId.current++;
       const start = new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]);
       if (event.from === ctx.player.userId) readFirstPersonMuzzle(start);

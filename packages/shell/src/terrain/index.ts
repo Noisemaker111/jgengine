@@ -41,6 +41,7 @@ export {
   type ResolvedTerrainSize,
   type TerrainArea,
   type TerrainHeightSampler,
+  type TerrainSurfaceColorOptions,
   type TerrainVertexColorOptions,
 } from "./terrainMath";
 export {

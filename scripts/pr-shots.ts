@@ -127,6 +127,20 @@ const uploads = parsed.files.map((file) => ({
   path: `${ARCHIVE_BRANCH}/${subdir}/${basename(file)}`,
 }));
 
+/**
+ * Markdown that actually renders in a PR body for this file type. Images —
+ * including animated PNG/GIF/WebP clips from `drive --record` — embed inline
+ * via GitHub's camo proxy. Raw video files never play inline on GitHub (only
+ * cookie-gated drag-and-drop attachments do), so they get a labeled download
+ * link; prefer the animated-PNG record path for inline evidence.
+ */
+function embedMarkdown(name: string): string {
+  const stem = name.replace(/\.[^.]+$/, "");
+  const ext = name.slice(stem.length).toLowerCase();
+  if ([".mp4", ".webm", ".mov"].includes(ext)) return `[▶ ${name} (download to play)](${rawUrl(name)})`;
+  return `![${stem}](${rawUrl(name)})`;
+}
+
 if (parsed.dry) {
   for (const { name } of uploads) process.stdout.write(`${rawUrl(name)}\n`);
   process.exit(0);
@@ -183,4 +197,4 @@ if (headAfter.rev !== headBefore.rev || headAfter.symbolic !== headBefore.symbol
 }
 
 process.stdout.write(`pushed ${uploads.length} shot(s) to ${ARCHIVE_BRANCH} (${commit.slice(0, 8)})\n\n`);
-for (const { name } of uploads) process.stdout.write(`![${name.replace(/\.[^.]+$/, "")}](${rawUrl(name)})\n`);
+for (const { name } of uploads) process.stdout.write(`${embedMarkdown(name)}\n`);

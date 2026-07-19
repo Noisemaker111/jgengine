@@ -19,6 +19,7 @@ import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
 import { useGameContext } from "@jgengine/react/provider";
+import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
 
 import {
   canAuthorTrigger,
@@ -58,6 +59,68 @@ import type { InspectorTab } from "./shell/layoutStore";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
 import { CollapsibleSection, EmptyState, IconButton, PanelTabs } from "./shell/ui";
 
+/** Live-mirrored, debounced density slider — grass regen only fires on pause/release, not per step (#1372). */
+function VegetationDensitySlider({
+  density,
+  sliderMax,
+  onMeta,
+}: {
+  density: number;
+  sliderMax: number;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(density, (next) => onMeta({ density: next }, "veg:density"));
+  return (
+    <label className="block space-y-1">
+      <span className="flex items-center justify-between">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">density /m²</span>
+        <span className="text-cyan-200">{local.toFixed(2)}</span>
+      </span>
+      <input
+        type="range"
+        min={0}
+        max={sliderMax}
+        step={sliderMax / 200}
+        className="w-full accent-emerald-400"
+        value={Math.min(local, sliderMax)}
+        onChange={(event) => onInput(Number(event.target.value))}
+        onPointerUp={flush}
+        onKeyUp={flush}
+        onBlur={flush}
+      />
+    </label>
+  );
+}
+
+/** Live-mirrored, debounced item/seed text — avoids a scene patch (and grass regen) per keystroke (#1372). */
+function VegetationTextField({
+  label,
+  field,
+  value,
+  placeholder,
+  onMeta,
+}: {
+  label: string;
+  field: "item" | "seed";
+  value: string;
+  placeholder: string;
+  onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field]: next }, `veg:${field}`));
+  return (
+    <label className="flex items-center justify-between gap-2">
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">{label}</span>
+      <input
+        className={`w-32 ${INPUT}`}
+        value={local}
+        placeholder={placeholder}
+        onChange={(event) => onInput(event.target.value)}
+        onBlur={flush}
+      />
+    </label>
+  );
+}
+
 function VegetationFields({
   volume,
   onMeta,
@@ -73,43 +136,13 @@ function VegetationFields({
   const estimated = Math.floor(areaM2 * settings.density);
   return (
     <div className="space-y-2">
-      <label className="flex items-center justify-between gap-2">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">item</span>
-        <input
-          className={`w-32 ${INPUT}`}
-          value={settings.item}
-          placeholder="grass"
-          onChange={(event) => onMeta({ item: event.target.value }, "veg:item")}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="flex items-center justify-between">
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">density /m²</span>
-          <span className="text-cyan-200">{settings.density.toFixed(2)}</span>
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={sliderMax}
-          step={sliderMax / 200}
-          className="w-full accent-emerald-400"
-          value={Math.min(settings.density, sliderMax)}
-          onChange={(event) => onMeta({ density: Number(event.target.value) }, "veg:density")}
-        />
-      </label>
+      <VegetationTextField label="item" field="item" value={settings.item} placeholder="grass" onMeta={onMeta} />
+      <VegetationDensitySlider density={settings.density} sliderMax={sliderMax} onMeta={onMeta} />
       <NumberField label="density" step={0.01} value={settings.density} onCommit={(value) => onMeta({ density: Math.max(0, value) }, "veg:density")} />
       <NumberField label="min scale" step={0.05} value={settings.minScale} onCommit={(value) => onMeta({ minScale: value }, "veg:minScale")} />
       <NumberField label="max scale" step={0.05} value={settings.maxScale} onCommit={(value) => onMeta({ maxScale: value }, "veg:maxScale")} />
       <NumberField label="spacing" step={0.25} value={settings.minDistance} onCommit={(value) => onMeta({ minDistance: Math.max(0, value) }, "veg:minDistance")} />
-      <label className="flex items-center justify-between gap-2">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">seed</span>
-        <input
-          className={`w-32 ${INPUT}`}
-          value={settings.seed}
-          placeholder="reroll…"
-          onChange={(event) => onMeta({ seed: event.target.value }, "veg:seed")}
-        />
-      </label>
+      <VegetationTextField label="seed" field="seed" value={settings.seed} placeholder="reroll…" onMeta={onMeta} />
       <div className="text-[10px] text-neutral-500">≈ {estimated.toLocaleString()} {settings.item === "grass" ? "blades" : "placements"} over {Math.round(areaM2).toLocaleString()} m²</div>
     </div>
   );

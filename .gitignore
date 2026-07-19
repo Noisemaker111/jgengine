@@ -42,5 +42,8 @@ packages/*/skills/
 # (Agent({ isolation: "worktree" })) — transient, never committed.
 .claude/worktrees/
 
-# agent-bootstrap concurrency guard (never race two bun installs)
+# agent-bootstrap concurrency guard (never race two bun installs),
+# hook-spawned background log, and killed-install detection marker
 .agent-bootstrap.lock
+.agent-bootstrap.log
+.agent-bootstrap.installing

@@ -1,10 +1,13 @@
 import { useState, type ReactNode } from "react";
 
+import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+
 import type { SettingsCategoryView, SettingsController, SettingsRow } from "./settingsController";
 
 function QuickSlider({ row }: { row: SettingsRow }) {
-  const value = Number(row.value);
-  const readout = row.format?.(value) ?? String(value);
+  // Live-mirror the thumb; debounce the persisting `set`, flush on release/blur (#1372).
+  const { value: local, onInput, flush } = useDebouncedCommit(Number(row.value), (next) => row.set(next));
+  const readout = row.format?.(local) ?? String(local);
   return (
     <label className="flex items-center gap-2 text-xs text-neutral-300">
       <span className="w-16 shrink-0 truncate">{row.label}</span>
@@ -13,10 +16,13 @@ function QuickSlider({ row }: { row: SettingsRow }) {
         min={row.min}
         max={row.max}
         step={row.step}
-        value={value}
+        value={local}
         aria-label={row.label}
         className="h-1.5 flex-1 cursor-pointer accent-emerald-400"
-        onChange={(event) => row.set(Number(event.target.value))}
+        onChange={(event) => onInput(Number(event.target.value))}
+        onPointerUp={flush}
+        onKeyUp={flush}
+        onBlur={flush}
       />
       <span className="w-9 shrink-0 text-right tabular-nums text-neutral-100">{readout}</span>
     </label>

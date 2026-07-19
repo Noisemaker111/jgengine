@@ -208,6 +208,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
 
+## status-effect-timeline — adapt live status instances into serializable timeline-HUD views (id, kind, remaining/duration, stacks) for a countdown-ring effect bar
+
+- `toStatusEffectViews` (function) · `import { toStatusEffectViews } from "@jgengine/core/combat"`
+
+## status-effect-view — adapt one live status instance into a serializable timeline-HUD view (id, kind, remaining/duration, stacks)
+
+- `toStatusEffectView` (function) · `import { toStatusEffectView } from "@jgengine/core/combat"`
+
 ## status-effects — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
 
 - `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`

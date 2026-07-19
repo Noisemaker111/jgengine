@@ -6,6 +6,7 @@ import {
   createEmptyMovementKeys,
   createPlayerMotionState,
   MOVEMENT_TUNING,
+  obstacleSupportHeight,
   resolveMovementIntent,
   resolveObstacleStep,
   snapPositionToGrid,
@@ -228,6 +229,29 @@ describe("resolveObstacleStep", () => {
     expect(-1.6 + escaped.stepX).toBeLessThanOrEqual(-2.3 + 1e-6);
   });
 
+  test("a step crossing the whole box in one frame stops on the near face instead of tunneling", () => {
+    // A thin fence: inflated span x∈[0.2, 1.8]. A fast mover (dash, vehicle, low-FPS frame) attempts a
+    // 3m step whose target lands BEYOND the far face; the old clamp returned the full step and the
+    // mover passed straight through the fence.
+    const fence: CollisionObstacle[] = [{ position: [1, 0, 0], halfExtents: [0.5, 1, 2] }];
+    const swept = resolveObstacleStep([0, 0, 0], 3, 0, fence);
+    expect(swept.stepX).toBeCloseTo(0.2, 10);
+    // Symmetric for negative travel.
+    const back = resolveObstacleStep([2, 0, 0], -3, 0, fence);
+    expect(back.stepX).toBeCloseTo(-0.2, 10);
+  });
+
+  test("stepUpHeight turns a low ledge into a non-blocking walkable (tall boxes still wall)", () => {
+    const curb: CollisionObstacle[] = [{ position: [1, 0, 0], halfExtents: [0.5, 0.15, 0.5], offset: [0, 0.15, 0] }];
+    // Without the allowance the 0.3-tall curb blocks like any wall...
+    expect(resolveObstacleStep([0, 0, 0], 0.5, 0, curb).stepX).toBeCloseTo(0.2, 10);
+    // ...with a 0.4 step allowance it is stepped over (support raises the feet separately).
+    expect(resolveObstacleStep([0, 0, 0], 0.5, 0, curb, undefined, 0.4).stepX).toBeCloseTo(0.5, 10);
+    // A box taller than the allowance keeps blocking.
+    const crate: CollisionObstacle[] = [{ position: [1, 0, 0], halfExtents: [0.5, 0.5, 0.5], offset: [0, 0.5, 0] }];
+    expect(resolveObstacleStep([0, 0, 0], 0.5, 0, crate, undefined, 0.4).stepX).toBeCloseTo(0.2, 10);
+  });
+
   test("resting exactly on a solid face does not trigger a depenetration nudge", () => {
     // Landing on the inflated face is where the slide clamp naturally stops; it must read as contact,
     // not penetration, so the player can keep pressing/sliding without being sprung back.
@@ -236,6 +260,41 @@ describe("resolveObstacleStep", () => {
     const held = resolveObstacleStep([0.8, 0, 0], -0.5, 0.5, box);
     expect(held.stepX).toBeCloseTo(0, 10);
     expect(held.stepZ).toBeCloseTo(0.5, 10);
+  });
+});
+
+describe("obstacleSupportHeight", () => {
+  // A 1×1×1 crate grounded at the origin: top face at y=1.
+  const crate: CollisionObstacle[] = [{ position: [0, 0, 0], halfExtents: [0.5, 0.5, 0.5], offset: [0, 0.5, 0] }];
+
+  test("standing over a box returns its top face; standing clear returns null", () => {
+    expect(obstacleSupportHeight(0, 0, 1, 0, crate)).toBeCloseTo(1, 10);
+    expect(obstacleSupportHeight(3, 0, 1, 0, crate)).toBeNull();
+  });
+
+  test("the footprint is inflated by the player radius so edge contact still supports", () => {
+    // x=0.7 is outside the raw footprint (0.5) but within the 0.3-inflated one.
+    expect(obstacleSupportHeight(0.7, 0, 1, 0, crate)).toBeCloseTo(1, 10);
+    expect(obstacleSupportHeight(0.85, 0, 1, 0, crate)).toBeNull();
+  });
+
+  test("tops above feet + maxClimb never support (no teleporting up walls)", () => {
+    expect(obstacleSupportHeight(0, 0, 0, 0.4, crate)).toBeNull();
+    expect(obstacleSupportHeight(0, 0, 0.7, 0.4, crate)).toBeCloseTo(1, 10);
+  });
+
+  test("compound boxes support on the tallest reachable sub-box under the point", () => {
+    const stairs: CollisionObstacle[] = [
+      {
+        position: [0, 0, 0],
+        boxes: [
+          { min: [-1, 0, -1], max: [1, 0.3, 1] },
+          { min: [0, 0, -1], max: [1, 0.6, 1] },
+        ],
+      },
+    ];
+    expect(obstacleSupportHeight(0.5, 0, 0.6, 0, stairs)).toBeCloseTo(0.6, 10);
+    expect(obstacleSupportHeight(-0.5, 0, 0.6, 0, stairs)).toBeCloseTo(0.3, 10);
   });
 });
 
