@@ -81,10 +81,6 @@ running ship preflight immediately after the verified runtime-state commit -> or
 
 opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead
 
-2026-07-18T23:02:42.541Z — fable — Claude
-
-shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
-
 2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
 
 Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstall.test.ts fails 3 tests because GNU tar treats C:\... as a remote host (Cannot connect to C: resolve failed); needs --force-local or forward-slash paths on win32
