@@ -155,6 +155,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/world"`
 
+## day-night-cycle — one wired model gives a moving day-night cycle — running clock plus keyframed phase labels and tint/light colors a game drives an existing sky/daylight seam from
+
+- `createDayNightCycle` (function) · `import { createDayNightCycle } from "@jgengine/core/world"`
+
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
@@ -424,6 +428,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ScatterCoverageKind` (type) · `import { ScatterCoverageKind } from "@jgengine/core/world"`
 
+## screen-effects — serializable, pooled screen-feedback controller — transient flash/vignette and sustained low-health-style pulses with eased opacities, free-string kinds the game styles, and snapshot/restore
+
+- `createScreenEffects` (function) · `import { createScreenEffects } from "@jgengine/core/world"`
+
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
 - `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
@@ -431,6 +439,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## selection-bookmarks — keyed saved-set store (RTS control groups, camera bookmarks, saved squads) with prune + serialize
 
 - `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
+
+## sequence-director — data-driven cutscene timeline — fire typed camera/dialogue/event cues on one injected clock with play/pause/seek/skip and snapshot/restore
+
+- `createSequenceDirector` (function) · `import { createSequenceDirector } from "@jgengine/core/world"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 

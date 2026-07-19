@@ -139,6 +139,13 @@ export {
   type StatusInstance,
   type StatusStackPolicy,
 } from "./combat/statusApplication";
+export {
+  statusEffectRemainingFraction,
+  toStatusEffectView,
+  toStatusEffectViews,
+  type StatusEffectView,
+  type StatusEffectViewOptions,
+} from "./combat/statusEffectView";
 export { type TelegraphConfig, type TelegraphShape } from "./combat/telegraph";
 export {
   createThresholdTracker,

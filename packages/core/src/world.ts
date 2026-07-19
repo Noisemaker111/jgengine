@@ -345,6 +345,16 @@ export {
   type SelectionBookmarks,
   type SelectionPruneResult,
 } from "./scene/selectionBookmarks";
+export {
+  createSequenceDirector,
+  type CueListener,
+  type EmittedCue,
+  type SequenceCue,
+  type SequenceDirector,
+  type SequenceDirectorOptions,
+  type SequenceSnapshot,
+  type SequenceState,
+} from "./scene/sequenceDirector";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
@@ -360,6 +370,14 @@ export {
 export { type HiddenStateSource, type SensorProbeOptions, type SensorReading } from "./sensor/hiddenStateProbe";
 export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
+export {
+  createDayNightCycle,
+  type DayNightCycle,
+  type DayNightCycleOptions,
+  type DayNightKeyframe,
+  type DayNightSample,
+  type DayNightSnapshot,
+} from "./time/dayNightCycle";
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
 export {
@@ -379,6 +397,17 @@ export {
   type ParticleSystem,
   type Range,
 } from "./vfx/particles";
+export {
+  createScreenEffects,
+  type ScreenEffect,
+  type ScreenEffectEasing,
+  type ScreenEffectShape,
+  type ScreenEffectSpec,
+  type ScreenEffectsController,
+  type ScreenEffectsOptions,
+  type ScreenEffectsSnapshot,
+  type StoredScreenEffect,
+} from "./vfx/screenEffects";
 export { type BoundsSpec, type Vec3 } from "./visibility/bounds";
 export { type CameraVisibilityContext } from "./visibility/camera";
 export { type VisibilityConfig } from "./visibility/config";
