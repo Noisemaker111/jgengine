@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { ParentCandidate } from "./parentCandidates";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
@@ -22,10 +22,6 @@ export function ParentPickerMenu({
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -54,7 +50,7 @@ export function ParentPickerMenu({
         </div>
         <div className="border-b border-white/10 p-1.5">
           <input
-            ref={inputRef}
+            autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {

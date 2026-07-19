@@ -38,11 +38,30 @@ export interface AppliedPoolDelta {
   delta: number;
 }
 
+/**
+ * Identity of an entity slain by a lethal effect, captured before the death system despawns it.
+ * Serializable and genre-agnostic: `catalogId` is the slain entity's spawn kind/name (the same
+ * value the `entity.died` event carries), `name` an optional human-readable label for kill feeds,
+ * and `userId` the owning player when the slain unit was player-controlled. The slain entity's
+ * instance id is already {@link EffectResult.instanceId}.
+ */
+export interface SlainIdentity {
+  catalogId: string;
+  name?: string;
+  userId?: string;
+}
+
 export interface EffectResult {
   instanceId: string;
   effect: string;
   applied: AppliedPoolDelta[];
   lethal: boolean;
+  /**
+   * Present only on a lethal hit: the slain entity's identity, captured before despawn so
+   * kill-credit / XP can read `catalogId`/`name` without a game-side spawn-time registry.
+   * A non-lethal hit omits this field.
+   */
+  slain?: SlainIdentity;
 }
 
 export interface LethalContext {
@@ -103,6 +122,12 @@ export interface EffectSystemDeps {
   getStat(itemId: string, stat: string): number | null;
   spatial: CombatSpatialDeps;
   drainStatByEffect?: Record<string, string>;
+  /**
+   * Resolve the target's identity, called on a lethal hit *before* {@link onLethal} despawns it.
+   * The returned {@link SlainIdentity} is attached to the lethal {@link EffectResult.slain} so kill
+   * credit works without a parallel registry. Return `null`/`undefined` to omit identity.
+   */
+  resolveSlainIdentity?(instanceId: string): SlainIdentity | null | undefined;
   onLethal?(instanceId: string, ctx: LethalContext): void;
 }
 
@@ -200,7 +225,12 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     const drainMagnitude = modifiedDrainMagnitude(baseDrainMagnitude(effect, via) * scale, rule);
     if (canReceive(instanceId, effect, drainMagnitude) !== null) return null;
     const result = drainPools(instanceId, effect, rule, drainMagnitude);
-    if (result.lethal) deps.onLethal?.(instanceId, { from, via, effect });
+    if (result.lethal) {
+      // Capture identity before onLethal, which runs the death system and despawns the target.
+      const slain = deps.resolveSlainIdentity?.(instanceId);
+      if (slain !== null && slain !== undefined) result.slain = slain;
+      deps.onLethal?.(instanceId, { from, via, effect });
+    }
     return result;
   }
 

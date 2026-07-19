@@ -1,7 +1,7 @@
 import { type ThreeElements } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
+import { useDisposable } from "../render/useDisposable";
 import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath";
 
 export interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
@@ -19,8 +19,8 @@ export function ProceduralGround({
   receiveShadow = true,
   ...meshProps
 }: ProceduralGroundProps) {
-  const geometry = useMemo(() => createProceduralGroundGeometry(terrain, colors), [colors, terrain]);
-  const material = useMemo(
+  const geometry = useDisposable(() => createProceduralGroundGeometry(terrain, colors), [colors, terrain]);
+  const material = useDisposable(
     () =>
       new THREE.MeshStandardMaterial({
         color: "#ffffff",
@@ -30,9 +30,6 @@ export function ProceduralGround({
       }),
     [metalness, roughness],
   );
-
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  useEffect(() => () => material.dispose(), [material]);
 
   return <mesh {...meshProps} geometry={geometry} material={material} receiveShadow={receiveShadow} />;
 }

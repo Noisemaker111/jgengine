@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { editorDocumentBounds } from "@jgengine/core/editor/index";
 import type { Aabb } from "@jgengine/core/world/geometry";
@@ -13,6 +13,7 @@ import {
 import type { EditorHostApi, EditorSession } from "./session";
 import { TERRAIN_MATERIALS, type EditorUiStore, type TerrainBrushKind } from "./uiStore";
 import { SliderRow } from "./chromeFields";
+import { useStoreVersion } from "./useStoreSelector";
 import { BORDER, CONTROL, CONTROL_ACTIVE, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 
 const BTN = `${CONTROL} px-2 py-1 text-[11px] disabled:opacity-40`;
@@ -144,10 +145,8 @@ function PaintControls({ session, ui }: { session: EditorSession; ui: EditorUiSt
 
 /** The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls. */
 export function TerrainPanel({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }) {
-  const [, setTick] = useState(0);
   const [bakeStatus, setBakeStatus] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
-  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
-  useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
+  useStoreVersion(ui, session);
   const uiState = ui.getState();
   const document = session.getState().document;
   const hasTerrain = document.terrain !== undefined;

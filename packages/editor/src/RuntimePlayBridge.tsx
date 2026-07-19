@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 
 import type { RuntimeEntityState, RuntimePlayControl } from "@jgengine/core/editor/index";
@@ -6,7 +6,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import type { EditorHostApi } from "./session";
 import { MICRO } from "./chromeStyles";
-import { PlayModeBar } from "./shell/PlayModeBar";
+import { PlayModeBar, usePlayControl } from "./shell/PlayModeBar";
 
 const PUBLISH_MS = 100;
 
@@ -100,7 +100,7 @@ export function RuntimePlayInspectorChrome({
   api: EditorHostApi;
   onExit: () => void;
 }) {
-  const [play, setPlay] = useState<RuntimePlayControl>(() => api.getPlayControl());
+  const play = usePlayControl(api);
   const [summary, setSummary] = useState<{
     entityCount: number;
     entities: { id: string; hasPosition: boolean; valueKeys: string[] }[];
@@ -108,9 +108,6 @@ export function RuntimePlayInspectorChrome({
     play: RuntimePlayControl;
   } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<string>("");
-
-  useEffect(() => api.subscribePlayControl(setPlay), [api]);
 
   useEffect(() => {
     const tick = () => {
@@ -131,17 +128,12 @@ export function RuntimePlayInspectorChrome({
     return () => clearInterval(timer);
   }, [api]);
 
-  useEffect(() => {
-    if (selectedId === null) {
-      setDetail("");
-      return;
-    }
+  const detail = useMemo(() => {
+    if (selectedId === null) return "";
     const got = api.handle({ method: "runtime_get", id: selectedId });
-    if (!got.ok) {
-      setDetail(got.error ?? "missing");
-      return;
-    }
-    setDetail(JSON.stringify(got.result, null, 2));
+    if (!got.ok) return got.error ?? "missing";
+    return JSON.stringify(got.result, null, 2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- entityCount/play are poll-tick cache keys
   }, [api, selectedId, summary?.entityCount, play.pendingSteps, play.paused]);
 
   const nudgeSelected = (axis: "x" | "z", delta: number) => {

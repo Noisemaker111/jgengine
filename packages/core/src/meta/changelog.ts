@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.13.0";
+export const VERSION = "0.14.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,26 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.14.0": {
+    migrate: [
+      "Bump lockstep SDK packages to ^0.14.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine is 0.11.0; @jgengine/github is unchanged at 0.1.0.",
+      "Nothing required — additive drop-in primitives, editor authoring, CLI discovery, and fixes. One behavior fix: in a rig: \"chase\" game, on-foot movement and aim are now camera-relative (the chase rig reports its yaw to the shell like every other rig).",
+    ],
+    added: [
+      "One authoring gesture for scatterable coverage — @jgengine/core/world/scatterCoverage owns shared density/budget semantics (per-kind unit, requested→count→capped, one clamp-and-warn phrasing) for grass_field/scatter/city; the editor inspector leads each kind with the same Area → Assets → Density coverage section.",
+      "Created games ship a drive/playtest script (#1248) — npx jgengine create scaffolds include scripts/drive.mjs (bun run drive): dependency-free headless play/testing via ordered --click/--key/--wait/--shot/--rpc steps against the agent bridge, plus --playtest --strict verdicts off capture.probe.",
+      "Editor viewport clip preview for rigged assets (Animation dock Clips mode) and an Inspector Animation section authoring a placement's ModelConfig.animation as undoable marker.meta.animation edits. New subpaths: @jgengine/editor/shell/clipPreview, @jgengine/editor/modelAnimationAuthoring, @jgengine/editor/ClipPreviewLayer.",
+      "npx jgengine find <intent> — active capability discovery: searches every shipped domain's capabilities.md and prints the drop-in primitive + its import for an intent like \"toggleable window\", inventory, or minimap.",
+      "EntityPreview (@jgengine/shell/render/EntityPreview) — drop-in live 3D entity portrait for character screens, unit inspectors, and loadout viewers; owns the nested Canvas, GameContextBridge, and a StudioStage lighting rig with optional turntable / face-camera.",
+      "GameContextBridge (@jgengine/react) — re-provide the running GameContext across a nested React reconciler boundary (the R3F Canvas).",
+    ],
+    changed: [
+      "Chase rig reports its yaw to the shell — on-foot movement and aim in a rig: \"chase\" game are camera-relative instead of frozen to world yaw 0; interior views (cockpit/hood/rear) report the vehicle heading.",
+      "Combat VFX no longer render as black squares under AO/DOF post-processing (#1247) — GTAO/Bokeh scene prepasses skip overlay effects; custom additive overlays opt out by spreading POSTFX_OVERLAY_USERDATA (@jgengine/shell/postfx/postfxOverlay) onto the overlay group's userData.",
+      "PanelHost windows stack above the HUD by default (@jgengine/react) — the host establishes its own stacking context at zIndexBase (default 40), overridable per instance.",
+    ],
+    removed: [],
+  },
   "0.13.0": {
     migrate: [
       "Bump lockstep SDK packages to ^0.13.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine is 0.10.0; @jgengine/github is unchanged.",

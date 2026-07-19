@@ -554,6 +554,20 @@ export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
 export { buildRoadRibbon, dashSegments } from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
+export {
+  CITY_BUILDING_BUDGET,
+  SCATTER_COVERAGE_SPECS,
+  SCATTER_INSTANCE_BUDGET,
+  budgetWarning,
+  densityCoverage,
+  describeScatterCoverage,
+  placedCoverage,
+  scatterCoverageSpec,
+  scatterFootprintArea,
+  type ScatterCoverage,
+  type ScatterCoverageKind,
+  type ScatterCoverageSpec,
+} from "./world/scatterCoverage";
 export { pickWeighted, scatterItems, type ScatterInstance } from "./world/scatterItems";
 export {
   SCATTER_PATH_KIND,
@@ -687,6 +701,14 @@ export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";
 export { waterSurface, waterSurfaceFromDescriptor, type WaterSurface } from "./world/water";
 export { WATER_SCHEMA, type WaterRules } from "./world/waterKind";
+export {
+  createWaypointStore,
+  type WaypointEntry,
+  type WaypointGuidance,
+  type WaypointSnapshot,
+  type WaypointStore,
+  type WaypointStoreDeps,
+} from "./world/waypoints";
 export {
   createFireGrid,
   resolveWeather,

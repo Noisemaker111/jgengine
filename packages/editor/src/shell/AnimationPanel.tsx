@@ -60,10 +60,8 @@ export function AnimationPanel({
     rigged.length > 0 && listScrubbablePaths(paths).length === 0 ? "clips" : "path",
   );
 
-  // Tear down the viewport preview whenever the panel leaves clip mode or unmounts.
-  useEffect(() => {
-    if (mode !== "clips" && ui.getState().clipPreview !== null) ui.patch({ clipPreview: null });
-  }, [mode, ui]);
+  // Tear down the viewport preview when the panel unmounts; leaving clip mode tears down in the
+  // tab click below.
   useEffect(
     () => () => {
       if (ui.getState().clipPreview !== null) ui.patch({ clipPreview: null });
@@ -89,7 +87,10 @@ export function AnimationPanel({
               className={`rounded-[5px] px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors ${FOCUS_RING} ${
                 mode === id ? "bg-cyan-500/15 text-cyan-200" : "text-neutral-500 hover:text-neutral-300"
               }`}
-              onClick={() => setMode(id)}
+              onClick={() => {
+                if (id !== "clips" && ui.getState().clipPreview !== null) ui.patch({ clipPreview: null });
+                setMode(id);
+              }}
             >
               {label}
             </button>
@@ -337,22 +338,16 @@ function PathFlythrough({ session, api }: { session: EditorSession; api: EditorH
   const [loop, setLoop] = useState(true);
   const playRef = useRef({ playing: false, loop: true, progress: 0, pathId: null as string | null });
 
+  // selectedId is raw intent; a removed path falls back to the first scrubbable one at read time.
   const selected = scrubbable.find((entry) => entry.id === selectedId) ?? scrubbable[0] ?? null;
   const selectedPath = selected === null ? undefined : paths.find((path) => path.id === selected.id);
 
-  useEffect(() => {
-    if (selected !== null && selectedId !== selected.id) setSelectedId(selected.id);
-    if (selected === null && selectedId !== null) setSelectedId(null);
-  }, [selected, selectedId]);
-
-  useEffect(() => {
-    playRef.current = {
-      playing,
-      loop,
-      progress,
-      pathId: selected?.id ?? null,
-    };
-  }, [playing, loop, progress, selected?.id]);
+  playRef.current = {
+    playing,
+    loop,
+    progress,
+    pathId: selected?.id ?? null,
+  };
 
   const applyProgress = useCallback(
     (next: number, pathId: string) => {

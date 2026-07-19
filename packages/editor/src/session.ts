@@ -57,6 +57,16 @@ export type EditorBridgeRequest =
   | { method: "set_transform"; id: string; x?: number; y?: number; z?: number; rotationY?: number }
   | { method: "set_volume"; id: string; radius?: number; height?: number; x?: number; y?: number; z?: number }
   | { method: "set_path"; id: string; kind?: string; width?: number; color?: string; label?: string; meta?: Record<string, unknown> }
+  | {
+      method: "add_path";
+      id: string;
+      points: { x: number; y?: number; z: number }[];
+      kind?: string;
+      width?: number;
+      color?: string;
+      label?: string;
+      meta?: Record<string, unknown>;
+    }
   | { method: "set_marker"; id: string; kind?: string; color?: string; label?: string; rotationY?: number; meta?: Record<string, unknown> }
   | { method: "set_note"; id: string; text?: string; meta?: Record<string, unknown> }
   | { method: "set_meta"; id: string; patch: Record<string, unknown> }

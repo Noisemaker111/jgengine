@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
+
+- `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
+
 ## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
@@ -57,13 +61,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
 
+## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
+
+- `useDisposable` (function) · `import { useDisposable } from "@jgengine/shell/render/useDisposable"`
+
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/ui"`
 
+## dom-event — attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects
+
+- `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/react"`
+
 ## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`
+
+## entity-preview — live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity
+
+- `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/shell/render/EntityPreview"`
 
 ## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
 
@@ -76,6 +92,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
+
+## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, and click-to-place without firing a click after a pan
+
+- `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`
+
+## game-context-bridge — re-provide the GameContext across a nested Canvas/reconciler boundary
+
+- `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
 
 ## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
 
@@ -133,6 +157,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`
 
+## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
+
+- `useTicker` (function) · `import { useTicker } from "@jgengine/react"`
+
 ## hud-vitals — atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
 
 - `BarTokens` (interface) · `import { BarTokens } from "@jgengine/react"`
@@ -149,6 +177,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
+
+## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
+
+- `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
@@ -186,7 +218,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `focusPanel` (function) · `import { focusPanel } from "@jgengine/core/ui"`
 
-## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs
+## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD
 
 - `PanelHost` (function) · `import { PanelHost } from "@jgengine/react"`
 
@@ -221,6 +253,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
+
+## raf-loop — run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
+
+- `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
 
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
@@ -266,6 +302,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
 
+## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
+
+- `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/react"`
+
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 
 - `Window` (function) · `import { Window } from "@jgengine/react"`
@@ -273,3 +313,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
 - `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/WorldHud"`
+
+## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
+
+- `WorldPings` (function) · `import { WorldPings } from "@jgengine/shell/world/WorldPings"`

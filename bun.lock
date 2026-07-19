@@ -293,6 +293,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/editor": "workspace:*",
+        "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "react": "19.2.3",
         "react-dom": "19.2.3",
@@ -466,7 +467,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -480,7 +481,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
         "@jgengine/core": "^0.11.0",
       },
@@ -496,15 +497,15 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.12.0",
+      "version": "0.14.0",
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
-        "@jgengine/core": "^0.11.0",
-        "@jgengine/react": "^0.11.0",
-        "@jgengine/shell": "^0.11.0",
+        "@jgengine/core": "^0.14.0",
+        "@jgengine/react": "^0.14.0",
+        "@jgengine/shell": "^0.14.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -530,7 +531,7 @@
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.9.0",
+      "version": "0.11.0",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
@@ -543,7 +544,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
         "@jgengine/core": "^0.11.0",
         "@jgengine/ws": "^0.11.0",
@@ -559,9 +560,9 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
-        "@jgengine/core": "^0.11.0",
+        "@jgengine/core": "^0.14.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -576,11 +577,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
-        "@jgengine/core": "^0.11.0",
-        "@jgengine/react": "^0.11.0",
-        "@jgengine/ws": "^0.11.0",
+        "@jgengine/core": "^0.14.0",
+        "@jgengine/react": "^0.14.0",
+        "@jgengine/ws": "^0.14.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -601,7 +602,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
         "@jgengine/core": "^0.11.0",
       },
@@ -611,9 +612,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.12.0",
+      "version": "0.14.0",
       "dependencies": {
-        "@jgengine/core": "^0.11.0",
+        "@jgengine/core": "^0.14.0",
       },
     },
     "registry": {

@@ -595,7 +595,7 @@
 
 ## @jgengine/editor/handlers/document
 
-- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "set_marker" | "set_note" | "set_meta" | "apply_preset" | "select" | "clear_selection" | "camera… — Document, selection, camera, mode, asset placement, and status verbs.
+- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "add_path" | "set_marker" | "set_note" | "set_meta" | "apply_preset" | "select" | "clear_selecti… — Document, selection, camera, mode, asset placement, and status verbs.
 
 ## @jgengine/editor/handlers/grids
 
@@ -953,6 +953,7 @@
 
 ## @jgengine/editor/useStoreSelector
 
+- `SubscribableSource` (interface): interface SubscribableSource — A notification-only source — `subscribe` is all a coarse invalidation needs.
 - `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
 - `shallowArrayEqual` (function): function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean — Shallow array equality — for selectors that return id lists (`selection`) or small tuples.

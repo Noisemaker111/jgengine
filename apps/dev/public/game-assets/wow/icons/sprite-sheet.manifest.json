@@ -104,7 +104,7 @@
     "trimPadding": 0
   },
   "output": {
-    "directory": "C:\\Users\\Jk101\\Projects\\ai-lab-game\\apps\\web\\public\\game-assets\\wow\\icons",
+    "directory": ".",
     "files": [
       {
         "name": "sword-slash-attack",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
@@ -109,15 +109,17 @@ function darkSightStateFor(ctx: GameContext): DarkSightState {
 function useDarkSight(): [boolean, () => void] {
   const ctx = useGameContext();
   const state = darkSightStateFor(ctx);
-  const [, forceRender] = useState(0);
-  useEffect(() => {
-    const listener = () => forceRender((count) => count + 1);
-    state.listeners.add(listener);
-    return () => {
-      state.listeners.delete(listener);
-    };
-  }, [state]);
-  return [state.on, () => ctx.game.commands.run("darkSight", {})];
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      state.listeners.add(listener);
+      return () => {
+        state.listeners.delete(listener);
+      };
+    },
+    [state],
+  );
+  const on = useSyncExternalStore(subscribe, () => state.on);
+  return [on, () => ctx.game.commands.run("darkSight", {})];
 }
 
 function GhostTrail() {

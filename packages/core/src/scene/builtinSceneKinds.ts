@@ -15,11 +15,18 @@ import { registerSoilKind } from "../world/soilKind";
 import { registerPoleLineKind } from "../world/poleLineKind";
 import { registerBuildingGenerator } from "../world/buildingGenerator";
 import { registerCityKind } from "../world/cityKind";
+import { describeScatterCoverage, densityCoverage } from "../world/scatterCoverage";
 import { registerSceneKind, type ParamSchema } from "./sceneKinds";
 
-/** The scatter/foliage region schema — the fields the inspector exposed as hand-written `ScatterFields`. */
+/**
+ * The scatter/foliage region schema. `palette` (what fills the area) leads the schema body and
+ * `density` is the single coverage slider hoisted into the shared `CoverageSection` (see the kind's
+ * `coverage` descriptor), so a scatter region reads as Area → Assets → Density like every other
+ * scatterable kind; the rest is kind-specific tuning.
+ */
 export const SCATTER_SCHEMA: ParamSchema = {
   fields: [
+    { type: "weightedList", key: "palette", label: "species (weighted)", itemLabel: "grass / tree id", default: [{ item: "grass", weight: 1 }] },
     { type: "range", key: "density", label: "density", min: 0, max: 2, step: 0.01, default: 0.15, unit: "/m²" },
     { type: "number", key: "minSpacing", label: "spacing", step: 0.25, default: 1.5, min: 0 },
     { type: "number", key: "minScale", label: "min scale", step: 0.05, default: 0.8, min: 0 },
@@ -28,7 +35,6 @@ export const SCATTER_SCHEMA: ParamSchema = {
     { type: "number", key: "edgeFalloff", label: "edge fade", step: 0.5, default: 0, min: 0 },
     { type: "bool", key: "alignToNormal", label: "align to slope", default: false },
     { type: "bool", key: "autoAvoid", label: "auto-avoid gameplay spots", default: true },
-    { type: "weightedList", key: "palette", label: "species (weighted)", itemLabel: "grass / tree id", default: [{ item: "grass", weight: 1 }] },
     { type: "seed", key: "seed", label: "seed", default: "" },
   ],
 };
@@ -48,6 +54,7 @@ export function registerBuiltinSceneKinds(): void {
     addCategory: "Studios",
     accent: "#34d399",
     schema: SCATTER_SCHEMA,
+    coverage: { spec: "scatter", densityKey: "density", assetsKey: "palette" },
     note: (object, params) => {
       const points = object.points ?? [];
       if (points.length < 3) return "Draw at least 3 points to close the region.";
@@ -57,7 +64,7 @@ export function registerBuiltinSceneKinds(): void {
       }
       area = Math.abs(area) / 2;
       const density = typeof params["density"] === "number" ? params["density"] : 0;
-      return `≈ ${Math.floor(area * density).toLocaleString()} placements over ${Math.round(area).toLocaleString()} m²`;
+      return describeScatterCoverage(densityCoverage("scatter", area, density));
     },
   });
 

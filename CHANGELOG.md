@@ -32,14 +32,70 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
-- **Created games ship a drive/playtest script** (#1248) — `npx jgengine create` scaffolds now include `scripts/drive.mjs` (`bun run drive`): dependency-free headless play/testing of the running game — ordered `--click`/`--key`/`--wait`/`--shot`/`--rpc` steps against the agent bridge, plus `--playtest --strict` progress/softlock verdicts off `capture.probe`. Shared Chrome/CDP machinery lives in `scripts/browser.mjs`; `scripts/shoot.mjs` is unchanged in behavior, now a thin CLI over it.
-- Editor: viewport clip preview for rigged assets (Animation dock "Clips" mode — pick a rig or placed instance, play/scrub/loop/speed any catalog clip) and an Inspector "Animation" section that authors a placement's `ModelConfig.animation` (role→clip dropdowns, auto/none, walk/run/fade, one-shot event bindings) as undoable `marker.meta.animation` edits. New subpaths: `@jgengine/editor/shell/clipPreview`, `@jgengine/editor/modelAnimationAuthoring`, `@jgengine/editor/ClipPreviewLayer`.
+- **World-space pings** (`@jgengine/shell/world/WorldPings`, `@jgengine/shell/world/pingPulse`) — the
+  in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a
+  billboarded callout (glyph + `meta.callout`/`label`), colored by marker kind and fading in/out over the
+  marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker
+  source, or a static array — mount through `PlayableGame.WorldOverlay`. `pingsOnly` (default true) limits
+  it to `meta.ping` markers; `renderCallout` overrides the chip. The pure lifecycle math (`pingOpacity`,
+  `pingBobOffset`) is exported and unit-tested. First adopter: the apps/dev `world-pings` demo.
+- **Difficulty-aware AI driver** (`@jgengine/core/ai/driver`, #1311) — `driveStep(state, dt, pose, goal, profile, tuning, rng, obstacleAhead?)` turns a vehicle pose + goal into the shared `AxisInput` for `tickDrivableVehicle`, with a `DifficultyProfile` (#1301) deciding how well the car drives: a reaction delay-line makes low tiers chase where the target *was*, corners shed speed instead of full-throttle orbiting, obstacles are perceived late by `speed × reactionSeconds`, steering wobbles by `executionJitter` resampled on an interval, and a wall-grinding car reverses out with counter-steer after a tier-scaled delay. `pathTargetAhead` walks a road/route polyline to a pure-pursuit lookahead point so the same brain follows authored streets and circuits. State is one serializable object; randomness injected; no world scans. First adopter: vice-isle cruiser pursuit, whose cops now drive by wanted level (3★ sloppy rookies → 5★ sharp interceptors) instead of `steer = error*2, throttle = 1`.
+- **Effect primitives: named hooks for the recurring `useEffect` shapes** (`@jgengine/react/hooks`, `@jgengine/shell/render/useDisposable`, #1298) — `useTicker(hz)` re-renders HUD elements at a steady rate for time-derived readouts (cooldowns, cast/swing bars); `useDomEvent(resolveTarget, type, handler, options?)` attaches a DOM listener with automatic cleanup and a stable handler ref; `useRafLoop(onFrame, active?)` runs a cancellable requestAnimationFrame loop with delta seconds; `useAutoScroll(dep)` pins a log/chat/console panel to its newest line; and shell's `useDisposable(create, deps)` (+ `disposeAll`) memoizes a three.js resource or tuple and disposes it on change/unmount, replacing the hand-rolled `useMemo` + dispose-effect pair. Prefer these over direct `useEffect` for their shapes — a lint restriction on direct `useEffect` outside the primitives layer follows in a later phase.
+- **Three-tier AI decision quality** (`@jgengine/core/ai/difficulty`, #1301) — one serializable `DifficultyProfile` (reaction time, decision noise, execution jitter, ability discipline, perception scale, plan depth/width) owns how well any opponent decides, with canonical `easy`/`standard`/`expert` tiers (`DIFFICULTY_TIERS`, `difficultyProfile(tier, overrides)`) and deterministic appliers at the universal decision seams: `advanceReactionGate` (delay acting on new information), `pickScored` (noisy argmax over any caller-scored option list), `executionError` (aim/lead/timing fuzz), `shouldUseAbility` (spend-or-hold specials from a scored opportunity window), and `planLookahead` (depth/width-bounded negamax or own-sequence search over a game-owned `moves`/`apply`/`evaluate` domain — greedy at easy, multi-ply tactics at expert). Composes with the existing substrates: scale `MobBrainConfig.aggroRadius` by `perceptionScale`, route `acquireTarget` scores through `pickScored`, gate `advancePursuit` swaps behind the reaction gate.
+- **Authored per-placement rig animation applies in game** (`@jgengine/core/world/authoredObjects`, `@jgengine/core/scene/objectStore`, #1276) — a placement's editor-authored `marker.meta.animation` (role→clip states, `"auto"`/`"none"`, walk/run/fade, one-shot bindings; the stable contract from #1274) now flows through `resolveAuthoredObjects` → `placeAuthoredObjects` → `ObjectStore.place` onto the placed object's `ModelConfig.animation`, so the override applies at play time instead of being write+preview only. `AuthoredObject.animation`, `PlaceOptions.animation`, and `SceneObject.animation` are new optional fields; the new `markerAnimation(marker)` reader exposes the contract. Markers with no override are unchanged — animation still comes from catalog resolution.
+- **`EffectResult` carries the slain entity's identity** (`@jgengine/core/combat/effects`, #1263) — a lethal `ctx.scene.entity.effect()` hit now returns `slain: { catalogId, name?, userId? }` on the per-target result, captured before the death system despawns the target. Kill credit / XP reads the victim's `catalogId` (its spawn kind) straight off the result — no game-side spawn-time registry mirroring instance ids to kinds. Non-lethal hits omit `slain`. The new `EffectSystemDeps.resolveSlainIdentity` seam is optional and additive, so existing effect-system compositions keep their exact shape.
+- Interactive fullscreen map + player waypoints. `@jgengine/core/world/waypoints`'
+  `createWaypointStore` is a serializable player-waypoint layer (place/track/clear,
+  snapshot↔restore) that mirrors pins into a `MarkerSet` so every map surface renders
+  them, and reports bearing/distance `guidance` for an on-screen arrow. New React
+  primitives in `@jgengine/react/map`: `FullscreenMap` (wheel-zoom/drag-pan overlay
+  that never fires a click after a pan), `WorldMapSurface` (the viewport-aware map
+  `<svg>` now shared by `WorldMap` and `FullscreenMap`), `MapLegend` (marker-kind key),
+  and `WaypointArrow` (HUD guide needle). A new `waypoint` entry joins
+  `DEFAULT_MARKER_KINDS`.
+- Editor RPC/CLI verb `add_path` (`@jgengine/editor`): author a new path/route into the scene
+  document from an ordered list of ≥2 `{x,z}` (optional `y`) points in one call, without an
+  `export_document`/`import_document` roundtrip. `kind` defaults to `route`; `meta` is schema-validated
+  like `set_path`, and a colliding `id` re-ids in the document-global namespace.
 
 ### Changed
 
-- **Combat VFX no longer render as black squares under AO/DOF post-processing** (#1247) — GTAO/Bokeh scene prepasses skip overlay effects. Games with custom additive overlay effects opt out the same way: spread `POSTFX_OVERLAY_USERDATA` (`@jgengine/shell/postfx/postfxOverlay`) onto the overlay group's `userData`.
+- **Effect consolidation phase 2: subscriptions on `useSyncExternalStore`, dispose pairs on `useDisposable`** (`@jgengine/react`, `@jgengine/shell`, `@jgengine/editor`, #1304) — hand-rolled `subscribe(() => setTick)` re-render mirrors across the editor chrome/panels, shell settings (`useSettingsRevision`), camera director, WorldHud selection, and AuthoredScene live-document hook now ride `useSyncExternalStore` (fewer redundant render passes, identical update timing); ~15 shell renderers moved their `useMemo` + dispose-effect pairs onto `useDisposable`; derived-state/prop-reset/focus effects were removed in favor of render-time derivation and `autoFocus` (editor inspector fields, hierarchy active row, animation panel, play-control mirrors via the new shared `usePlayControl`, GamePlayerShell binding overrides — kills a one-frame stale-keybinds render on game switch; `GameViewport` now renders `data-jg-layout-collision` declaratively). No public API removals; `usePlayControl` (`@jgengine/editor`) is new.
+
+- **Walking collision now depenetrates instead of locking.** `resolveObstacleStep`
+  (movement) previously slid along box faces but had no escape once the capsule was
+  strictly *inside* a solid box — its per-axis clamps returned zero on both axes and the
+  player was stuck forever. It now pushes an enclosed capsule out along the box's
+  shallowest face before sliding. Resting exactly on a face still reads as contact, so
+  normal wall-sliding is byte-for-byte unchanged; only the previously-unrecoverable
+  "wedged inside a building" case now frees itself.
+- `import_document` (`@jgengine/editor`) now answers a missing or mis-keyed document param with an
+  error naming the expected `json` param instead of surfacing a raw `JSON Parse error: Unexpected
+  identifier "undefined"`.
 
 ### Removed
+
+## 0.14.0
+
+### Migrate
+
+- **Nothing required** — this release is additive drop-in primitives, editor authoring, CLI discovery, and fixes. Bump `@jgengine/*` pins to `^0.14.0` (CLI `jgengine` is 0.11.0; `@jgengine/github` unchanged at 0.1.0) and rebuild.
+- One behavior fix to know about: in a `rig: "chase"` game, on-foot movement and aim are now camera-relative (the chase rig reports its yaw to the shell like every other rig). If a game somehow relied on world-yaw-0 movement under a chase camera, that was the bug this fixes.
+
+### Added
+
+- One authoring gesture for scatterable coverage: `@jgengine/core/world/scatterCoverage` owns shared density/budget semantics (per-kind unit, requested→count→capped, one clamp-and-warn phrasing) for `grass_field`/`scatter`/`city`; the editor inspector leads each kind with the same Area → Assets → Density coverage section, scatter truncates to the shared 250k instance budget, and city single-sources its 2,600-lot cap.
+- **Created games ship a drive/playtest script** (#1248) — `npx jgengine create` scaffolds now include `scripts/drive.mjs` (`bun run drive`): dependency-free headless play/testing of the running game — ordered `--click`/`--key`/`--wait`/`--shot`/`--rpc` steps against the agent bridge, plus `--playtest --strict` progress/softlock verdicts off `capture.probe`. Shared Chrome/CDP machinery lives in `scripts/browser.mjs`; `scripts/shoot.mjs` is unchanged in behavior, now a thin CLI over it.
+- Editor: viewport clip preview for rigged assets (Animation dock "Clips" mode — pick a rig or placed instance, play/scrub/loop/speed any catalog clip) and an Inspector "Animation" section that authors a placement's `ModelConfig.animation` (role→clip dropdowns, auto/none, walk/run/fade, one-shot event bindings) as undoable `marker.meta.animation` edits. New subpaths: `@jgengine/editor/shell/clipPreview`, `@jgengine/editor/modelAnimationAuthoring`, `@jgengine/editor/ClipPreviewLayer`.
+- **`npx jgengine find <intent>`** — active capability discovery: searches every shipped domain's `capabilities.md` (staged inside the CLI tarball, so it works regardless of which `@jgengine/*` packages a project installed) and prints the drop-in primitive + its import for an intent like `"toggleable window"`, `inventory`, or `minimap`. Scaffolded games are now briefed (in `AGENTS.md` and the `jgengine` intake skill) to reach for it before hand-rolling a HUD/inventory/window/rig.
+- **`EntityPreview`** (`@jgengine/shell/render/EntityPreview`) — drop-in live 3D entity portrait for character screens, unit inspectors, and loadout viewers. Owns the nested `<Canvas>`, the `GameContextBridge`, and a `StudioStage` lighting rig with optional turntable / face-camera; the game passes its own `renderEntity` as children (or a native `model` + `instanceId`) and, bound to a live entity, the portrait walks/flinches/topples in sync with the world.
+- **`GameContextBridge`** (`@jgengine/react`) — re-provide the running `GameContext` across a nested React reconciler boundary (the R3F `<Canvas>`), so a game building its own preview canvas no longer re-derives the bridge by hand.
+
+### Changed
+
+- **Chase rig reports its yaw to the shell** — `ChaseRig` now writes the camera yaw back to the shared yaw ref like every other player-facing rig, so on-foot movement and aim in a `rig: "chase"` game are camera-relative instead of frozen to world yaw 0 (WASD no longer fights the camera the moment it swings behind the player). Interior views (cockpit/hood/rear) report the vehicle heading.
+- **Combat VFX no longer render as black squares under AO/DOF post-processing** (#1247) — GTAO/Bokeh scene prepasses skip overlay effects. Games with custom additive overlay effects opt out the same way: spread `POSTFX_OVERLAY_USERDATA` (`@jgengine/shell/postfx/postfxOverlay`) onto the overlay group's `userData`.
+- **`PanelHost` windows stack above the HUD by default** (`@jgengine/react`) — the host establishes its own stacking context at `zIndexBase` (default 40), so open windows always paint over stat bars / nameplates / frames instead of bleeding through. Overridable per instance.
 
 ## 0.13.0
 

@@ -28,7 +28,6 @@ export function CommandPalette({
   const [query, setQuery] = useState(initialQuery);
   const [cursor, setCursor] = useState(0);
   const [recentIds, setRecentIds] = useState<string[]>(() => loadRecentCommandIds());
-  const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(
@@ -36,10 +35,6 @@ export function CommandPalette({
     [commands, query, recentIds],
   );
   const clampedCursor = Math.min(cursor, Math.max(0, filtered.length - 1));
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   useEffect(() => {
     const row = listRef.current?.children[clampedCursor];
@@ -67,7 +62,7 @@ export function CommandPalette({
         <div className="flex items-center gap-2 border-b border-white/[0.07] px-3">
           <Icon name="search" size={14} className="shrink-0 text-neutral-500" />
           <input
-            ref={inputRef}
+            autoFocus
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

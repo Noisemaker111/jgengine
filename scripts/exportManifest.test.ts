@@ -1,8 +1,12 @@
-import { describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   computeExposedSubpaths,
   computeManifest,
   distExists,
+  exposedSubpathsForPackageDir,
   isForbiddenSubpath,
   publishedPackages,
   readManifest,
@@ -42,4 +46,52 @@ describe.if(built)("published export manifest", () => {
 
 test("published package list is fixed and non-empty", () => {
   expect(publishedPackages.length).toBe(11);
+});
+
+describe("orphaned dist files are excluded from public subpaths", () => {
+  let pkgDir: string;
+  const wildcardExports = { "./*": { types: "./dist/*.d.ts", default: "./dist/*.js" } };
+  const writeDistJs = (rel: string): void => {
+    const full = join(pkgDir, "dist", `${rel}.js`);
+    mkdirSync(join(full, ".."), { recursive: true });
+    writeFileSync(full, "export {};\n");
+  };
+  const writeSrcTs = (rel: string): void => {
+    const full = join(pkgDir, "src", `${rel}.ts`);
+    mkdirSync(join(full, ".."), { recursive: true });
+    writeFileSync(full, "export {};\n");
+  };
+
+  beforeEach(() => {
+    pkgDir = mkdtempSync(join(tmpdir(), "export-manifest-"));
+    mkdirSync(join(pkgDir, "dist"), { recursive: true });
+    mkdirSync(join(pkgDir, "src"), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(pkgDir, { recursive: true, force: true });
+  });
+
+  test("a dist/*.js with a live src/*.ts counterpart is a public subpath", () => {
+    writeSrcTs("world");
+    writeDistJs("world");
+    expect(exposedSubpathsForPackageDir(pkgDir, wildcardExports)).toContain("./world");
+  });
+
+  test("an orphaned dist/*.js with no src counterpart is not a public subpath", () => {
+    writeSrcTs("world");
+    writeDistJs("world");
+    // devtools/urlFlags.js lingers from a deleted source; it must not leak.
+    writeDistJs("devtools/urlFlags");
+    const subpaths = exposedSubpathsForPackageDir(pkgDir, wildcardExports);
+    expect(subpaths).toContain("./world");
+    expect(subpaths).not.toContain("./devtools/urlFlags");
+  });
+
+  test("a src/*.tsx source keeps its compiled dist/*.js as a public subpath", () => {
+    const full = join(pkgDir, "src", "Panel.tsx");
+    writeFileSync(full, "export {};\n");
+    writeDistJs("Panel");
+    expect(exposedSubpathsForPackageDir(pkgDir, wildcardExports)).toContain("./Panel");
+  });
 });

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import * as THREE from "three";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
+
+import { useDisposable } from "../render/useDisposable";
 import { POSTFX_OVERLAY_USERDATA } from "../postfx/postfxOverlay";
 import {
   aimProbeNeeded,
@@ -102,13 +104,12 @@ function WireTriangleMesh({
   shape: Extract<DebugShapeEntry["shape"], { kind: "mesh" }>;
   color: string;
 }) {
-  const geometry = useMemo(() => {
+  const geometry = useDisposable(() => {
     const built = new THREE.BufferGeometry();
     built.setAttribute("position", new THREE.BufferAttribute(shape.mesh.positions, 3));
     built.setIndex(new THREE.BufferAttribute(shape.mesh.indices, 1));
     return built;
   }, [shape.mesh]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <group>
       <group position={[entry.position[0], entry.position[1], entry.position[2]]} rotation={[0, entry.rotationY, 0]}>

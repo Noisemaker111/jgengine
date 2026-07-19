@@ -15,6 +15,7 @@ import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSock
 import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
+import { useDisposable } from "../render/useDisposable";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
 function Cables({ cables }: { cables: readonly Cable[] }) {
@@ -165,31 +166,15 @@ function ProxyPoles({
   const insulatorRef = useRef<THREE.InstancedMesh>(null);
   const armLength = wireCount > 1 ? (wireCount - 1) * wireSpacing + 0.6 : 0.8;
   // Chunkier members than a real-scale pole: stylized worlds read thin cylinders as wire, not wood.
-  const trunkGeometry = useMemo(() => new THREE.CylinderGeometry(0.13, 0.22, height, 10), [height]);
-  const armGeometry = useMemo(() => new THREE.BoxGeometry(armLength, 0.17, 0.14), [armLength]);
-  const braceGeometry = useMemo(() => {
+  const trunkGeometry = useDisposable(() => new THREE.CylinderGeometry(0.13, 0.22, height, 10), [height]);
+  const armGeometry = useDisposable(() => new THREE.BoxGeometry(armLength, 0.17, 0.14), [armLength]);
+  const braceGeometry = useDisposable(() => {
     const braceSpan = Math.hypot(armLength * 0.32, 0.7);
     return new THREE.BoxGeometry(0.07, braceSpan, 0.06);
   }, [armLength]);
-  const insulatorGeometry = useMemo(() => new THREE.CylinderGeometry(0.06, 0.085, 0.24, 8), []);
-  const trunkMaterial = useMemo(() => createWeatheredWoodMaterial("#6b533a"), []);
-  const armMaterial = useMemo(() => createWeatheredWoodMaterial("#59452e", "x"), []);
-  useEffect(
-    () => () => {
-      trunkGeometry.dispose();
-      armGeometry.dispose();
-      braceGeometry.dispose();
-      insulatorGeometry.dispose();
-    },
-    [trunkGeometry, armGeometry, braceGeometry, insulatorGeometry],
-  );
-  useEffect(
-    () => () => {
-      trunkMaterial.dispose();
-      armMaterial.dispose();
-    },
-    [trunkMaterial, armMaterial],
-  );
+  const insulatorGeometry = useDisposable(() => new THREE.CylinderGeometry(0.06, 0.085, 0.24, 8), []);
+  const trunkMaterial = useDisposable(() => createWeatheredWoodMaterial("#6b533a"), []);
+  const armMaterial = useDisposable(() => createWeatheredWoodMaterial("#59452e", "x"), []);
   useEffect(() => {
     const trunk = trunkRef.current;
     const arm = armRef.current;

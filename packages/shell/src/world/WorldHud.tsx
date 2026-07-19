@@ -6,6 +6,7 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
 import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
+import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useCameraShake } from "../camera/shakeChannel";
 import { CALIBRATED_TRAUMA_SHAKE_DECAY_PER_SECOND } from "../camera/rigMath";
@@ -256,11 +257,7 @@ export interface WorldObjectHighlightsProps {
  */
 export function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps) {
   const ctx = useGameContext();
-  const [ids, setIds] = useState<readonly string[]>(() => ctx.scene.object.selection.list());
-  useEffect(() => {
-    setIds(ctx.scene.object.selection.list());
-    return ctx.subscribe(() => setIds(ctx.scene.object.selection.list()));
-  }, [ctx]);
+  const ids = useGameStore((c): readonly string[] => c.scene.object.selection.list());
   return (
     <>
       {ids.map((id) => {

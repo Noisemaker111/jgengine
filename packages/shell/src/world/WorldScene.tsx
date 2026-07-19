@@ -18,6 +18,7 @@ import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarge
 
 import { colorFromId } from "../worldSky";
 import { DefaultSurface, detailMaps } from "../render/defaultSurface";
+import { useDisposable } from "../render/useDisposable";
 import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
 import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "../render/resolveModel";
@@ -193,7 +194,7 @@ function GroundPlane() {
     next.computeVertexNormals();
     return next;
   }, []);
-  const material = useMemo(() => {
+  const material = useDisposable(() => {
     const normal = detailMaps().normal.clone();
     normal.repeat.set(48, 48);
     normal.needsUpdate = true;
@@ -206,7 +207,6 @@ function GroundPlane() {
       envMapIntensity: 0.4,
     });
   }, []);
-  useEffect(() => () => material.dispose(), [material]);
 
   return <mesh rotation-x={-Math.PI / 2} geometry={geometry} material={material} receiveShadow />;
 }
@@ -331,11 +331,17 @@ function WorldActors({
         const object = ctx.scene.object.get(instanceId);
         if (object === null) return null;
         const custom = renderObject?.(object);
-        const model =
+        const resolved =
           resolveModel(objectModels?.[object.catalogId], assets, {
             seam: "objectModels",
             key: object.catalogId,
           }) ?? tryResolveCatalogModel(object.catalogId, assets);
+        // An authored per-placement animation override (marker.meta.animation → SceneObject.animation,
+        // #1276) wins over catalog resolution's default "auto"; absent, the resolved config is untouched.
+        const model =
+          resolved !== undefined && object.animation !== undefined
+            ? { ...resolved, animation: object.animation }
+            : resolved;
         const style = objectStyles?.[object.catalogId];
         // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
         // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.

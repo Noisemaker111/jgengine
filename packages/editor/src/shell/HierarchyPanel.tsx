@@ -78,10 +78,11 @@ export const HierarchyPanel = memo(function HierarchyPanel({
   const [query, setQuery] = useState("");
   const [collapsedKinds, setCollapsedKinds] = useState<Record<string, boolean>>({});
   const [collapsedNodes, setCollapsedNodes] = useState<Record<string, boolean>>({});
-  const [visibilityTick, setVisibilityTick] = useState(0);
-  useEffect(() => api.subscribeVisibility(() => setVisibilityTick((value) => value + 1)), [api]);
-  void visibilityTick;
-  const visibility = api.getVisibility();
+  const visibilityStore = useMemo(
+    () => ({ getState: api.getVisibility, subscribe: api.subscribeVisibility }),
+    [api],
+  );
+  const visibility = useStoreSelector(visibilityStore, (v) => v);
 
   const rows = useMemo(
     () => flattenOutliner(document, { view, query, collapsedKinds, collapsedNodes }),
@@ -121,15 +122,10 @@ export const HierarchyPanel = memo(function HierarchyPanel({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
-  const renameInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (activeId !== null && !navigableIds.includes(activeId)) setActiveId(navigableIds[0] ?? null);
-  }, [activeId, navigableIds]);
-
-  useEffect(() => {
-    if (renamingId !== null) renameInputRef.current?.focus();
-  }, [renamingId]);
+  // Raw intent clamped at read time: a filtered-away active row falls back to the first row.
+  const effectiveActiveId =
+    activeId === null ? null : navigableIds.includes(activeId) ? activeId : (navigableIds[0] ?? null);
 
   const focusTree = () => {
     scrollRef.current?.focus({ preventScroll: true });
@@ -177,7 +173,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
 
   const onListFocus = () => {
     if (renamingId !== null) return;
-    if (activeId !== null && navigableIds.includes(activeId)) return;
+    if (effectiveActiveId !== null) return;
     const seed =
       selectedId !== undefined && navigableIds.includes(selectedId)
         ? selectedId
@@ -188,7 +184,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
   const onListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (renamingId !== null) return;
     if (navigableIds.length === 0) return;
-    const currentIndex = activeId === null ? -1 : navigableIds.indexOf(activeId);
+    const currentIndex = effectiveActiveId === null ? -1 : navigableIds.indexOf(effectiveActiveId);
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
@@ -215,21 +211,21 @@ export const HierarchyPanel = memo(function HierarchyPanel({
       return;
     }
 
-    if (event.key === "Enter" && activeId !== null) {
+    if (event.key === "Enter" && effectiveActiveId !== null) {
       event.preventDefault();
-      api.handle({ method: "camera_goto", id: activeId });
+      api.handle({ method: "camera_goto", id: effectiveActiveId });
       return;
     }
 
-    if (event.key === "F2" && activeId !== null) {
+    if (event.key === "F2" && effectiveActiveId !== null) {
       event.preventDefault();
       const row = rows.find(
         (entry) =>
-          (entry.type === "kindItem" && entry.ids[0] === activeId) ||
-          (entry.type === "treeItem" && entry.id === activeId),
+          (entry.type === "kindItem" && entry.ids[0] === effectiveActiveId) ||
+          (entry.type === "treeItem" && entry.id === effectiveActiveId),
       );
       if (row !== undefined && (row.type === "kindItem" || row.type === "treeItem")) {
-        beginRename(activeId, row.label);
+        beginRename(effectiveActiveId, row.label);
       }
     }
   };
@@ -302,7 +298,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
     session.dispatch({ type: "setObjectFlags", ids: [...ids], patch: { locked: true } });
   };
 
-  const activeDescendant = hierarchyActiveDescendantId(activeId, navigableIds);
+  const activeDescendant = hierarchyActiveDescendantId(effectiveActiveId, navigableIds);
 
   return (
     <>
@@ -430,7 +426,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                       (id) =>
                         isEditorObjectCollectionLocked(document, id) && !isEditorObjectSelfLocked(document, id),
                     );
-                  const active = activeId === primaryId;
+                  const active = effectiveActiveId === primaryId;
                   const renaming = renamingId === primaryId && row.ids.length === 1;
                   return (
                     <div
@@ -480,7 +476,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                         <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected || active ? "text-cyan-300" : "text-neutral-500"}`} />
                         {renaming ? (
                           <input
-                            ref={renameInputRef}
+                            autoFocus
                             value={renameDraft}
                             onChange={(event) => setRenameDraft(event.target.value)}
                             onBlur={commitRename}
@@ -572,7 +568,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                 const collectionOnlyLock =
                   isEditorObjectCollectionLocked(document, row.id) && !isEditorObjectSelfLocked(document, row.id);
                 const dragging = draggingObjectId === row.id;
-                const active = activeId === row.id;
+                const active = effectiveActiveId === row.id;
                 const renaming = renamingId === row.id;
                 const expanded = row.hasChildren ? collapsedNodes[row.id] !== true : undefined;
                 return (
@@ -652,7 +648,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
                       <Icon name={kindIcon(row.kind)} size={13} className={`shrink-0 ${rowSelected || active ? "text-cyan-300" : "text-neutral-500"}`} />
                       {renaming ? (
                         <input
-                          ref={renameInputRef}
+                          autoFocus
                           value={renameDraft}
                           onChange={(event) => setRenameDraft(event.target.value)}
                           onBlur={commitRename}

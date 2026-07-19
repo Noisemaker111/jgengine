@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/ws",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Browser-safe WebSocket client backend for JGengine: protocol codec, createWsBackend, and HTTP read helpers.",
   "license": "Apache-2.0",
   "type": "module",
@@ -27,11 +27,11 @@
   },
   "scripts": {
     "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
-    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "check-types": "bun ../../scripts/check-types-preflight.ts && tsgo --noEmit -p tsconfig.json",
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.13.0"
+    "@jgengine/core": "^0.14.0"
   },
   "publishConfig": {
     "access": "public"

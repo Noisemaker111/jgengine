@@ -1,4 +1,5 @@
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
+import type { ModelAnimationConfig } from "../game/playableGame";
 import type { EntityPosition } from "./entityStore";
 
 export interface ObjectVisual {
@@ -14,6 +15,13 @@ export interface SceneObject {
   rotationY: number;
   parentSpace?: string;
   visual?: ObjectVisual;
+  /**
+   * Per-placement rig animation override applied on top of catalog resolution — the same shape as
+   * `ModelConfig.animation` (role→clip states, `"auto"`/`"none"`, speeds, fade, one-shot bindings).
+   * Authored in the editor as `marker.meta.animation` (#1274) and threaded here by
+   * `resolveAuthoredObjects` → `placeAuthoredObjects`; `undefined` keeps the catalog-resolved default.
+   */
+  animation?: ModelAnimationConfig | "auto" | "none";
 }
 
 export interface PlaceOptions {
@@ -21,6 +29,8 @@ export interface PlaceOptions {
   parentSpace?: string;
   rotation?: number;
   visual?: ObjectVisual;
+  /** Per-placement rig animation override stored on the placed {@link SceneObject}; same shape as `ModelConfig.animation`. Omit to keep the catalog-resolved default. */
+  animation?: ModelAnimationConfig | "auto" | "none";
   /** When `instanceId` is already placed: `"throw"` (default), `"replace"` (fresh placement over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
   onExisting?: "throw" | "replace" | "keep";
 }
@@ -113,6 +123,7 @@ export function createObjectStore(): ObjectStore {
         rotationY: options.rotation ?? 0,
         ...(options.parentSpace !== undefined ? { parentSpace: options.parentSpace } : {}),
         ...(options.visual !== undefined ? { visual: options.visual } : {}),
+        ...(options.animation !== undefined ? { animation: options.animation } : {}),
       });
       indexAdd(instanceId, position);
       return instanceId;
@@ -148,6 +159,7 @@ export function createObjectStore(): ObjectStore {
         position: current.position,
         rotationY: current.rotationY,
         ...(current.parentSpace !== undefined ? { parentSpace: current.parentSpace } : {}),
+        ...(current.animation !== undefined ? { animation: current.animation } : {}),
         ...(visual !== undefined ? { visual } : {}),
       });
       return true;

@@ -5,7 +5,7 @@ description: Route game work to the smallest useful JGengine guidance set.
 
 # JGengine intake and router
 
-Read the repository [README](../../../README.md) for package truth, commands, layering, and license. This skill decides what to load; it is not an engine manual.
+Read the JGengine README for package truth, commands, layering, and license — the repo-root [`README.md`](../../../README.md) in the monorepo, or [jgengine.com](https://jgengine.com) from a scaffolded consumer project (where the relative link does not resolve). This skill decides what to load; it is not an engine manual.
 
 ## 1. Establish the target
 
@@ -45,7 +45,7 @@ World content routes editor-first: any request that adds, moves, restyles, or re
 Within each selected domain:
 
 0. Fastest start for a common composition: `npx jgengine recipe <name>` prints a vetted, SDK-typechecked snippet (imports + wired code) for `combat-loop`, `boss-telegraph`, `loot`, `quest`, `coop-presence`, `third-person-camera`; `npx jgengine recipe` lists them. Copy that instead of reconning per-file.
-1. Search `capabilities.md` by intent; it maps needs to imports.
+1. Search `capabilities.md` by intent; it maps needs to imports. Outside the monorepo (or before a domain skill is even loaded), `npx jgengine find <intent>` greps every shipped capability index at once and prints the primitive + import — reach for it the moment you're tempted to hand-roll a HUD window, inventory grid, paperdoll, hotkey listener, minimap, stat bar, or character motion. If you're writing a `z-index`, a `keydown` for a panel, a `<div>` inventory, or a limb bob, a shipped drop-in almost certainly exists (`usePanels`/`PanelHost`, `InventoryGrid`, `CharacterSheet`/`Paperdoll`, `PartMotionRig`, `EntityPreview`); games own the *skin*, not the re-derivation.
 2. Open `api.md` only when exact signatures or export inventory are needed.
 3. Open the linked reference only for a deeper recipe or trap.
 4. For how several primitives wire into a running loop, read the domain's `recipes/` — connected, genre-free walkthroughs organized by composition seam; this skill's own [recipes/minimal-game.md](recipes/minimal-game.md) is the default whole-game walkthrough. Prefer a recipe over reading a game's source; the games under `Games/*` are not templates or references, and a hybrid game is just a different composition of the same primitives.
@@ -55,3 +55,5 @@ If no capability fits, identify the upstream package seam before writing game-lo
 ## 4. Build and finish
 
 Keep scene coordinates in the editor document, state serializable, randomness injected, and hot-path work bounded. Use `jgengine-verify` for evidence appropriate to the change. Inside this monorepo, `workflow` owns issue/PR completion. Visual polish work also uses the `jgengine-ui` quality reference.
+
+**Required asset pass — completion is gated on real models.** A game is not done while its entities and props are still primitive markers or box placeholders when real models are available for them. Before claiming completion, run an asset pass: every placed entity has its `entityModels` set and every prop its `objectModels` set to real, resolved model refs — not primitive-shape markers. Scaffolds ship with `jgengine-assets` and `npx jgengine assets pull` installed but never auto-triggered, so this step is on you to run explicitly. `jgengine-assets` owns the how-to (sourcing, licensing, `assets pull`, catalog indexing, and resolving refs); load it for the workflow. If a game genuinely wants primitive shapes as its art direction, say so — otherwise unresolved markers/box props are unfinished, not a style.

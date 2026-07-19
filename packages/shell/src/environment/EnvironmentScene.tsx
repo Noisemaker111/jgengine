@@ -27,6 +27,7 @@ import {
   type TerrainField,
 } from "@jgengine/core/world/terrain";
 
+import { useDisposable } from "../render/useDisposable";
 import { GroundPad } from "./GroundPad";
 import { RoadJunctions } from "./RoadJunctions";
 import { RoadRibbons } from "./RoadRibbons";
@@ -76,8 +77,7 @@ function TexturedTerrainGround({
       texture.needsUpdate = true;
     }
   }, [textures]);
-  const material = useMemo(() => createTerrainDetailMaterial(detail, textures).material, [detail, textures]);
-  useEffect(() => () => material.dispose(), [material]);
+  const material = useDisposable(() => createTerrainDetailMaterial(detail, textures).material, [detail, textures]);
   return (
     <CarvedTerrain
       field={layout.field}

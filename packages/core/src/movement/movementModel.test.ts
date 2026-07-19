@@ -215,6 +215,28 @@ describe("resolveObstacleStep", () => {
     const narrow: CollisionObstacle[] = [{ position: [0, 0, 0] }];
     expect(resolveObstacleStep([1.5, 0, -1], 0, 0.5, narrow).stepZ).toBeCloseTo(0.5, 10);
   });
+
+  test("a capsule wedged inside a box escapes along the shallowest face instead of locking", () => {
+    // A 4m×4m building (half-extents 2) with the player buried near its −X face. Axis clamping alone
+    // returns zero on both axes (every step keeps the target inside), trapping the player forever.
+    const building: CollisionObstacle[] = [{ position: [0, 0, 0], halfExtents: [2, 2, 2] }];
+    const escaped = resolveObstacleStep([-1.6, 0, 0.2], 0, 0, building);
+    // Nearest face is −X (penetration 0.4 + radius 0.3 = 0.7), so the escape shoves out along −X only.
+    expect(escaped.stepX).toBeLessThan(0);
+    expect(escaped.stepZ).toBeCloseTo(0, 10);
+    // The escape clears the inflated box: the capsule center lands at/outside minX = −2.3.
+    expect(-1.6 + escaped.stepX).toBeLessThanOrEqual(-2.3 + 1e-6);
+  });
+
+  test("resting exactly on a solid face does not trigger a depenetration nudge", () => {
+    // Landing on the inflated face is where the slide clamp naturally stops; it must read as contact,
+    // not penetration, so the player can keep pressing/sliding without being sprung back.
+    const box: CollisionObstacle[] = [{ position: [0, 0, 0] }];
+    // Inflated box spans [-0.8, 0.8]; sit the player exactly on the +X face and push back into it.
+    const held = resolveObstacleStep([0.8, 0, 0], -0.5, 0.5, box);
+    expect(held.stepX).toBeCloseTo(0, 10);
+    expect(held.stepZ).toBeCloseTo(0.5, 10);
+  });
 });
 
 describe("constrainStepToAxis", () => {

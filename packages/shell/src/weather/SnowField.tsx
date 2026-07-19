@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { useDisposable } from "../render/useDisposable";
 import { createWeatherQuadGeometry } from "./weatherGeometry";
 import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
@@ -49,8 +49,8 @@ export function SnowField({
 }: SnowFieldProps) {
   const { camera } = useThree();
   const shared = useWeatherUniformSet({ wind, timeScale });
-  const geometry = useMemo(() => createWeatherQuadGeometry(count, seed), [count, seed]);
-  const material = useMemo(() => {
+  const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
+  const material = useDisposable(() => {
     const uniforms = {
       uTime: shared.time,
       uWind: shared.wind,
@@ -138,14 +138,6 @@ export function SnowField({
     (uniforms.uColor.value as THREE.Color).set(color);
     geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
   });
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   return (
     <mesh
