@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 import { runCreate } from "../create";
+import { runFind } from "../find";
 import { renderRecipe, renderRecipeList } from "../recipes";
 import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
@@ -44,6 +45,9 @@ usage: jgengine <command> [...args]
   editor [dir]          open the standalone 3D scene editor on a folder (default cwd) —
                         loads its editor.scene.json + models, Ctrl+S writes back
                         [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]
+  find <intent>         search what the engine already ships by intent (e.g. "toggleable window",
+                        "inventory", "minimap") → the drop-in primitive + its import. Reach for
+                        this before hand-rolling a HUD/inventory/window/rig — most already exist.
   recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
@@ -167,6 +171,9 @@ const [command, ...rest] = process.argv.slice(2);
 switch (command) {
   case "create":
     process.exit(runCreate(rest));
+    break;
+  case "find":
+    process.exit(runFind(rest));
     break;
   case "recipe":
     process.exit(runRecipe(rest));
