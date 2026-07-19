@@ -32,7 +32,16 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- Editor RPC/CLI verb `add_path` (`@jgengine/editor`): author a new path/route into the scene
+  document from an ordered list of ≥2 `{x,z}` (optional `y`) points in one call, without an
+  `export_document`/`import_document` roundtrip. `kind` defaults to `route`; `meta` is schema-validated
+  like `set_path`, and a colliding `id` re-ids in the document-global namespace.
+
 ### Changed
+
+- `import_document` (`@jgengine/editor`) now answers a missing or mis-keyed document param with an
+  error naming the expected `json` param instead of surfacing a raw `JSON Parse error: Unexpected
+  identifier "undefined"`.
 
 ### Removed
 
