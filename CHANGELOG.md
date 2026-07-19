@@ -38,6 +38,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Coach-marks / tutorial hints.** `@jgengine/core/ui/coachMarks`' `createCoachMarkSequence` is a genre-agnostic
+  onboarding model: an ordered list of `CoachMarkStep`s (title, body, optional `anchor`/`placement`, and a data-first
+  string `condition`), a persisted "seen" set so completed hints never re-show, condition-gating via `satisfy`/
+  `setSatisfied`, `current`/`advance`/`dismiss`/`skipAll`, `isComplete`/`remaining`, `subscribe`, and serializable
+  `snapshot`/`restore`. New `@jgengine/react`: `useCoachMarks` plus `CoachMark` and `CoachMarkHost` (anchored or
+  centered callout with an "N of M" counter, a dimmed spotlight backdrop, Next/Skip, and a `CoachMarkTheme` reskin).
+  New `coach-marks` demo.
 - **Fast-travel network.** `@jgengine/core/world/fastTravel`' `createFastTravelNetwork` is a genre-agnostic
   discovered-destinations model: game-defined `TravelPointDef`s (world-XZ position, region, icon, `initial`)
   with per-player discovery tracking — `discover`, `isDiscovered`, distance-sorted `list(from)` and

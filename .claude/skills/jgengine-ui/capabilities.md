@@ -73,6 +73,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
+## coach-mark — single onboarding callout — title/body, N-of-M counter, Next + Skip controls, theme-reskinnable
+
+- `CoachMark` (function) · `import { CoachMark } from "@jgengine/react"`
+
+## coach-mark-host — full-screen onboarding coach-mark host — anchored/centered callout, dimmed spotlight backdrop, Next/Skip wired to the sequence
+
+- `CoachMarkHost` (function) · `import { CoachMarkHost } from "@jgengine/react"`
+
+## coach-marks — ordered, gated, persist-once onboarding coach-marks/tutorial callouts — anchored or centered steps with a seen set and Next/Skip
+
+- `createCoachMarkSequence` (function) · `import { createCoachMarkSequence } from "@jgengine/core/ui"`
+
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
@@ -373,6 +385,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+
+## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
+
+- `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
 
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
