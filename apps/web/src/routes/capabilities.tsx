@@ -69,12 +69,14 @@ export const moon = world({
       "A per-world entity store you spawn into and tick. State serializes cleanly and scales to many entities and many players — no module-global maps.",
     filename: "loop.ts",
     code: `export function onNewPlayer(ctx: GameContext) {
-  ctx.scene.entity.spawn(PLAYER, { id: ctx.player.userId, position: SPAWN });
+  ctx.scene.entity.spawn("player", { id: ctx.player.userId, position: SPAWN });
 }
 
 export function onTick(ctx: GameContext, dt: number) {
-  for (const mob of ctx.scene.entity.all("mob")) {
-    mob.position.x += mob.velocity.x * dt;
+  for (const mob of ctx.scene.entity.list()) {
+    if (mob.role !== "npc") continue;
+    const [x, y, z] = mob.position;
+    ctx.scene.entity.setPose(mob.id, { position: [x + mob.velocity[0] * dt, y, z], dt });
   }
 }`,
   },
@@ -85,13 +87,20 @@ export function onTick(ctx: GameContext, dt: number) {
     blurb:
       "Cast runners, resource meters, auto-target, projectiles, and a death system — feel and resistance included. Opt in per game; a puzzle game never carries it.",
     filename: "combat.ts",
-    code: `import { createAbilityKit } from "@jgengine/core/combat/abilities";
+    code: `import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
 import { createDeathSystem } from "@jgengine/core/combat/death";
 
-const abilities = createAbilityKit({
-  fireball: { cost: 20, cooldown: 1.5, cast: 0.4, range: 30 },
-});
-const death = createDeathSystem({ onDeath: (e) => dropLoot(e) });`,
+const abilities = createAbilityKit([
+  { id: "fireball", cooldownMs: 1500, resourceCost: 20, castType: "projectile" },
+]);
+// canCast/cast track cooldowns, charges, and resource spend for you
+if (abilities.canCast("fireball").ok) abilities.cast("fireball");
+
+const death = createDeathSystem({
+  resolveOnDeath: (id) => ({ drops: "goblin-loot" }),
+  resolveIdentity, loot, events,
+  despawn: (id) => scene.entity.despawn(id),
+});`,
   },
   {
     glyph: "🌐",
@@ -116,7 +125,6 @@ const backend = createWsBackend({
       "Author paths, foliage, and gameplay spots in the 3D editor, save editor.scene.json, and drape it at runtime — the render and the gameplay read the same document.",
     filename: "Scene.tsx",
     code: `import { AuthoredScene } from "@jgengine/shell/scene";
-import { resolveScatter } from "@jgengine/core/world/scatterRegion";
 
 <AuthoredScene document={doc} field={ctx.world.ground} />;
 // Enemy waypoints and tower plots derive from the same doc —
@@ -133,8 +141,9 @@ import { resolveScatter } from "@jgengine/core/world/scatterRegion";
 
 function Hud() {
   const gold = useCurrency("gold");
-  const fireball = useAbilitySlot("fireball");
-  return <HudPanel anchor="top-right">{gold} · {fireball.cooldown}</HudPanel>;
+  const fireball = useAbilitySlot(abilities, "fireball");
+  const cd = Math.ceil((fireball?.cooldownRemainingMs ?? 0) / 1000);
+  return <HudPanel anchor="top-right">{gold} · {cd}s</HudPanel>;
 }`,
   },
   {
