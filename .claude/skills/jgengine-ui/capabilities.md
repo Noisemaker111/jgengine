@@ -109,6 +109,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
 
+## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
+
+- `useDebouncedCommit` (function) · `import { useDebouncedCommit } from "@jgengine/react"`
+
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`

@@ -584,6 +584,7 @@
     "./store",
     "./talentTree",
     "./timerReadout",
+    "./useDebouncedCommit",
     "./voice"
   ],
   "@jgengine/convex": [
@@ -672,6 +673,7 @@
     "./drivers/FrameDriver",
     "./drivers/HudOnlyDriver",
     "./environment",
+    "./environment/DayNightSky",
     "./environment/Daylight",
     "./environment/EnvironmentScene",
     "./environment/GroundPad",

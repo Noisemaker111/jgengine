@@ -153,6 +153,9 @@ bun run gate → packages/assets src/cli/pull.test.ts failed once in the full te
 
 bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — computed manifest has ./previewFixtures and ./harness subpaths missing from the committed manifest (likely #1336 landed without regenerating it); gate is red for every branch until regenerated
 
+2026-07-19T18:22:26.329Z — claude-opus — Claude
+
+capturing before/after terrain shots → 'bun run drive --shot' rejects an absolute path with a hard error (takes a bare name, output forced to shots/<game>-<name>.png), while 'bun run shoot --out' accepts a full path — the two capture entrypoints disagree on how you name the output file
 2026-07-19T18:26:23.894Z — claude-fable-5 — Claude
 
 running bun run gate for a touch-controls PR → gate is red on main itself: check-game-shape flags Games/vice-isle/src/editorKinds.ts(+test) from merged #1369 as off-shape, masking my own results; the offending PR landed without gate catching it
