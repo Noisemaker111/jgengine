@@ -566,7 +566,21 @@ export {
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
-export { buildRoadRibbon, dashSegments } from "./world/roads";
+export {
+  GROUND_DECAL_LAYERS,
+  buildJunctionSurface,
+  buildRoadRibbon,
+  buildTrimmedIntersections,
+  dashSegments,
+  trimPathAtJunctions,
+  type IntersectionStreet,
+  type JunctionApproach,
+  type JunctionGeometryOptions,
+  type RoadCut,
+  type RoadJunctionInput,
+  type TrimmedIntersections,
+  type TrimmedRoad,
+} from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
 export {
   CITY_BUILDING_BUDGET,
