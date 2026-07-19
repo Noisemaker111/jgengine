@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import {
   bestRaceStore,
@@ -18,6 +19,7 @@ import { vehicleById } from "./game/entities/vehicles/catalog";
 import { advanceBustedHold, BUSTED_HOLD_SEC, BUSTED_RADIUS, bustedFine, clinicFee } from "./game/failStates";
 import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
 import { onBountyKilled, tickBounties } from "./game/jobs/bounties";
+import { resetStashRuntime, tickStashes } from "./game/jobs/stashes";
 import { loadouts } from "./game/loadouts";
 import { CRED_BY_QUEST, grantCred, RACE_WIN_CRED } from "./game/progression/cred";
 import { QUESTS } from "./game/quests/catalog";
@@ -48,6 +50,18 @@ let kingpinSpawned = false;
 let bustedHold = 0;
 let raceSettled = false;
 let raceClearAt = 0;
+
+/**
+ * Publish the shell's run phase from the one gate the UI already reads (`startedStore`):
+ * on the title screen the game is at `menu`, live it is `playing`. This is what hides the
+ * shell's on-screen touch controls until play actually begins — without it the phase
+ * defaults to `playing` and the mobile dock paints over the main menu. Idempotent: only
+ * writes on an actual transition so it never thrashes the world signal (and autosave).
+ */
+function syncPhase(ctx: GameContext): void {
+  const desired = startedStore.read(ctx) === true ? "playing" : "menu";
+  if (gamePhase(ctx) !== desired) setGamePhase(ctx, desired);
+}
 
 export function resetMissionState(): void {
   convoyTimer = 0;
@@ -343,6 +357,7 @@ export function normalizeAfterRestore(ctx: GameContext): void {
   ctx.camera.follow(ctx.player.userId);
   ctx.camera.setChaseTuning(null);
   continueStore.write(ctx, true);
+  syncPhase(ctx);
 }
 
 async function resumeFromSave(ctx: GameContext): Promise<void> {
@@ -355,6 +370,7 @@ async function resumeFromSave(ctx: GameContext): Promise<void> {
 function onInit(ctx: GameContext): void {
   resetWeaponState();
   resetMissionState();
+  resetStashRuntime();
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
   for (const table of lootTables) ctx.game.loot.register(table);
@@ -402,6 +418,9 @@ function onNewPlayer(ctx: GameContext): void {
     ctx.player.applyLoadout(ctx.player.userId, "starterKit");
     ctx.game.quest!.grant(ctx.player.userId, "m1_welcome");
   }
+  // Boot at the title screen (menu phase) so the shell's touch dock stays hidden;
+  // `game.start` and a restored session flip it to `playing`.
+  syncPhase(ctx);
   void resumeFromSave(ctx);
 }
 
@@ -411,6 +430,7 @@ function onTick(ctx: GameContext, dt: number): void {
   tickMissions(ctx);
   tickMissionSpawns(ctx, dt);
   tickBounties(ctx);
+  tickStashes(ctx);
   tickRaceEconomy(ctx);
   tickBusted(ctx, dt);
   tickPedPanic(ctx, dt);

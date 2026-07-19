@@ -19,7 +19,7 @@ export interface RuntimeSaveTarget {
   subscribe(listener: () => void): () => void;
 }
 
-/** `"autosave"` writes a fresh capture on a debounce after any world change; `"manual"` writes only on an explicit `save()`/`checkpoint()` — the save-point / quest-trigger model. */
+/** `"autosave"` writes a fresh capture on a trailing timer while the world changes (at most once per `autosaveMs`, so a never-idle world still persists); `"manual"` writes only on an explicit `save()`/`checkpoint()` — the save-point / quest-trigger model. */
 export type RuntimeSaveMode = "autosave" | "manual";
 
 /** How {@link createRuntimeSave} is wired — the live world `target`, the `backend` it persists through, and optional mode/slot/versioning/cadence knobs. */
@@ -37,7 +37,7 @@ export interface RuntimeSaveConfig {
   /** Save-format version; bump + pass {@link migrate} on a breaking world-shape change. */
   version?: number;
   migrate?: (data: unknown, fromVersion: number) => WorldSnapshot;
-  /** Debounce for `autosave` mode. Default `3000`. */
+  /** Trailing autosave interval (ms) for `autosave` mode — the world persists at most once per interval and always within one interval of its first unsaved change. Default `3000`. */
   autosaveMs?: number;
   now?: () => number;
   timers?: SaveTimers;
@@ -51,7 +51,7 @@ export type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target">;
  * Whole-world save/load bound to a live world and a pluggable backend. `save()`
  * captures `target.snapshot()` and writes it; `load()` reads it back and
  * `target.hydrate()`s the whole world. In `autosave` mode it also writes on a
- * debounce after any change. Named slots, versioned migration, and offline↔cloud
+ * trailing timer while the world keeps changing. Named slots, versioned migration, and offline↔cloud
  * (backend swap) all come for free from the underlying save store.
  */
 export interface RuntimeSave {
@@ -133,9 +133,18 @@ export function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave {
     return store.save();
   }
 
+  /**
+   * Arm a trailing autosave. A living world (AI, physics, the day/night clock)
+   * changes every frame, so a debounce that *reset* its timer on every change
+   * would never elapse and the game would never persist — the timer would be
+   * pushed forward faster than it could fire. Instead the first change since the
+   * last write arms a single timer and later changes ride that same timer; when
+   * it fires it captures the latest snapshot. The result is at most one write per
+   * `autosaveMs`, and always within `autosaveMs` of the first unsaved change,
+   * even while the world never stops moving.
+   */
   function scheduleAutosave(): void {
-    if (disposed || restoring) return;
-    clearTimer();
+    if (disposed || restoring || pendingTimer !== null) return;
     pendingTimer = timers.set(() => {
       pendingTimer = null;
       void persist();

@@ -21,7 +21,8 @@ export const game = defineGame({
   inventories,
   input: keybinds,
   server: { mode: "openworld" },
-  save: "none",
+  // Offline whole-world save: autosaves cash, cred, quests, inventory, safehouse, best lap,
+  // and the player's position to localStorage; restored behind the title's Continue.
   persist: true,
   content,
   loop,

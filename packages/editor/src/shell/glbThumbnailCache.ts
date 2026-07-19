@@ -34,6 +34,17 @@ const cache = new Map<string, CacheEntry>();
 const queue: string[] = [];
 let active = 0;
 
+/** Shared idle snapshot — one stable identity for every "no thumbnail yet" case. */
+const IDLE_STATE: ThumbnailState = { status: "idle", dataUrl: null };
+/**
+ * Last snapshot handed out per URL. `getGlbThumbnailState` is the `getSnapshot`
+ * for `useSyncExternalStore`, which requires a referentially stable result while
+ * the underlying state is unchanged: returning a fresh object literal every call
+ * makes React's post-commit consistency check ("Maximum update depth exceeded")
+ * fire forever. We reuse the prior object until status/dataUrl actually changes.
+ */
+const snapshots = new Map<string, ThumbnailState>();
+
 let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
@@ -55,6 +66,7 @@ export function resetGlbThumbnailLoader(): void {
 /** @internal Clear cache + dispose GPU resources (tests / hot dispose). */
 export function clearGlbThumbnailCache(): void {
   cache.clear();
+  snapshots.clear();
   queue.length = 0;
   active = 0;
   disposeRenderer();
@@ -173,6 +185,7 @@ function evictIfNeeded(): void {
   for (const [key, entry] of cache) {
     if (entry.status !== "ready") continue;
     cache.delete(key);
+    snapshots.delete(key);
     if (cache.size <= MAX_CACHE) return;
   }
 }
@@ -235,12 +248,31 @@ function pump(): void {
  * @internal
  */
 export function getGlbThumbnailState(url: string | undefined): ThumbnailState {
-  if (url === undefined || url.length === 0) return { status: "idle", dataUrl: null };
+  if (url === undefined || url.length === 0) return IDLE_STATE;
   const entry = cache.get(url);
-  if (entry === undefined) return { status: "idle", dataUrl: null };
-  if (entry.status === "ready") return { status: "ready", dataUrl: entry.dataUrl };
-  if (entry.status === "error") return { status: "error", dataUrl: null };
-  return { status: "loading", dataUrl: null };
+  if (entry === undefined) {
+    snapshots.delete(url);
+    return IDLE_STATE;
+  }
+  const prev = snapshots.get(url);
+  // Reuse the prior snapshot object whenever the observable state is unchanged so
+  // useSyncExternalStore sees a stable reference (no infinite re-render loop).
+  if (entry.status === "ready") {
+    if (prev !== undefined && prev.status === "ready" && prev.dataUrl === entry.dataUrl) return prev;
+    const next: ThumbnailState = { status: "ready", dataUrl: entry.dataUrl };
+    snapshots.set(url, next);
+    return next;
+  }
+  if (entry.status === "error") {
+    if (prev !== undefined && prev.status === "error") return prev;
+    const next: ThumbnailState = { status: "error", dataUrl: null };
+    snapshots.set(url, next);
+    return next;
+  }
+  if (prev !== undefined && prev.status === "loading") return prev;
+  const next: ThumbnailState = { status: "loading", dataUrl: null };
+  snapshots.set(url, next);
+  return next;
 }
 
 /**

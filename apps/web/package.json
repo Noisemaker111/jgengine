@@ -18,13 +18,15 @@
     "@tanstack/react-start": "^1.121.0",
     "nitro": "^3.0.260610-beta",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.15",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "19.2.3",
+    "@types/three": "^0.182.0",
     "@vitejs/plugin-react": "^6.0.3",
     "tailwindcss": "^4.0.15",
     "typescript": "^5",

@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { handrollOf } from "./handroll";
 import { vehicleById } from "./entities/vehicles/catalog";
@@ -62,6 +63,8 @@ export function registerCommands(ctx: GameContext): void {
     apply(state) {
       if (startedStore.read(state) === true) return;
       startedStore.write(state, true);
+      // Live now: the shell reveals the on-screen touch controls only in the `playing` phase.
+      setGamePhase(state, "playing");
       // Continuing a save drops straight back into play; the flyover is a first-run intro.
       if (continueStore.read(state) === true) return;
       const player = state.scene.entity.get(state.player.userId);

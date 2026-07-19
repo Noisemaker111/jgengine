@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { bestRaceStore, continueStore, safehouseStore, startedStore } from "./commands";
+import { bestRaceStore, continueStore, registerCommands, safehouseStore, startedStore } from "./commands";
 import { content } from "./content";
 import { normalizeAfterRestore } from "../loop";
 import { grantCred } from "./progression/cred";
@@ -65,6 +66,18 @@ describe("vice-isle whole-world save", () => {
     normalizeAfterRestore(ctx);
     expect(startedStore.read(ctx)).not.toBe(true);
     expect(continueStore.read(ctx)).toBe(true);
+  });
+
+  test("the run phase gates the shell touch dock: menu on the title, playing once started", () => {
+    const ctx = bootContext(memorySaveBackend());
+    ctx.scene.entity.spawn("street_runner", { id: "p1", position: [0, 0, 0], role: "player" });
+    registerCommands(ctx);
+    // A fresh title screen must report `menu` so the shell hides the on-screen touch
+    // controls instead of painting the mobile dock over the main menu.
+    normalizeAfterRestore(ctx);
+    expect(gamePhase(ctx)).toBe("menu");
+    ctx.game.commands.run("game.start", {});
+    expect(gamePhase(ctx)).toBe("playing");
   });
 
   test("a restore keeps an already-live session live so shoot --mode play does not bounce to the menu", () => {

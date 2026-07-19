@@ -14,10 +14,12 @@ import {
   RACE_ROUTES,
   ROADS,
   SAFEHOUSE_POS,
+  STASH_SPOTS,
   districtAt,
 } from "../../world/districts";
 import { safehouseStore } from "../../commands";
 import { bountyStore } from "../../jobs/bounties";
+import { stashStore } from "../../jobs/stashes";
 import { raceStore, wantedStore } from "../../handroll";
 
 const SIZE = 176;
@@ -33,6 +35,7 @@ interface MapSnapshot {
   raceRouteId: string | null;
   bountySpotId: string | null;
   safehouseOwned: boolean;
+  stashesCollected: readonly string[];
 }
 
 function readMap(ctx: GameContext): MapSnapshot | null {
@@ -57,6 +60,7 @@ function readMap(ctx: GameContext): MapSnapshot | null {
     raceRouteId: race !== undefined && race.active ? race.routeId : null,
     bountySpotId: bounty?.targetId !== null && bounty?.targetId !== undefined ? (bounty.spotId ?? null) : null,
     safehouseOwned: safehouseStore.read(ctx) === true,
+    stashesCollected: stashStore.read(ctx) ?? [],
   };
 }
 
@@ -108,6 +112,18 @@ export function CityMinimap() {
       radius: 5,
       strokeColor: "#000",
       strokeWidth: 1.5,
+    });
+  }
+  const collectedStashes = new Set(snapshot.stashesCollected);
+  for (const stash of STASH_SPOTS) {
+    if (collectedStashes.has(stash.id)) continue;
+    markers.push({
+      id: `stash-${stash.id}`,
+      position: [stash.position[0], stash.position[2]],
+      color: "#38d6c4",
+      radius: 3,
+      strokeColor: "#0b2a2a",
+      strokeWidth: 1,
     });
   }
   if (snapshot.safehouseOwned) {

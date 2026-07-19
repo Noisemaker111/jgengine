@@ -1,23 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { generateCity, type GeneratedCity } from "@jgengine/core/world/cityGenerator";
 import { generateStreets, type StreetNetwork, type StreetNetworkRules } from "@jgengine/core/world/streetGenerator";
 import { Page, PageHero } from "../components/Layout";
+import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/playground")({
   head: () =>
     seo({
-      title: "Playground — grow a city or a race circuit from one seed",
+      title: "Playground — grow a 3D city or a race circuit from one seed",
       description:
-        "Live in-browser street generator: drag the sliders and watch a whole city street net or a closed race circuit regrow deterministically from a seed — the same engine JGengine's editor bakes into scene documents.",
+        "Live in-browser street generator: drag the sliders and watch a whole 3D city — streets, building lots, traffic — or a closed race circuit regrow deterministically from a seed. The same engine JGengine's editor bakes into scene documents.",
       path: "/playground",
     }),
   component: Playground,
 });
 
 type Mode = "city" | "circuit";
+type View = "3d" | "map";
 
 interface Dials {
   seed: string;
@@ -116,7 +118,7 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
   const toX = (x: number) => x + view / 2;
   const toZ = (z: number) => z + view / 2;
   return (
-    <svg viewBox={`0 0 ${view} ${view}`} className="h-full w-full rounded-2xl border border-white/[0.08] bg-[#0b1017]">
+    <svg viewBox={`0 0 ${view} ${view}`} className="h-full w-full">
       {network.streets.map((street, i) => (
         <polyline
           key={`s${i}`}
@@ -183,7 +185,12 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
 
 function Playground() {
   const [mode, setMode] = useState<Mode>("city");
+  const [view, setView] = useState<View>("3d");
   const [dials, setDials] = useState<Dials>(DEFAULTS);
+  const [worldReady, setWorldReady] = useState(false);
+  const viewerHost = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<PlaygroundWorldHandle | null>(null);
+  const builtOnce = useRef(false);
   const set = (patch: Partial<Dials>) => setDials((d) => ({ ...d, ...patch }));
 
   const result = useMemo(() => {
@@ -214,6 +221,48 @@ function Playground() {
     return { network: city.network, city };
   }, [mode, dials]);
 
+  // Boot the 3D viewer once (client-only; three.js loads lazily).
+  useEffect(() => {
+    const host = viewerHost.current;
+    if (host === null) return;
+    let cancelled = false;
+    void import("../live/playgroundWorld")
+      .then(({ createPlaygroundWorld }) => {
+        if (cancelled) return;
+        worldRef.current = createPlaygroundWorld(host);
+        setWorldReady(true);
+      })
+      .catch(() => {
+        setView("map");
+      });
+    return () => {
+      cancelled = true;
+      worldRef.current?.dispose();
+      worldRef.current = null;
+    };
+  }, []);
+
+  // Rebuild the 3D model on every regeneration. The first build grows in;
+  // slider drags rebuild instantly so the feedback stays immediate.
+  useEffect(() => {
+    if (!worldReady) return;
+    const world = worldRef.current;
+    if (world === null) return;
+    const city = result.city ?? { network: result.network, lots: [] };
+    world.setCity(city, {
+      seed: dials.seed,
+      heightScale: mode === "circuit" ? 0.5 : 1,
+      animate: !builtOnce.current,
+    });
+    builtOnce.current = true;
+    // Screenshot tooling (jgengine-verify) waits for this flag; give the
+    // first build's grow animation time to settle before declaring ready.
+    const readyTimer = window.setTimeout(() => {
+      document.documentElement.dataset.jgCapture = "ready";
+    }, 3400);
+    return () => window.clearTimeout(readyTimer);
+  }, [worldReady, result, mode, dials.seed]);
+
   const rpc =
     mode === "circuit"
       ? `{"method":"generate_streets","seed":"${dials.seed}","mode":"circuit","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"winding":${dials.winding},"segmentLength":${dials.segmentLength}}}`
@@ -224,7 +273,7 @@ function Playground() {
       <PageHero
         eyebrow="Playground"
         title="Grow a city — or a race circuit — from one seed"
-        blurb="This is the live street generator that ships in @jgengine/core. Every drag regrows the whole network deterministically: same seed and sliders, same city, in the browser, in the editor, and in a shipped game."
+        blurb="This is the live street generator that ships in @jgengine/core, rendered in full 3D: streets, frontage building lots, traffic. Every drag regrows the whole city deterministically — same seed and sliders, same city, in the browser, in the editor, and in a shipped game."
       />
       <div className="mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]">
         <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5">
@@ -295,8 +344,43 @@ function Playground() {
             </code>
           </div>
         </div>
-        <div className="min-h-[420px] lg:min-h-[560px]">
-          <StreetsSvg network={result.network} city={result.city} size={dials.size} />
+        <div className="relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1017] lg:min-h-[560px]">
+          <div
+            ref={viewerHost}
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              view === "3d" && worldReady ? "opacity-100" : "opacity-0"
+            } ${view === "3d" ? "" : "hidden"}`}
+            aria-label="3D city preview"
+          />
+          {view === "map" && (
+            <div className="absolute inset-0">
+              <StreetsSvg network={result.network} city={result.city} size={dials.size} />
+            </div>
+          )}
+          {view === "3d" && !worldReady && (
+            <p className="absolute inset-0 grid place-items-center font-mono text-xs text-slate-600">
+              loading three.js…
+            </p>
+          )}
+          <div className="absolute right-3 top-3 flex gap-1 rounded-full border border-white/10 bg-ink/80 p-1 backdrop-blur-sm">
+            {(["3d", "map"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`rounded-full px-3 py-1 font-mono text-xs uppercase transition ${
+                  view === v ? "bg-emerald-400/15 text-emerald-300" : "text-slate-500 hover:text-slate-200"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          {view === "3d" && (
+            <p className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] text-slate-600">
+              drag to orbit · scroll to zoom
+            </p>
+          )}
         </div>
       </div>
     </Page>

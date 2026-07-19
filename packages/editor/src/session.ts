@@ -73,8 +73,18 @@ export type EditorBridgeRequest =
   | { method: "apply_preset"; id: string; preset: string }
   | { method: "select"; ids: string[] }
   | { method: "clear_selection" }
-  | { method: "camera_goto"; id?: string; x?: number; y?: number; z?: number }
-  | { method: "camera_frame" }
+  | {
+      method: "camera_goto";
+      id?: string;
+      x?: number;
+      y?: number;
+      z?: number;
+      distance?: number;
+      pitch?: number;
+      yaw?: number;
+      height?: number;
+    }
+  | { method: "camera_frame"; distance?: number; pitch?: number; yaw?: number; height?: number }
   | { method: "scene_summary" }
   | { method: "export_document" }
   | { method: "import_document"; json: string }
@@ -293,6 +303,26 @@ export interface EditorPerfSample {
   phases?: readonly { name: string; avgMs: number }[];
 }
 
+/**
+ * Where the editor orbit camera looks, plus optional placement so a single `camera_goto`/
+ * `camera_frame` can compose an aerial. `x/y/z` is the orbit target (pan-only when that is all that
+ * is set — the historical behavior); `distance`, `pitch` (degrees above the horizon), `yaw`
+ * (degrees), and `height` reposition the camera around that target when provided.
+ */
+export interface EditorFocusTarget {
+  x: number;
+  y: number;
+  z: number;
+  /** Radial distance from the target to the camera, world units. */
+  distance?: number;
+  /** Elevation above the horizon, degrees (90 = straight-down aerial). */
+  pitch?: number;
+  /** Azimuth around the target, degrees. */
+  yaw?: number;
+  /** Explicit camera height above the target; overrides the pitch-derived height. */
+  height?: number;
+}
+
 /** The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC. */
 export interface EditorHostApi {
   gameId: string;
@@ -302,9 +332,9 @@ export interface EditorHostApi {
   getVisibility(): EditorKindVisibility;
   setVisibility(next: EditorKindVisibility): void;
   subscribeVisibility(listener: () => void): () => void;
-  getFocusTarget(): { x: number; y: number; z: number } | null;
-  setFocusTarget(target: { x: number; y: number; z: number } | null): void;
-  subscribeFocus(listener: (target: { x: number; y: number; z: number } | null) => void): () => void;
+  getFocusTarget(): EditorFocusTarget | null;
+  setFocusTarget(target: EditorFocusTarget | null): void;
+  subscribeFocus(listener: (target: EditorFocusTarget | null) => void): () => void;
   getAssets(): readonly EditorAssetInfo[];
   setAssets(assets: readonly EditorAssetInfo[]): void;
   getCatalogDefinitions(): readonly EditorCatalogDefinition[];
@@ -370,14 +400,14 @@ export function createEditorHost(options: {
     liveSync.replaceDocument(state.document);
   });
   let visibility: EditorKindVisibility = {};
-  let focusTarget: { x: number; y: number; z: number } | null = null;
+  let focusTarget: EditorFocusTarget | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
   let perf: EditorPerfSample | null = null;
   let terrainSampler: TerrainField | null = null;
   let mode: EditorRunMode = "edit";
   let playControl: RuntimePlayControl = createRuntimePlayControl(false);
   const visibilityListeners = new Set<() => void>();
-  const focusListeners = new Set<(target: { x: number; y: number; z: number } | null) => void>();
+  const focusListeners = new Set<(target: EditorFocusTarget | null) => void>();
   const modeListeners = new Set<(mode: EditorRunMode) => void>();
   const playControlListeners = new Set<(play: RuntimePlayControl) => void>();
 

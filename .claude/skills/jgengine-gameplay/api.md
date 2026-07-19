@@ -264,6 +264,16 @@
 - `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 
+## @jgengine/core/game/achievements
+
+- `AchievementDef` (interface): interface AchievementDef — Definition of one achievement. Content-agnostic — the game supplies names, targets, and icons.
+- `AchievementSnapshot` (interface): interface AchievementSnapshot — Whole serializable state of a tracker — drop into a save blob.
+- `AchievementTracker` (interface): interface AchievementTracker — Live achievement state over a fixed definition set — drives progress, unlocks, score, and a UI view list.
+- `AchievementTrackerOptions` (interface): interface AchievementTrackerOptions — Options for {@link createAchievementTracker}.
+- `AchievementUnlock` (interface): interface AchievementUnlock — Emitted the instant an achievement unlocks — wire to a toast, feed, or sound.
+- `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
+- `createAchievementTracker` (function): function createAchievementTracker(options: AchievementTrackerOptions): AchievementTracker — Tracks achievement/trophy unlocks over caller-driven events — counter goals (`progress`/`setProgress`) and boolean flags (`unlock`) — with score, completion, an `onUnlock` seam, and serializable `snapshot`/`restore`. State is plain data; the view list keeps a stable identity between changes so React can read it through `useSyncExternalStore` without re-projecting every frame.
+
 ## @jgengine/core/game/breeding
 
 - `BreedConfig` (interface): interface BreedConfig — Tuning for {@link breedOffspring}. Every field has an ARK-style default; all are optional.
@@ -899,6 +909,12 @@
 
 ## @jgengine/core/gameplay
 
+- `AchievementDef` (interface): interface AchievementDef — Definition of one achievement. Content-agnostic — the game supplies names, targets, and icons.
+- `AchievementSnapshot` (interface): interface AchievementSnapshot — Whole serializable state of a tracker — drop into a save blob.
+- `AchievementTracker` (interface): interface AchievementTracker — Live achievement state over a fixed definition set — drives progress, unlocks, score, and a UI view list.
+- `AchievementTrackerOptions` (interface): interface AchievementTrackerOptions — Options for {@link createAchievementTracker}.
+- `AchievementUnlock` (interface): interface AchievementUnlock — Emitted the instant an achievement unlocks — wire to a toast, feed, or sound.
+- `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
@@ -1239,6 +1255,7 @@
 - `countSetMembers` (function): function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number — Count how many parts (or tags) contribute to a set bonus on an identity.
 - `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
 - `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
+- `createAchievementTracker` (function): function createAchievementTracker(options: AchievementTrackerOptions): AchievementTracker — Tracks achievement/trophy unlocks over caller-driven events — counter goals (`progress`/`setProgress`) and boolean flags (`unlock`) — with score, completion, an `onUnlock` seam, and serializable `snapshot`/`restore`. State is plain data; the view list keeps a stable identity between changes so React can read it through `useSyncExternalStore` without re-projecting every frame.
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
 - `createAuctionBook` (function): function createAuctionBook(config: AuctionBookConfig): AuctionBook — Timed-bid auctions in the WoW/BDO auction-house mold: post an item with a start price, minimum increment, and optional buyout; bids escrow currency, outbid players are refunded into their collection box, bids near the close extend it (anti-snipe), and settlement pays the seller minus the house cut while the item lands in the winner's collection box. Unsold auctions return the goods to the seller's box. Wallet and inventory movement is the caller's job (mirrors `economy/listingBook`) — this primitive owns the auction lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented

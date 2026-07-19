@@ -401,7 +401,7 @@
 - `EditorBridgeResponse` (type): type EditorBridgeResponse = { ok: boolean; result?: unknown; error?: string; } — Result envelope returned by every editor host RPC call.
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
-- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
+- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
@@ -476,7 +476,7 @@
 
 ## @jgengine/editor/EditorCameraDriver
 
-- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
+- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
 
 ## @jgengine/editor/EditorChrome
 
@@ -561,6 +561,17 @@
 
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `StandaloneAsset` (interface): interface StandaloneAsset — Shared model-import helpers used by the standalone editor strip and the in-game Content Browser. Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
+
+## @jgengine/editor/camera/orbitFraming
+
+- `Bounds3` (interface): interface Bounds3 — Axis-aligned bounds as produced by `editorDocumentBounds`.
+- `FrameDistanceOptions` (interface): interface FrameDistanceOptions — Options for {@link frameDistanceForBounds}.
+- `OrbitFrameInput` (interface): interface OrbitFrameInput — Inputs to {@link orbitCameraPosition}.
+- `Vec3` (interface): interface Vec3 — A world-space point the orbit camera looks at.
+- `boundsCenter` (function): function boundsCenter(bounds: Bounds3): Vec3 — Center point of axis-aligned bounds.
+- `clampPitchDeg` (function): function clampPitchDeg(pitchDeg: number): number — Clamp a pitch to the horizon..straight-down range the orbit rig can express.
+- `frameDistanceForBounds` (function): function frameDistanceForBounds(bounds: Bounds3, options: FrameDistanceOptions = {}): number — Distance at which the camera fits the whole `bounds` region into its vertical FOV — the value `camera_frame` uses when a caller asks for an aerial but does not pin an explicit distance, so a district frames itself instead of burying the camera. Uses the region's XZ half-diagonal plus its vertical extent as the radius to cover.
+- `orbitCameraPosition` (function): function orbitCameraPosition(input: OrbitFrameInput): Vec3 — Camera position for an orbit rig framing `target` at the given distance, pitch, and yaw. Pitch is measured up from the horizon (90° = directly overhead); `height`, when provided, replaces the pitch-derived vertical offset. Pure: same inputs always yield the same position.
 
 ## @jgengine/editor/chromeFields
 
@@ -738,6 +749,7 @@
 - `EditorBridgeRequest` (type): type EditorBridgeRequest = | { method: "editor_status" } | { method: "set_mode"; mode: EditorRunMode } | { method: "perf_report" } | { method: "list_layers" } | { method: "list_catalogs" } | { method: "get_catalog_entry"; catalogId: string; entryId: string } | { method: "set_catalog_entry"; catalogI… — RPC request shapes the editor host understands, used by the MCP bridge and UI.
 - `EditorBridgeResponse` (type): type EditorBridgeResponse = { ok: boolean; result?: unknown; error?: string; } — Result envelope returned by every editor host RPC call.
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
+- `EditorFocusTarget` (interface): interface EditorFocusTarget — Where the editor orbit camera looks, plus optional placement so a single `camera_goto`/ `camera_frame` can compose an aerial. `x/y/z` is the orbit target (pan-only when that is all that is set — the historical behavior); `distance`, `pitch` (degrees above the horizon), `yaw` (degrees), and `height` reposition the camera around that target when provided.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
