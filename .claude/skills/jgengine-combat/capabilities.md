@@ -120,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
 
+## fire-cadence — a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam)
+
+- `createFireCadence` (function) · `import { createFireCadence } from "@jgengine/core/combat"`
+
 ## immunity-window — reject damage during a per-target invulnerability window installed by transitions
 
 - `createImmunityWindow` (function) · `import { createImmunityWindow } from "@jgengine/core/combat"`
@@ -211,3 +215,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
 
 - `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/combat"`
+
+## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
+
+- `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`
