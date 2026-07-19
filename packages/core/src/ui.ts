@@ -85,6 +85,12 @@ export {
   type HudViewportConfig,
 } from "./ui/hudScale";
 export {
+  orientationGateActive,
+  orientationHintActive,
+  resolveOrientationRequirement,
+  type LayoutOrientation,
+} from "./ui/orientation";
+export {
   closePanel,
   closeTopPanel,
   createPanelState,
@@ -96,16 +102,9 @@ export {
   panelByHotkey,
   togglePanel,
   type PanelDef,
-  type PanelMeta,
   type PanelPosition,
   type PanelState,
 } from "./ui/panelModel";
-export {
-  orientationGateActive,
-  orientationHintActive,
-  resolveOrientationRequirement,
-  type LayoutOrientation,
-} from "./ui/orientation";
 export {
   moveSelectionFocus,
   selectionWindow,
