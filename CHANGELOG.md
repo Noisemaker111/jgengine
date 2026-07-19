@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Countdown / timer HUD.** `@jgengine/core/time/timerSet`' `createTimerSet` is a serializable set of named
+  countdown/countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability
+  cooldown/charge (identical mechanics; `id`/labels are free strings the engine never interprets). Start, pause,
+  resume, stop, reset, and read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` per timer
+  (allocation-aware `read(id, out)`), observe structural changes via `subscribe` and expiry edges via
+  `poll`/`onExpire`, and `snapshot`/`restore` round-trip through a save. `@jgengine/react`'s `TimerReadout`
+  (live digital mm:ss/m:ss.d) and `TimerRing` (SVG radial fill/drain), plus the `useTimerRead` per-frame hook,
+  render it HudTheme-skinned — no hand-rolled interval math. See the `countdown-timer` dev demo.
 - **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
   serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
   (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a

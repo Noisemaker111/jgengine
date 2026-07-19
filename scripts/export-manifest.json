@@ -376,6 +376,7 @@
     "./time/serverTick",
     "./time/simClock",
     "./time/stateSchedule",
+    "./time/timerSet",
     "./turn/commit",
     "./turn/intent",
     "./turn/turnLoop",
@@ -567,6 +568,7 @@
     "./social",
     "./startScreen",
     "./store",
+    "./timerReadout",
     "./voice"
   ],
   "@jgengine/convex": [
