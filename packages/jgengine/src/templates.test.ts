@@ -30,6 +30,8 @@ const THIN_FILES = [
   "vite.config.ts",
   "package.json",
   "tsconfig.json",
+  ".gitignore",
+  "scripts/shoot.mjs",
   "AGENTS.md",
   "src/index.css",
   "src/style.css",
@@ -97,6 +99,21 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       };
       expect(pkg.scripts?.desktop).toBe("jgengine desktop");
       expect(pkg.scripts?.build).toBe("vite build");
+    });
+
+    test(`${variant}: ships a dependency-free WebGL screenshot script wired to a shoot command`, () => {
+      const files = render(variant);
+      const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
+      expect(pkg.scripts?.shoot).toBe("node scripts/shoot.mjs");
+      const script = fileOf(files, "scripts/shoot.mjs");
+      // No npm deps — only node: builtins and web globals.
+      expect(script).not.toContain("playwright");
+      expect(script).not.toContain("puppeteer");
+      // The two things that make WebGL capture reliable: a forced viewport and an honest-frame wait.
+      expect(script).toContain("Emulation.setDeviceMetricsOverride");
+      expect(script).toContain("Page.captureScreenshot");
+      // shots/ output is ignored so generated screenshots are never committed.
+      expect(fileOf(files, ".gitignore")).toContain("shots/");
     });
   }
 
