@@ -112,6 +112,12 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
       statPools: createEntityStatsApi((instanceId) => statsByInstance.get(instanceId)),
       getStat: weapon.getStat,
       spatial: combatSpatial,
+      resolveSlainIdentity(instanceId) {
+        const entity = entities.get(instanceId);
+        if (entity === null) return null;
+        // `entity.name` is the spawn kind/catalog id, matching the `entity.died` event.
+        return { catalogId: entity.name, name: entity.name };
+      },
       onLethal(instanceId, lethalCtx) {
         // Capture identity + onDeath *before* resolveDeath despawns the entity.
         const dyingEntity = entities.get(instanceId);

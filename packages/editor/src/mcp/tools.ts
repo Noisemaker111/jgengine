@@ -31,6 +31,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "set_transform", description: "Move a marker or volume center by id." },
   { name: "set_volume", description: "Patch a volume radius/height/center." },
   { name: "set_path", description: "Patch a path's kind/width/color/label and merge-patch its meta (studio sliders: scatter density, pole spacing, …). Validated against the kind schema." },
+  { name: "add_path", description: "Author a new path/route into the scene document from an ordered list of ≥2 {x,z} (optional y) points — the headless one-shot for placing a route without an export/import roundtrip. kind defaults to `route`; width/color/label/meta are optional and meta is validated against the kind schema. Re-ids on a document-global id collision." },
   { name: "set_marker", description: "Patch a marker's kind/color/label/rotationY and merge-patch its meta. Validated against the kind schema when registered." },
   { name: "set_note", description: "Patch a note's text and merge-patch its meta." },
   { name: "set_meta", description: "Merge-patch the meta bag of any document object (marker/volume/path/note) by id — the generic studio-slider primitive. Rejected if it violates the kind's param schema." },

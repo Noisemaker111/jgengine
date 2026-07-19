@@ -199,6 +199,59 @@ describe("effect system", () => {
     expect(lethalCalls).toHaveLength(1);
   });
 
+  test("a lethal hit carries the slain entity's identity, captured before despawn", () => {
+    const identityCalls: string[] = [];
+    const system = createEffectSystem({
+      resolveReceive: () => ({ damage: { order: ["health"] } }),
+      resolveStats: () => ({ health: createStatPool({ current: 10, max: 10 }) }),
+      getStat: () => null,
+      spatial: { inRadius: () => [], hasLineOfSight: () => true, positionOf: () => undefined },
+      resolveSlainIdentity(instanceId) {
+        identityCalls.push(instanceId);
+        return { catalogId: "goblin_warrior", name: "Goblin Warrior" };
+      },
+      // The death system would normally despawn here; identity must already be captured.
+      onLethal: () => {},
+    });
+
+    const [result] = system.applyEffect({
+      from: "player",
+      to: "enemy",
+      effect: "damage",
+      via: { amount: 99 },
+    });
+
+    expect(result?.lethal).toBe(true);
+    expect(result?.slain).toEqual({ catalogId: "goblin_warrior", name: "Goblin Warrior" });
+    expect(identityCalls).toEqual(["enemy"]);
+  });
+
+  test("a non-lethal hit omits slain identity and never asks for it", () => {
+    let asked = false;
+    const system = createEffectSystem({
+      resolveReceive: () => ({ damage: { order: ["health"] } }),
+      resolveStats: () => ({ health: createStatPool({ current: 100, max: 100 }) }),
+      getStat: () => null,
+      spatial: { inRadius: () => [], hasLineOfSight: () => true, positionOf: () => undefined },
+      resolveSlainIdentity() {
+        asked = true;
+        return { catalogId: "goblin_warrior" };
+      },
+    });
+
+    const [result] = system.applyEffect({
+      from: "player",
+      to: "enemy",
+      effect: "damage",
+      via: { amount: 10 },
+    });
+
+    expect(result?.lethal).toBe(false);
+    expect(result?.slain).toBeUndefined();
+    expect("slain" in (result ?? {})).toBe(false);
+    expect(asked).toBe(false);
+  });
+
   test("AoE applies linear falloff and excludes targets without line of sight", () => {
     const { system, stats } = createWorld(
       {

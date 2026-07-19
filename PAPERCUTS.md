@@ -97,14 +97,6 @@ running ship preflight immediately after the verified runtime-state commit -> or
 
 opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead
 
-2026-07-18T23:02:42.473Z — fable — Claude
-
-editor CLI: export_document returns result.json but import_document with a wrong param key fails with 'JSON Parse error: Unexpected identifier undefined' instead of naming the expected 'json' param
-
-2026-07-18T23:02:42.508Z — fable — Claude
-
-editor CLI has no add_path verb — authoring a new route path headlessly requires a full export_document/import_document roundtrip
-
 2026-07-18T23:02:42.541Z — fable — Claude
 
 shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
@@ -120,10 +112,6 @@ Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstal
 2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
 
 bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
-
-2026-07-18T23:38:11.857Z — claude-fable-5 — NoisemakerJon
-
-Building a WoW-like on the SDK: on a lethal ctx.scene.entity.effect() hit the engine death system despawns the target before game code can read its identity, so kill credit/XP needs a game-side spawn-time registry; EffectResult could carry the slain entity's catalogId/name
 
 2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
 
@@ -180,14 +168,6 @@ verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't lo
 2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
 
 Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
-
-2026-07-19T01:58:14.989Z — claude-fable-5 — NoisemakerJon
-
-regenerating scripts/export-manifest.json → gen-export-manifest reads dist, so orphaned dist files from incremental builds (deleted/renamed source never cleaned from dist) leak phantom public subpaths into the manifest and can mask real removals — found packages/core/dist/devtools/urlFlags.js orphaned with no src counterpart, and main's committed manifest still lists the deleted ./handlers/pathNetwork; the generator should cross-check dist entries against src (or builds should clean orphans)
-
-2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
-
-switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop
 
 2026-07-19T03:47:57.282Z — claude-opus-4-8 — Claude
 

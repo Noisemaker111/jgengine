@@ -32,6 +32,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`EffectResult` carries the slain entity's identity** (`@jgengine/core/combat/effects`, #1263) — a lethal `ctx.scene.entity.effect()` hit now returns `slain: { catalogId, name?, userId? }` on the per-target result, captured before the death system despawns the target. Kill credit / XP reads the victim's `catalogId` (its spawn kind) straight off the result — no game-side spawn-time registry mirroring instance ids to kinds. Non-lethal hits omit `slain`. The new `EffectSystemDeps.resolveSlainIdentity` seam is optional and additive, so existing effect-system compositions keep their exact shape.
+- Editor RPC/CLI verb `add_path` (`@jgengine/editor`): author a new path/route into the scene
+  document from an ordered list of ≥2 `{x,z}` (optional `y`) points in one call, without an
+  `export_document`/`import_document` roundtrip. `kind` defaults to `route`; `meta` is schema-validated
+  like `set_path`, and a colliding `id` re-ids in the document-global namespace.
+
 ### Changed
 
 - **Walking collision now depenetrates instead of locking.** `resolveObstacleStep`
@@ -41,6 +47,9 @@ At publish, rename this heading to the new version and mirror the entries into
   shallowest face before sliding. Resting exactly on a face still reads as contact, so
   normal wall-sliding is byte-for-byte unchanged; only the previously-unrecoverable
   "wedged inside a building" case now frees itself.
+- `import_document` (`@jgengine/editor`) now answers a missing or mis-keyed document param with an
+  error naming the expected `json` param instead of surfacing a raw `JSON Parse error: Unexpected
+  identifier "undefined"`.
 
 ### Removed
 

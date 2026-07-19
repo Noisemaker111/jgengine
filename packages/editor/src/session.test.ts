@@ -174,6 +174,73 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("import_document names the expected `json` param instead of a raw JSON parse error", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+
+    // A wrong param key (or omitting `json`) must not fall into JSON.parse("undefined").
+    const wrongKey = api.handle({ method: "import_document", document: "{}" } as never);
+    expect(wrongKey.ok).toBe(false);
+    expect(wrongKey.error).toContain("json");
+    expect(wrongKey.error).not.toContain("JSON Parse error");
+
+    const missing = api.handle({ method: "import_document" } as never);
+    expect(missing.ok).toBe(false);
+    expect(missing.error).toContain("json");
+
+    // The correct param still round-trips a document in.
+    const ok = api.handle({
+      method: "import_document",
+      json: JSON.stringify({ version: 1, markers: [{ id: "m1", kind: "poi", position: { x: 1, y: 0, z: 2 } }] }),
+    });
+    expect(ok.ok).toBe(true);
+    expect(api.getSession().getState().document.markers.some((m) => m.id === "m1")).toBe(true);
+    dispose();
+  });
+
+  test("add_path authors a route into the document and round-trips through export/import", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+
+    const added = api.handle({
+      method: "add_path",
+      id: "patrol",
+      points: [
+        { x: 0, z: 0 },
+        { x: 10, z: 5 },
+        { x: 20, z: 0 },
+      ],
+      label: "Patrol",
+      width: 3,
+    });
+    expect(added.ok).toBe(true);
+    const created = added.result as { id: string; kind: string; points: { x: number; y: number; z: number }[] };
+    expect(created.id).toBe("patrol");
+    expect(created.kind).toBe("route"); // defaults to route when kind is omitted
+    expect(created.points).toEqual([
+      { x: 0, y: 0, z: 0 },
+      { x: 10, y: 0, z: 5 },
+      { x: 20, y: 0, z: 0 },
+    ]);
+
+    const doc = api.getSession().getState().document;
+    const path = doc.paths.find((p) => p.id === "patrol");
+    expect(path?.label).toBe("Patrol");
+    expect(path?.width).toBe(3);
+
+    // The authored route survives an export → import round-trip through a fresh session.
+    const exported = api.handle({ method: "export_document" });
+    const json = (exported.result as { json: string }).json;
+    const fresh = createEditorHost({ gameId: "test", layers: {} });
+    const imported = fresh.api.handle({ method: "import_document", json });
+    expect(imported.ok).toBe(true);
+    expect(fresh.api.getSession().getState().document.paths.some((p) => p.id === "patrol")).toBe(true);
+    fresh.dispose();
+
+    // Fewer than two points is rejected honestly.
+    const tooFew = api.handle({ method: "add_path", id: "p2", points: [{ x: 0, z: 0 }] });
+    expect(tooFew.ok).toBe(false);
+    dispose();
+  });
+
   test("set_parent builds a hierarchy, refuses cycles, and carries the subtree on move", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",
