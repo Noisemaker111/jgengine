@@ -1,5 +1,7 @@
 import {
   agentsMd,
+  browserLibMjs,
+  driveMjs,
   editorLayersTest,
   editorLayersTestFor,
   editorLayersTs,
@@ -63,7 +65,9 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     },
     { path: "tsconfig.json", contents: tsconfigJson(variant) },
     { path: ".gitignore", contents: gitignore },
+    { path: "scripts/browser.mjs", contents: browserLibMjs },
     { path: "scripts/shoot.mjs", contents: shootMjs },
+    { path: "scripts/drive.mjs", contents: driveMjs },
     { path: "AGENTS.md", contents: agentsMd(name, variant) },
     { path: "src/index.css", contents: indexCss(variant, editor) },
     { path: "src/style.css", contents: styleCss },

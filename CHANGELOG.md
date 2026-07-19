@@ -32,6 +32,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Created games ship a drive/playtest script** (#1248) — `npx jgengine create` scaffolds now include `scripts/drive.mjs` (`bun run drive`): dependency-free headless play/testing of the running game — ordered `--click`/`--key`/`--wait`/`--shot`/`--rpc` steps against the agent bridge, plus `--playtest --strict` progress/softlock verdicts off `capture.probe`. Shared Chrome/CDP machinery lives in `scripts/browser.mjs`; `scripts/shoot.mjs` is unchanged in behavior, now a thin CLI over it.
 - Editor: viewport clip preview for rigged assets (Animation dock "Clips" mode — pick a rig or placed instance, play/scrub/loop/speed any catalog clip) and an Inspector "Animation" section that authors a placement's `ModelConfig.animation` (role→clip dropdowns, auto/none, walk/run/fade, one-shot event bindings) as undoable `marker.meta.animation` edits. New subpaths: `@jgengine/editor/shell/clipPreview`, `@jgengine/editor/modelAnimationAuthoring`, `@jgengine/editor/ClipPreviewLayer`.
 
 ### Changed

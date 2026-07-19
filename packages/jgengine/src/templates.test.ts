@@ -31,7 +31,9 @@ const THIN_FILES = [
   "package.json",
   "tsconfig.json",
   ".gitignore",
+  "scripts/browser.mjs",
   "scripts/shoot.mjs",
+  "scripts/drive.mjs",
   "AGENTS.md",
   "src/index.css",
   "src/style.css",
@@ -105,15 +107,32 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       const files = render(variant);
       const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
       expect(pkg.scripts?.shoot).toBe("node scripts/shoot.mjs");
-      const script = fileOf(files, "scripts/shoot.mjs");
+      const lib = fileOf(files, "scripts/browser.mjs");
       // No npm deps — only node: builtins and web globals.
-      expect(script).not.toContain("playwright");
-      expect(script).not.toContain("puppeteer");
+      expect(lib).not.toContain("playwright");
+      expect(lib).not.toContain("puppeteer");
       // The two things that make WebGL capture reliable: a forced viewport and an honest-frame wait.
-      expect(script).toContain("Emulation.setDeviceMetricsOverride");
-      expect(script).toContain("Page.captureScreenshot");
+      expect(fileOf(files, "scripts/shoot.mjs")).toContain("Emulation.setDeviceMetricsOverride");
+      expect(lib).toContain("Page.captureScreenshot");
       // shots/ output is ignored so generated screenshots are never committed.
       expect(fileOf(files, ".gitignore")).toContain("shots/");
+    });
+
+    test(`${variant}: ships a dependency-free drive script wired to a drive command`, () => {
+      const files = render(variant);
+      const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
+      expect(pkg.scripts?.drive).toBe("node scripts/drive.mjs");
+      const script = fileOf(files, "scripts/drive.mjs");
+      // No npm deps — clicks/keys via raw CDP, RPC via the page's agent bridge.
+      expect(script).not.toContain("playwright");
+      expect(script).not.toContain("puppeteer");
+      expect(script).toContain("Input.dispatchMouseEvent");
+      expect(script).toContain("Input.dispatchKeyEvent");
+      expect(script).toContain("__jgengineAgent");
+      // The playtest rung travels: probe sampling + softlock verdict.
+      expect(script).toContain("__jgProbe");
+      expect(script).toContain("--playtest");
+      expect(script).toContain("softlock");
     });
   }
 
@@ -246,6 +265,9 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(agents).toContain("https://github.com/Noisemaker111/jgengine/issues");
     expect(agents).toContain("[BUG]");
     expect(agents).toContain("[FEATURE]");
+    // The scaffold briefs agents to reach for bun run drive, never a hand-rolled browser stack.
+    expect(agents).toContain("bun run drive");
+    expect(agents).toContain("Never hand-roll a Playwright/Puppeteer/CDP script");
     expect(agents).not.toContain("full export surface");
     expect(agents).not.toContain("full game not a slice");
   });
