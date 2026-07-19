@@ -1,8 +1,12 @@
 import { useMemo } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
-import { buildJunctionPatch, buildRoadRibbon, type RoadPoint } from "@jgengine/core/world/roads";
+import { buildRoadRibbon, GROUND_DECAL_LAYERS, type RoadPoint } from "@jgengine/core/world/roads";
 import { junctionMarkings, type RoadJunction } from "@jgengine/core/world/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { JunctionSurface } from "./RoadRibbons";
+
+/** Lane paint sits the table's road→marking gap above the welded junction surface (also polygonOffset). */
+const MARKING_LIFT = GROUND_DECAL_LAYERS.marking - GROUND_DECAL_LAYERS.road;
 
 function toGeometry(positions: Float32Array, indices: Uint32Array): BufferGeometry | null {
   if (positions.length === 0) return null;
@@ -41,32 +45,28 @@ function mergedBars(
 }
 
 /**
- * Renders welded road intersections: one asphalt disc patch per junction (covering the crossing
- * ribbons so they read as one intersection instead of stacking/z-fighting), plus white stop lines
- * and crosswalk bars at each approach. Fed the junctions the scene already computed from its roads.
+ * Renders welded road intersections: one seam-shared asphalt surface per junction (built by
+ * {@link buildAuthoredRoadNetwork}, its boundary vertices welded onto the trimmed ribbon ends so
+ * there is no overlap and no floating disc), plus white stop lines and crosswalk bars at each
+ * approach. Markings ride the {@link GROUND_DECAL_LAYERS} marking layer above the surface, with
+ * `polygonOffset`/`renderOrder` so they win the depth test on sloped ground.
  * @internal
  */
 export function RoadJunctions({
+  surfaces,
   junctions,
   field,
 }: {
+  surfaces: readonly JunctionSurface[];
   junctions: readonly RoadJunction[];
   field: TerrainField;
 }) {
   const patches = useMemo(
     () =>
-      junctions
-        .map((junction) => {
-          const patch = buildJunctionPatch(
-            junction.center,
-            junction.radius,
-            (x, z) => field.sampleHeight(x, z),
-            { elevation: junction.elevation + 0.02 },
-          );
-          return { color: junction.color, geometry: toGeometry(patch.positions, patch.indices) };
-        })
+      surfaces
+        .map((surface) => ({ color: surface.color, geometry: toGeometry(surface.ribbon.positions, surface.ribbon.indices) }))
         .filter((entry): entry is { color: string; geometry: BufferGeometry } => entry.geometry !== null),
-    [junctions, field],
+    [surfaces],
   );
 
   const markings = useMemo(() => {
@@ -80,12 +80,12 @@ export function RoadJunctions({
       for (const bar of marks.crosswalkBars) crossBars.push(bar);
     }
     return {
-      stops: mergedBars(stopBars, 0.5, field, elevation + 0.05),
-      crosswalks: mergedBars(crossBars, 0.55, field, elevation + 0.05),
+      stops: mergedBars(stopBars, 0.5, field, elevation + MARKING_LIFT),
+      crosswalks: mergedBars(crossBars, 0.55, field, elevation + MARKING_LIFT),
     };
   }, [junctions, field]);
 
-  if (patches.length === 0) return null;
+  if (patches.length === 0 && markings.stops === null && markings.crosswalks === null) return null;
   return (
     <group>
       {patches.map((patch, index) => (
@@ -94,13 +94,29 @@ export function RoadJunctions({
         </mesh>
       ))}
       {markings.stops !== null ? (
-        <mesh geometry={markings.stops}>
-          <meshStandardMaterial color="#e6e9ee" roughness={0.85} metalness={0} side={DoubleSide} />
+        <mesh geometry={markings.stops} renderOrder={1}>
+          <meshStandardMaterial
+            color="#e6e9ee"
+            roughness={0.85}
+            metalness={0}
+            side={DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
+          />
         </mesh>
       ) : null}
       {markings.crosswalks !== null ? (
-        <mesh geometry={markings.crosswalks}>
-          <meshStandardMaterial color="#e6e9ee" roughness={0.85} metalness={0} side={DoubleSide} />
+        <mesh geometry={markings.crosswalks} renderOrder={1}>
+          <meshStandardMaterial
+            color="#e6e9ee"
+            roughness={0.85}
+            metalness={0}
+            side={DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
+          />
         </mesh>
       ) : null}
     </group>

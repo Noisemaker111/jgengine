@@ -381,8 +381,10 @@ export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from 
 export { catenaryCurve, sagCurve } from "./world/catenary";
 export { type CityBlockKind } from "./world/cityBlocks";
 export {
+  CITY_LANDMARK_CLASSES,
   CITY_LOT_CLASSES,
   CITY_TREE_SPECIES,
+  type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
   type CityPieceRole,
@@ -391,6 +393,22 @@ export {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./world/cityContent";
+export {
+  DEFAULT_CITY_LEVEL_BIAS,
+  DEFAULT_CITY_ZONE_MIXES,
+  DEFAULT_LANDMARK_SHARE,
+  LANDMARK_HARD_CAP,
+  generateCity,
+  resolveCityLotContent,
+  type CityContentOptions,
+  type CityContentOverrides,
+  type CityGeneratorOptions,
+  type CityLevelClassBias,
+  type CityZoneMixes,
+  type GeneratedCity,
+  type MassingFootprint,
+  type ResolvedCityLot,
+} from "./world/cityGenerator";
 export {
   CITY_DEFAULTS,
   CITY_KIND,
@@ -561,7 +579,21 @@ export {
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
-export { buildRoadRibbon, dashSegments } from "./world/roads";
+export {
+  GROUND_DECAL_LAYERS,
+  buildJunctionSurface,
+  buildRoadRibbon,
+  buildTrimmedIntersections,
+  dashSegments,
+  trimPathAtJunctions,
+  type IntersectionStreet,
+  type JunctionApproach,
+  type JunctionGeometryOptions,
+  type RoadCut,
+  type RoadJunctionInput,
+  type TrimmedIntersections,
+  type TrimmedRoad,
+} from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
 export {
   CITY_BUILDING_BUDGET,

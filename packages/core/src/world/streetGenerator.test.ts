@@ -114,14 +114,56 @@ describe("geometry sliders", () => {
     }
   });
 
-  test("minTurnAngle straightens shallow wiggles", () => {
-    const net = generateStreets(rules({ winding: 0.6, minTurnAngle: 15, maxTurnAngle: 160 }), 260, 260);
-    for (const street of net.streets) {
-      for (let i = 1; i < street.points.length - 1; i += 1) {
-        const t = turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!);
-        // Either straight-through (below tolerance) or a deliberate corner at/above the floor.
-        expect(t < 0.5 || t >= 14).toBe(true);
+  test("minTurnAngle straightens shallow wiggles before filleting", () => {
+    // The straighten pass drops a sub-floor kink outright; a real corner survives as a fillet arc.
+    const minRad = (15 * Math.PI) / 180;
+    const dropped = clampTurns([[0, 0], [10, 0.6], [20, 0]], minRad, Math.PI);
+    expect(dropped.length).toBe(2); // the ~6.8° kink is straightened away
+    const kept = clampTurns([[0, 0], [10, 8], [20, 0]], minRad, (60 * Math.PI) / 180, 3);
+    // A ~77° corner is preserved (rounded), never collapsed to a straight line.
+    expect(kept.length).toBeGreaterThan(3);
+    expect(kept[0]).toEqual([0, 0]);
+    expect(kept[kept.length - 1]).toEqual([20, 0]);
+  });
+});
+
+describe("arc-fillet corners (#1364)", () => {
+  test("a sharp corner becomes a sampled arc, not a single bevel, honoring the radius", () => {
+    const R = 12;
+    const out = clampTurns([[0, 0], [40, 0], [40, 40]], 0, (30 * Math.PI) / 180, R, false);
+    // More than the two points a bevel would insert — a real arc.
+    const interior = out.slice(1, -1);
+    expect(interior.length).toBeGreaterThan(3);
+    // Endpoints welded.
+    expect(out[0]).toEqual([0, 0]);
+    expect(out[out.length - 1]).toEqual([40, 40]);
+    // Every discrete turn stays under the ceiling.
+    for (let i = 1; i < out.length - 1; i += 1) {
+      expect(turnDeg(out[i - 1]!, out[i]!, out[i + 1]!)).toBeLessThanOrEqual(31);
+    }
+    // The arc's tangent point sits ~R·tan(45°) = R back from the 90° corner along each leg.
+    expect(out[1]![0]).toBeCloseTo(40 - R, 0);
+  });
+
+  test("per-vertex discrete turn is bounded by maxTurnAngle across generated streets", () => {
+    for (const seed of ["c1", "c2", "c3"]) {
+      const net = generateStreets(rules({ seed, winding: 1, minCurveRadius: 10, maxTurnAngle: 40, loopiness: 0.4 }), 300, 260);
+      for (const street of net.streets) {
+        for (let i = 1; i < street.points.length - 1; i += 1) {
+          expect(turnDeg(street.points[i - 1]!, street.points[i]!, street.points[i + 1]!)).toBeLessThanOrEqual(41);
+        }
       }
+    }
+  });
+
+  test("a closed loop stays welded (first === last) after filleting", () => {
+    const ring: StreetVec2[] = [[0, 0], [40, 0], [40, 40], [0, 40], [0, 0]];
+    const out = clampTurns(ring, 0, (30 * Math.PI) / 180, 8, true);
+    const first = out[0]!;
+    const last = out[out.length - 1]!;
+    expect(Math.hypot(first[0] - last[0], first[1] - last[1])).toBeLessThan(1e-9);
+    for (let i = 1; i < out.length - 1; i += 1) {
+      expect(turnDeg(out[i - 1]!, out[i]!, out[i + 1]!)).toBeLessThanOrEqual(31);
     }
   });
 });
@@ -190,6 +232,174 @@ describe("bridges and tunnels", () => {
     const net = generateStreets(rules(), 200, 200);
     expect(net.bridges.length).toBe(0);
     expect(net.tunnels.length).toBe(0);
+  });
+});
+
+describe("circuit synthesis (#1365)", () => {
+  const circuitRules = (o: Partial<StreetNetworkRules> = {}) =>
+    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 14, maxTurnAngle: 120, ...o });
+
+  // Reconstruct the closed centerline polygon from the single loop street.
+  function loopPolygon(net: ReturnType<typeof generateStreets>): StreetVec2[] {
+    const loop = net.streets.find((s) => s.loop);
+    expect(loop).toBeDefined();
+    const pts = loop!.points.slice(0, -1); // drop duplicated closing vertex
+    return pts;
+  }
+
+  test("produces a self-clearing, non-star-shaped closed loop for several seeds", () => {
+    for (const seed of ["r1", "r2", "r3", "r4", "r5"]) {
+      const net = generateStreets(circuitRules({ seed }), 260, 220);
+      expect(net.mode).toBe("circuit");
+      const poly = loopPolygon(net);
+      expect(poly.length).toBeGreaterThan(6);
+
+      // Non-star-shaped: at least one reflex vertex (a star/convex blob has none).
+      let area = 0;
+      for (let i = 0; i < poly.length; i += 1) {
+        const a = poly[i]!;
+        const b = poly[(i + 1) % poly.length]!;
+        area += a[0] * b[1] - b[0] * a[1];
+      }
+      const ccw = area > 0;
+      let reflex = false;
+      for (let i = 0; i < poly.length; i += 1) {
+        const a = poly[(i - 1 + poly.length) % poly.length]!;
+        const v = poly[i]!;
+        const b = poly[(i + 1) % poly.length]!;
+        const cross = (v[0] - a[0]) * (b[1] - v[1]) - (v[1] - a[1]) * (b[0] - v[0]);
+        if ((ccw && cross < -1e-3) || (!ccw && cross > 1e-3)) reflex = true;
+      }
+      expect(reflex).toBe(true);
+
+      // Self-clearing: parts of the loop FAR APART along the track (arc gap > gapMin) never fold to
+      // within ~one track width of each other. Segments within a corner or between neighbors are
+      // excluded (a hairpin's close legs are intentional).
+      const width = net.streets.find((s) => s.loop)!.width;
+      const clear = width * 0.9;
+      const gapMin = width * 4;
+      const n = poly.length;
+      const seg: number[] = [];
+      let perim = 0;
+      for (let i = 0; i < n; i += 1) {
+        const a = poly[i]!;
+        const b = poly[(i + 1) % n]!;
+        const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        seg.push(l);
+        perim += l;
+      }
+      const cum = [0];
+      for (let i = 0; i < n; i += 1) cum.push(cum[i]! + seg[i]!);
+      const pointSeg = (p: StreetVec2, a: StreetVec2, c: StreetVec2): number => {
+        const abx = c[0] - a[0];
+        const abz = c[1] - a[1];
+        const l2 = abx * abx + abz * abz;
+        const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * abx + (p[1] - a[1]) * abz) / l2));
+        return Math.hypot(p[0] - (a[0] + abx * t), p[1] - (a[1] + abz * t));
+      };
+      for (let i = 0; i < n; i += 1) {
+        const a1 = poly[i]!;
+        const a2 = poly[(i + 1) % n]!;
+        for (let j = i + 1; j < n; j += 1) {
+          const arcGap = Math.min(cum[j]! - cum[i + 1]!, perim - cum[j + 1]! + cum[i]!);
+          if (arcGap <= gapMin) continue;
+          const b1 = poly[j]!;
+          const b2 = poly[(j + 1) % n]!;
+          const d = Math.min(pointSeg(a1, b1, b2), pointSeg(a2, b1, b2), pointSeg(b1, a1, a2), pointSeg(b2, a1, a2));
+          expect(d).toBeGreaterThan(clear);
+        }
+      }
+    }
+  });
+
+  test("guarantees at least one meaningful start/finish straight", () => {
+    const net = generateStreets(circuitRules({ seed: "straight" }), 300, 260);
+    const poly = loopPolygon(net);
+    // Longest gap between direction changes ≥ 18% of the axis extent.
+    let longest = 0;
+    let run = 0;
+    for (let i = 0; i < poly.length; i += 1) {
+      const a = poly[i]!;
+      const b = poly[(i + 1) % poly.length]!;
+      const t = turnDeg(poly[(i - 1 + poly.length) % poly.length]!, a, b);
+      run += Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (t > 6) {
+        longest = Math.max(longest, run);
+        run = 0;
+      }
+    }
+    longest = Math.max(longest, run);
+    expect(longest).toBeGreaterThanOrEqual(0.18 * 300 * 2 * 0.9 * 0.7);
+  });
+
+  test("pit lane leaves and rejoins the loop at two degree-3 junctions", () => {
+    const net = generateStreets(circuitRules({ seed: "pit", branching: 0.6 }), 300, 260);
+    // Two loop nodes with degree 3 (the pit entry/exit), plus a lane-level pit street.
+    const deg3 = net.nodes.filter((n) => n.degree === 3);
+    expect(deg3.length).toBe(2);
+    expect(net.streets.some((s) => s.level === "lane")).toBe(true);
+    // The pit lane is not a dead-end stub: no degree-1 node feeds it.
+    expect(net.deadEnds.length).toBe(0);
+  });
+
+  test("determinism holds through the retry/synthesis path", () => {
+    const a = generateStreets(circuitRules({ seed: "det" }), 260, 220);
+    const b = generateStreets(circuitRules({ seed: "det" }), 260, 220);
+    expect(a).toEqual(b);
+  });
+});
+
+describe("structural hierarchy (#1368)", () => {
+  test("arterial (avenue/boulevard) chains form a connected skeleton — no interior arterial dead-ends", () => {
+    const net = generateStreets(rules({ seed: "art", connectivity: 0.5, loopiness: 0.3, branching: 0.2 }), 300, 300);
+    const isArterial = (l: string) => l === "avenue" || l === "boulevard";
+    expect(net.streets.some((s) => isArterial(s.level))).toBe(true);
+    const deg = new Map(net.nodes.map((n) => [n.id, n.degree] as const));
+    const rim = (id: number) => {
+      const n = net.nodes.find((v) => v.id === id)!;
+      return Math.abs(n.x) >= 300 - 0.5 || Math.abs(n.z) >= 300 - 0.5;
+    };
+    // For each arterial chain endpoint that is an interior junction, some other arterial must touch it.
+    const arterialAt = new Map<number, number>();
+    for (const s of net.streets) {
+      if (!isArterial(s.level) || s.loop) continue;
+      for (const end of [s.nodes[0]!, s.nodes[s.nodes.length - 1]!]) {
+        arterialAt.set(end, (arterialAt.get(end) ?? 0) + 1);
+      }
+    }
+    for (const s of net.streets) {
+      if (!isArterial(s.level) || s.loop) continue;
+      for (const end of [s.nodes[0]!, s.nodes[s.nodes.length - 1]!]) {
+        if (rim(end)) continue;
+        if ((deg.get(end) ?? 0) < 2) continue; // cul-de-sac terminus is allowed
+        expect(arterialAt.get(end)! >= 2).toBe(true);
+      }
+    }
+  });
+});
+
+describe("sidewalks (#1368)", () => {
+  test("paved streets carry parallel left/right bands offset by width/2 + sidewalkWidth", () => {
+    const net = generateStreets(rules({ seed: "sw", winding: 0, gridness: 1, branching: 0.3, sidewalkWidth: 3 }), 240, 240);
+    const paved = net.streets.filter((s) => s.level !== "lane");
+    expect(paved.length).toBeGreaterThan(0);
+    for (const s of paved) {
+      expect(s.sidewalks).toBeDefined();
+      expect(s.sidewalks!.left.length).toBe(s.points.length);
+      expect(s.sidewalks!.right.length).toBe(s.points.length);
+      // Sample a mid vertex: left and right sit ~width/2 + 3 off the centerline, on opposite sides.
+      const want = s.width / 2 + 3;
+      const i = Math.floor(s.points.length / 2);
+      const c = s.points[i]!;
+      const dl = Math.hypot(s.sidewalks!.left[i]![0] - c[0], s.sidewalks!.left[i]![1] - c[1]);
+      const dr = Math.hypot(s.sidewalks!.right[i]![0] - c[0], s.sidewalks!.right[i]![1] - c[1]);
+      expect(dl).toBeCloseTo(want, 5);
+      expect(dr).toBeCloseTo(want, 5);
+    }
+    // Lanes get no sidewalks.
+    for (const s of net.streets.filter((s) => s.level === "lane")) {
+      expect(s.sidewalks).toBeUndefined();
+    }
   });
 });
 
