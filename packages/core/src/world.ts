@@ -345,6 +345,16 @@ export {
   type SelectionBookmarks,
   type SelectionPruneResult,
 } from "./scene/selectionBookmarks";
+export {
+  createSequenceDirector,
+  type CueListener,
+  type EmittedCue,
+  type SequenceCue,
+  type SequenceDirector,
+  type SequenceDirectorOptions,
+  type SequenceSnapshot,
+  type SequenceState,
+} from "./scene/sequenceDirector";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
@@ -360,6 +370,14 @@ export {
 export { type HiddenStateSource, type SensorProbeOptions, type SensorReading } from "./sensor/hiddenStateProbe";
 export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
+export {
+  createDayNightCycle,
+  type DayNightCycle,
+  type DayNightCycleOptions,
+  type DayNightKeyframe,
+  type DayNightSample,
+  type DayNightSnapshot,
+} from "./time/dayNightCycle";
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
 export {
@@ -373,6 +391,14 @@ export {
   type TimerSnapshot,
   type TimerStartOptions,
 } from "./time/timerSet";
+export {
+  createDamageDirectionTracker,
+  type DamageDirectionOptions,
+  type DamageDirectionSnapshot,
+  type DamageDirectionTracker,
+  type DamageIndicator,
+  type HitInput,
+} from "./vfx/damageDirection";
 export {
   createParticleSystem,
   type Curve,

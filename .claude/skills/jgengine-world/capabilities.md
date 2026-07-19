@@ -155,6 +155,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
+## damage-direction — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging
+
+- `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/world"`
+
+## day-night-cycle — one wired model gives a moving day-night cycle — running clock plus keyframed phase labels and tint/light colors a game drives an existing sky/daylight seam from
+
+- `createDayNightCycle` (function) · `import { createDayNightCycle } from "@jgengine/core/world"`
+
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
@@ -435,6 +443,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## selection-bookmarks — keyed saved-set store (RTS control groups, camera bookmarks, saved squads) with prune + serialize
 
 - `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
+
+## sequence-director — data-driven cutscene timeline — fire typed camera/dialogue/event cues on one injected clock with play/pause/seek/skip and snapshot/restore
+
+- `createSequenceDirector` (function) · `import { createSequenceDirector } from "@jgengine/core/world"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 
