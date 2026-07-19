@@ -2131,6 +2131,11 @@
 
 - `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 
+## @jgengine/shell/world/WorldPings
+
+- `WorldPings` (function): function WorldPings({ markers, kindStyles, pingsOnly = true, height = 2.4, showCallout = true, renderCallout, }: WorldPingsProps): ReactNode — World-space pings — the in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a billboarded callout, colored by marker kind and fading in/out over the marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker source, or a static array; mount through `PlayableGame.WorldOverlay`.
+- `WorldPingsProps` (interface): interface WorldPingsProps — Props for {@link WorldPings}.
+
 ## @jgengine/shell/world/WorldScene
 
 - `RemotePlayers` (function): function RemotePlayers({ rows }: { rows: PresencePoseRow[] }): React.JSX.Element — ⚠ undocumented
@@ -2145,6 +2150,12 @@
 
 - `FloatTextInfo` (interface): interface FloatTextInfo — ⚠ undocumented
 - `FloatTextStyle` (interface): interface FloatTextStyle — ⚠ undocumented
+
+## @jgengine/shell/world/pingPulse
+
+- `PingOpacityInput` (interface): interface PingOpacityInput — Inputs to {@link pingOpacity}.
+- `pingBobOffset` (function): function pingBobOffset(elapsedSeconds: number, amplitude = 0.18, speedHz = 1.1): number — Vertical bob offset (world units) for a hovering ping arrow at `elapsedSeconds`.
+- `pingOpacity` (function): function pingOpacity(input: PingOpacityInput): number — Alpha for a world ping in `[0, 1]`: ramps up over `fadeInMs` after it appears and ramps back down over `fadeOutMs` before it expires. Pure math so the lifecycle can be unit-tested without an R3F canvas.
 
 ## @jgengine/shell/world/worldBarSamples
 

@@ -301,3 +301,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
 - `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/WorldHud"`
+
+## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
+
+- `WorldPings` (function) · `import { WorldPings } from "@jgengine/shell/world/WorldPings"`
