@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import type { FogCells, FogField } from "@jgengine/core/world/fog";
 import {
   DEFAULT_MARKER_KINDS,
@@ -944,10 +944,159 @@ export interface WorldMapProps {
   onClose?: () => void;
 }
 
+/** Pan/zoom transform applied to a {@link WorldMapSurface}'s content group. */
+export interface MapViewport {
+  /** Uniform zoom factor; 1 = fit. */
+  scale: number;
+  /** Content-group translation in canvas px. */
+  tx: number;
+  ty: number;
+}
+
+const IDENTITY_VIEWPORT: MapViewport = { scale: 1, tx: 0, ty: 0 };
+
+/** Props for {@link WorldMapSurface}. */
+export interface WorldMapSurfaceProps {
+  markers: MarkerCollection;
+  bounds: MapBounds;
+  player?: WorldXZ;
+  facingYaw?: number;
+  fog?: FogField;
+  background?: string;
+  /** Content layout width in px (world bounds map into this). */
+  width?: number;
+  /** Content layout height; defaults to the bounds aspect ratio. */
+  height?: number;
+  kindStyles?: Record<string, MarkerKindStyle>;
+  routes?: readonly MapRoute[];
+  zones?: readonly MapZone[];
+  cellStates?: readonly MapCellStates[];
+  onWorldClick?: (world: WorldXZ) => void;
+  /** Outer `<svg>` pixel size; defaults to the content `width`/`height` (no viewport). */
+  canvasWidth?: number;
+  canvasHeight?: number;
+  /** Pan/zoom transform; identity when omitted. Click math inverts it before unprojecting. */
+  viewport?: MapViewport;
+  style?: CSSProperties;
+}
+
+/**
+ * The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and
+ * {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map
+ * layers, markers with labels, and the player arrow, drawn under an optional
+ * viewport transform. Rectangular linear projection over the world `bounds`.
+ */
+export function WorldMapSurface({
+  markers,
+  bounds,
+  player,
+  facingYaw = 0,
+  fog,
+  background,
+  width = 520,
+  height,
+  kindStyles = DEFAULT_MARKER_KINDS,
+  routes,
+  zones,
+  cellStates,
+  onWorldClick,
+  canvasWidth,
+  canvasHeight,
+  viewport = IDENTITY_VIEWPORT,
+  style,
+}: WorldMapSurfaceProps): ReactNode {
+  const markerList = useMarkers(markers);
+  const fogCells = useSyncExternalStore(
+    fog?.subscribe ?? NO_SUBSCRIBE,
+    fog?.cells ?? NULL_CELLS,
+    fog?.cells ?? NULL_CELLS,
+  );
+  const worldW = bounds.maxX - bounds.minX;
+  const worldD = bounds.maxZ - bounds.minZ;
+  const mapH = height ?? Math.round((width * worldD) / worldW);
+  const svgW = canvasWidth ?? width;
+  const svgH = canvasHeight ?? mapH;
+  const project = (x: number, z: number): { x: number; y: number } => ({
+    x: ((x - bounds.minX) / worldW) * width,
+    y: ((z - bounds.minZ) / worldD) * mapH,
+  });
+
+  return (
+    <svg
+      width={svgW}
+      height={svgH}
+      viewBox={`0 0 ${svgW} ${svgH}`}
+      data-world-map-canvas
+      style={{ borderRadius: 10, ...(onWorldClick === undefined ? {} : { cursor: "crosshair" as const }), ...style }}
+      {...(onWorldClick === undefined
+        ? {}
+        : {
+            onClick: (event: { currentTarget: { getBoundingClientRect(): DOMRect }; clientX: number; clientY: number }) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              const sx = ((event.clientX - rect.left) / rect.width) * svgW;
+              const sy = ((event.clientY - rect.top) / rect.height) * svgH;
+              const px = (sx - viewport.tx) / viewport.scale;
+              const py = (sy - viewport.ty) / viewport.scale;
+              onWorldClick([bounds.minX + (px / width) * worldW, bounds.minZ + (py / mapH) * worldD]);
+            },
+          })}
+    >
+      <g transform={`translate(${viewport.tx} ${viewport.ty}) scale(${viewport.scale})`} data-world-map-content>
+        <rect x={0} y={0} width={width} height={mapH} fill="#16202b" />
+        {background !== undefined ? (
+          <image href={background} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" opacity={0.95} />
+        ) : null}
+        <WorldMapFogImage fogCells={fogCells} project={project} worldW={worldW} worldD={worldD} width={width} mapH={mapH} />
+        {(() => {
+          const projectXZ: ProjectFn = (x, z) => project(x, z);
+          const layerScale: LayerScale = {
+            x: (units) => (units / worldW) * width,
+            y: (units) => (units / worldD) * mapH,
+          };
+          return [
+            ...cellStateNodes(cellStates, projectXZ, layerScale, "wm"),
+            ...zoneNodes(zones, projectXZ, layerScale, "wm"),
+            ...routeNodes(routes, projectXZ, "wm"),
+          ];
+        })()}
+        {markerList.map((marker) => {
+          const at = project(marker.position[0], marker.position[2]);
+          const kind = marker.kind ?? "marker";
+          const markerStyle = markerKindStyle(kind, kindStyles);
+          return (
+            <g key={marker.id} data-world-marker={kind}>
+              <circle cx={at.x} cy={at.y} r={9} fill="rgba(2,6,12,0.6)" stroke={markerStyle.color} strokeWidth={1.2} />
+              <text x={at.x} y={at.y + 4} textAnchor="middle" fontSize={12} fill={markerStyle.color} style={{ fontWeight: 700 }}>
+                {markerStyle.glyph}
+              </text>
+              {marker.label !== undefined ? (
+                <text x={at.x + 12} y={at.y + 4} fontSize={11} fill="rgba(226,232,240,0.85)">
+                  {marker.label}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+        {player !== undefined
+          ? (() => {
+              const at = project(player[0], player[1]);
+              return (
+                <g transform={`translate(${at.x} ${at.y}) rotate(${headingToBearing(facingYaw) * (180 / Math.PI)})`}>
+                  <path d="M0,-11 L7,9 L0,4 L-7,9 Z" fill="#4ade80" stroke="#052e16" strokeWidth={1} />
+                </g>
+              );
+            })()
+          : null}
+      </g>
+    </svg>
+  );
+}
+
 /**
  * Full-bounds top-down world map (the "press M" overlay): baked terrain
  * background, reveal-on-event fog, all markers with labels, and the player.
- * Rectangular linear projection over the supplied world `bounds`.
+ * Rectangular linear projection over the supplied world `bounds`. Framed panel
+ * wrapper over {@link WorldMapSurface}.
  */
 export function WorldMap({
   markers,
@@ -967,20 +1116,6 @@ export function WorldMap({
   title = "World Map",
   onClose,
 }: WorldMapProps): ReactNode {
-  const markerList = useMarkers(markers);
-  const fogCells = useSyncExternalStore(
-    fog?.subscribe ?? NO_SUBSCRIBE,
-    fog?.cells ?? NULL_CELLS,
-    fog?.cells ?? NULL_CELLS,
-  );
-  const worldW = bounds.maxX - bounds.minX;
-  const worldD = bounds.maxZ - bounds.minZ;
-  const mapH = height ?? Math.round((width * worldD) / worldW);
-  const project = (x: number, z: number): { x: number; y: number } => ({
-    x: ((x - bounds.minX) / worldW) * width,
-    y: ((z - bounds.minZ) / worldD) * mapH,
-  });
-
   return (
     <div
       className={className}
@@ -1015,69 +1150,332 @@ export function WorldMap({
           </button>
         ) : null}
       </div>
-      <svg
+      <WorldMapSurface
+        markers={markers}
+        bounds={bounds}
+        player={player}
+        facingYaw={facingYaw}
+        fog={fog}
+        background={background}
         width={width}
-        height={mapH}
-        viewBox={`0 0 ${width} ${mapH}`}
-        data-world-map-canvas
-        style={{ borderRadius: 10, ...(onWorldClick === undefined ? {} : { cursor: "crosshair" as const }) }}
-        {...(onWorldClick === undefined
-          ? {}
-          : {
-              onClick: (event: { currentTarget: { getBoundingClientRect(): DOMRect }; clientX: number; clientY: number }) => {
-                const rect = event.currentTarget.getBoundingClientRect();
-                const px = ((event.clientX - rect.left) / rect.width) * width;
-                const py = ((event.clientY - rect.top) / rect.height) * mapH;
-                onWorldClick([bounds.minX + (px / width) * worldW, bounds.minZ + (py / mapH) * worldD]);
-              },
-            })}
+        height={height}
+        kindStyles={kindStyles}
+        routes={routes}
+        zones={zones}
+        cellStates={cellStates}
+        onWorldClick={onWorldClick}
+      />
+    </div>
+  );
+}
+
+function clampScale(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/** Props for {@link FullscreenMap}. */
+export interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> {
+  /** Render nothing when false. Default true. */
+  open?: boolean;
+  /** Content layout width in px before zoom; height derives from the bounds aspect. Default 900. */
+  contentWidth?: number;
+  /** Zoom bounds. Default 0.5 / 8. */
+  minScale?: number;
+  maxScale?: number;
+  title?: string;
+  onClose?: () => void;
+  /** Overlay chrome drawn above the map (legend, tool palette, hints). */
+  children?: ReactNode;
+  overlayClassName?: string;
+  overlayStyle?: CSSProperties;
+}
+
+/**
+ * Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to
+ * zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick`
+ * to a waypoint/annotation store). Reuses {@link WorldMapSurface} for rendering,
+ * so terrain bake, fog, routes, zones, markers, and the player arrow all appear;
+ * a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette
+ * via `children`.
+ *
+ * @capability fullscreen-map fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, and click-to-place without firing a click after a pan
+ */
+export function FullscreenMap({
+  open = true,
+  bounds,
+  contentWidth = 900,
+  minScale = 0.5,
+  maxScale = 8,
+  title = "Map",
+  onClose,
+  onWorldClick,
+  children,
+  overlayClassName,
+  overlayStyle,
+  ...surfaceProps
+}: FullscreenMapProps): ReactNode {
+  const worldW = bounds.maxX - bounds.minX;
+  const worldD = bounds.maxZ - bounds.minZ;
+  const contentHeight = Math.round((contentWidth * worldD) / worldW);
+  const [viewport, setViewport] = useState<MapViewport>(IDENTITY_VIEWPORT);
+  const drag = useRef<{ x: number; y: number; vp: MapViewport } | null>(null);
+  const moved = useRef(false);
+
+  if (!open) return null;
+
+  const zoomBy = (factor: number, sx: number, sy: number): void => {
+    setViewport((prev) => {
+      const next = clampScale(prev.scale * factor, minScale, maxScale);
+      const k = next / prev.scale;
+      return { scale: next, tx: sx - k * (sx - prev.tx), ty: sy - k * (sy - prev.ty) };
+    });
+  };
+
+  const canvasPoint = (
+    event: { currentTarget: { getBoundingClientRect(): DOMRect }; clientX: number; clientY: number },
+  ): { x: number; y: number; kx: number; ky: number } => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const kx = contentWidth / rect.width;
+    const ky = contentHeight / rect.height;
+    return { x: (event.clientX - rect.left) * kx, y: (event.clientY - rect.top) * ky, kx, ky };
+  };
+
+  const controlButton: CSSProperties = {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    border: "1px solid rgba(148,163,184,0.4)",
+    background: "rgba(17,22,30,0.85)",
+    color: "#e2e8f0",
+    fontSize: 16,
+    lineHeight: "1",
+    cursor: "pointer",
+  };
+
+  return (
+    <div
+      className={overlayClassName}
+      data-fullscreen-map
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 40,
+        display: "flex",
+        flexDirection: "column",
+        background: "rgba(6,9,14,0.82)",
+        backdropFilter: "blur(2px)",
+        color: "#e2e8f0",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        ...overlayStyle,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px",
+          borderBottom: "1px solid rgba(148,163,184,0.2)",
+        }}
       >
-        <rect x={0} y={0} width={width} height={mapH} fill="#16202b" />
-        {background !== undefined ? (
-          <image href={background} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" opacity={0.95} />
-        ) : null}
-        <WorldMapFogImage fogCells={fogCells} project={project} worldW={worldW} worldD={worldD} width={width} mapH={mapH} />
-        {(() => {
-          const projectXZ: ProjectFn = (x, z) => project(x, z);
-          const layerScale: LayerScale = {
-            x: (units) => (units / worldW) * width,
-            y: (units) => (units / worldD) * mapH,
-          };
-          return [
-            ...cellStateNodes(cellStates, projectXZ, layerScale, "wm"),
-            ...zoneNodes(zones, projectXZ, layerScale, "wm"),
-            ...routeNodes(routes, projectXZ, "wm"),
-          ];
-        })()}
-        {markerList.map((marker) => {
-          const at = project(marker.position[0], marker.position[2]);
-          const kind = marker.kind ?? "marker";
-          const style = markerKindStyle(kind, kindStyles);
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.6, textTransform: "uppercase" }}>{title}</span>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button type="button" aria-label="Zoom out" style={controlButton} onClick={() => zoomBy(1 / 1.2, contentWidth / 2, contentHeight / 2)}>
+            −
+          </button>
+          <button type="button" aria-label="Zoom in" style={controlButton} onClick={() => zoomBy(1.2, contentWidth / 2, contentHeight / 2)}>
+            +
+          </button>
+          <button type="button" aria-label="Reset view" style={{ ...controlButton, width: "auto", padding: "0 10px", fontSize: 11 }} onClick={() => setViewport(IDENTITY_VIEWPORT)}>
+            Reset
+          </button>
+          {onClose !== undefined ? (
+            <button type="button" aria-label="Close map" style={{ ...controlButton, width: "auto", padding: "0 12px", fontSize: 11 }} onClick={onClose}>
+              Close
+            </button>
+          ) : null}
+        </div>
+      </div>
+      <div
+        data-fullscreen-map-viewport
+        style={{ position: "relative", flex: 1, minHeight: 0, overflow: "hidden", touchAction: "none", cursor: drag.current !== null ? "grabbing" : "grab" }}
+        onWheel={(event) => {
+          const at = canvasPoint(event);
+          zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15, at.x, at.y);
+        }}
+        onPointerDown={(event) => {
+          if (event.button !== 0) return;
+          drag.current = { x: event.clientX, y: event.clientY, vp: viewport };
+          moved.current = false;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          const state = drag.current;
+          if (state === null) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          const kx = contentWidth / rect.width;
+          const ky = contentHeight / rect.height;
+          const dx = (event.clientX - state.x) * kx;
+          const dy = (event.clientY - state.y) * ky;
+          if (Math.abs(dx) + Math.abs(dy) > 3) moved.current = true;
+          setViewport({ scale: state.vp.scale, tx: state.vp.tx + dx, ty: state.vp.ty + dy });
+        }}
+        onPointerUp={(event) => {
+          drag.current = null;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        }}
+      >
+        <WorldMapSurface
+          {...surfaceProps}
+          bounds={bounds}
+          width={contentWidth}
+          height={contentHeight}
+          canvasWidth={contentWidth}
+          canvasHeight={contentHeight}
+          viewport={viewport}
+          style={{ width: "100%", height: "100%", borderRadius: 0, display: "block" }}
+          onWorldClick={
+            onWorldClick === undefined
+              ? undefined
+              : (world) => {
+                  if (moved.current) {
+                    moved.current = false;
+                    return;
+                  }
+                  onWorldClick(world);
+                }
+          }
+        />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Props for {@link MapLegend}. */
+export interface MapLegendProps {
+  /** Marker kinds to key, in order. */
+  kinds: readonly string[];
+  /** Human labels per kind; falls back to the kind id. */
+  labels?: Record<string, string>;
+  kindStyles?: Record<string, MarkerKindStyle>;
+  title?: string;
+  className?: string;
+  style?: CSSProperties;
+}
+
+/**
+ * Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled.
+ * Reads the same `kindStyles` the map renders with, so the legend can never
+ * drift from the pins.
+ *
+ * @capability map-legend marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
+ */
+export function MapLegend({
+  kinds,
+  labels,
+  kindStyles = DEFAULT_MARKER_KINDS,
+  title = "Legend",
+  className,
+  style,
+}: MapLegendProps): ReactNode {
+  return (
+    <div
+      className={className}
+      data-map-legend
+      style={{
+        borderRadius: 10,
+        padding: "8px 10px",
+        background: "rgba(12,16,22,0.86)",
+        border: "1px solid rgba(148,163,184,0.28)",
+        color: "#e2e8f0",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        fontSize: 11,
+        ...style,
+      }}
+    >
+      {title !== "" ? (
+        <div style={{ fontSize: 9, letterSpacing: 1.4, textTransform: "uppercase", color: "rgba(203,213,225,0.7)", marginBottom: 5 }}>
+          {title}
+        </div>
+      ) : null}
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+        {kinds.map((kind) => {
+          const kindStyle = markerKindStyle(kind, kindStyles);
           return (
-            <g key={marker.id} data-world-marker={kind}>
-              <circle cx={at.x} cy={at.y} r={9} fill="rgba(2,6,12,0.6)" stroke={style.color} strokeWidth={1.2} />
-              <text x={at.x} y={at.y + 4} textAnchor="middle" fontSize={12} fill={style.color} style={{ fontWeight: 700 }}>
-                {style.glyph}
-              </text>
-              {marker.label !== undefined ? (
-                <text x={at.x + 12} y={at.y + 4} fontSize={11} fill="rgba(226,232,240,0.85)">
-                  {marker.label}
-                </text>
-              ) : null}
-            </g>
+            <li key={kind} data-legend-kind={kind} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span aria-hidden style={{ width: 14, textAlign: "center", color: kindStyle.color, fontWeight: 700 }}>
+                {kindStyle.glyph}
+              </span>
+              <span>{labels?.[kind] ?? kind}</span>
+            </li>
           );
         })}
-        {player !== undefined
-          ? (() => {
-              const at = project(player[0], player[1]);
-              return (
-                <g transform={`translate(${at.x} ${at.y}) rotate(${headingToBearing(facingYaw) * (180 / Math.PI)})`}>
-                  <path d="M0,-11 L7,9 L0,4 L-7,9 Z" fill="#4ade80" stroke="#052e16" strokeWidth={1} />
-                </g>
-              );
-            })()
-          : null}
+      </ul>
+    </div>
+  );
+}
+
+/** Props for {@link WaypointArrow}. */
+export interface WaypointArrowProps {
+  /** Bearing to the target relative to facing (radians); 0 = dead ahead. From `WaypointStore.guidance().relative`. */
+  relative: number;
+  /** XZ distance in world units; renders a readout when supplied. */
+  distance?: number;
+  label?: string;
+  /** Format the distance readout; defaults to whole units + "m". */
+  formatDistance?: (distance: number) => string;
+  size?: number;
+  color?: string;
+  className?: string;
+  style?: CSSProperties;
+}
+
+/**
+ * On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated
+ * by the facing-relative bearing, with an optional label and distance readout.
+ * Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
+ *
+ * @capability waypoint-arrow on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
+ */
+export function WaypointArrow({
+  relative,
+  distance,
+  label,
+  formatDistance = (value) => `${Math.round(value)}m`,
+  size = 44,
+  color = "#f59e0b",
+  className,
+  style,
+}: WaypointArrowProps): ReactNode {
+  return (
+    <div
+      className={className}
+      data-waypoint-arrow
+      style={{
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+        color,
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        textShadow: "0 1px 2px rgba(0,0,0,0.9)",
+        ...style,
+      }}
+    >
+      <svg width={size} height={size} viewBox="0 0 44 44" aria-hidden data-waypoint-arrow-needle>
+        <g transform={`rotate(${(relative * 180) / Math.PI} 22 22)`}>
+          <path d="M22 6 L32 34 L22 27 L12 34 Z" fill={color} stroke="rgba(0,0,0,0.7)" strokeWidth={1.2} strokeLinejoin="round" />
+        </g>
       </svg>
+      {label !== undefined ? (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>{label}</span>
+      ) : null}
+      {distance !== undefined ? (
+        <span style={{ fontSize: 11, fontVariantNumeric: "tabular-nums", color: "rgba(226,232,240,0.9)" }}>
+          {formatDistance(distance)}
+        </span>
+      ) : null}
     </div>
   );
 }

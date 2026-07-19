@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {
@@ -29,9 +29,17 @@ export function useTouchStyle(store: SettingsStore, fallback: TouchStyle): Touch
 }
 
 export function useSettingsRevision(store: SettingsStore): number {
-  const [rev, bump] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => store.subscribe(() => bump()), [store]);
-  return rev;
+  const versionRef = useRef(0);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) =>
+      store.subscribe(() => {
+        versionRef.current += 1;
+        onStoreChange();
+      }),
+    [store],
+  );
+  const getVersion = useCallback(() => versionRef.current, []);
+  return useSyncExternalStore(subscribe, getVersion, getVersion);
 }
 
 export function useGraphicsSettings(

@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { useDisposable } from "../render/useDisposable";
 import { createWeatherQuadGeometry } from "./weatherGeometry";
 import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
@@ -51,8 +51,8 @@ export function RainField({
 }: RainFieldProps) {
   const { camera } = useThree();
   const shared = useWeatherUniformSet({ wind, lightning, timeScale });
-  const geometry = useMemo(() => createWeatherQuadGeometry(count, seed), [count, seed]);
-  const material = useMemo(() => {
+  const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
+  const material = useDisposable(() => {
     const uniforms = {
       uTime: shared.time,
       uWind: shared.wind,
@@ -139,14 +139,6 @@ export function RainField({
     (uniforms.uColor.value as THREE.Color).set(color);
     geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
   });
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   return (
     <mesh

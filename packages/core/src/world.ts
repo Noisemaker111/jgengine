@@ -702,6 +702,14 @@ export { type EnclosedFootprint, type RoofPlan } from "./world/walls";
 export { waterSurface, waterSurfaceFromDescriptor, type WaterSurface } from "./world/water";
 export { WATER_SCHEMA, type WaterRules } from "./world/waterKind";
 export {
+  createWaypointStore,
+  type WaypointEntry,
+  type WaypointGuidance,
+  type WaypointSnapshot,
+  type WaypointStore,
+  type WaypointStoreDeps,
+} from "./world/waypoints";
+export {
   createFireGrid,
   resolveWeather,
   type FireGrid,

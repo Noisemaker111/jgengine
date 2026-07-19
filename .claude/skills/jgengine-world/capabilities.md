@@ -4,6 +4,18 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## ai-driver — difficulty-aware chase/route driving step producing throttle/brake/steer for the vehicle sim
+
+- `driveStep` (function) · `import { driveStep } from "@jgengine/core/ai/driver"`
+
+## ai-driver-path-target — pure-pursuit lookahead target on a road/route polyline for street following
+
+- `pathTargetAhead` (function) · `import { pathTargetAhead } from "@jgengine/core/ai/driver"`
+
+## ai-driver-state — fresh serializable state for one difficulty-aware AI driver
+
+- `createDriverState` (function) · `import { createDriverState } from "@jgengine/core/ai/driver"`
+
 ## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
 
 - `createAreaEffectField` (function) · `import { createAreaEffectField } from "@jgengine/core/world"`
@@ -138,6 +150,38 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
+
+## difficulty-ability-gate — spend-or-hold ability decision from a scored opportunity window
+
+- `shouldUseAbility` (function) · `import { shouldUseAbility } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-execution-error — symmetric aim/lead/timing error scaled by the profile
+
+- `executionError` (function) · `import { executionError } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-lookahead — depth/width-bounded deterministic planner for turn-based or sequential decisions
+
+- `planLookahead` (function) · `import { planLookahead } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-pick — noisy argmax over scored options; expert picks best, easy blunders
+
+- `pickScored` (function) · `import { pickScored } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-profile — derive a per-game decision-quality profile from a canonical tier
+
+- `difficultyProfile` (function) · `import { difficultyProfile } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-reaction-gate — delay acting on new information by the profile's reaction time
+
+- `advanceReactionGate` (function) · `import { advanceReactionGate } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-reaction-gate-state — fresh serializable reaction-gate state for one observed value
+
+- `createReactionGate` (function) · `import { createReactionGate } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-tiers — canonical easy/standard/expert decision-quality profiles for any opponent
+
+- `DIFFICULTY_TIERS` (const) · `import { DIFFICULTY_TIERS } from "@jgengine/core/ai/difficulty"`
 
 ## elevation-readout — cursor height and delta-from-reference feedback
 
@@ -471,6 +515,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## volumetric-clouds — raymarched cloud layer sky option
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
+
+## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
+
+- `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 

@@ -1,6 +1,7 @@
 import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 
+import { useDisposable } from "../render/useDisposable";
 import {
   createGrassBladeGeometry,
   grassTuftCount,
@@ -78,7 +79,7 @@ export function GrassField({
   frustumCulled = true,
   ...meshProps
 }: GrassFieldProps) {
-  const geometry = useMemo(
+  const geometry = useDisposable(
     () =>
       createGrassBladeGeometry({
         count,
@@ -122,7 +123,6 @@ export function GrassField({
     handle.uniforms.uTime.value = state.clock.elapsedTime;
   });
 
-  useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => handle.material.dispose(), [handle]);
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 export function HitMarker({
   active,
@@ -12,11 +12,11 @@ export function HitMarker({
   className?: string;
 }) {
   const [pulse, setPulse] = useState(0);
-  const wasActive = useRef(false);
-  useEffect(() => {
-    if (active && !wasActive.current) setPulse((count) => count + 1);
-    wasActive.current = active;
-  }, [active]);
+  const [prevActive, setPrevActive] = useState(active);
+  if (active !== prevActive) {
+    setPrevActive(active);
+    if (active) setPulse((count) => count + 1);
+  }
   if (!active) return null;
   const color = crit ? "var(--jg-warning)" : "var(--jg-text)";
   const half = size / 2;

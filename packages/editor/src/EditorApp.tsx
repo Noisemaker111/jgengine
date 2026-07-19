@@ -416,7 +416,6 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
   const readoutStoreRef = useRef<TerrainReadoutStore | null>(null);
   if (readoutStoreRef.current === null) readoutStoreRef.current = createTerrainReadoutStore();
   const readout = readoutStoreRef.current;
-  const [mode, setModeState] = useState<EditorRunMode>("edit");
 
   const catalogAssets = useMemo(() => {
     try {
@@ -444,7 +443,11 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
 
   useEffect(() => host.dispose, [host]);
 
-  useEffect(() => host.api.subscribeMode(setModeState), [host]);
+  const modeStore = useMemo(
+    () => ({ getState: host.api.getMode, subscribe: host.api.subscribeMode }),
+    [host],
+  );
+  const mode = useStoreSelector(modeStore, (m) => m);
 
   const [pendingDraft, setPendingDraft] = useState<string | null>(null);
 
