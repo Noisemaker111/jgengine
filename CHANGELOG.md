@@ -41,6 +41,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Chase rig reports its yaw to the shell** — `ChaseRig` now writes the camera yaw back to the shared yaw ref like every other player-facing rig, so on-foot movement and aim in a `rig: "chase"` game are camera-relative instead of frozen to world yaw 0 (WASD no longer fights the camera the moment it swings behind the player). Interior views (cockpit/hood/rear) report the vehicle heading.
 - **Combat VFX no longer render as black squares under AO/DOF post-processing** (#1247) — GTAO/Bokeh scene prepasses skip overlay effects. Games with custom additive overlay effects opt out the same way: spread `POSTFX_OVERLAY_USERDATA` (`@jgengine/shell/postfx/postfxOverlay`) onto the overlay group's `userData`.
 - **`PanelHost` windows stack above the HUD by default** (`@jgengine/react`) — the host establishes its own stacking context at `zIndexBase` (default 40), so open windows always paint over stat bars / nameplates / frames instead of bleeding through. Overridable per instance.
 

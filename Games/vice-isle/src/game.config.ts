@@ -53,7 +53,9 @@ export const game = defineGame({
     },
   },
   pointer: { grabWorldItems: true },
-  movement: { collideObjects: true },
+  // turnSpeed rate-limits body facing so the chase camera arcs behind the runner
+  // instead of snap-whipping 90° on every strafe tap.
+  movement: { collideObjects: true, turnSpeed: 8 },
   camera: {
     rig: "chase",
     chase: {
@@ -62,7 +64,9 @@ export const game = defineGame({
       lookHeight: 1.15,
       springDamping: 7.5,
       fov: { base: 60, max: 86, speedForMax: 40 },
-      velocityYaw: { blend: 0.6, minSpeed: 6, response: 5 },
+      // minSpeed sits above on-foot sprint (~14) so drift-lag stays a driving
+      // feature and never drags the camera sideways while running.
+      velocityYaw: { blend: 0.6, minSpeed: 16, response: 5 },
       shakePerSpeed: 0.0015,
       lead: { time: 0.22, max: 8 },
       bank: { perYawRate: 0.09, max: 0.16, damping: 7 },

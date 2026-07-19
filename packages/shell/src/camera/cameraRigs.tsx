@@ -567,6 +567,7 @@ export function ChaseRig(props: RigProps) {
       if (lookBack) {
         pose.position = seatPose(follow, yaw, seat, fov).position;
       }
+      props.yawRef.current = yaw;
       commit(pose, dt);
       return;
     }
@@ -581,6 +582,9 @@ export function ChaseRig(props: RigProps) {
       anchorYaw = smoothYaw(anchorYawRef.current ?? targetYaw, targetYaw, resolved.velocityYawResponse, dt);
       anchorYawRef.current = anchorYaw;
     }
+    // Report camera yaw back to the shell like every other player-facing rig, so
+    // on-foot movement and aim stay camera-relative instead of frozen at yaw 0.
+    props.yawRef.current = anchorYaw;
 
     const led = leadFollowPoint(follow, last, dt, resolved);
     const desired = chaseDesiredPosition(led, anchorYaw, resolved);
