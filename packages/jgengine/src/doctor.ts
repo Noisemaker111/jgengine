@@ -137,6 +137,16 @@ export function diagnose(dir: string): Finding[] {
       label: "Tailwind @source covers @jgengine/react and @jgengine/shell",
       fix: 'without @source entries for the engine UI packages, HUD classes are silently not generated and the UI renders unstyled — add @source "../node_modules/@jgengine/react/dist" and "../node_modules/@jgengine/shell/dist" to src/index.css',
     });
+    // The F2+E editor summon mounts @jgengine/editor's chrome into the game page, styled by this same
+    // index.css. Wire the editor without scanning its classes and the summoned editor is all-white.
+    if (engineDeps["@jgengine/editor"] !== undefined) {
+      const coversEditor = /@source\s+"[^"]*(@jgengine\/editor|packages\/editor)/.test(css);
+      findings.push({
+        ok: !usesTailwind || coversEditor,
+        label: "Tailwind @source covers @jgengine/editor (F2+E summon)",
+        fix: 'the F2+E editor mounts into the game page — without its @source, the editor renders unstyled (all-white) — add @source "../node_modules/@jgengine/editor/dist" to src/index.css',
+      });
+    }
   } else {
     findings.push({ ok: false, label: "src/index.css present", fix: "the standalone harness needs src/index.css importing tailwindcss" });
   }

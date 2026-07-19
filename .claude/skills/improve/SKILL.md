@@ -16,7 +16,7 @@ Use this for backlog missions ("look at all the issues, plan each one, implement
 
 ## Ship one issue
 
-Route through `jgengine` intake and deliver through `workflow`, with evidence via `jgengine-verify`. Merge only when the mission explicitly asks for merges; otherwise park the PR for the user.
+Route through `jgengine` intake and deliver through `workflow`, with evidence via `jgengine-verify`. In the `Noisemaker111` repo, enable squash auto-merge on each PR so it lands once CI is green — the user never merges by hand; for any other owner/repo, park the PR for the user. Never publish npm releases or bump versions without an explicit ask.
 
 While implementing, record friction as it happens:
 

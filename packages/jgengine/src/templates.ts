@@ -61,7 +61,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     },
     { path: "tsconfig.json", contents: tsconfigJson(variant) },
     { path: "AGENTS.md", contents: agentsMd(name, variant) },
-    { path: "src/index.css", contents: indexCss(variant) },
+    { path: "src/index.css", contents: indexCss(variant, editor) },
     { path: "src/style.css", contents: styleCss },
     { path: "src/main.tsx", contents: mainTsx(editor) },
     { path: "src/index.tsx", contents: indexTsx(editor) },

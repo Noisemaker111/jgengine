@@ -37,6 +37,14 @@ describe("diagnose", () => {
     expect(failingLabels(dir)).toContain("Tailwind @source covers @jgengine/react and @jgengine/shell");
   });
 
+  test("flags missing editor @source when the F2+E summon is wired (the all-white editor)", () => {
+    const dir = scaffold();
+    const cssPath = join(dir, "src", "index.css");
+    // Drop only the editor @source, leaving react/shell coverage intact.
+    writeFileSync(cssPath, readFileSync(cssPath, "utf8").replaceAll(/@source [^\n]*@jgengine\/editor[^\n]*\n/g, ""));
+    expect(failingLabels(dir)).toContain("Tailwind @source covers @jgengine/editor (F2+E summon)");
+  });
+
   test("flags workspace:* deps outside a workspace (escaped-monorepo copy)", () => {
     const dir = scaffold();
     const pkgPath = join(dir, "package.json");

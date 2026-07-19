@@ -191,3 +191,7 @@ drive vice-isle --key KeyW:12000: player never moves (three identical shots from
 2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
 
 verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
+
+2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
+
+Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
