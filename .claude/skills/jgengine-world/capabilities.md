@@ -199,6 +199,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
 
+## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
+
+- `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
+
 ## flight-dynamics — simulate fixed-wing, helicopter, and VTOL aircraft
 
 - `createAircraftDynamics` (function) · `import { createAircraftDynamics } from "@jgengine/core/world"`

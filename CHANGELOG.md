@@ -32,6 +32,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Fast-travel network.** `@jgengine/core/world/fastTravel`' `createFastTravelNetwork` is a genre-agnostic
+  discovered-destinations model: game-defined `TravelPointDef`s (world-XZ position, region, icon, `initial`)
+  with per-player discovery tracking — `discover`, `isDiscovered`, distance-sorted `list(from)` and
+  `destinations(from)`, `nearest(from, { exclude })`, a `canTravel` gate, `discoveredCount`/`total`, an
+  `onDiscover` seam, and serializable `snapshot`/`restore` (re-seeds `initial` points). New `@jgengine/react`:
+  `useFastTravel` (re-render on discovery) and `FastTravelMenu` (region-grouped, distance-labeled destination
+  picker with a discovery counter and "you are here" flag). New `fast-travel` demo.
 - **Notification center.** `@jgengine/core/game/notifications`' `createNotificationCenter` is a persistent,
   read-tracked notification log (newest-first, capped, serializable, observable) — the durable counterpart to
   transient toasts: `push`, `list({ kind, unreadOnly })`, `unreadCount`, `markRead`/`markAllRead`, `remove`,

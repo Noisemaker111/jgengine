@@ -437,6 +437,14 @@ export { snapToNearest, socketWorldPosition, socketsCompatible, worldSockets } f
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";
 export {
+  createFastTravelNetwork,
+  type FastTravelNetwork,
+  type FastTravelOptions,
+  type FastTravelSnapshot,
+  type TravelPointDef,
+  type TravelPointView,
+} from "./world/fastTravel";
+export {
   biomes,
   building,
   environment,
