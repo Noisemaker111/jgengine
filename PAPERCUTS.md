@@ -101,10 +101,6 @@ Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive
 
 Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
 
-2026-07-19T01:16:07.023Z — opus — Claude
-
-PR #1220: Vercel preview *deployment* reported FAILED on the PR while GitHub CI (quick/ci) was green and a local 'vite build' of apps/web passed clean (17 pages prerendered) — the red Vercel status is environmental/deploy-config, not caused by the diff, but it looks like a blocking failure and invites chasing a non-issue. Would help to either not surface non-blocking Vercel deploy status as a PR failure signal, or document that it's independent of CI.
-
 2026-07-18T23:04:31.014Z — gpt-5.6-sol — NoisemakerJon
 
 running independent recipe/surface/test/type checks for portable damage in parallel -> automatic permission review timed out after several minutes before commands ran, so verification had to be retried as one bounded sequence
@@ -112,14 +108,6 @@ running independent recipe/surface/test/type checks for portable damage in paral
 2026-07-18T23:09:23.301Z — gpt-5.6-sol — NoisemakerJon
 
 running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh
-
-2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
-
-PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
-
-2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
-
-Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
 
 2026-07-19T04:40:07.134Z — fable — Claude
 
