@@ -3,6 +3,7 @@ import {
   listEditorKinds,
   summarizeEditorSession,
   type EditorDocument,
+  type EditorMarker,
   type EditorPath,
 } from "@jgengine/core/editor/index";
 import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAsset";
@@ -87,6 +88,7 @@ export const documentHandlers: Pick<
   | "set_volume"
   | "set_path"
   | "add_path"
+  | "add_marker"
   | "set_marker"
   | "set_note"
   | "set_meta"
@@ -214,6 +216,24 @@ export const documentHandlers: Pick<
     if (!applied) return { ok: false, error: "add_path rejected: no effect" };
     const createdId = state.selection[0] ?? request.id;
     return { ok: true, result: state.document.paths.find((p) => p.id === createdId) };
+  },
+  add_marker: (ctx, request) => {
+    const invalid = validateMetaForKind(request.kind, request.meta);
+    if (invalid !== null) return { ok: false, error: invalid };
+    const marker: EditorMarker = {
+      id: request.id,
+      kind: request.kind,
+      position: { x: request.x, y: request.y ?? 0, z: request.z },
+      ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
+      ...(request.color === undefined ? {} : { color: request.color }),
+      ...(request.label === undefined ? {} : { label: request.label }),
+      ...(request.meta === undefined ? {} : { meta: request.meta }),
+    };
+    // addMarker re-ids on a document-global collision, so read the created id back from the selection.
+    const { applied, state } = ctx.dispatchGuarded({ type: "addMarker", marker });
+    if (!applied) return { ok: false, error: "add_marker rejected: no effect" };
+    const createdId = state.selection[0] ?? request.id;
+    return { ok: true, result: state.document.markers.find((m) => m.id === createdId) };
   },
   set_marker: (ctx, request) => {
     const marker = ctx.session.getState().document.markers.find((m) => m.id === request.id);

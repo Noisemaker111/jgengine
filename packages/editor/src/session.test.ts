@@ -63,6 +63,48 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("add_marker authors a bare marker of any kind in one shot", () => {
+    const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
+
+    const added = api.handle({
+      method: "add_marker",
+      id: "stash_pier",
+      kind: "stash",
+      x: 168,
+      z: 232,
+      label: "Pier's end",
+      meta: { value: 300 },
+    });
+    expect(added.ok).toBe(true);
+    const marker = api.getSession().getState().document.markers.find((m) => m.id === "stash_pier");
+    expect(marker?.kind).toBe("stash");
+    expect(marker?.position).toEqual({ x: 168, y: 0, z: 232 });
+    expect(marker?.label).toBe("Pier's end");
+    expect(marker?.meta?.value).toBe(300);
+
+    // The new marker is selected and the edit is undoable.
+    expect(api.getSession().getState().selection).toEqual(["stash_pier"]);
+    expect(api.handle({ method: "undo" }).ok).toBe(true);
+    expect(api.getSession().getState().document.markers.some((m) => m.id === "stash_pier")).toBe(false);
+
+    dispose();
+  });
+
+  test("add_marker re-ids rather than shadow an id used in another collection", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        volumes: [{ id: "zone_a", kind: "zone", shape: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 40 }],
+      },
+    });
+    const added = api.handle({ method: "add_marker", id: "zone_a", kind: "poi", x: 5, z: 5 });
+    expect(added.ok).toBe(true);
+    const createdId = (added.result as { id: string }).id;
+    expect(createdId).not.toBe("zone_a");
+    expect(api.getSession().getState().document.markers).toHaveLength(1);
+    dispose();
+  });
+
   test("set_mode switches modes, notifies subscribers, and rejects junk", () => {
     const { api, dispose } = createEditorHost({ gameId: "test", layers: {} });
     expect(api.getMode()).toBe("edit");
