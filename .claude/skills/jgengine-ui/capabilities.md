@@ -125,6 +125,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
 
+## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
+
+- `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/react"`
+
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`
@@ -369,6 +373,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+
+## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
+
+- `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
 
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 

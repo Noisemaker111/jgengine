@@ -133,6 +133,7 @@ export const gameRegistry: GameRegistry = {
     import("./demo/bookcaseStageDemo").then((module) => module.bookcaseStageGame),
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
+  "fast-travel": () => import("./demo/fastTravelDemo").then((module) => module.fastTravelDemoGame),
   "photo-mode": () => import("./demo/photoModeDemo").then((module) => module.photoModeDemoGame),
   "radial-menu": () => import("./demo/radialDemo").then((module) => module.radialDemoGame),
   "accessibility": () => import("./demo/accessibilityDemo").then((module) => module.accessibilityDemoGame),

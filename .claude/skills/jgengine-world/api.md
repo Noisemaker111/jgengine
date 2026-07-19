@@ -1577,6 +1577,9 @@
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
 - `FactionDef` (interface): interface FactionDef — ⚠ undocumented
 - `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
+- `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
+- `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
+- `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
 - `FireGrid` (interface): interface FireGrid — ⚠ undocumented
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
@@ -1853,6 +1856,8 @@
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
 - `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
+- `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
+- `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
 - `TriggerActionDefinition` (interface): interface TriggerActionDefinition — A game-declared action the editor can assign to a volume/marker trigger. Schema drives the inspector params; `targets`/`events` optionally narrow where it appears.
 - `TriggerDispatchEvent` (interface): interface TriggerDispatchEvent — Fired when a watched actor trips an authored trigger edge.
 - `TriggerEvent` (type): type TriggerEvent = "enter" | "exit" | "interact" — Event edge that can fire an authored trigger.
@@ -1968,6 +1973,7 @@
 - `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
 - `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
+- `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
 - `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — ⚠ undocumented
 - `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
@@ -2493,6 +2499,15 @@
 - `WeatherSummary` (interface): interface WeatherSummary — ⚠ undocumented
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] — ⚠ undocumented
 - `summarizeEnvironment` (function): function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary — ⚠ undocumented
+
+## @jgengine/core/world/fastTravel
+
+- `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
+- `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
+- `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
+- `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
+- `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
+- `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
 
 ## @jgengine/core/world/features
 
