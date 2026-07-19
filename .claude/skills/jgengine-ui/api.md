@@ -1502,6 +1502,10 @@
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
 
+## @jgengine/shell/render/PartMotion
+
+- `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
+
 ## @jgengine/shell/render/SceneLighting
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
@@ -1509,14 +1513,23 @@
 
 ## @jgengine/shell/render/SceneModels
 
-- `EntityModel` (function): function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }): React.JSX.Element — ⚠ undocumented
+- `EntityModel` (function): function EntityModel({ model, instanceId, measure, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; }): React.JSX.Element — ⚠ undocumented
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — ⚠ undocumented
-- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, fallback, }: { model: ModelConfig; instanceId?: string; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
 
 ## @jgengine/shell/render/assetBase
 
 - `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.
 - `resolveAssetBaseUrl` (function): function resolveAssetBaseUrl(url: string): string — Resolves a root-absolute asset URL (`/models/…`, `/materials/…`) against the installed app base. Relative, protocol-relative, absolute-scheme (`https:`, `blob:`, `data:`), and already-based URLs pass through unchanged. Installed as the URL modifier on THREE loading managers so every model and texture load resolves correctly wherever the app is mounted.
+
+## @jgengine/shell/render/measureBounds
+
+- `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
+- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): React.JSX.Element — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes.
+- `MeasuredLocalBounds` (interface): interface MeasuredLocalBounds — Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the count lets callers detect async subtree fill-in without diffing bounds.
+- `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
+- `reportMeasuredBounds` (function): function reportMeasuredBounds(ctx: GameContext, target: "entity" | "object", key: string, bounds: MeasuredLocalBounds): void — Forward a measured result into the context (entity kind or object catalog id), deduping repeat reports of the same shape so remounts and multi-instance kinds don't churn collider resolution.
 
 ## @jgengine/shell/render/modelRender
 
@@ -1532,6 +1545,10 @@
 ## @jgengine/shell/render/useEntityRenderCues
 
 - `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
+
+## @jgengine/shell/render/useModelAnimation
+
+- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp.
 
 ## @jgengine/shell/replay/useSessionRecorder
 
@@ -2068,7 +2085,7 @@
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from the player (world… — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, tickMs = 120, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, tickMs = 120, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
 - `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
 - `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
 - `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.

@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
 
+## clip-metadata — read a GLB's animation clip names for the asset index at reindex
+
+- `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
+
 ## starter-packs — themed CC0 model ids (people/props/nature/urban) ready for entityModels
 
 - `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`

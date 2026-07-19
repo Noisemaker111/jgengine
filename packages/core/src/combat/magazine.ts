@@ -19,6 +19,13 @@ export interface MagazineConfig {
   reserve?: number | MagazineReserve;
 }
 
+/** Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve. */
+export interface MagazineSnapshot {
+  loaded: number;
+  reloadElapsedMs: number | null;
+  reserve: number | null;
+}
+
 /**
  * A per-weapon magazine: discrete loaded rounds, a timed reload that refills from a reserve pool,
  * and the reserve-pool interaction itself — the primitive that replaces hand-rolling mag size,
@@ -47,6 +54,13 @@ export interface Magazine {
   addReserve(amount: number): void;
   /** Advance the reload timer; completes the reload once `reloadMs` has elapsed. */
   tick(dtSeconds: number): void;
+  /** Return detached plain data for save, rollback, replay, or worker transfer. */
+  snapshot(): MagazineSnapshot;
+  /**
+   * Restore decoded snapshot data. Returns false without changing loaded/reload
+   * state when reserve kinds differ or an external reserve cannot reconcile.
+   */
+  restore(snapshot: MagazineSnapshot): boolean;
 }
 
 function selfManagedReserve(initial: number): MagazineReserve {
@@ -135,6 +149,29 @@ export function createMagazine(config: MagazineConfig): Magazine {
         if (take > 0 && reserve.spend(take)) loaded = clampLoaded(loaded + take);
       }
       reloadElapsedMs = null;
+    },
+    snapshot() {
+      return {
+        loaded,
+        reloadElapsedMs,
+        reserve: isInfiniteReserve ? null : reserve.current(),
+      };
+    },
+    restore(snapshot) {
+      if (isInfiniteReserve !== (snapshot.reserve === null)) return false;
+      if (!isInfiniteReserve) {
+        const desired = Math.max(0, snapshot.reserve!);
+        const current = Math.max(0, reserve.current());
+        if (desired > current && reserve.gain === undefined) return false;
+        if (desired < current && !reserve.spend(current - desired)) return false;
+        if (desired > current) reserve.gain?.(desired - current);
+      }
+      loaded = clampLoaded(snapshot.loaded);
+      reloadElapsedMs =
+        snapshot.reloadElapsedMs === null
+          ? null
+          : Math.max(0, Math.min(reloadMs, snapshot.reloadElapsedMs));
+      return true;
     },
   };
 }

@@ -74,7 +74,17 @@ export {
   type SpawnProviderContext,
 } from "./combat/encounterSequence";
 export { impactPresets, resolveHitReaction, type HitReactionConfig } from "./combat/hitReaction";
-export { createMagazine, type Magazine, type MagazineReserve } from "./combat/magazine";
+export { createMagazine, type Magazine, type MagazineConfig, type MagazineReserve, type MagazineSnapshot } from "./combat/magazine";
+export {
+  createFireCadence,
+  createWeaponRuntime,
+  type FireCadence,
+  type FireCadenceConfig,
+  type WeaponFireResult,
+  type WeaponFireStatus,
+  type WeaponRuntime,
+  type WeaponRuntimeConfig,
+} from "./combat/weaponFire";
 export {
   createProjectileSystem,
   type ObjectRaycastHit,
@@ -145,10 +155,17 @@ export {
   type ThresholdTracker,
   type ThresholdTrackerSnapshot,
 } from "./combat/thresholdCrossings";
+export {
+  DEFAULT_VFX_PRESET,
+  resolveVfxPreset,
+  vfxPresets,
+  type VfxPreset,
+  type VfxPresetName,
+} from "./combat/vfxPresets";
 export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";
-export { createStats, type Stats } from "./stats/statModifiers";
+export { createStats, type Stats, type StatsSnapshot } from "./stats/statModifiers";
 export {
   applyStatPoolDelta,
   changeStatPool,

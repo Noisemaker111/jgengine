@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CapabilitiesRouteImport } from './routes/capabilities'
+import { Route as AdoptRouteImport } from './routes/adopt'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as GamesIdRouteImport } from './routes/games.$id'
@@ -45,6 +46,11 @@ const CapabilitiesRoute = CapabilitiesRouteImport.update({
   path: '/capabilities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdoptRoute = AdoptRouteImport.update({
+  id: '/adopt',
+  path: '/adopt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -73,6 +79,7 @@ const ApiGithubContributionsRoute = ApiGithubContributionsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/adopt': typeof AdoptRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
   '/playground': typeof PlaygroundRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/adopt': typeof AdoptRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
   '/playground': typeof PlaygroundRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/adopt': typeof AdoptRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
   '/playground': typeof PlaygroundRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adopt'
     | '/capabilities'
     | '/editor'
     | '/playground'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/adopt'
     | '/capabilities'
     | '/editor'
     | '/playground'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/adopt'
     | '/capabilities'
     | '/editor'
     | '/playground'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdoptRoute: typeof AdoptRoute
   CapabilitiesRoute: typeof CapabilitiesRoute
   EditorRoute: typeof EditorRoute
   PlaygroundRoute: typeof PlaygroundRoute
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CapabilitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adopt': {
+      id: '/adopt'
+      path: '/adopt'
+      fullPath: '/adopt'
+      preLoaderRoute: typeof AdoptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -237,6 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdoptRoute: AdoptRoute,
   CapabilitiesRoute: CapabilitiesRoute,
   EditorRoute: EditorRoute,
   PlaygroundRoute: PlaygroundRoute,

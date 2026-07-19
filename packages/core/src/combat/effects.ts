@@ -1,6 +1,6 @@
 import type { EntityPosition } from "../scene/entityStore";
-import { applyPoolDelta, type StatValueMap } from "../scene/entityStats";
 import { distanceBetween } from "../scene/spatial";
+import { applyStatPoolDelta, type StatPool, type StatPoolAccess } from "../stats/statPool";
 
 export interface ReceiveRule {
   order: string[];
@@ -93,7 +93,13 @@ export function resolveAreaTargets(
 
 export interface EffectSystemDeps {
   resolveReceive(instanceId: string): ReceiveMap | null | undefined;
-  resolveStats(instanceId: string): StatValueMap | undefined;
+  /** Preferred portable bridge to caller-owned resource state. */
+  statPools?: StatPoolAccess;
+  /**
+   * Legacy native bridge retained for source compatibility. New integrations
+   * should provide {@link statPools} and keep their own state model.
+   */
+  resolveStats?(instanceId: string): Record<string, StatPool> | undefined;
   getStat(itemId: string, stat: string): number | null;
   spatial: CombatSpatialDeps;
   drainStatByEffect?: Record<string, string>;
@@ -109,11 +115,24 @@ export interface EffectSystem {
 const DEFAULT_DRAIN_STAT = "damage";
 
 /**
- * Apply, stack, and tick timed status effects — buffs, debuffs, DoTs — on entities.
+ * Resolve direct or area resource effects through caller-owned stat pools,
+ * including ordered absorption, restoration, modifiers, and lethal context.
  *
- * @capability status-effects apply and tick timed status effects and buffs on entities
+ * @capability status-effects commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
  */
 export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
+  const statPools: StatPoolAccess = deps.statPools ?? {
+    get(instanceId, statId) {
+      return deps.resolveStats?.(instanceId)?.[statId] ?? null;
+    },
+    set(instanceId, statId, next) {
+      const stats = deps.resolveStats?.(instanceId);
+      if (stats === undefined) return false;
+      stats[statId] = next;
+      return true;
+    },
+  };
+
   function resolveRule(instanceId: string, effect: string): ReceiveRule | null {
     return deps.resolveReceive(instanceId)?.[effect] ?? null;
   }
@@ -136,12 +155,11 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
   function canReceive(instanceId: string, effect: string, magnitude?: number): string | null {
     const rule = resolveRule(instanceId, effect);
     if (rule === null) return "not-receivable";
-    const stats = deps.resolveStats(instanceId);
-    if (stats === undefined) return "unknown-instance";
+    if (deps.statPools === undefined && deps.resolveStats?.(instanceId) === undefined) return "unknown-instance";
     const restorative = magnitude !== undefined && magnitude < 0;
     const anyPoolHasHeadroom = rule.order.some((statId) => {
-      const stat = stats[statId];
-      if (stat === undefined) return false;
+      const stat = statPools.get(instanceId, statId);
+      if (stat === null) return false;
       return restorative ? stat.current < stat.max : stat.current > stat.min;
     });
     if (!anyPoolHasHeadroom) return "pools-depleted";
@@ -152,7 +170,6 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     instanceId: string,
     effect: string,
     rule: ReceiveRule,
-    stats: StatValueMap,
     drainMagnitude: number,
   ): EffectResult {
     const applied: AppliedPoolDelta[] = [];
@@ -161,12 +178,9 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     let lethal = false;
     for (const statId of rule.order) {
       if (remaining === 0) break;
-      const before = stats[statId];
-      if (before === undefined) continue;
-      const result = applyPoolDelta(stats, statId, -remaining);
+      const result = applyStatPoolDelta(statPools, instanceId, statId, -remaining);
       if (result.status === "rejected") continue;
-      stats[statId] = result.stat;
-      const delta = result.stat.current - before.current;
+      const delta = result.applied;
       if (delta !== 0) applied.push({ statId, delta });
       remaining += delta;
       if (statId === lastStatId && drainMagnitude > 0 && result.hitMin) lethal = true;
@@ -182,11 +196,10 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
     scale: number,
   ): EffectResult | null {
     const rule = resolveRule(instanceId, effect);
-    const stats = deps.resolveStats(instanceId);
-    if (rule === null || stats === undefined) return null;
+    if (rule === null) return null;
     const drainMagnitude = modifiedDrainMagnitude(baseDrainMagnitude(effect, via) * scale, rule);
     if (canReceive(instanceId, effect, drainMagnitude) !== null) return null;
-    const result = drainPools(instanceId, effect, rule, stats, drainMagnitude);
+    const result = drainPools(instanceId, effect, rule, drainMagnitude);
     if (result.lethal) deps.onLethal?.(instanceId, { from, via, effect });
     return result;
   }

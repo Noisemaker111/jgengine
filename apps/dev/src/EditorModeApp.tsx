@@ -6,12 +6,22 @@ import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import { captureArmed, setCaptureStatus } from "./captureReady";
 import { editorLayerRegistry, gameLoaders } from "./registries";
 
-export function EditorModeApp({ gameId, playable }: { gameId: string; playable: PlayableGame }) {
+export function EditorModeApp({
+  gameId,
+  playable,
+  onExitEditor,
+}: {
+  gameId: string;
+  playable: PlayableGame;
+  /** Closes the editor and returns to the game; powers the chrome's "Exit to game" control. */
+  onExitEditor?: () => void;
+}) {
   const [EditorApp, setEditorApp] = useState<ComponentType<{
     gameId: string;
     playable: PlayableGame;
     layers?: import("@jgengine/core/editor/index").EditorLayersInput;
     catalogs?: readonly import("@jgengine/core/editor/index").EditorCatalogDefinition[];
+    onExitEditor?: () => void;
   }> | null>(null);
   const [layers, setLayers] = useState<import("@jgengine/core/editor/index").EditorLayersInput | undefined>(
     undefined,
@@ -46,5 +56,7 @@ export function EditorModeApp({ gameId, playable }: { gameId: string; playable: 
 
   if (error !== null) return <ErrorPanel title="Editor failed to load" detail={error} />;
   if (EditorApp === null) return <LoadingPanel label="Loading editor…" />;
-  return <EditorApp gameId={gameId} playable={playable} layers={layers} catalogs={catalogs} />;
+  return (
+    <EditorApp gameId={gameId} playable={playable} layers={layers} catalogs={catalogs} onExitEditor={onExitEditor} />
+  );
 }

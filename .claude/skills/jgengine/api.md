@@ -276,7 +276,7 @@
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
 - `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
 - `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
-- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
+- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `createGameContext` (function): function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(options: GameContextOptions<TAssetRef, TMultiplayer>): GameContext — ⚠ undocumented
 
@@ -307,7 +307,7 @@
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
 - `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
 - `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
-- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`.
+- `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 
 ## @jgengine/core/runtime/gameRuntime

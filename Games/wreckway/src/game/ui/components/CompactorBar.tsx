@@ -1,13 +1,9 @@
+import { formatDuration } from "@jgengine/core/format/duration";
+
 import type { SessionSnapshot } from "../../run/session";
 
 const DANGER_GAP = 22;
 const CRITICAL_GAP = 10;
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
 
 export function CompactorBar({ snapshot }: { snapshot: SessionSnapshot }) {
   const gap = Math.max(0, snapshot.compactorGap);
@@ -20,7 +16,7 @@ export function CompactorBar({ snapshot }: { snapshot: SessionSnapshot }) {
       <div className="flex items-center gap-3 text-xs font-black tracking-[0.2em] text-[#f0c419]">
         <span>{snapshot.zone.label}</span>
         <span className="text-[#8d99a6]">•</span>
-        <span className="tabular-nums text-[#fef3e0]">{formatTime(snapshot.runTime)}</span>
+        <span className="tabular-nums text-[#fef3e0]">{formatDuration(snapshot.runTime)}</span>
       </div>
       <div
         className={`relative h-4 w-64 overflow-hidden rounded-full border-2 sm:w-80 ${

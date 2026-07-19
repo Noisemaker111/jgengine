@@ -82,8 +82,7 @@ export function createDriving(): Driving {
   const vtolModes = new Map<string, boolean>();
   const vehicleSeats: VehicleSeats = createVehicleSeats();
   let driving: string | null = null;
-  let lastSpeedKmh = 0;
-  let lastTelemetry: VehicleTelemetry = { mode: "ground", speedKmh: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
+  let lastTelemetry: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
 
   /**
    * The solids a car should slide along this tick (#1051): every nearby *solid* scene object (buildings,
@@ -300,7 +299,7 @@ export function createDriving(): Driving {
     });
     lastTelemetry = {
       mode: "aircraft",
-      speedKmh: step.airspeed * 3.6,
+      speedMs: step.airspeed,
       altitude: step.position[1] - ctx.world.groundHeightAt(step.position[0], step.position[2]),
       verticalSpeed: step.verticalSpeed,
       gear: 0,
@@ -308,7 +307,6 @@ export function createDriving(): Driving {
       stalled: step.stalled,
       vtol: vtolModes.get(vehicleId) === true,
     };
-    lastSpeedKmh = lastTelemetry.speedKmh;
     return step;
   }
 
@@ -366,8 +364,7 @@ export function createDriving(): Driving {
       });
       driving = null;
       drivingAudio.stop(ctx);
-      lastSpeedKmh = 0;
-      lastTelemetry = { mode: "ground", speedKmh: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
+      lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
       drivingStore.write(ctx, null);
       if (!result.ok) return;
       ctx.camera.follow(result.cameraTarget);
@@ -375,7 +372,7 @@ export function createDriving(): Driving {
       ctx.scene.entity.setPose(ctx.player.userId, { position: result.placement.position, rotationY: result.placement.rotationY });
     },
     drivingVehicleId: () => driving,
-    carSpeedKmh: () => lastSpeedKmh,
+    carSpeedKmh: () => lastTelemetry.speedMs * 3.6,
     telemetry: () => lastTelemetry,
     playerWorldPos,
     makeCarSim,
@@ -390,8 +387,7 @@ export function createDriving(): Driving {
         vehicleSeats.mounts.dismount(ctx.player.userId);
         driving = null;
         drivingAudio.stop(ctx);
-        lastSpeedKmh = 0;
-        lastTelemetry = { mode: "ground", speedKmh: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
+        lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
         ctx.camera.follow(ctx.player.userId);
         const rider = ctx.scene.entity.get(ctx.player.userId);
         setRiderFrozen(ctx, ctx.player.userId, false);
@@ -419,10 +415,9 @@ export function createDriving(): Driving {
             const axis = ctx.input.axis(DRIVE_AXIS_BINDINGS);
             refreshClamp(ctx, driving, kinematic.pose().position, dt);
             const result = tickDrivableVehicle(kinematic, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
-            lastSpeedKmh = Math.abs(result.step.forwardSpeed) * 3.6;
             lastTelemetry = {
               mode: "ground",
-              speedKmh: lastSpeedKmh,
+              speedMs: Math.abs(result.step.forwardSpeed),
               altitude: 0,
               verticalSpeed: 0,
               gear: result.step.gear,

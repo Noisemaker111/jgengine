@@ -1,11 +1,11 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import { cloneModelScene, disposeClonedMaterials, standardMaterialsOf } from "@jgengine/shell/render/modelRender";
+import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
 import { useStore } from "@jgengine/react/store";
 
 import { bodyColor, type AlienBodyPlan } from "../creatures/bodyPlan";
@@ -53,22 +53,20 @@ class ModelErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
 
 function AlienModel({
   meshUrl,
+  instanceId,
   scale,
   color,
   emissive,
   emissiveIntensity,
-  moving,
 }: {
   meshUrl: string;
+  instanceId: string;
   scale: [number, number, number];
   color: string;
   emissive: string;
   emissiveIntensity: number;
-  moving: boolean;
 }): ReactNode {
-  const gltf = useLoader(GLTFLoader, meshUrl, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, meshUrl);
 
   const scene = useMemo(() => cloneModelScene(gltf.scene), [gltf]);
   const materials = useMemo(() => standardMaterialsOf(scene), [scene]);
@@ -80,35 +78,9 @@ function AlienModel({
 
   useEffect(() => () => disposeClonedMaterials(scene), [scene]);
 
-  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
-  const actionsRef = useRef<{ idle: THREE.AnimationAction; walk: THREE.AnimationAction; active: "idle" | "walk" } | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (gltf.animations.length === 0) {
-      mixerRef.current = null;
-      actionsRef.current = null;
-      return;
-    }
-    const mixer = new THREE.AnimationMixer(scene);
-    const clipFor = (name: string) => THREE.AnimationClip.findByName(gltf.animations, name) ?? gltf.animations[0]!;
-    const idle = mixer.clipAction(clipFor("idle"));
-    const walk = mixer.clipAction(clipFor("walk"));
-    for (const action of [idle, walk]) {
-      action.setLoop(THREE.LoopRepeat, Infinity);
-      action.enabled = true;
-    }
-    idle.play();
-    mixer.update(0);
-    mixerRef.current = mixer;
-    actionsRef.current = { idle, walk, active: "idle" };
-    return () => {
-      mixer.stopAllAction();
-      mixerRef.current = null;
-      actionsRef.current = null;
-    };
-  }, [scene, gltf]);
+  // Engine animation driver: derives idle/walk clips from the GLB's own clip names and
+  // crossfades from the entity's live movement — no game-side mixer or clip strings.
+  useModelAnimation(scene, gltf.animations, "auto", instanceId);
 
   useEffect(() => {
     for (const material of materials) {
@@ -117,19 +89,6 @@ function AlienModel({
       material.emissiveIntensity = emissiveIntensity;
     }
   }, [materials, color, emissive, emissiveIntensity]);
-
-  useFrame((_state, delta) => {
-    const machine = actionsRef.current;
-    if (machine !== null) {
-      const next: "idle" | "walk" = moving ? "walk" : "idle";
-      if (next !== machine.active) {
-        machine[next].reset().fadeIn(0.25).play();
-        machine[machine.active].fadeOut(0.25);
-        machine.active = next;
-      }
-    }
-    if (mixerRef.current !== null) mixerRef.current.update(delta);
-  });
 
   return (
     <group scale={[normalizedScale * scale[0], normalizedScale * scale[1], normalizedScale * scale[2]]}>
@@ -181,11 +140,11 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
           <Suspense fallback={null}>
             <AlienModel
               meshUrl={meshUrl}
+              instanceId={entity.id}
               scale={scale}
               color={color}
               emissive={emissive}
               emissiveIntensity={emissiveIntensity}
-              moving={moving}
             />
           </Suspense>
         </ModelErrorBoundary>

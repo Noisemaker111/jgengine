@@ -51,11 +51,14 @@ Identify the screens the game actually needs:
 
 - boot/loading
 - title or attract screen
+- **main menu** (the game's front-end — see the Main menu section)
 - mode selection
+- character create / character select where the game has classes, characters, or profiles
 - onboarding/tutorial
 - gameplay HUD
 - pause
 - settings
+- credits
 - map/inventory/dialogue where relevant
 - victory/results
 - failure/retry
@@ -302,7 +305,27 @@ Three composable-chrome seams for FPS/TPS polish — a placement hook plus a goo
 - **Render cues for any custom rig.** `useEntityRenderCues(instanceId, tuning?)` (`@jgengine/shell/render/useEntityRenderCues`) returns the same `cuesRef` the viewmodel gets, for a custom `renderEntity` component: velocity-driven `bobPhase`, `firing`/`recoil` from `ctx.game.playEntityAnimation(instanceId, "fire")`, `reloading` from `"reload"`/`"reloadEnd"`, `hit` from `combat.hitReaction`, `dead` from `entity.died` — no diffing the parent group's position, no game-side module map for attack timing. `RenderCueTuning` (`@jgengine/core/combat/renderCues`) overrides the bob rate / recoil decay / pulse durations; see `jgengine-combat`'s `combat/renderCues` for the underlying pure math.
 `@jgengine/shell/terrain`'s `ProceduralGround`/`CarvedTerrain`/`GrassField` are the game-facing terrain surface; the height-field math underneath (`arenaField`, `flatField`, `fractalNoise`, `resolveGroundStep`, `valueNoise`, `withNormal`, re-exported from `@jgengine/core/world/terrain`) and `GamePlayerShell`'s physics helpers (`applyMotionImpulses`, `nearbyObstacles`, `resolvePhysicsTuning`, `hasEnvironmentTerrain`, sourced from `core/runtime/motionIntents` / `core/movement`) are internal building blocks the shell composes for you — reach for `defineGame({ movement, world })` and the ground primitives above instead of calling these directly.
 
+## Main menu
+
+**The main menu is the game's front-end, not a marketing splash.** The hosting website/runner loads straight into the game's own menu (see rejection criteria) — there is no engine-supplied main menu, and the page must not render a title card, tagline, or "enter game" button of its own. What the player first sees is a screen the game designs and skins in its own art direction: the same shape/material/type language as its HUD, not a landing page, hero banner, feature list, or store page. Homage/credit lines are fine as small print; the screen's job is to start play, not to sell it.
+
+Compose it from the game's own markup over the headless `StartScreen` (`@jgengine/react`, `start-screen` capability) — a full-bleed `data-jg-menu` overlay that centers your content and offers an opt-in settings corner; it imposes no look. Menu rows are the copy-in `MenuList` / `MenuButton` / `TitleScreen` registry scaffolds (keyboard/controller focus + `KeybindBadge` that self-hides on touch already wired) restyled into the game's chrome — never shipped as raw scaffold.
+
+**The front-end entries, when the game has them.** A menu is more than one Start button. Offer the real front-end verbs a player expects, gated to what the game actually supports:
+
+- **New Game** — begin a fresh run. When a save exists, keep it distinct from Continue rather than silently overwriting.
+- **Continue / Load** — resume the most recent save, and (when the game keeps more than one) a **Load** entry that lists save slots. Save slots are `createSaveStore` instances keyed by slot id; read them reactively with `useSaveStore` (`@jgengine/react`, offline `localSaveBackend` or cloud `remoteSaveBackend` — same hook, different backend). Disable Continue/Load with a real disabled state when there is nothing to resume; do not hide the verb entirely.
+- **Create Character / Choose Class** — when the game has characters, classes, loadouts, or profiles, the create/select flow lives here as an authored screen, not a stray dropdown. Keep the character/roster model serializable and game-owned (persist it through the game's save store); the menu is its presentation. Do not reach for a genre "class picker" preset — compose the choices this game actually offers.
+- **Load Character / Roster** — choose an existing profile or party when the game persists more than one.
+- **Settings** — reachable from the main menu, always (see Settings menu below). This is one of the two canonical places settings live; pause is the other.
+- **Credits** — a real, reachable screen. Player-facing games owe HUD and website credit (see governance) and record borrowed work in `CREDITS.md`; the menu's Credits entry surfaces that in-game. Read it from the game's own credits data — do not bury attribution only in a build artifact.
+- **Quit / Back to site** — where it makes sense for the host.
+
+Only show entries the game supports, and disable (don't delete) verbs that are temporarily unavailable so the menu shape stays legible. Character create/select and Credits are their own authored sub-screens reached from the menu, composed to the same art direction — not modal form dumps.
+
 ## Settings menu
+
+**Settings is game-owned and reachable from a place that makes sense.** Every game ships settings — but as *its* settings, skinned in its own art direction and placed inline with its own UI, never the engine's stock face dropped into a corner. The two canonical homes are the **main menu** and the **pause** screen; put the entry where the player would look, not floating over live play. The engine gives you the menu's contents and behavior for free — you own its skin, layout choice, and placement. If the default four layouts do not match the game, drive `useSettings()` and render the rows entirely inside your own chrome.
 
 **Settings menu (themed, four layouts, no forced chrome).** The engine builds the whole menu for free — Sound (master + per-bus volume), Graphics (quality/dpr + shadows), Gameplay (FOV slider, default 40–120), Controls (per-action key rebinding, inline click-to-rebind, persisted) — from the game's `audio.buses` and `input` map. What it does **not** do is bolt a fixed gear onto every game: **there is no auto trigger.** You place the entry yourself so it lives *inline with your game's own UI*, never a stray corner overlay. Drop `<SettingsTrigger className=…>` (from `@jgengine/react`) anywhere in your HUD or menu — headless button, `className` for skin/placement, optional `children` to replace the default gear glyph, renders nothing when there's nothing to show. Or call `useSettings().open()` from your own control. Tune the menu via `defineGame({ settings })` (`GameSettingsConfig` from `@jgengine/core/settings/settingsModel`):
 
@@ -493,6 +516,11 @@ Require revision when any of these are true:
 - ordinary document flow determines the HUD layout
 - generic default styling is used because no art direction was written
 - the hosting website page renders its own title, tagline, or "enter game" button instead of loading straight into the game's own menu
+- the game's own main menu reads as a marketing/landing page (hero banner, feature list, store framing) rather than a game front-end
+- the game supports saves, characters, or classes but the main menu offers no Continue/Load or character create/select entry
+- Continue/Load is hidden rather than shown disabled when there is nothing to resume
+- settings ship as the engine's unskinned stock menu instead of the game's own skin and placement, or sit floating over live play with no sensible home
+- credits are absent from the game, or attribution lives only in a build artifact instead of a reachable in-game screen
 
 ## 15. Compact implementation API appendix
 
@@ -513,6 +541,9 @@ UI work is complete only when:
 - mobile controls do not cover critical content
 - touch controls match the genre and game identity
 - title, pause, and results screens feel authored
+- the main menu is a game-owned front-end (New Game / Continue / Load / character create+select / Settings / Credits as the game supports them), not a marketing splash
+- settings are game-skinned and reachable from the main menu and pause, not a stock corner overlay
+- credits are reachable in-game and record borrowed work
 - interaction states and transitions are present
 - screenshots have been reviewed and revised
 - the implementation remains accessible and performant

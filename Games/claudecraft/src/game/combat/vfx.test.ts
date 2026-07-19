@@ -5,7 +5,7 @@ import type { CombatVfxEvent } from "@jgengine/core/game/events";
 import { game } from "../../game.config";
 import { content } from "../content";
 import { CLASS_ENTITY_ID, type AbilityDef, type AbilityKind, type AbilitySchool } from "../model";
-import { SCHOOL_COLORS, playMeleeVfx, playSpellVfx, vfxArchetype } from "./vfx";
+import { SCHOOL_COLORS, playMeleeVfx, playSpellVfx, vfxPreset } from "./vfx";
 
 const CASTER = "vfx-caster";
 const TARGET = "vfx-target";
@@ -56,14 +56,14 @@ describe("claudecraft spell vfx", () => {
     expect(SCHOOL_COLORS.nature).toBe(0x86e86a);
   });
 
-  test("archetype maps by ability kind and school", () => {
-    expect(vfxArchetype(ability("damage", "frost"))).toBe("projectile");
-    expect(vfxArchetype(ability("damage", "physical"))).toBe("spark");
-    expect(vfxArchetype(ability("dot", "shadow"))).toBe("projectile");
-    expect(vfxArchetype(ability("heal", "holy"))).toBe("glow");
-    expect(vfxArchetype(ability("hot", "nature"))).toBe("glow");
-    expect(vfxArchetype(ability("buff", "arcane"))).toBe("glow");
-    expect(vfxArchetype(ability("aoe", "fire"))).toBe("nova");
+  test("preset maps by ability kind and school onto the shared SDK vocabulary", () => {
+    expect(vfxPreset(ability("damage", "frost"))).toBe("firebolt");
+    expect(vfxPreset(ability("damage", "physical"))).toBe("slash");
+    expect(vfxPreset(ability("dot", "shadow"))).toBe("firebolt");
+    expect(vfxPreset(ability("heal", "holy"))).toBe("buff");
+    expect(vfxPreset(ability("hot", "nature"))).toBe("buff");
+    expect(vfxPreset(ability("buff", "arcane"))).toBe("buff");
+    expect(vfxPreset(ability("aoe", "fire"))).toBe("explosion");
   });
 
   test("a frost bolt emits a projectile from caster to target in school color", () => {

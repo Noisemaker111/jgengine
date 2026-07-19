@@ -8,6 +8,7 @@ import type {
 } from "../combat/effects";
 import type { ProjectileSystem } from "../combat/projectiles";
 import type { HitReaction, HitReactionConfig, ImpactPresetName } from "../combat/hitReaction";
+import type { VfxPresetName } from "../combat/vfxPresets";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CommandDefinition, CommandResult } from "../commands/commandRegistry";
 import type { ChargeOptions as WalletChargeOptions } from "../economy/wallet";
@@ -47,7 +48,7 @@ import type {
   SpawnPose,
 } from "../scene/entityStore";
 import type { Forms } from "../scene/form";
-import type { EntityColliderSet, ModelBodySource } from "../scene/colliders";
+import type { EntityColliderSet, MeasuredBounds, ModelBodySource } from "../scene/colliders";
 import type { ObjectRaycastHit, ObjectRaycastInput } from "../scene/objectQuery";
 import type { ObjectStore } from "../scene/objectStore";
 import type { Roster } from "../scene/roster";
@@ -154,6 +155,15 @@ export interface SceneObjectContext extends ObjectStore {
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
   /**
+   * Report the entity-local AABB the renderer actually mounted for `catalogId` — stored per catalog
+   * id as a blocking physical body and consulted after authored `colliders` and index-`dims` fitted
+   * models, before the visual-scale fallback. The shell reports custom `renderObject` content and
+   * dims-less models automatically, so a placed prop's body wraps its real rendered shape instead of
+   * a unit-cube guess. Pass `null` to clear. Returns `false` when the bounds are degenerate.
+   * @capability measured-colliders hitboxes and blocking bodies wrap what the renderer actually mounted — custom render props and dims-less models stop falling back to fixed-size boxes.
+   */
+  reportBounds(catalogId: string, bounds: MeasuredBounds | null): boolean;
+  /**
    * Per-instance selection/highlight state for placed objects — the reactive counterpart to
    * `worldHealthBars`/`nameplates` (entities), so a build-mode or RTS selection ring reads
    * `ctx.scene.object.selection` instead of hand-rolling one through `WorldOverlay` against external
@@ -176,10 +186,22 @@ export interface FloatTextInput {
   scale?: number;
 }
 
-/** Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`. */
+/**
+ * Request a transient spell/ability VFX burst. The easy path is a named `preset` —
+ * `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color
+ * or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"`
+ * and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id
+ * (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`,
+ * `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color`
+ * yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
+ */
 export interface VfxInput {
-  kind: VfxKind;
-  color: number;
+  /** A named visual flavor from {@link vfxPresets}. Fills in `kind`/`color`/defaults; explicit fields below still win. */
+  preset?: VfxPresetName | (string & {});
+  /** Visual archetype. Optional when `preset` is given; required otherwise. */
+  kind?: VfxKind;
+  /** `0xRRGGBB` tint. Optional when `preset` is given; required otherwise. */
+  color?: number;
   from?: string | readonly [number, number, number];
   to?: string | readonly [number, number, number];
   radius?: number;
@@ -270,6 +292,17 @@ export interface SceneEntityContext {
   invalidateSpatial: SpatialApi["invalidate"];
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
+  /**
+   * Report the entity-local AABB the renderer actually mounted for `kind` — stored per kind as a
+   * tight damage hitbox and consulted after authored `colliders` and index-`dims` fitted models,
+   * before the scale/humanoid-default fallbacks. The shell reports custom `renderEntity` content and
+   * dims-less models automatically, so hitboxes wrap the rendered mesh instead of the fixed
+   * 0.7×1.8×0.7 box. Runtime-measured on the client; authoritative hosts that never render should
+   * author `colliders` or model `dims` instead. Pass `null` to clear. Returns `false` when the
+   * bounds are degenerate.
+   * @capability measured-hitboxes an entity rendered with a custom mesh takes hits in a box matching its rendered bounds, not the fixed humanoid rectangle.
+   */
+  reportBounds(kind: string, bounds: MeasuredBounds | null): boolean;
   /** Uniform visual scale from the entity's catalog entry (1 when unscaled). */
   visualScaleOf(instanceId: string): number;
   form: Forms;

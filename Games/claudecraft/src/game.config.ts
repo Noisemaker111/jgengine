@@ -84,7 +84,9 @@ export const game = defineGame({
   objectStyles,
   settings: { variant: "sidebar" },
   worldHealthBars: { roles: ["enemy", "hostile"], maxDistance: 60 },
-  nameplates: { maxDistance: 40 },
+  // worldHealthBars already draws the HP bar; keep the nameplate name-only so enemies
+  // don't get two stacked health bars.
+  nameplates: { maxDistance: 40, showHealth: false },
   postProcessing: {
     toneMapping: "aces",
     ao: { radius: 2, intensity: 1.2, distanceFalloff: 3.6, blend: 0.85 },

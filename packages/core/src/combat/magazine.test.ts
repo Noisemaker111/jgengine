@@ -118,4 +118,53 @@ describe("createMagazine", () => {
     expect(mag.loaded()).toBe(0);
     expect(mag.reserve()).toBe(0);
   });
+
+  test("snapshot round-trips through JSON and resumes a reload identically", () => {
+    const original = createMagazine({ capacity: 8, reloadMs: 1000, reserve: 20 });
+    original.fire(6);
+    original.startReload();
+    original.tick(0.4);
+
+    const decoded = JSON.parse(JSON.stringify(original.snapshot()));
+    const restored = createMagazine({ capacity: 8, reloadMs: 1000, reserve: 0, loaded: 0 });
+    expect(restored.restore(decoded)).toBe(true);
+    expect(restored.snapshot()).toEqual(decoded);
+
+    original.tick(0.6);
+    restored.tick(0.6);
+    expect(restored.snapshot()).toEqual(original.snapshot());
+    expect(restored.loaded()).toBe(8);
+    expect(restored.reserve()).toBe(14);
+  });
+
+  test("restore reconciles caller-owned reserve state or rejects without partial magazine changes", () => {
+    let external = 3;
+    const mag = createMagazine({
+      capacity: 8,
+      reloadMs: 1000,
+      loaded: 2,
+      reserve: {
+        current: () => external,
+        spend(amount) {
+          if (amount > external) return false;
+          external -= amount;
+          return true;
+        },
+      },
+    });
+
+    expect(mag.restore({ loaded: 7, reloadElapsedMs: null, reserve: 5 })).toBe(false);
+    expect(mag.loaded()).toBe(2);
+    expect(external).toBe(3);
+
+    external = 5; // caller restores its own reserve before restoring the magazine
+    expect(mag.restore({ loaded: 7, reloadElapsedMs: null, reserve: 5 })).toBe(true);
+    expect(mag.loaded()).toBe(7);
+  });
+
+  test("restore rejects finite/infinite reserve mismatches", () => {
+    const infinite = createMagazine({ capacity: 4, reloadMs: 100 });
+    expect(infinite.restore({ loaded: 1, reloadElapsedMs: null, reserve: 4 })).toBe(false);
+    expect(infinite.loaded()).toBe(4);
+  });
 });

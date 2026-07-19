@@ -47,7 +47,9 @@ When a game is reported slow, play it and pull the debug menu's perf data instea
 
 ## Visual proof
 
-Start one managed capture session before the first visual shot:
+**Created standalone game (outside the monorepo):** run `bun run shoot` (or `node scripts/shoot.mjs`, shipped in the scaffold). It starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at R3F's 300×150 default, waits for an honest frame, and captures headless to `shots/shot.png` — no daemon, no npm deps. Flags: `--device desktop|mobile|mobile-landscape`, `--url`, `--out`, `--settle`, `--timeout`; `--help` for all. The daemon workflow below is the richer engine-monorepo path; the single-shot script is the portable rung the created game ships.
+
+Inside the engine monorepo, start one managed capture session before the first visual shot:
 
 1. Run `bun run shoot daemon start`. The command must report a live Chrome/Vite pair; a non-zero exit means visual capture is unavailable, not permission to repeat cold foreground launches.
 2. Iterate with `bun run shoot <game> --mode play --size half --inspect`. Plain `shoot` auto-attaches to the live daemon; reuse it for every state or viewport in the loop.

@@ -12,7 +12,7 @@ import {
   elementalDamageMult,
   gunById,
   isReloading,
-  magState,
+  magLoaded,
   startReload,
 } from "../handroll";
 
@@ -76,19 +76,23 @@ const fireGun: ItemUseHandler<GameContext> = {
     const gun = gunById(input.itemId);
     if (gun === undefined) return { state: ctx, error: "unknown-gun" };
     const nowMs = ctx.time.now() * 1000;
-    if (isReloading(ctx, gun, nowMs)) return { state: ctx };
+    if (isReloading(ctx, gun)) return { state: ctx };
 
     const gateKey = `${input.from}:${gun.id}`;
     const readyAt = lastFiredAt.get(gateKey) ?? 0;
     if (nowMs < readyAt) return { state: ctx };
 
-    if (!consumeRound(ctx, gun)) {
-      if (!startReload(ctx, gun, nowMs)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} AMMO`);
+    if (magLoaded(ctx, gun) < gun.ammoPerShot) {
+      if (!startReload(ctx, gun)) warn(ctx, input.from, `NO ${AMMO_LABELS[gun.ammo].toUpperCase()} AMMO`);
       return { state: ctx };
     }
+    // Free-shot refund: roll before spending so a refunded shot leaves the mag untouched (the old code
+    // spent the round then added it back). The `combatRng()` draw stays gated behind `ammoRefund > 0` and
+    // happens once per fired shot, so the shared proc/crit rng stream keeps the same order.
     if (bonus("ammoRefund") > 0 && combatRng() < bonus("ammoRefund")) {
-      magState(ctx, gun).inMag += gun.ammoPerShot;
       ctx.scene.entity.floatText({ instanceId: input.from, text: "FREE SHOT", kind: "pickup" });
+    } else {
+      consumeRound(ctx, gun);
     }
     lastFiredAt.set(gateKey, nowMs + Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))));
     noteShot(nowMs, gun.family);

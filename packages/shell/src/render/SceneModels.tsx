@@ -4,10 +4,12 @@ import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from 
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
-import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
+import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
+import { useModelAnimation } from "./useModelAnimation";
+import { PartMotionRig } from "./PartMotion";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,
@@ -52,16 +54,18 @@ class ModelFallbackBoundary extends Component<
 export function IsolatedEntityModel({
   model,
   instanceId,
+  measure,
   fallback,
 }: {
   model: ModelConfig;
   instanceId?: string;
+  measure?: MeasureTarget;
   fallback?: ReactNode;
 }) {
   return (
     <ModelFallbackBoundary fallback={fallback ?? null}>
       <Suspense fallback={null}>
-        <EntityModel model={model} instanceId={instanceId} />
+        <EntityModel model={model} instanceId={instanceId} measure={measure} />
       </Suspense>
     </ModelFallbackBoundary>
   );
@@ -150,7 +154,21 @@ function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps
   return null;
 }
 
-export function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
+/** Where a measured model reports its rendered bounds: an entity kind or an object catalog id. */
+export interface MeasureTarget {
+  target: "entity" | "object";
+  key: string;
+}
+
+export function EntityModel({
+  model,
+  instanceId,
+  measure,
+}: {
+  model: ModelConfig;
+  instanceId?: string;
+  measure?: MeasureTarget;
+}) {
   const gltf = useLoader(sharedGltfLoader, model.url);
   const ctx = useGameContext();
   const material = model.material;
@@ -192,145 +210,25 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
     [scene],
   );
 
-  const animation = model.animation;
-  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
-  const animationPausedRef = useRef(false);
-  const stateActionsRef = useRef<{
-    actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>>;
-    active: "idle" | "walk" | "run";
-    lastPos: [number, number, number] | null;
-    smoothedSpeed: number;
-  } | null>(null);
-  const states = animation?.states;
-  const oneShots = animation?.oneShots;
-  const oneShotPlayRef = useRef<((event: string) => void) | null>(null);
-  const activeOneShotRef = useRef<{ action: THREE.AnimationAction; isDeath: boolean } | null>(null);
-
+  // A model without index-measured dims can't drive the fitted-collider path, so report the live
+  // measurement (the primitive mounts with only this uniform scale + position) instead of letting
+  // the kind fall back to a fixed-size box. Index dims keep priority — skip when they exist.
+  const measureTarget = measure?.target;
+  const measureKey = measure?.key;
+  const dimsMaxY = dims?.maxY;
+  const [positionX, positionY, positionZ] = position;
   useEffect(() => {
-    if (animation === undefined || gltf.animations.length === 0) {
-      mixerRef.current = null;
-      stateActionsRef.current = null;
-      return;
-    }
-    const mixer = new THREE.AnimationMixer(scene);
-    if (states !== undefined) {
-      const clipFor = (name: string) =>
-        THREE.AnimationClip.findByName(gltf.animations, name) ?? gltf.animations[0]!;
-      const actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>> = {
-        idle: mixer.clipAction(clipFor(states.idle)),
-        walk: mixer.clipAction(clipFor(states.walk)),
-        ...(states.run === undefined ? {} : { run: mixer.clipAction(clipFor(states.run)) }),
-      };
-      for (const action of Object.values(actions)) {
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.timeScale = animation.timeScale ?? 1;
-        action.enabled = true;
-      }
-      actions.idle!.play();
-      mixer.update(0);
-      mixerRef.current = mixer;
-      stateActionsRef.current = { actions, active: "idle", lastPos: null, smoothedSpeed: 0 };
-      animationPausedRef.current = false;
-
-      let onOneShotFinished: ((event: { action: THREE.AnimationAction }) => void) | null = null;
-      if (oneShots !== undefined) {
-        const clipNames = new Set<string>();
-        for (const spec of Object.values(oneShots)) {
-          if (typeof spec === "string") clipNames.add(spec);
-          else for (const name of spec) clipNames.add(name);
-        }
-        const oneShotActions = new Map<string, THREE.AnimationAction>();
-        for (const name of clipNames) {
-          const found = THREE.AnimationClip.findByName(gltf.animations, name);
-          if (found === null) continue;
-          const oneShotAction = mixer.clipAction(found);
-          oneShotAction.setLoop(THREE.LoopOnce, 1);
-          oneShotAction.enabled = true;
-          oneShotActions.set(name, oneShotAction);
-        }
-        onOneShotFinished = ({ action }) => {
-          const active = activeOneShotRef.current;
-          if (active === null || action !== active.action || active.isDeath) return;
-          const machine = stateActionsRef.current;
-          const back = machine?.actions[machine.active];
-          action.fadeOut(0.15);
-          if (back !== undefined) back.reset().fadeIn(0.15).play();
-          activeOneShotRef.current = null;
-        };
-        mixer.addEventListener("finished", onOneShotFinished);
-        oneShotPlayRef.current = (event: string) => {
-          const active = activeOneShotRef.current;
-          if (active !== null && active.isDeath) return;
-          const clipName = resolveOneShotClip(oneShots, event, Math.random());
-          if (clipName === null) return;
-          const oneShotAction = oneShotActions.get(clipName);
-          if (oneShotAction === undefined) return;
-          const machine = stateActionsRef.current;
-          machine?.actions[machine.active]?.fadeOut(0.1);
-          if (active !== null && active.action !== oneShotAction) active.action.stop();
-          oneShotAction.clampWhenFinished = event === "death";
-          oneShotAction.reset().fadeIn(0.1).play();
-          activeOneShotRef.current = { action: oneShotAction, isDeath: event === "death" };
-        };
-      }
-
-      return () => {
-        if (onOneShotFinished !== null) mixer.removeEventListener("finished", onOneShotFinished);
-        oneShotPlayRef.current = null;
-        activeOneShotRef.current = null;
-        mixer.stopAllAction();
-        mixerRef.current = null;
-        stateActionsRef.current = null;
-      };
-    }
-    const clip =
-      (animation.clip !== undefined ? THREE.AnimationClip.findByName(gltf.animations, animation.clip) : undefined) ??
-      gltf.animations[0]!;
-    const action = mixer.clipAction(clip);
-    action.setLoop(animation.loop === false ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
-    action.clampWhenFinished = animation.loop === false;
-    action.timeScale = animation.timeScale ?? 1;
-    action.enabled = true;
-    action.paused = animation.paused === true;
-    action.play();
-    if (animation.time !== undefined) action.time = animation.time;
-    mixer.update(0);
-    mixerRef.current = mixer;
-    animationPausedRef.current = animation.paused === true;
-    return () => {
-      mixer.stopAllAction();
-      mixerRef.current = null;
-    };
-  }, [
-    scene,
-    gltf,
-    animation?.clip,
-    animation?.loop,
-    animation?.timeScale,
-    animation?.paused,
-    animation?.time,
-    states,
-    oneShots,
-  ]);
-
-  useEffect(() => {
-    if (instanceId === undefined || oneShots === undefined) return;
-    const fire = (event: string) => oneShotPlayRef.current?.(event);
-    const offAnimation = ctx.game.events.on("entity.animation", (event) => {
-      if (event.instanceId === instanceId) fire(event.event);
+    if (measureTarget === undefined || measureKey === undefined || dimsMaxY !== undefined) return;
+    const raw = measureLocalBounds(scene);
+    if (raw === null) return;
+    reportMeasuredBounds(ctx, measureTarget, measureKey, {
+      min: [raw.min[0] * scale + positionX, raw.min[1] * scale + positionY, raw.min[2] * scale + positionZ],
+      max: [raw.max[0] * scale + positionX, raw.max[1] * scale + positionY, raw.max[2] * scale + positionZ],
+      meshCount: raw.meshCount,
     });
-    const offHit = ctx.game.events.on("combat.hitReaction", (event) => {
-      if (event.instanceId === instanceId) fire("hit");
-    });
-    const offDied = ctx.game.events.on("entity.died", (event) => {
-      if (event.instanceId === instanceId) fire("death");
-    });
-    return () => {
-      offAnimation();
-      offHit();
-      offDied();
-    };
-  }, [ctx, instanceId, oneShots]);
+  }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey, dimsMaxY]);
+
+  useModelAnimation(scene, gltf.animations, model.animation, instanceId);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
@@ -350,42 +248,7 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
     [scene],
   );
 
-  useFrame((_state, delta) => {
-    const stateMachine = stateActionsRef.current;
-    if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0) {
-      const entity = ctx.scene.entity.get(instanceId);
-      if (entity !== null) {
-        const [x, , z] = entity.position;
-        if (stateMachine.lastPos !== null) {
-          const instantSpeed =
-            Math.hypot(x - stateMachine.lastPos[0], z - stateMachine.lastPos[2]) / delta;
-          stateMachine.smoothedSpeed +=
-            (instantSpeed - stateMachine.smoothedSpeed) * Math.min(1, delta * 12);
-        }
-        stateMachine.lastPos = [x, entity.position[1], z];
-        const walkSpeed = states.walkSpeed ?? 0.5;
-        const runSpeed = states.runSpeed ?? 6;
-        const next: "idle" | "walk" | "run" =
-          stateMachine.smoothedSpeed < walkSpeed
-            ? "idle"
-            : stateMachine.actions.run !== undefined && stateMachine.smoothedSpeed >= runSpeed
-              ? "run"
-              : "walk";
-        if (next !== stateMachine.active) {
-          if (activeOneShotRef.current === null) {
-            const fade = states.fadeSec ?? 0.2;
-            const from = stateMachine.actions[stateMachine.active];
-            const to = stateMachine.actions[next];
-            if (from !== undefined && to !== undefined) {
-              to.reset().fadeIn(fade).play();
-              from.fadeOut(fade);
-            }
-          }
-          stateMachine.active = next;
-        }
-      }
-    }
-    if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
+  useFrame(() => {
     if (instanceId === undefined) return;
     const paint = ctx.scene.entity.paint;
     const version = paint.version(instanceId);
@@ -410,7 +273,7 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
     );
   });
 
-  return (
+  const base = (
     <>
       <primitive object={scene} position={position} scale={[scale, scale, scale]} />
       {material?.maps !== undefined ? <ModelMaterialMapsApplier scene={scene} maps={material.maps} /> : null}
@@ -427,7 +290,29 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
           />
         ),
       )}
-      {(model.parts ?? []).map((part, index) =>
+    </>
+  );
+
+  const parts = model.parts ?? [];
+  // Any role-tagged part switches the composition onto the procedural part-motion rig:
+  // root bob/flinch/topple plus per-role limb swing, driven from the entity's live state.
+  if (parts.some((part) => part.role !== undefined)) {
+    return (
+      <PartMotionRig
+        parts={parts}
+        model={model}
+        instanceId={instanceId}
+        renderPart={(part) => (typeof part.model === "string" ? null : <EntityModel model={part.model} />)}
+      >
+        {base}
+      </PartMotionRig>
+    );
+  }
+
+  return (
+    <>
+      {base}
+      {parts.map((part, index) =>
         typeof part.model === "string" ? null : (
           <ModelPartGroup
             key={index}
