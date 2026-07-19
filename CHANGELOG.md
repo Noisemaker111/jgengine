@@ -32,6 +32,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`EffectResult` carries the slain entity's identity** (`@jgengine/core/combat/effects`, #1263) — a lethal `ctx.scene.entity.effect()` hit now returns `slain: { catalogId, name?, userId? }` on the per-target result, captured before the death system despawns the target. Kill credit / XP reads the victim's `catalogId` (its spawn kind) straight off the result — no game-side spawn-time registry mirroring instance ids to kinds. Non-lethal hits omit `slain`. The new `EffectSystemDeps.resolveSlainIdentity` seam is optional and additive, so existing effect-system compositions keep their exact shape.
 - Editor RPC/CLI verb `add_path` (`@jgengine/editor`): author a new path/route into the scene
   document from an ordered list of ≥2 `{x,z}` (optional `y`) points in one call, without an
   `export_document`/`import_document` roundtrip. `kind` defaults to `route`; `meta` is schema-validated

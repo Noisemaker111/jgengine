@@ -45,6 +45,8 @@ ctx.scene.entity.effect({ from, effect, via, at, radius, falloff?, los? })  // A
 
 AoE: `inRadius(at, radius)` → LoS filter (default on) → `canReceive` per target → absorption; `falloff: "linear" | "none"`. `via` = `{ item }` (magnitude from weapon stats) or `{ amount }`. `canReceive`'s `pools-depleted` reason checks headroom in the effect's direction: a positive (draining) magnitude needs a stat above its min, a negative (restorative) magnitude needs a stat below its max — so a heal can still raise a stat sitting at its minimum. Omitting `magnitude` assumes the draining direction.
 
+Each per-target `EffectResult` carries `{ instanceId, effect, applied, lethal }`. On a **lethal** hit it additionally carries `slain: { catalogId, name?, userId? }` — the victim's identity captured **before** the death system despawns it, so kill credit / XP reads the slain kind straight off the call result without a spawn-time id→kind registry (a non-lethal hit omits `slain`). This is the synchronous complement to the `entity.died` event: use `slain` when the code awarding the kill is the same code that fired the effect; use `entity.died` for decoupled listeners (quests, feeds, leaderboards).
+
 `canReceive`'s optional signed `magnitude` makes the check direction-aware: positive (or omitted) keeps the standard `"pools-depleted"` check; negative checks the opposite direction and returns `"pools-full"` only when every stat in the receive order is already at max — so a heal (`via: { amount: -n }`) correctly reaches a fully-depleted target and is rejected only when there's nothing left to restore.
 
 **Projectiles** (aim-based — no target ids):
