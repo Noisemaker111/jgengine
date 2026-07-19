@@ -1531,6 +1531,12 @@
 - `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
 - `reportMeasuredBounds` (function): function reportMeasuredBounds(ctx: GameContext, target: "entity" | "object", key: string, bounds: MeasuredLocalBounds): void — Forward a measured result into the context (entity kind or object catalog id), deduping repeat reports of the same shape so remounts and multi-instance kinds don't churn collider resolution.
 
+## @jgengine/shell/render/measureCollisionMesh
+
+- `MeasuredCollisionTriangles` (interface): interface MeasuredCollisionTriangles extends CollisionMeshSource — Entity-local triangle soup of the meshes under a measured root, plus the contributing mesh count (same async fill-in detection as measured bounds). Satisfies {@link CollisionMeshSource}.
+- `measureLocalCollisionTriangles` (function): function measureLocalCollisionTriangles(root: THREE.Object3D, transform?: { scale: number; offset: readonly [number, number, number] }): MeasuredCollisionTriangles | null — Collect the triangle soup of the meshes under `root` in `root`'s own frame — the mesh-accurate counterpart to `measureLocalBounds`, with the same visibility/sprite/{@link MEASURE_EXCLUDE_KEY} exclusions (skinned meshes contribute their bind pose). An optional uniform `scale` + `offset` maps the result into entity-local space when the caller mounts the root scaled/translated (the model-primitive path). Returns `null` when nothing is measurable or the soup exceeds the triangle budget — callers keep their box fallback.
+- `reportMeasuredCollisionMesh` (function): function reportMeasuredCollisionMesh(ctx: GameContext, target: "entity" | "object", key: string, triangles: MeasuredCollisionTriangles): void — Forward measured triangles into the context (entity kind or object catalog id), deduping repeat reports of the same soup so remounts and multi-instance kinds don't rebuild the BVH.
+
 ## @jgengine/shell/render/modelRender
 
 - `MaterialCache` (interface): interface MaterialCache — ⚠ undocumented

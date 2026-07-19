@@ -358,6 +358,81 @@ export function measuredObjectColliders(bounds: MeasuredBounds): EntityColliderS
   };
 }
 
+/** Root-node AABB of a prepared mesh (the BVH root bounds the whole soup) as a clamped
+ * entity-local box — `null` when degenerate. */
+function preparedMeshShape(mesh: PreparedCollisionMesh): ColliderShape | null {
+  const bounds = mesh.nodeBounds;
+  if (bounds.length < 6) return null;
+  const min: EntityPosition = [bounds[0]!, bounds[1]!, bounds[2]!];
+  const max: EntityPosition = [bounds[3]!, bounds[4]!, bounds[5]!];
+  const box = measuredBox({ min, max });
+  if (box === null) return null;
+  return {
+    kind: "mesh",
+    mesh,
+    meshScale: 1,
+    meshTranslate: [0, 0, 0],
+    halfExtents: box.halfExtents,
+    offset: box.offset,
+  };
+}
+
+/** Damage hitbox raycasting the actual triangles the renderer mounted for an entity kind — what
+ * `reportCollisionMesh` stores. Triangles are entity-local (scale/placement already applied), so the
+ * shape composes with identity `meshScale`/`meshTranslate`; bounds/broadphase read the clamped AABB.
+ * `null` when the mesh is degenerate, keeping the caller's existing fallback.
+ * @capability conforming-hitboxes shots aimed between a character's feet or past its shoulder MISS — the damage hitbox is the rendered model's own triangles, not a bounding box.
+ * @internal
+ */
+export function meshEntityColliders(mesh: PreparedCollisionMesh): EntityColliderSet | null {
+  const shape = preparedMeshShape(mesh);
+  if (shape === null) return null;
+  return {
+    hitboxes: [
+      {
+        name: "body",
+        purpose: "damage",
+        shape,
+        damageEligible: true,
+        blocks: false,
+      },
+    ],
+  };
+}
+
+/** Blocking physical body raycasting the actual triangles the renderer mounted for an object catalog
+ * id — the mesh-accurate counterpart to `measuredObjectColliders`. Movement obstruction stays on the
+ * conservative AABB (no `boxes` decomposition at runtime); rays hit the real surface. `null` when
+ * degenerate.
+ * @internal
+ */
+export function meshObjectColliders(mesh: PreparedCollisionMesh): EntityColliderSet | null {
+  const shape = preparedMeshShape(mesh);
+  if (shape === null) return null;
+  return {
+    body: {
+      name: "body",
+      purpose: "physical",
+      shape,
+      damageEligible: false,
+      blocks: true,
+    },
+  };
+}
+
+/** True when any collider in the set already raycasts real triangles (index-derived mesh shapes win
+ * over runtime-measured ones — they are identical on a headless host).
+ * @internal
+ */
+export function hasMeshColliderShape(set: EntityColliderSet | null | undefined): boolean {
+  if (set === null || set === undefined) return false;
+  if (set.body?.shape.kind === "mesh") return true;
+  for (const hitbox of set.hitboxes ?? []) {
+    if (hitbox.shape.kind === "mesh") return true;
+  }
+  return false;
+}
+
 /** @internal */
 export function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] {
   if (set === null || set === undefined) return [];

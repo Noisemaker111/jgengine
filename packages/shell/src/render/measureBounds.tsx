@@ -5,6 +5,8 @@ import * as THREE from "three";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 
+import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
+
 /** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
  * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible
  * subtrees are always excluded. */
@@ -138,6 +140,8 @@ export function MeasuredBoundsGroup({
     if (lastMeshCountRef.current === measured.meshCount) return;
     lastMeshCountRef.current = measured.meshCount;
     reportMeasuredBounds(ctx, target, measureKey, measured);
+    const triangles = measureLocalCollisionTriangles(group);
+    if (triangles !== null) reportMeasuredCollisionMesh(ctx, target, measureKey, triangles);
   });
 
   return <group ref={groupRef}>{children}</group>;
