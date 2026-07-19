@@ -17,6 +17,7 @@ export * from "./quickMenu";
 export * from "./questTracker";
 export * from "./notifications";
 export * from "./fastTravel";
+export * from "./floatingText";
 export * from "./components";
 export * from "./hud";
 export * from "./bars";

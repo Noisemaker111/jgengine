@@ -129,6 +129,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/react"`
 
+## floating-text — overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale
+
+- `FloatingText` (function) · `import { FloatingText } from "@jgengine/react"`
+- `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/react"`
+- `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText"`
+- `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/ui"`
+- `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/react"`
+
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`

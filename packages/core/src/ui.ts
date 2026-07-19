@@ -73,6 +73,15 @@ export {
   type ResolvedAction,
 } from "./ui/actionModel";
 export {
+  createFloatingTextField,
+  type FloatingTextDef,
+  type FloatingTextField,
+  type FloatingTextFieldConfig,
+  type FloatingTextPosition,
+  type FloatingTextSnapshot,
+  type FloatingTextView,
+} from "./ui/floatingText";
+export {
   type GameLayoutMode,
   type GameViewportLayout,
   type HudPriority,
