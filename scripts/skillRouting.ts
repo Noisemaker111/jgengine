@@ -55,6 +55,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   time: "jgengine-world",
   turn: "jgengine-gameplay",
   ui: "jgengine-ui",
+  vfx: "jgengine-world",
   visibility: "jgengine-world",
   work: "jgengine-gameplay",
   world: "jgengine-world",

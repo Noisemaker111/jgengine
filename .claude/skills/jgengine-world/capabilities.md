@@ -330,6 +330,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
 
+## particle-system — deterministic pooled particle emitter with SoA render buffers, burst/continuous emission, gravity/drag, size/color/alpha-over-life, and serializable state
+
+- `createParticleSystem` (function) · `import { createParticleSystem } from "@jgengine/core/world"`
+
 ## path-follow-progress — read normalized/distance/segment progress from follow state
 
 - `pathFollowProgress` (function) · `import { pathFollowProgress } from "@jgengine/core/world"`

@@ -294,6 +294,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `togglePanel` (function) · `import { togglePanel } from "@jgengine/core/ui"`
 
+## particle-field — render a core particle system as a soft-point GPU cloud with per-particle size, color, and alpha
+
+- `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
+
 ## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
 
 - `createPhotoModeStore` (function) · `import { createPhotoModeStore } from "@jgengine/core/ui"`

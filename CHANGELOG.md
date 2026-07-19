@@ -45,6 +45,13 @@ At publish, rename this heading to the new version and mirror the entries into
   `onDiscover` seam, and serializable `snapshot`/`restore` (re-seeds `initial` points). New `@jgengine/react`:
   `useFastTravel` (re-render on discovery) and `FastTravelMenu` (region-grouped, distance-labeled destination
   picker with a discovery counter and "you are here" flag). New `fast-travel` demo.
+- **Generic particle system.** `@jgengine/core/vfx/particles`' `createParticleSystem` is a genre-agnostic,
+  deterministic, allocation-aware particle emitter: a fixed pool, data-only `EmitterConfig` (rate, position,
+  lifetime, speed, cone `spread`, `gravity`, `drag`, size/color/alpha over life), burst `emit(n)` and continuous
+  `rate`, `update(dt)` integration with swap-remove reaping, Structure-of-Arrays render `buffers()` (positions,
+  sizes, colors, alphas) clamped to the live count, injected-seed determinism, and serializable `snapshot`/
+  `restore`. New `@jgengine/shell/vfx/ParticleField` renders it as a one-draw-call soft-point GPU cloud with
+  per-particle size/color/alpha (additive or normal blending). New `particle-vfx` demo (fire / smoke / sparks).
 - **Notification center.** `@jgengine/core/game/notifications`' `createNotificationCenter` is a persistent,
   read-tracked notification log (newest-first, capped, serializable, observable) — the durable counterpart to
   transient toasts: `push`, `list({ kind, unreadOnly })`, `unreadCount`, `markRead`/`markAllRead`, `remove`,
