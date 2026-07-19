@@ -3,6 +3,7 @@ import {
   listEditorKinds,
   summarizeEditorSession,
   type EditorDocument,
+  type EditorPath,
 } from "@jgengine/core/editor/index";
 import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAsset";
 import { findSchemaPreset, getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
@@ -61,6 +62,7 @@ export const documentHandlers: Pick<
   | "set_transform"
   | "set_volume"
   | "set_path"
+  | "add_path"
   | "set_marker"
   | "set_note"
   | "set_meta"
@@ -168,6 +170,26 @@ export const documentHandlers: Pick<
       },
     });
     return { ok: true, result: ctx.session.getState().document.paths.find((p) => p.id === request.id) };
+  },
+  add_path: (ctx, request) => {
+    if (request.points.length < 2) return { ok: false, error: "add_path needs at least 2 points" };
+    const kind = request.kind ?? "route";
+    const invalid = validateMetaForKind(kind, request.meta);
+    if (invalid !== null) return { ok: false, error: invalid };
+    const path: EditorPath = {
+      id: request.id,
+      kind,
+      points: request.points.map((point) => ({ x: point.x, y: point.y ?? 0, z: point.z })),
+      ...(request.width === undefined ? {} : { width: request.width }),
+      ...(request.color === undefined ? {} : { color: request.color }),
+      ...(request.label === undefined ? {} : { label: request.label }),
+      ...(request.meta === undefined ? {} : { meta: request.meta }),
+    };
+    // addPath re-ids on a document-global collision, so read the created id back from the selection.
+    const { applied, state } = ctx.dispatchGuarded({ type: "addPath", path });
+    if (!applied) return { ok: false, error: "add_path rejected: no effect" };
+    const createdId = state.selection[0] ?? request.id;
+    return { ok: true, result: state.document.paths.find((p) => p.id === createdId) };
   },
   set_marker: (ctx, request) => {
     const marker = ctx.session.getState().document.markers.find((m) => m.id === request.id);
@@ -288,6 +310,11 @@ export const documentHandlers: Pick<
   }),
   export_document: (ctx) => ({ ok: true, result: { json: ctx.session.exportJson(true) } }),
   import_document: (ctx, request) => {
+    // Name the expected param instead of letting a missing/mis-keyed value fall into JSON.parse as
+    // the literal string "undefined" and surface a cryptic "JSON Parse error: Unexpected identifier".
+    if (typeof request.json !== "string") {
+      return { ok: false, error: "import_document requires a `json` param — the document JSON text (as export_document returns in result.json)" };
+    }
     ctx.session.dispatch({ type: "importJson", json: request.json });
     return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
   },

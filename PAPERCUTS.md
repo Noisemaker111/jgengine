@@ -97,14 +97,6 @@ running ship preflight immediately after the verified runtime-state commit -> or
 
 opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead
 
-2026-07-18T23:02:42.473Z — fable — Claude
-
-editor CLI: export_document returns result.json but import_document with a wrong param key fails with 'JSON Parse error: Unexpected identifier undefined' instead of naming the expected 'json' param
-
-2026-07-18T23:02:42.508Z — fable — Claude
-
-editor CLI has no add_path verb — authoring a new route path headlessly requires a full export_document/import_document roundtrip
-
 2026-07-18T23:02:42.541Z — fable — Claude
 
 shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
