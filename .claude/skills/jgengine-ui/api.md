@@ -95,6 +95,12 @@
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
 - `COLORBLIND_MATRICES` (const): const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> — `feColorMatrix` `values` strings for each colorblind mode — simulate how a viewer with that condition perceives color (and a grayscale mode). `"none"` maps to `null` (no filter). Consumed by the React `ColorblindFilters` defs.
 - `Catalog` (type): type Catalog = Readonly<Record<Locale, Messages>> — All locales' message tables, keyed by locale.
+- `CoachMarkPlacement` (type): type CoachMarkPlacement = "top" | "bottom" | "left" | "right" | "center" — Where a coach-mark callout sits relative to its anchor (or `"center"` for an unanchored callout).
+- `CoachMarkSequence` (interface): interface CoachMarkSequence — An ordered, observable, serializable onboarding coach-mark run.
+- `CoachMarkSequenceOptions` (interface): interface CoachMarkSequenceOptions — Options for {@link createCoachMarkSequence}.
+- `CoachMarkSnapshot` (interface): interface CoachMarkSnapshot — Serializable persisted state — the seen set (with timestamps) and satisfied triggers.
+- `CoachMarkStep` (interface): interface CoachMarkStep — One onboarding hint: an ordered, optionally-anchored, optionally-gated callout.
+- `CoachMarkView` (interface): interface CoachMarkView — The active step plus its position, returned by {@link CoachMarkSequence.current}.
 - `ColorblindMode` (type): type ColorblindMode = "none" | "protanopia" | "deuteranopia" | "tritanopia" | "grayscale" — Colorblind simulation/daltonization modes the engine ships matrices for.
 - `DEFAULT_ACCESSIBILITY` (const): const DEFAULT_ACCESSIBILITY: AccessibilityState — The out-of-the-box accessibility state (all assistance off, `textScale` 1).
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
@@ -186,6 +192,7 @@
 - `closePanel` (function): function closePanel(state: PanelState, id: string): PanelState — Close panel `id`. No-op if it is already closed. Its position override is kept so reopening restores the last placement.
 - `closeTopPanel` (function): function closeTopPanel(state: PanelState): PanelState — Close the topmost closable open panel — the ESC handler. Skips panels pinned with `closable: false` and returns the same state when nothing closable is open.
 - `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
+- `createCoachMarkSequence` (function): function createCoachMarkSequence(options: CoachMarkSequenceOptions): CoachMarkSequence — An onboarding coach-mark run: an ordered sequence of hint steps, each shown as a centered callout or anchored to a UI element, with a persisted "seen" set so completed onboarding stays done across sessions, and data-first condition gating so a step waits until its trigger id is satisfied. Advance/skip/dismiss drive it; `snapshot`/`restore` round-trip the seen set through a save. Purely a model — a React host renders `current()`.
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `createPanelState` (function): function createPanelState(defs: readonly PanelDef[]): PanelState — Build the initial {@link PanelState} from the panel defs: panels flagged `initial` start open (in declaration order, respecting group exclusivity), and every def's group/closable is captured into the state so later reducers need no defs.
 - `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with React `PhotoModeControls` and shell `captureCanvas`.
@@ -257,6 +264,16 @@
 - `moveGridFocus` (function): function moveGridFocus(current: number, count: number, columns: number, dir: FocusDirection, options?: GridFocusOptions): number — Pure grid focus math for keyboard and controller navigation of an action card laid out in `columns`-wide rows. Given the current index (`-1` for none) it returns the next index, clamped to `[0, count)` — or wrapped when `wrap` is set. `left/right` move within/across columns, `up/down` across rows, `next/prev` walk the flat order, `first/last` jump to the ends. Renderer-agnostic: radial and list layouts pass `columns: 1` (or `count`) to get sensible 1-D stepping.
 - `resolveAction` (function): function resolveAction(def: ActionDef): ResolvedAction — Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`, and order the blocking `reasons`. Pure — the same input always yields the same view model.
 - `resolveActionCollection` (function): function resolveActionCollection(defs: readonly ActionDef[]): ResolvedAction[] — Resolve an ordered list of actions, preserving input order.
+
+## @jgengine/core/ui/coachMarks
+
+- `CoachMarkPlacement` (type): type CoachMarkPlacement = "top" | "bottom" | "left" | "right" | "center" — Where a coach-mark callout sits relative to its anchor (or `"center"` for an unanchored callout).
+- `CoachMarkSequence` (interface): interface CoachMarkSequence — An ordered, observable, serializable onboarding coach-mark run.
+- `CoachMarkSequenceOptions` (interface): interface CoachMarkSequenceOptions — Options for {@link createCoachMarkSequence}.
+- `CoachMarkSnapshot` (interface): interface CoachMarkSnapshot — Serializable persisted state — the seen set (with timestamps) and satisfied triggers.
+- `CoachMarkStep` (interface): interface CoachMarkStep — One onboarding hint: an ordered, optionally-anchored, optionally-gated callout.
+- `CoachMarkView` (interface): interface CoachMarkView — The active step plus its position, returned by {@link CoachMarkSequence.current}.
+- `createCoachMarkSequence` (function): function createCoachMarkSequence(options: CoachMarkSequenceOptions): CoachMarkSequence — An onboarding coach-mark run: an ordered sequence of hint steps, each shown as a centered callout or anchored to a UI element, with a persisted "seen" set so completed onboarding stays done across sessions, and data-first condition gating so a step waits until its trigger id is satisfied. Advance/skip/dismiss drive it; `snapshot`/`restore` round-trip the seen set through a save. Purely a model — a React host renders `current()`.
 
 ## @jgengine/core/ui/gameLayout
 
@@ -431,6 +448,11 @@
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
+- `CoachMark` (function): function CoachMark({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: CoachMarkProps): ReactNode — A single coach-mark callout — title, body, an "N of M" counter, a Next/Got-it button, and a Skip-tour link. Presentation-only; position it with `positionStyle` or drop it into {@link CoachMarkHost}. Reskin via {@link CoachMarkTheme}.
+- `CoachMarkHost` (function): function CoachMarkHost({ sequence, resolveAnchor, showBackdrop = true, onComplete, nextLabel, doneLabel, skipLabel, theme, className, style, }: CoachMarkHostProps): ReactNode — Full-screen coach-mark host: watches a sequence, positions the current step's callout beside its anchored element (or centered when unanchored) via `getBoundingClientRect`, and draws an optional dimmed backdrop with a spotlight cutout around the anchor. Next advances, Skip ends the tour — both persist so hints never re-show. Reskin with {@link CoachMarkTheme}.
+- `CoachMarkHostProps` (interface): interface CoachMarkHostProps — Props for {@link CoachMarkHost}.
+- `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
+- `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
@@ -681,6 +703,7 @@
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
+- `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
 - `useDomEvent` (function): function useDomEvent<E>(resolveTarget: () => DomEventTarget | null, type: string, handler: (event: E) => void, options?: { capture?: boolean; passive?: boolean }): void — Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The handler is kept in a ref, so a fresh closure per render never re-binds the listener. Re-binds only when `type` or `options.capture`/`options.passive` change.
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
@@ -847,6 +870,15 @@
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
+
+## @jgengine/react/coachMarks
+
+- `CoachMark` (function): function CoachMark({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: CoachMarkProps): ReactNode — A single coach-mark callout — title, body, an "N of M" counter, a Next/Got-it button, and a Skip-tour link. Presentation-only; position it with `positionStyle` or drop it into {@link CoachMarkHost}. Reskin via {@link CoachMarkTheme}.
+- `CoachMarkHost` (function): function CoachMarkHost({ sequence, resolveAnchor, showBackdrop = true, onComplete, nextLabel, doneLabel, skipLabel, theme, className, style, }: CoachMarkHostProps): ReactNode — Full-screen coach-mark host: watches a sequence, positions the current step's callout beside its anchored element (or centered when unanchored) via `getBoundingClientRect`, and draws an optional dimmed backdrop with a spotlight cutout around the anchor. Next advances, Skip ends the tour — both persist so hints never re-show. Reskin with {@link CoachMarkTheme}.
+- `CoachMarkHostProps` (interface): interface CoachMarkHostProps — Props for {@link CoachMarkHost}.
+- `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
+- `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
+- `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
 
 ## @jgengine/react/components
 
