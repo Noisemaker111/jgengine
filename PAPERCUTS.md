@@ -144,3 +144,11 @@ Fixing production 404 for quaternius-modular-scifi models → content gate accep
 2026-07-19T07:37:41.988Z — claude-fable-5 — Claude
 
 screenshotting the website: 'bun run shoot --url http://localhost:3000/...' errors 'nothing is listening' even when our dev server owns that port — only http://127.0.0.1:... passes the allowlist, and the error message doesn't mention that 127.0.0.1 URLs are accepted
+
+2026-07-19T17:09:58.949Z — claude-fable-5 — Claude
+
+bun run gate → packages/assets src/cli/pull.test.ts failed once in the full test:all run (offline pull found empty /tmp dir) but passes in isolation; flaky network/tmpdir-dependent test forced a full gate re-run
+
+2026-07-19T17:14:06.870Z — claude-fable-5 — Claude
+
+bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — computed manifest has ./previewFixtures and ./harness subpaths missing from the committed manifest (likely #1336 landed without regenerating it); gate is red for every branch until regenerated
