@@ -1,36 +1,54 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
 import { formatLoadError } from "./appShared";
 
+const EDITOR_MODE_PARAM = "mode";
+const EDITOR_MODE_VALUE = "editor";
+
+/** Live editor-open state plus the callback that closes it back to the game. */
+export interface EditorSummon {
+  editorOpen: boolean;
+  exitEditor: () => void;
+}
+
 /**
- * Play-mode editor summon: exposes `window.__jgengineSummonEditor()` and the
- * F2-hold + E chord, both flipping the returned flag so the shell can swap in
- * the editor without a reload. No-op outside `mode === "play"`.
+ * URL-backed editor summon: opens the editor via `window.__jgengineSummonEditor()` or the F2+E
+ * chord (in play mode) and via `?mode=editor` at load, mirroring the flag into the URL through the
+ * shared {@link writeUrlParam} seam so the address bar is the honest record — share it to reopen,
+ * strip it to drop back to the game. `exitEditor` closes the editor and clears the param.
  */
-export function useEditorSummon(mode: string): boolean {
-  const [editorSummoned, setEditorSummoned] = useState(false);
+export function useEditorSummon(mode: string): EditorSummon {
+  const [editorOpen, setEditorOpen] = useState(
+    () => mode === EDITOR_MODE_VALUE || readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE,
+  );
+
+  // Mirror the flag into the URL and keep in step with browser back/forward. Only touch `mode` for
+  // editor: leave `mode=poster`/`mode=ui` (and a bare `mode=play`) alone so other runner modes keep
+  // their honest URL.
+  useEffect(() => {
+    if (editorOpen) writeUrlParam(EDITOR_MODE_PARAM, EDITOR_MODE_VALUE);
+    else if (readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE) writeUrlParam(EDITOR_MODE_PARAM, null);
+  }, [editorOpen]);
+  useEffect(
+    () => subscribeUrlChange(() => setEditorOpen(readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE)),
+    [],
+  );
 
   useEffect(() => {
-    if (mode !== "play") return;
-    const summon = () => setEditorSummoned(true);
+    if (editorOpen || mode !== "play") return;
+    const summon = () => setEditorOpen(true);
     (window as { __jgengineSummonEditor?: () => void }).__jgengineSummonEditor = summon;
-    return () => {
-      const host = window as { __jgengineSummonEditor?: () => void };
-      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
-    };
-  }, [mode]);
-
-  useEffect(() => {
-    if (mode !== "play") return;
     let f2Held = false;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "F2") {
         f2Held = true;
         return;
       }
-      if (event.code === "KeyE" && f2Held && !editorSummoned) {
+      if (event.code === "KeyE" && f2Held) {
         event.preventDefault();
-        setEditorSummoned(true);
+        summon();
       }
     };
     const onKeyUp = (event: KeyboardEvent) => {
@@ -46,10 +64,13 @@ export function useEditorSummon(mode: string): boolean {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
+      const host = window as { __jgengineSummonEditor?: () => void };
+      if (host.__jgengineSummonEditor === summon) delete host.__jgengineSummonEditor;
     };
-  }, [mode, editorSummoned]);
+  }, [editorOpen, mode]);
 
-  return editorSummoned;
+  const exitEditor = useCallback(() => setEditorOpen(false), []);
+  return { editorOpen, exitEditor };
 }
 
 /**
