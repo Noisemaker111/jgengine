@@ -109,6 +109,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
 
+## building-lots — derive street-facing building lots from road frontage
+
+- `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`
+
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
@@ -281,10 +285,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
 
-## path-network — build a deterministic road/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
-
-- `buildPathNetwork` (function) · `import { buildPathNetwork } from "@jgengine/core/world/pathNetwork"`
-
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
 - `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
@@ -414,6 +414,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stop-order — halt-and-complete order that brings a unit to an immediate standstill
 
 - `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
+
+## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
+
+- `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/world/streetGenerator"`
 
 ## surface-drape — lift an XZ polyline onto sculpted terrain
 

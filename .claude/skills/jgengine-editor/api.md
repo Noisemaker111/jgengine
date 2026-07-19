@@ -613,6 +613,10 @@
 
 - `runtimeHandlers` (const): const runtimeHandlers: Pick< HandlerTable, | "push_document_patch" | "pull_document_patches" | "document_revision" | "push_runtime_delta" | "pull_runtime_deltas" | "runtime_snapshot" | "runtime_summary" | "runtime_get" | "runtime_set" | "runtime_pause" | "runtime_resume" | "runtime_step" | "set_runt… — Live-sync document patches, the ephemeral runtime reverse channel, and play-mode poke verbs.
 
+## @jgengine/editor/handlers/streets
+
+- `streetsHandlers` (const): const streetsHandlers: Pick<HandlerTable, "generate_streets"> — Document, selection, camera, mode, asset placement, and status verbs.
+
 ## @jgengine/editor/handlers/terrain
 
 - `terrainHandlers` (const): const terrainHandlers: Pick< HandlerTable, | "create_terrain" | "sculpt_terrain" | "terrain_summary" | "paint_terrain" | "fill_terrain" | "auto_paint" | "terrain_materials" | "terrain_layers" | "set_terrain_layers" | "blend_terrain" | "convert_scatter" | "add_foliage" | "scatter_summary" > — Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs.

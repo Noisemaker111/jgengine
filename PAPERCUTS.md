@@ -166,3 +166,7 @@ Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstal
 2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
 
 bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
+
+2026-07-18T23:42:10.479Z — fable — Claude
+
+drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures

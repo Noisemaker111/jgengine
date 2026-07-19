@@ -1305,7 +1305,7 @@
 
 ## @jgengine/shell/environment/RoadRibbons
 
-- `RoadRibbons` (function): function RoadRibbons({ road, field }: { road: RoadEnvironmentDescriptor; field: TerrainField }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon plus optional dashed centerline, draped on the terrain.
+- `RoadRibbons` (function): function RoadRibbons({ road, field, exclusions = [], }: { road: RoadEnvironmentDescriptor; field: TerrainField; exclusions?: readonly DashExclusion[]; }): React.JSX.Element | null — Renders one `road()` descriptor: an asphalt ribbon, a curb/edge strip along each border, plus an optional dashed centerline (draped on the terrain, and interrupted through any `exclusions` — the welded junction patches — so the center line does not paint across intersections).
 
 ## @jgengine/shell/environment/VolumetricClouds
 

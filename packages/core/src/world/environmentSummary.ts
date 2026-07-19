@@ -1,10 +1,13 @@
 import {
+  DEFAULT_BUILDING_CONFIG,
+  generateBuilding,
   generateBuildingDistrict,
   resolveBuildingPalette,
   type BuildingPalette,
   type BuildingStyle,
   type GeneratedBuilding,
 } from "./buildings";
+import { deriveBuildingLots, type PlacedBuildingLot } from "./buildingLots";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentArea,
@@ -17,6 +20,9 @@ import { pathLength } from "./roads";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
 
 export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] {
+  if (descriptor.along !== undefined) {
+    return resolveFrontageBuildings(descriptor, descriptor.along);
+  }
   const columns = Math.max(1, Math.ceil(Math.sqrt(descriptor.count)));
   const rows = Math.max(1, Math.ceil(descriptor.count / columns));
   const spacing = descriptor.spacing;
@@ -35,6 +41,72 @@ export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescrip
     base: { floorHeight: descriptor.storyHeight },
     ...(descriptor.seed === undefined ? {} : { seed: descriptor.seed }),
   }).slice(0, descriptor.count);
+}
+
+function hashU32(input: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 2246822507);
+  hash ^= hash >>> 13;
+  hash = Math.imul(hash, 3266489909);
+  hash ^= hash >>> 16;
+  return hash >>> 0;
+}
+
+/**
+ * Build one street-aware building per road-frontage lot: massed at the lot center, its `rotationY`
+ * set so the front faces the road (the renderer turns the whole building about `center`), floors
+ * rolled deterministically from the descriptor's `stories` and the lot's road/side/index.
+ */
+function resolveFrontageBuildings(
+  descriptor: BuildingEnvironmentDescriptor,
+  along: NonNullable<BuildingEnvironmentDescriptor["along"]>,
+): GeneratedBuilding[] {
+  const seed = descriptor.seed ?? "buildings";
+  const lots = deriveBuildingLots({
+    roads: along.roads,
+    footprint: descriptor.footprint,
+    spacing: descriptor.spacing,
+    maxLots: descriptor.count,
+    seed: `${seed}:lots`,
+    ...(along.setback === undefined ? {} : { setback: along.setback }),
+    ...(along.bothSides === undefined ? {} : { bothSides: along.bothSides }),
+    ...(along.area === undefined ? {} : { area: along.area }),
+  });
+  const [floorsMin, floorsMax] = descriptor.stories;
+  const bayWidth = DEFAULT_BUILDING_CONFIG.bayWidth;
+  return lots.map((lot, index) => buildLot(lot, index, seed, floorsMin, floorsMax, bayWidth, descriptor.storyHeight));
+}
+
+function buildLot(
+  lot: PlacedBuildingLot,
+  index: number,
+  seed: string,
+  floorsMin: number,
+  floorsMax: number,
+  bayWidth: number,
+  storyHeight: number,
+): GeneratedBuilding {
+  const lo = Math.min(floorsMin, floorsMax);
+  const hi = Math.max(floorsMin, floorsMax);
+  const floors = lo + Math.floor((hashU32(`${seed}:floors:${index}`) / 4294967296) * (hi - lo + 1));
+  const baysWide = Math.max(1, Math.floor(lot.footprint.w / bayWidth));
+  const baysDeep = Math.max(1, Math.floor(lot.footprint.d / bayWidth));
+  const building = generateBuilding({
+    id: `frontage-${index}`,
+    seed: `${seed}:${index}`,
+    center: lot.center,
+    floors,
+    baysWide,
+    baysDeep,
+    bayWidth,
+    floorHeight: storyHeight,
+  });
+  return { ...building, rotationY: lot.rotationY };
 }
 
 export interface TerrainHeightStats {
