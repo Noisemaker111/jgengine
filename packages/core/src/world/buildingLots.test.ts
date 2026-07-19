@@ -209,3 +209,21 @@ describe("deriveBuildingLots — plot contract (#1454)", () => {
     }
   });
 });
+
+describe("deriveBuildingLots — plot spacing dial (#1454)", () => {
+  const road: RoadFrontage[] = [{ path: [[-200, 0], [200, 0]], width: 10 }];
+
+  test("spacing 0 packs plots edge-to-edge — touching is legal, overlap is not", () => {
+    const touching = deriveBuildingLots({ roads: road, footprint: { w: 12, d: 10 }, spacing: 0, setback: 3 });
+    const spaced = deriveBuildingLots({ roads: road, footprint: { w: 12, d: 10 }, spacing: 4, setback: 3 });
+    // Zero spacing must not silently drop same-road neighbours: the pitch tightens, so a fixed
+    // frontage fits MORE plots than a 4 m gap does.
+    expect(touching.length).toBeGreaterThan(spaced.length);
+    const side = touching.filter((lot) => lot.side === 1).sort((a, b) => a.center[0] - b.center[0]);
+    for (let i = 1; i < side.length; i += 1) {
+      const gap = side[i]!.center[0] - side[i - 1]!.center[0] - 12;
+      expect(gap).toBeGreaterThanOrEqual(-1e-6); // never overlapping…
+      expect(gap).toBeLessThanOrEqual(1e-6); // …and exactly touching at spacing 0
+    }
+  });
+});

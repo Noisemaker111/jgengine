@@ -157,10 +157,12 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
   const accepted: OrientedRect[] = [];
   const hw = footprint.w / 2;
   const hd = footprint.d / 2;
-  // Gap grown onto the candidate for the plot-vs-plot separation test. Half the spacing on each
-  // rect keeps same-road neighbours (spaced exactly `spacing` apart) accepted while anything
-  // closer — corner stacking, inside-of-curve pinches — is rejected.
-  const gap = Math.max(0.1, spacing * 0.45);
+  // Gap grown onto the candidate for the plot-vs-plot separation test. Just under half the
+  // spacing keeps same-road neighbours (spaced exactly `spacing` apart) accepted while anything
+  // closer — corner stacking, inside-of-curve pinches — is rejected. At `spacing` 0 the gap goes
+  // slightly NEGATIVE (a shrink), so exactly-touching plots (terraces, rowhouse walls) are legal:
+  // touching is a valid look, overlapping never is.
+  const gap = spacing * 0.45 - 0.05;
   // Plots may touch the asphalt edge but never intrude into it; the tiny epsilon keeps an exact
   // setback-0 front face (touching the corridor boundary) legal.
   const roadClearanceSlack = 0.02;
