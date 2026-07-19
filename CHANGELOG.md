@@ -46,6 +46,15 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Branching dialogue UI.** `@jgengine/core/game/dialogueGraph`'s `createDialogueRun` / `selectDialogueView` add a
+  thin, serializable branching-conversation model over the existing `features.dialogue` open/close bridge — a graph of
+  nodes (free-string speaker + line + choices that name the node they lead to) with choose-to-advance traversal, visited
+  history, and snapshot/restore. `@jgengine/react`'s `DialogueView` (+ `useDialogueRun`) is the drop-in view: speaker
+  name, an optional portrait slot, the current line, and clickable response buttons that advance the run — a game passes
+  its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. Genre-agnostic:
+  speaker/choice `kind` are free strings the model never interprets, surfaced as `data-*` for game styling; HudTheme-skinned
+  via `--jg-*` tokens. See the `dialogue` demo.
+=======
 - **Damage-direction indicators.** `@jgengine/core/vfx/damageDirection`' `createDamageDirectionTracker` is a
   serializable, allocation-aware "hit-from" brain: `registerHit({ angle, intensity?, kind? })` (angle in radians,
   `0` = front, free-string `kind` never interpreted) turns each hit into a directional indicator that fades over a

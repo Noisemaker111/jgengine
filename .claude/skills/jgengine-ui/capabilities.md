@@ -113,6 +113,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
 
+## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
+
+- `DialogueView` (function) · `import { DialogueView } from "@jgengine/react"`
+
 ## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
 
 - `useDisposable` (function) · `import { useDisposable } from "@jgengine/shell/render/useDisposable"`
@@ -433,6 +437,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
 - `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/react"`
+
+## use-dialogue-run — React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
+
+- `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/react"`
 
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 

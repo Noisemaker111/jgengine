@@ -405,6 +405,18 @@
 - `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
 
+## @jgengine/core/game/dialogueGraph
+
+- `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
+- `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
+- `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
+- `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
+- `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
+- `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
+- `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
+- `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
+- `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
+
 ## @jgengine/core/game/events
 
 - `AudioLoopSetEvent` (interface): interface AudioLoopSetEvent — Live-update the retained loop `id`: `rate` re-pitches it (1 = authored, the shell clamps to 0.25–4), `gain` rescales its volume (0–1), and `at` repositions its emitter. Emitted every tick to track a live signal (RPM, tire slip); the shell smooths rate/gain and ignores an unknown `id` (#1051).
@@ -989,6 +1001,13 @@
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
 - `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
+- `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
+- `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
+- `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
+- `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
+- `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
+- `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
+- `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
 - `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
@@ -1289,6 +1308,7 @@
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
+- `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
 - `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
@@ -1437,6 +1457,7 @@
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
+- `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
 - `selectRules` (function): function selectRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig): RuleSelection<TPayload> — Select up to `count` rules from `pool` deterministically from `config.seed`. Locked ids are placed first (in order), then remaining slots are filled by weighted draw from tag-filtered, still-eligible candidates, honoring `requires`/`conflicts` after each pick. Each slot draws from an independent seed stream keyed by slot index, so a later slot's outcome never shifts an earlier one. Selection stops early when no compatible candidate remains. Pure given `pool` + `config`.
 - `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
 - `setTouchControlsMode` (function): function setTouchControlsMode(ctx: GameContext, mode: string | null): void — Activate a named touch control mode, or `null` to return to the base config.
