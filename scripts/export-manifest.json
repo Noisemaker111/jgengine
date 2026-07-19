@@ -543,6 +543,7 @@
     "./preview",
     "./previewFixtures",
     "./provider",
+    "./questTracker",
     "./radialMenu",
     "./rotateDevice",
     "./save",

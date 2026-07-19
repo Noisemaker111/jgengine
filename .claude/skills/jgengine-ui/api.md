@@ -545,6 +545,8 @@
 - `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
+- `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
 - `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel): a ring of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. The game supplies option icons/labels and skins it.
@@ -1127,6 +1129,11 @@
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
+
+## @jgengine/react/questTracker
+
+- `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
+- `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
 
 ## @jgengine/react/radialMenu
 

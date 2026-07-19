@@ -312,6 +312,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/gameplay"`
 
+## quest-tracker-view — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
+
+- `describeTrackedQuest` (function) · `import { describeTrackedQuest } from "@jgengine/core/gameplay"`
+
 ## race-placements — look up one racer's place + win/lose within a finish order
 
 - `placementOf` (function) · `import { placementOf } from "@jgengine/core/gameplay"`

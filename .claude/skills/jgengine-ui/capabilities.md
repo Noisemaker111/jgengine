@@ -286,6 +286,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
 
+## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
+
+- `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/react"`
+
 ## radial-menu — pointer/stick-driven radial quick menu (weapon/emote wheel) — angular slice selection with a neutral hub
 
 - `RadialMenu` (function) · `import { RadialMenu } from "@jgengine/react"`
