@@ -134,6 +134,7 @@ export const gameRegistry: GameRegistry = {
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
+  "day-night": () => import("./demo/dayNightDemo").then((module) => module.dayNightDemoGame),
   "status-effects": () => import("./demo/statusEffectDemo").then((module) => module.statusEffectDemoGame),
   "cutscene": () => import("./demo/cutsceneDemo").then((module) => module.cutsceneDemoGame),
   "pause-menu": () => import("./demo/pauseMenuDemo").then((module) => module.pauseMenuDemoGame),

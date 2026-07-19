@@ -1680,6 +1680,8 @@
 
 ## @jgengine/shell/environment
 
+- `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
+- `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
@@ -1694,6 +1696,8 @@
 
 ## @jgengine/shell/environment
 
+- `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
+- `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
@@ -1705,6 +1709,11 @@
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 - `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
+
+## @jgengine/shell/environment/DayNightSky
+
+- `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
+- `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
 
 ## @jgengine/shell/environment/Daylight
 

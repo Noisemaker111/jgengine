@@ -101,6 +101,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
 
+## day-night-sky — drop-in R3F presenter that drives the engine's existing sky dome and lights from a serializable day-night cycle for a moving, color-graded day-night look
+
+- `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
+
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`

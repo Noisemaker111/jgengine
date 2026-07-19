@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Turnkey day-night cycle.** `@jgengine/core/time/dayNightCycle`' `createDayNightCycle` is a genre-agnostic,
+  serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels
+  and tint/light colors (`DayNightKeyframe` → `DayNightSample`), with `pause`/`play`/`setSpeed`/`setDayFraction`,
+  `subscribe`, `snapshot`/`restore`, and a `calendar()` adapter so it drops straight into any `{ dayFraction }` sky
+  seam. The shell's `@jgengine/shell/environment` adds `DayNightSky`, a drop-in R3F presenter that drives the existing
+  `SkyDome` shader and lights from the model each frame — wire one thing for a moving, color-graded day-night sky
+  instead of hand-rolling a clock plus a color lerp. `phase`/`kind` strings stay free-form; the model never interprets
+  them. New `day-night` dev demo.
 - **Status-effect timeline HUD.** `@jgengine/react`'s `StatusEffectBar` renders active buffs/debuffs as a row of
   painted icons, each with a radial countdown ring and stack-count badge, driven off the existing status model
   (`combat/statusApplication`'s `StatusInstance`). A thin genre-agnostic core selector,
