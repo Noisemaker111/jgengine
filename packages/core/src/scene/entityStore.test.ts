@@ -34,6 +34,21 @@ describe("scene entity store", () => {
     expect(entity?.behaviors).toEqual([]);
   });
 
+  test("hidden is unset by default, settable at spawn, and round-trips through update", () => {
+    const store = createEntityStore();
+    const walker = store.spawn("rider");
+    expect(store.get(walker)?.hidden).toBeUndefined();
+    const cloaked = store.spawn("rider", { hidden: true });
+    expect(store.get(cloaked)?.hidden).toBe(true);
+    store.update(walker, { hidden: true });
+    expect(store.get(walker)?.hidden).toBe(true);
+    store.update(walker, { hidden: false });
+    expect(store.get(walker)?.hidden).toBe(false);
+    // An unrelated patch leaves the flag alone.
+    store.update(walker, { rotationY: 1 });
+    expect(store.get(walker)?.hidden).toBe(false);
+  });
+
   test("spawn accepts both tuple and point positions and stores the tuple", () => {
     const store = createEntityStore();
     const fromTuple = store.spawn("bench", { position: [1, 2, 3] });

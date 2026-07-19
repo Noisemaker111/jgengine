@@ -17,7 +17,7 @@ function boot(): GameContext {
 }
 
 describe("handroll drivable-vehicle adoption", () => {
-  test("entering a vehicle freezes the rider and points the camera at it, exiting reverses both", () => {
+  test("entering a vehicle freezes+hides the rider, follows it, and overlays the drive camera; exiting reverses all (#1299)", () => {
     const ctx = boot();
     const handroll = createHandroll();
     ctx.scene.entity.spawn("car_compact", { id: "car_1", position: [10, 0, 10], role: "prop" });
@@ -26,11 +26,30 @@ describe("handroll drivable-vehicle adoption", () => {
     expect(handroll.drivingVehicleId()).toBe("car_1");
     expect(ctx.camera.followedEntityId()).toBe("car_1");
     expect(ctx.scene.entity.get(HERO)?.movement.frozen).toBe(true);
+    // The seated rider stops rendering — its model otherwise pokes through the car body.
+    expect(ctx.scene.entity.get(HERO)?.hidden).toBe(true);
+    // Speed→FOV, bank, lead, drift-lag are a driving-only overlay, never the on-foot baseline.
+    const tuning = ctx.camera.chaseTuning();
+    expect(tuning).not.toBeNull();
+    expect(tuning?.fov?.max).toBe(86);
+    expect(tuning?.bank?.perYawRate).toBeGreaterThan(0);
 
     handroll.exitVehicle(ctx);
     expect(handroll.drivingVehicleId()).toBeNull();
     expect(ctx.camera.followedEntityId()).toBe(HERO);
     expect(ctx.scene.entity.get(HERO)?.movement.frozen).toBe(false);
+    expect(ctx.scene.entity.get(HERO)?.hidden).toBe(false);
+    expect(ctx.camera.chaseTuning()).toBeNull();
+  });
+
+  test("the static on-foot chase config carries no speed-reactive lens or roll (#1299)", () => {
+    const chase = game.camera?.chase;
+    expect(chase).toBeDefined();
+    expect(chase?.fov?.speedForMax).toBe(0);
+    expect(chase?.bank).toBeUndefined();
+    expect(chase?.lead).toBeUndefined();
+    expect(chase?.shakePerSpeed).toBeUndefined();
+    expect(chase?.velocityYaw).toBeUndefined();
   });
 
   test("throttle drives the vehicle entity forward over several ticks", () => {
