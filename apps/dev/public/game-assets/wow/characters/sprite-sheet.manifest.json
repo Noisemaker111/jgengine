@@ -144,7 +144,7 @@
     "trimPadding": 4
   },
   "output": {
-    "directory": "C:\\Users\\Jk101\\Projects\\ai-lab-game\\apps\\web\\public\\game-assets\\wow\\characters",
+    "directory": ".",
     "files": [
       {
         "name": "player-armored-adventurer",
