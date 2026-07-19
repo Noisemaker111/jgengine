@@ -555,15 +555,15 @@ export { createRegionField, isRegionField, type RegionField } from "./world/regi
 export { buildRoadRibbon, dashSegments } from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
 export {
-  budgetWarning,
   CITY_BUILDING_BUDGET,
+  SCATTER_COVERAGE_SPECS,
+  SCATTER_INSTANCE_BUDGET,
+  budgetWarning,
   densityCoverage,
   describeScatterCoverage,
   placedCoverage,
   scatterCoverageSpec,
   scatterFootprintArea,
-  SCATTER_COVERAGE_SPECS,
-  SCATTER_INSTANCE_BUDGET,
   type ScatterCoverage,
   type ScatterCoverageKind,
   type ScatterCoverageSpec,

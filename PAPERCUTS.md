@@ -196,3 +196,7 @@ Wiring in-game before/after screenshots for HudTheme/IconTreatment adoption -> t
 2026-07-19T04:40:07.134Z — fable — Claude
 
 verifying vice-isle movement fix → bun run drive --playtest in the cloud container runs headless Chrome at ~2 fps software GL (1.2M tris), so held-key movement barely advances and every game reads as a false SOFTLOCK (wreckway: 2 probe frames in 8s); playtest rung is unusable here, had to fall back to deterministic headless stepPlayerMovement evidence
+
+2026-07-19T04:59:59.942Z — claude-fable-5 — Claude
+
+releasing 0.14.0 → bun test scripts fails on a clean main checkout: packages/core/src/world.ts barrel is out of sync with gen-barrels output (scatterCoverage symbol ordering from #1279); had to regenerate and fold the fix into the release PR
