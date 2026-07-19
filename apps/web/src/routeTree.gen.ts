@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CapabilitiesRouteImport } from './routes/capabilities'
 import { Route as IndexRouteImport } from './routes/index'
@@ -27,6 +28,11 @@ const WhyRoute = WhyRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaygroundRoute = PlaygroundRouteImport.update({
+  id: '/playground',
+  path: '/playground',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditorRoute = EditorRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
+  '/playground': typeof PlaygroundRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
+  '/playground': typeof PlaygroundRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
+  '/playground': typeof PlaygroundRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/why': typeof WhyRoute
   '/api/github-contributions': typeof ApiGithubContributionsRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/capabilities'
     | '/editor'
+    | '/playground'
     | '/sitemap.xml'
     | '/why'
     | '/api/github-contributions'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/capabilities'
     | '/editor'
+    | '/playground'
     | '/sitemap.xml'
     | '/why'
     | '/api/github-contributions'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/capabilities'
     | '/editor'
+    | '/playground'
     | '/sitemap.xml'
     | '/why'
     | '/api/github-contributions'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CapabilitiesRoute: typeof CapabilitiesRoute
   EditorRoute: typeof EditorRoute
+  PlaygroundRoute: typeof PlaygroundRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WhyRoute: typeof WhyRoute
   ApiGithubContributionsRoute: typeof ApiGithubContributionsRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playground': {
+      id: '/playground'
+      path: '/playground'
+      fullPath: '/playground'
+      preLoaderRoute: typeof PlaygroundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor': {
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CapabilitiesRoute: CapabilitiesRoute,
   EditorRoute: EditorRoute,
+  PlaygroundRoute: PlaygroundRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WhyRoute: WhyRoute,
   ApiGithubContributionsRoute: ApiGithubContributionsRoute,
