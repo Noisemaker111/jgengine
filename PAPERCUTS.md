@@ -187,3 +187,7 @@ bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails 
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
+
+2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
+
+PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
