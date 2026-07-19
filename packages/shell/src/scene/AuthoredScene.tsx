@@ -13,7 +13,7 @@ import {
   placeAuthoredObjects,
   resolveAuthoredObjects,
 } from "@jgengine/core/world/authoredObjects";
-import { buildRoadRibbon, roundPathCorners } from "@jgengine/core/world/roads";
+import { buildRoadRibbon, GROUND_DECAL_LAYERS, roundPathCorners } from "@jgengine/core/world/roads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
@@ -143,7 +143,8 @@ function DrapedPath({
     // Fillet sharp turns first so bends read as smooth arcs, not overlapping rectangles.
     const rounded = roundPathCorners(points, Math.max(1.5, width * 0.9), 6);
     const ribbon = buildRoadRibbon(rounded, width, (x, z) => field.sampleHeight(x, z), {
-      elevation: 0.18,
+      // Generic authored paths (dirt roads, routes, corridors) drape on the shared road decal layer.
+      elevation: GROUND_DECAL_LAYERS.road,
       maxSegmentLength: 1,
     });
     const geo = new THREE.BufferGeometry();

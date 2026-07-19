@@ -7,7 +7,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/world/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
-import { findRoadJunctions, junctionExclusions } from "@jgengine/core/world/streets";
+import { findRoadJunctions } from "@jgengine/core/world/streets";
 import type {
   BuildingEnvironmentDescriptor,
   EnvironmentWorldFeature,
@@ -30,7 +30,7 @@ import {
 import { useDisposable } from "../render/useDisposable";
 import { GroundPad } from "./GroundPad";
 import { RoadJunctions } from "./RoadJunctions";
-import { RoadRibbons } from "./RoadRibbons";
+import { buildAuthoredRoadNetwork, RoadRibbons } from "./RoadRibbons";
 import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassField } from "../terrain/GrassField";
@@ -337,7 +337,10 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const islands = feature.islands ?? [];
   const roads = feature.roads ?? [];
   const junctions = useMemo(() => findRoadJunctions(roads), [roads]);
-  const exclusions = useMemo(() => junctionExclusions(junctions), [junctions]);
+  const roadNetwork = useMemo(
+    () => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z)),
+    [roads, junctions, field],
+  );
   return (
     <>
       {feature.terrain !== undefined ? <TerrainGround terrain={feature.terrain} field={field} /> : null}
@@ -348,9 +351,9 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
         <Water key={`ocean-${index}`} ocean={ocean} />
       ))}
       {roads.map((entry, index) => (
-        <RoadRibbons key={`road-${index}`} road={entry} field={field} exclusions={exclusions} />
+        <RoadRibbons key={`road-${index}`} road={entry} field={field} paths={roadNetwork.roadPaths[index] ?? []} />
       ))}
-      <RoadJunctions junctions={junctions} field={field} />
+      <RoadJunctions surfaces={roadNetwork.junctionSurfaces} junctions={junctions} field={field} />
       {structures.map((entry, index) => (
         <Structures key={`structures-${index}`} structures={entry} field={field} />
       ))}
