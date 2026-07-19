@@ -345,6 +345,140 @@ export function buildLotPieces(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Landmarks — block-scale buildings placed by the landmark pass, NOT rolled per lot.
+// They merge a cluster of adjacent frontage lots into ONE oversized parcel, so a city gets a
+// handful of stadium/mall/campus/civic-hall footprints several times larger than their neighbours.
+// ---------------------------------------------------------------------------
+
+/**
+ * A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone
+ * mix — the landmark pass in `resolveCityLotContent` picks clusters of adjacent lots and stamps one
+ * of these over them. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a
+ * much larger footprint (~40–90 m).
+ */
+export type CityLandmarkClass = "hall" | "arena" | "market" | "campus";
+
+/** All landmark classes, for schema hints, validation, and default allow-lists. */
+export const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] = ["hall", "arena", "market", "campus"];
+
+/** Per-landmark massing profile: floor range and how deep into the block the parcel is pushed. */
+interface LandmarkProfile {
+  /** Floor-count range (drives overall height; height = floors × floorHeight). */
+  floors: readonly [number, number];
+  /** Landmark depth is grown to at least this × width, so parcels read as block-scale, not shallow. */
+  minDepthFactor: number;
+}
+
+const LANDMARK_PROFILES: Record<CityLandmarkClass, LandmarkProfile> = {
+  hall: { floors: [2, 3], minDepthFactor: 0.55 },
+  arena: { floors: [3, 5], minDepthFactor: 0.85 },
+  market: { floors: [1, 2], minDepthFactor: 0.6 },
+  campus: { floors: [3, 6], minDepthFactor: 0.7 },
+};
+
+/** Minimum depth-into-block factor for a landmark class (the pass grows shallow clusters to this). @internal */
+export function landmarkMinDepthFactor(cls: CityLandmarkClass): number {
+  return LANDMARK_PROFILES[cls].minDepthFactor;
+}
+
+/** Roll a landmark's floor count from its profile range. @internal */
+export function landmarkFloors(cls: CityLandmarkClass, rng: () => number): number {
+  return Math.round(range(rng, LANDMARK_PROFILES[cls].floors));
+}
+
+/**
+ * Compose the massing pieces for one landmark parcel, filling the given `width`×`depth` footprint
+ * (lot-local, x along frontage, z into the block). Deterministic per `rng`. Every piece is kept
+ * inside the `[-width/2, width/2] × [-depth/2, depth/2]` box so the reported footprint matches the
+ * merged cluster's AABB. Sizes are in meters.
+ * @internal
+ */
+export function buildLandmarkPieces(
+  cls: CityLandmarkClass,
+  width: number,
+  depth: number,
+  floors: number,
+  floorHeight: number,
+  rng: () => number,
+): CityLotPiece[] {
+  const H = Math.max(1, floors) * floorHeight;
+  const pieces: CityLotPiece[] = [];
+  switch (cls) {
+    case "hall": {
+      // Civic block: broad walled base, an entablature, a fronting colonnade, and a central dome.
+      const bw = width * 0.96;
+      const bd = depth * 0.96;
+      pieces.push(box([0, 0, 0], [bw, H, bd], "wall", { grounded: true }));
+      pieces.push(box([0, H, 0], [bw, 0.6, bd], "trim"));
+      const cols = Math.max(4, Math.round(bw / 6));
+      const colH = H * 0.92;
+      const zFront = bd / 2 - 0.6;
+      for (let i = 0; i < cols; i += 1) {
+        const t = cols === 1 ? 0.5 : i / (cols - 1);
+        const x = (t - 0.5) * (bw - 1.4);
+        pieces.push(box([x, 0, zFront], [0.7, colH, 0.7], "trim", { grounded: true }));
+      }
+      // Portico roof over the colonnade.
+      pieces.push(box([0, colH, zFront], [bw - 1.0, 0.5, 1.6], "roof"));
+      const dd = Math.min(bw, bd) * (0.4 + rng() * 0.06);
+      pieces.push({ shape: "dome", offset: [0, H, 0], size: [dd, dd * 0.55, dd], rotationY: 0, role: "roof", grounded: false, banded: false });
+      return pieces;
+    }
+    case "arena": {
+      // Bowl: an elliptical outer wall, a rim ring, and a sunken inner field ring.
+      const ow = width * 0.94;
+      const od = depth * 0.94;
+      pieces.push({ shape: "cylinder", offset: [0, 0, 0], size: [ow, H, od], rotationY: 0, role: "wall", grounded: true, banded: true });
+      pieces.push({ shape: "cylinder", offset: [0, H, 0], size: [ow * 0.99, 0.9, od * 0.99], rotationY: 0, role: "trim", grounded: false, banded: false });
+      pieces.push({ shape: "cylinder", offset: [0, 0, 0], size: [ow * 0.66, H * 0.5, od * 0.66], rotationY: 0, role: "accent", grounded: true, banded: false });
+      if (rng() < 0.6) {
+        // A short mast/scoreboard on the rim.
+        pieces.push(box([0, H, 0], [1.4, 3 + rng() * 3, 1.4], "trim"));
+      }
+      return pieces;
+    }
+    case "market": {
+      // Broad low gabled hall with an open stall face on the street side.
+      const bw = width * 0.97;
+      const bd = depth * 0.95;
+      pieces.push(box([0, 0, 0], [bw, H, bd], "wall", { grounded: true }));
+      const roofH = Math.min(4 + rng() * 2, bd * 0.4);
+      pieces.push(gable([0, H, 0], [bw, roofH, bd]));
+      // Clerestory monitor along the ridge.
+      pieces.push(box([0, H, 0], [bw * 0.5, roofH * 0.5, bd * 0.25], "accent"));
+      // Awning/stall lip on the front face.
+      pieces.push(box([0, Math.min(H - 0.5, 3), bd / 2 - 0.4], [bw * 0.94, 0.4, 1.0], "accent"));
+      return pieces;
+    }
+    case "campus": {
+      // Courtyard: four connected slab wings around an open center, varied heights.
+      const bw = width * 0.96;
+      const bd = depth * 0.96;
+      const wingT = Math.min(bw, bd) * 0.22;
+      const innerD = Math.max(1, bd - 2 * wingT);
+      const frontH = H * (0.9 + rng() * 0.2);
+      const backH = H * (0.85 + rng() * 0.2);
+      const leftH = H * (0.9 + rng() * 0.25);
+      const rightH = H * (1.0 + rng() * 0.2);
+      pieces.push(box([0, 0, (bd - wingT) / 2], [bw, frontH, wingT], "wall", { grounded: true, banded: true }));
+      pieces.push(box([0, 0, -(bd - wingT) / 2], [bw, backH, wingT], "wall", { grounded: true, banded: true }));
+      pieces.push(box([(bw - wingT) / 2, 0, 0], [wingT, rightH, innerD], "wall", { grounded: true, banded: true }));
+      pieces.push(box([-(bw - wingT) / 2, 0, 0], [wingT, leftH, innerD], "wall", { grounded: true, banded: true }));
+      // Parapet caps.
+      for (const [wx, wz, ww, wd, wh] of [
+        [0, (bd - wingT) / 2, bw, wingT, frontH],
+        [0, -(bd - wingT) / 2, bw, wingT, backH],
+        [(bw - wingT) / 2, 0, wingT, innerD, rightH],
+        [-(bw - wingT) / 2, 0, wingT, innerD, leftH],
+      ] as const) {
+        pieces.push(box([wx, wh, wz], [ww, 0.4, wd], "trim"));
+      }
+      return pieces;
+    }
+  }
+}
+
 /** Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species. */
 export type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress";
 

@@ -381,8 +381,10 @@ export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from 
 export { catenaryCurve, sagCurve } from "./world/catenary";
 export { type CityBlockKind } from "./world/cityBlocks";
 export {
+  CITY_LANDMARK_CLASSES,
   CITY_LOT_CLASSES,
   CITY_TREE_SPECIES,
+  type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
   type CityPieceRole,
@@ -394,6 +396,8 @@ export {
 export {
   DEFAULT_CITY_LEVEL_BIAS,
   DEFAULT_CITY_ZONE_MIXES,
+  DEFAULT_LANDMARK_SHARE,
+  LANDMARK_HARD_CAP,
   generateCity,
   resolveCityLotContent,
   type CityContentOptions,

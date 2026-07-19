@@ -15,11 +15,16 @@
  */
 import { deriveBuildingLots, type BuildingLotOptions, type PlacedBuildingLot } from "./buildingLots";
 import {
+  buildLandmarkPieces,
   buildLotPieces,
+  landmarkFloors,
+  landmarkMinDepthFactor,
   pickClass,
   rollClassPlacement,
   zoneBand,
   zoneMetric,
+  CITY_LANDMARK_CLASSES,
+  type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
   type CityZoneBand,
@@ -195,6 +200,19 @@ export interface CityContentOverrides {
    * uses {@link DEFAULT_CITY_LEVEL_BIAS}; pass a table to customise; `false` disables the bias.
    */
   streetLevelBias?: boolean | CityLevelClassBias;
+  /**
+   * Share dial (0..1) for the landmark pass: roughly `lots × landmarks ÷ clusterSize` clusters of
+   * adjacent frontage lots are merged into block-scale landmarks (civic hall, arena, market, campus)
+   * whose footprint is several times larger than a normal lot. Default {@link DEFAULT_LANDMARK_SHARE}
+   * (~0.04 ⇒ a couple per default city); `0` disables the pass and yields byte-identical per-lot
+   * resolution. Count is hard-capped at {@link LANDMARK_HARD_CAP}. See {@link resolveCityLotContent}.
+   */
+  landmarks?: number;
+  /**
+   * Restrict the landmark pass to these classes (a subset of {@link CITY_LANDMARK_CLASSES}). Omit to
+   * allow every class the zone table would pick.
+   */
+  landmarkClasses?: readonly CityLandmarkClass[];
 }
 
 /** Full options for {@link resolveCityLotContent}: the city geometry frame plus content overrides. */
@@ -219,12 +237,21 @@ export interface MassingFootprint {
 
 /** One lot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`. */
 export interface ResolvedCityLot {
-  /** The source frontage lot (center, rotationY, footprint, road, side, frontDistance). */
+  /** The source frontage lot. For a landmark this is the cluster's dominant lot (carries road/side). */
   lot: PlacedBuildingLot;
-  /** Zone band the lot's center fell in under the profile. */
+  /** Zone band the lot's (or cluster's) center fell in under the profile. */
   zone: CityZoneBand;
-  /** Building class the bias-adjusted band mix rolled. */
-  class: CityLotClass;
+  /**
+   * Building class. For ordinary lots this is the {@link CityLotClass} the band mix rolled. For a
+   * landmark it is the {@link CityLandmarkClass} (the union is widened only to carry that value;
+   * ordinary lots never take a landmark class). Read {@link ResolvedCityLot.landmark} to discriminate.
+   */
+  class: CityLotClass | CityLandmarkClass;
+  /**
+   * Set only on landmark entries (block-scale cluster merges); equals {@link ResolvedCityLot.class}
+   * there and is `undefined` for every ordinary per-lot building. Renderers branch on this.
+   */
+  landmark?: CityLandmarkClass;
   /** Hierarchy level of the frontage road the lot faces (`street` when it can't be recovered). */
   streetLevel: StreetLevel;
   /** Building floor count after the district clamp. */
@@ -267,6 +294,69 @@ function massingFootprint(pieces: readonly CityLotPiece[]): MassingFootprint {
   return { w: maxX - minX, d: maxZ - minZ, bounds: { minX, maxX, minZ, maxZ } };
 }
 
+/** Default landmark share dial — a couple of block-scale landmarks per default city. */
+export const DEFAULT_LANDMARK_SHARE = 0.04;
+/** Hard cap on landmarks emitted regardless of dial/city size. */
+export const LANDMARK_HARD_CAP = 12;
+/** Divisor turning the share dial into a cluster budget (≈ lots × dial ÷ this). */
+const LANDMARK_CLUSTER_DIVISOR = 3;
+const LANDMARK_MIN_CLUSTER = 2;
+const LANDMARK_MAX_CLUSTER = 4;
+
+/** Which landmark classes each zone band favours (weighted). Data-only, mirrors the zone-mix pattern. */
+const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass; weight: number }[]> = {
+  core: [
+    { cls: "hall", weight: 3 },
+    { cls: "arena", weight: 1 },
+    { cls: "market", weight: 1 },
+  ],
+  mid: [
+    { cls: "arena", weight: 2 },
+    { cls: "campus", weight: 2 },
+    { cls: "market", weight: 2 },
+  ],
+  edge: [
+    { cls: "campus", weight: 2 },
+    { cls: "arena", weight: 1 },
+  ],
+};
+
+/** Rotate a lot-local XZ offset into world space by a lot yaw (inverse of {@link worldToLocal}). */
+function localToWorld(p: Vec2, angle: number): Vec2 {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return [p[0] * c + p[1] * s, -p[0] * s + p[1] * c];
+}
+
+/** Rotate a world-space XZ offset into a lot's local frame. */
+function worldToLocal(p: Vec2, angle: number): Vec2 {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
+}
+
+/** Weighted pick of a landmark class from a zone entry list, restricted to `allowed`. */
+function pickLandmarkClass(
+  entries: readonly { cls: CityLandmarkClass; weight: number }[],
+  allowed: ReadonlySet<CityLandmarkClass>,
+  roll: number,
+): CityLandmarkClass {
+  let total = 0;
+  for (const e of entries) if (allowed.has(e.cls) && e.weight > 0) total += e.weight;
+  if (total <= 0) {
+    // Zone table has nothing allowed here — fall back to any allowed class deterministically.
+    const pool = CITY_LANDMARK_CLASSES.filter((c) => allowed.has(c));
+    return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))] ?? "campus";
+  }
+  let cursor = roll * total;
+  for (const e of entries) {
+    if (!allowed.has(e.cls) || e.weight <= 0) continue;
+    cursor -= e.weight;
+    if (cursor <= 0) return e.cls;
+  }
+  return entries[0]!.cls;
+}
+
 /**
  * Enrich a generated city's bare frontage lots into the 9-class massing system: each lot gets its
  * zone band (radial position under a {@link CityZoneProfile}), a building class rolled from the
@@ -303,7 +393,11 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
   const frontage = city.network.streets.filter((street) => laneFrontage || street.level !== "lane");
 
   const streams = seededStreams(options.seed);
-  return city.lots.map((lot, i) => {
+
+  // Ordinary per-lot resolution — the 9-class massing system. Kept byte-identical to the
+  // pre-landmark path (same `lot:${i}` stream, same field shape) so the landmarks-off case is a
+  // strict backward-compat guard.
+  const resolveNormal = (lot: PlacedBuildingLot, i: number): ResolvedCityLot => {
     const streetLevel = frontage[lot.road]?.level ?? "street";
     const rng = streams(`lot:${i}`);
     const bandRoll = rng();
@@ -324,5 +418,191 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
       rotationY: lot.rotationY,
       footprint: massingFootprint(pieces),
     };
+  };
+
+  const dial = options.landmarks ?? DEFAULT_LANDMARK_SHARE;
+  if (dial <= 0) return city.lots.map(resolveNormal);
+
+  const allowed = new Set<CityLandmarkClass>(options.landmarkClasses ?? CITY_LANDMARK_CLASSES);
+  const { landmarks, consumed } = placeLandmarks(city, {
+    dial,
+    allowed,
+    frontage,
+    streams,
+    profile,
+    coreExtent,
+    midExtent,
+    hx,
+    hz,
+    floorHeight,
   });
+  if (landmarks.length === 0) return city.lots.map(resolveNormal);
+
+  const result: ResolvedCityLot[] = [];
+  city.lots.forEach((lot, i) => {
+    if (!consumed.has(i)) result.push(resolveNormal(lot, i));
+  });
+  result.push(...landmarks);
+  return result;
+}
+
+/** Internal inputs for the landmark pass (already-resolved dials from {@link resolveCityLotContent}). */
+interface LandmarkPassContext {
+  dial: number;
+  allowed: ReadonlySet<CityLandmarkClass>;
+  frontage: StreetNetwork["streets"];
+  streams: (key: string) => () => number;
+  profile: CityZoneProfile;
+  coreExtent: number;
+  midExtent: number;
+  hx: number;
+  hz: number;
+  floorHeight: number;
+}
+
+/**
+ * Deterministic landmark pass. Groups lots by shared frontage (road + side, already in arc order),
+ * partitions each group into non-overlapping candidate clusters of 2–4 adjacent lots, scores them
+ * (bigger clusters + seeded jitter), and merges the top `cap` into oversized landmark parcels whose
+ * footprint is the cluster AABB (in the dominant lot's local frame) grown into the block. Any
+ * surviving ordinary lot whose center falls inside a landmark footprint is swallowed too, so no
+ * landmark ever overlaps a normal building. Bounded: one grouping pass + one sort over ≤ n candidates.
+ */
+function placeLandmarks(
+  city: GeneratedCity,
+  ctx: LandmarkPassContext,
+): { landmarks: ResolvedCityLot[]; consumed: Set<number> } {
+  const { dial, allowed, frontage, streams, profile, coreExtent, midExtent, hx, hz, floorHeight } = ctx;
+  const lots = city.lots;
+  const consumed = new Set<number>();
+  const landmarks: ResolvedCityLot[] = [];
+
+  const cap = Math.min(LANDMARK_HARD_CAP, Math.max(1, Math.floor((lots.length * dial) / LANDMARK_CLUSTER_DIVISOR)));
+
+  // Group by shared frontage; the placer emits a road's lots in arc order, so a group's indices are
+  // already spatially consecutive along that frontage.
+  const groups = new Map<string, number[]>();
+  lots.forEach((lot, i) => {
+    const key = `${lot.road}:${lot.side}`;
+    const arr = groups.get(key);
+    if (arr) arr.push(i);
+    else groups.set(key, [i]);
+  });
+
+  interface Candidate {
+    cluster: number[];
+    score: number;
+    zone: CityZoneBand;
+    cls: CityLandmarkClass;
+  }
+  const candidates: Candidate[] = [];
+  for (const [key, idxs] of groups) {
+    let start = 0;
+    while (start < idxs.length) {
+      const r = streams(`landmark:${key}:${start}`);
+      const size = LANDMARK_MIN_CLUSTER + Math.floor(r() * (LANDMARK_MAX_CLUSTER - LANDMARK_MIN_CLUSTER + 1));
+      const end = Math.min(idxs.length, start + size);
+      const cluster = idxs.slice(start, end);
+      start = end;
+      if (cluster.length < LANDMARK_MIN_CLUSTER) continue;
+      // Reject clusters spread too far to read as one building (a gap in the frontage).
+      let far = false;
+      for (let k = 1; k < cluster.length; k += 1) {
+        const a = lots[cluster[k - 1]!]!.center;
+        const b = lots[cluster[k]!]!.center;
+        const span = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        const reach = (lots[cluster[k - 1]!]!.footprint.w + lots[cluster[k]!]!.footprint.w) * 0.5 + 8;
+        if (span > reach) {
+          far = true;
+          break;
+        }
+      }
+      if (far) continue;
+      let sx = 0;
+      let sz = 0;
+      for (const i of cluster) {
+        sx += lots[i]!.center[0];
+        sz += lots[i]!.center[1];
+      }
+      const cx = sx / cluster.length;
+      const cz = sz / cluster.length;
+      const zone = zoneBand(zoneMetric(cx, cz, hx, hz), profile, coreExtent, midExtent, r());
+      const cls = pickLandmarkClass(LANDMARK_ZONE_MIX[zone], allowed, r());
+      const score = cluster.length + r();
+      candidates.push({ cluster, score, zone, cls });
+    }
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const selected = candidates.slice(0, cap);
+
+  for (const cand of selected) {
+    const { cluster, zone, cls } = cand;
+    const domIdx = cluster[Math.floor(cluster.length / 2)]!;
+    const dom = lots[domIdx]!;
+
+    // Cluster AABB in the dominant lot's local frame (clustered lots share a frontage ⇒ near-parallel).
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (const i of cluster) {
+      const lot = lots[i]!;
+      const rel: Vec2 = [lot.center[0] - dom.center[0], lot.center[1] - dom.center[1]];
+      const loc = worldToLocal(rel, dom.rotationY);
+      const hw = lot.footprint.w / 2;
+      const hd = lot.footprint.d / 2;
+      minX = Math.min(minX, loc[0] - hw);
+      maxX = Math.max(maxX, loc[0] + hw);
+      minZ = Math.min(minZ, loc[1] - hd);
+      maxZ = Math.max(maxZ, loc[1] + hd);
+    }
+    const clusterWidth = maxX - minX;
+    const clusterDepth = maxZ - minZ;
+    // Grow depth into the block (away from the road at +z) so the parcel reads as block-scale.
+    const targetDepth = Math.max(clusterDepth, clusterWidth * landmarkMinDepthFactor(cls));
+    minZ -= targetDepth - clusterDepth;
+    const width = maxX - minX;
+    const depth = maxZ - minZ;
+    const localCenter: Vec2 = [(minX + maxX) / 2, (minZ + maxZ) / 2];
+    const worldOffset = localToWorld(localCenter, dom.rotationY);
+    const center: Vec2 = [dom.center[0] + worldOffset[0], dom.center[1] + worldOffset[1]];
+
+    const rng = streams(`landmark-build:${domIdx}`);
+    const floors = landmarkFloors(cls, rng);
+    const pieces = buildLandmarkPieces(cls, width, depth, floors, floorHeight, rng);
+    const footprint = massingFootprint(pieces);
+    for (const i of cluster) consumed.add(i);
+    landmarks.push({
+      lot: dom,
+      zone,
+      class: cls,
+      landmark: cls,
+      streetLevel: frontage[dom.road]?.level ?? "street",
+      floors,
+      pieces,
+      center,
+      rotationY: dom.rotationY,
+      footprint,
+    });
+  }
+
+  // Swallow any surviving ordinary lot whose center falls inside a landmark footprint, so a landmark
+  // never overlaps a normal building.
+  if (landmarks.length > 0) {
+    lots.forEach((lot, i) => {
+      if (consumed.has(i)) return;
+      for (const lm of landmarks) {
+        const rel: Vec2 = [lot.center[0] - lm.center[0], lot.center[1] - lm.center[1]];
+        const loc = worldToLocal(rel, lm.rotationY);
+        const b = lm.footprint.bounds;
+        if (loc[0] >= b.minX && loc[0] <= b.maxX && loc[1] >= b.minZ && loc[1] <= b.maxZ) {
+          consumed.add(i);
+          return;
+        }
+      }
+    });
+  }
+
+  return { landmarks, consumed };
 }

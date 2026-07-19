@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { generateCity, resolveCityLotContent } from "./cityGenerator";
-import { CITY_LOT_CLASSES, type CityLotClass } from "./cityContent";
+import { DEFAULT_LANDMARK_SHARE, LANDMARK_HARD_CAP, generateCity, resolveCityLotContent } from "./cityGenerator";
+import { CITY_LANDMARK_CLASSES, CITY_LOT_CLASSES, type CityLandmarkClass, type CityLotClass } from "./cityContent";
 import { isOnRoad } from "./roads";
 
 describe("cityGenerator", () => {
@@ -54,7 +54,9 @@ describe("resolveCityLotContent", () => {
   const HX = 300;
   const HZ = 300;
   const base = generateCity({ seed: "content-city" }, HX, HZ);
-  const resolved = resolveCityLotContent(base, { seed: "content-city", halfExtents: [HX, HZ] });
+  // The base fixture pins the landmark pass OFF so the per-lot assertions below stay 1:1; the
+  // landmark pass has its own describe block. `landmarks: 0` is also the backward-compat path.
+  const resolved = resolveCityLotContent(base, { seed: "content-city", halfExtents: [HX, HZ], landmarks: 0 });
 
   test("resolves one entry per lot, in lot order, carrying class/zone/floors/massing", () => {
     expect(resolved.length).toBe(base.lots.length);
@@ -71,9 +73,9 @@ describe("resolveCityLotContent", () => {
   });
 
   test("deterministic per seed — two resolutions are identical, a new seed differs", () => {
-    const again = resolveCityLotContent(base, { seed: "content-city", halfExtents: [HX, HZ] });
+    const again = resolveCityLotContent(base, { seed: "content-city", halfExtents: [HX, HZ], landmarks: 0 });
     expect(again).toEqual(resolved);
-    const other = resolveCityLotContent(base, { seed: "other-seed", halfExtents: [HX, HZ] });
+    const other = resolveCityLotContent(base, { seed: "other-seed", halfExtents: [HX, HZ], landmarks: 0 });
     // Same lots, but the class/floor/massing rolls diverge.
     expect(other.map((r) => `${r.class}:${r.floors}`)).not.toEqual(resolved.map((r) => `${r.class}:${r.floors}`));
   });
@@ -132,8 +134,8 @@ describe("resolveCityLotContent", () => {
     // Isolate the bias from zoning by comparing biased vs unbiased over the SAME wide-frontage lots:
     // the boulevard/avenue bias only scales tower/slab/shop weights up, so their share can only rise.
     const wideCity = generateCity({ seed: "bias-city" }, HX, HZ);
-    const withBias = resolveCityLotContent(wideCity, { seed: "bias-city", halfExtents: [HX, HZ], streetLevelBias: true });
-    const noBias = resolveCityLotContent(wideCity, { seed: "bias-city", halfExtents: [HX, HZ], streetLevelBias: false });
+    const withBias = resolveCityLotContent(wideCity, { seed: "bias-city", halfExtents: [HX, HZ], streetLevelBias: true, landmarks: 0 });
+    const noBias = resolveCityLotContent(wideCity, { seed: "bias-city", halfExtents: [HX, HZ], streetLevelBias: false, landmarks: 0 });
     const wideLevels = ["boulevard", "avenue"];
     const tallShare = (rs: typeof withBias): number => {
       const pool = rs.filter((r) => wideLevels.includes(r.streetLevel));
@@ -151,6 +153,7 @@ describe("resolveCityLotContent", () => {
       halfExtents: [HX, HZ],
       mixes: { edge: [{ item: "barn", weight: 1 }] as { item: CityLotClass; weight: number }[] },
       streetLevelBias: false,
+      landmarks: 0,
     });
     const edge = custom.filter((r) => r.zone === "edge");
     expect(edge.length).toBeGreaterThan(0);
@@ -166,9 +169,121 @@ describe("resolveCityLotContent", () => {
     expect(enriched.lots).toEqual(bare.lots);
     expect(enriched.network).toEqual(bare.network);
     expect(enriched.lotContent).toBeDefined();
-    expect(enriched.lotContent!.length).toBe(bare.lots.length);
-    // Folded resolution matches the standalone call with the same frame.
+    // The default landmark pass merges a few lots, so content count is ≤ lot count.
+    expect(enriched.lotContent!.length).toBeLessThanOrEqual(bare.lots.length);
+    expect(enriched.lotContent!.length).toBeGreaterThan(0);
+    // Folded resolution matches the standalone call with the same frame (landmark pass and all).
     const standalone = resolveCityLotContent(bare, { seed: "content-city", halfExtents: [HX, HZ] });
     expect(enriched.lotContent).toEqual(standalone);
+  });
+});
+
+describe("resolveCityLotContent — landmark pass", () => {
+  const HX = 320;
+  const HZ = 320;
+  const city = generateCity({ seed: "landmark-city" }, HX, HZ);
+  const frame = { seed: "landmark-city", halfExtents: [HX, HZ] as const };
+
+  const landmarksOf = (rs: readonly { landmark?: CityLandmarkClass }[]) => rs.filter((r) => r.landmark !== undefined);
+  const normalsOf = (rs: readonly { landmark?: CityLandmarkClass }[]) => rs.filter((r) => r.landmark === undefined);
+  const median = (xs: number[]): number => {
+    const s = [...xs].sort((a, b) => a - b);
+    return s.length === 0 ? 0 : s[Math.floor(s.length / 2)]!;
+  };
+
+  test("dial 0 places no landmarks and is 1:1 with the bare lots (backward-compat guard)", () => {
+    const off = resolveCityLotContent(city, { ...frame, landmarks: 0 });
+    expect(off.length).toBe(city.lots.length);
+    off.forEach((r, i) => {
+      expect(r.lot).toBe(city.lots[i]!);
+      expect(r.landmark).toBeUndefined();
+    });
+    // Explicit 0 and the pre-landmark-shaped resolution agree — no landmark keys anywhere.
+    expect(off.every((r) => r.landmark === undefined)).toBe(true);
+  });
+
+  test("the default dial (~0.04) yields a couple of landmarks; a fatter dial yields more", () => {
+    const dfl = resolveCityLotContent(city, frame);
+    const dflMarks = landmarksOf(dfl);
+    expect(DEFAULT_LANDMARK_SHARE).toBeGreaterThan(0);
+    expect(dflMarks.length).toBeGreaterThanOrEqual(1);
+    expect(dflMarks.length).toBeLessThanOrEqual(LANDMARK_HARD_CAP);
+    for (const r of dflMarks) expect(CITY_LANDMARK_CLASSES).toContain(r.landmark!);
+
+    const fat = landmarksOf(resolveCityLotContent(city, { ...frame, landmarks: 0.2 }));
+    expect(fat.length).toBeGreaterThan(dflMarks.length);
+    expect(fat.length).toBeLessThanOrEqual(LANDMARK_HARD_CAP);
+  });
+
+  test("landmarks consume their member lots — no surviving normal lot center sits inside a landmark footprint", () => {
+    const rs = resolveCityLotContent(city, { ...frame, landmarks: 0.2 });
+    const marks = landmarksOf(rs);
+    const normals = normalsOf(rs);
+    expect(marks.length).toBeGreaterThan(0);
+    for (const n of normals) {
+      for (const lm of marks) {
+        // Transform the normal lot's center into the landmark's local frame and reject containment.
+        const dx = n.center[0] - lm.center[0];
+        const dz = n.center[1] - lm.center[1];
+        const c = Math.cos(lm.rotationY);
+        const s = Math.sin(lm.rotationY);
+        const lx = dx * c - dz * s;
+        const lz = dx * s + dz * c;
+        const b = lm.footprint.bounds;
+        const inside = lx >= b.minX && lx <= b.maxX && lz >= b.minZ && lz <= b.maxZ;
+        expect(inside).toBe(false);
+      }
+    }
+  });
+
+  test("each landmark footprint dwarfs the neighbourhood — area ≥ 3× the median normal lot area", () => {
+    const rs = resolveCityLotContent(city, { ...frame, landmarks: 0.2 });
+    const normalAreas = normalsOf(rs).map((r) => r.footprint.w * r.footprint.d);
+    const med = median(normalAreas);
+    expect(med).toBeGreaterThan(0);
+    const marks = landmarksOf(rs);
+    expect(marks.length).toBeGreaterThan(0);
+    for (const lm of marks) {
+      expect(lm.footprint.w * lm.footprint.d).toBeGreaterThanOrEqual(3 * med);
+    }
+  });
+
+  test("same seed ⇒ identical landmarks; a new seed diverges", () => {
+    const a = resolveCityLotContent(city, { ...frame, landmarks: 0.15 });
+    const b = resolveCityLotContent(city, { ...frame, landmarks: 0.15 });
+    expect(b).toEqual(a);
+    const other = resolveCityLotContent(city, { seed: "other-landmarks", halfExtents: [HX, HZ], landmarks: 0.15 });
+    const sig = (rs: typeof a) => landmarksOf(rs).map((r) => `${r.landmark}@${r.center[0].toFixed(1)},${r.center[1].toFixed(1)}`).join("|");
+    expect(sig(other)).not.toBe(sig(a));
+  });
+
+  test("every landmark's massing pieces stay inside the reported footprint bounds", () => {
+    const rs = resolveCityLotContent(city, { ...frame, landmarks: 0.2 });
+    const marks = landmarksOf(rs) as import("./cityGenerator").ResolvedCityLot[];
+    expect(marks.length).toBeGreaterThan(0);
+    const eps = 1e-6;
+    for (const lm of marks) {
+      const { minX, maxX, minZ, maxZ } = lm.footprint.bounds;
+      expect(lm.pieces.length).toBeGreaterThan(0);
+      for (const piece of lm.pieces) {
+        for (const v of [...piece.offset, ...piece.size]) expect(Number.isFinite(v)).toBe(true);
+        for (const v of piece.size) expect(v).toBeGreaterThan(0);
+        const c = Math.abs(Math.cos(piece.rotationY));
+        const s = Math.abs(Math.sin(piece.rotationY));
+        const hx = (piece.size[0] / 2) * c + (piece.size[2] / 2) * s;
+        const hz = (piece.size[0] / 2) * s + (piece.size[2] / 2) * c;
+        expect(piece.offset[0] - hx).toBeGreaterThanOrEqual(minX - eps);
+        expect(piece.offset[0] + hx).toBeLessThanOrEqual(maxX + eps);
+        expect(piece.offset[2] - hz).toBeGreaterThanOrEqual(minZ - eps);
+        expect(piece.offset[2] + hz).toBeLessThanOrEqual(maxZ + eps);
+      }
+    }
+  });
+
+  test("landmarkClasses restricts the pass to the allowed set", () => {
+    const rs = resolveCityLotContent(city, { ...frame, landmarks: 0.25, landmarkClasses: ["arena"] });
+    const marks = landmarksOf(rs);
+    expect(marks.length).toBeGreaterThan(0);
+    for (const r of marks) expect(r.landmark).toBe("arena");
   });
 });
