@@ -176,3 +176,11 @@ running bun run gate on a fresh branch off main → check-content-gate red on a 
 2026-07-19T07:09:44.388Z — claude-fable-5 — Claude
 
 gen:export-manifest reads built dist, so generating before a full package build silently omits new subpaths (bit #1300's useDisposable and nearly my ai/driver) — manifest check only fails later on a fully-built tree; generator should build or warn on stale dist
+
+2026-07-19T03:57:16.316Z — fable — Claude
+
+Adding an /agents.md server route to apps/web → Vite dev static middleware intercepts .md URLs and 404s before TanStack SSR sees them, while .txt/.xml server routes work; had to ship the brief as /llms-full.txt instead
+
+2026-07-19T04:20:12.828Z — claude-fable-5 — Claude
+
+Fixing production 404 for quaternius-modular-scifi models → content gate accepts 'provisioned' pack refs, but the Vercel /play build only ships committed packs, so games can merge referencing packs production can never serve (the-robots, tower-guard hit this); also kaykit-space-base was committed without a .gitignore whitelist entry
