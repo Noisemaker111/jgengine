@@ -73,6 +73,17 @@ sci-fi, fantasy props, base characters, animated animals, and monsters
 CC0 — no attribution required, credited here anyway. Broadest low-poly CC0
 library around; go star it.
 
+## ambientCG
+
+JGengine's `@jgengine/assets` catalog mirrors **[ambientCG](https://ambientcg.com)**
+PBR material families (CC0-1.0) — grass, ground, rock, gravel, snow, lava, bark,
+wood, planks, bricks, paving, tiles, concrete, asphalt, metal, fabric, leather,
+marble, and more, over 400 materials generated per numbered family
+([`packages/assets/src/sources/ambientcg.ts`](packages/assets/src/sources/ambientcg.ts));
+`Grass001` and `MetalPlates001` ship pre-mirrored under
+[`apps/dev/public/materials/`](apps/dev/public/materials). CC0 — no attribution
+required, credited here anyway. The gold standard for free PBR; go support it.
+
 ## game-icons.net (Ironhold HUD)
 
 The **[Ironhold](Games/ironhold)** command-console HUD uses vector glyphs from
@@ -125,6 +136,13 @@ movement, armor, and XP formulas, the class kits, the three zone bands
 tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
 credited here and on the game's HUD.
 
+The port's committed 3D art is not upstream's: the `.glb` models under
+[`apps/dev/public/models/claudecraft/`](apps/dev/public/models/claudecraft) —
+player classes, weapons, creatures, and enemies — are CC0 **KayKit**
+(adventurer classes, weapons, skeletons) and **Quaternius** (animals, monsters)
+models, renamed to match the roles in upstream's visual manifest. See the
+KayKit and Quaternius sections above.
+
 ### Classic games (Wave 2)
 
 A handful of genre-anchor classics in `Games/*` are our own builds of decades-old
@@ -137,3 +155,11 @@ genre-homage line rather than crediting a named individual creator.
 | --- | --- | --- |
 | **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
 | **[Ironhold](Games/ironhold)** | `ironhold` | Blizzard Entertainment's **Warcraft III** — the base-and-army real-time-strategy skirmish (select, command, attack-move, focus-fire). Original code, art, and map; only the feel and verb set are harvested. |
+
+## First-party generated assets
+
+The fantasy sprite sheets under `apps/dev/public/game-assets/wow/` and
+`apps/desktop/public/game-assets/wow/` (character portraits, ability and item
+icons, plus their slicing manifests) were AI-generated for this repository and
+sliced into sheets by its own tooling. They are first-party assets — no
+third-party artwork, asset pack, or outside artist is involved.
