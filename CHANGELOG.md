@@ -32,6 +32,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Shared map drawings (multiplayer).** `@jgengine/core/world/sharedAnnotations`' `createSharedAnnotations`
+  makes a map annotation layer collaborative: local `addStroke`/`addShape`/`addNote`/`remove`/`clear` apply
+  then broadcast a serializable edit over the party feed (the same seam `createPingSystem` pings ride), and
+  `apply` mirrors inbound edits from other players while dropping our own echoes. Ids are globally unique per
+  client (`owner:n`) so two players' strokes never collide; transport-agnostic (`ANNOTATION_FEED_ACTION` +
+  any replicated feed). Pings were already shared via `createPingSystem`; this completes the pair. Verified by
+  a two-client sync test.
 - **Welded street intersections** (`@jgengine/core/world/roads`, #1363) — `trimPathAtJunctions` cuts every road back to an arm-derived apron at each crossing (through-roads split in two) and `buildJunctionSurface` welds a curb-return-filleted junction polygon whose boundary vertices are bitwise-shared with the trimmed ribbon ends; `buildTrimmedIntersections` runs the whole pipeline for a street network in one call. Junctions read as real intersections instead of overlapping ribbons under a floating disc (`buildJunctionPatch` is deprecated but still works). The shell's authored-road and city renderers consume it out of the box.
 - **`GROUND_DECAL_LAYERS`** (`@jgengine/core/world/roads`, #1366) — one owning table for ground-decal elevations (terrain < road = junction < marking < glow) replacing scattered per-callsite Y epsilons; ribbon/junction builders default from it, and markings/glow overlays pair it with renderer-side `polygonOffset` so road surfaces stop z-fighting at distance.
 - **Real curves and sidewalks in the street generator** (`@jgengine/core/world/streetGenerator`, #1364, #1368) — corners are now sampled circular-arc fillets honoring `minCurveRadius` instead of single bevels; street hierarchy comes from sampled betweenness centrality with an arterial-connectivity repair pass instead of a length percentile; and boulevard/avenue/street chains carry `sidewalks` offset polylines (new optional `sidewalkWidth` rule, default 2).
