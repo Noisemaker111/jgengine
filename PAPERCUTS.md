@@ -160,3 +160,7 @@ running bun run gate for a touch-controls PR → gate is red on main itself: che
 2026-07-19T20:38:47.201Z — claude-fable-5 — Claude
 
 Running bun run gate on a fresh branch off origin/main → check-game-shape fails on pre-existing Games/vice-isle/src/editorKinds.ts(+test) placement, aborting the gate before test:all for unrelated PRs
+
+2026-07-19T20:41:47.420Z — claude-fable-5 — Claude
+
+test:all on a fresh branch → scripts/exportManifest.test.ts fails because export-manifest.json drift (editor ./camera/orbitFraming, ./harness) landed on main unregenerated — the PR quick CI job doesn't run this test, so drift only surfaces on later unrelated branches
