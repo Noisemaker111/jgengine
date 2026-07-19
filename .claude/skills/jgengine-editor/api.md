@@ -393,7 +393,7 @@
 - `EDITOR_AGENT_KEY_FALLBACK_ENV` (const): const EDITOR_AGENT_KEY_FALLBACK_ENV: "ANTHROPIC_API_KEY" — Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`).
 - `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -402,7 +402,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Smoothly pans the orbit camera to the editor host's focus target when it changes.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — d… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
@@ -470,7 +470,7 @@
 
 ## @jgengine/editor/EditorApp
 
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorSaveFn` (type): type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }> — Persists an exported document JSON; resolves with where it landed or why it failed.
 
@@ -480,7 +480,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document as loaded — d… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
 ## @jgengine/editor/PerfProbe
 
@@ -764,7 +764,7 @@
 
 ## @jgengine/editor/shell/TopAppBar
 
-- `TopAppBar` (function): function TopAppBar({ gameId, dirty, saveState, lastSavedAt = null, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; dirty: boolean; saveState: TopBarSaveState; /… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step stay disabled in edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the runtime pause/step RPCs so mode switches keep shell chrome.
+- `TopAppBar` (function): function TopAppBar({ gameId, onExitToGame, dirty, saveState, lastSavedAt = null, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; /** When set (editor summoned o… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step stay disabled in edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the runtime pause/step RPCs so mode switches keep shell chrome.
 - `TopBarSaveState` (type): type TopBarSaveState = "idle" | "saving" | "saved" | "error" — Document save lifecycle mirrored from `useDocumentSave`.
 
 ## @jgengine/editor/shell/ViewportOverlays

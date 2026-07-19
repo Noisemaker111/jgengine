@@ -209,6 +209,13 @@
 - `Tunable` (interface): interface Tunable<T> — Typed handle to a registered control, exposing its live value and subscribe/set/reset operations.
 - `TunableAccessor` (interface): interface TunableAccessor — Get/set accessor pair plus initial value used to bind a discovered field to a control.
 
+## @jgengine/core/devtools/urlFlags
+
+- `readUrlFlag` (function): function readUrlFlag(param: string): boolean — True when `param` is present and not an explicit off value (`0`/`false`/`off`/`no`).
+- `readUrlParam` (function): function readUrlParam(param: string): string | null — The current query value of `param`, or null when absent (or no DOM).
+- `subscribeUrlChange` (function): function subscribeUrlChange(listener: () => void): () => void — Fires `listener` whenever the query string may have changed out from under a flag — browser back/forward (`popstate`). Manual address-bar edits reload the page, so initial reads cover those; this keeps in-app state honest across history navigation. Returns an unsubscribe.
+- `writeUrlParam` (function): function writeUrlParam(param: string, value: string | null): void — Sets `param` to `value`, or removes it when `value` is null, rewriting the URL in place with `history.replaceState` so the rest of the query and the hash survive and no history entry is pushed. No-ops without a DOM, and skips the write when the URL already matches.
+
 ## @jgengine/core/meta/changelog
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
