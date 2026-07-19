@@ -238,6 +238,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
 
+## notification-bell — icon button with a live unread-count badge over a notification store
+
+- `NotificationBell` (function) · `import { NotificationBell } from "@jgengine/react"`
+
+## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
+
+- `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/react"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`

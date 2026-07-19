@@ -540,6 +540,10 @@
 - `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
 - `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
 - `MinimapTrackSpan` (interface): interface MinimapTrackSpan — A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`).
+- `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
+- `NotificationBellProps` (interface): interface NotificationBellProps — Props for {@link NotificationBell}.
+- `NotificationCenter` (function): function NotificationCenter({ store, title = "Notifications", emptyLabel = "You're all caught up.", onClose, formatTime, className, style, }: NotificationCenterProps): ReactNode — Notification center panel — the scrollable log toasts don't provide: newest notifications with a kind-colored marker, title/body, relative time, and an unread highlight; a header with the unread count, mark-all-read, and clear. Clicking an entry marks it read. Bind it to a `createNotificationCenter`.
+- `NotificationCenterProps` (interface): interface NotificationCenterProps — Props for {@link NotificationCenter}.
 - `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `BarsPreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
 - `PanelHost` (function): function PanelHost({ manager, render, panels, variation, shape, width, zIndexBase = 40, className, windowClassName, windowStyle, bodyStyle, }: { manager: PanelsManager; /** Content for a panel by id. Takes precedence over `panels`. */ render?: (id: string) => ReactNode; /** Static content map by pan… — Renders the open panels of a {@link usePanels} manager as absolutely-positioned, draggable, closable windows in z-order — the WoW window layer. Each window uses {@link HudFrame} chrome, is dragged by its title bar, raises focus on pointer-down, and gets its content from the `render` prop (or a `panels` map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button; ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
 - `PanelKeyResult` (interface): interface PanelKeyResult — React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable, draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close). `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
@@ -710,6 +714,7 @@
 - `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 - `useNearestWorldItem` (function): function useNearestWorldItem(radius: number): WorldItemRecord | null — Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `useNotifications` (function): function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] — Subscribe to a notification store's live list.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
 - `useOptionalGamePhase` (function): function useOptionalGamePhase(): GamePhase — Live run phase that degrades to `"playing"` when rendered outside a `GameProvider` (component showcases, previews), so phase-gated chrome never throws.
@@ -1119,6 +1124,14 @@
 - `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
+
+## @jgengine/react/notifications
+
+- `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
+- `NotificationBellProps` (interface): interface NotificationBellProps — Props for {@link NotificationBell}.
+- `NotificationCenter` (function): function NotificationCenter({ store, title = "Notifications", emptyLabel = "You're all caught up.", onClose, formatTime, className, style, }: NotificationCenterProps): ReactNode — Notification center panel — the scrollable log toasts don't provide: newest notifications with a kind-colored marker, title/body, relative time, and an unread highlight; a header with the unread count, mark-all-read, and clear. Clicking an entry marks it read. Bind it to a `createNotificationCenter`.
+- `NotificationCenterProps` (interface): interface NotificationCenterProps — Props for {@link NotificationCenter}.
+- `useNotifications` (function): function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] — Subscribe to a notification store's live list.
 
 ## @jgengine/react/panels
 
