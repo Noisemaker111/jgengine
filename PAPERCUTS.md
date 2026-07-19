@@ -191,3 +191,7 @@ drive vice-isle --key KeyW:12000: player never moves (three identical shots from
 2026-07-19T01:16:07.023Z — opus — Claude
 
 PR #1220: Vercel preview *deployment* reported FAILED on the PR while GitHub CI (quick/ci) was green and a local 'vite build' of apps/web passed clean (17 pages prerendered) — the red Vercel status is environmental/deploy-config, not caused by the diff, but it looks like a blocking failure and invites chasing a non-issue. Would help to either not surface non-blocking Vercel deploy status as a PR failure signal, or document that it's independent of CI.
+
+2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
+
+Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.

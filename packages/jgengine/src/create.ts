@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
-import { findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPackageManager, sdkVersion } from "./pkg";
+import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPackageManager, sdkVersion } from "./pkg";
 import { installSkills } from "./skills";
 import { type EditorSceneDoc, gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
 
@@ -113,6 +113,14 @@ function isInsideDir(child: string, parent: string): boolean {
   return resolvedChild === resolvedParent || resolvedChild.startsWith(resolvedParent + sep);
 }
 
+function runInstall(pm: string, targetDir: string): ReturnType<typeof spawnSync> {
+  return spawnSync(pm, ["install"], {
+    cwd: targetDir,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+}
+
 /** @internal */
 export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
@@ -177,9 +185,13 @@ export function runCreate(argv: string[]): number {
       return 1;
     }
 
+    const engineVersion = sdkVersion();
     writeGame(targetDir, id, displayName, variant, scene, { world, editor });
     console.log(`created ${displayName} (${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
+    if (variant === "standalone") {
+      console.log(`  scaffolding @jgengine/* ^${engineVersion} (jgengine CLI ${cliVersion()})`);
+    }
     if (scene !== undefined) {
       console.log(`  promoted authored scene from ${resolve(sceneArg!)} → src/editor.scene.json`);
     }
@@ -199,11 +211,12 @@ export function runCreate(argv: string[]): number {
     if (!hasFlag(argv, "no-install")) {
       const pm = pickPackageManager(flag(argv, "pm"));
       console.log(`installing dependencies with ${pm}…`);
-      const install = spawnSync(pm, ["install"], {
-        cwd: targetDir,
-        stdio: "inherit",
-        shell: process.platform === "win32",
-      });
+      let install = runInstall(pm, targetDir);
+      if (install.status !== 0) {
+        console.error("install failed — retrying once (registry propagation can lag a fresh publish)…");
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500);
+        install = runInstall(pm, targetDir);
+      }
       installed = install.status === 0;
       if (!installed) console.error(`warning: ${pm} install failed — run it manually in ${targetDir}`);
     }

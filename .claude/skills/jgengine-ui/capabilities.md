@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
+
+- `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
+
 ## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
 
 - `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/react"`
