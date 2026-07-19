@@ -33,6 +33,7 @@ Classify each acceptance claim before scheduling proof. A plan that uses screens
 - Gameplay tests prove the observable acceptance scenario, including save/restore or multi-client behavior when changed.
 - For interactive softlock/progress proof, run `bun dev`, open the game page in a browser tool, drive input, and interrogate `window.__jgengineAgent.handle({ method: ... })` — `agent_status`, `debug_snapshot`, and the editor verbs work headlessly on any running game page.
 - Placeholder-vs-authored: `debug_snapshot().probes.fallbacks` reports which render seams resolved to fallbacks (green ground, primitive actors, proxy scatter) and why — a non-empty count proves content is unauthored/misconfigured rather than an intended placeholder.
+- UI-flow logic (a command/intent handler, not its pixels): drive it canvas-free with `createHeadlessRunner(...).ui.invoke("intent.name", input)`, then assert the resulting reactive state off `ctx` (store, stats, scene). No renderer, no pointer simulation — leave pixels to `shoot`; prove the logic headlessly.
 
 ## Performance proof
 
