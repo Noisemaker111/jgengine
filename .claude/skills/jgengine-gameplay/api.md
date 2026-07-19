@@ -356,6 +356,15 @@
 - `resolveAnimationConfig` (function): function resolveAnimationConfig(animation: ModelAnimationConfig | "auto" | "none" | undefined, clips: readonly string[] | undefined, table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): ModelAnimationConfig | undefined — Collapse `ModelConfig.animation`'s widened union to a concrete playback config: explicit configs pass through, `"none"`/absent render the bind pose, and `"auto"` derives states and one-shots from the model's clip names via {@link defaultAnimationForClips}. The shell calls this with the loaded GLB's actual clip names, so `"auto"` works on any rigged model — catalog-resolved ids are stamped `"auto"` automatically.
 - `rolesFromClips` (function): function rolesFromClips(clips: readonly string[], table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): Partial<Record<ClipRole, string[]>> — Group a GLB's clip names by role. Each role's variants are sorted simplest-first — fewest name tokens, then lexicographic — so the canonical variant (`Idle` over `2H_Melee_Idle`, KayKit `Walking_A` over `Walking_B`) is always first: stable output for the same clip set regardless of source order.
 
+## @jgengine/core/game/codex
+
+- `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
+- `CodexEntryDef` (interface): interface CodexEntryDef<TMeta = unknown> — A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately.
+- `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
+- `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
+- `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
+- `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
+
 ## @jgengine/core/game/connectedPlayers
 
 - `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`. Frozen by the registry (see {@link ConnectedPlayers.get}); fields are `readonly` so a caller can't edit its own copy and assume the change stuck.
@@ -404,6 +413,18 @@
 - `GameDialogue` (interface): interface GameDialogue — `ctx.game.dialogue` — the blessed open/close bridge for the `talkable`/`dialogue.open` prompt flow. A game opts in with `features.dialogue`, and the runtime both builds this surface and auto-registers the `dialogue.open`/`dialogue.close` commands a `talkable(id)` prompt dispatches, so no game re-implements the store, the command pair, or the open/close bookkeeping. React reads the open id via `useOpenDialogueId`.
 - `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
+
+## @jgengine/core/game/dialogueGraph
+
+- `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
+- `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
+- `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
+- `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
+- `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
+- `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
+- `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
+- `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
+- `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
 
 ## @jgengine/core/game/events
 
@@ -828,6 +849,14 @@
 - `DEFAULT_FRAME_STAGES` (const): const DEFAULT_FRAME_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup", "animation", "camera", "effects"] — Default frame stage order. Gameplay stages mirror the fixed table so once-per-frame systems (`type: "frame"`) can pick `combat`/`ai`/… without falling into the unknown-stage bucket; presentation stages follow.
 - `compileSystemSchedule` (function): function compileSystemSchedule(systems: readonly SystemDefinition[], options?: CompileSystemScheduleOptions): CompiledSystemSchedule — Compile system definitions into a deterministic schedule. Validates unique ids, `dependsOn`, and before/after cycles.
 
+## @jgengine/core/game/talentTreeView
+
+- `TalentEdgeView` (interface): interface TalentEdgeView — One prerequisite edge into a node — the source node, the rank it demands, and whether that is met.
+- `TalentNodeState` (type): type TalentNodeState = "locked" | "available" | "learned" | "maxed" — Render state of a talent node, derived from its rank and prerequisite satisfaction. - `locked` — rank 0 and at least one prerequisite unmet; cannot be trained yet. - `available` — rank 0, every prerequisite met; ready to take a first point. - `learned` — at least one rank invested, but below `maxRank`. - `maxed` — fully invested (`rank === maxRank`).
+- `TalentNodeView` (interface): interface TalentNodeView — A per-node view for rendering: grid placement (tier/branch), rank, state, and inbound prerequisite edges.
+- `TalentTreeView` (interface): interface TalentTreeView — A whole-tree render view: placed nodes plus branch/tier extents and point totals.
+- `talentTreeView` (function): function talentTreeView<TStat extends string = string>(nodes: readonly TalentNodeDef<TStat>[], tree: TalentTree<TStat>): TalentTreeView — Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-depth tier, tagged learned/available/locked/maxed, with its inbound prerequisite edges (and whether each is met) and whether a point can be spent right now. It is a pure read over the node defs plus a live {@link TalentTree}, so a React/canvas widget can lay out nodes, draw edges, and gate clicks without re-deriving topology or re-interpreting eligibility. The model still owns allocation, requirements, and point rules — this only reshapes them for drawing, and never interprets what a node *means* (ids, branches, and ranks stay opaque game data).
+
 ## @jgengine/core/game/talents
 
 - `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> — ⚠ undocumented
@@ -964,6 +993,11 @@
 - `ChatRateLimit` (interface): interface ChatRateLimit — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
+- `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
+- `CodexEntryDef` (interface): interface CodexEntryDef<TMeta = unknown> — A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately.
+- `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
+- `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
+- `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
@@ -989,6 +1023,13 @@
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
 - `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
+- `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
+- `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
+- `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
+- `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
+- `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
+- `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
+- `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
 - `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
@@ -1189,8 +1230,12 @@
 - `SystemTick` (type): type SystemTick = | { type: "fixed"; /** Steps per game-second. Default 60. */ rate?: number; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { type: "frame"; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { t… — How a system is scheduled. Omit `tick` (or use only `events`) for event-driven systems. Multiple systems may share the same channel; order within a channel is deterministic by stage then optional `before`/`after` constraints — never import order.
 - `TOUCH_STYLES` (const): const TOUCH_STYLES: readonly TouchStyle[] — Every touch skin id, in menu order.
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
+- `TalentEdgeView` (interface): interface TalentEdgeView — One prerequisite edge into a node — the source node, the rank it demands, and whether that is met.
 - `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
+- `TalentNodeState` (type): type TalentNodeState = "locked" | "available" | "learned" | "maxed" — Render state of a talent node, derived from its rank and prerequisite satisfaction. - `locked` — rank 0 and at least one prerequisite unmet; cannot be trained yet. - `available` — rank 0, every prerequisite met; ready to take a first point. - `learned` — at least one rank invested, but below `maxRank`. - `maxed` — fully invested (`rank === maxRank`).
+- `TalentNodeView` (interface): interface TalentNodeView — A per-node view for rendering: grid placement (tier/branch), rank, state, and inbound prerequisite edges.
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
+- `TalentTreeView` (interface): interface TalentTreeView — A whole-tree render view: placed nodes plus branch/tier extents and point totals.
 - `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
 - `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
@@ -1285,10 +1330,12 @@
 - `createCardPile` (function): function createCardPile(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPile — ⚠ undocumented
 - `createCardPileState` (function): function createCardPileState(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPileState — ⚠ undocumented
 - `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
+- `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
 - `createCommitController` (function): function createCommitController<TAction>(config: CommitControllerConfig): CommitController<TAction> — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
+- `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
 - `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
@@ -1437,6 +1484,7 @@
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
+- `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
 - `selectRules` (function): function selectRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig): RuleSelection<TPayload> — Select up to `count` rules from `pool` deterministically from `config.seed`. Locked ids are placed first (in order), then remaining slots are filled by weighted draw from tag-filtered, still-eligible candidates, honoring `requires`/`conflicts` after each pick. Each slot draws from an independent seed stream keyed by slot index, so a later slot's outcome never shifts an earlier one. Selection stops early when no compatible candidate remains. Pure given `pool` + `config`.
 - `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
 - `setTouchControlsMode` (function): function setTouchControlsMode(ctx: GameContext, mode: string | null): void — Activate a named touch control mode, or `null` to return to the base config.
@@ -1448,6 +1496,7 @@
 - `startRaceCountdown` (function): function startRaceCountdown(options?: RaceCountdownOptions): RaceSessionState — Drop the lights: return a fresh `countdown` session of `seconds` (default 3). A non-positive length skips straight to `racing` for a standing start with no countdown.
 - `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
+- `talentTreeView` (function): function talentTreeView<TStat extends string = string>(nodes: readonly TalentNodeDef<TStat>[], tree: TalentTree<TStat>): TalentTreeView — Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-depth tier, tagged learned/available/locked/maxed, with its inbound prerequisite edges (and whether each is met) and whether a point can be spent right now. It is a pure read over the node defs plus a live {@link TalentTree}, so a React/canvas widget can lay out nodes, draw edges, and gate clicks without re-deriving topology or re-interpreting eligibility. The model still owns allocation, requirements, and point rules — this only reshapes them for drawing, and never interprets what a node *means* (ids, branches, and ranks stay opaque game data).
 - `taxFraction` (function): function taxFraction(fraction: number, to?: string): ResourcePolicy — Take a fraction of the amount. With `to`, the taxed portion is split off into a second transaction toward that recipient (a transfer/tax); without it, the fraction is simply removed.
 - `thresholdScale` (function): function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy — Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in currencies or brackets.
 - `tick` (function): function tick<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, dt: number): TickResult<TSpec, TReserve, TOutput> — Advance the queue by `dt` seconds. Promotes queued jobs into up to `concurrency` active slots, advances active jobs, and completes those that reach their duration — emitting `started`/`completed` events in deterministic order. A large `dt` catches up across many jobs in one call: when a job completes with leftover time, the freed slot promotes the next queued job and applies the remainder, so a reconnect or save/load gap resolves in a single bounded pass. Completed jobs are removed from the returned state.

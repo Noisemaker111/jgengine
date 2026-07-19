@@ -1191,6 +1191,17 @@
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 
+## @jgengine/core/scene/sequenceDirector
+
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+
 ## @jgengine/core/scene/spatial
 
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
@@ -1303,6 +1314,15 @@
 
 - `GameTime` (interface): interface GameTime — ⚠ undocumented
 
+## @jgengine/core/time/dayNightCycle
+
+- `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
+- `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
+- `DayNightKeyframe` (interface): interface DayNightKeyframe — Turnkey day-night cycle: one serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. A game wires this one model and drives an existing sky/daylight seam from `sample()` instead of hand-rolling a clock plus a color lerp.
+- `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
+- `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
+- `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
+
 ## @jgengine/core/time/gameClock
 
 - `DEFAULT_TIME_SCALE` (const): const DEFAULT_TIME_SCALE: 24 — Simulation clock: real time scaled into game time, plus the derived game-day counter.
@@ -1347,6 +1367,50 @@
 - `StateScheduleConfig` (interface): interface StateScheduleConfig<T> — ⚠ undocumented
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
+
+## @jgengine/core/time/timerSet
+
+- `TimerDirection` (type): type TimerDirection = "down" | "up" — A serializable set of named countdown / countup timers evaluated against an injected clock. One primitive covers round timers, respawn clocks, and ability cooldown/charge — they are the same mechanic (elapsed vs. duration on a clock), so `id` and any labels are free strings the engine never interprets.
+- `TimerExpiryListener` (type): type TimerExpiryListener = (id: string) => void — Listener notified when a timer newly expires. Receives the timer id.
+- `TimerRead` (interface): interface TimerRead — A single timer's resolved state for one read. All fields are plain numbers so a HUD can render without touching the model. For a looping timer the values describe the current cycle; `expired` is only ever `true` for a finished non-looping timer (loops signal completion through {@link TimerSet.poll}).
+- `TimerSet` (interface): interface TimerSet — A named set of countdown / countup timers on an injected clock. Start, pause, resume, stop, reset, and read timers by free-string id; observe structural changes with {@link TimerSet.subscribe} and expiry edges with {@link TimerSet.poll} / {@link TimerSet.onExpire}.
+- `TimerSetOptions` (interface): interface TimerSetOptions — Options for {@link createTimerSet}.
+- `TimerSetSnapshot` (interface): interface TimerSetSnapshot — Serializable state of a whole {@link TimerSet}.
+- `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
+- `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
+- `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
+
+## @jgengine/core/vfx/damageDirection
+
+- `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
+- `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
+- `DamageDirectionTracker` (interface): interface DamageDirectionTracker — A serializable, allocation-aware brain that tracks where recent damage came from. Each registered hit becomes a directional indicator that fades over a fixed duration on the injected clock; {@link DamageDirectionTracker.active} reports the live ones with their eased current strength.
+- `DamageIndicator` (interface): interface DamageIndicator — A live directional indicator with its eased, time-decayed strength, produced by {@link DamageDirectionTracker.active}. The `intensity` here is the *current* eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
+- `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
+- `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
+
+## @jgengine/core/vfx/particles
+
+- `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
+- `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
+- `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
+- `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
+- `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
+- `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D vector `[x, y, z]`.
+- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
+
+## @jgengine/core/vfx/screenEffects
+
+- `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.
+- `ScreenEffectEasing` (type): type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut" — How a transient effect's intensity curves from peak to zero over its life.
+- `ScreenEffectShape` (type): type ScreenEffectShape = "full" | "vignette" — The screen region an effect tints. `"full"` grades the whole frame (a flash); `"vignette"` grades only the edges, leaving the center clear (a directional or ambient border tint). Purely a shape hint for the renderer — no genre meaning.
+- `ScreenEffectSpec` (interface): interface ScreenEffectSpec — One screen-feedback effect, fully data-first so a whole controller serializes. `kind` is a free label the game assigns and styles ("damage", "heal", "poison", "boost", …); the model never interprets it. Everything visible is a parameter: color, peak intensity, region shape, easing, and either a transient duration or a sustained (optionally oscillating) hold.
+- `ScreenEffectsController` (interface): interface ScreenEffectsController — A live, clock-driven screen-feedback controller.
+- `ScreenEffectsOptions` (interface): interface ScreenEffectsOptions — Options for {@link createScreenEffects}.
+- `ScreenEffectsSnapshot` (interface): interface ScreenEffectsSnapshot — Serializable state of every active effect, for save/restore and replay.
+- `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
+- `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
 
 ## @jgengine/core/visibility/assetStreaming
 
@@ -1441,6 +1505,7 @@
 
 ## @jgengine/core/world
 
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
@@ -1453,6 +1518,8 @@
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
 - `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
 - `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
 - `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
 - `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
 - `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
@@ -1481,6 +1548,7 @@
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
 - `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
+- `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `BehaviorControl` (interface): interface BehaviorControl — Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance, seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable entity id without a full-world scan. Obtain it with {@link behaviorControl}.
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented
 - `BehaviorInspection` (interface): interface BehaviorInspection — Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}.
@@ -1500,6 +1568,7 @@
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
 - `CITY_BUILDING_BUDGET` (const): const CITY_BUILDING_BUDGET: 2600 — Max buildings a single `city` district generates — the block/parcel pipeline's bounded lot cap.
 - `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
+- `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
 - `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
 - `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
@@ -1519,6 +1588,7 @@
 - `CityContentOptions` (interface): interface CityContentOptions extends CityContentOverrides — Full options for {@link resolveCityLotContent}: the city geometry frame plus content overrides.
 - `CityContentOverrides` (interface): interface CityContentOverrides — Tunable overrides for {@link resolveCityLotContent} (seed/halfExtents/laneFrontage are supplied).
 - `CityDriveway` (interface): interface CityDriveway — One driveway ribbon from a street to a lot.
+- `CityFillerClass` (type): type CityFillerClass = "garage" | "depot" — Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with parking structures and warehouses/depots, mixed in with ordinary zone classes.
 - `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and lot pass-through options.
 - `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
 - `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
@@ -1555,6 +1625,9 @@
 - `ControlGroupInput` (interface): interface ControlGroupInput — A decoded control-group key press plus the memory needed to detect a double-tap.
 - `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Digit: recall the set saved under `key` into the active selection. */ | { kind: "recall"; key: string } /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */ | { kind: "focus"; key: string } — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
+- `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
+- `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill` — a deliberate no-op point. At this value frontage is untouched and the interior-fill/park passes are gated off, so the content path stays byte-identical to the classic one; callers opt into the Manhattan look by raising the dial toward 1.
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
 - `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
@@ -1563,10 +1636,21 @@
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
+- `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
+- `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
+- `DamageDirectionTracker` (interface): interface DamageDirectionTracker — A serializable, allocation-aware brain that tracks where recent damage came from. Each registered hit becomes a directional indicator that fades over a fixed duration on the injected clock; {@link DamageDirectionTracker.active} reports the live ones with their eased current strength.
+- `DamageIndicator` (interface): interface DamageIndicator — A live directional indicator with its eased, time-decayed strength, produced by {@link DamageDirectionTracker.active}. The `intensity` here is the *current* eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
+- `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
+- `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
+- `DayNightKeyframe` (interface): interface DayNightKeyframe — Turnkey day-night cycle: one serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. A game wires this one model and drives an existing sky/daylight seam from `sample()` instead of hand-rolling a clock plus a color lerp.
+- `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
+- `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
 - `DrapeOptions` (interface): interface DrapeOptions — Shaping for surface draping: subdivision spacing and a lift to keep the line off the ground.
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
 - `ElevationSummary` (interface): interface ElevationSummary — Aggregate elevation statistics over a region — the selection min/max/mean and legend range.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
+- `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
 - `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
 - `EngagementKindConfig` (interface): interface EngagementKindConfig extends OrderKindConfig — Move + engagement config carrying the default radii the payload may override.
@@ -1621,6 +1705,8 @@
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HeightSampler` (type): type HeightSampler = (x: number, z: number) => number — A height sampler over the ground: world elevation at any `x`/`z`.
 - `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
+- `INTERIOR_LOTS_PER_BLOCK_CAP` (const): const INTERIOR_LOTS_PER_BLOCK_CAP: 24 — Hard cap on interior lots synthesized per frontage block (road+side group). Bounds the pass.
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
 - `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
 - `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
@@ -1720,6 +1806,9 @@
 - `ParamPreset` (interface): interface ParamPreset — A named slider/weight bundle for a kind — a saved set of field values the inspector (or the `apply_preset` verb) writes into an object's `meta` in one patch, ready to tweak afterwards. Presets are plain data on the schema, so kinds ship archetypes and games can override the registration with their own.
 - `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
 - `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
+- `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
+- `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
+- `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
 - `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
 - `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
 - `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
@@ -1747,6 +1836,7 @@
 - `QteStep` (interface): interface QteStep — ⚠ undocumented
 - `RadialDistribution` (type): type RadialDistribution = "area" | "radial" — Fill policy for a circle/ring: `"area"` = area-uniform (even density); `"radial"` = radius-uniform (clumps toward center).
 - `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
+- `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
 - `RecallBookmarkOptions` (interface): interface RecallBookmarkOptions — Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned.
 - `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
@@ -1796,6 +1886,13 @@
 - `SceneObject` (interface): interface SceneObject — ⚠ undocumented
 - `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
 - `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
+- `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.
+- `ScreenEffectEasing` (type): type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut" — How a transient effect's intensity curves from peak to zero over its life.
+- `ScreenEffectShape` (type): type ScreenEffectShape = "full" | "vignette" — The screen region an effect tints. `"full"` grades the whole frame (a flash); `"vignette"` grades only the edges, leaving the center clear (a directional or ambient border tint). Purely a shape hint for the renderer — no genre meaning.
+- `ScreenEffectSpec` (interface): interface ScreenEffectSpec — One screen-feedback effect, fully data-first so a whole controller serializes. `kind` is a free label the game assigns and styles ("damage", "heal", "poison", "boost", …); the model never interprets it. Everything visible is a parameter: color, peak intensity, region shape, easing, and either a transient duration or a sustained (optionally oscillating) hold.
+- `ScreenEffectsController` (interface): interface ScreenEffectsController — A live, clock-driven screen-feedback controller.
+- `ScreenEffectsOptions` (interface): interface ScreenEffectsOptions — Options for {@link createScreenEffects}.
+- `ScreenEffectsSnapshot` (interface): interface ScreenEffectsSnapshot — Serializable state of every active effect, for save/restore and replay.
 - `ScreenRect` (interface): interface ScreenRect — ⚠ undocumented
 - `SelectionBookmarkSnapshot` (interface): interface SelectionBookmarkSnapshot — The serializable shape of a {@link SelectionBookmarks} store: each key maps to its ordered, deduplicated id list. Plain data — safe to persist in a save file or replicate over the wire, and the exact input {@link createSelectionBookmarks} restores.
 - `SelectionBookmarks` (interface): interface SelectionBookmarks — A generic, keyed store of saved id sets ("bookmarks") over stable string ids — the reusable layer under RTS control groups, camera bookmarks, saved squads, editor selection presets, and accessibility recall. It owns storage only: binding, recall, enumeration, pruning, and serialization. It never touches the active {@link SelectionSet} or the camera — replacement/merge and focus stay caller hooks (see {@link recallSelectionBookmark}) so one store serves any genre, input scheme, or focus policy.
@@ -1803,6 +1900,13 @@
 - `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
 - `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
 - `SensorReading` (interface): interface SensorReading — ⚠ undocumented
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
 - `SimClock` (interface): interface SimClock — ⚠ undocumented
 - `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
 - `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
@@ -1820,6 +1924,7 @@
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
 - `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `Station` (interface): interface Station — ⚠ undocumented
+- `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
 - `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
 - `StructureMaterial` (interface): interface StructureMaterial — ⚠ undocumented
@@ -1855,6 +1960,14 @@
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
 - `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
+- `TimerDirection` (type): type TimerDirection = "down" | "up" — A serializable set of named countdown / countup timers evaluated against an injected clock. One primitive covers round timers, respawn clocks, and ability cooldown/charge — they are the same mechanic (elapsed vs. duration on a clock), so `id` and any labels are free strings the engine never interprets.
+- `TimerExpiryListener` (type): type TimerExpiryListener = (id: string) => void — Listener notified when a timer newly expires. Receives the timer id.
+- `TimerRead` (interface): interface TimerRead — A single timer's resolved state for one read. All fields are plain numbers so a HUD can render without touching the model. For a looping timer the values describe the current cycle; `expired` is only ever `true` for a finished non-looping timer (loops signal completion through {@link TimerSet.poll}).
+- `TimerSet` (interface): interface TimerSet — A named set of countdown / countup timers on an injected clock. Start, pause, resume, stop, reset, and read timers by free-string id; observe structural changes with {@link TimerSet.subscribe} and expiry edges with {@link TimerSet.poll} / {@link TimerSet.onExpire}.
+- `TimerSetOptions` (interface): interface TimerSetOptions — Options for {@link createTimerSet}.
+- `TimerSetSnapshot` (interface): interface TimerSetSnapshot — Serializable state of a whole {@link TimerSet}.
+- `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
+- `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
 - `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
 - `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
@@ -1968,7 +2081,9 @@
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
+- `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
+- `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
 - `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
 - `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
@@ -1990,6 +2105,7 @@
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
+- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
@@ -1998,14 +2114,18 @@
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
+- `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `createVehicleObstacleClamp` (function): function createVehicleObstacleClamp(options: { /** Solids near the car this tick (already filtered to the relevant, solid set). */ obstacles: () => readonly CollisionObstacle[]; /** Vehicle body radius (units). Default {@link DEFAULT_VEHICLE_RADIUS}. */ radius?: number; /** Current tick dt (seconds)… — Build a slide-along move clamp for a kinematic car (#1051). `obstacles` is sampled fresh each tick — the caller hands back the already-filtered set of solids near the car — and `dt` supplies the current tick length so a blocked move's lost displacement converts to a closing speed. `radius` inflates each obstacle footprint by the car's body radius (default {@link DEFAULT_VEHICLE_RADIUS}).
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
@@ -2197,6 +2317,7 @@
 - `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
 - `toEngineUnits` (function): function toEngineUnits(sourceValue: number, space?: Pick<AssetSpace, "unitScale">): number — Convert a source-space length to engine meters through the asset's {@link AssetSpace.unitScale} — the data-owned replacement for per-game scale constants (a native ~4-unit kit tile down to a 1-unit grid).
 - `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
+- `trimBandAtJunctions` (function): function trimBandAtJunctions(bandPath: readonly RoadPoint[], bandWidth: number, junctions: readonly RoadJunctionInput[], options: BandTrimOptions = {}): RoadPoint[][] — Cut an offset band (a polyline running PARALLEL to a street — e.g. a sidewalk from `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius `max arm half-width + curbReturnRadius + apronMargin + bandWidth/2 + clearance`, and any part of the band inside any apron circle is removed, splitting the band into the sub-paths that survive outside. Entry/exit points land exactly on the apron boundary. A band that never enters an apron passes through as a single untouched copy.
 - `trimPathAtJunctions` (function): function trimPathAtJunctions(path: readonly RoadPoint[], width: number, junctions: readonly RoadJunctionInput[], options: JunctionGeometryOptions = {}): TrimmedRoad[] — Cut a street centerline back from the junctions it passes through so its ribbon ENDS at the junction boundary instead of ploughing through the node. Junctions are matched to path vertices within `nodeEpsilon` (endpoints and interior vertices alike); a junction sitting on an interior vertex SPLITS the path into two independently-trimmed sub-paths. Each cut records the exact boundary point and the road's left/right edge corners there, so {@link buildJunctionSurface} can weld its polygon onto the identical vertices with no overlap.
 - `uniformGravity` (function): function uniformGravity(vector: GravityVector = [0, -9.81, 0]): GravityField — Constant vector gravity for ordinary worlds, space stations, and sideways-gravity levels.
 - `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
@@ -2296,6 +2417,7 @@
 ## @jgengine/core/world/buildingLots
 
 - `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
+- `FRONTAGE_FILL_REFERENCE` (const): const FRONTAGE_FILL_REFERENCE: 0.45 — Frontage-fill reference point: at this dial value the compaction is a no-op (legacy spacing/width), so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
 - `LotArea` (interface): interface LotArea — Rectangular clip region lots must fall within (world center + half-extents).
 - `PlacedBuildingLot` (interface): interface PlacedBuildingLot — One placed building lot: where a building stands and how it is turned to face its road.
 - `RoadFrontage` (interface): interface RoadFrontage — One road the frontage placer lines with buildings: a centerline polyline and its full width.
@@ -2376,9 +2498,11 @@
 
 ## @jgengine/core/world/cityContent
 
+- `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
 - `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
 - `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
+- `CityFillerClass` (type): type CityFillerClass = "garage" | "depot" — Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with parking structures and warehouses/depots, mixed in with ordinary zone classes.
 - `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the landmark pass in `resolveCityLotContent` picks clusters of adjacent lots and stamps one of these over them. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
 - `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
@@ -2395,10 +2519,12 @@
 - `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and lot pass-through options.
 - `CityLevelClassBias` (type): type CityLevelClassBias = Record<StreetLevel, Partial<Record<CityLotClass, number>>> — Per-street-level class weight multipliers applied to the band mix before the class pick, so towers and slabs bias toward wide boulevard/avenue frontage while houses and farm classes bias toward lanes and quiet streets. A missing class ⇒ multiplier 1 (the band mix is unchanged for it). Pure data: modulating the existing weighted mixes, never a separate placement code path.
 - `CityZoneMixes` (interface): interface CityZoneMixes — Weighted building-class mix per zone band; the radial profile decides which band a lot falls in.
+- `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill` — a deliberate no-op point. At this value frontage is untouched and the interior-fill/park passes are gated off, so the content path stays byte-identical to the classic one; callers opt into the Manhattan look by raising the dial toward 1.
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
 - `DEFAULT_LANDMARK_SHARE` (const): const DEFAULT_LANDMARK_SHARE: 0.04 — Default landmark share dial — a couple of block-scale landmarks per default city.
 - `GeneratedCity` (interface): interface GeneratedCity — A generated city: the street network and the building lots lining its frontage.
+- `INTERIOR_LOTS_PER_BLOCK_CAP` (const): const INTERIOR_LOTS_PER_BLOCK_CAP: 24 — Hard cap on interior lots synthesized per frontage block (road+side group). Bounds the pass.
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on landmarks emitted regardless of dial/city size.
 - `MassingFootprint` (interface): interface MassingFootprint — Axis-aligned massing extents (lot-local): full width along x and depth along z.
 - `ResolvedCityLot` (interface): interface ResolvedCityLot — One lot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`.
@@ -2864,6 +2990,7 @@
 
 ## @jgengine/core/world/roads
 
+- `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `DashExclusion` (interface): interface DashExclusion — A circular exclusion zone: dashes whose midpoint falls inside are dropped (e.g. junction patches).
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `IntersectionStreet` (interface): interface IntersectionStreet — One street to trim + mesh through {@link buildTrimmedIntersections}.
@@ -2885,6 +3012,7 @@
 - `isOnRoad` (function): function isOnRoad(path: readonly RoadPoint[], width: number, x: number, z: number): boolean — True when the query point lies within half the road `width` of the centerline.
 - `nearestOnPath` (function): function nearestOnPath(path: readonly RoadPoint[], x: number, z: number): RoadSample | null — Closest-point query against a road centerline — the seam traffic AI, spawn placement, and "am I on the road" checks share. Returns null for a degenerate path.
 - `pathLength` (function): function pathLength(path: readonly RoadPoint[]): number — Total arc length of a centerline in world units.
+- `trimBandAtJunctions` (function): function trimBandAtJunctions(bandPath: readonly RoadPoint[], bandWidth: number, junctions: readonly RoadJunctionInput[], options: BandTrimOptions = {}): RoadPoint[][] — Cut an offset band (a polyline running PARALLEL to a street — e.g. a sidewalk from `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius `max arm half-width + curbReturnRadius + apronMargin + bandWidth/2 + clearance`, and any part of the band inside any apron circle is removed, splitting the band into the sub-paths that survive outside. Entry/exit points land exactly on the apron boundary. A band that never enters an apron passes through as a single untouched copy.
 - `trimPathAtJunctions` (function): function trimPathAtJunctions(path: readonly RoadPoint[], width: number, junctions: readonly RoadJunctionInput[], options: JunctionGeometryOptions = {}): TrimmedRoad[] — Cut a street centerline back from the junctions it passes through so its ribbon ENDS at the junction boundary instead of ploughing through the node. Junctions are matched to path vertices within `nodeEpsilon` (endpoints and interior vertices alike); a junction sitting on an interior vertex SPLITS the path into two independently-trimmed sub-paths. Each cut records the exact boundary point and the road's left/right edge corners there, so {@link buildJunctionSurface} can weld its polygon onto the identical vertices with no overlap.
 
 ## @jgengine/core/world/scatter
@@ -2958,6 +3086,15 @@
 - `ClosestOnSegment` (interface): interface ClosestOnSegment — Closest point on segment `a`→`b` to `p`, and the clamped parameter `t` in [0,1] where it lies.
 - `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
 - `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
+
+## @jgengine/core/world/sharedAnnotations
+
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 
 ## @jgengine/core/world/soilKind
 

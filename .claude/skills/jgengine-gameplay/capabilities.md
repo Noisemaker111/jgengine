@@ -45,6 +45,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`
 - `defaultAnimationForClips` (function) · `import { defaultAnimationForClips } from "@jgengine/core/game/clipRoles"`
 
+## codex — codex/bestiary/lorebook of defined entries with discovery tracking, categories, secret masking, completion, an onDiscover seam, and serializable state
+
+- `createCodex` (function) · `import { createCodex } from "@jgengine/core/gameplay"`
+
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
 - `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
@@ -87,6 +91,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
 
 - `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/gameplay"`
+
+## dialogue-graph-view — select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph
+
+- `selectDialogueView` (function) · `import { selectDialogueView } from "@jgengine/core/gameplay"`
+
+## dialogue-run — walk a serializable branching dialogue graph — current node view, choose-to-advance traversal, visited history, snapshot/restore
+
+- `createDialogueRun` (function) · `import { createDialogueRun } from "@jgengine/core/gameplay"`
 
 ## durability — track item wear, breakage, and repair
 
@@ -390,6 +402,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
+
+## talent-tree-view — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
+
+- `talentTreeView` (function) · `import { talentTreeView } from "@jgengine/core/gameplay"`
 
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 

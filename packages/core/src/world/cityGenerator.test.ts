@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_LANDMARK_SHARE, LANDMARK_HARD_CAP, generateCity, resolveCityLotContent } from "./cityGenerator";
-import { CITY_LANDMARK_CLASSES, CITY_LOT_CLASSES, type CityLandmarkClass, type CityLotClass } from "./cityContent";
+import {
+  DEFAULT_BLOCK_FILL,
+  DEFAULT_LANDMARK_SHARE,
+  INTERIOR_LOTS_PER_BLOCK_CAP,
+  LANDMARK_HARD_CAP,
+  generateCity,
+  resolveCityLotContent,
+  type ResolvedCityLot,
+} from "./cityGenerator";
+import { CITY_FILLER_CLASSES, CITY_LANDMARK_CLASSES, CITY_LOT_CLASSES, type CityLandmarkClass, type CityLotClass } from "./cityContent";
 import { isOnRoad } from "./roads";
 
 describe("cityGenerator", () => {
@@ -285,5 +293,159 @@ describe("resolveCityLotContent — landmark pass", () => {
     const marks = landmarksOf(rs);
     expect(marks.length).toBeGreaterThan(0);
     for (const r of marks) expect(r.landmark).toBe("arena");
+  });
+});
+
+describe("resolveCityLotContent — blockFill interior fill + parks", () => {
+  const HX = 320;
+  const HZ = 320;
+  const SEED = "fill-city";
+  const city = generateCity({ seed: SEED }, HX, HZ);
+  const frame = { seed: SEED, halfExtents: [HX, HZ] as const };
+
+  const dflt = resolveCityLotContent(city, frame); // default dial (0.45) — no fill
+  const full = resolveCityLotContent(city, { ...frame, blockFill: 1 });
+  const interiorsOf = (rs: readonly ResolvedCityLot[]) => rs.filter((r) => r.interior);
+  const fillerSet = new Set<string>(CITY_FILLER_CLASSES);
+
+  /** True if two placed lots' oriented rectangles overlap (SAT, touching allowed). */
+  const overlaps = (a: ResolvedCityLot, b: ResolvedCityLot): boolean => {
+    const box = (r: ResolvedCityLot) => {
+      const w = r.landmark ? r.footprint.w : r.lot.footprint.w;
+      const d = r.landmark ? r.footprint.d : r.lot.footprint.d;
+      const c = Math.cos(r.rotationY);
+      const s = Math.sin(r.rotationY);
+      const pts = ([[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]] as const).map(
+        ([x, z]) => [r.center[0] + x * c - z * s, r.center[1] + x * s + z * c] as [number, number],
+      );
+      return { pts, axes: [[c, s], [-s, c]] as [number, number][] };
+    };
+    const A = box(a);
+    const B = box(b);
+    for (const [ax, az] of [...A.axes, ...B.axes]) {
+      let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
+      for (const [x, z] of A.pts) { const p = x * ax + z * az; amin = Math.min(amin, p); amax = Math.max(amax, p); }
+      for (const [x, z] of B.pts) { const p = x * ax + z * az; bmin = Math.min(bmin, p); bmax = Math.max(bmax, p); }
+      if (amax <= bmin + 1e-6 || bmax <= amin + 1e-6) return false; // separating axis
+    }
+    return true;
+  };
+
+  test("the default dial is a strict no-op: no interior lots, no park flags, backward-compatible", () => {
+    expect(DEFAULT_BLOCK_FILL).toBeLessThan(0.5);
+    expect(interiorsOf(dflt).length).toBe(0);
+    expect(dflt.every((r) => r.park === undefined && r.interior === undefined)).toBe(true);
+    // Omitting blockFill and passing the default explicitly agree.
+    expect(resolveCityLotContent(city, { ...frame, blockFill: DEFAULT_BLOCK_FILL })).toEqual(dflt);
+  });
+
+  test("full fill packs block interiors — content count ≥ 1.6× the default for the same seed", () => {
+    expect(interiorsOf(full).length).toBeGreaterThan(0);
+    expect(full.length).toBeGreaterThanOrEqual(1.6 * dflt.length);
+  });
+
+  test("garage/depot fillers appear ONLY on interior-fill lots", () => {
+    for (const r of full) {
+      if (fillerSet.has(r.class)) expect(r.interior).toBe(true);
+    }
+    // And the interior pass actually reaches for them (not all interiors are ordinary classes).
+    expect(interiorsOf(full).some((r) => fillerSet.has(r.class))).toBe(true);
+  });
+
+  test("no interior lot sits on a road", () => {
+    for (const r of interiorsOf(full)) {
+      const onRoad = city.network.streets.some((s) => isOnRoad(s.points, s.width, r.center[0], r.center[1]));
+      expect(onRoad).toBe(false);
+    }
+  });
+
+  test("no interior lot overlaps any other lot (frontage, landmark, or interior)", () => {
+    const interior = interiorsOf(full);
+    for (const it of interior) {
+      for (const other of full) {
+        if (other === it) continue;
+        expect(overlaps(it, other)).toBe(false);
+      }
+    }
+  });
+
+  test("interior lots per block stay under the hard cap", () => {
+    const perBlock = new Map<string, number>();
+    for (const r of interiorsOf(full)) {
+      const k = `${r.lot.road}:${r.lot.side}`;
+      perBlock.set(k, (perBlock.get(k) ?? 0) + 1);
+    }
+    for (const n of perBlock.values()) expect(n).toBeLessThanOrEqual(INTERIOR_LOTS_PER_BLOCK_CAP);
+  });
+
+  test("park blocks are present and their interiors stay empty", () => {
+    const parks = full.filter((r) => r.park);
+    expect(parks.length).toBeGreaterThan(0); // a full-fill city still keeps breathing room
+    const parkKeys = new Set(parks.map((r) => `${r.lot.road}:${r.lot.side}`));
+    // No interior lot is ever attributed to a reserved park block.
+    for (const r of interiorsOf(full)) expect(parkKeys.has(`${r.lot.road}:${r.lot.side}`)).toBe(false);
+  });
+
+  // Inter-lot gap fraction of the bare frontage lots on wide (avenue/boulevard) streets. Measured on
+  // bare lots so landmark/park holes (which are filled, just not by a per-lot building) don't count.
+  const frontageGapFraction = (c: ReturnType<typeof generateCity>): number => {
+    const wide = new Set(["avenue", "boulevard"]);
+    const frontage = c.network.streets.filter((s) => s.level !== "lane");
+    const groups = new Map<string, { along: number; w: number }[]>();
+    for (const lot of c.lots) {
+      const st = frontage[lot.road];
+      if (!st || !wide.has(st.level)) continue;
+      const p0 = st.points[0]!;
+      const p1 = st.points[st.points.length - 1]!;
+      const tx = p1[0] - p0[0];
+      const tz = p1[1] - p0[1];
+      const L = Math.hypot(tx, tz) || 1;
+      const along = ((lot.center[0] - p0[0]) * tx + (lot.center[1] - p0[1]) * tz) / L;
+      const key = `${lot.road}:${lot.side}`;
+      (groups.get(key) ?? groups.set(key, []).get(key)!).push({ along, w: lot.footprint.w });
+    }
+    let totalGap = 0;
+    let totalSpan = 0;
+    for (const arr of groups.values()) {
+      if (arr.length < 2) continue;
+      arr.sort((a, b) => a.along - b.along);
+      const span = arr[arr.length - 1]!.along - arr[0]!.along;
+      if (span <= 0) continue;
+      for (let i = 0; i + 1 < arr.length; i += 1) {
+        const g = arr[i + 1]!.along - arr[i]!.along - (arr[i]!.w + arr[i + 1]!.w) / 2;
+        if (g > 0) totalGap += g;
+      }
+      totalSpan += span;
+    }
+    return totalSpan > 0 ? totalGap / totalSpan : NaN;
+  };
+
+  test("full-fill frontage closes to a streetwall — inter-lot gap under 10%; low fill is sparser", () => {
+    const fullCity = generateCity({ seed: SEED, lots: { blockFill: 1 } }, HX, HZ);
+    const dfltCity = generateCity({ seed: SEED }, HX, HZ);
+    const sparseCity = generateCity({ seed: SEED, lots: { blockFill: 0 } }, HX, HZ);
+    const gFull = frontageGapFraction(fullCity);
+    const gDflt = frontageGapFraction(dfltCity);
+    const gSparse = frontageGapFraction(sparseCity);
+    expect(gFull).toBeLessThan(0.1); // Manhattan streetwall
+    expect(gFull).toBeLessThan(gDflt); // fuller than default
+    expect(gSparse).toBeGreaterThan(gDflt); // low dial reads sparser than default
+  });
+
+  test("determinism: same seed + dial ⇒ identical result; landmarks still fire at full fill", () => {
+    expect(resolveCityLotContent(city, { ...frame, blockFill: 1 })).toEqual(full);
+    expect(full.some((r) => r.landmark !== undefined)).toBe(true);
+  });
+
+  test("generateCity threads content.blockFill into both the frontage compaction and the interior pass", () => {
+    const compact = generateCity({ seed: SEED, content: { blockFill: 1 } }, HX, HZ);
+    // Frontage lots compacted (more of them) AND interiors filled behind them.
+    expect(compact.lots.length).toBeGreaterThan(city.lots.length);
+    expect(compact.lotContent!.some((r) => r.interior)).toBe(true);
+    // content:true (no dial) leaves the bare lots byte-identical to the no-content path.
+    const bare = generateCity({ seed: SEED }, HX, HZ);
+    const enriched = generateCity({ seed: SEED, content: true }, HX, HZ);
+    expect(enriched.lots).toEqual(bare.lots);
+    expect(enriched.lotContent!.every((r) => r.interior === undefined)).toBe(true);
   });
 });

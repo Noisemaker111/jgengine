@@ -8,6 +8,7 @@ export {
   type SkyDomeProps,
   type TimeOfDayDaylightProps,
 } from "./Daylight";
+export { DayNightSky, type DayNightSkyProps } from "./DayNightSky";
 export { EnvironmentScene, type EnvironmentSceneProps } from "./EnvironmentScene";
 export { VolumetricClouds, type VolumetricCloudsProps } from "./VolumetricClouds";
 export {

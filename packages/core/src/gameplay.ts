@@ -86,6 +86,14 @@ export {
   type ChatRateLimit,
   type ChatSendResult,
 } from "./game/chat";
+export {
+  createCodex,
+  type Codex,
+  type CodexEntryDef,
+  type CodexEntryView,
+  type CodexOptions,
+  type CodexSnapshot,
+} from "./game/codex";
 export { playControlsActive } from "./game/controlGate";
 export { createCosmetics } from "./game/cosmetics";
 export {
@@ -98,6 +106,17 @@ export {
 } from "./game/defineGame";
 export { defineSystem, type SystemDefinition, type SystemEventHandlers, type SystemTick } from "./game/defineSystem";
 export { createGameDialogue, dialogueSlot } from "./game/dialogue";
+export {
+  createDialogueRun,
+  selectDialogueView,
+  type DialogueGraph,
+  type DialogueGraphChoice,
+  type DialogueGraphNode,
+  type DialogueGraphSnapshot,
+  type DialogueGraphView,
+  type DialogueRun,
+  type DialogueRunOptions,
+} from "./game/dialogueGraph";
 export {
   createGameEvents,
   type CombatTelegraphEvent,
@@ -285,6 +304,13 @@ export {
   compileSystemSchedule,
   type CompiledSystemSchedule,
 } from "./game/systemSchedule";
+export {
+  talentTreeView,
+  type TalentEdgeView,
+  type TalentNodeState,
+  type TalentNodeView,
+  type TalentTreeView,
+} from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";

@@ -134,24 +134,131 @@ export function buildRoadRibbon(
     return { positions: new Float32Array(0), indices: new Uint32Array(0) };
   }
   const points = subdividePath(path, maxSegmentLength);
+  const n = points.length;
   const half = width / 2;
-  const positions = new Float32Array(points.length * 6);
-  for (let i = 0; i < points.length; i += 1) {
+
+  // Offset boundaries as 2-D points, then draped. The offsetting has to survive bends: a naive
+  // per-vertex perpendicular offset makes the INNER edge of a corner fold back on itself (a bowtie)
+  // whenever the local turn radius drops below the half-width — visible as doubled/overlapping road.
+  //
+  // Two invariants keep downstream welds and the regression suite intact while fixing the fold:
+  //   • Endpoints (i=0, i=n−1) and straight interior vertices use the EXACT naive formula
+  //     (`centre ± normalAt·half`). buildTrimmedIntersections reads terminal cross-sections back
+  //     bitwise, so those floats must never move; straight ribbons stay byte-identical to before.
+  //   • Only genuinely BENT interior vertices change: the inner edge gets a real miter join (the
+  //     intersection of the two adjacent inner offset lines) and a forward-progress weld that
+  //     collapses any residual fold, while the outer edge keeps the smooth naive offset.
+  const left: RoadPoint[] = new Array(n);
+  const right: RoadPoint[] = new Array(n);
+  const turnSign = new Float64Array(n); // >0 left turn (left edge inner), <0 right turn, 0 straight
+  const normX = new Float64Array(n);
+  const normZ = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) {
     const [x, z] = points[i]!;
     const [nx, nz] = normalAt(points, i);
-    const lx = x + nx * half;
-    const lz = z + nz * half;
-    const rx = x - nx * half;
-    const rz = z - nz * half;
-    positions[i * 6] = lx;
-    positions[i * 6 + 1] = sampleHeight(lx, lz) + elevation;
-    positions[i * 6 + 2] = lz;
-    positions[i * 6 + 3] = rx;
-    positions[i * 6 + 4] = sampleHeight(rx, rz) + elevation;
-    positions[i * 6 + 5] = rz;
+    normX[i] = nx;
+    normZ[i] = nz;
+    let lx = x + nx * half;
+    let lz = z + nz * half;
+    let rx = x - nx * half;
+    let rz = z - nz * half;
+    if (i > 0 && i < n - 1) {
+      const p = points[i - 1]!;
+      const q = points[i + 1]!;
+      const inx = x - p[0];
+      const inz = z - p[1];
+      const il = Math.hypot(inx, inz);
+      const oux = q[0] - x;
+      const ouz = q[1] - z;
+      const ol = Math.hypot(oux, ouz);
+      if (il > 1e-12 && ol > 1e-12) {
+        const dix = inx / il;
+        const diz = inz / il;
+        const dox = oux / ol;
+        const doz = ouz / ol;
+        const cross = dix * doz - diz * dox; // >0 left turn (left edge is inner), <0 right turn
+        if (Math.abs(cross) > 1e-9) {
+          turnSign[i] = cross;
+          // Left normals of the incoming/outgoing segments; their offset lines intersect at the miter.
+          const nix = -diz;
+          const niz = dix;
+          const nox = -doz;
+          const noz = dox;
+          const denom = 1 + (nix * nox + niz * noz); // 1 + cosθ; → 0 only at a ~180° reversal
+          if (denom > 1e-6) {
+            const mvx = (nix + nox) / denom;
+            const mvz = (niz + noz) / denom;
+            if (cross > 0) {
+              // Left edge is inner → miter it; right (outer) stays naive.
+              lx = x + mvx * half;
+              lz = z + mvz * half;
+            } else {
+              // Right edge is inner → miter it; left (outer) stays naive.
+              rx = x - mvx * half;
+              rz = z - mvz * half;
+            }
+          }
+        }
+      }
+    }
+    left[i] = [lx, lz];
+    right[i] = [rx, rz];
   }
-  const indices = new Uint32Array((points.length - 1) * 6);
-  for (let i = 0; i < points.length - 1; i += 1) {
+
+  // Collapse any inner-edge fold. At interior vertices only, weld an INNER-side vertex onto its kept
+  // predecessor when it either (a) fails to advance along the centreline tangent, or (b) has crossed
+  // to the far side of the centreline — both signatures of a fold when the turn radius drops below
+  // the half-width (the offset curve otherwise inverts and self-intersects). Straight runs and the
+  // outer edge of a bend are never inner, so they — and every straight ribbon — stay byte-identical.
+  const weldFolds = (edge: RoadPoint[], sideSign: number): void => {
+    let kept = edge[0]!;
+    for (let i = 1; i < n - 1; i += 1) {
+      const inner = sideSign * turnSign[i]! > 0;
+      if (!inner) {
+        kept = edge[i]!;
+        continue;
+      }
+      const p = points[i - 1]!;
+      const q = points[i + 1]!;
+      let tx = q[0] - p[0];
+      let tz = q[1] - p[1];
+      const tl = Math.hypot(tx, tz);
+      if (tl <= 1e-12) {
+        kept = edge[i]!;
+        continue;
+      }
+      tx /= tl;
+      tz /= tl;
+      const cx = points[i]![0];
+      const cz = points[i]![1];
+      const qx = edge[i]![0];
+      const qz = edge[i]![1];
+      const forward = (qx - kept[0]) * tx + (qz - kept[1]) * tz;
+      // Signed distance onto this edge's own outward normal — negative means it crossed the centreline.
+      const sideDist = (qx - cx) * (sideSign * normX[i]!) + (qz - cz) * (sideSign * normZ[i]!);
+      if (forward <= 1e-9 || sideDist <= 1e-9) {
+        edge[i] = [kept[0], kept[1]]; // fold → collapse onto the kept frontier
+      } else {
+        kept = edge[i]!;
+      }
+    }
+  };
+  weldFolds(left, 1);
+  weldFolds(right, -1);
+
+  const positions = new Float32Array(n * 6);
+  for (let i = 0; i < n; i += 1) {
+    const l = left[i]!;
+    const r = right[i]!;
+    positions[i * 6] = l[0];
+    positions[i * 6 + 1] = sampleHeight(l[0], l[1]) + elevation;
+    positions[i * 6 + 2] = l[1];
+    positions[i * 6 + 3] = r[0];
+    positions[i * 6 + 4] = sampleHeight(r[0], r[1]) + elevation;
+    positions[i * 6 + 5] = r[1];
+  }
+  const indices = new Uint32Array((n - 1) * 6);
+  for (let i = 0; i < n - 1; i += 1) {
     const a = i * 2;
     indices[i * 6] = a;
     indices[i * 6 + 1] = a + 1;
@@ -574,6 +681,128 @@ export function trimPathAtJunctions(
   return result;
 }
 
+/** Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance. */
+export interface BandTrimOptions extends JunctionGeometryOptions {
+  /** Extra outward clearance added to every junction's apron radius before cutting the band. Default 0. */
+  clearance?: number;
+}
+
+/**
+ * Cut an offset band (a polyline running PARALLEL to a street — e.g. a sidewalk from
+ * `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing
+ * instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes
+ * through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius
+ * `max arm half-width + curbReturnRadius + apronMargin + bandWidth/2 + clearance`, and any part of the
+ * band inside any apron circle is removed, splitting the band into the sub-paths that survive outside.
+ * Entry/exit points land exactly on the apron boundary. A band that never enters an apron passes
+ * through as a single untouched copy.
+ *
+ * Pure geometry, deterministic, bounded by the band-vertex and junction counts.
+ *
+ * @example
+ * ```ts
+ * // Same `junctions` you fed the roads; trim both sidewalks of a street around every node.
+ * const left = trimBandAtJunctions(street.sidewalks.left, street.sidewalkWidth, junctions);
+ * const right = trimBandAtJunctions(street.sidewalks.right, street.sidewalkWidth, junctions);
+ * for (const sub of [...left, ...right]) meshes.push(buildRoadRibbon(sub, street.sidewalkWidth, sampleHeight));
+ * ```
+ *
+ * @capability world-intersections trim offset sidewalk/parallel bands around junction aprons
+ */
+export function trimBandAtJunctions(
+  bandPath: readonly RoadPoint[],
+  bandWidth: number,
+  junctions: readonly RoadJunctionInput[],
+  options: BandTrimOptions = {},
+): RoadPoint[][] {
+  if (bandPath.length < 2) return [];
+  const curbReturnRadius = options.curbReturnRadius ?? 4;
+  const margin = options.apronMargin ?? 1;
+  const clearance = options.clearance ?? 0;
+  const half = Math.max(0, bandWidth) / 2;
+
+  interface Circle {
+    x: number;
+    z: number;
+    r2: number;
+  }
+  const circles: Circle[] = [];
+  for (let ji = 0; ji < junctions.length; ji += 1) {
+    const j = junctions[ji]!;
+    let maxHalf = 0;
+    for (let a = 0; a < j.arms.length; a += 1) maxHalf = Math.max(maxHalf, j.arms[a]!.width / 2);
+    const r = maxHalf + curbReturnRadius + margin + half + clearance;
+    if (r > 0) circles.push({ x: j.x, z: j.z, r2: r * r });
+  }
+  const copy = (): RoadPoint[] => bandPath.map((p) => [p[0], p[1]] as RoadPoint);
+  if (circles.length === 0) return [copy()];
+
+  const insideAny = (x: number, z: number): boolean => {
+    for (let c = 0; c < circles.length; c += 1) {
+      const dx = x - circles[c]!.x;
+      const dz = z - circles[c]!.z;
+      if (dx * dx + dz * dz < circles[c]!.r2) return true;
+    }
+    return false;
+  };
+
+  const result: RoadPoint[][] = [];
+  let cur: RoadPoint[] = [];
+  const eps = 1e-9;
+  const pushPoint = (p: RoadPoint): void => {
+    const last = cur[cur.length - 1];
+    if (last === undefined || Math.hypot(last[0] - p[0], last[1] - p[1]) > eps) cur.push(p);
+  };
+  const closeSub = (): void => {
+    if (cur.length >= 2 && pathLength(cur) > eps) result.push(cur);
+    cur = [];
+  };
+
+  for (let i = 0; i < bandPath.length - 1; i += 1) {
+    const a = bandPath[i]!;
+    const b = bandPath[i + 1]!;
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    // Every boundary crossing t in (0,1) where the segment meets a circle edge.
+    const ts: number[] = [0, 1];
+    for (let c = 0; c < circles.length; c += 1) {
+      const circle = circles[c]!;
+      const fx = a[0] - circle.x;
+      const fz = a[1] - circle.z;
+      const A = dx * dx + dz * dz;
+      if (A < eps) continue;
+      const B = 2 * (fx * dx + fz * dz);
+      const C = fx * fx + fz * fz - circle.r2;
+      const disc = B * B - 4 * A * C;
+      if (disc <= 0) continue;
+      const sq = Math.sqrt(disc);
+      const t0 = (-B - sq) / (2 * A);
+      const t1 = (-B + sq) / (2 * A);
+      if (t0 > eps && t0 < 1 - eps) ts.push(t0);
+      if (t1 > eps && t1 < 1 - eps) ts.push(t1);
+    }
+    ts.sort((p, q) => p - q);
+    for (let s = 0; s < ts.length - 1; s += 1) {
+      const t0 = ts[s]!;
+      const t1 = ts[s + 1]!;
+      if (t1 - t0 < eps) continue;
+      const tm = (t0 + t1) / 2;
+      const mx = a[0] + dx * tm;
+      const mz = a[1] + dz * tm;
+      if (insideAny(mx, mz)) {
+        closeSub(); // this piece is inside an apron — drop it and break continuity
+        continue;
+      }
+      const p0: RoadPoint = [a[0] + dx * t0, a[1] + dz * t0];
+      const p1: RoadPoint = [a[0] + dx * t1, a[1] + dz * t1];
+      pushPoint(p0);
+      pushPoint(p1);
+    }
+  }
+  closeSub();
+  return result;
+}
+
 /** One approach feeding {@link buildJunctionSurface}: the exact draped corner vertices a ribbon ends at. */
 export interface JunctionApproach {
   /** Junction-boundary centerline point where the ribbon ends. */
@@ -607,47 +836,86 @@ export function buildJunctionSurface(
   const cx = junction.x;
   const cz = junction.z;
 
-  // Collect the 2 corners per approach and order them around the node.
-  interface Corner {
-    x: number;
-    y: number;
-    z: number;
-    ap: number;
+  // Wrap an angle difference into (−π, π].
+  const wrapAngle = (a: number): number => {
+    let v = a;
+    while (v <= -Math.PI) v += Math.PI * 2;
+    while (v > Math.PI) v -= Math.PI * 2;
+    return v;
+  };
+
+  // ---- Build a STRICTLY SIMPLE, angularly-monotonic boundary loop before triangulating. ----
+  //
+  // Root cause of the old shard/sliver triangulation: it sorted ALL 2·N corners globally by their
+  // angle around the node, then decided "seam vs fillet" purely from whether two angularly-adjacent
+  // corners happened to share an approach index. On unequal-width junctions the aprons differ, so a
+  // WIDE approach's corner can interleave between the two corners of a NARROW neighbour — its two
+  // corners are no longer adjacent in the global sort. Seam edges then get treated as fillet gaps
+  // (and vice-versa), the fillet arcs sweep across a neighbour's corner, and the fan-from-centre
+  // covers the resulting non-simple boundary with overlapping slivers.
+  //
+  // Fix: group by APPROACH first. Order the approaches by their outward direction around the node,
+  // emit each approach's own two corners together (in consistent CCW order, wrap-safe because the
+  // corner angle is measured RELATIVE to that approach's outward direction), and bridge the gap to
+  // the NEXT approach with a single outward-bulging curb-return arc. The result is monotonic in
+  // node-angle by construction, so a fan from the node is simple and shard-free.
+  interface Ap {
+    first: { x: number; y: number; z: number };
+    second: { x: number; y: number; z: number };
+    firstAngle: number;
+    secondAngle: number;
+    outAngle: number;
   }
-  const corners: Corner[] = [];
+  const ordered: Ap[] = [];
   for (let i = 0; i < approaches.length; i += 1) {
     const ap = approaches[i]!;
-    corners.push({ x: ap.left[0], y: ap.left[1], z: ap.left[2], ap: i });
-    corners.push({ x: ap.right[0], y: ap.right[1], z: ap.right[2], ap: i });
+    const outAngle = Math.atan2(ap.center[1] - cz, ap.center[0] - cx);
+    const leftC = { x: ap.left[0], y: ap.left[1], z: ap.left[2] };
+    const rightC = { x: ap.right[0], y: ap.right[1], z: ap.right[2] };
+    const leftOff = wrapAngle(Math.atan2(leftC.z - cz, leftC.x - cx) - outAngle);
+    const rightOff = wrapAngle(Math.atan2(rightC.z - cz, rightC.x - cx) - outAngle);
+    // `first` is the CW-most corner (smaller signed offset), `second` the CCW-most: a CCW walk
+    // around the node visits first → second, keeping each approach's pair contiguous and ordered.
+    const firstIsLeft = leftOff <= rightOff;
+    ordered.push({
+      first: firstIsLeft ? leftC : rightC,
+      second: firstIsLeft ? rightC : leftC,
+      firstAngle: Math.atan2((firstIsLeft ? leftC : rightC).z - cz, (firstIsLeft ? leftC : rightC).x - cx),
+      secondAngle: Math.atan2((firstIsLeft ? rightC : leftC).z - cz, (firstIsLeft ? rightC : leftC).x - cx),
+      outAngle,
+    });
   }
-  corners.sort((p, q) => Math.atan2(p.z - cz, p.x - cx) - Math.atan2(q.z - cz, q.x - cx));
+  ordered.sort((p, q) => p.outAngle - q.outAngle);
 
-  // Boundary ring: each corner, plus a fillet arc across every gap between DIFFERENT approaches.
   const boundary: { x: number; y: number; z: number }[] = [];
-  for (let k = 0; k < corners.length; k += 1) {
-    const cur = corners[k]!;
-    const nxt = corners[(k + 1) % corners.length]!;
-    boundary.push({ x: cur.x, y: cur.y, z: cur.z });
-    if (cur.ap === nxt.ap) continue; // same approach → the ribbon's straight end-edge (seam)
-    const L = Math.hypot(nxt.x - cur.x, nxt.z - cur.z);
+  for (let k = 0; k < ordered.length; k += 1) {
+    const ap = ordered[k]!;
+    boundary.push(ap.first);
+    boundary.push(ap.second);
+    if (ordered.length < 2) continue;
+    const nxt = ordered[(k + 1) % ordered.length]!;
+    const cur = ap.second;
+    const to = nxt.first;
+    const L = Math.hypot(to.x - cur.x, to.z - cur.z);
     if (L < 1e-6) continue;
+    // Skip the arc if the next approach angularly OVERLAPS this one (a straight seam chord keeps the
+    // ring simple where a fillet would sweep backward across a corner).
+    if (wrapAngle(nxt.firstAngle - ap.secondAngle) <= 1e-9) continue;
     const radius = Math.max(curbReturnRadius, L / 2 + 1e-6);
-    const mx = (cur.x + nxt.x) / 2;
-    const mz = (cur.z + nxt.z) / 2;
+    const mx = (cur.x + to.x) / 2;
+    const mz = (cur.z + to.z) / 2;
     let ox = mx - cx;
     let oz = mz - cz;
     const ol = Math.hypot(ox, oz) || 1;
     ox /= ol;
     oz /= ol;
-    // Arc center sits on the node side so the arc bulges outward, away from the crossing.
+    // Arc centre sits on the node side so the arc bulges outward, away from the crossing.
     const h = Math.sqrt(Math.max(0, radius * radius - (L / 2) * (L / 2)));
     const ax = mx - ox * h;
     const az = mz - oz * h;
     const a0 = Math.atan2(cur.z - az, cur.x - ax);
-    const a1 = Math.atan2(nxt.z - az, nxt.x - ax);
-    let d = a1 - a0;
-    while (d <= -Math.PI) d += Math.PI * 2;
-    while (d > Math.PI) d -= Math.PI * 2;
+    const a1 = Math.atan2(to.z - az, to.x - ax);
+    const d = wrapAngle(a1 - a0);
     for (let s = 1; s < filletSegments; s += 1) {
       const t = s / filletSegments;
       const ang = a0 + d * t;
@@ -656,6 +924,12 @@ export function buildJunctionSurface(
       boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
     }
   }
+
+  // Final guarantee of a strictly simple, star-shaped ring: order every boundary point (approach
+  // corners AND fillet-arc samples) by its angle around the node. A fan from the node over an
+  // angle-sorted point set is monotonic by construction, so it can never emit an overlapping sliver
+  // — even where a wide-spread approach or an over-long curb return would otherwise fold the ring.
+  boundary.sort((p, q) => Math.atan2(p.z - cz, p.x - cx) - Math.atan2(q.z - cz, q.x - cx));
 
   const m = boundary.length;
   const positions = new Float32Array((m + 1) * 3);
@@ -669,24 +943,24 @@ export function buildJunctionSurface(
     positions[base + 1] = p.y;
     positions[base + 2] = p.z;
   }
-  const indices = new Uint32Array(m * 3);
+  // Fan from the node; skip any near-zero-area triangle (an invisible gap, never a flipped sliver).
+  const idx: number[] = [];
   for (let k = 0; k < m; k += 1) {
     const a = boundary[k]!;
     const b = boundary[(k + 1) % m]!;
     const ai = k + 1;
     const bi = ((k + 1) % m) + 1;
-    // Up-normal of triangle (center, a, b): flip the two ring verts if it would face −Y.
+    // Up-normal of triangle (node, a, b): flip the two ring verts if it would face −Y.
     const ny = (a.z - positions[2]!) * (b.x - positions[0]!) - (a.x - positions[0]!) * (b.z - positions[2]!);
-    indices[k * 3] = 0;
+    if (Math.abs(ny) <= 1e-9) continue; // degenerate: node collinear with the ring edge — drop it
+    idx.push(0);
     if (ny >= 0) {
-      indices[k * 3 + 1] = ai;
-      indices[k * 3 + 2] = bi;
+      idx.push(ai, bi);
     } else {
-      indices[k * 3 + 1] = bi;
-      indices[k * 3 + 2] = ai;
+      idx.push(bi, ai);
     }
   }
-  return { positions, indices };
+  return { positions, indices: Uint32Array.from(idx) };
 }
 
 /** One street to trim + mesh through {@link buildTrimmedIntersections}. */

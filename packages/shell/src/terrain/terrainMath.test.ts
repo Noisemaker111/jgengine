@@ -89,6 +89,64 @@ describe("terrain primitives", () => {
     geometry.dispose();
   });
 
+  test("procedural ground vertex colors are deterministic across rebuilds", () => {
+    const build = () => createProceduralGroundGeometry({ size: [24, 24], segments: [12, 12], seed: "terra", height: 3 });
+    const a = build();
+    const b = build();
+    expect(Array.from(a.attributes.color.array as Float32Array)).toEqual(Array.from(b.attributes.color.array as Float32Array));
+    a.dispose();
+    b.dispose();
+  });
+
+  test("field ground mottling is seeded and deterministic on flat ground", () => {
+    const flat = { sampleHeight: () => 0.5, sampleNormal: () => [0, 1, 0] as const };
+    const build = (seed: string) =>
+      createFieldGroundGeometry(flat, {
+        size: [24, 24],
+        segments: [12, 12],
+        surface: { seed, slopeStrength: 0, mottleStrength: 0.3 },
+      });
+    const a = Array.from(build("a").attributes.color.array as Float32Array);
+    const aAgain = Array.from(build("a").attributes.color.array as Float32Array);
+    const b = Array.from(build("b").attributes.color.array as Float32Array);
+    expect(a).toEqual(aAgain);
+    expect(a).not.toEqual(b);
+    // Mottling only jitters brightness, so a flat field is no longer a single flat color.
+    expect(new Set(a).size).toBeGreaterThan(1);
+  });
+
+  test("steeper slopes darken ground vertices", () => {
+    const ramp = { sampleHeight: (x: number) => x * 0.8, sampleNormal: () => [0, 1, 0] as const };
+    const opts = { size: [24, 24] as const, segments: [12, 12] as const, heightRange: [-12, 12] as const };
+    const flatShade = createFieldGroundGeometry(ramp, { ...opts, surface: { slopeStrength: 0, mottleStrength: 0 } });
+    const slopeShade = createFieldGroundGeometry(ramp, { ...opts, surface: { slopeStrength: 1, mottleStrength: 0 } });
+    const mean = (geometry: { attributes: { color: { array: ArrayLike<number> } } }) => {
+      const arr = geometry.attributes.color.array;
+      let sum = 0;
+      for (let i = 0; i < arr.length; i += 1) sum += arr[i];
+      return sum / arr.length;
+    };
+    expect(mean(slopeShade)).toBeLessThan(mean(flatShade));
+    flatShade.dispose();
+    slopeShade.dispose();
+  });
+
+  test("surface shading can be disabled for a flat gradient", () => {
+    const ramp = { sampleHeight: (x: number) => x * 0.5, sampleNormal: () => [0, 1, 0] as const };
+    const plain = createFieldGroundGeometry(ramp, {
+      size: [8, 8],
+      segments: [4, 4],
+      surface: { slopeStrength: 0, mottleStrength: 0 },
+    });
+    // Height depends only on x here, so with both knobs off two vertices sharing an x (same height)
+    // keep an identical color — pure height lerp, no per-vertex jitter. Grid is 5 wide (segments 4).
+    const colors = plain.attributes.color;
+    expect(colors.getX(5)).toBeCloseTo(colors.getX(0), 6);
+    expect(colors.getY(5)).toBeCloseTo(colors.getY(0), 6);
+    expect(colors.getZ(5)).toBeCloseTo(colors.getZ(0), 6);
+    plain.dispose();
+  });
+
   test("field ground geometry with a collapsed heightRange yields finite vertex colors", () => {
     const geometry = createFieldGroundGeometry(
       { sampleHeight: () => 0, sampleNormal: () => [0, 1, 0] as const },

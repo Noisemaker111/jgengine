@@ -73,17 +73,57 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
+## coach-mark — single onboarding callout — title/body, N-of-M counter, Next + Skip controls, theme-reskinnable
+
+- `CoachMark` (function) · `import { CoachMark } from "@jgengine/react"`
+
+## coach-mark-host — full-screen onboarding coach-mark host — anchored/centered callout, dimmed spotlight backdrop, Next/Skip wired to the sequence
+
+- `CoachMarkHost` (function) · `import { CoachMarkHost } from "@jgengine/react"`
+
+## coach-marks — ordered, gated, persist-once onboarding coach-marks/tutorial callouts — anchored or centered steps with a seen set and Next/Skip
+
+- `createCoachMarkSequence` (function) · `import { createCoachMarkSequence } from "@jgengine/core/ui"`
+
+## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
+
+- `Codex` (function) · `import { Codex } from "@jgengine/react"`
+
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
+
+## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
+
+- `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
 
 ## controls-list — keybind-derived control legend that hides on touch
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
 
+## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
+
+- `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
+
+## damage-direction-overlay — drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none
+
+- `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/react"`
+
+## day-night-sky — drop-in R3F presenter that drives the engine's existing sky dome and lights from a serializable day-night cycle for a moving, color-graded day-night look
+
+- `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
+
+## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
+
+- `useDebouncedCommit` (function) · `import { useDebouncedCommit } from "@jgengine/react"`
+
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
+
+## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
+
+- `DialogueView` (function) · `import { DialogueView } from "@jgengine/react"`
 
 ## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
 
@@ -134,7 +174,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `FloatingText` (function) · `import { FloatingText } from "@jgengine/react"`
 - `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/react"`
 - `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText"`
-- `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/ui"`
+- `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/ui/floatingText"`
 - `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/react"`
 
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
@@ -246,6 +286,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/react"`
 
+## modal-host — full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog
+
+- `ModalHost` (function) · `import { ModalHost } from "@jgengine/react"`
+
+## modal-stack — serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result
+
+- `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
+
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
@@ -257,6 +305,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
 
 - `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/react"`
+
+## objective-banner — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore
+
+- `createObjectiveBanner` (function) · `import { createObjectiveBanner } from "@jgengine/core/ui"`
+
+## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
+
+- `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
@@ -302,6 +358,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `togglePanel` (function) · `import { togglePanel } from "@jgengine/core/ui"`
 
+## particle-field — render a core particle system as a soft-point GPU cloud with per-particle size, color, and alpha
+
+- `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
+
+## pause-menu — reskinnable pause-menu building block — Resume plus a game-filled Settings/Quit slot list, HudTheme-driven
+
+- `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/react"`
+
 ## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
 
 - `createPhotoModeStore` (function) · `import { createPhotoModeStore } from "@jgengine/core/ui"`
@@ -346,6 +410,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
+## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
+
+- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
+
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 
 - `SelectionCollectionChrome` (function) · `import { SelectionCollectionChrome } from "@jgengine/react"`
@@ -370,9 +438,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
 
+## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
+
+- `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/react"`
+
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
+
+## talent-tree — drop-in skill/talent-tree widget over the talents model — branch/tier node layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
+
+- `TalentTree` (function) · `import { TalentTree } from "@jgengine/react"`
+
+## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
+
+- `TimerReadout` (function) · `import { TimerReadout } from "@jgengine/react"`
+
+## timer-readout-format — format milliseconds as digital timer text (mm:ss / m:ss.d / ss.d)
+
+- `formatTimerMs` (function) · `import { formatTimerMs } from "@jgengine/react"`
+
+## timer-ring — radial SVG charge/cooldown ring bound to a TimerSet's progress
+
+- `TimerRing` (function) · `import { TimerRing } from "@jgengine/react"`
 
 ## trans — inline translated-message component bound to the active locale
 
@@ -382,13 +470,41 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
 
+## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
+
+- `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
+
+## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
+
+- `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/react"`
+
+## use-dialogue-run — React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
+
+- `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/react"`
+
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
 
+## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
+
+- `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
+
+## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+
+- `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/react"`
+
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+
+- `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
+
+## use-timer — React hook binding one timer to a component with a per-frame re-read
+
+- `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/react"`
 
 ## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
 
