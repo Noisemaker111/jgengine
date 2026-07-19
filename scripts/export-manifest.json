@@ -112,6 +112,7 @@
     "./format/distance",
     "./format/duration",
     "./format/speed",
+    "./game/achievements",
     "./game/breeding",
     "./game/cameraConfig",
     "./game/chat",
@@ -496,6 +497,7 @@
   ],
   "@jgengine/react": [
     ".",
+    "./achievements",
     "./actionHud",
     "./bars",
     "./barsPreview",

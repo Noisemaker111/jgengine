@@ -8,6 +8,7 @@ export * from "./hooks";
 export * from "./store";
 export * from "./settings";
 export * from "./save";
+export * from "./achievements";
 export * from "./components";
 export * from "./hud";
 export * from "./bars";

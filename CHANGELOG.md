@@ -32,6 +32,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Achievements / trophies** — `@jgengine/core/game/achievements`' `createAchievementTracker`
+  is a serializable tracker for counter-goal (`progress`/`setProgress`) and boolean (`unlock`)
+  achievements, with `score()`, `completion()`, an `onUnlock` seam (wire to a toast queue, feed,
+  or sound), and `snapshot`/`restore`; its view `list()` keeps a stable identity so React reads it
+  through `useSyncExternalStore` without re-projecting each frame. New `@jgengine/react` presentation:
+  `useAchievements(tracker)`, `AchievementGallery` (unlocked/locked grid with counter progress bars,
+  secret masking, and a completion/score header), and `AchievementToast` (unlock banner). Genre-agnostic
+  and additive — no defaults or content shipped.
 - **Authored per-placement rig animation applies in game** (`@jgengine/core/world/authoredObjects`, `@jgengine/core/scene/objectStore`, #1276) — a placement's editor-authored `marker.meta.animation` (role→clip states, `"auto"`/`"none"`, walk/run/fade, one-shot bindings; the stable contract from #1274) now flows through `resolveAuthoredObjects` → `placeAuthoredObjects` → `ObjectStore.place` onto the placed object's `ModelConfig.animation`, so the override applies at play time instead of being write+preview only. `AuthoredObject.animation`, `PlaceOptions.animation`, and `SceneObject.animation` are new optional fields; the new `markerAnimation(marker)` reader exposes the contract. Markers with no override are unchanged — animation still comes from catalog resolution.
 - **`EffectResult` carries the slain entity's identity** (`@jgengine/core/combat/effects`, #1263) — a lethal `ctx.scene.entity.effect()` hit now returns `slain: { catalogId, name?, userId? }` on the per-target result, captured before the death system despawns the target. Kill credit / XP reads the victim's `catalogId` (its spawn kind) straight off the result — no game-side spawn-time registry mirroring instance ids to kinds. Non-lethal hits omit `slain`. The new `EffectSystemDeps.resolveSlainIdentity` seam is optional and additive, so existing effect-system compositions keep their exact shape.
 - Editor RPC/CLI verb `add_path` (`@jgengine/editor`): author a new path/route into the scene

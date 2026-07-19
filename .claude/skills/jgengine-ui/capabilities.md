@@ -4,6 +4,14 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## achievement-gallery — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
+
+- `AchievementGallery` (function) · `import { AchievementGallery } from "@jgengine/react"`
+
+## achievement-toast — unlock-moment banner (icon, heading, name, points) for an achievement toast queue
+
+- `AchievementToast` (function) · `import { AchievementToast } from "@jgengine/react"`
+
 ## action-bar — optional skinned action-bar composition over the headless model — games own chrome
 
 - `ActionBar` (function) · `import { ActionBar } from "@jgengine/react"`
