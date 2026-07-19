@@ -290,11 +290,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/react"`
 
-## radial-menu — pointer/stick-driven radial quick menu (weapon/emote wheel) — angular slice selection with a neutral hub
+## quick-menu — multi-form quick menu (radial / arc / list / grid) over one item model with hotkeys, badges, cooldowns, sections, and nested submenus
+
+- `QuickMenu` (function) · `import { QuickMenu } from "@jgengine/react"`
+
+## radial-menu — pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub
 
 - `RadialMenu` (function) · `import { RadialMenu } from "@jgengine/react"`
 
-## radial-select — map a pointer/stick vector to a radial-menu slice index, with a neutral dead zone
+## radial-select — map a pointer/stick vector to a radial-menu slice index, with a neutral dead zone and optional arc bounds
 
 - `radialIndexFromVector` (function) · `import { radialIndexFromVector } from "@jgengine/core/ui"`
 

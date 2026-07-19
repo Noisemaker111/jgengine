@@ -45,6 +45,27 @@ describe("radialIndexFromVector", () => {
   });
 });
 
+describe("arc (partial) menus", () => {
+  test("radialSlices packs slices inside a bottom half-arc", () => {
+    const arc = { startAngle: Math.PI / 2, sweep: Math.PI }; // right → down → left
+    const slices = radialSlices(2, arc);
+    // Two slices centered at 1/4 and 3/4 of the sweep from the start.
+    expect(slices[0]!.centerAngle).toBeCloseTo(Math.PI / 2 + Math.PI / 4, 5);
+    expect(slices[1]!.centerAngle).toBeCloseTo(Math.PI / 2 + (3 * Math.PI) / 4, 5);
+  });
+
+  test("radialIndexFromVector returns null outside a partial arc", () => {
+    const arc = { startAngle: Math.PI / 2, sweep: Math.PI }; // lower-right half only
+    expect(radialIndexFromVector(1, 1, 2, arc)).not.toBeNull(); // down-right: inside
+    expect(radialIndexFromVector(0, -1, 2, arc)).toBeNull(); // straight up: outside the arc
+  });
+
+  test("a full sweep still centers index 0 at the top", () => {
+    expect(radialSlices(4, { sweep: Math.PI * 2 })[0]!.centerAngle).toBeCloseTo(0, 5);
+    expect(radialIndexFromVector(0, -1, 4, { sweep: Math.PI * 2 })).toBe(0);
+  });
+});
+
 describe("radialSlicePosition", () => {
   test("places index 0 straight up and index at a quarter to the right", () => {
     const up = radialSlicePosition(0, 4, 10);
