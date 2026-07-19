@@ -65,6 +65,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`
 
+## entity-preview — live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity
+
+- `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/shell/render/EntityPreview"`
+
 ## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
 
 - `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
@@ -76,6 +80,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
+
+## game-context-bridge — re-provide the GameContext across a nested Canvas/reconciler boundary
+
+- `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
 
 ## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
 
@@ -186,7 +194,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `focusPanel` (function) · `import { focusPanel } from "@jgengine/core/ui"`
 
-## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs
+## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD
 
 - `PanelHost` (function) · `import { PanelHost } from "@jgengine/react"`
 

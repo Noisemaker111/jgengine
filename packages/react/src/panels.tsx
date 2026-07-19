@@ -329,7 +329,13 @@ function cascade(index: number): PanelPosition {
  * map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button;
  * ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
  *
- * @capability panel-host render a manager's open windows as draggable, closable, z-stacked dialogs
+ * The host establishes its own stacking context at `zIndexBase` (default 40) so windows always paint
+ * *above* the HUD (stat bars, nameplates, frames typically sit at z 10–30) — no game should have to
+ * rediscover "my vitals bar bleeds through the open window" and wrap this in a `z-*` of its own. Per-
+ * window focus order still resolves inside that context, so clicking a window raises it over its peers.
+ * Raise `zIndexBase` to sit above a full-screen modal, or lower it to tuck windows beneath one.
+ *
+ * @capability panel-host render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD
  */
 export function PanelHost({
   manager,
@@ -338,6 +344,7 @@ export function PanelHost({
   variation,
   shape,
   width,
+  zIndexBase = 40,
   className,
   windowClassName,
   windowStyle,
@@ -352,6 +359,8 @@ export function PanelHost({
   shape?: HudFrameShape;
   /** Default window width (per-panel unless overridden by the panel content). */
   width?: number | string;
+  /** z-index of the host's stacking context — the floor every window paints above. Default 40 (above the HUD). */
+  zIndexBase?: number;
   className?: string;
   windowClassName?: string;
   windowStyle?: CSSProperties;
@@ -361,7 +370,11 @@ export function PanelHost({
   const content = (id: string): ReactNode =>
     render !== undefined ? render(id) : (panels?.[id] ?? null);
   return (
-    <div data-jg-panel-host="" className={className} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+    <div
+      data-jg-panel-host=""
+      className={className}
+      style={{ position: "absolute", inset: 0, zIndex: zIndexBase, pointerEvents: "none" }}
+    >
       {open.map((def, index) => (
         <WindowView
           key={def.id}

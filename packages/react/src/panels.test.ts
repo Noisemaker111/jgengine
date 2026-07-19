@@ -89,6 +89,20 @@ describe("PanelHost (SSR)", () => {
     );
     expect(html).not.toContain('aria-label="Character"');
   });
+
+  test("host establishes a stacking context above the HUD (default z-index 40)", () => {
+    const html = renderToStaticMarkup(
+      createElement(PanelHost, { manager: staticManager(), panels: { bag: "b" } }),
+    );
+    expect(html).toContain("z-index:40");
+  });
+
+  test("zIndexBase overrides the stacking floor", () => {
+    const html = renderToStaticMarkup(
+      createElement(PanelHost, { manager: staticManager(), panels: { bag: "b" }, zIndexBase: 500 }),
+    );
+    expect(html).toContain("z-index:500");
+  });
 });
 
 describe("Window (SSR)", () => {
