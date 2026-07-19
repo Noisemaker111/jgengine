@@ -16,6 +16,7 @@ export * from "./photoMode";
 export * from "./radialMenu";
 export * from "./quickMenu";
 export * from "./questTracker";
+export * from "./codex";
 export * from "./notifications";
 export * from "./coachMarks";
 export * from "./objectiveBanner";

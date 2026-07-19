@@ -45,6 +45,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`
 - `defaultAnimationForClips` (function) · `import { defaultAnimationForClips } from "@jgengine/core/game/clipRoles"`
 
+## codex — codex/bestiary/lorebook of defined entries with discovery tracking, categories, secret masking, completion, an onDiscover seam, and serializable state
+
+- `createCodex` (function) · `import { createCodex } from "@jgengine/core/gameplay"`
+
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
 - `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`

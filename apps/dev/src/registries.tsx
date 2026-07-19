@@ -132,6 +132,7 @@ export const gameRegistry: GameRegistry = {
   "bookcase-stage": () =>
     import("./demo/bookcaseStageDemo").then((module) => module.bookcaseStageGame),
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
+  "codex": () => import("./demo/codexDemo").then((module) => module.codexDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),

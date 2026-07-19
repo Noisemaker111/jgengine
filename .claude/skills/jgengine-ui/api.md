@@ -495,6 +495,8 @@
 - `CoachMarkHostProps` (interface): interface CoachMarkHostProps — Props for {@link CoachMarkHost}.
 - `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
 - `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
+- `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
@@ -965,6 +967,11 @@
 - `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
 - `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
 - `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
+
+## @jgengine/react/codex
+
+- `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
 
 ## @jgengine/react/components
 
