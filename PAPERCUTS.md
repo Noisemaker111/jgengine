@@ -49,10 +49,6 @@ recovering issue-1148 custom-UI branch after stash/branch switch mid-session →
 
 locating API adoption routing for the minimap slice -> the expected scripts/api-adoption.json path does not exist, so generator ownership was not discoverable by filename
 
-2026-07-18T20:30:09.213Z — gpt-5.6-sol — NoisemakerJon
-
-running affected-package typechecks after a clean frozen install -> react/shell emitted hundreds of missing @jgengine/* modules because package checks require upstream dist builds but neither the script nor error explains that prerequisite
-
 2026-07-18T20:41:24.709Z — gpt-5.6-sol — NoisemakerJon
 
 verifying the standalone portable-minimap dev server with the required agent-browser skill -> the agent-browser CLI is not installed or on PATH, so verification had to fall back to the repository's Chrome/CDP shoot --url path
