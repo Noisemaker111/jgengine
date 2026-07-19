@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\repetitive-edit-watch.mjs'"
+            "command": "bun '.codex/hooks/repetitive-edit-watch.mjs'"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\session-start.mjs'"
+            "command": "bun '.codex/hooks/session-start.mjs'"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\warn-unpushed.mjs'"
+            "command": "bun '.codex/hooks/warn-unpushed.mjs'"
           }
         ]
       },
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun 'C:\\Users\\Jk101\\Desktop\\jgengine\\.codex\\hooks\\papercut-reminder.mjs'"
+            "command": "bun '.codex/hooks/papercut-reminder.mjs'"
           }
         ]
       }
