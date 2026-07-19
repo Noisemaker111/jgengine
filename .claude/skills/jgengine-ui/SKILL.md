@@ -14,7 +14,7 @@ Search [capabilities.md](capabilities.md), use [api.md](api.md) for signatures, 
 ## Canonical workflow
 
 1. Write the game's UI art direction first (see [reference.md](reference.md) §1) — fantasy, shape/material language, hierarchy, forbidden patterns. Stock glass widgets are not a stand-in for this step.
-2. Define the real UI states: attract/menu, live play, pause, results, empty/error, and relevant overlays.
+2. Define the real UI states: attract, main menu (the game's front-end), character create/select where relevant, live play, pause, settings, credits, results, empty/error, and relevant overlays.
 3. Read state through selectors/hooks; keep simulation mutation behind commands.
 4. Compose custom markup for this game. Prefer headless data + game-owned chrome. When a second presentation is plausible, split data / renderer / chrome (minimap stack example: `useLiveMarkers` → track/renderer → game frame; see reference §6).
 5. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit.
@@ -28,6 +28,8 @@ Existing React games keep their entity store and use the focused
 ## Product rules
 
 - **Every game owns its UI end-to-end.** Custom composition, skin, placement, terminology, motion, and one main menu. The website/runner is a bare loader.
+- **The main menu is a game front-end, not marketing.** The runner loads straight into the game's own menu; it offers the real front-end verbs the game supports — New Game, Continue/Load (save slots), Create/Choose character or class, Settings, Credits — each an authored screen in the game's art direction, not a landing page or raw scaffold. See [reference.md](reference.md) §"Main menu".
+- **Settings is game-owned and reachable from a sensible place.** Every game ships settings as *its* settings — skinned and placed inline with its UI (main menu and pause), never the engine's stock face floated into a corner. Credits are a reachable in-game screen, not attribution buried in a build artifact.
 - Engine packages do not supply a finished game face. Shared UI is headless or unskinned building blocks: layout (`HudCanvas`/`HudPanel`), data hooks, interaction models, tokens. Optional styled widgets exist for previews and scaffolding only — shipping them unskinned as the product is out of policy (see [AGENTS.md](../../../AGENTS.md)).
 - Never reach for genre HUD kits, theme presets, or "default RPG/FPS chrome" as the game's identity. Build the look this pitch needs.
 - Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
