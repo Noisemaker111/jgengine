@@ -448,6 +448,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSequenceDirector` (function) · `import { createSequenceDirector } from "@jgengine/core/world"`
 
+## shared-annotations — broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed
+
+- `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
+
 ## skill-check — a timing-bar skill check where you release inside a zone
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`

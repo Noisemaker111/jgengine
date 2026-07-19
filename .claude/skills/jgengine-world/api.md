@@ -1505,6 +1505,7 @@
 
 ## @jgengine/core/world
 
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
@@ -1517,6 +1518,8 @@
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
 - `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
 - `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
 - `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
 - `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
 - `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
@@ -1897,6 +1900,8 @@
 - `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
 - `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
 - `SimClock` (interface): interface SimClock — ⚠ undocumented
 - `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
 - `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
@@ -2108,6 +2113,7 @@
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
@@ -3067,6 +3073,15 @@
 - `ClosestOnSegment` (interface): interface ClosestOnSegment — Closest point on segment `a`→`b` to `p`, and the clamped parameter `t` in [0,1] where it lies.
 - `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
 - `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
+
+## @jgengine/core/world/sharedAnnotations
+
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 
 ## @jgengine/core/world/soilKind
 

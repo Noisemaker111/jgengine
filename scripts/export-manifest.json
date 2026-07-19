@@ -475,6 +475,7 @@
     "./world/scatterRegion",
     "./world/sceneShapes",
     "./world/segment",
+    "./world/sharedAnnotations",
     "./world/soilKind",
     "./world/spatialSample",
     "./world/spawnOverride",

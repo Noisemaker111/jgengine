@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Shared map drawings (multiplayer).** `@jgengine/core/world/sharedAnnotations`' `createSharedAnnotations`
+  makes a map annotation layer collaborative: local `addStroke`/`addShape`/`addNote`/`remove`/`clear` apply
+  then broadcast a serializable edit over the party feed (the same seam `createPingSystem` pings ride), and
+  `apply` mirrors inbound edits from other players while dropping our own echoes. Ids are globally unique per
+  client (`owner:n`) so two players' strokes never collide; transport-agnostic (`ANNOTATION_FEED_ACTION` +
+  any replicated feed). Pings were already shared via `createPingSystem`; this completes the pair. Verified by
+  a two-client sync test.
 - **Terrain surface shading + layered grass wind** (`@jgengine/shell/terrain`, #1373) — plain (untextured) ground now reads as terrain instead of a two-tone gradient: `buildGroundGeometry`-based grounds (`ProceduralGround`, field ground) gain slope-aware darkening/desaturation and seeded, deterministic hash mottling, tunable via the new optional `TerrainSurfaceColorOptions` (`FieldGroundOptions.surface`; defaults in `DEFAULT_TERRAIN_SURFACE_COLOR`, strengths `0` restore the old flat lerp). Grass wind gains a layered rolling gust field (`GrassWindOptions.layered`, default on — three phase-offset directional waves so visible fronts sweep the meadow; `false` restores the single sine) plus a warm lit-tip sheen, and the default grass distance fade widens from 35–95 m to 55–150 m so meadows read expansive at no extra instance cost. `createProceduralGroundGeometry` now delegates to the shared ground builder (behavior-identical geometry, minus the duplication).
 - **Debounced control commits: `useDebouncedCommit`** (`@jgengine/react/useDebouncedCommit`, #1372) — a live-mirrored, trailing-debounced commit binding for slider/number/color/text controls whose commit path is expensive (scene-document patches that regenerate streets, scatter, or grass). The control renders from the local mirror for instant thumb/readout feedback; the real commit fires once per pause (default 180 ms) and flushes on release/blur/unmount; external changes (undo, RPC echo) resync the mirror unless a drag is in flight. The editor's inspector fields (`SchemaInspector`, `SliderRow`/`NumberField`, vegetation and scatter-coverage density) and the shell settings sliders now commit through it, so one drag lands one patch instead of ~50.
 - **Stage / objective banner.** `@jgengine/core/ui/objectiveBanner`' `createObjectiveBanner` is a genre-agnostic,

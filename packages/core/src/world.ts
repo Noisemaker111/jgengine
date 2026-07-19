@@ -691,6 +691,14 @@ export {
   scatterRegionFromPath,
   type ScatterTerrain,
 } from "./world/scatterRegion";
+export {
+  ANNOTATION_FEED_ACTION,
+  createSharedAnnotations,
+  type AnnotationBroadcast,
+  type AnnotationFeedSink,
+  type SharedAnnotations,
+  type SharedAnnotationsDeps,
+} from "./world/sharedAnnotations";
 export { SOIL_KIND, SOIL_SCHEMA, type SoilRules } from "./world/soilKind";
 export {
   annulusRegion,
