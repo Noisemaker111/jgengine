@@ -49,6 +49,8 @@ type Args = {
   stage?: boolean;
   state?: string;
   preview?: string;
+  fixture?: string;
+  listFixtures: boolean;
   run?: string[];
   settle?: number;
   spawn?: string;
@@ -70,6 +72,10 @@ const HELP = `bun run shoot [game] [options]
                       mid-loop judge shots — use full (default) for final/PR shots
   --state <name>      capture.states entry instead of live play
   --preview [key]     preview.tsx state instead of the full shell
+  --fixture [name]    capture an exported engine preview fixture (real @jgengine/react
+                      component) by name — no game boot, no hand-rolled --url page.
+                      With no name (or --list), prints the registered fixtures and exits
+  --list              list the registered engine preview fixtures and exit
   --run <cmd[,cmd]>   script past a start screen before capture
   --settle <ms>       wait past an intro before capture
   --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
@@ -112,6 +118,7 @@ function parseArgs(argv: string[]): Args {
     keep: false,
     inspect: false,
     help: false,
+    listFixtures: false,
     timeoutMs: 60_000,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -136,6 +143,16 @@ function parseArgs(argv: string[]): Args {
       } else {
         args.preview = "";
       }
+    } else if (value === "--fixture") {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        args.fixture = next;
+        index += 1;
+      } else {
+        args.fixture = "";
+      }
+    } else if (value === "--list" || value === "--list-fixtures") {
+      args.listFixtures = true;
     } else if (value === "--run") {
       const list = (argv[++index] ?? "")
         .split(",")
@@ -171,6 +188,10 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
   const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}`;
+  if (args.fixture !== undefined && args.fixture.length > 0) {
+    const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
+    return join(outDir, `fixture-${key}${suffix}.png`);
+  }
   if (args.state !== undefined) {
     const key = args.state.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `${args.game}-state-${key}${suffix}.png`);
@@ -187,6 +208,13 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
     const url = new URL(args.url);
     url.searchParams.set("capture", "1");
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
+    return url.toString();
+  }
+  if (args.fixture !== undefined && args.fixture.length > 0) {
+    const url = new URL(devBase);
+    url.searchParams.set("fixture", args.fixture);
+    url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
+    url.searchParams.set("capture", "1");
     return url.toString();
   }
   const url = new URL(devBase);
@@ -325,6 +353,21 @@ if (isDaemonArgv(rawArgv)) {
 const args = parseArgs(rawArgv);
 if (args.help) {
   console.log(HELP);
+  process.exit(0);
+}
+
+// Discovery: `shoot --list` or `shoot --fixture` (no name) prints the registered
+// engine preview fixtures from the @jgengine/react registry (single source of truth).
+if (args.listFixtures || (args.fixture !== undefined && args.fixture.length === 0)) {
+  // The @jgengine/react registry is the single source of truth; scripts resolve it from
+  // source (bare `@jgengine/*` specifiers only type-resolve through dist, not at bun runtime).
+  const { PREVIEW_FIXTURES, previewFixtureNames } = await import(
+    resolve(import.meta.dir, "../packages/react/src/previewFixtures.ts")
+  );
+  console.log("engine preview fixtures (bun run shoot --fixture <name>):");
+  for (const name of previewFixtureNames()) {
+    console.log(`  ${name.padEnd(18)} ${PREVIEW_FIXTURES[name]!.description}`);
+  }
   process.exit(0);
 }
 

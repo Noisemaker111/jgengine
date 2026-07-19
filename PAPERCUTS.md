@@ -141,10 +141,6 @@ verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't lo
 
 Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
 
-2026-07-19T03:47:57.282Z — claude-opus-4-8 — Claude
-
-Wiring in-game before/after screenshots for HudTheme/IconTreatment adoption -> the deterministic engine preview fixtures (hudThemePreview/iconsPreview/barsPreview) render the REAL components but the shoot harness only auto-discovers Games/*/src/preview.tsx, so exported @jgengine/react previews have no capture route without a hand-rolled --url mount; games' own preview.tsx are static posters, not the real HUD, so painted-icon adoption can't be screenshotted without booting full --mode play.
-
 2026-07-19T04:40:07.134Z — fable — Claude
 
 verifying vice-isle movement fix → bun run drive --playtest in the cloud container runs headless Chrome at ~2 fps software GL (1.2M tris), so held-key movement barely advances and every game reads as a false SOFTLOCK (wreckway: 2 probe frames in 8s); playtest rung is unusable here, had to fall back to deterministic headless stepPlayerMovement evidence
