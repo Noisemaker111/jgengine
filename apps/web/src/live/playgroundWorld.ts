@@ -120,8 +120,12 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         // Frame the whole generated extent from a pleasing ~33–40° pitch orbit so first paint shows the
         // layout and its rolling silhouette, not a half-empty low angle.
         const r = model.radius;
-        const horiz = circuit ? 0.95 : 0.92; // pull back enough that nothing clips at the frame edges
-        const lift = circuit ? 0.86 : 1.02; // pitch ≈ atan(lift / (horiz·√2))
+        // Circuits pull back further and sit a touch higher than a city: a dense (compactness→1) track
+        // fills its whole footprint with switchbacks, so a low rolling-lap framing clipped the near
+        // corridors off the bottom. This steeper, further orbit fits the entire footprint yet still
+        // reads as a rolling lap for an open loop.
+        const horiz = circuit ? 1.08 : 0.92; // pull back enough that nothing clips at the frame edges
+        const lift = circuit ? 1.12 : 1.02; // pitch ≈ atan(lift / (horiz·√2))
         handle.camera.position.set(r * horiz, r * lift, r * horiz);
         controls.target.set(0, circuit ? 4 : 14, 0);
         controls.update();

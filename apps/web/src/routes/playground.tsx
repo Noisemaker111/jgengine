@@ -36,6 +36,7 @@ interface Dials {
   landmarks: number;
   blockFill: number;
   elevation: number;
+  trackDensity: number;
 }
 
 const DEFAULTS: Dials = {
@@ -53,6 +54,7 @@ const DEFAULTS: Dials = {
   landmarks: 0.08,
   blockFill: 0.45,
   elevation: 0.35,
+  trackDensity: 0.35,
 };
 
 /** City vs. circuit start their Elevation dial in different places — gentle hills vs. a rolling lap. */
@@ -219,6 +221,18 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
   const loop = network.mode === "circuit" ? network.streets.find((s) => s.loop) ?? network.streets[0] : undefined;
   const loopPts = loop?.points ?? [];
   const corners = loop !== undefined ? circuitCorners(loopPts) : [];
+  // Dense compactness-1 layouts detect 12-20+ corners; a label on every one collides into an
+  // unreadable smear. Above 14, label only the corners tighter than the median radius (the ones a
+  // driver actually brakes for) while every corner keeps its apex dot — T-numbers stay the true
+  // sequential index so the labelled subset reads as T1…Tn with gaps, never renumbered.
+  const LABEL_ALL_MAX = 14;
+  const labelEveryCorner = corners.length <= LABEL_ALL_MAX;
+  let radiusCutoff = Infinity;
+  if (!labelEveryCorner) {
+    const sorted = corners.map((c) => c.radius).sort((a, b) => a - b);
+    const mid = sorted.length >> 1;
+    radiusCutoff = sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+  }
   // Loop centroid — labels are pushed radially outward from it so they never sit on the track line.
   let cx = 0;
   let cz = 0;
@@ -314,6 +328,11 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
       {corners.map((corner, i) => {
         const ax = corner.apex[0];
         const az = corner.apex[1];
+        // Every corner keeps a dot; only the labelled subset draws a leader line + T/R text.
+        const labelled = labelEveryCorner || corner.radius < radiusCutoff;
+        if (!labelled) {
+          return <circle key={`c${i}`} cx={toX(ax)} cy={toZ(az)} r={1.8} fill="#34d399" opacity={0.7} />;
+        }
         let ox = ax - cx;
         let oz = az - cz;
         const ol = Math.hypot(ox, oz) || 1;
@@ -367,6 +386,7 @@ function Playground() {
         ...CIRCUIT_RULES,
         winding: dials.winding,
         segmentLength: dials.segmentLength,
+        compactness: dials.trackDensity,
         elevation: dials.elevation,
         maxGrade: MAX_GRADE,
       };
@@ -443,7 +463,7 @@ function Playground() {
 
   const rpc =
     mode === "circuit"
-      ? `{"method":"generate_streets","seed":"${dials.seed}","mode":"circuit","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"winding":${dials.winding},"segmentLength":${dials.segmentLength},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`
+      ? `{"method":"generate_streets","seed":"${dials.seed}","mode":"circuit","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"winding":${dials.winding},"segmentLength":${dials.segmentLength},"compactness":${dials.trackDensity},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`
       : `{"method":"generate_streets","seed":"${dials.seed}","mode":"net","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"gridness":${dials.gridness},"connectivity":${dials.connectivity},"branching":${dials.branching},"winding":${dials.winding},"segmentLength":${dials.segmentLength},"boulevards":${dials.boulevards},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`;
 
   return (
@@ -505,7 +525,9 @@ function Playground() {
               <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
               <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
-          ) : null}
+          ) : (
+            <Slider label="Track density" value={dials.trackDensity} min={0} max={1} step={0.05} onChange={(v) => set({ trackDensity: v })} />
+          )}
           <div className="text-xs leading-relaxed text-slate-500">
             {mode === "city" ? (
               <>
@@ -515,7 +537,9 @@ function Playground() {
             ) : (
               <>
                 A closed circuit of <span className="text-emerald-300">{result.network.edges.length}</span> welded segments — the
-                same engine, loopiness turned to 1.
+                same engine, loopiness at 1. Track density{" "}
+                <span className="text-emerald-300">{dials.trackDensity}</span> folds the lap into its footprint: 0 keeps an open,
+                flowing loop; 1 fills the interior with parallel corridors and switchbacks.
               </>
             )}
           </div>
