@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Countdown / timer HUD.** `@jgengine/core/time/timerSet`' `createTimerSet` is a serializable set of named
+  countdown/countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability
+  cooldown/charge (identical mechanics; `id`/labels are free strings the engine never interprets). Start, pause,
+  resume, stop, reset, and read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` per timer
+  (allocation-aware `read(id, out)`), observe structural changes via `subscribe` and expiry edges via
+  `poll`/`onExpire`, and `snapshot`/`restore` round-trip through a save. `@jgengine/react`'s `TimerReadout`
+  (live digital mm:ss/m:ss.d) and `TimerRing` (SVG radial fill/drain), plus the `useTimerRead` per-frame hook,
+  render it HudTheme-skinned — no hand-rolled interval math. See the `countdown-timer` dev demo.
 - **Branching dialogue UI.** `@jgengine/core/game/dialogueGraph`'s `createDialogueRun` / `selectDialogueView` add a
   thin, serializable branching-conversation model over the existing `features.dialogue` open/close bridge — a graph of
   nodes (free-string speaker + line + choices that name the node they lead to) with choose-to-advance traversal, visited
@@ -54,7 +62,6 @@ At publish, rename this heading to the new version and mirror the entries into
   its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. Genre-agnostic:
   speaker/choice `kind` are free strings the model never interprets, surfaced as `data-*` for game styling; HudTheme-skinned
   via `--jg-*` tokens. See the `dialogue` demo.
-=======
 - **Damage-direction indicators.** `@jgengine/core/vfx/damageDirection`' `createDamageDirectionTracker` is a
   serializable, allocation-aware "hit-from" brain: `registerHit({ angle, intensity?, kind? })` (angle in radians,
   `0` = front, free-string `kind` never interpreted) turns each hit into a directional indicator that fades over a

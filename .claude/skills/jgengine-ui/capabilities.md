@@ -422,6 +422,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
 
+## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
+
+- `TimerReadout` (function) · `import { TimerReadout } from "@jgengine/react"`
+
+## timer-readout-format — format milliseconds as digital timer text (mm:ss / m:ss.d / ss.d)
+
+- `formatTimerMs` (function) · `import { formatTimerMs } from "@jgengine/react"`
+
+## timer-ring — radial SVG charge/cooldown ring bound to a TimerSet's progress
+
+- `TimerRing` (function) · `import { TimerRing } from "@jgengine/react"`
+
 ## trans — inline translated-message component bound to the active locale
 
 - `Trans` (function) · `import { Trans } from "@jgengine/react"`
@@ -457,6 +469,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
 - `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
+
+## use-timer — React hook binding one timer to a component with a per-frame re-read
+
+- `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/react"`
 
 ## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
 

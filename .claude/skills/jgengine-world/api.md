@@ -1368,6 +1368,18 @@
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
 
+## @jgengine/core/time/timerSet
+
+- `TimerDirection` (type): type TimerDirection = "down" | "up" — A serializable set of named countdown / countup timers evaluated against an injected clock. One primitive covers round timers, respawn clocks, and ability cooldown/charge — they are the same mechanic (elapsed vs. duration on a clock), so `id` and any labels are free strings the engine never interprets.
+- `TimerExpiryListener` (type): type TimerExpiryListener = (id: string) => void — Listener notified when a timer newly expires. Receives the timer id.
+- `TimerRead` (interface): interface TimerRead — A single timer's resolved state for one read. All fields are plain numbers so a HUD can render without touching the model. For a looping timer the values describe the current cycle; `expired` is only ever `true` for a finished non-looping timer (loops signal completion through {@link TimerSet.poll}).
+- `TimerSet` (interface): interface TimerSet — A named set of countdown / countup timers on an injected clock. Start, pause, resume, stop, reset, and read timers by free-string id; observe structural changes with {@link TimerSet.subscribe} and expiry edges with {@link TimerSet.poll} / {@link TimerSet.onExpire}.
+- `TimerSetOptions` (interface): interface TimerSetOptions — Options for {@link createTimerSet}.
+- `TimerSetSnapshot` (interface): interface TimerSetSnapshot — Serializable state of a whole {@link TimerSet}.
+- `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
+- `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
+- `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
+
 ## @jgengine/core/vfx/damageDirection
 
 - `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
@@ -1938,6 +1950,14 @@
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
 - `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
+- `TimerDirection` (type): type TimerDirection = "down" | "up" — A serializable set of named countdown / countup timers evaluated against an injected clock. One primitive covers round timers, respawn clocks, and ability cooldown/charge — they are the same mechanic (elapsed vs. duration on a clock), so `id` and any labels are free strings the engine never interprets.
+- `TimerExpiryListener` (type): type TimerExpiryListener = (id: string) => void — Listener notified when a timer newly expires. Receives the timer id.
+- `TimerRead` (interface): interface TimerRead — A single timer's resolved state for one read. All fields are plain numbers so a HUD can render without touching the model. For a looping timer the values describe the current cycle; `expired` is only ever `true` for a finished non-looping timer (loops signal completion through {@link TimerSet.poll}).
+- `TimerSet` (interface): interface TimerSet — A named set of countdown / countup timers on an injected clock. Start, pause, resume, stop, reset, and read timers by free-string id; observe structural changes with {@link TimerSet.subscribe} and expiry edges with {@link TimerSet.poll} / {@link TimerSet.onExpire}.
+- `TimerSetOptions` (interface): interface TimerSetOptions — Options for {@link createTimerSet}.
+- `TimerSetSnapshot` (interface): interface TimerSetSnapshot — Serializable state of a whole {@link TimerSet}.
+- `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
+- `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
 - `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
 - `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
@@ -2094,6 +2114,7 @@
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
 - `createTerrainSnapshot` (function): function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot — A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
+- `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `createVehicleObstacleClamp` (function): function createVehicleObstacleClamp(options: { /** Solids near the car this tick (already filtered to the relevant, solid set). */ obstacles: () => readonly CollisionObstacle[]; /** Vehicle body radius (units). Default {@link DEFAULT_VEHICLE_RADIUS}. */ radius?: number; /** Current tick dt (seconds)… — Build a slide-along move clamp for a kinematic car (#1051). `obstacles` is sampled fresh each tick — the caller hands back the already-filtered set of solids near the car — and `dt` supplies the current tick length so a blocked move's lost displacement converts to a closing speed. `radius` inflates each obstacle footprint by the car's body radius (default {@link DEFAULT_VEHICLE_RADIUS}).
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.

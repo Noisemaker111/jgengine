@@ -147,6 +147,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/world"`
 
+## countdown-timers — named countdown/countup timer set on an injected clock — round timers, respawn clocks, ability cooldown/charge; read remaining/elapsed/progress + expiry, snapshot/restore
+
+- `createTimerSet` (function) · `import { createTimerSet } from "@jgengine/core/world"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`

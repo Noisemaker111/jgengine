@@ -381,6 +381,17 @@ export {
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
 export {
+  createTimerSet,
+  type TimerDirection,
+  type TimerExpiryListener,
+  type TimerRead,
+  type TimerSet,
+  type TimerSetOptions,
+  type TimerSetSnapshot,
+  type TimerSnapshot,
+  type TimerStartOptions,
+} from "./time/timerSet";
+export {
   createDamageDirectionTracker,
   type DamageDirectionOptions,
   type DamageDirectionSnapshot,
