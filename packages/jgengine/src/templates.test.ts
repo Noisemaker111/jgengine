@@ -112,7 +112,10 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const pkg = JSON.parse(fileOf(files, "package.json")) as { name: string; dependencies: Record<string, string> };
     expect(pkg.name).toBe("@games/probe-game");
     expect(pkg.dependencies["@jgengine/core"]).toBe("workspace:*");
-    expect(fileOf(files, "src/index.css")).toContain('@source "../../../packages/react/src"');
+    const css = fileOf(files, "src/index.css");
+    expect(css).toContain('@source "../../../packages/react/src"');
+    // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
+    expect(css).toContain('@source "../../../packages/editor/src"');
   });
 
   test("standalone: no workspace protocol, no monorepo paths, css @source points at node_modules", () => {
@@ -126,6 +129,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const css = fileOf(files, "src/index.css");
     expect(css).toContain('@source "../node_modules/@jgengine/react/dist"');
     expect(css).toContain('@source "../node_modules/@jgengine/shell/dist"');
+    // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
+    expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');
   });
 
   test("standalone: engine deps pin the CLI's own version", () => {
@@ -206,6 +211,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game.config.ts")).not.toContain("editorLayers");
     expect(fileOf(files, "src/loop.ts")).not.toContain("editorLayers");
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
+    // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
+    expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
   });
 
   test("templates carry the gameKit-first agent onboarding", () => {
@@ -217,6 +224,11 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(agents).toContain("recipes/minimal-game.md");
     expect(agents).toContain("npx jgengine skills -p");
     expect(agents).toContain("--all");
+    // Every new game is briefed to file engine bugs/gaps upstream instead of burying a workaround.
+    expect(agents).toContain("File it upstream");
+    expect(agents).toContain("https://github.com/Noisemaker111/jgengine/issues");
+    expect(agents).toContain("[BUG]");
+    expect(agents).toContain("[FEATURE]");
     expect(agents).not.toContain("full export surface");
     expect(agents).not.toContain("full game not a slice");
   });

@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ComponentRef, type MutableRefObject } from "react";
 import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { isCameraOccluderTransparent } from "./cameraCollision";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
 import {
@@ -132,7 +133,8 @@ export function GameOrbitCamera({
           const obj = hit.object;
           if (!obj.visible) continue;
           if ((obj as { isSprite?: boolean }).isSprite === true) continue;
-          if (obj.userData.jgCameraTransparent === true) continue;
+          // Inheritable: decor flags a group jgCameraTransparent and all children pass through.
+          if (isCameraOccluderTransparent(obj)) continue;
           blocked = hit.distance;
           break;
         }
