@@ -94,6 +94,54 @@ describe("sampleBodyPose", () => {
   });
 });
 
+describe("squash & stretch", () => {
+  const SOFT = { squashAmp: 0.2 };
+  const FOOTFALL: PartMotionInput = { timeSec: 0, speed: 2, phase: 0, flinch: 0, death: 0 }; // sin(stride) = 0
+  const MIDSTEP: PartMotionInput = { ...FOOTFALL, timeSec: 1 / (4 * 1.6) }; // sin(stride) = 1
+
+  test("rigid by default: scale stays exactly 1 walking, idle, flinching", () => {
+    for (const input of [WALKING, STANDING, { ...STANDING, flinch: 1 }]) {
+      expect(sampleBodyPose(input).scale).toEqual([1, 1, 1]);
+    }
+    expect(samplePartPose("leg.l", WALKING).scale).toEqual([1, 1, 1]);
+  });
+
+  test("footfall squashes deepest, released mid-step, volume-conserving", () => {
+    const atFootfall = sampleBodyPose(FOOTFALL, SOFT);
+    const atMidstep = sampleBodyPose(MIDSTEP, SOFT);
+    expect(atFootfall.scale[1]).toBeLessThan(1);
+    expect(atFootfall.scale[0]).toBeGreaterThan(1);
+    expect(atFootfall.scale[2]).toBe(atFootfall.scale[0]);
+    expect(atMidstep.scale[1]).toBeGreaterThan(atFootfall.scale[1]);
+  });
+
+  test("idle jelly breathe oscillates scale", () => {
+    const inhale = sampleBodyPose({ ...STANDING, timeSec: 1 / (4 * 0.45) }, SOFT); // sin(breathe) = 1
+    const exhale = sampleBodyPose({ ...STANDING, timeSec: 3 / (4 * 0.45) }, SOFT); // sin(breathe) = -1
+    expect(inhale.scale[1]).toBeLessThan(1);
+    expect(exhale.scale[1]).toBeGreaterThan(1);
+  });
+
+  test("flinch adds a squash pulse on soft bodies", () => {
+    const calm = sampleBodyPose(FOOTFALL, SOFT);
+    const hit = sampleBodyPose({ ...FOOTFALL, flinch: 1 }, SOFT);
+    expect(hit.scale[1]).toBeLessThan(calm.scale[1]);
+  });
+
+  test('deathStyle "splat" flattens without toppling', () => {
+    const splat = sampleBodyPose({ ...STANDING, death: 1 }, { ...SOFT, deathStyle: "splat" });
+    expect(splat.scale[1]).toBeCloseTo(0.3, 10);
+    expect(splat.scale[0]).toBeGreaterThan(1);
+    expect(splat.rotation[2]).toBeCloseTo(0, 10);
+  });
+
+  test("default death style still topples with unit scale", () => {
+    const topple = sampleBodyPose({ ...STANDING, death: 1 });
+    expect(topple.rotation[2]).toBeCloseTo(Math.PI / 2, 10);
+    expect(topple.scale).toEqual([1, 1, 1]);
+  });
+});
+
 describe("partMotionPhase", () => {
   test("is deterministic and bounded", () => {
     expect(partMotionPhase("goblin-7")).toBe(partMotionPhase("goblin-7"));

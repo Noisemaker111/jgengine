@@ -25,12 +25,21 @@ export interface PartMotionParams {
   flinchRad?: number;
   /** Sideways topple roll in radians at death = 1. Default PI / 2. */
   toppleRad?: number;
+  /**
+   * Squash-and-stretch amplitude for soft characters (blobs, slimes): footfall squash while
+   * walking, jelly breathe while idle, a squash pulse on flinch. Volume-conserving — the body
+   * bulges horizontally as it compresses. Default 0 (rigid; scale stays exactly 1).
+   */
+  squashAmp?: number;
+  /** How death reads: `"topple"` rolls sideways (default, hard characters); `"splat"` flattens the body out — right for blobs. */
+  deathStyle?: "topple" | "splat";
 }
 
-/** Sampled offsets to add onto a part's authored transform (or the character root). */
+/** Sampled offsets to add onto a part's authored transform (or the character root). `scale` is multiplicative (1 = unchanged). */
 export interface PartPose {
   position: [number, number, number];
   rotation: [number, number, number];
+  scale: [number, number, number];
 }
 
 /** Live signals a driver feeds the samplers each frame. All values are render-side only. */
@@ -68,12 +77,23 @@ function zeroPose(out: PartPose): PartPose {
   out.rotation[0] = 0;
   out.rotation[1] = 0;
   out.rotation[2] = 0;
+  out.scale[0] = 1;
+  out.scale[1] = 1;
+  out.scale[2] = 1;
   return out;
 }
 
-/** A reusable all-zero pose. */
+/** Volume-conserving vertical squash: compress y by `amount`, bulge x/z by half of it. */
+function applySquash(out: PartPose, amount: number): void {
+  out.scale[1] *= 1 - amount;
+  const bulge = 1 + amount * 0.5;
+  out.scale[0] *= bulge;
+  out.scale[2] *= bulge;
+}
+
+/** A reusable identity pose (zero offsets, unit scale). */
 export function createPartPose(): PartPose {
-  return { position: [0, 0, 0], rotation: [0, 0, 0] };
+  return { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] };
 }
 
 /**
@@ -86,12 +106,16 @@ export function partMotionPhase(id: string): number {
   return (hash % 1000) / 1000;
 }
 
+const SPLAT_FLATTEN = 0.7;
+
 /**
- * Sample the character-root pose: walk bob, idle breathe/sway, backward hit flinch, and the
- * sideways death topple. A driver applies this to the group wrapping the whole composition
- * (base model plus parts) — limbs ride along, as they would on a real torso.
+ * Sample the character-root pose: walk bob, idle breathe/sway, backward hit flinch, and death —
+ * a sideways topple by default, or a flatten-out splat with `deathStyle: "splat"`. With
+ * `squashAmp > 0` the body also squashes and stretches (footfall squash, jelly idle breathe,
+ * flinch squash pulse), volume-conserving. A driver applies this to the group wrapping the
+ * whole composition (base model plus parts) — limbs ride along, as they would on a real torso.
  *
- * @capability part-motion sample the root bob/sway/flinch/topple pose for a rig-less part-composed character
+ * @capability part-motion sample the root bob/sway/squash/flinch/death pose for a rig-less part-composed character
  */
 export function sampleBodyPose(
   input: PartMotionInput,
@@ -103,15 +127,31 @@ export function sampleBodyPose(
   const strideHz = params?.strideHz ?? DEFAULT_STRIDE_HZ;
   const bobAmp = params?.bobAmp ?? DEFAULT_BOB_AMP;
   const swayRad = params?.swayRad ?? DEFAULT_SWAY_RAD;
-  const alive = 1 - clamp01(input.death);
+  const squashAmp = params?.squashAmp ?? 0;
+  const death = clamp01(input.death);
+  const alive = 1 - death;
   const walk = clamp01(input.speed / walkSpeed) * alive;
   const idle = (1 - walk) * alive;
   const stride = TWO_PI * (input.timeSec * strideHz + input.phase);
+  const breathe = TWO_PI * (input.timeSec * IDLE_BREATHE_HZ + input.phase);
+  const step = Math.abs(Math.sin(stride));
   // Double-bounce bob: the body rises on each step, twice per stride cycle.
-  out.position[1] = Math.abs(Math.sin(stride)) * bobAmp * walk + Math.sin(TWO_PI * (input.timeSec * IDLE_BREATHE_HZ + input.phase)) * bobAmp * 0.5 * idle;
-  out.rotation[2] = Math.sin(TWO_PI * (input.timeSec * IDLE_BREATHE_HZ + input.phase)) * swayRad * idle;
+  out.position[1] = step * bobAmp * walk + Math.sin(breathe) * bobAmp * 0.5 * idle;
+  out.rotation[2] = Math.sin(breathe) * swayRad * idle;
   out.rotation[0] = -clamp01(input.flinch) * (params?.flinchRad ?? DEFAULT_FLINCH_RAD) * alive;
-  out.rotation[2] += clamp01(input.death) * (params?.toppleRad ?? DEFAULT_TOPPLE_RAD);
+  if (squashAmp > 0) {
+    // Footfall squash: deepest where the bob is lowest (step ≈ 0), released at the top of the step.
+    applySquash(out, (1 - step) * squashAmp * walk);
+    // Jelly breathe: idle scale oscillation, gentler than a footfall.
+    applySquash(out, Math.sin(breathe) * squashAmp * 0.4 * idle);
+    // Flinch reads as a squash pulse on a soft body.
+    applySquash(out, clamp01(input.flinch) * squashAmp * alive);
+  }
+  if ((params?.deathStyle ?? "topple") === "splat") {
+    applySquash(out, death * SPLAT_FLATTEN);
+  } else {
+    out.rotation[2] += death * (params?.toppleRad ?? DEFAULT_TOPPLE_RAD);
+  }
   return out;
 }
 

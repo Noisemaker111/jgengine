@@ -32,7 +32,7 @@ Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. 
 
 ## Part-composed character motion
 
-A character kit-bashed from primitives/`ModelPart`s (no skeleton, no clips) animates procedurally: tag parts with `role` (`leg.l`, `arm.r`, `head`, `tail`, `wing.l`…) and the shell's part-motion rig drives counter-phase limb swing from the entity's live movement speed, idle breathe/sway, hit flinch on `combat.hitReaction`, and a death topple on `entity.died` — no game-side frame loops. Tune with `ModelConfig.partMotion`; curves are pure and deterministic (`@jgengine/core/game/partAnimation`), so crowds de-sync by instance-id phase and replays stay stable. Rigged GLBs keep using `ModelConfig.animation` — roles are only for rig-less compositions.
+A character kit-bashed from primitives/`ModelPart`s (no skeleton, no clips) animates procedurally: tag parts with `role` (`leg.l`, `arm.r`, `head`, `tail`, `wing.l`…) and the shell's part-motion rig drives counter-phase limb swing from the entity's live movement speed, idle breathe/sway, hit flinch on `combat.hitReaction`, and a death topple on `entity.died` — no game-side frame loops. Tune with `ModelConfig.partMotion`; curves are pure and deterministic (`@jgengine/core/game/partAnimation`), so crowds de-sync by instance-id phase and replays stay stable. Soft characters (blobs, slimes) opt into volume-conserving squash-and-stretch with `partMotion: { squashAmp }` — footfall squash, jelly idle breathe, flinch pulse — and `deathStyle: "splat"` flattens out on death instead of the default sideways topple. Rigged GLBs keep using `ModelConfig.animation` — roles are only for rig-less compositions.
 
 ## Traps
 
