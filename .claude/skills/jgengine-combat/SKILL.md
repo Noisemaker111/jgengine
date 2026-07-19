@@ -14,7 +14,11 @@ Search [capabilities.md](capabilities.md), then use [api.md](api.md) for signatu
 Existing projects keep their resource state and follow the
 [portable stat-pool recipe](recipes/portable-stat-pools.md). Adapt the caller's
 store through `StatPoolAccess`; do not require `StatValueMap`, `GameContext`, or
-a parallel entity store.
+a parallel entity store. To bolt firing onto an existing game, compose
+`createWeaponRuntime` (cadence + magazine + the caller's own raycast + portable
+`resolveDamageHit`) per the
+[portable weapon-plumbing recipe](recipes/portable-weapon-plumbing.md); never add
+a default gun or FPS kit.
 
 ## Canonical pipeline
 

@@ -566,6 +566,17 @@
 - `resolveSelection` (function): function resolveSelection(base: Readonly<Record<string, number>>, registry: LayerRegistry, ids: LayerSelection): { readonly snapshot: ParamSnapshot; readonly unknown: readonly string[] } — Reproducible session setup in one call: resolve a saved {@link LayerSelection} through a registry, fold the found layers over `base`, and return the snapshot alongside any unknown ids. The same base + registry + selection always yields the same snapshot.
 - `validateLayers` (function): function validateLayers(layers: readonly ParamLayer[]): readonly LayerConflict[] — Detect design conflicts in a layer set before resolving: duplicate ids, and competing `set` ops on the same parameter at the same priority (order-dependent, so worth surfacing). Returns an empty array when the set is clean, so callers can gate a difficulty/session build on it.
 
+## @jgengine/core/game/partAnimation
+
+- `PartMotionInput` (interface): interface PartMotionInput — Live signals a driver feeds the samplers each frame. All values are render-side only.
+- `PartMotionParams` (interface): interface PartMotionParams — Tuning for {@link samplePartPose}/{@link sampleBodyPose}; every field has a sensible default.
+- `PartPose` (interface): interface PartPose — Sampled offsets to add onto a part's authored transform (or the character root).
+- `PartRole` (type): type PartRole = "head" | "arm.l" | "arm.r" | "leg.l" | "leg.r" | "tail" | "wing.l" | "wing.r" — Procedural animation for part-composed (rig-less) models — characters kit-bashed from primitives/`ModelPart`s with no skeleton or clips. Pure, deterministic curve sampling: the same (time, speed, phase, flinch, death) input always yields the same pose, so replays and multi-client renders stay in lockstep and the hot path allocates nothing when an `out` pose is reused.
+- `createPartPose` (function): function createPartPose(): PartPose — A reusable all-zero pose.
+- `partMotionPhase` (function): function partMotionPhase(id: string): number — Deterministic per-character stride phase in [0, 1) from an id (e.g. the entity instance id), so a crowd of identical part-composed characters doesn't animate in lockstep.
+- `sampleBodyPose` (function): function sampleBodyPose(input: PartMotionInput, params?: PartMotionParams, out: PartPose = createPartPose()): PartPose — Sample the character-root pose: walk bob, idle breathe/sway, backward hit flinch, and the sideways death topple. A driver applies this to the group wrapping the whole composition (base model plus parts) — limbs ride along, as they would on a real torso.
+- `samplePartPose` (function): function samplePartPose(role: PartRole, input: PartMotionInput, params?: PartMotionParams, out: PartPose = createPartPose()): PartPose — Sample one part's pose offset by role: counter-phase leg/arm swing driven by speed, a head counter-sway, tail wag, and wing flap. Offsets are added onto the part's authored position/rotation. Motion fades to zero as `death` ramps so the topple reads as one piece.
+
 ## @jgengine/core/game/ping
 
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
