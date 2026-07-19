@@ -6,8 +6,9 @@
  */
 import { createRoot } from "react-dom/client";
 
-import { EDITOR_STANDALONE, GAME_ID, PREVIEW } from "./appEnv";
+import { EDITOR_STANDALONE, FIXTURE, GAME_ID, PREVIEW } from "./appEnv";
 import { DevApp } from "./DevApp";
+import { FixturesApp } from "./FixturesApp";
 import { GamePicker } from "./GamePicker";
 import { PreviewApp } from "./PreviewApp";
 import { StandaloneEditorApp } from "./StandaloneEditorApp";
@@ -16,6 +17,8 @@ import "./index.css";
 createRoot(document.getElementById("root")!).render(
   EDITOR_STANDALONE ? (
     <StandaloneEditorApp />
+  ) : FIXTURE !== null ? (
+    <FixturesApp name={FIXTURE} />
   ) : PREVIEW !== null && GAME_ID !== null ? (
     <PreviewApp gameId={GAME_ID} stateKey={PREVIEW} />
   ) : GAME_ID === null ? (

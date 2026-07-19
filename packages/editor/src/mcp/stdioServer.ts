@@ -101,9 +101,19 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         ...(typeof args.x === "number" ? { x: args.x } : {}),
         ...(typeof args.y === "number" ? { y: args.y } : {}),
         ...(typeof args.z === "number" ? { z: args.z } : {}),
+        ...(typeof args.distance === "number" ? { distance: args.distance } : {}),
+        ...(typeof args.pitch === "number" ? { pitch: args.pitch } : {}),
+        ...(typeof args.yaw === "number" ? { yaw: args.yaw } : {}),
+        ...(typeof args.height === "number" ? { height: args.height } : {}),
       };
     case "camera_frame":
-      return { method: "camera_frame" };
+      return {
+        method: "camera_frame",
+        ...(typeof args.distance === "number" ? { distance: args.distance } : {}),
+        ...(typeof args.pitch === "number" ? { pitch: args.pitch } : {}),
+        ...(typeof args.yaw === "number" ? { yaw: args.yaw } : {}),
+        ...(typeof args.height === "number" ? { height: args.height } : {}),
+      };
     case "scene_summary":
       return { method: "scene_summary" };
     case "export_document":

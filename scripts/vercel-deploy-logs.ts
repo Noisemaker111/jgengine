@@ -98,7 +98,26 @@ for (const dep of deployments) {
       `<details><summary>Build log (last 400 lines)</summary>\n\n\`\`\`\n${trimmed}\n\`\`\`\n\n</details>`,
   );
 
-  if (done.readyState === "ERROR") failed = true;
+  if (done.readyState === "ERROR") {
+    failed = true;
+    // Surface the failure where a human will read it — the job summary and a
+    // GitHub annotation — but do NOT fail this workflow run over it. This job
+    // exists to *print* the Vercel build log, not to gate. A genuinely broken
+    // deploy is already reported red twice by signals that own it: Vercel's own
+    // "Vercel" commit status on the SHA, and CI's `web-build` job. Turning this
+    // observability helper into a third red X just adds noise to main for the
+    // same failure. See apps/web/README.md ("Deploy signal, honestly").
+    console.log(`::warning title=Vercel deploy ERROR::${done.name ?? dep.name} — see the Vercel status + CI web-build for the blocking signal.`);
+  }
 }
 
-process.exit(failed ? 1 : 0);
+// Exit 0 even when a deployment errored: this workflow reports build logs, it
+// does not gate. The only non-zero exits are earlier — a missing VERCEL_TOKEN
+// or a Vercel API error — cases where the log fetcher itself cannot run and its
+// green check would be meaningless.
+if (failed) {
+  await summarize(
+    `\n> ⚠️ A Vercel deployment for \`${sha.slice(0, 7)}\` reported **ERROR** — the blocking signal lives on the "Vercel" commit status and CI \`web-build\`. This log job is non-gating; it stays green so it does not double-report.`,
+  );
+}
+process.exit(0);

@@ -21,6 +21,7 @@ import {
   roadPoints,
   ROADS,
   SAFEHOUSE_POS,
+  STASH_SPOTS,
   VCPD_POS,
 } from "./world/districts";
 
@@ -91,14 +92,27 @@ describe("vice-isle authored scene parity", () => {
     expect(districtAt(CICADA_STAGE_POS[0], CICADA_STAGE_POS[2])?.id).toBe("palm_heights");
   });
 
-  test("five bounty spots rotate across the isle", () => {
-    expect(BOUNTY_SPOTS).toHaveLength(5);
-    expect(new Set(BOUNTY_SPOTS.map((s) => s.id)).size).toBe(5);
+  test("ten bounty spots rotate across the isle", () => {
+    expect(BOUNTY_SPOTS).toHaveLength(10);
+    expect(new Set(BOUNTY_SPOTS.map((s) => s.id)).size).toBe(10);
     const districts = new Set(BOUNTY_SPOTS.map((s) => districtAt(s.position[0], s.position[2])?.id ?? "streets"));
     expect(districts.size).toBeGreaterThanOrEqual(4);
   });
 
-  test("aircraft plus the SUV and bus spawn from editor-authored vehicle markers", () => {
+  test("twelve hidden stashes are scattered across every district", () => {
+    expect(STASH_SPOTS).toHaveLength(12);
+    expect(new Set(STASH_SPOTS.map((s) => s.id)).size).toBe(12);
+    const districts = new Set(STASH_SPOTS.map((s) => districtAt(s.position[0], s.position[2])?.id ?? "streets"));
+    for (const id of ["ocean_drive", "downtown", "port_carmine", "palm_heights"]) {
+      expect(districts.has(id)).toBe(true);
+    }
+    // No stash sits on the asphalt so pickups stay reachable on foot.
+    for (const stash of STASH_SPOTS) {
+      expect(streets.some((street) => isOnRoad(street.path, street.width, stash.position[0], stash.position[2]))).toBe(false);
+    }
+  });
+
+  test("aircraft, story cars, and a scattered street fleet spawn from editor-authored vehicle markers", () => {
     expect(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.catalogId)).toEqual([
       "air_helicopter",
       "air_trainer",
@@ -107,8 +121,16 @@ describe("vice-isle authored scene parity", () => {
       "air_vtol",
       "car_suv",
       "car_bus",
+      "car_muscle",
+      "car_compact",
+      "car_suv",
+      "car_muscle",
+      "car_compact",
+      "car_sport",
+      "car_compact",
+      "car_muscle",
     ]);
-    expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(7);
+    expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(15);
   });
 });
 

@@ -19,7 +19,7 @@ import { resolveWorldPhysics } from "../world/place";
 
 /** Tunes offline whole-world save (`defineGameDefinition({ persist })`). Offline games already autosave to `localStorage` by default — pass this only to tune it (or `persist: false` to opt out). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
 export interface PersistConfig {
-  /** `"autosave"` (default) writes on a debounce after any change; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
+  /** `"autosave"` (default) writes on a trailing timer while the world changes — at most once per `autosaveMs`, so a never-idle world (AI, physics, day/night) still persists; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
   mode?: RuntimeSaveMode;
   /** `"local"` (default) persists to `localStorage`; `"memory"` keeps saves in-session only (tests, "no persistence" mode). */
   storage?: "local" | "memory";

@@ -10,10 +10,7 @@ const MODELS_ROOT = join(import.meta.dir, "..", "apps", "dev", "public", "models
  * repo. Entries here render untextured (white) in every consuming game — the
  * list may only shrink. Tracked in #1005.
  */
-const KNOWN_UNRESOLVED_PACKS = new Set([
-  // ~100MB of 2k texture PNGs; decide downscale-or-commit before shipping them.
-  "quaternius-stylized-nature",
-]);
+const KNOWN_UNRESOLVED_PACKS = new Set<string>([]);
 
 describe("committed model packs resolve their textures", () => {
   const packs = readdirSync(MODELS_ROOT, { withFileTypes: true })

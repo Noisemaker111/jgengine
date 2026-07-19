@@ -10,6 +10,10 @@ shots/
 !apps/dev/public/models/kaykit-city-builder/
 !apps/dev/public/models/kaykit-dungeon/
 !apps/dev/public/models/kaykit-furniture/
+!apps/dev/public/models/kaykit-skeletons/
+!apps/dev/public/models/kaykit-space-base/
+!apps/dev/public/models/quaternius-medieval-village/
+!apps/dev/public/models/quaternius-modular-scifi/
 !apps/dev/public/models/quaternius-stylized-nature/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo

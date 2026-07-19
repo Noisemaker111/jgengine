@@ -28,6 +28,8 @@ Skills ship inside this package under `skills/` and are installed into the proje
 | --- | --- |
 | `create "<Game Name>"` | Scaffold playable base + install skills (`--from-scene <folder>`, `--standalone`/`--in-repo`, `--no-install`, `--no-skills`, `--pm bun\|npm\|pnpm`) |
 | `editor [dir]` | Open the standalone 3D scene editor on a folder; Ctrl+S writes `editor.scene.json` back |
+| `shoot [...]` | Screenshot the current game headless (WebGL-safe) to `shots/shot.png` (`--device`, `--out`, `--url`, `--settle`, `--timeout`, `--help`); needs Chrome/Chromium |
+| `drive [...]` | Play/test the current game headless — `--click`/`--key`/`--wait`/`--shot` steps, `--rpc`, `--playtest --strict`; `--help` for all flags |
 | `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url` |
 | `skills -p \| -g` | Re-install agent skills (project / global) |
 | `doctor [dir]` | Diagnose version skew, missing peers, unstyled HUD, shape drift |

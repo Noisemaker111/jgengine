@@ -50,3 +50,18 @@ CLI alternative: `bunx vercel --cwd apps/web` (preview) / `bunx vercel --prod --
 If a cancel-storm leaves Production on an old SHA, force a new production deploy from Actions: **Deploy Web** workflow (`workflow_dispatch`) runs `scripts/vercel-force-prod.ts` with `VERCEL_TOKEN`. Do not redeploy an old Ready row in the Vercel UI — that rebuilds the stale snapshot.
 
 > `apps/web` must be committed and pushed to `main` before Vercel can import it. If the domain ever changes, update `SITE_URL` in [`src/lib/site.ts`](src/lib/site.ts) — it drives the social meta tags.
+
+### Deploy signal, honestly
+
+The **`Vercel` commit status** ("Deployment has completed" / "Deployment has failed") that shows on every PR and commit is posted by Vercel's **GitHub integration**, configured in the Vercel dashboard — not by anything in this repo. It is **not a required check** and does **not** gate merge or auto-merge; CI is the gate. So a red "Deployment has failed" on an otherwise-green PR does not block landing, and it is *not* evidence the diff is bad by itself.
+
+When that status is red, it is one of two things — never guess, reproduce:
+
+- **A genuine `apps/web` build break.** Reproduce it locally with `bun --cwd=apps/web run build` (the same build Vercel runs). If that fails, the diff broke the site build — fix it. This is real signal and has genuinely gone red across a run of commits when a shared import broke (e.g. a `@jgengine/core` subpath that `playground.tsx` imported).
+- **Vercel-infra flakiness** (install/runner/transient) with a build that passes locally and in CI. This is environmental, independent of the diff, and safe to ignore for merge.
+
+The **authoritative in-repo build signal** for the site is CI's **`web-build`** job (`bun run --cwd apps/web build`, runs on every push to `main`) plus the local build above — those, not the Vercel commit status, are what a green additive PR should be judged against.
+
+The [**Vercel Deploy Logs**](../../.github/workflows/vercel-logs.yml) Actions workflow is **observability only**: it prints each main deploy's Vercel build log into its job summary. It stays green even when a deploy reports ERROR (that failure is already reported by the `Vercel` status and `web-build` — no need for a third red X); it only goes red if it cannot run at all (missing `VERCEL_TOKEN` or a Vercel API error).
+
+**Dashboard levers (owner-only, not reachable from the repo).** If the `Vercel` PR status is ever pure noise you want quieter, that toggle lives in the Vercel dashboard: **Project → Settings → Git → "Comments" / "Commit status"** (or set `github.silent` in [`vercel.json`](vercel.json)). Leaving it on is fine — it is non-blocking and, when reproducible, real.

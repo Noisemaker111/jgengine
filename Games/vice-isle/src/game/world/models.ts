@@ -159,6 +159,53 @@ const objectPlan: Record<string, ModelPick> = {
     fallbackModel: `${CITY}/dumpster`,
     style: { targetHeight: 1 },
   },
+  obj_palm: {
+    // No dedicated palm in the CC0 packs — a tall toon tree reads as one against the coast. Flat
+    // green keeps it readable while Quaternius textures stay uncommitted (#1005).
+    model: `${NATURE}/CommonTree_2`,
+    fallbackModel: `${NATURE}/CommonTree_1`,
+    style: { targetHeight: 6.4, material: { color: "#4f9a54" } },
+  },
+  obj_bench: {
+    model: `${CITY}/bench`,
+    fallbackModel: `${FURN}/chair_A`,
+    style: { targetHeight: 0.9 },
+  },
+  obj_hydrant: {
+    model: `${CITY}/firehydrant`,
+    fallbackModel: `${CITY}/trafficlight_C`,
+    style: { targetHeight: 1, material: { color: "#d64545" } },
+  },
+  obj_trashcan: {
+    model: `${CITY}/trash_A`,
+    fallbackModel: `${CITY}/trash_B`,
+    style: { targetHeight: 1.1 },
+  },
+  obj_dumpster: {
+    model: `${CITY}/dumpster`,
+    fallbackModel: `${CITY}/box_B`,
+    style: { targetHeight: 1.3, material: { color: "#3f6d4a" } },
+  },
+  obj_neon: {
+    model: `${DUNGEON}/banner_red`,
+    fallbackModel: `${CITY}/trafficlight_B`,
+    style: { targetHeight: 3.2, material: { color: "#f2599b" } },
+  },
+  obj_hedge: {
+    model: `${NATURE}/Bush_Common`,
+    fallbackModel: `${CITY}/bush`,
+    style: { targetHeight: 1.3, material: { color: "#4e8a4a" } },
+  },
+  obj_cargo: {
+    model: `${SPACE}/containers_B`,
+    fallbackModel: `${CITY}/box_B`,
+    style: { targetHeight: 2.4, material: { color: "#c08a3c" } },
+  },
+  obj_cactus: {
+    model: `${FURN}/cactus_medium_A`,
+    fallbackModel: `${NATURE}/CommonTree_1`,
+    style: { targetHeight: 1.8, material: { color: "#5f8a4f" } },
+  },
 };
 
 for (const b of BUILDING_SPECS) {

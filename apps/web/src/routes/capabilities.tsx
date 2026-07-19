@@ -114,8 +114,9 @@ const death = createDeathSystem({
 
 const backend = createWsBackend({
   url: "wss://your-host.example/game",
-  gameId: "meadow-run",
+  userId: player.id,
 });
+const { serverId } = await backend.createSession({ gameId: "meadow-run" });
 // Reconnect, snapshot sync, and save cadence are handled for you.`,
   },
   {
@@ -281,7 +282,7 @@ function Capabilities() {
               key={cap.title}
               className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12"
             >
-              <div className={i % 2 === 1 ? "lg:order-2" : ""}>
+              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
                 <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/90">
                   <span className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-sm">
                     {cap.glyph}
@@ -293,7 +294,7 @@ function Capabilities() {
                 </h2>
                 <p className="mt-3 text-pretty leading-relaxed text-slate-400">{cap.blurb}</p>
               </div>
-              <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-1" : ""}`}>
                 <CodeBlock code={cap.code} filename={cap.filename} />
               </div>
             </section>
