@@ -25,6 +25,7 @@ import {
   CICADA_STAGE_POS,
   DOCK_FIGHT_CENTER,
   GARAGE_POS,
+  OCEAN_LOOP_ID,
   KINGPIN_POS,
   MARCO_POS,
   PLAYER_SPAWN,
@@ -119,7 +120,7 @@ function tickMissions(ctx: GameContext): void {
   const race = quests.find((q) => q.questId === "m5_ocean_loop" && q.status === "active");
   if (race !== undefined) {
     const snapshot = raceStore.peek(ctx);
-    if (snapshot !== undefined && snapshot.finished && snapshot.won) {
+    if (snapshot !== undefined && snapshot.finished && snapshot.won && snapshot.routeId === OCEAN_LOOP_ID) {
       ctx.game.quest!.progress(ctx.player.userId, "m5_ocean_loop", "win_race", 1);
     }
   }
@@ -238,22 +239,23 @@ function tickRaceEconomy(ctx: GameContext): void {
     if (snapshot.won) {
       ctx.game.economy.grant(ctx.player.userId, "cash", RACE_WIN_PAYOUT);
       grantCred(ctx, RACE_WIN_CRED);
-      const best = bestRaceStore.read(ctx);
-      if (best === undefined || snapshot.timeSec < best) {
+      // The persisted best time (and its bonus) stays an Ocean Loop record — other circuits pay the flat purse.
+      const best = snapshot.routeId === OCEAN_LOOP_ID ? bestRaceStore.read(ctx) : undefined;
+      if (snapshot.routeId === OCEAN_LOOP_ID && (best === undefined || snapshot.timeSec < best)) {
         bestRaceStore.write(ctx, snapshot.timeSec);
         if (best !== undefined) {
           ctx.game.economy.grant(ctx.player.userId, "cash", RACE_BEST_BONUS);
           ctx.game.feed.push("vice.log", {
-            text: `New Ocean Loop record ${snapshot.timeSec.toFixed(1)}s — $${RACE_WIN_PAYOUT + RACE_BEST_BONUS}.`,
+            text: `New ${snapshot.label} record ${snapshot.timeSec.toFixed(1)}s — $${RACE_WIN_PAYOUT + RACE_BEST_BONUS}.`,
           });
         } else {
-          ctx.game.feed.push("vice.log", { text: `Won the Ocean Loop — $${RACE_WIN_PAYOUT}.` });
+          ctx.game.feed.push("vice.log", { text: `Won ${snapshot.label} — $${RACE_WIN_PAYOUT}.` });
         }
       } else {
-        ctx.game.feed.push("vice.log", { text: `Won the Ocean Loop — $${RACE_WIN_PAYOUT}.` });
+        ctx.game.feed.push("vice.log", { text: `Won ${snapshot.label} — $${RACE_WIN_PAYOUT}.` });
       }
     } else {
-      ctx.game.feed.push("vice.log", { text: "Lost the Ocean Loop. The garage runs it again anytime." });
+      ctx.game.feed.push("vice.log", { text: `Lost ${snapshot.label}. The start line runs it again anytime.` });
     }
   }
   if (ctx.time.now() >= raceClearAt) raceStore.clear(ctx);

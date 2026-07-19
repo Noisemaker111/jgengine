@@ -69,11 +69,9 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
 
-<<<<<<< HEAD
 2026-07-18T22:43:40.443Z — claude-fable-5 — Claude
 
 world redesign PR: main is broken — packages/editor/src/EditorChrome.tsx had a duplicate ')}' (merge #1176) that fails 'bun run build'; agent:bootstrap earlier reported success anyway, so the breakage only surfaced mid-task at gen:skill-api
-=======
 2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
 
 recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
@@ -157,7 +155,26 @@ retrying the full gate after the isolated editor build passed -> 6337 tests pass
 2026-07-18T22:23:17.244Z — claude — Claude
 
 ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
->>>>>>> origin/main
+
+2026-07-18T23:02:42.440Z — fable — Claude
+
+drive --shot <value>: passing an absolute path breaks (script builds shots/<game>-<path>.png → ENOENT); only bare names work, flag docs don't say so
+
+2026-07-18T23:02:42.473Z — fable — Claude
+
+editor CLI: export_document returns result.json but import_document with a wrong param key fails with 'JSON Parse error: Unexpected identifier undefined' instead of naming the expected 'json' param
+
+2026-07-18T23:02:42.508Z — fable — Claude
+
+editor CLI has no add_path verb — authoring a new route path headlessly requires a full export_document/import_document roundtrip
+
+2026-07-18T23:02:42.541Z — fable — Claude
+
+shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
+
+2026-07-18T23:09:33.687Z — fable — Claude
+
+vice-isle drive rpc editor_summon: editor host mounts then React 'Maximum update depth exceeded' loop in editor shell ContentBrowser/AssetThumbnail — page goes black, editor verbs unreachable (wanted an editor-view screenshot of authored paths)
 
 2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
 

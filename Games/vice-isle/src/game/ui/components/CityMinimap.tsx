@@ -11,7 +11,7 @@ import {
   GARAGE_POS,
   KINGPIN_POS,
   MARCO_POS,
-  RACE_CHECKPOINTS,
+  RACE_ROUTES,
   ROADS,
   SAFEHOUSE_POS,
   districtAt,
@@ -30,6 +30,7 @@ interface MapSnapshot {
   activeQuest: string | null;
   stars: number;
   raceCheckpoint: number | null;
+  raceRouteId: string | null;
   bountySpotId: string | null;
   safehouseOwned: boolean;
 }
@@ -53,6 +54,7 @@ function readMap(ctx: GameContext): MapSnapshot | null {
     activeQuest: active?.questId ?? null,
     stars: wanted?.stars ?? 0,
     raceCheckpoint: race !== undefined && race.active ? race.checkpoint : null,
+    raceRouteId: race !== undefined && race.active ? race.routeId : null,
     bountySpotId: bounty?.targetId !== null && bounty?.targetId !== undefined ? (bounty.spotId ?? null) : null,
     safehouseOwned: safehouseStore.read(ctx) === true,
   };
@@ -78,9 +80,10 @@ export function CityMinimap() {
     size: SIZE,
     rotate: headingToBearing(snapshot.heading),
   };
+  const raceRoute = snapshot.raceRouteId !== null ? RACE_ROUTES.find((r) => r.id === snapshot.raceRouteId) : undefined;
   const target =
-    snapshot.raceCheckpoint !== null
-      ? RACE_CHECKPOINTS[Math.min(snapshot.raceCheckpoint, RACE_CHECKPOINTS.length - 1)]
+    snapshot.raceCheckpoint !== null && raceRoute !== undefined
+      ? raceRoute.checkpoints[Math.min(snapshot.raceCheckpoint, raceRoute.checkpoints.length - 1)]
       : snapshot.activeQuest !== null
         ? QUEST_TARGETS[snapshot.activeQuest]
         : undefined;
