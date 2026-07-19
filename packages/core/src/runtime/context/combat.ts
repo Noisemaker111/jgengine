@@ -11,6 +11,7 @@ import { createVfxInstanceStore, type VfxInstanceStore } from "../../game/vfxIns
 import type { LootRegistry } from "../../game/lootTable";
 import type { EntityColliderSet } from "../../scene/colliders";
 import type { EntityStore } from "../../scene/entityStore";
+import { createEntityStatsApi } from "../../scene/entityStats";
 import type { ObjectStore } from "../../scene/objectStore";
 import type { SceneRaycastApi, SceneRaycastInput } from "../../scene/sceneRaycast";
 import type { WeaponStats } from "../../item/weapon";
@@ -108,7 +109,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
   const effects = notifyAfter(
     createEffectSystem({
       resolveReceive: (instanceId) => catalogEntry(instanceId)?.receive,
-      resolveStats: (instanceId) => statsByInstance.get(instanceId),
+      statPools: createEntityStatsApi((instanceId) => statsByInstance.get(instanceId)),
       getStat: weapon.getStat,
       spatial: combatSpatial,
       onLethal(instanceId, lethalCtx) {

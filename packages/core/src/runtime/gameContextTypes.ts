@@ -8,6 +8,7 @@ import type {
 } from "../combat/effects";
 import type { ProjectileSystem } from "../combat/projectiles";
 import type { HitReaction, HitReactionConfig, ImpactPresetName } from "../combat/hitReaction";
+import type { VfxPresetName } from "../combat/vfxPresets";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CommandDefinition, CommandResult } from "../commands/commandRegistry";
 import type { ChargeOptions as WalletChargeOptions } from "../economy/wallet";
@@ -185,10 +186,22 @@ export interface FloatTextInput {
   scale?: number;
 }
 
-/** Request a transient spell/ability VFX burst; `from`/`to` accept an instance id or a world point, `color` is a `0xRRGGBB` tint, and `durationMs` defaults per `kind`. */
+/**
+ * Request a transient spell/ability VFX burst. The easy path is a named `preset` —
+ * `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color
+ * or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"`
+ * and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id
+ * (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`,
+ * `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color`
+ * yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
+ */
 export interface VfxInput {
-  kind: VfxKind;
-  color: number;
+  /** A named visual flavor from {@link vfxPresets}. Fills in `kind`/`color`/defaults; explicit fields below still win. */
+  preset?: VfxPresetName | (string & {});
+  /** Visual archetype. Optional when `preset` is given; required otherwise. */
+  kind?: VfxKind;
+  /** `0xRRGGBB` tint. Optional when `preset` is given; required otherwise. */
+  color?: number;
   from?: string | readonly [number, number, number];
   to?: string | readonly [number, number, number];
   radius?: number;

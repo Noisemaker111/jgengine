@@ -10,6 +10,7 @@ import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { ModelDims } from "../scene/assetCatalog";
+import type { PartMotionParams, PartRole } from "./partAnimation";
 import type { CollisionMeshData } from "../scene/collisionMesh";
 import type { SkyEnvironmentConfig } from "../world/features";
 import type { VisibilityConfig } from "../visibility/config";
@@ -194,6 +195,14 @@ export interface ModelPart {
   rotation?: [number, number, number];
   /** Uniform scale of the part under the parent's transform. Default 1. */
   scale?: number;
+  /**
+   * Semantic motion role for a rig-less part-composed character (see `game/partAnimation`).
+   * Tagging any part enables the shell's procedural driver on an entity model: legs and arms swing
+   * counter-phase with movement speed, the head counter-sways, tails wag, wings flap, and the whole
+   * composition gains walk bob, idle breathe, hit flinch, and a death topple. Untagged parts stay
+   * static kit pieces.
+   */
+  role?: PartRole;
 }
 
 export interface ModelConfig {
@@ -210,12 +219,21 @@ export interface ModelConfig {
   collisionMesh?: CollisionMeshData;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
-  /** Plays a GLTF animation clip on the model when the source has any (skinned or not); omit to render the rig's bind pose. */
-  animation?: ModelAnimationConfig;
+  /**
+   * Plays a GLTF animation clip on the model when the source has any (skinned or not).
+   * A model resolved from a catalog id whose index carries `clips` animates automatically —
+   * semantic clip roles build the idle/walk/run states and hit/death/attack one-shots (see
+   * `defaultAnimationForClips`). `"auto"` forces that derivation, `"none"` opts out (bind pose),
+   * and an explicit config always wins. Omit on an inline (non-catalog) config to render the
+   * rig's bind pose.
+   */
+  animation?: ModelAnimationConfig | "auto" | "none";
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
-  /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. */
+  /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
   parts?: readonly ModelPart[];
+  /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */
+  partMotion?: PartMotionParams;
 }
 
 export interface ObjectStyle {

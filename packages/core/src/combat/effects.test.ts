@@ -7,6 +7,7 @@ import {
 } from "@jgengine/core/combat/effects";
 import { seedStatValues, type StatCatalog, type StatValueMap } from "@jgengine/core/scene/entityStats";
 import { distanceBetween } from "@jgengine/core/scene/spatial";
+import { createStatPool, type StatPool, type StatPoolAccess } from "@jgengine/core/stats/statPool";
 
 interface WorldEntity {
   stats: StatCatalog;
@@ -43,6 +44,62 @@ function createWorld(
 }
 
 describe("effect system", () => {
+  test("portable stat access mutates caller-owned state in declared pool order", () => {
+    type OwnerId = "enemy";
+    type StatId = "shield" | "health";
+    let callerState: Record<OwnerId, Record<StatId, StatPool>> = {
+      enemy: {
+        shield: createStatPool({ current: 15, max: 15 }),
+        health: createStatPool({ current: 80, max: 80 }),
+      },
+    };
+    const writes: string[] = [];
+    const lethalCalls: { instanceId: string; ctx: LethalContext }[] = [];
+    const statPools: StatPoolAccess<OwnerId, StatId> = {
+      get: (ownerId, statId) => callerState[ownerId]?.[statId] ?? null,
+      set(ownerId, statId, next) {
+        writes.push(`${ownerId}:${statId}`);
+        callerState = {
+          ...callerState,
+          [ownerId]: { ...callerState[ownerId], [statId]: next },
+        };
+      },
+    };
+    const system = createEffectSystem({
+      resolveReceive: () => ({ damage: { order: ["shield", "health"] } }),
+      statPools,
+      getStat: () => null,
+      spatial: {
+        inRadius: () => [],
+        hasLineOfSight: () => true,
+        positionOf: () => undefined,
+      },
+      onLethal: (instanceId, ctx) => lethalCalls.push({ instanceId, ctx }),
+    });
+
+    const result = system.applyEffect({ from: "player", to: "enemy", effect: "damage", via: { amount: 25 } });
+
+    expect(result).toEqual([{
+      instanceId: "enemy",
+      effect: "damage",
+      applied: [
+        { statId: "shield", delta: -15 },
+        { statId: "health", delta: -10 },
+      ],
+      lethal: false,
+    }]);
+    expect(writes).toEqual(["enemy:shield", "enemy:health"]);
+    expect(JSON.parse(JSON.stringify(callerState))).toEqual(callerState);
+    expect(callerState.enemy.health.current).toBe(70);
+
+    const lethal = system.applyEffect({ from: "player", to: "enemy", effect: "damage", via: { amount: 100 } });
+    expect(lethal[0]?.lethal).toBe(true);
+    expect(lethalCalls).toEqual([{
+      instanceId: "enemy",
+      ctx: { from: "player", effect: "damage", via: { amount: 100 } },
+    }]);
+  });
+
   test("canReceive rejects unknown effects, unknown instances, and depleted pools", () => {
     const { system } = createWorld({
       enemy: { stats: { health: { max: 10 } }, receive: { damage: { order: ["health"] } } },

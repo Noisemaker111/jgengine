@@ -30,7 +30,7 @@ export function DevApp({ gameId }: { gameId: string }) {
   const [scenario, setScenario] = useState<UiPreviewScenario | undefined>(undefined);
   const [scenarioPending, setScenarioPending] = useState(STAGE && MODE !== "ui" && MODE !== "editor");
   const [loadError, setLoadError] = useState<string | null>(null);
-  const editorSummoned = useEditorSummon(MODE);
+  const { editorOpen, exitEditor } = useEditorSummon(MODE);
   const runtimeError = useRuntimeError();
   useEffect(() => {
     if (MODE === "play" && playable === null && captureArmed()) {
@@ -105,7 +105,7 @@ export function DevApp({ gameId }: { gameId: string }) {
   if (playable === null) return <LoadingPanel label="Loading game…" />;
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
-  if (MODE === "editor" || editorSummoned) return <EditorModeApp gameId={gameId} playable={playable} />;
+  if (editorOpen) return <EditorModeApp gameId={gameId} playable={playable} onExitEditor={exitEditor} />;
   if (scenarioPending) return <LoadingPanel label="Staging scenario…" />;
   const stageScenario =
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;

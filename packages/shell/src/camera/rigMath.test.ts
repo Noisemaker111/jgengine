@@ -23,6 +23,7 @@ import {
   resolveSideScroll,
   resolveSideScrollPose,
   rtsPanKeysConflict,
+  rtsPanWorldDir,
   seatPose,
   shakeOffset,
   shoulderPose,
@@ -65,6 +66,33 @@ describe("topDownPose", () => {
       55,
     );
     expect(Math.abs(shallow.position.z)).toBeGreaterThan(Math.abs(steep.position.z));
+  });
+});
+
+describe("rtsPanWorldDir", () => {
+  test("pan right moves toward screen-right of the topDownPose camera", () => {
+    // yaw 0 poses the camera on the -Z side looking toward +Z; three.js lookAt
+    // then makes screen-right world -X, so panX=+1 must move the center to -X.
+    const dir = rtsPanWorldDir(1, 0, 0);
+    expect(near(dir.x, -1)).toBe(true);
+    expect(near(dir.z, 0)).toBe(true);
+  });
+
+  test("pan forward moves along the camera's ground-plane forward", () => {
+    const dir = rtsPanWorldDir(0, 1, 0);
+    expect(near(dir.x, 0)).toBe(true);
+    expect(near(dir.z, 1)).toBe(true);
+  });
+
+  test("respects yaw and normalizes diagonals", () => {
+    const yaw = Math.PI / 4;
+    const right = rtsPanWorldDir(1, 0, yaw);
+    expect(near(right.x, -Math.cos(yaw))).toBe(true);
+    expect(near(right.z, Math.sin(yaw))).toBe(true);
+    const diag = rtsPanWorldDir(1, 1, 0.3);
+    expect(near(Math.hypot(diag.x, diag.z), 1)).toBe(true);
+    const idle = rtsPanWorldDir(0, 0, 0.3);
+    expect(idle).toEqual({ x: 0, y: 0, z: 0 });
   });
 });
 

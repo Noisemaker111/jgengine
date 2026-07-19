@@ -71,6 +71,7 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
       url,
       ...(entry.dims === undefined ? {} : { dims: entry.dims }),
       ...(entry.collisionMesh === undefined ? {} : { collisionMesh: entry.collisionMesh }),
+      ...(entry.clips === undefined ? {} : { clips: entry.clips }),
     });
   }
 
@@ -92,6 +93,7 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
         url: ref.url,
         ...(ref.dims === undefined ? {} : { dims: ref.dims }),
         ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
+        ...(ref.clips === undefined ? {} : { clips: ref.clips }),
       });
     }
   }

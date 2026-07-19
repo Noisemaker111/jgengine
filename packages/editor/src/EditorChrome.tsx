@@ -157,6 +157,7 @@ export function EditorChrome({
   networkSnapshot,
   importAsset = importAssetToHost,
   onRegisterAsset,
+  onExitEditor,
 }: {
   gameId: string;
   session: EditorSession;
@@ -166,6 +167,8 @@ export function EditorChrome({
   /** The document as loaded — drives the header unsaved indicator by reference compare. */
   baselineDocument?: EditorDocument;
   save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  /** Closes the editor and returns to the game; set only when summoned over a game. Shows "Exit to game". */
+  onExitEditor?: () => void;
   /**
    * Network workspace inspection payload (adapter config + optional host presence).
    * Built by `EditorApp` from the game definition; live presence rows only when the host injects them.
@@ -257,6 +260,8 @@ export function EditorChrome({
   }, [state.document]);
 
   useF2Chord("KeyE", () => api.setMode("play"));
+  // F2+Q leaves the editor entirely (back to the game) — only meaningful when summoned over one.
+  useF2Chord("KeyQ", useCallback(() => onExitEditor?.(), [onExitEditor]));
 
   useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
   useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
@@ -758,10 +763,14 @@ export function EditorChrome({
 
   const railActive: EditorWorkspace = uiState.tool === "terrain" ? "terrain" : layoutState.workspace;
 
+  // Only advertise the exit chord when there is a game to return to.
+  const shortcuts = onExitEditor !== undefined ? [...SHORTCUTS, { keys: "F2+Q", action: "Exit editor to game" }] : SHORTCUTS;
+
   return (
     <div className="pointer-events-none absolute inset-0 z-50 flex flex-col text-xs text-neutral-100">
       <TopAppBar
         gameId={gameId}
+        onExitToGame={onExitEditor}
         dirty={dirty}
         saveState={docSave.saveState}
         lastSavedAt={docSave.lastSavedAt}
@@ -1120,7 +1129,7 @@ export function EditorChrome({
               <IconButton icon="close" label="Close shortcuts" tone="ghost" className="ml-auto" onClick={() => setHelpOpen(false)} />
             </div>
             <div className="grid max-h-[60vh] grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 overflow-auto">
-              {SHORTCUTS.map((entry) => (
+              {shortcuts.map((entry) => (
                 <div key={entry.keys} className="contents">
                   <span className="justify-self-start">
                     <Kbd>{entry.keys}</Kbd>

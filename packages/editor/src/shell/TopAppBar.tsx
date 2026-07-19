@@ -74,6 +74,7 @@ function SaveStatus({
  */
 export function TopAppBar({
   gameId,
+  onExitToGame,
   dirty,
   saveState,
   lastSavedAt = null,
@@ -95,6 +96,8 @@ export function TopAppBar({
   onResetLayout,
 }: {
   gameId: string;
+  /** When set (editor summoned over a game), renders an "Exit to game" control that closes the editor. */
+  onExitToGame?: () => void;
   dirty: boolean;
   saveState: TopBarSaveState;
   /** Epoch ms of the last successful save this session; omit/null when never saved. */
@@ -143,6 +146,17 @@ export function TopAppBar({
       className={`pointer-events-auto relative z-[60] flex h-12 shrink-0 items-center gap-2 border-b ${BORDER} bg-[#111318] px-2.5`}
     >
       <div className="flex min-w-0 items-center gap-2.5">
+        {onExitToGame !== undefined ? (
+          <button
+            type="button"
+            onClick={onExitToGame}
+            title="Close the editor and return to the game (F2+Q)"
+            className={`flex h-8 shrink-0 items-center gap-1.5 rounded-[6px] border border-white/[0.08] bg-black/30 pl-2 pr-2.5 text-[12px] text-neutral-300 transition-colors hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-neutral-100 ${FOCUS_RING}`}
+          >
+            <Icon name="chevronRight" size={14} className="rotate-180" />
+            Exit to game
+          </button>
+        ) : null}
         <div
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-gradient-to-br from-cyan-500/30 to-indigo-500/25 text-[11px] font-bold tracking-wide text-cyan-200 ring-1 ring-inset ring-cyan-400/30"
           aria-hidden="true"

@@ -73,6 +73,28 @@ describe("handroll drivable-vehicle adoption", () => {
     expect(handroll.wanted().peakStars).toBe(2);
   });
 
+  test("a cop in range and line of sight shoots on its wall-clock cadence via the pursuit primitive", () => {
+    const ctx = boot();
+    const handroll = createHandroll();
+    // Deterministic line of sight so the shot gate depends only on range + cooldown.
+    ctx.scene.entity.hasLineOfSight = () => true;
+    ctx.scene.entity.setPose(HERO, { position: [0, 0, 0] });
+    ctx.scene.entity.spawn("cop_patrol", { id: "cop_x", position: [1.5, 0, 0], role: "npc" });
+
+    // Count only the damage this cop deals to the player.
+    const realEffect = ctx.scene.entity.effect.bind(ctx.scene.entity);
+    let shots = 0;
+    ctx.scene.entity.effect = (opts: Parameters<typeof realEffect>[0]) => {
+      if (opts.from === "cop_x" && opts.to === HERO && opts.effect === "damage") shots += 1;
+      return realEffect(opts);
+    };
+
+    handroll.addHeat(ctx, 150); // one star, so cops engage
+    // cop_patrol fires every 1.2s; over 2.5s expect shots at t≈0, 1.2, 2.4.
+    for (let i = 0; i < 150; i += 1) handroll.tick(ctx, STEP);
+    expect(shots).toBe(3);
+  });
+
   test("clearWanted resets heat and stars", () => {
     const ctx = boot();
     const handroll = createHandroll();
