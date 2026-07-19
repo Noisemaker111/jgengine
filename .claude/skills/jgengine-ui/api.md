@@ -372,6 +372,7 @@
 - `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
 - `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
+- `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `DragLayer` (interface): interface DragLayer<T> — ⚠ undocumented
 - `DragPayload` (interface): interface DragPayload<T> — ⚠ undocumented
@@ -558,10 +559,12 @@
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
+- `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
+- `useDomEvent` (function): function useDomEvent<E>(resolveTarget: () => DomEventTarget | null, type: string, handler: (event: E) => void, options?: { capture?: boolean; passive?: boolean }): void — Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The handler is kept in a ref, so a fresh closure per render never re-binds the listener. Re-binds only when `type` or `options.capture`/`options.passive` change.
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
@@ -602,6 +605,7 @@
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
 - `usePresence` (function): function usePresence(userId: string): PresenceInfo — ⚠ undocumented
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
+- `useRafLoop` (function): function useRafLoop(onFrame: (deltaSeconds: number) => void, active = true): void — Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame. The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for DOM-side animation outside the renderer.
 - `useRegisterLayoutRegion` (function): function useRegisterLayoutRegion(spec: LayoutRegionSpec, ref: RefObject<HTMLElement | null>, enabled = true): void — Register the element behind `ref` as a layout region and keep its measured rectangle live (ResizeObserver + viewport changes). No-op outside a `GameViewportProvider`, so a component using it still works in isolation.
 - `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
 - `useRoster` (function): function useRoster(userId?: string): readonly RosterEntry[] — ⚠ undocumented
@@ -617,6 +621,7 @@
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
@@ -776,6 +781,7 @@
 ## @jgengine/react/hooks
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `InventoryGridBinding` (interface): interface InventoryGridBinding — Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so React re-renders.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
@@ -787,9 +793,11 @@
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
+- `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
+- `useDomEvent` (function): function useDomEvent<E>(resolveTarget: () => DomEventTarget | null, type: string, handler: (event: E) => void, options?: { capture?: boolean; passive?: boolean }): void — Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The handler is kept in a ref, so a fresh closure per render never re-binds the listener. Re-binds only when `type` or `options.capture`/`options.passive` change.
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
 - `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
@@ -813,12 +821,14 @@
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
 - `usePresence` (function): function usePresence(userId: string): PresenceInfo — ⚠ undocumented
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
+- `useRafLoop` (function): function useRafLoop(onFrame: (deltaSeconds: number) => void, active = true): void — Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame. The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for DOM-side animation outside the renderer.
 - `useRoster` (function): function useRoster(userId?: string): readonly RosterEntry[] — ⚠ undocumented
 - `useSceneEntities` (function): function useSceneEntities(): readonly SceneEntity[] — ⚠ undocumented
 - `useSceneEntityIds` (function): function useSceneEntityIds(): readonly string[] — Membership-only entity id list: the returned array keeps a stable identity across per-frame pose writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
 - `useSceneObjectIds` (function): function useSceneObjectIds(): readonly string[] — Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove.
 - `useSceneObjects` (function): function useSceneObjects(): readonly SceneObject[] — ⚠ undocumented
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
@@ -1561,6 +1571,12 @@
 
 - `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
 - `ModelResolveContext` (interface): interface ModelResolveContext — ⚠ undocumented
+
+## @jgengine/shell/render/useDisposable
+
+- `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
+- `disposeAll` (function): function disposeAll(value: Disposable | readonly Disposable[]): void — Dispose a single resource or every resource in a tuple.
+- `useDisposable` (function): function useDisposable<T extends Disposable | readonly Disposable[]>(create: () => T, deps: DependencyList): T — Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Owns the useMemo + dispose-effect pair that otherwise repeats at every GPU-resource call site. The factory must return objects exposing `dispose()` (geometries, materials, textures, render targets).
 
 ## @jgengine/shell/render/useEntityRenderCues
 

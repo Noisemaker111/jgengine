@@ -1,23 +1,13 @@
 import { KeyHint } from "@jgengine/react";
 import { IconTreatment, schoolForAction } from "@jgengine/react/iconTreatment";
-import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useEntityStat, useGame, useGameStore, usePlayer, useTicker } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
 import { useGameContext } from "@jgengine/react/provider";
-import { useEffect, useState } from "react";
 
 import { classById } from "../../classes/catalog";
 import type { AbilityDef } from "../../model";
 import { heroOf } from "../../session/hero";
 import { barStore, castStore, classStore, restedStore } from "../../session/stores";
-
-function useHudTicker(): number {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((value) => value + 1), 100);
-    return () => clearInterval(timer);
-  }, []);
-  return tick;
-}
 
 function Slot({
   ability,
@@ -96,7 +86,7 @@ function Slot({
 }
 
 export function ActionBar() {
-  useHudTicker();
+  useTicker(10);
   const { commands } = useGame();
   const { userId } = usePlayer();
   const classId = useKeyedStore(classStore, userId);
@@ -147,7 +137,7 @@ export function ActionBar() {
 }
 
 export function CastBar() {
-  useHudTicker();
+  useTicker(10);
   const { userId } = usePlayer();
   const cast = useKeyedStore(castStore, userId);
   const now = useGameStore((ctx) => ctx.time.now());
