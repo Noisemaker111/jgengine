@@ -1,4 +1,8 @@
+import type { ModelAnimationConfig } from "../game/playableGame";
 import type { SceneMarkerLike } from "./sceneShapes";
+
+/** A placement's authored rig animation override — the stored `marker.meta.animation` contract (#1274). */
+export type AuthoredAnimation = ModelAnimationConfig | "auto" | "none";
 
 /**
  * One authored catalog prop resolved from an editor marker — grounded at `x`/`z` with yaw, ready
@@ -12,6 +16,12 @@ export interface AuthoredObject {
   instanceId: string;
   /** Extra lift in meters from the marker (`catalogId` field / meta), applied on top of terrain height. */
   verticalOffset: number;
+  /**
+   * Per-placement rig animation override authored at `marker.meta.animation` (#1274), threaded onto the
+   * placed object's `ModelConfig.animation` so the override applies in game. `undefined` when the marker
+   * carries no override — behavior is exactly the catalog-resolved default.
+   */
+  animation?: AuthoredAnimation;
 }
 
 /** Minimal marker shape {@link resolveAuthoredObjects} reads; any `EditorMarker` satisfies it. */
@@ -35,6 +45,7 @@ export interface AuthoredObjectPlaceTarget {
     options?: {
       instanceId?: string;
       rotation?: number;
+      animation?: AuthoredAnimation;
       onExisting?: "throw" | "replace" | "keep";
     },
   ): string;
@@ -66,6 +77,24 @@ function metaNumber(meta: Record<string, unknown> | undefined, key: string): num
 export function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null {
   if (typeof marker.catalogId === "string" && marker.catalogId.length > 0) return marker.catalogId;
   return metaString(marker.meta, "catalogId");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The authored per-placement rig animation override stored at `marker.meta.animation` (#1274), or
+ * `undefined` when absent/malformed. `"auto"` / `"none"` pass through as the string modes; any other
+ * object is a `ModelAnimationConfig` the shell applies verbatim (validated at author time in the
+ * editor). Runtime trusts the persisted document here exactly like it trusts position and rotation.
+ * @capability authored-objects per-placement animation override from marker.meta.animation
+ */
+export function markerAnimation(marker: AuthoredObjectMarkerLike): AuthoredAnimation | undefined {
+  const value = marker.meta?.["animation"];
+  if (value === "auto" || value === "none") return value;
+  if (isRecord(value)) return value as unknown as ModelAnimationConfig;
+  return undefined;
 }
 
 function markerVerticalOffset(marker: AuthoredObjectMarkerLike): number {
@@ -107,6 +136,7 @@ export function resolveAuthoredObjects(
     if (excluded.has(marker.kind)) continue;
     const catalogId = markerCatalogId(marker);
     if (catalogId === null) continue;
+    const animation = markerAnimation(marker);
     out.push({
       catalogId,
       x: marker.position.x,
@@ -114,6 +144,7 @@ export function resolveAuthoredObjects(
       rotationY: marker.rotationY ?? 0,
       instanceId: marker.id,
       verticalOffset: markerVerticalOffset(marker),
+      ...(animation === undefined ? {} : { animation }),
     });
   }
   return out;
@@ -139,6 +170,7 @@ export function placeAuthoredObjects(
       store.place(object.catalogId, object.x, y, object.z, {
         instanceId: object.instanceId,
         rotation: object.rotationY,
+        ...(object.animation === undefined ? {} : { animation: object.animation }),
         ...(onExisting === undefined ? {} : { onExisting }),
       }),
     );
