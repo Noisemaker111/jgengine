@@ -386,112 +386,120 @@ describe("circuit synthesis (#1365)", () => {
   });
 });
 
-describe("circuit shape variety (#1365 round-2)", () => {
-  // Round-1 circuits read as a mostly-convex hull loop with a single twisty zone. A real circuit folds:
-  // multiple concave lobes (reflex regions), a hairpin, an ess/chicane, all popping against straights.
+describe("curve-first circuit centerline (#1395)", () => {
+  // The circuit centerline is a smooth closed spline whose curvature is FLOORED at minCurveRadius, not a
+  // polygon filleted at its corners. A real lap is MOSTLY curve: continuous curvature (it flows), a legal
+  // hairpin near the floor, a sustained sweeper several times the floor, and deliberate straights as the
+  // exception — never straight chords joined by tiny corner caps.
   const circuitRules = (o: Partial<StreetNetworkRules> = {}) =>
-    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.55, minCurveRadius: 14, maxTurnAngle: 120, ...o });
+    rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 14, maxTurnAngle: 120, ...o });
   const SEEDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
 
-  function signedTurnDeg(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
-    const ux = b[0] - a[0], uz = b[1] - a[1];
-    const vx = c[0] - b[0], vz = c[1] - b[1];
-    const lu = Math.hypot(ux, uz), lv = Math.hypot(vx, vz);
-    if (lu < 1e-6 || lv < 1e-6) return 0;
-    return (Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz) * 180) / Math.PI;
+  function circumradius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
+    const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const bc = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    const ca = Math.hypot(a[0] - c[0], a[1] - c[1]);
+    const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2;
+    if (area < 1e-9) return Infinity;
+    return (ab * bc * ca) / (4 * area);
   }
 
-  // Measure a loop street: reflex-region count (arc spans turning AGAINST the winding by ≥25°, robust to
-  // fillet sampling noise), hairpin presence (≥150° of turn over a short arc), ess presence (a sign
-  // change between significant corners), and straight-share (length fraction with near-zero curvature).
-  function measure(net: ReturnType<typeof generateStreets>) {
+  // Per-sample loop metrics over the closed centerline: max turn, minimum fitted radius (the curvature
+  // floor), curved-share (arc-length fraction perceptibly curved), max curvature JUMP outside straight
+  // ends (the "flows, not corner-capped" property), presence of a near-hairpin and a sustained sweeper.
+  function measure(net: ReturnType<typeof generateStreets>, minR: number) {
     const loop = net.streets.find((s) => s.loop)!;
-    const poly = loop.points.slice(0, -1);
-    const n = poly.length;
-    let area = 0;
-    const segLen: number[] = [];
+    const p = loop.points.slice(0, -1);
+    const n = p.length;
+    const seg: number[] = [];
     let perim = 0;
     for (let i = 0; i < n; i += 1) {
-      const a = poly[i]!, b = poly[(i + 1) % n]!;
-      area += a[0] * b[1] - b[0] * a[1];
-      const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      segLen.push(l);
+      const l = Math.hypot(p[(i + 1) % n]![0] - p[i]![0], p[(i + 1) % n]![1] - p[i]![1]);
+      seg.push(l);
       perim += l;
     }
-    const sign = area > 0 ? 1 : -1;
-    const st: number[] = [];
-    for (let i = 0; i < n; i += 1) st.push(signedTurnDeg(poly[(i - 1 + n) % n]!, poly[i]!, poly[(i + 1) % n]!) * sign);
-    // Reflex regions: maximal runs of contrary (concave) turn accumulating ≥25°, anchored at a convex vertex.
-    let anchor = 0;
-    for (let i = 0; i < n; i += 1) if (st[i]! > 2) { anchor = i; break; }
-    let regions = 0, run = 0;
-    for (let k = 0; k <= n; k += 1) {
-      const i = (anchor + k) % n;
-      if (st[i]! < -0.5) run += -st[i]!;
-      else { if (run >= 25) regions += 1; run = 0; }
+    const turnAt = (i: number) => turnDeg(p[(i - 1 + n) % n]!, p[i]!, p[(i + 1) % n]!);
+    const radAt = (i: number) => circumradius(p[(i - 1 + n) % n]!, p[i]!, p[(i + 1) % n]!);
+    const localLen = (i: number) => (seg[(i - 1 + n) % n]! + seg[i]!) / 2;
+    let maxTurn = 0;
+    let minRad = Infinity;
+    let curvedLen = 0;
+    for (let i = 0; i < n; i += 1) {
+      maxTurn = Math.max(maxTurn, turnAt(i));
+      const R = radAt(i);
+      if (Number.isFinite(R)) minRad = Math.min(minRad, R);
+      if (R < 8 * minR) curvedLen += localLen(i);
     }
-    if (run >= 25) regions += 1;
-    // Hairpin: a short arc window with ≥150° summed direction change.
-    const win = loop.width * 14;
-    let hairpin = false;
-    for (let start = 0; start < n && !hairpin; start += 1) {
-      let acc = 0, arc = 0;
-      for (let k = 0; k < n; k += 1) {
-        const i = (start + k) % n;
-        acc += Math.abs(signedTurnDeg(poly[(i - 1 + n) % n]!, poly[i]!, poly[(i + 1) % n]!));
-        arc += segLen[i]!;
-        if (arc > win) break;
-        if (acc >= 150) { hairpin = true; break; }
+    // Curvature (1/R) jump between consecutive samples, EXCLUDING designated straight ends (a sample whose
+    // own or next triple is near-straight, i.e. turn < 0.75°). This is the flow / no-corner-cap property.
+    const kappa = (i: number) => {
+      const R = radAt(i);
+      return R > 1e6 ? 0 : 1 / R;
+    };
+    let maxJump = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (turnAt(i) < 0.75 || turnDeg(p[i]!, p[(i + 1) % n]!, p[(i + 2) % n]!) < 0.75) continue;
+      maxJump = Math.max(maxJump, Math.abs(kappa(i) - kappa((i + 1) % n)));
+    }
+    const hairpin = minRad <= 1.6 * minR;
+    // Sustained sweeper: a run (≥25 m of arc) whose fitted radius stays in [4×, 40×] minR (40× excludes a
+    // dead-straight run).
+    let sweepRun = 0;
+    let sustainedSweeper = false;
+    for (let k = 0; k < 2 * n; k += 1) {
+      const i = k % n;
+      const R = radAt(i);
+      if (R >= 4 * minR && R < 40 * minR) {
+        sweepRun += seg[i]!;
+        if (sweepRun >= 25) sustainedSweeper = true;
+      } else {
+        sweepRun = 0;
       }
     }
-    // Ess: a direction-sign change between significant corners.
-    const signs: number[] = [];
-    for (let i = 0; i < n; i += 1) {
-      const s = signedTurnDeg(poly[(i - 1 + n) % n]!, poly[i]!, poly[(i + 1) % n]!);
-      if (Math.abs(s) > 8) signs.push(Math.sign(s));
-    }
-    let ess = false;
-    for (let i = 1; i < signs.length; i += 1) if (signs[i] !== signs[i - 1]) { ess = true; break; }
-    // Straight-share: fraction of lap length in near-zero-curvature segments.
-    let straight = 0;
-    for (let i = 0; i < n; i += 1) {
-      if (Math.abs(st[i]!) < 4) straight += segLen[i]!;
-    }
-    return { regions, hairpin, ess, straightShare: straight / perim, hairpinButNoTemplate: !hairpin };
+    return { maxTurn, minRad, curvedShare: curvedLen / perim, maxJump, hairpin, sustainedSweeper };
   }
 
-  test("≥2 reflex regions for most seeds at winding 0.55, fallbacks rare", () => {
-    const results = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220)));
-    const withReflex = results.filter((r) => r.regions >= 2).length;
-    expect(withReflex).toBeGreaterThanOrEqual(4);
-    // Fallback (the safe convex layout has no corner templates → no hairpin) must be rare.
-    const fallbackLike = results.filter((r) => !r.hairpin && r.regions < 2).length;
-    expect(fallbackLike).toBeLessThanOrEqual(1);
-  });
-
-  test("hairpin + ess corner variety present for most seeds at winding 0.55", () => {
-    const results = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220)));
-    expect(results.filter((r) => r.hairpin).length).toBeGreaterThanOrEqual(4);
-    expect(results.filter((r) => r.ess).length).toBeGreaterThanOrEqual(4);
-    expect(results.filter((r) => r.hairpin && r.ess).length).toBeGreaterThanOrEqual(4);
-  });
-
-  test("straight-share floor: real straights survive for corners to pop against", () => {
+  test("no discrete turn between consecutive samples exceeds 7° (6 seeds)", () => {
     for (const seed of SEEDS) {
-      const m = measure(generateStreets(circuitRules({ seed }), 260, 220));
-      expect(m.straightShare).toBeGreaterThanOrEqual(0.25);
+      const m = measure(generateStreets(circuitRules({ seed }), 260, 220), 14);
+      expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
     }
   });
 
-  test("the playground circuit rules fold into a varied, finely-sampled loop", () => {
+  test("the curvature floor holds: no sample triple fits a radius below minCurveRadius×0.92 (6 seeds)", () => {
+    for (const seed of SEEDS) {
+      const m = measure(generateStreets(circuitRules({ seed }), 260, 220), 14);
+      expect(m.minRad).toBeGreaterThanOrEqual(14 * 0.92);
+    }
+  });
+
+  test("curved-share: ≥50% of lap length is perceptibly curved (fitted R < 8×minR) for ≥4 of 6 seeds", () => {
+    const shares = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220), 14).curvedShare);
+    expect(shares.filter((s) => s >= 0.5).length).toBeGreaterThanOrEqual(4);
+  });
+
+  test("curvature is CONTINUOUS: no sample-to-sample curvature jump > (1/minR)×0.5 outside straight ends", () => {
+    for (const seed of SEEDS) {
+      const m = measure(generateStreets(circuitRules({ seed }), 260, 220), 14);
+      expect(m.maxJump).toBeLessThanOrEqual((0.5 / 14) + 1e-9);
+    }
+  });
+
+  test("a near-hairpin (≤1.6×minR) AND a sustained sweeper (≥4×minR over ≥25 m) coexist for ≥4 of 6 seeds", () => {
+    const results = SEEDS.map((seed) => measure(generateStreets(circuitRules({ seed }), 260, 220), 14));
+    expect(results.filter((r) => r.hairpin && r.sustainedSweeper).length).toBeGreaterThanOrEqual(4);
+  });
+
+  test("the playground circuit rules read as a flowing, curve-first lap", () => {
     // seed vice-isle, the exact rules the orchestrator measures.
     const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 });
-    const net = generateStreets(play, 260, 260);
-    const m = measure(net);
-    expect(m.regions).toBeGreaterThanOrEqual(2);
+    const m = measure(generateStreets(play, 260, 260), 24);
+    expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
+    expect(m.minRad).toBeGreaterThanOrEqual(24 * 0.92);
+    expect(m.curvedShare).toBeGreaterThanOrEqual(0.5);
+    expect(m.maxJump).toBeLessThanOrEqual(0.5 / 24 + 1e-9);
     expect(m.hairpin).toBe(true);
-    expect(m.ess).toBe(true);
-    expect(m.straightShare).toBeGreaterThanOrEqual(0.25);
+    expect(m.sustainedSweeper).toBe(true);
   });
 });
 
@@ -602,13 +610,11 @@ describe("sidewalks (#1368)", () => {
   });
 });
 
-describe("per-corner radius mix (#1395 round-3)", () => {
+describe("circuit radius continuum (#1395)", () => {
   const circuitRules = (o: Partial<StreetNetworkRules> = {}) =>
     rules({ loopiness: 1, branching: 0, connectivity: 0, winding: 0.5, minCurveRadius: 14, maxTurnAngle: 120, ...o });
   const SEEDS = ["r1", "r2", "r3", "r4", "r5", "r6"];
 
-  // Fitted radius = circumradius of a consecutive point triple. On a uniformly-sampled arc this equals
-  // the arc radius; on a straight run it blows up (excluded by the mid-turn filter).
   function circumradius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
     const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const bc = Math.hypot(c[0] - b[0], c[1] - b[1]);
@@ -617,48 +623,51 @@ describe("per-corner radius mix (#1395 round-3)", () => {
     if (area < 1e-9) return Infinity;
     return (ab * bc * ca) / (4 * area);
   }
-  // Circumradii at every apex triple genuinely on an arc (mid-band turn, not a straight, not a near-sharp
-  // hairpin apex where the fit degenerates).
-  function fittedRadii(loopPoints: StreetVec2[]): number[] {
+  // Radius of curvature at every sample of the closed loop that is genuinely curving (turn > 0.5°, so a
+  // dead-straight run is excluded). The spline floors curvature at minR, so these span a CONTINUUM from
+  // ~1×minR (hairpins) up to many ×minR (sweepers) — not three discrete fillet bands.
+  function curvingRadii(loop: StreetVec2[]): number[] {
+    const n = loop.length;
     const out: number[] = [];
-    for (let i = 1; i < loopPoints.length - 1; i += 1) {
-      const t = turnDeg(loopPoints[i - 1]!, loopPoints[i]!, loopPoints[i + 1]!);
-      if (t > 3 && t < 40) {
-        const r = circumradius(loopPoints[i - 1]!, loopPoints[i]!, loopPoints[i + 1]!);
-        if (Number.isFinite(r)) out.push(r);
-      }
+    for (let i = 0; i < n; i += 1) {
+      const a = loop[(i - 1 + n) % n]!;
+      const b = loop[i]!;
+      const c = loop[(i + 1) % n]!;
+      if (turnDeg(a, b, c) <= 0.5) continue;
+      const r = circumradius(a, b, c);
+      if (Number.isFinite(r)) out.push(r);
     }
     return out;
   }
 
-  test("a circuit lap mixes ≥3 fitted-radius bands incl. a sweeper ≥4×minCurveRadius (≥4 of 6 seeds)", () => {
+  test("the fitted-radius continuum spans ~1×..≥4×minCurveRadius (tight hairpin to gentle sweeper), ≥4 of 6", () => {
     const minR = 14;
     let ok = 0;
     for (const seed of SEEDS) {
-      const net = generateStreets(circuitRules({ seed }), 260, 220);
-      const loop = net.streets.find((s) => s.loop)!;
-      const radii = fittedRadii(loop.points);
-      const hairpin = radii.some((r) => r < 1.8 * minR); // tight
-      const standard = radii.some((r) => r >= 1.8 * minR && r <= 4 * minR); // medium
-      const sweeper = radii.some((r) => r > 4 * minR); // fast sweeper, ≥4×
-      if (hairpin && standard && sweeper) ok += 1;
+      const loop = generateStreets(circuitRules({ seed }), 260, 220).streets.find((s) => s.loop)!;
+      const radii = curvingRadii(loop.points.slice(0, -1));
+      if (radii.length < 8) continue;
+      const tight = radii.some((r) => r <= 1.6 * minR); // hairpin band, at the floor
+      const sweeper = radii.some((r) => r >= 4 * minR); // sweeper band, several × the floor
+      if (tight && sweeper) ok += 1;
     }
     expect(ok).toBeGreaterThanOrEqual(4);
   });
 
-  test("the fitted-radius spread is a real MIX — max ≫ min across the lap", () => {
-    // A single-radius fillet (the old behavior, still used by city nets) would cluster every fitted
-    // corner near minCurveRadius; the per-corner mix opens the ratio wide.
+  test("the radius spread is a real continuum — max ≫ min across the curving lap", () => {
     for (const seed of SEEDS) {
-      const net = generateStreets(circuitRules({ seed }), 260, 220);
-      const loop = net.streets.find((s) => s.loop)!;
-      const radii = fittedRadii(loop.points).filter((r) => r > 0);
-      if (radii.length < 4) continue;
-      expect(Math.max(...radii) / Math.min(...radii)).toBeGreaterThan(3);
+      const loop = generateStreets(circuitRules({ seed }), 260, 220).streets.find((s) => s.loop)!;
+      const radii = curvingRadii(loop.points.slice(0, -1));
+      if (radii.length < 8) continue;
+      radii.sort((a, b) => a - b);
+      // Robust percentiles avoid a single near-straight outlier; a genuine mix still opens the ratio wide.
+      const lo = radii[Math.floor(radii.length * 0.05)]!;
+      const hi = radii[Math.floor(radii.length * 0.95)]!;
+      expect(hi / lo).toBeGreaterThan(2.5);
     }
   });
 
-  test("per-corner radii stay deterministic through the retry/synthesis path", () => {
+  test("the circuit centerline stays deterministic through the retry/synthesis path", () => {
     const a = generateStreets(circuitRules({ seed: "det-r" }), 260, 220);
     const b = generateStreets(circuitRules({ seed: "det-r" }), 260, 220);
     expect(a).toEqual(b);
