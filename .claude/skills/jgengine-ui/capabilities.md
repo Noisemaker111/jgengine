@@ -32,6 +32,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
 
+## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
+
+- `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/react"`
+
+## character-sheet — drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats
+
+- `CharacterSheet` (function) · `import { CharacterSheet } from "@jgengine/react"`
+
+## character-statlist — derived-stat readout — grouped small-caps label→value rows, token-themed
+
+- `StatList` (function) · `import { StatList } from "@jgengine/react"`
+
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
@@ -162,6 +174,46 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
 
+## panel-close — close a window while remembering its last position
+
+- `closePanel` (function) · `import { closePanel } from "@jgengine/core/ui"`
+
+## panel-close-top — close the focused (topmost) closable window — the ESC behavior
+
+- `closeTopPanel` (function) · `import { closeTopPanel } from "@jgengine/core/ui"`
+
+## panel-focus — raise a window to the top of the focus/z stack
+
+- `focusPanel` (function) · `import { focusPanel } from "@jgengine/core/ui"`
+
+## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs
+
+- `PanelHost` (function) · `import { PanelHost } from "@jgengine/react"`
+
+## panel-hotkey — resolve a keybind (code or key) to the panel id it toggles
+
+- `panelByHotkey` (function) · `import { panelByHotkey } from "@jgengine/core/ui"`
+
+## panel-move — override a window's on-surface position (the drag commit)
+
+- `movePanel` (function) · `import { movePanel } from "@jgengine/core/ui"`
+
+## panel-open — open a window, raise its z, and enforce exclusive-group membership
+
+- `openPanel` (function) · `import { openPanel } from "@jgengine/core/ui"`
+
+## panel-ordered-open — open panels' defs in z/render order for a window host
+
+- `orderedOpen` (function) · `import { orderedOpen } from "@jgengine/core/ui"`
+
+## panel-state — serializable open/z/position state for a set of toggleable game windows
+
+- `createPanelState` (function) · `import { createPanelState } from "@jgengine/core/ui"`
+
+## panel-toggle — toggle a window open/closed from a single keybind
+
+- `togglePanel` (function) · `import { togglePanel } from "@jgengine/core/ui"`
+
 ## placement-ghost — render valid/invalid placement preview mesh
 
 - `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
@@ -206,9 +258,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
 
+## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
+
+- `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
 ## vital-bar — compact current/max vital meter for an entity summary
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
+
+## window — standalone draggable, closable window primitive over HudFrame — no manager required
+
+- `Window` (function) · `import { Window } from "@jgengine/react"`
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 

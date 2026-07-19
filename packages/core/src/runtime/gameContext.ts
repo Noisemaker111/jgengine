@@ -7,6 +7,7 @@ import { createGameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
 import { createLootRegistry, grantDrops } from "../game/lootTable";
 import { createSocial, type Social } from "../game/social";
+import { splitStack } from "../inventory/inventoryModel";
 import { createItemUse } from "../item/use";
 import { createWeaponStats } from "../item/weapon";
 import type { ModelAssetRef } from "../scene/assetCatalog";
@@ -212,6 +213,43 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     seedUserPool,
   } = playerSys;
   scene.setOnAfterDespawn((instanceId) => pose.clear(instanceId));
+
+  // Built-in inventory mutation commands so a HUD grid drives moves/splits through the notifying
+  // command path (a raw InventorySet mutation would not re-render React). Each resolves the acting
+  // user's own inventory, so it respects `privatePerUser` replication.
+  const knownInventory = (inventoryId: string): boolean => layouts[inventoryId] !== undefined;
+  const slotInRange = (inventoryId: string, slot: unknown): slot is number =>
+    typeof slot === "number" && Number.isInteger(slot) && slot >= 0 && slot < layouts[inventoryId]!.slots;
+  commandRegistry.define<{ inventoryId: string; from: number; to: number }>("inventory.move", {
+    validate(_state, input) {
+      if (!knownInventory(input.inventoryId)) return { reason: `unknown inventory "${input.inventoryId}"` };
+      if (!slotInRange(input.inventoryId, input.from) || !slotInRange(input.inventoryId, input.to)) {
+        return { reason: "invalid-slot" };
+      }
+      return null;
+    },
+    apply(_state, input) {
+      const inventory = inventoryFor(activeUserId());
+      // A rejected move (empty source, wrong-kind, no-space) is a harmless no-op: the item bounces back.
+      inventory.move(input.inventoryId, input.from, input.inventoryId, input.to);
+    },
+  });
+  commandRegistry.define<{ inventoryId: string; slot: number; amount: number; toSlot?: number }>("inventory.split", {
+    validate(_state, input) {
+      if (!knownInventory(input.inventoryId)) return { reason: `unknown inventory "${input.inventoryId}"` };
+      if (!slotInRange(input.inventoryId, input.slot)) return { reason: "invalid-slot" };
+      if (input.toSlot !== undefined && !slotInRange(input.inventoryId, input.toSlot)) {
+        return { reason: "invalid-slot" };
+      }
+      return null;
+    },
+    apply(_state, input) {
+      const inventory = inventoryFor(activeUserId());
+      const result = splitStack(inventory.state(input.inventoryId), input.slot, input.amount, input.toSlot);
+      if (result.status === "rejected") return;
+      inventory.replaceState(input.inventoryId, result.state);
+    },
+  });
 
   const loot: GameContextLoot = {
     register: lootRegistry.register,

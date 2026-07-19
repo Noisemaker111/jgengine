@@ -128,6 +128,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `incubationViable` (function) · `import { incubationViable } from "@jgengine/core/game/breeding"`
 
+## inventory-grid — a bag of stackable items with add, remove, and move
+
+- `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
+
+## inventory-split — split a stack into a target or first-empty slot
+
+- `splitStack` (function) · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
+
 ## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
 
 - `generate` (function) · `import { generate } from "@jgengine/core/gameplay"`
