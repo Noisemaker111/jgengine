@@ -38,6 +38,7 @@ import { summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
+import { assembleMp4 } from "./video";
 
 type Step =
   | { kind: "click"; text: string }
@@ -94,9 +95,11 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
   --record <name>     record the whole drive (every rendered frame, CDP screencast)
                       to shots/<game>-<name>.gif — an animated GIF that plays
-                      inline in PR bodies and chat, the PR-embeddable "video" of a
-                      play session. Auto-thins frames to stay under ~4.5MB (GitHub
-                      camo's limit); pair with pr-shots like any other capture
+                      inline in PR bodies and chat, auto-thinned under ~4.5MB
+                      (GitHub camo's limit) — plus shots/<game>-<name>.mp4, the
+                      full-fidelity real video: every frame, true timing, no size
+                      cap (GitHub links it for download; it cannot play inline).
+                      Pair both with pr-shots like any other capture
   --record-width <px> screencast max width (default 640; smaller = more frames
                       fit in the size budget)
   --probe [name]      print the game's live capture.probe metrics (e.g. player
@@ -448,6 +451,16 @@ const exitCode = await withBrowserSession(
           console.error(`drive: --record captured no frames — the page never repainted during the drive`);
           code = 1;
         } else {
+          const fullFrames = frames;
+          const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
+          try {
+            assembleMp4(fullFrames, mp4Path);
+            console.log(mp4Path);
+          } catch (error) {
+            console.error(
+              `drive: mp4 encode failed (${error instanceof Error ? error.message : error}) — the GIF still carries the clip`,
+            );
+          }
           let gif = assembleGif(frames);
           let thinned = 0;
           while (gif.length > RECORD_BUDGET_BYTES && frames.length > 2) {
