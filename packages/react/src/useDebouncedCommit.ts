@@ -39,6 +39,7 @@ const defaultTimer: DebounceTimer = {
  * Framework-free core of {@link useDebouncedCommit}: owns the live value, the dirty flag, and the
  * trailing-debounce timer. Notifies the caller of local-value changes through `onLocalChange` (the
  * hook wires this to `setState`). Exposed for focused testing with an injected {@link DebounceTimer}.
+ * @internal
  */
 export function createDebouncedCommit<T>(options: {
   initial: T;
@@ -99,6 +100,7 @@ export function createDebouncedCommit<T>(options: {
 /**
  * See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the
  * binding identity stays stable except when `value` (the local mirror) changes.
+ * @capability debounced-commit bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
  */
 export function useDebouncedCommit<T>(
   value: T,

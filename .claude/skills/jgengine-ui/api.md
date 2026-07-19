@@ -369,6 +369,8 @@
 - `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `DEFAULT_BAR_TOKENS` (const): const DEFAULT_BAR_TOKENS: Required<BarTokens> — Built-in default values for every vitals token — scaffolding/preview only, not a shipped look.
 - `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `DebounceTimer` (interface): interface DebounceTimer — Injectable timer seam so the controller is testable with a manual clock.
+- `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
 - `DefaultEquipSlotId` (type): type DefaultEquipSlotId = | "head" | "chest" | "hands" | "legs" | "feet" | "mainHand" | "offHand" | "ring1" | "ring2" | "trinket" — Slot ids used by {@link defaultEquipLayout}'s convenience arrangement.
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
 - `DialogueCheck` (interface): interface DialogueCheck — ⚠ undocumented
@@ -590,6 +592,7 @@
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
+- `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
 - `useDomEvent` (function): function useDomEvent<E>(resolveTarget: () => DomEventTarget | null, type: string, handler: (event: E) => void, options?: { capture?: boolean; passive?: boolean }): void — Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The handler is kept in a ref, so a fresh closure per render never re-binds the listener. Re-binds only when `type` or `options.capture`/`options.passive` change.
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
@@ -1121,6 +1124,12 @@
 
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
+
+## @jgengine/react/useDebouncedCommit
+
+- `DebounceTimer` (interface): interface DebounceTimer — Injectable timer seam so the controller is testable with a manual clock.
+- `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
+- `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
 
 ## @jgengine/react/voice
 
@@ -1838,6 +1847,7 @@
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
+- `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
@@ -1875,6 +1885,7 @@
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
+- `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
@@ -1921,7 +1932,7 @@
 
 ## @jgengine/shell/terrain/grassMaterial
 
-- `DEFAULT_GRASS_DISTANCE_FADE` (const): const DEFAULT_GRASS_DISTANCE_FADE: Required<GrassDistanceFadeOptions> — Default camera-distance fade band: tufts start thinning at 35 m and are gone by 95 m.
+- `DEFAULT_GRASS_DISTANCE_FADE` (const): const DEFAULT_GRASS_DISTANCE_FADE: Required<GrassDistanceFadeOptions> — Default camera-distance fade band: tufts start thinning at 55 m and are gone by 150 m so the meadow reads deep.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
 - `GrassDistanceFadeOptions` (interface): interface GrassDistanceFadeOptions — Camera-distance fade band: tufts thin out between `start` and `end` meters, so the instance budget spends where the camera lives.
 - `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
@@ -1958,6 +1969,7 @@
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainPaletteSampler` (type): type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string } — Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/world/terrain` returns exactly this shape.
+- `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
 
 ## @jgengine/shell/touch/OrientationHint
