@@ -31,6 +31,7 @@ Classify each acceptance claim before scheduling proof. A plan that uses screens
 - Generated worlds assert resolved counts, finite/non-flat terrain where expected, palettes, bounds, and required features.
 - Authored worlds assert required layers, objects, paths, markers, and ids from `editor.scene.json`.
 - Gameplay tests prove the observable acceptance scenario, including save/restore or multi-client behavior when changed.
+- Time-based headless tests: `HeadlessRunner.step(dt)` clamps every step to `maxStepSeconds` (default 0.05 s) no matter what dt you pass — `step(5)` advances the sim by 0.05 s, not 5 s, so a timer that "never fires" is usually this clamp, not a bug. Advance game time with many small steps (~20 per second of game time, e.g. `for (…) runner.step(1 / 60)`), or raise `maxStepSeconds` in the runner options when coarse fixed steps are intended.
 - For interactive softlock/progress proof, run `bun dev`, open the game page in a browser tool, drive input, and interrogate `window.__jgengineAgent.handle({ method: ... })` — `agent_status`, `debug_snapshot`, and the editor verbs work headlessly on any running game page.
 - Placeholder-vs-authored: `debug_snapshot().probes.fallbacks` reports which render seams resolved to fallbacks (green ground, primitive actors, proxy scatter) and why — a non-empty count proves content is unauthored/misconfigured rather than an intended placeholder.
 
