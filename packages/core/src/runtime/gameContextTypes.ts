@@ -49,6 +49,7 @@ import type {
 } from "../scene/entityStore";
 import type { Forms } from "../scene/form";
 import type { EntityColliderSet, MeasuredBounds, ModelBodySource } from "../scene/colliders";
+import type { CollisionMeshSource } from "../scene/collisionMesh";
 import type { ObjectRaycastHit, ObjectRaycastInput } from "../scene/objectQuery";
 import type { ObjectStore } from "../scene/objectStore";
 import type { Roster } from "../scene/roster";
@@ -163,6 +164,15 @@ export interface SceneObjectContext extends ObjectStore {
    * @capability measured-colliders hitboxes and blocking bodies wrap what the renderer actually mounted — custom render props and dims-less models stop falling back to fixed-size boxes.
    */
   reportBounds(catalogId: string, bounds: MeasuredBounds | null): boolean;
+  /**
+   * Report the entity-local triangle soup the renderer actually mounted for `catalogId` — stored per
+   * catalog id as a blocking physical body whose raycasts hit the real surface (a BVH over the
+   * triangles) while movement obstruction keeps the conservative AABB. Consulted right after
+   * authored `colliders` / index collision meshes and before the fitted-box, measured-bounds, and
+   * visual-scale fallbacks. The shell reports rendered models automatically. Pass `null` to clear.
+   * Returns `false` when no valid triangle survives.
+   */
+  reportCollisionMesh(catalogId: string, mesh: CollisionMeshSource | null): boolean;
   /**
    * Per-instance selection/highlight state for placed objects — the reactive counterpart to
    * `worldHealthBars`/`nameplates` (entities), so a build-mode or RTS selection ring reads
@@ -303,6 +313,17 @@ export interface SceneEntityContext {
    * @capability measured-hitboxes an entity rendered with a custom mesh takes hits in a box matching its rendered bounds, not the fixed humanoid rectangle.
    */
   reportBounds(kind: string, bounds: MeasuredBounds | null): boolean;
+  /**
+   * Report the entity-local triangle soup the renderer actually mounted for `kind` — stored per kind
+   * as a damage hitbox that raycasts the model's own triangles (BVH), so shots aimed between a
+   * character's feet or past its shoulder miss instead of hitting a bounding box. Consulted right
+   * after authored `colliders` / index collision meshes and before the fitted-box and
+   * measured-bounds fallbacks. The shell reports rendered models automatically; authoritative hosts
+   * that never render should author `colliders` or index collision meshes for identical results.
+   * Pass `null` to clear. Returns `false` when no valid triangle survives.
+   * @capability conforming-hitboxes shots aimed between a character's feet or past its shoulder MISS — damage raycasts hit the rendered model's triangles, not its bounding box.
+   */
+  reportCollisionMesh(kind: string, mesh: CollisionMeshSource | null): boolean;
   /** Uniform visual scale from the entity's catalog entry (1 when unscaled). */
   visualScaleOf(instanceId: string): number;
   form: Forms;

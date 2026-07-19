@@ -18,13 +18,17 @@ import { createForms, type Forms } from "../../scene/form";
 import {
   fittedEntityColliders,
   fittedObjectColliders,
+  hasMeshColliderShape,
   measuredEntityColliders,
   measuredObjectColliders,
+  meshEntityColliders,
+  meshObjectColliders,
   scaledEntityColliders,
   scaledObjectColliders,
   type EntityColliderSet,
   type MeasuredBounds,
 } from "../../scene/colliders";
+import { prepareCollisionMeshSource, type CollisionMeshSource } from "../../scene/collisionMesh";
 import { raycastObjects, raycastObjectsAll } from "../../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../../scene/objectStore";
 import { createPaintLayer, type PaintLayer } from "../../scene/paintLayer";
@@ -77,6 +81,7 @@ export interface SceneSubsystem {
   entityCollidersOf: (instanceId: string) => EntityColliderSet | null;
   objectCollidersOf: (instanceId: string) => EntityColliderSet | null;
   reportEntityBounds: (kind: string, bounds: MeasuredBounds | null) => boolean;
+  reportEntityCollisionMesh: (kind: string, mesh: CollisionMeshSource | null) => boolean;
   entityVisualScaleOf: (instanceId: string) => number;
   forms: Forms;
   paintLayer: PaintLayer;
@@ -196,6 +201,37 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     return true;
   }
 
+  const meshEntityByKind = new Map<string, EntityColliderSet>();
+  const meshObjectByCatalogId = new Map<string, EntityColliderSet>();
+
+  function reportEntityCollisionMesh(kind: string, mesh: CollisionMeshSource | null): boolean {
+    if (mesh === null) {
+      const existed = meshEntityByKind.delete(kind);
+      if (existed) signalNotify();
+      return existed;
+    }
+    const prepared = prepareCollisionMeshSource(mesh);
+    const set = prepared === null ? null : meshEntityColliders(prepared);
+    if (set === null) return false;
+    meshEntityByKind.set(kind, set);
+    signalNotify();
+    return true;
+  }
+
+  function reportObjectCollisionMesh(catalogId: string, mesh: CollisionMeshSource | null): boolean {
+    if (mesh === null) {
+      const existed = meshObjectByCatalogId.delete(catalogId);
+      if (existed) signalNotify();
+      return existed;
+    }
+    const prepared = prepareCollisionMeshSource(mesh);
+    const set = prepared === null ? null : meshObjectColliders(prepared);
+    if (set === null) return false;
+    meshObjectByCatalogId.set(catalogId, set);
+    signalNotify();
+    return true;
+  }
+
   function reportObjectBounds(catalogId: string, bounds: MeasuredBounds | null): boolean {
     if (bounds === null) {
       const existed = measuredObjectByCatalogId.delete(catalogId);
@@ -217,6 +253,11 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     const kind = entities.get(instanceId)?.name;
     if (kind !== undefined) {
       const fitted = fittedEntitySetFor(kind);
+      // Index-derived mesh shapes win (identical on a headless host); otherwise a runtime-reported
+      // collision mesh upgrades the fitted/measured bounding box to the rendered triangles.
+      if (fitted !== null && hasMeshColliderShape(fitted)) return fitted;
+      const runtimeMesh = meshEntityByKind.get(kind);
+      if (runtimeMesh !== undefined) return runtimeMesh;
       if (fitted !== null) return fitted;
       const measured = measuredEntityByKind.get(kind);
       if (measured !== undefined) return measured;
@@ -239,6 +280,9 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     const object = objects.get(instanceId);
     if (object === null) return null;
     const fitted = fittedObjectSetFor(object.catalogId);
+    if (fitted !== null && hasMeshColliderShape(fitted)) return fitted;
+    const runtimeMesh = meshObjectByCatalogId.get(object.catalogId);
+    if (runtimeMesh !== undefined) return runtimeMesh;
     if (fitted !== null) return fitted;
     const measured = measuredObjectByCatalogId.get(object.catalogId);
     if (measured !== undefined) return measured;
@@ -391,6 +435,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     },
     collidersOf: objectCollidersOf,
     reportBounds: reportObjectBounds,
+    reportCollisionMesh: reportObjectCollisionMesh,
     selection: objectSelection,
   };
 
@@ -411,6 +456,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     entityCollidersOf,
     objectCollidersOf,
     reportEntityBounds,
+    reportEntityCollisionMesh,
     entityVisualScaleOf,
     forms,
     paintLayer,

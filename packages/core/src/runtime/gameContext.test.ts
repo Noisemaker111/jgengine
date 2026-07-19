@@ -1432,3 +1432,128 @@ describe("runtime-measured bounds colliders", () => {
     expect(box.offset).toEqual([0, 1.5, 0]);
   });
 });
+
+describe("runtime-reported collision meshes", () => {
+  /** Closed axis-aligned box as a triangle soup appended into `positions`/`indices`. */
+  function pushBox(
+    positions: number[],
+    indices: number[],
+    min: readonly [number, number, number],
+    max: readonly [number, number, number],
+  ): void {
+    const base = positions.length / 3;
+    for (const z of [min[2], max[2]])
+      for (const y of [min[1], max[1]])
+        for (const x of [min[0], max[0]]) positions.push(x, y, z);
+    // 12 triangles over the 8 corners (index bits: x + 2y + 4z).
+    const faces = [
+      [0, 2, 3, 0, 3, 1], // z-
+      [4, 5, 7, 4, 7, 6], // z+
+      [0, 1, 5, 0, 5, 4], // y-
+      [2, 6, 7, 2, 7, 3], // y+
+      [0, 4, 6, 0, 6, 2], // x-
+      [1, 3, 7, 1, 7, 5], // x+
+    ];
+    for (const face of faces) for (const corner of face) indices.push(base + corner);
+  }
+
+  /** Two-legged "robot": legs at x=±0.3 with a clear gap between the feet, torso, and a narrow head
+   * leaving open air over each shoulder — all inside a 0.8×1.6×0.4 bounding box. */
+  function legsSource(): CollisionMeshSource {
+    const positions: number[] = [];
+    const indices: number[] = [];
+    pushBox(positions, indices, [-0.4, 0, -0.15], [-0.2, 0.8, 0.15]);
+    pushBox(positions, indices, [0.2, 0, -0.15], [0.4, 0.8, 0.15]);
+    pushBox(positions, indices, [-0.4, 0.8, -0.2], [0.4, 1.3, 0.2]);
+    pushBox(positions, indices, [-0.15, 1.3, -0.15], [0.15, 1.6, 0.15]);
+    return { positions, indices };
+  }
+
+  function makeContext() {
+    return createGameContext({
+      definition: defineGameDefinition({ name: "Reported", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {
+        entityById(catalogId) {
+          if (catalogId === "scrapbot") return { stats: { health: { max: 5 } } };
+          if (catalogId === "modeled") return {};
+          return null;
+        },
+        objectById(catalogId) {
+          if (catalogId === "pylon") return {};
+          return null;
+        },
+      },
+      player: { userId: "user_a", isNew: true },
+      models: {
+        entity: (kind) =>
+          kind === "modeled"
+            ? { dims: { footprint: { w: 0.8, d: 0.4 }, center: { x: 0, z: 0 }, minY: 0, maxY: 1.6 } }
+            : undefined,
+      },
+    });
+  }
+
+  test("a shot between the feet misses; a shot at a leg or the torso hits", () => {
+    const ctx = makeContext();
+    expect(ctx.scene.entity.reportCollisionMesh("scrapbot", legsSource())).toBe(true);
+    ctx.scene.entity.spawn("scrapbot", { position: [0, 0, 4] });
+    // Straight through the gap between the legs — inside the old bounding box, must miss now.
+    const betweenFeet = ctx.scene.raycast({ origin: [0, 0.4, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(betweenFeet).toBeNull();
+    // Over the shoulder — beside the head but inside the old bounding box.
+    const overShoulder = ctx.scene.raycast({ origin: [0.3, 1.45, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(overShoulder).toBeNull();
+    // A leg is a real hit — non-blocking damage.
+    const leg = ctx.scene.raycast({ origin: [0.3, 0.4, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(leg?.targetKind).toBe("entity");
+    expect(leg?.damageEligible).toBe(true);
+    expect(leg?.blocks).toBe(false);
+    expect(leg?.distance).toBeCloseTo(3.85, 2);
+    // The torso too.
+    const torso = ctx.scene.raycast({ origin: [0, 1.2, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(torso?.targetKind).toBe("entity");
+  });
+
+  test("a runtime mesh upgrades the fitted-dims box and clearing restores it", () => {
+    const ctx = makeContext();
+    const modeled = ctx.scene.entity.spawn("modeled", { position: [0, 0, 0] });
+    expect(ctx.scene.entity.collidersOf(modeled)!.hitboxes![0]!.shape.kind).toBe("aabb");
+    expect(ctx.scene.entity.reportCollisionMesh("modeled", legsSource())).toBe(true);
+    expect(ctx.scene.entity.collidersOf(modeled)!.hitboxes![0]!.shape.kind).toBe("mesh");
+    expect(ctx.scene.entity.reportCollisionMesh("modeled", null)).toBe(true);
+    expect(ctx.scene.entity.collidersOf(modeled)!.hitboxes![0]!.shape.kind).toBe("aabb");
+  });
+
+  test("a runtime mesh wins over measured bounds; degenerate soups are rejected", () => {
+    const ctx = makeContext();
+    ctx.scene.entity.reportBounds("scrapbot", { min: [-0.4, 0, -0.2], max: [0.4, 1.6, 0.2] });
+    const bot = ctx.scene.entity.spawn("scrapbot", { position: [0, 0, 0] });
+    expect(ctx.scene.entity.collidersOf(bot)!.hitboxes![0]!.shape.kind).toBe("aabb");
+    expect(ctx.scene.entity.reportCollisionMesh("scrapbot", legsSource())).toBe(true);
+    expect(ctx.scene.entity.collidersOf(bot)!.hitboxes![0]!.shape.kind).toBe("mesh");
+    expect(ctx.scene.entity.reportCollisionMesh("scrapbot", { positions: [0, 0, 0], indices: [0, 0, 0] })).toBe(
+      false,
+    );
+    expect(
+      ctx.scene.entity.reportCollisionMesh("scrapbot", { positions: [Number.NaN, 0, 0, 1, 0, 0, 0, 1, 0], indices: [0, 1, 2] }),
+    ).toBe(false);
+  });
+
+  test("a reported object mesh is a blocking physical body with the real gap", () => {
+    const ctx = makeContext();
+    expect(ctx.scene.object.reportCollisionMesh("pylon", legsSource())).toBe(true);
+    ctx.scene.object.place("pylon", 0, 0, 4);
+    const between = ctx.scene.raycast({ origin: [0, 0.4, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(between).toBeNull();
+    const leg = ctx.scene.raycast({ origin: [0.3, 0.4, 0], direction: [0, 0, 1], maxDistance: 20 });
+    expect(leg?.targetKind).toBe("object");
+    expect(leg?.blocks).toBe(true);
+    // The conservative entity-local AABB still feeds bounds/broadphase.
+    const set = ctx.scene.object.collidersOf(ctx.scene.object.list()[0]!.instanceId)!;
+    const shape = set.body!.shape;
+    if (shape.kind !== "mesh") throw new Error("expected mesh");
+    expect(shape.halfExtents[0]).toBeCloseTo(0.4, 3);
+    expect(shape.halfExtents[1]).toBeCloseTo(0.8, 3);
+    expect(shape.offset![1]).toBeCloseTo(0.8, 3);
+  });
+});
