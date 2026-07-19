@@ -88,12 +88,12 @@ const NAV_LINKS = [
   { to: "/playground", label: "Playground" },
 ] as const;
 
-export function Header() {
+export function Header({ sticky = true }: { sticky?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-20 px-3 pt-3 sm:px-4">
+    <header className={`${sticky ? "sticky top-0" : "relative"} z-20 px-3 pt-3 sm:px-4`}>
       <div className="mx-auto max-w-6xl rounded-2xl border border-white/[0.08] bg-ink/75 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl">
         <div className="flex items-center justify-between py-2.5 pl-4 pr-3 sm:pl-5">
           <Link
@@ -269,11 +269,11 @@ export function Footer() {
   );
 }
 
-export function Page({ children }: { children: ReactNode }) {
+export function Page({ children, stickyHeader = true }: { children: ReactNode; stickyHeader?: boolean }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <Header />
-      <main className="-mt-16 flex-1 pt-16">{children}</main>
+      <Header sticky={stickyHeader} />
+      <main className={`${stickyHeader ? "-mt-16 pt-16" : ""} flex-1`}>{children}</main>
       <Footer />
     </div>
   );

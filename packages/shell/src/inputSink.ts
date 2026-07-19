@@ -100,6 +100,15 @@ export function resolveInputSink(opts: {
 export function inputFramesEqual(a: InputFrame, b: InputFrame): boolean {
   if (a.held.length !== b.held.length) return false;
   for (let i = 0; i < a.held.length; i++) if (a.held[i] !== b.held[i]) return false;
+  const aa = a.analog ?? null;
+  const ba = b.analog ?? null;
+  if (aa === null || ba === null) {
+    if (aa !== ba) return false;
+  } else {
+    const keys = Object.keys(aa);
+    if (keys.length !== Object.keys(ba).length) return false;
+    for (const key of keys) if (aa[key] !== ba[key]) return false;
+  }
   const pa = a.pointer;
   const pb = b.pointer;
   if (pa === null || pb === null) return pa === pb;

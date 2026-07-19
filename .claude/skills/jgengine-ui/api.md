@@ -66,7 +66,7 @@
 - `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
 - `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; readonly touchJoystick: "controls.touchJoystick"; } — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
@@ -147,7 +147,7 @@
 - `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
 - `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
 - `ResolvedAction` (interface): interface ResolvedAction — A resolved action view model — availability computed once from cooldown, cost, `disabled`, and any caller reasons. `enabled` is the single truth a renderer gates interaction on; `reasons` is the ordered explanation (cooldown, then unmet costs, then caller reasons, then a generic disable).
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; readonly touchJoystick: "controls.touchJoystick"; } — ⚠ undocumented
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `SelectionFocusDirection` (type): type SelectionFocusDirection = "next" | "prev" | "first" | "last" — A 1-D focus move within the selection member strip.
 - `SelectionGroup` (interface): interface SelectionGroup — A bucket of same-`kind` entities in a large selection — the RTS "12 Marines" control chip.
@@ -1529,7 +1529,7 @@
 
 ## @jgengine/shell/drivers/FrameDriver
 
-- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker<string>; y… — ⚠ undocumented
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker… — ⚠ undocumented
 - `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
 
 ## @jgengine/shell/drivers/HudOnlyDriver
@@ -2079,7 +2079,7 @@
 ## @jgengine/shell/touch/TouchControlsOverlay
 
 - `TouchCodeSink` (interface): interface TouchCodeSink — ⚠ undocumented
-- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; }): React.JSX.Element — ⚠ undocumented
+- `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; /** Player-selected joystick behavior (Settings → Contro… — ⚠ undocumented
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
 - `touchDockClearance` (function): function touchDockClearance(scheme: TouchScheme | null, scale = 1): number — Vertical space (px, excluding device safe areas) that *bottom-docked* clusters occupy above the bottom edge. The shell publishes it as `--jg-hud-dock-clearance` so `HudCanvas` regions never collide with touch controls. Side rails and top clusters reserve their own rectangles through the layout registry instead of this scalar.

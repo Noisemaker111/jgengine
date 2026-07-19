@@ -18,7 +18,11 @@ import {
   type SettingOption,
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
-import { TOUCH_STYLE_OPTIONS } from "@jgengine/core/input/touchScheme";
+import {
+  DEFAULT_TOUCH_JOYSTICK_VARIANT,
+  TOUCH_JOYSTICK_VARIANT_OPTIONS,
+  TOUCH_STYLE_OPTIONS,
+} from "@jgengine/core/input/touchScheme";
 import { TOUCH_STYLE_AUTO, useSettingsRevision } from "./appliedSettings";
 import {
   useSettingsStore,
@@ -187,6 +191,14 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
             value: store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO),
             options: TOUCH_STYLE_SELECT_OPTIONS,
             set: (value: SettingValue) => store.set(SETTING_IDS.touchStyle, value),
+          },
+          {
+            id: SETTING_IDS.touchJoystick,
+            label: "Joystick",
+            kind: "select" as const,
+            value: store.get(SETTING_IDS.touchJoystick, DEFAULT_TOUCH_JOYSTICK_VARIANT),
+            options: TOUCH_JOYSTICK_VARIANT_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+            set: (value: SettingValue) => store.set(SETTING_IDS.touchJoystick, value),
           },
         ]
       : []),

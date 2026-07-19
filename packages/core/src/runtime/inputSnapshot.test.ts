@@ -119,3 +119,34 @@ describe("InputSnapshot.axis", () => {
     expect(input.axis({ gas: { positive: ["gas"] } }).gas).toBe(0);
   });
 });
+
+describe("InputSnapshot analog values (#1370)", () => {
+  test("value() prefers a published analog magnitude and falls back to digital 0/1", () => {
+    const input = createInputSnapshot();
+    input.publish(["moveForward", "jump"]);
+    input.publishAnalog({ moveForward: 0.35 });
+    expect(input.value("moveForward")).toBe(0.35);
+    expect(input.value("jump")).toBe(1);
+    expect(input.value("moveLeft")).toBe(0);
+    input.publishAnalog(null);
+    expect(input.value("moveForward")).toBe(1);
+  });
+
+  test("axis() steers proportionally from analog magnitudes", () => {
+    const input = createInputSnapshot();
+    input.publish(["moveRight"]);
+    input.publishAnalog({ moveRight: 0.6, moveLeft: 0 });
+    const axes = input.axis({ steer: { positive: ["moveRight"], negative: ["moveLeft"] } });
+    expect(axes.steer).toBeCloseTo(0.6);
+  });
+
+  test("analog() returns a frozen owned copy and null after clearing", () => {
+    const input = createInputSnapshot();
+    const source: Record<string, number> = { moveForward: 0.5 };
+    input.publishAnalog(source);
+    source.moveForward = 0.9;
+    expect(input.analog()?.moveForward).toBe(0.5);
+    input.publishAnalog(null);
+    expect(input.analog()).toBeNull();
+  });
+});

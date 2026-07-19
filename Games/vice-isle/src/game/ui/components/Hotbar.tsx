@@ -1,4 +1,4 @@
-import { useEntityStat, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useEntityStat, useGame, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { iconForItemId } from "@jgengine/react/gameIcons";
 import { IconTreatment, schoolForItem } from "@jgengine/react/iconTreatment";
@@ -9,6 +9,7 @@ import { ITEM_LABELS } from "../../content";
 
 export function Hotbar() {
   const { userId } = usePlayer();
+  const { commands } = useGame();
   const slots = useInventory("hotbar");
   const selected = useStore(slotStore, (v) => v ?? 0);
   const ammo9 = useEntityStat(userId, "ammo_9mm");
@@ -27,9 +28,14 @@ export function Hotbar() {
         const ammoValue = ammoStat === "ammo_9mm" ? ammo9?.current : ammoStat === "ammo_shell" ? ammoShell?.current : null;
         const active = index === selected;
         return (
+          // Tappable so touch play switches weapons from the cards themselves — the on-screen
+          // dock hides the four selectSlot buttons (#1370).
           <div
             key={index}
-            className={`w-24 -skew-x-6 border-2 border-black px-2 py-1 shadow-[3px_3px_0_#000] ${
+            role="button"
+            tabIndex={-1}
+            onPointerDown={() => commands.run(`selectSlot${index + 1}`, {})}
+            className={`w-24 -skew-x-6 cursor-pointer select-none border-2 border-black px-2 py-1 shadow-[3px_3px_0_#000] ${
               active ? "bg-[#ffb020] text-black" : "bg-[#12141a]/85 text-[#cfd6de]"
             }`}
           >

@@ -396,8 +396,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `appendToast` (function) · `import { appendToast } from "@jgengine/core/gameplay"`
 - `createToastQueue` (function) · `import { createToastQueue } from "@jgengine/core/gameplay"`
 
-## touch-controls — default on-screen button silhouette for a touch action
+## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 
+- `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/gameplay"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
 
 ## tribe-group — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log

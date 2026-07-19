@@ -40,6 +40,7 @@ export function FrameDriver({
   pitchRef,
   primaryClickRef,
   pointerAxisRef,
+  analogRef,
   gateRef,
   onRuntimeError,
   multiplayer,
@@ -57,6 +58,7 @@ export function FrameDriver({
   pitchRef: { current: number };
   primaryClickRef: { current: boolean };
   pointerAxisRef: { current: PointerAxisState | null };
+  analogRef: { current: Readonly<Record<string, number>> | null };
   gateRef: { current: boolean };
   onRuntimeError: (error: unknown, phase: string) => void;
   multiplayer: ShellMultiplayer | null;
@@ -130,7 +132,7 @@ export function FrameDriver({
     }
     const sendInput = () => {
       if (!serverAuthoritative) return;
-      const frame: InputFrame = { held: ctx.input.held(), pointer: ctx.input.pointer() };
+      const frame: InputFrame = { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() };
       const last = lastSentInputRef.current;
       if (last !== null && inputFramesEqual(last, frame)) return;
       lastSentInputRef.current = frame;
@@ -138,6 +140,7 @@ export function FrameDriver({
     };
     if (gateRef.current || !playControlsActive(ctx)) {
       ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+      ctx.input.publishAnalog(null);
       sendInput();
       return;
     }
@@ -148,6 +151,7 @@ export function FrameDriver({
     const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
     ctx.input.publishPointer(pointerAxisRef.current);
+    ctx.input.publishAnalog(analogRef.current);
     sendInput();
     const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
     if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
@@ -160,7 +164,7 @@ export function FrameDriver({
       stepPlayerMovement(
         ctx,
         ctx.player.userId,
-        { held: ctx.input.held(), pointer: ctx.input.pointer() },
+        { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
         rawDt,
         movementTuning,
         yawRef.current,

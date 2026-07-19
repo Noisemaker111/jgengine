@@ -21,6 +21,40 @@ export const game = defineGame({
   inventories,
   input: keybinds,
   server: { mode: "openworld" },
+  // Touch controls are context-curated (#1370): each mode shows only the verbs that context uses.
+  // On foot the joystick walks (analog) and the cluster is the five gameplay verbs; flight and
+  // vehicle actions never appear until a vehicle is boarded (game/handroll/driving.ts switches
+  // modes via setTouchControlsMode). Slot switching on touch is the tappable hotbar cards.
+  touch: {
+    buttons: [
+      { action: "fire", label: "Fire" },
+      { action: "jump", label: "Jump" },
+      { action: "interact", label: "Use" },
+      { action: "throwGrenade", label: "Grenade", icon: "bomb" },
+      { action: "useMedkit", label: "Medkit", icon: "heart" },
+      { action: "sprint", label: "Sprint" },
+    ],
+    modes: {
+      car: {
+        buttons: [
+          { action: "jump", label: "Handbrake", shape: "lever" },
+          { action: "exitVehicle", label: "Exit", kind: "utility" },
+        ],
+      },
+      aircraft: {
+        buttons: [
+          { action: "flightThrottleUp", label: "Throttle +", shape: "lever" },
+          { action: "flightThrottleDown", label: "Throttle −", shape: "lever" },
+          { action: "jump", label: "Boost" },
+          { action: "flightAirbrake", label: "Airbrake" },
+          { action: "flightYawLeft", label: "Yaw L", icon: false },
+          { action: "flightYawRight", label: "Yaw R", icon: false },
+          { action: "flightVectorToggle", label: "VTOL", kind: "utility" },
+          { action: "exitVehicle", label: "Exit", kind: "utility" },
+        ],
+      },
+    },
+  },
   // Offline whole-world save: autosaves cash, cred, quests, inventory, safehouse, best lap,
   // and the player's position to localStorage; restored behind the title's Continue.
   persist: true,

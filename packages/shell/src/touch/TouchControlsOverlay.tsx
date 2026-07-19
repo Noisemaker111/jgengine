@@ -16,6 +16,7 @@ import {
   type TouchButton,
   type TouchButtonShape,
   type TouchJoystick,
+  type TouchJoystickVariant,
   type TouchScheme,
   type TouchStyle,
 } from "@jgengine/core/input/touchScheme";
@@ -29,11 +30,15 @@ const UTILITY_ZONE = { id: "control:utility", kind: "control", collisionPolicy: 
 export interface TouchCodeSink {
   onCodeDown(code: string): void;
   onCodeUp(code: string): void;
+  /** Analog per-action magnitudes (0..1) from the joystick's continuous vector; `null` when the stick is released. Optional so bespoke docks that only press buttons need not care. */
+  onAnalog?(values: Readonly<Record<string, number>> | null): void;
 }
 
 const JOYSTICK_SIZE = 132;
 const JOYSTICK_THUMB = 52;
-const JOYSTICK_DEADZONE = 0.28;
+/** Radial deflection below which the stick reads as centered; travel past it rescales to 0..1 so analog output starts from zero instead of jumping. */
+const JOYSTICK_DEADZONE = 0.16;
+/** Digital fallback codes fire past this per-axis deflection — kept for edge-detection consumers (`justPressed`); analog movement itself flows through `onAnalog`. */
 const JOYSTICK_AXIS_THRESHOLD = 0.42;
 const LOOK_TAP_TUNING = { tapMoveThresholdPx: 12, tapMaxMs: 280, longPressMs: 450 };
 const BUTTON_SIZE = 56;
@@ -297,6 +302,56 @@ function joystickDirections(joystick: TouchJoystick, nx: number, ny: number): Se
   return active;
 }
 
+/**
+ * Per-action analog magnitudes for a stick deflection: radial deadzone, then travel rescaled to
+ * 0..1 and split across the joystick's four mapped actions. This is what actually moves the
+ * player — the digital codes above only exist for edge-detection consumers.
+ */
+function joystickAnalogValues(joystick: TouchJoystick, nx: number, ny: number): Record<string, number> {
+  const values: Record<string, number> = {};
+  const assign = (action: string | null, magnitude: number): void => {
+    if (action !== null) values[action] = magnitude;
+  };
+  const length = Math.hypot(nx, ny);
+  let dx = 0;
+  let dy = 0;
+  if (length >= JOYSTICK_DEADZONE) {
+    const travel = Math.min(1, (length - JOYSTICK_DEADZONE) / (1 - JOYSTICK_DEADZONE));
+    dx = (nx / length) * travel;
+    dy = (ny / length) * travel;
+  }
+  assign(joystick.up, Math.max(0, -dy));
+  assign(joystick.down, Math.max(0, dy));
+  assign(joystick.left, Math.max(0, -dx));
+  assign(joystick.right, Math.max(0, dx));
+  return values;
+}
+
+/** Shared drag state machine for both joystick variants: converts pointer travel around an origin into digital edge codes + analog magnitudes, and releases both on lift. */
+function useJoystickDrag(joystick: TouchJoystick, sink: TouchCodeSink) {
+  const activeRef = useRef<Set<string>>(new Set());
+
+  const applyNormalized = (nx: number, ny: number) => {
+    const next = joystickDirections(joystick, nx, ny);
+    for (const action of activeRef.current) {
+      if (!next.has(action)) sink.onCodeUp(touchCode(action));
+    }
+    for (const action of next) {
+      if (!activeRef.current.has(action)) sink.onCodeDown(touchCode(action));
+    }
+    activeRef.current = next;
+    sink.onAnalog?.(joystickAnalogValues(joystick, nx, ny));
+  };
+
+  const release = () => {
+    for (const action of activeRef.current) sink.onCodeUp(touchCode(action));
+    activeRef.current = new Set();
+    sink.onAnalog?.(null);
+  };
+
+  return { applyNormalized, release };
+}
+
 function VirtualJoystick({
   joystick,
   sink,
@@ -311,7 +366,7 @@ function VirtualJoystick({
   const baseRef = useRef<HTMLDivElement | null>(null);
   const thumbRef = useRef<HTMLDivElement | null>(null);
   const pointerIdRef = useRef<number | null>(null);
-  const activeRef = useRef<Set<string>>(new Set());
+  const drag = useJoystickDrag(joystick, sink);
   const size = JOYSTICK_SIZE * scale;
   const thumbSize = JOYSTICK_THUMB * scale;
 
@@ -330,20 +385,12 @@ function VirtualJoystick({
     }
     const travel = radius - thumbSize / 2;
     thumb.style.transform = `translate(${nx * travel}px, ${ny * travel}px)`;
-    const next = joystickDirections(joystick, nx, ny);
-    for (const action of activeRef.current) {
-      if (!next.has(action)) sink.onCodeUp(touchCode(action));
-    }
-    for (const action of next) {
-      if (!activeRef.current.has(action)) sink.onCodeDown(touchCode(action));
-    }
-    activeRef.current = next;
+    drag.applyNormalized(nx, ny);
   };
 
   const releaseAll = () => {
     pointerIdRef.current = null;
-    for (const action of activeRef.current) sink.onCodeUp(touchCode(action));
-    activeRef.current = new Set();
+    drag.release();
     if (thumbRef.current !== null) thumbRef.current.style.transform = "translate(0px, 0px)";
   };
 
@@ -371,6 +418,117 @@ function VirtualJoystick({
       onPointerCancel={() => releaseAll()}
     >
       <div ref={thumbRef} className="rounded-full" style={{ width: thumbSize, height: thumbSize, ...tokens.joyThumb }} />
+    </div>
+  );
+}
+
+/** Capture-zone footprint of the floating joystick — generous around the dock corner, but bounded so it never blankets HUD elements further up the screen (the zone eats pointer events). */
+const FLOATING_ZONE_WIDTH = "min(42vw, 300px)";
+const FLOATING_ZONE_HEIGHT = "min(40vh, 260px)";
+
+/**
+ * The floating joystick variant: its dock corner is an invisible capture zone with a faint
+ * resting ring for discoverability; the stick spawns centered under wherever the thumb lands and
+ * follows the same deadzone/analog math as the fixed stick. The modern mobile-shooter default —
+ * the hand never has to find a fixed target mid-fight.
+ */
+function FloatingJoystick({
+  joystick,
+  sink,
+  tokens,
+  scale = 1,
+}: {
+  joystick: TouchJoystick;
+  sink: TouchCodeSink;
+  tokens: StyleTokens;
+  scale?: number;
+}) {
+  const pointerIdRef = useRef<number | null>(null);
+  const originRef = useRef<{ x: number; y: number } | null>(null);
+  const baseRef = useRef<HTMLDivElement | null>(null);
+  const thumbRef = useRef<HTMLDivElement | null>(null);
+  const [engaged, setEngaged] = useState(false);
+  const drag = useJoystickDrag(joystick, sink);
+  const size = JOYSTICK_SIZE * scale;
+  const thumbSize = JOYSTICK_THUMB * scale;
+  const radius = size / 2;
+
+  const applyVector = (clientX: number, clientY: number) => {
+    const origin = originRef.current;
+    const thumb = thumbRef.current;
+    if (origin === null || thumb === null) return;
+    let nx = (clientX - origin.x) / radius;
+    let ny = (clientY - origin.y) / radius;
+    const length = Math.hypot(nx, ny);
+    if (length > 1) {
+      nx /= length;
+      ny /= length;
+    }
+    const travel = radius - thumbSize / 2;
+    thumb.style.transform = `translate(${nx * travel}px, ${ny * travel}px)`;
+    drag.applyNormalized(nx, ny);
+  };
+
+  const releaseAll = () => {
+    pointerIdRef.current = null;
+    originRef.current = null;
+    setEngaged(false);
+    drag.release();
+    if (thumbRef.current !== null) thumbRef.current.style.transform = "translate(0px, 0px)";
+  };
+
+  return (
+    <div
+      className="pointer-events-auto relative touch-none select-none"
+      style={{ width: FLOATING_ZONE_WIDTH, height: FLOATING_ZONE_HEIGHT }}
+      onPointerDown={(event) => {
+        if (pointerIdRef.current !== null) return;
+        pointerIdRef.current = event.pointerId;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const zone = event.currentTarget.getBoundingClientRect();
+        // Clamp the spawn point so the whole base stays inside the zone.
+        const x = Math.min(Math.max(event.clientX, zone.left + radius), zone.right - radius);
+        const y = Math.min(Math.max(event.clientY, zone.top + radius), zone.bottom - radius);
+        originRef.current = { x, y };
+        setEngaged(true);
+        const base = baseRef.current;
+        if (base !== null) {
+          base.style.left = `${x - zone.left - radius}px`;
+          base.style.top = `${y - zone.top - radius}px`;
+        }
+        applyVector(event.clientX, event.clientY);
+      }}
+      onPointerMove={(event) => {
+        if (event.pointerId !== pointerIdRef.current) return;
+        event.stopPropagation();
+        applyVector(event.clientX, event.clientY);
+      }}
+      onPointerUp={(event) => {
+        if (event.pointerId !== pointerIdRef.current) return;
+        event.stopPropagation();
+        releaseAll();
+      }}
+      onPointerCancel={() => releaseAll()}
+    >
+      {/* Resting hint ring in the corner so an idle screen still shows where movement lives. */}
+      <div
+        className="pointer-events-none absolute rounded-full transition-opacity"
+        style={{
+          width: size,
+          height: size,
+          left: 0,
+          bottom: 0,
+          opacity: engaged ? 0 : 0.4,
+          ...tokens.joyBase,
+        }}
+      />
+      <div
+        ref={baseRef}
+        className="pointer-events-none absolute flex items-center justify-center rounded-full"
+        style={{ width: size, height: size, visibility: engaged ? "visible" : "hidden", ...tokens.joyBase }}
+      >
+        <div ref={thumbRef} className="rounded-full" style={{ width: thumbSize, height: thumbSize, ...tokens.joyThumb }} />
+      </div>
     </div>
   );
 }
@@ -688,12 +846,15 @@ export function TouchControlsDock({
   sink,
   style,
   scale = 1,
+  joystickVariant = "floating",
 }: {
   scheme: TouchScheme;
   sink: TouchCodeSink;
   /** Player-selected skin; falls back to the scheme's game default. */
   style?: TouchStyle;
   scale?: number;
+  /** Player-selected joystick behavior (Settings → Controls). Default `floating`. */
+  joystickVariant?: TouchJoystickVariant;
 }) {
   const tokens = STYLE_TOKENS[style ?? scheme.style];
   const layout = scheme.layout;
@@ -716,7 +877,11 @@ export function TouchControlsDock({
     <ResolvedLayout>
       {scheme.joystick !== null ? (
         <AnchoredSlot anchor={layout.movement} slotRef={joystickRef}>
-          <VirtualJoystick joystick={scheme.joystick} sink={sink} tokens={tokens} scale={scale} />
+          {joystickVariant === "floating" ? (
+            <FloatingJoystick joystick={scheme.joystick} sink={sink} tokens={tokens} scale={scale} />
+          ) : (
+            <VirtualJoystick joystick={scheme.joystick} sink={sink} tokens={tokens} scale={scale} />
+          )}
         </AnchoredSlot>
       ) : null}
 

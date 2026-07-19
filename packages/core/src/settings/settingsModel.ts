@@ -86,6 +86,7 @@ export const SETTING_IDS = {
   graphicsShadows: "graphics.shadows",
   graphicsUiScale: "graphics.uiScale",
   touchStyle: "controls.touchStyle",
+  touchJoystick: "controls.touchJoystick",
 } as const;
 
 export type GraphicsQuality = "low" | "medium" | "high";
