@@ -153,9 +153,7 @@ export function TerrainReadout({
   const planeRef = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const hitRef = useRef(new THREE.Vector3());
   const accum = useRef(0);
-  useEffect(() => {
-    planeRef.current.constant = -(guides.summary.mean ?? 0);
-  }, [guides.summary]);
+  planeRef.current.constant = -(guides.summary.mean ?? 0);
 
   useFrame((_, delta) => {
     accum.current += delta;

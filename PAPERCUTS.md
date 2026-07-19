@@ -21,10 +21,6 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 capturing editor screenshots via drive: camera_goto only pans the orbit target with no distance/pitch control and KeyF framing can bury the camera in terrain/buildings — getting a usable aerial of a district took ~8 drive round-trips of guessing y offsets
 
-2026-07-18T15:28:59.258Z — claude-fable-5 — NoisemakerJon
-
-driving screenshots via 'bun run drive' with --rpc JSON → guard.ts arg requoting corrupts the JSON payload (Unterminated string); had to invoke scripts/drive-dev.ts directly
-
 2026-07-18T15:46:51.967Z — claude-fable-5 — NoisemakerJon
 
 Shooting close-ups from different vantage points → no way to override player spawn per-shot; had to mutate editor.scene.json player_spawn via python heredocs three times and hand-restore. shoot needs a --spawn x,y,z flag / ?spawn= URL param overlay (like ?cam=) so screenshots never mutate authored scene content.
@@ -48,10 +44,6 @@ recovering issue-1148 custom-UI branch after stash/branch switch mid-session →
 2026-07-18T20:24:06.560Z — gpt-5.6-sol — NoisemakerJon
 
 locating API adoption routing for the minimap slice -> the expected scripts/api-adoption.json path does not exist, so generator ownership was not discoverable by filename
-
-2026-07-18T20:30:09.213Z — gpt-5.6-sol — NoisemakerJon
-
-running affected-package typechecks after a clean frozen install -> react/shell emitted hundreds of missing @jgengine/* modules because package checks require upstream dist builds but neither the script nor error explains that prerequisite
 
 2026-07-18T20:41:24.709Z — gpt-5.6-sol — NoisemakerJon
 
@@ -180,3 +172,11 @@ Fan-out research with background subagents → each agent's final report arrives
 2026-07-19T06:14:30.443Z — claude-fable-5 — Claude
 
 Running bun run gate on a fresh branch off main → check-content-gate fails on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building) that main's own migration removed without reseeding — main's gate is red for unrelated work until someone runs check-content-gate --update
+
+2026-07-19T06:22:33.518Z — claude-fable-5 — Claude
+
+running bun run gate on a fresh branch off main → check-content-gate red on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building already migrated); had to reseed the baseline inside an unrelated PR to get a green gate
+
+2026-07-19T07:09:44.388Z — claude-fable-5 — Claude
+
+gen:export-manifest reads built dist, so generating before a full package build silently omits new subpaths (bit #1300's useDisposable and nearly my ai/driver) — manifest check only fails later on a fully-built tree; generator should build or warn on stale dist

@@ -1,22 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useGameContext } from "@jgengine/react/provider";
-import { useGameStore, useTarget } from "@jgengine/react/hooks";
+import { useGameStore, useTarget, useTicker } from "@jgengine/react/hooks";
 import { swingTimerState, type SwingTargetInput } from "@jgengine/core/ui/swingTimer";
 
 import { isMobInstance } from "../../ai/mobs";
 import { heroOf, heroSheet } from "../../session/hero";
 
-function useHudTicker(): number {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((value) => value + 1), 100);
-    return () => clearInterval(timer);
-  }, []);
-  return tick;
-}
-
 export function SwingTimer() {
-  useHudTicker();
+  useTicker(10);
   const ctx = useGameContext();
   const userId = ctx.player.userId;
   const targetId = useTarget(userId);

@@ -543,3 +543,99 @@ export function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult 
   const channel = useMemo(() => new AxisChannel(config), [config]);
   return { channel, isDown };
 }
+
+/**
+ * Re-render at a steady rate. Returns a monotonically increasing tick count driven by a
+ * setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars,
+ * swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
+ *
+ * @capability hud-ticker re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
+ */
+export function useTicker(hz = 10): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!Number.isFinite(hz) || hz <= 0) return undefined;
+    const timer = setInterval(() => setTick((value) => value + 1), 1000 / hz);
+    return () => clearInterval(timer);
+  }, [hz]);
+  return tick;
+}
+
+/** Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements). */
+export interface DomEventTarget {
+  addEventListener(type: string, listener: (event: never) => void, options?: unknown): void;
+  removeEventListener(type: string, listener: (event: never) => void, options?: unknown): void;
+}
+
+/**
+ * Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so
+ * `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The
+ * handler is kept in a ref, so a fresh closure per render never re-binds the listener.
+ * Re-binds only when `type` or `options.capture`/`options.passive` change.
+ *
+ * @capability dom-event attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects
+ */
+export function useDomEvent<E>(
+  resolveTarget: () => DomEventTarget | null,
+  type: string,
+  handler: (event: E) => void,
+  options?: { capture?: boolean; passive?: boolean },
+): void {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+  const capture = options?.capture ?? false;
+  const passive = options?.passive;
+  useEffect(() => {
+    const target = resolveTarget();
+    if (target === null) return undefined;
+    const listener = (event: E) => handlerRef.current(event);
+    const listenerOptions = passive === undefined ? { capture } : { capture, passive };
+    target.addEventListener(type, listener as (event: never) => void, listenerOptions);
+    return () => target.removeEventListener(type, listener as (event: never) => void, listenerOptions);
+    // resolveTarget is intentionally excluded: it is expected to be an inline closure over a
+    // stable target (window, document, a ref) and re-running on its identity would re-bind
+    // every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, capture, passive]);
+}
+
+/**
+ * Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame.
+ * The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the
+ * pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for
+ * DOM-side animation outside the renderer.
+ *
+ * @capability raf-loop run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
+ */
+export function useRafLoop(onFrame: (deltaSeconds: number) => void, active = true): void {
+  const frameRef = useRef(onFrame);
+  frameRef.current = onFrame;
+  useEffect(() => {
+    if (!active || typeof requestAnimationFrame !== "function") return undefined;
+    let handle = 0;
+    let last = performance.now();
+    const step = (now: number) => {
+      frameRef.current(Math.max(0, now - last) / 1000);
+      last = now;
+      handle = requestAnimationFrame(step);
+    };
+    handle = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(handle);
+  }, [active]);
+}
+
+/**
+ * Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list
+ * itself). Attach the returned ref to the scroll container. Owns the log/chat/console
+ * scroll-to-bottom effect so panels don't hand-roll it.
+ *
+ * @capability auto-scroll pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
+ */
+export function useAutoScroll<T extends HTMLElement>(dep: unknown) {
+  const ref = useRef<T | null>(null);
+  useEffect(() => {
+    const node = ref.current;
+    if (node !== null) node.scrollTop = node.scrollHeight;
+  }, [dep]);
+  return ref;
+}

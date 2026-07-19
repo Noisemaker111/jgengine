@@ -1,5 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
+
+import { useDisposable } from "../render/useDisposable";
 
 export type BuildingFacade = "front" | "back" | "left" | "right" | "roof";
 export type BuildingPartKind =
@@ -204,8 +206,7 @@ function BuildingKindBatch({
   geometry: THREE.BoxGeometry;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const material = useMemo(() => batchMaterialFor(kind, palette), [kind, palette]);
-  useEffect(() => () => material.dispose(), [material]);
+  const material = useDisposable(() => batchMaterialFor(kind, palette), [kind, palette]);
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
@@ -225,8 +226,7 @@ function BuildingKindBatch({
 }
 
 export function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps) {
-  const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
   const buckets = useMemo(() => {
     const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
     return bucketPartMatrices(buildings, visible);

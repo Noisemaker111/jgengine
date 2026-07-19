@@ -1,11 +1,25 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 import type { RuntimePlayControl } from "@jgengine/core/editor/index";
 
 import type { EditorHostApi } from "../session";
+import { useStoreSelector } from "../useStoreSelector";
 import { Icon } from "./icons";
 import { BORDER, FOCUS_RING } from "./theme";
 import { IconButton, ToolbarDivider } from "./ui";
+
+/**
+ * Subscribe to the host runtime play-control (pause / pending steps) as an external store.
+ * Shared by the play-mode chrome pieces so none of them hand-rolls a `setState` mirror.
+ * @internal
+ */
+export function usePlayControl(api: EditorHostApi): RuntimePlayControl {
+  const store = useMemo(
+    () => ({ getState: api.getPlayControl, subscribe: api.subscribePlayControl }),
+    [api],
+  );
+  return useStoreSelector(store, (play) => play);
+}
 
 /**
  * Slim shell chrome for Play mode — same app-bar language as edit mode so switching modes
@@ -22,8 +36,7 @@ export function PlayModeBar({
   api: EditorHostApi;
   onExit: () => void;
 }) {
-  const [play, setPlay] = useState<RuntimePlayControl>(() => api.getPlayControl());
-  useEffect(() => api.subscribePlayControl(setPlay), [api]);
+  const play = usePlayControl(api);
 
   const pause = () => {
     api.handle({ method: "runtime_pause" });

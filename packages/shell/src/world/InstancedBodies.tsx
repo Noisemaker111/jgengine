@@ -4,6 +4,8 @@ import * as THREE from "three";
 
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 
+import { useDisposable } from "../render/useDisposable";
+
 export interface InstancedBodiesProps {
   /** Physics world whose SoA buffers are streamed straight into the instance matrix. */
   world: PhysicsWorld;
@@ -27,8 +29,8 @@ const DEFAULT_BASE = new THREE.Color(0.62, 0.64, 0.68);
  */
 export function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const material = useMemo(
+  const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const material = useDisposable(
     () => new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0, vertexColors: false }),
     [],
   );
@@ -98,14 +100,6 @@ export function InstancedBodies({ world, debugTint = false, baseColors, epoch = 
     }
     lastTintRef.current = debugTint;
   });
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   return (
     <instancedMesh

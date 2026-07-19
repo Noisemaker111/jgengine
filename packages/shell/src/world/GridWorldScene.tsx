@@ -4,6 +4,8 @@ import * as THREE from "three";
 import type { WorldFeature } from "@jgengine/core/world/features";
 import { resolveGridInstances } from "@jgengine/core/world/gridInstances";
 
+import { useDisposable } from "../render/useDisposable";
+
 export interface GridWorldSceneProps {
   feature: WorldFeature;
 }
@@ -28,8 +30,8 @@ export function GridWorldScene({ feature }: GridWorldSceneProps) {
   );
 
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0 }), []);
+  const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const material = useDisposable(() => new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0 }), []);
   const instanceColor = useMemo(
     () => new THREE.InstancedBufferAttribute(new Float32Array(Math.max(instances.length, 1) * 3), 3),
     [instances.length],
@@ -64,14 +66,6 @@ export function GridWorldScene({ feature }: GridWorldSceneProps) {
     mesh.instanceMatrix.needsUpdate = true;
     instanceColor.needsUpdate = true;
   }, [instances, instanceColor]);
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   if (instances.length === 0) return null;
 

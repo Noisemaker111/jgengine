@@ -953,6 +953,7 @@
 
 ## @jgengine/editor/useStoreSelector
 
+- `SubscribableSource` (interface): interface SubscribableSource — A notification-only source — `subscribe` is all a coarse invalidation needs.
 - `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
 - `shallowArrayEqual` (function): function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean — Shallow array equality — for selectors that return id lists (`selection`) or small tuples.

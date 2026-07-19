@@ -1,6 +1,6 @@
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef, type ComponentRef, type MutableRefObject } from "react";
+import { useRef, type ComponentRef, type MutableRefObject } from "react";
 import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { isCameraOccluderTransparent } from "./cameraCollision";
@@ -69,15 +69,6 @@ export function GameOrbitCamera({
     distance: 0,
   });
   const followId = followEntityId ?? userId;
-
-  useEffect(() => {
-    const entity = ctx.scene.entity.get(followId);
-    if (entity === null || runtimeRef.current !== null) return;
-    const seeded = seedOrbitFollowState({ entityPosition: entity.position, config });
-    runtimeRef.current = seeded;
-    camera.position.set(seeded.camera.x, seeded.camera.y, seeded.camera.z);
-    camera.lookAt(seeded.target.x, seeded.target.y, seeded.target.z);
-  }, [camera, config, ctx, followId]);
 
   useFrame((_, delta) => {
     const controls = controlsRef.current;

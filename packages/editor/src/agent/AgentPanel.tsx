@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { EditorHostApi } from "../session";
+import { useStoreVersion } from "../useStoreSelector";
 import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL, PANEL_BG } from "../shell/theme";
 
 const BTN = `${CONTROL} px-2 py-1 text-[11px] disabled:opacity-40`;
@@ -74,18 +75,12 @@ export function AgentPanel({
   const listRef = useRef<HTMLDivElement>(null);
 
   const endpoint = useMemo(() => buildEndpoint(url, apiKey), [url, apiKey]);
-  const context = useMemo(() => packAgentContext(api), [api, contextTick]);
-
-  useEffect(() => {
-    const unsubSession = api.getSession().subscribe(() => setContextTick((v) => v + 1));
-    const unsubMode = api.subscribeMode(() => setContextTick((v) => v + 1));
-    const unsubFocus = api.subscribeFocus(() => setContextTick((v) => v + 1));
-    return () => {
-      unsubSession();
-      unsubMode();
-      unsubFocus();
-    };
-  }, [api]);
+  // Coarse invalidation of the packed context: any session/mode/focus change (or a finished agent
+  // turn, via contextTick) rebuilds the memo.
+  const modeSource = useMemo(() => ({ subscribe: api.subscribeMode }), [api]);
+  const focusSource = useMemo(() => ({ subscribe: api.subscribeFocus }), [api]);
+  const contextVersion = useStoreVersion(api.getSession(), modeSource, focusSource);
+  const context = useMemo(() => packAgentContext(api), [api, contextTick, contextVersion]);
 
   useEffect(() => {
     const el = listRef.current;
