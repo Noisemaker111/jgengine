@@ -2,11 +2,27 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { advanceHeat, createHeatState, type HeatConfig, type HeatGain, type HeatState } from "@jgengine/core/ai/heatSystem";
 import { advancePursuit, armPursuit, createPursuitState, type PursuitState } from "@jgengine/core/ai/pursuit";
+import { DIFFICULTY_TIERS, type DifficultyProfile } from "@jgengine/core/ai/difficulty";
+import { createDriverState, driveStep, type DriverState, type DriverTuning } from "@jgengine/core/ai/driver";
 import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
 import { seededRng } from "@jgengine/core/random/rng";
 import { vehicleById } from "../entities/vehicles/catalog";
 import type { Driving } from "./driving";
 import { MAX_STARS, PURSUIT_STARS, wantedStore, type WantedSnapshot } from "./shared";
+
+/** Cruiser driving skill by wanted stars: 3★ rookies drive sloppy, 5★ interceptors drive sharp. */
+const CRUISER_SKILL: readonly DifficultyProfile[] = [
+  DIFFICULTY_TIERS.easy,
+  DIFFICULTY_TIERS.standard,
+  DIFFICULTY_TIERS.expert,
+];
+const cruiserSkill = (stars: number): DifficultyProfile =>
+  CRUISER_SKILL[Math.max(0, Math.min(CRUISER_SKILL.length - 1, stars - PURSUIT_STARS))]!;
+
+const CRUISER_TUNING: DriverTuning = (() => {
+  const def = vehicleById("car_cop");
+  return { maxSpeed: def !== undefined && def.dynamics.type === "ground" ? def.dynamics.tuning.topSpeed : 35 };
+})();
 
 const HEAT_CONFIG: HeatConfig = {
   levels: [1, 2, 3, 4, 5].map((level) => ({ level, threshold: level * 100, pursuerBudget: level * 2 })),
@@ -45,6 +61,8 @@ export function createPursuit(driving: Driving): Pursuit {
   let cruiserTimer = 0;
   /** Per-cop attack-cooldown state, owned by the pursuit primitive instead of stashed on `entity.meta`. */
   const copPursuit = new Map<string, PursuitState>();
+  /** Per-cruiser AI-driver state — steering quality scales with the wanted level. */
+  const cruiserDrivers = new Map<string, DriverState>();
 
   function publishWanted(ctx: GameContext): void {
     wantedStore.write(ctx, { heat: heatState.heat, stars: heatState.level, peakStars } satisfies WantedSnapshot);
@@ -159,27 +177,47 @@ export function createPursuit(driving: Driving): Pursuit {
             id,
             driving.makeCarSim(id, copDef.dynamics.tuning, copDef.collisionRadius, [x, 0, z], Math.atan2(target[0] - x, target[2] - z)),
           );
+          cruiserDrivers.set(id, createDriverState(target[0], target[2]));
         }
       }
     }
 
+    const skill = cruiserSkill(level);
     for (const cruiser of cruisers) {
       const vehicle = driving.cruiserVehicles.get(cruiser.id);
-      if (vehicle === undefined) continue;
+      if (vehicle === undefined) {
+        cruiserDrivers.delete(cruiser.id);
+        continue;
+      }
       const pose = vehicle.pose();
       const dist = Math.hypot(pose.position[0] - target[0], pose.position[2] - target[2]);
       if (level < PURSUIT_STARS) {
         if (dist > 60) {
           ctx.scene.entity.despawn(cruiser.id);
           driving.dropCarSim(cruiser.id);
+          cruiserDrivers.delete(cruiser.id);
         }
         continue;
       }
-      const desired = Math.atan2(target[0] - pose.position[0], target[2] - pose.position[2]);
-      let error = desired - pose.heading;
-      while (error > Math.PI) error -= Math.PI * 2;
-      while (error < -Math.PI) error += Math.PI * 2;
-      const axis = { throttle: dist > 6 ? 1 : 0.2, brake: 0, steer: Math.max(-1, Math.min(1, error * 2)), handbrake: 0 };
+      // Difficulty-aware chase driving: rookie 3★ drivers react late, wobble the wheel, and grind
+      // walls before backing out; 5★ interceptors track tight and corner clean.
+      let driver = cruiserDrivers.get(cruiser.id);
+      if (driver === undefined) {
+        driver = createDriverState(target[0], target[2]);
+        cruiserDrivers.set(cruiser.id, driver);
+      }
+      const [vx, vz] = vehicle.velocity();
+      const forwardSpeed = vx * Math.sin(pose.heading) + vz * Math.cos(pose.heading);
+      const drive = driveStep(
+        driver,
+        dt,
+        { x: pose.position[0], z: pose.position[2], heading: pose.heading, speed: forwardSpeed },
+        { x: target[0], z: target[2] },
+        skill,
+        CRUISER_TUNING,
+        rng,
+      );
+      const axis = { throttle: drive.throttle, brake: drive.brake, steer: drive.steer, handbrake: 0 };
       driving.refreshClamp(ctx, cruiser.id, pose.position, dt);
       const result = tickDrivableVehicle(vehicle, dt, axis, { groundHeight: (x, z) => ctx.world.groundHeightAt(x, z) });
       ctx.scene.entity.setPose(cruiser.id, result.pose);

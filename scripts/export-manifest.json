@@ -3,6 +3,7 @@
     ".",
     "./ai/crowd",
     "./ai/difficulty",
+    "./ai/driver",
     "./ai/flock",
     "./ai/groupAssist",
     "./ai/heatSystem",

@@ -4,6 +4,18 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## ai-driver — difficulty-aware chase/route driving step producing throttle/brake/steer for the vehicle sim
+
+- `driveStep` (function) · `import { driveStep } from "@jgengine/core/ai/driver"`
+
+## ai-driver-path-target — pure-pursuit lookahead target on a road/route polyline for street following
+
+- `pathTargetAhead` (function) · `import { pathTargetAhead } from "@jgengine/core/ai/driver"`
+
+## ai-driver-state — fresh serializable state for one difficulty-aware AI driver
+
+- `createDriverState` (function) · `import { createDriverState } from "@jgengine/core/ai/driver"`
+
 ## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
 
 - `createAreaEffectField` (function) · `import { createAreaEffectField } from "@jgengine/core/world"`
