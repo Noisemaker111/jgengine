@@ -26,6 +26,7 @@ export * from "./cutscene";
 export * from "./damageDirection";
 export * from "./modals";
 export * from "./fastTravel";
+export * from "./floatingText";
 export * from "./components";
 export * from "./hud";
 export * from "./bars";

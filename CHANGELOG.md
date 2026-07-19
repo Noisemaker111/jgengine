@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Floating combat text / damage numbers.** `@jgengine/core/ui/floatingText`' `createFloatingTextField` is a
+  genre-agnostic, deterministic, allocation-aware field of world-anchored text pops (damage, crits, heals, XP/gold,
+  status, barks): `emit({ position, text, kind?, color?, size?, rise?, drift?, lifetime? })`, `update(dt)` (rise +
+  seeded drift + fade + swap-remove reaping), `active()` views, a capped pool that recycles the oldest, `clear`,
+  `subscribe`, and serializable `snapshot`/`restore`. `kind` is a free string the presentation styles — no combat
+  coupling. New `@jgengine/react`: `layoutFloatingText` (pure project/cull/depth-sort over the `EntityFrames`
+  projector seam) and `FloatingText` (per-`kind` skinnable overlay). New `@jgengine/shell/vfx/WorldFloatingText`
+  binds the live R3F camera and advances the field. New `floating-text` demo.
 - **Codex / bestiary.** `@jgengine/core/game/codex`' `createCodex` tracks discovery over a fixed set of
   defined entries — `discover`, `isDiscovered`, category-filtered `list`, `categories`, `discoveredCount`/
   `total`/`completion`, an `onDiscover` seam, secret masking, and serializable `snapshot`/`restore`; the view
