@@ -34,6 +34,7 @@ import {
 } from "./assetImport";
 import { newPlacementId, type EditorUiStore, type PlacementTool } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
+import { useStoreVersion } from "./useStoreSelector";
 import { TerrainPanel } from "./TerrainPanel";
 import { LightingPanel } from "./LightingPanel";
 import { InspectorPanel } from "./InspectorPanel";
@@ -185,10 +186,10 @@ export function EditorChrome({
    */
   onRegisterAsset?: (id: string, url: string) => void;
 }) {
-  const [, setTick] = useState(0);
   const layoutRef = useRef<ReturnType<typeof createShellLayoutStore> | null>(null);
   layoutRef.current ??= createShellLayoutStore(gameId);
   const layout = layoutRef.current;
+  useStoreVersion(session, ui, layout);
   const consoleRef = useRef<ReturnType<typeof createEditorConsoleStore> | null>(null);
   consoleRef.current ??= createEditorConsoleStore();
   const consoleStore = consoleRef.current;
@@ -262,10 +263,6 @@ export function EditorChrome({
   useF2Chord("KeyE", () => api.setMode("play"));
   // F2+Q leaves the editor entirely (back to the game) — only meaningful when summoned over one.
   useF2Chord("KeyQ", useCallback(() => onExitEditor?.(), [onExitEditor]));
-
-  useEffect(() => session.subscribe(() => setTick((value) => value + 1)), [session]);
-  useEffect(() => ui.subscribe(() => setTick((value) => value + 1)), [ui]);
-  useEffect(() => layout.subscribe(() => setTick((value) => value + 1)), [layout]);
 
   const copySelection = useCallback((): number => {
     const current = session.getState();

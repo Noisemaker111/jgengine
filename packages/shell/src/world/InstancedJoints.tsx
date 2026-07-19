@@ -4,6 +4,8 @@ import * as THREE from "three";
 
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 
+import { useDisposable } from "../render/useDisposable";
+
 export interface InstancedJointsProps {
   /** Physics world whose active joints are drawn as line segments between their world anchors. */
   world: PhysicsWorld;
@@ -20,7 +22,7 @@ export function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsPro
   const geometryRef = useRef<THREE.BufferGeometry>(null);
   const positions = useMemo(() => new Float32Array(world.jointCapacity * 6), [world.jointCapacity]);
   const attribute = useMemo(() => new THREE.BufferAttribute(positions, 3), [positions]);
-  const material = useMemo(() => new THREE.LineBasicMaterial({ color }), [color]);
+  const material = useDisposable(() => new THREE.LineBasicMaterial({ color }), [color]);
 
   useEffect(() => {
     const geometry = geometryRef.current;
@@ -36,8 +38,6 @@ export function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsPro
     attribute.needsUpdate = true;
     geometry.setDrawRange(0, count * 2);
   });
-
-  useEffect(() => () => material.dispose(), [material]);
 
   return (
     <lineSegments frustumCulled={false}>

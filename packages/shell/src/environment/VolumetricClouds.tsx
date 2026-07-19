@@ -1,8 +1,10 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import type { VolumetricCloudsRules } from "@jgengine/core/world/volumetricClouds";
+
+import { useDisposable } from "../render/useDisposable";
 
 /** Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction. */
 export interface VolumetricCloudsProps {
@@ -176,7 +178,7 @@ export function VolumetricClouds({ rules, sunDirection }: VolumetricCloudsProps)
   const meshRef = useRef<THREE.Mesh>(null);
   const timeRef = useRef(0);
 
-  const material = useMemo(() => {
+  const material = useDisposable(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
         uCameraPos: { value: new THREE.Vector3() },
@@ -201,8 +203,6 @@ export function VolumetricClouds({ rules, sunDirection }: VolumetricCloudsProps)
       fog: false,
     });
   }, [rules, sunDirection]);
-
-  useEffect(() => () => material.dispose(), [material]);
 
   useFrame((state, delta) => {
     timeRef.current += delta;

@@ -1,6 +1,7 @@
 import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useDisposable } from "../render/useDisposable";
 import { createOceanConfig, type OceanConfig, type ResolvedOceanConfig } from "./OceanConfig";
 import { createOceanMaterial, syncOceanMaterial } from "./OceanMaterial";
 
@@ -37,16 +38,11 @@ function createOceanGeometry(config: ResolvedOceanConfig, depthAt?: (x: number, 
 export function Ocean({ config, depthAt, ...meshProps }: OceanProps) {
   const resolved = useMemo(() => createOceanConfig(config), [config]);
   const elapsedRef = useRef(0);
-  const geometry = useMemo(() => createOceanGeometry(resolved, depthAt), [resolved, depthAt]);
-  const material = useMemo(() => createOceanMaterial(resolved), [resolved]);
-
-  useEffect(() => {
-    return () => geometry.dispose();
-  }, [geometry]);
+  const geometry = useDisposable(() => createOceanGeometry(resolved, depthAt), [resolved, depthAt]);
+  const material = useDisposable(() => createOceanMaterial(resolved), [resolved]);
 
   useEffect(() => {
     elapsedRef.current = 0;
-    return () => material.dispose();
   }, [material]);
 
   useFrame((_, delta) => {

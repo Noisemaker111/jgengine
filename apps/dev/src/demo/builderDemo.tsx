@@ -1,5 +1,5 @@
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -108,20 +108,17 @@ function BuilderScene() {
   const controller = useRef<PlacementController>(
     createPlacementController({ footprint: FOOTPRINT, snapMode: "grid", grid: 1, rules: { bounds: BOUNDS } }),
   );
-  const [preview, setPreview] = useState<PlacementPreview | null>(null);
+  const [preview, setPreview] = useState<PlacementPreview | null>(() =>
+    controller.current.hover({ point: [-6, terrain.sampleHeight(-6, -4), -4], normal: [0, 1, 0] }),
+  );
   const [brushCenter, setBrushCenter] = useState<readonly [number, number] | null>([8, -6]);
-  const [placed, setPlaced] = useState<readonly PlacedStructure[]>(structures.list());
+  // `structures.list()` returns a cached snapshot with stable identity between writes, so it is a
+  // valid `getSnapshot` as-is.
+  const placed = useSyncExternalStore(structures.subscribe, () => structures.list());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toolMode, setToolMode] = useState<BuilderState["mode"]>("build");
   const [version, setVersion] = useState(0);
   const stateRef = useRef<BuilderState>({ mode: "build", terraformMode: "raise", snapMode: "grid" });
-
-  useEffect(() => structures.subscribe(() => setPlaced(structures.list())), []);
-
-  useEffect(() => {
-    const seed: PlacementPreview = controller.current.hover({ point: [-6, terrain.sampleHeight(-6, -4), -4], normal: [0, 1, 0] });
-    setPreview(seed);
-  }, []);
 
   useEffect(() => {
     const dom = three.gl.domElement;

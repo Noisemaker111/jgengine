@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import * as THREE from "three";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
@@ -26,6 +26,8 @@ import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
 import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
+const noopSubscribe = (): (() => void) => () => undefined;
+
 /**
  * Resolves the document AuthoredScene renders: when a {@link getDocumentLiveSync} bus is
  * installed (editor host live), subscribe to document patches; otherwise use the prop.
@@ -33,32 +35,23 @@ import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRe
  * @internal
  */
 export function useLiveEditorDocument(document: EditorDocument, live = true): EditorDocument {
-  const [resolved, setResolved] = useState(document);
-  useEffect(() => {
-    if (!live) {
-      setResolved(document);
-      return;
-    }
-    let unsubDoc: (() => void) | undefined;
-    const attach = () => {
+  const subscribeLive = useCallback((onStoreChange: () => void) => {
+    let unsubDoc = getDocumentLiveSync()?.subscribeDocument(onStoreChange);
+    const unsubInstall = subscribeDocumentLiveSyncInstall(() => {
       unsubDoc?.();
-      unsubDoc = undefined;
-      const sync = getDocumentLiveSync();
-      if (sync === null) {
-        setResolved(document);
-        return;
-      }
-      setResolved(sync.getDocument());
-      unsubDoc = sync.subscribeDocument((event) => setResolved(event.document));
-    };
-    attach();
-    const unsubInstall = subscribeDocumentLiveSyncInstall(attach);
+      unsubDoc = getDocumentLiveSync()?.subscribeDocument(onStoreChange);
+      onStoreChange();
+    });
     return () => {
       unsubInstall();
       unsubDoc?.();
     };
-  }, [document, live]);
-  return live ? resolved : document;
+  }, []);
+  const getDocument = useCallback(
+    () => (live ? (getDocumentLiveSync()?.getDocument() ?? document) : document),
+    [live, document],
+  );
+  return useSyncExternalStore(live ? subscribeLive : noopSubscribe, getDocument, getDocument);
 }
 
 registerBuiltinSceneKindRenderers();
