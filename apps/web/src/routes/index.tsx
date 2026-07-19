@@ -110,15 +110,15 @@ function Home() {
               className="animate-fade-up mt-7 text-balance text-[2.6rem] font-bold leading-[1.05] tracking-tighter text-slate-50 sm:text-7xl"
               style={{ animationDelay: "60ms" }}
             >
-              A TypeScript game engine built for <span className="text-gradient">AI coding agents</span>.
+              Make a game that <span className="text-gradient">anything</span> with jgengine.
             </h1>
             <p
               className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base text-slate-400 sm:text-lg"
               style={{ animationDelay: "120ms" }}
             >
-              One interface: tell your agent{" "}
-              <span className="font-mono text-emerald-300/90">Make a game that … with jgengine</span>.
-              It scaffolds, plans, and builds the whole game — no CLI for you, no docs to paste.
+              That sentence is the whole interface. Underneath it is a pure-TypeScript game engine
+              SDK — worlds, entities, combat, multiplayer, a 3D editor — that any coding agent
+              builds a complete game on. No CLI for you, no docs to paste.
             </p>
             <div
               className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3"

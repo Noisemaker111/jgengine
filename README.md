@@ -4,11 +4,11 @@
 
 # jgengine
 
-**agent-first game framework SDK** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com) · agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
+**pure-TypeScript game framework SDK** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com). The whole product surface for people is one sentence said to a coding agent: *Make a game that … with jgengine*. Agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
 
 > Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is software — a pure-TypeScript **framework** (entity stores, commands, catalogs, multiplayer seams, R3F shell), not an ECS and not a general-purpose 3D engine.
 
-Built so coding agents can ship games from a short prompt. Skills provide design playbooks, intake, focused API guidance, and verification. `@jgengine/core` has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo still ships a wide primitive set — skills route selectively so agents do not load every domain by default.
+`@jgengine/core` has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo ships a wide primitive set. Coding agents build whole games on it from that one sentence: skills provide design playbooks, intake, focused API guidance, and verification, and route selectively so agents do not load every domain by default.
 
 ## Packages
 
