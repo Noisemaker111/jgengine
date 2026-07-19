@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.12.0";
+export const VERSION = "0.13.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,30 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.13.0": {
+    migrate: [
+      "Bump lockstep SDK packages to ^0.13.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine is 0.10.0; @jgengine/github is unchanged.",
+      "Nothing required — additive release. Two overridable defaults changed in the player's favor: offline games persist to localStorage automatically (#1207) and rigged catalog assets animate by default via clip metadata + semantic clip roles (#1209); opt out explicitly if a game relied on the old behavior.",
+    ],
+    added: [
+      "Drop-in inventory grid, window manager, and character sheet (#1220) — @jgengine/react InventoryGrid (drag/stack/split), toggleable windows backed by @jgengine/core/ui/panelModel, CharacterSheet paperdoll; all HudTheme-skinnable.",
+      "Serializable runtime snapshots (#1179) — capture/restore live runtime state including magazine state (@jgengine/core/combat/magazine) and stat modifiers.",
+      "Portable weapon plumbing (#1211) — @jgengine/core/combat/weaponFire composes trigger → magazine → spread → projectile/hitscan as data.",
+      "Portable leveling (#1206) and portable damage-pool access (#1208) as genre-agnostic game-context seams.",
+      "Named combat VFX presets (#1204) — @jgengine/core/combat/vfxPresets; a visible attack is one line.",
+      "Runtime-measured render-bounds hitboxes (#1227) — colliders wrap what the shell actually mounts.",
+      "Procedural part motion for rig-less part-composed characters (#1222); squash & stretch and death splat (#1229).",
+      "City fabric (#1191) — streetGenerator + cityGenerator, editor bake verb, street-aware lots, road junctions, grounding.",
+      "jgengine recipe CLI (#1214, #1231) — vetted wired compositions, compile-pinned against the SDK.",
+      "Editor/debug modes mirrored to the URL with an editor exit (#1203); dependency-free WebGL screenshot script in the game template (#1202).",
+    ],
+    changed: [
+      "Offline games persist to localStorage by default (#1207); rigged assets animate by default (#1209).",
+      "RTS camera pan inversion fixed (#1228); sprite raycast warning silenced and duplicate nameplate health bars removed (#1194); scaffolded F2+E editor Tailwind @source renders its theme (#1195).",
+      "Outside-game DX: stat-pool no-op stability, camera-transparent decor, cleaner install/version output, headless UI-intent seam (#1223).",
+    ],
+    removed: [],
+  },
   "0.12.0": {
     migrate: [
       "Bump lockstep SDK packages to ^0.12.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine is 0.9.0; @jgengine/github is unchanged.",
