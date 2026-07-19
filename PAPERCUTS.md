@@ -85,10 +85,6 @@ opening the verified runtime-state PR from PowerShell -> gh pr create split mult
 
 shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
 
-2026-07-18T23:09:33.687Z — fable — Claude
-
-vice-isle drive rpc editor_summon: editor host mounts then React 'Maximum update depth exceeded' loop in editor shell ContentBrowser/AssetThumbnail — page goes black, editor verbs unreachable (wanted an editor-view screenshot of authored paths)
-
 2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
 
 Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstall.test.ts fails 3 tests because GNU tar treats C:\... as a remote host (Cannot connect to C: resolve failed); needs --force-local or forward-slash paths on win32
@@ -124,10 +120,6 @@ running independent recipe/surface/test/type checks for portable damage in paral
 2026-07-18T23:09:23.301Z — gpt-5.6-sol — NoisemakerJon
 
 running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh
-
-2026-07-19T00:30:01.147Z — claude-opus-4-8 — NoisemakerJon
-
-Opened the-robots/loopline editor (?mode=editor) → infinite React 'Maximum update depth exceeded' loop in useGlbThumbnail/AssetThumbnail (ContentBrowser/BottomDock), triggered when GLB model textures fail to load; the GameUiErrorBoundary then blanks the whole editor chrome. Standalone/spire-cards editors (no failing model assets) are unaffected.
 
 2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
 
