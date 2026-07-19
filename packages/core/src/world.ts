@@ -392,6 +392,20 @@ export {
   type CityZoneProfile,
 } from "./world/cityContent";
 export {
+  DEFAULT_CITY_LEVEL_BIAS,
+  DEFAULT_CITY_ZONE_MIXES,
+  generateCity,
+  resolveCityLotContent,
+  type CityContentOptions,
+  type CityContentOverrides,
+  type CityGeneratorOptions,
+  type CityLevelClassBias,
+  type CityZoneMixes,
+  type GeneratedCity,
+  type MassingFootprint,
+  type ResolvedCityLot,
+} from "./world/cityGenerator";
+export {
   CITY_DEFAULTS,
   CITY_KIND,
   CITY_SCHEMA,
