@@ -33,6 +33,7 @@ interface Dials {
   lotW: number;
   lotD: number;
   setback: number;
+  landmarks: number;
 }
 
 const DEFAULTS: Dials = {
@@ -47,6 +48,7 @@ const DEFAULTS: Dials = {
   lotW: 12,
   lotD: 10,
   setback: 3,
+  landmarks: 0.06,
 };
 
 const CIRCUIT_RULES: Omit<StreetNetworkRules, "seed"> = {
@@ -214,6 +216,7 @@ function Playground() {
           boulevards: dials.boulevards,
         },
         lots: { footprint: { w: dials.lotW, d: dials.lotD }, setback: dials.setback },
+        content: { landmarks: dials.landmarks },
       },
       dials.size,
       dials.size,
@@ -322,13 +325,14 @@ function Playground() {
               <Slider label="Lot frontage" value={dials.lotW} min={8} max={24} step={1} onChange={(v) => set({ lotW: v })} />
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
+              <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
             </>
           ) : null}
           <div className="text-xs leading-relaxed text-slate-500">
             {mode === "city" ? (
               <>
                 <span className="text-emerald-300">{result.network.streets.length}</span> streets ·{" "}
-                <span className="text-emerald-300">{result.city?.lots.length ?? 0}</span> street-facing building lots
+                <span className="text-emerald-300">{result.city?.lotContent?.length ?? result.city?.lots.length ?? 0}</span> buildings
               </>
             ) : (
               <>
