@@ -129,6 +129,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
+- `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry"`
+- `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/cityGeometry"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
 ## city-generator — resolve bare city lots into zoned, classed, massed buildings

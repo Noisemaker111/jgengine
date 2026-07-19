@@ -15,6 +15,7 @@ import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
 import {
   buildTrimmedIntersections,
   GROUND_DECAL_LAYERS,
+  isOnRoad,
   type IntersectionStreet,
   type RoadRibbon,
 } from "@jgengine/core/world/roads";
@@ -491,11 +492,64 @@ export function buildCityModel(
   for (const i of order) {
     appendRibbon(streetPos, streetCol, streetIdx, trimmed.ribbons[i]!, levelColors[ribbonLevel(trimmed.trimmed[i]!.path)]);
   }
-  // Sidewalk bands flanking the arterials, at the road layer, a touch lighter.
-  for (const s of streets) {
+  // Sidewalk bands flanking the arterials, at the road layer, a touch lighter — trimmed into
+  // spans wherever the band would plow across another street's pavement (crossings, junctions),
+  // so no white strip ever runs over a road and dead-stops on the far side.
+  const SIDEWALK_W = 2.2;
+  const streetBounds = streets.map((s) => {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (const [x, z] of s.points) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z);
+      maxZ = Math.max(maxZ, z);
+    }
+    const pad = s.width / 2 + SIDEWALK_W + 6;
+    return { minX: minX - pad, maxX: maxX + pad, minZ: minZ - pad, maxZ: maxZ + pad };
+  });
+  for (let si = 0; si < streets.length; si += 1) {
+    const s = streets[si]!;
     if (s.level === "lane" || s.sidewalks === undefined) continue;
-    pushRibbon(streetPos, streetCol, streetIdx, s.sidewalks.left, 2.2, ROAD_Y, sidewalkColor);
-    pushRibbon(streetPos, streetCol, streetIdx, s.sidewalks.right, 2.2, ROAD_Y, sidewalkColor);
+    const near = streetBounds[si]!;
+    const crossers = streets.filter((_, ti) => {
+      if (ti === si) return false;
+      const b = streetBounds[ti]!;
+      return !(b.maxX < near.minX || b.minX > near.maxX || b.maxZ < near.minZ || b.minZ > near.maxZ);
+    });
+    for (const band of [s.sidewalks.left, s.sidewalks.right]) {
+      let run: (readonly [number, number])[] = [];
+      for (const p of band) {
+        const blocked = crossers.some((t) => isOnRoad(t.points, t.width + SIDEWALK_W, p[0], p[1]));
+        if (blocked) {
+          if (run.length >= 2) pushRibbon(streetPos, streetCol, streetIdx, run, SIDEWALK_W, ROAD_Y, sidewalkColor);
+          run = [];
+        } else {
+          run.push(p);
+        }
+      }
+      if (run.length >= 2) pushRibbon(streetPos, streetCol, streetIdx, run, SIDEWALK_W, ROAD_Y, sidewalkColor);
+    }
+  }
+  // Cul-de-sac turning bulbs: a kept dead end is a deliberate turnaround, so pave it as one —
+  // a disc at the dangling terminus in the street's own color — instead of a bare squared stub.
+  const pushDisc = (cx: number, cz: number, radius: number, color: THREE.Color): void => {
+    const segs = 20;
+    const base = streetPos.length / 3;
+    streetPos.push(cx, ROAD_Y, cz);
+    streetCol.push(color.r, color.g, color.b);
+    for (let i = 0; i <= segs; i += 1) {
+      const a = (i / segs) * Math.PI * 2;
+      streetPos.push(cx + Math.cos(a) * radius, ROAD_Y, cz + Math.sin(a) * radius);
+      streetCol.push(color.r, color.g, color.b);
+    }
+    for (let i = 0; i < segs; i += 1) streetIdx.push(base, base + 1 + i, base + 2 + i);
+  };
+  for (const s of streets) {
+    if (s.bulb === undefined) continue;
+    pushDisc(s.bulb[0], s.bulb[1], Math.max(s.width * 0.85, s.width / 2 + 2), levelColors[s.level]);
   }
   // Welded junction surfaces last (they read as one clean crossing patch).
   const streetSweepCount = streetIdx.length;

@@ -1,7 +1,24 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_LANDMARK_SHARE, LANDMARK_HARD_CAP, generateCity, resolveCityLotContent } from "./cityGenerator";
+import { DEFAULT_LANDMARK_SHARE, LANDMARK_HARD_CAP, generateCity, resolveCityLotContent, type ResolvedCityLot } from "./cityGenerator";
 import { CITY_LANDMARK_CLASSES, CITY_LOT_CLASSES, type CityLandmarkClass, type CityLotClass } from "./cityContent";
+import { rectClearsPolyline, rectsSeparated, type OrientedRect } from "./cityGeometry";
 import { isOnRoad } from "./roads";
+
+/** World-space oriented rect of a resolved building's massing bounds. */
+function massingRect(entry: ResolvedCityLot): OrientedRect {
+  const b = entry.footprint.bounds;
+  const lx = (b.minX + b.maxX) / 2;
+  const lz = (b.minZ + b.maxZ) / 2;
+  const c = Math.cos(entry.rotationY);
+  const s = Math.sin(entry.rotationY);
+  return {
+    x: entry.center[0] + lx * c + lz * s,
+    z: entry.center[1] - lx * s + lz * c,
+    hw: (b.maxX - b.minX) / 2,
+    hd: (b.maxZ - b.minZ) / 2,
+    angle: entry.rotationY,
+  };
+}
 
 describe("cityGenerator", () => {
   const city = generateCity({ seed: "spec-city" }, 300, 300);
@@ -285,5 +302,89 @@ describe("resolveCityLotContent — landmark pass", () => {
     const marks = landmarksOf(rs);
     expect(marks.length).toBeGreaterThan(0);
     for (const r of marks) expect(r.landmark).toBe("arena");
+  });
+});
+
+describe("plot contract (#1454)", () => {
+  // The playground's default dials — the exact configuration the overlap bugs shipped in.
+  const seeds = ["vice-isle", "neon-harbor-42", "plot-a"];
+  const cities = seeds.map((seed) =>
+    generateCity(
+      { seed, lots: { footprint: { w: 12, d: 10 }, setback: 3 }, content: { landmarks: 0.06 } },
+      260,
+      260,
+    ),
+  );
+
+  test("no two plots overlap — any road pair, any side, corners and curves included", () => {
+    for (const city of cities) {
+      const rects: OrientedRect[] = city.lots.map((lot) => ({
+        x: lot.center[0],
+        z: lot.center[1],
+        hw: lot.footprint.w / 2 - 0.05,
+        hd: lot.footprint.d / 2 - 0.05,
+        angle: lot.rotationY,
+      }));
+      for (let i = 0; i < rects.length; i += 1) {
+        for (let j = i + 1; j < rects.length; j += 1) {
+          expect(rectsSeparated(rects[i]!, rects[j]!)).toBe(true);
+        }
+      }
+    }
+  });
+
+  test("no plot footprint touches any street corridor (lanes included)", () => {
+    for (const city of cities) {
+      for (const lot of city.lots) {
+        const rect: OrientedRect = {
+          x: lot.center[0],
+          z: lot.center[1],
+          hw: lot.footprint.w / 2,
+          hd: lot.footprint.d / 2,
+          angle: lot.rotationY,
+        };
+        for (const street of city.network.streets) {
+          expect(rectClearsPolyline(rect, street.points, street.width / 2 - 0.1)).toBe(true);
+        }
+      }
+    }
+  });
+
+  test("every resolved massing fits its plot — classes never outgrow the frontage spacing", () => {
+    for (const city of cities) {
+      for (const entry of city.lotContent!) {
+        if (entry.landmark !== undefined) continue; // landmarks legitimately span merged plots
+        expect(entry.footprint.w).toBeLessThanOrEqual(entry.lot.footprint.w + 1e-6);
+        expect(entry.footprint.d).toBeLessThanOrEqual(entry.lot.footprint.d + 1e-6);
+        const b = entry.footprint.bounds;
+        expect(Math.max(Math.abs(b.minX), Math.abs(b.maxX))).toBeLessThanOrEqual(entry.lot.footprint.w / 2 + 1e-6);
+        expect(Math.max(Math.abs(b.minZ), Math.abs(b.maxZ))).toBeLessThanOrEqual(entry.lot.footprint.d / 2 + 1e-6);
+      }
+    }
+  });
+
+  test("no two resolved buildings overlap — landmarks included", () => {
+    for (const city of cities) {
+      const rects = city.lotContent!.map((entry) => {
+        const r = massingRect(entry);
+        return { ...r, hw: Math.max(0.1, r.hw - 0.05), hd: Math.max(0.1, r.hd - 0.05) };
+      });
+      for (let i = 0; i < rects.length; i += 1) {
+        for (let j = i + 1; j < rects.length; j += 1) {
+          expect(rectsSeparated(rects[i]!, rects[j]!)).toBe(true);
+        }
+      }
+    }
+  });
+
+  test("no resolved building (landmarks included) intrudes into any street corridor", () => {
+    for (const city of cities) {
+      for (const entry of city.lotContent!) {
+        const rect = massingRect(entry);
+        for (const street of city.network.streets) {
+          expect(rectClearsPolyline(rect, street.points, street.width / 2 - 0.1)).toBe(true);
+        }
+      }
+    }
   });
 });

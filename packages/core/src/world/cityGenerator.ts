@@ -30,8 +30,7 @@ import {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./cityContent";
-import type { Vec2 } from "./cityGeometry";
-import { isOnRoad } from "./roads";
+import { rectClearsPolyline, rectsSeparated, type OrientedRect, type Vec2 } from "./cityGeometry";
 import { seededStreams } from "../random/rng";
 import type { WeightedParamEntry } from "../scene/sceneKinds";
 import {
@@ -105,20 +104,18 @@ export function generateCity(options: CityGeneratorOptions, hx: number, hz: numb
   const frontage = network.streets
     .filter((street) => laneFrontage || street.level !== "lane")
     .map((street) => ({ path: street.points, width: street.width }));
-  const candidates = deriveBuildingLots({
+  // Streets excluded from frontage (lanes by default) are still pavement: the frontage engine
+  // keeps every plot's full footprint off them via `avoid`, alongside every frontage corridor.
+  const avoid = network.streets
+    .filter((street) => !(laneFrontage || street.level !== "lane"))
+    .map((street) => ({ path: street.points, width: street.width }));
+  const lots = deriveBuildingLots({
     ...lotRest,
     roads: frontage,
+    avoid,
     seed,
     area: lotRest.area ?? { center: [0, 0], halfExtents: [hx, hz] },
   });
-  // The frontage engine only avoids the roads it lines; streets excluded from frontage (lanes by
-  // default) are still pavement, so drop any lot whose footprint would straddle one.
-  const clearance = Math.min(lotRest.footprint?.w ?? 12, lotRest.footprint?.d ?? 10);
-  const lots = candidates.filter((lot) =>
-    network.streets.every(
-      (street) => !isOnRoad(street.points, street.width + clearance, lot.center[0], lot.center[1]),
-    ),
-  );
   if (options.content === undefined || options.content === false) return { network, lots };
   const overrides = options.content === true ? {} : options.content;
   const lotContent = resolveCityLotContent(
@@ -274,6 +271,34 @@ function biasMix(mix: readonly WeightedParamEntry[], levelBias: Partial<Record<C
   });
 }
 
+/**
+ * Enforce the plot contract on a lot's massing: if the composed pieces (porches, awnings, side
+ * silos) overhang the plot's half-extents, scale every piece's lot-local XZ offset and size by one
+ * uniform factor so the whole silhouette fits the plot. Uniform scale is rotation-safe (crossed
+ * gables keep their shape) and keeps the massing centered on the lot.
+ */
+function fitPiecesToPlot(pieces: CityLotPiece[], plotW: number, plotD: number): CityLotPiece[] {
+  let reach = 1;
+  for (const piece of pieces) {
+    const c = Math.abs(Math.cos(piece.rotationY));
+    const s = Math.abs(Math.sin(piece.rotationY));
+    const hx = (piece.size[0] / 2) * c + (piece.size[2] / 2) * s;
+    const hz = (piece.size[0] / 2) * s + (piece.size[2] / 2) * c;
+    reach = Math.max(
+      reach,
+      (Math.abs(piece.offset[0]) + hx) / Math.max(1e-6, plotW / 2),
+      (Math.abs(piece.offset[2]) + hz) / Math.max(1e-6, plotD / 2),
+    );
+  }
+  if (reach <= 1 + 1e-9) return pieces;
+  const f = 1 / reach;
+  return pieces.map((piece) => ({
+    ...piece,
+    offset: [piece.offset[0] * f, piece.offset[1], piece.offset[2] * f] as const,
+    size: [piece.size[0] * f, piece.size[1], piece.size[2] * f] as const,
+  }));
+}
+
 /** Local axis-aligned bounding box of a lot's massing pieces, accounting for each piece's local yaw. */
 function massingFootprint(pieces: readonly CityLotPiece[]): MassingFootprint {
   let minX = Infinity;
@@ -406,7 +431,16 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
     const mix = biasTable === null ? mixes[zone] : biasMix(mixes[zone], biasTable[streetLevel]);
     const cls = pickClass(mix, classRoll);
     const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing);
-    const pieces = buildLotPieces(cls, placement.width, placement.depth, placement.floors, floorHeight, rng);
+    // The plot is the contract: the frontage engine spaced plots of exactly `lot.footprint`, so a
+    // class roll may come in SMALLER than the plot but never larger — a 20 m tower profile on a
+    // 12 m plot previously overlapped both neighbours and spilled onto the road.
+    const fitW = Math.min(placement.width, lot.footprint.w);
+    const fitD = Math.min(placement.depth, lot.footprint.d);
+    const pieces = fitPiecesToPlot(
+      buildLotPieces(cls, fitW, fitD, placement.floors, floorHeight, rng),
+      lot.footprint.w,
+      lot.footprint.d,
+    );
     return {
       lot,
       zone,
@@ -536,6 +570,10 @@ function placeLandmarks(
   candidates.sort((a, b) => b.score - a.score);
   const selected = candidates.slice(0, cap);
 
+  // Street corridors the landmark footprint must stay off — ALL streets, lanes included.
+  const corridors = city.network.streets.map((street) => ({ path: street.points, half: street.width / 2 - 0.02 }));
+  const placedRects: OrientedRect[] = [];
+
   for (const cand of selected) {
     const { cluster, zone, cls } = cand;
     const domIdx = cluster[Math.floor(cluster.length / 2)]!;
@@ -544,7 +582,7 @@ function placeLandmarks(
     // Cluster AABB in the dominant lot's local frame (clustered lots share a frontage ⇒ near-parallel).
     let minX = Infinity;
     let maxX = -Infinity;
-    let minZ = Infinity;
+    let baseMinZ = Infinity;
     let maxZ = -Infinity;
     for (const i of cluster) {
       const lot = lots[i]!;
@@ -554,49 +592,90 @@ function placeLandmarks(
       const hd = lot.footprint.d / 2;
       minX = Math.min(minX, loc[0] - hw);
       maxX = Math.max(maxX, loc[0] + hw);
-      minZ = Math.min(minZ, loc[1] - hd);
+      baseMinZ = Math.min(baseMinZ, loc[1] - hd);
       maxZ = Math.max(maxZ, loc[1] + hd);
     }
     const clusterWidth = maxX - minX;
-    const clusterDepth = maxZ - minZ;
-    // Grow depth into the block (away from the road at +z) so the parcel reads as block-scale.
-    const targetDepth = Math.max(clusterDepth, clusterWidth * landmarkMinDepthFactor(cls));
-    minZ -= targetDepth - clusterDepth;
-    const width = maxX - minX;
-    const depth = maxZ - minZ;
-    const localCenter: Vec2 = [(minX + maxX) / 2, (minZ + maxZ) / 2];
-    const worldOffset = localToWorld(localCenter, dom.rotationY);
-    const center: Vec2 = [dom.center[0] + worldOffset[0], dom.center[1] + worldOffset[1]];
+    const clusterDepth = maxZ - baseMinZ;
 
-    const rng = streams(`landmark-build:${domIdx}`);
-    const floors = landmarkFloors(cls, rng);
-    const pieces = buildLandmarkPieces(cls, width, depth, floors, floorHeight, rng);
-    const footprint = massingFootprint(pieces);
+    // Build one candidate landmark at a given depth-growth, then verify its ACTUAL massing rect
+    // stays off every street corridor. A merged parcel spanning a cross street — or grown back
+    // into the street behind the block — is rejected, never emitted.
+    const attempt = (grown: boolean): ResolvedCityLot | null => {
+      // Grow depth into the block (away from the road at +z) so the parcel reads as block-scale.
+      const targetDepth = grown ? Math.max(clusterDepth, clusterWidth * landmarkMinDepthFactor(cls)) : clusterDepth;
+      const minZ = baseMinZ - (targetDepth - clusterDepth);
+      const width = maxX - minX;
+      const depth = maxZ - minZ;
+      const localCenter: Vec2 = [(minX + maxX) / 2, (minZ + maxZ) / 2];
+      const worldOffset = localToWorld(localCenter, dom.rotationY);
+      const center: Vec2 = [dom.center[0] + worldOffset[0], dom.center[1] + worldOffset[1]];
+
+      const rng = streams(`landmark-build:${domIdx}`);
+      const floors = landmarkFloors(cls, rng);
+      const pieces = buildLandmarkPieces(cls, width, depth, floors, floorHeight, rng);
+      const footprint = massingFootprint(pieces);
+      const b = footprint.bounds;
+      const mid = localToWorld([(b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2], dom.rotationY);
+      const rect: OrientedRect = {
+        x: center[0] + mid[0],
+        z: center[1] + mid[1],
+        hw: (b.maxX - b.minX) / 2,
+        hd: (b.maxZ - b.minZ) / 2,
+        angle: dom.rotationY,
+      };
+      for (const corridor of corridors) {
+        if (!rectClearsPolyline(rect, corridor.path, corridor.half)) return null;
+      }
+      // Landmarks grown from opposite block faces must not meet in the block interior.
+      for (const placed of placedRects) {
+        if (!rectsSeparated(rect, placed)) return null;
+      }
+      placedRects.push(rect);
+      return {
+        lot: dom,
+        zone,
+        class: cls,
+        landmark: cls,
+        streetLevel: frontage[dom.road]?.level ?? "street",
+        floors,
+        pieces,
+        center,
+        rotationY: dom.rotationY,
+        footprint,
+      };
+    };
+    const landmark = attempt(true) ?? attempt(false);
+    if (landmark === null) continue; // cluster straddles a street — its lots resolve normally
     for (const i of cluster) consumed.add(i);
-    landmarks.push({
-      lot: dom,
-      zone,
-      class: cls,
-      landmark: cls,
-      streetLevel: frontage[dom.road]?.level ?? "street",
-      floors,
-      pieces,
-      center,
-      rotationY: dom.rotationY,
-      footprint,
-    });
+    landmarks.push(landmark);
   }
 
-  // Swallow any surviving ordinary lot whose center falls inside a landmark footprint, so a landmark
-  // never overlaps a normal building.
+  // Swallow any surviving ordinary lot whose PLOT RECT intersects a landmark footprint, so a
+  // landmark never overlaps a normal building — partial overlaps count, not just centers.
   if (landmarks.length > 0) {
+    const lmRects: OrientedRect[] = landmarks.map((lm) => {
+      const b = lm.footprint.bounds;
+      const mid = localToWorld([(b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2], lm.rotationY);
+      return {
+        x: lm.center[0] + mid[0],
+        z: lm.center[1] + mid[1],
+        hw: (b.maxX - b.minX) / 2,
+        hd: (b.maxZ - b.minZ) / 2,
+        angle: lm.rotationY,
+      };
+    });
     lots.forEach((lot, i) => {
       if (consumed.has(i)) return;
-      for (const lm of landmarks) {
-        const rel: Vec2 = [lot.center[0] - lm.center[0], lot.center[1] - lm.center[1]];
-        const loc = worldToLocal(rel, lm.rotationY);
-        const b = lm.footprint.bounds;
-        if (loc[0] >= b.minX && loc[0] <= b.maxX && loc[1] >= b.minZ && loc[1] <= b.maxZ) {
+      const rect: OrientedRect = {
+        x: lot.center[0],
+        z: lot.center[1],
+        hw: lot.footprint.w / 2,
+        hd: lot.footprint.d / 2,
+        angle: lot.rotationY,
+      };
+      for (const lm of lmRects) {
+        if (!rectsSeparated(rect, lm)) {
           consumed.add(i);
           return;
         }

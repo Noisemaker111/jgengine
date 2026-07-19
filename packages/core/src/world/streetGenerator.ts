@@ -24,7 +24,9 @@
  *
  * Hierarchy is STRUCTURAL, not a length percentile: an approximate edge-betweenness centrality over the
  * grown graph elects a connected arterial skeleton (avenues/boulevards) that never dead-ends at an
- * interior junction of lesser roads; everything else is a local street, spurs are lanes.
+ * interior junction of lesser roads NOR at an interior cul-de-sac (wide roads never stub out
+ * mid-district); everything else is a local street, spurs are lanes. Grown chords and spur lanes
+ * keep the graph planar — no edge ever crosses another without a shared junction node.
  *
  * Circuit mode is REAL track synthesis, not a wobbly ellipse: seeded points are scattered, hulled, and
  * their hull-edge midpoints displaced inward (the classic random-track method) into a self-avoiding,
@@ -544,19 +546,31 @@ function buildNet(
     degree[b] += 1;
   };
   for (const e of edges) addAdj(e.a, e.b);
+  // A new chord/spur must keep the graph PLANAR: it may not cross or shadow any edge it does not
+  // share a node with — otherwise two roads overlap mid-segment with no junction node, and every
+  // downstream consumer (blocks, lots, renderers) sees pavement crossing pavement with no crossing.
+  const corridorClear = rules.width * 1.6;
+  const chordClear = (a: StreetVec2, b: StreetVec2, endA: number, endB: number): boolean => {
+    for (const e of edges) {
+      if (e.a === endA || e.b === endA || e.a === endB || e.b === endB) continue;
+      if (segSegDistance(a, b, nodes[e.a]!, nodes[e.b]!) < corridorClear) return false;
+    }
+    return true;
+  };
   const loopRng = streams("loops");
   for (let n = 0; n < nodes.length; n += 1) {
     if (degree[n] !== 1) continue;
     const keep = loopRng() < rules.deadEnds;
     if (keep) continue; // becomes a cul-de-sac
     if (loopRng() > rules.loopiness + 0.15) continue; // otherwise mostly left as-is
-    // Reconnect to the nearest node that isn't already a neighbor, forming a loop.
+    // Reconnect to the nearest node that isn't already a neighbor, forming a loop — but only via a
+    // chord that stays clear of every unrelated edge (no node-less crossings).
     let best = -1;
     let bestD = Infinity;
     for (let m = 0; m < nodes.length; m += 1) {
       if (m === n || adj.get(n)?.has(m)) continue;
       const d = Math.hypot(nodes[n]![0] - nodes[m]![0], nodes[n]![1] - nodes[m]![1]);
-      if (d < bestD && d < rules.segmentLength * 1.8) {
+      if (d < bestD && d < rules.segmentLength * 1.8 && chordClear(nodes[n]!, nodes[m]!, n, m)) {
         bestD = d;
         best = m;
       }
@@ -587,8 +601,31 @@ function buildNet(
       }
     }
     if (clash) continue;
+    // Planarity + readability: the spur may not cross/shadow any edge it doesn't fork from, and at
+    // its host it must leave at a real angle instead of shadowing an incident road.
+    const tip: StreetVec2 = [nx, nz];
+    let blocked = false;
+    for (const e of edges) {
+      if (e.a === host || e.b === host) {
+        const other = nodes[e.a === host ? e.b : e.a]!;
+        const aSpur = Math.atan2(nz - hp[1], nx - hp[0]);
+        const aEdge = Math.atan2(other[1] - hp[1], other[0] - hp[0]);
+        let diff = Math.abs(aSpur - aEdge);
+        if (diff > Math.PI) diff = TAU - diff;
+        if (diff < Math.PI / 6) {
+          blocked = true;
+          break;
+        }
+        continue;
+      }
+      if (segSegDistance(hp, tip, nodes[e.a]!, nodes[e.b]!) < corridorClear) {
+        blocked = true;
+        break;
+      }
+    }
+    if (blocked) continue;
     const id = nodes.length;
-    nodes.push([nx, nz]);
+    nodes.push(tip);
     edges.push({ a: host, b: id, lane: true });
   }
   return { nodes, edges: edges.slice(0, MAX_EDGES) };
@@ -622,8 +659,22 @@ function convexHull(pts: StreetVec2[]): StreetVec2[] {
   return lower.concat(upper);
 }
 
-/** Minimum distance between two line segments in the XZ plane. */
+/** True when segments p1–p2 and p3–p4 intersect (including touching). */
+function segSegIntersects(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
+  const rx = p2[0] - p1[0];
+  const rz = p2[1] - p1[1];
+  const sx = p4[0] - p3[0];
+  const sz = p4[1] - p3[1];
+  const denom = rx * sz - rz * sx;
+  if (Math.abs(denom) < 1e-12) return false; // parallel — the distance test covers overlap
+  const t = ((p3[0] - p1[0]) * sz - (p3[1] - p1[1]) * sx) / denom;
+  const u = ((p3[0] - p1[0]) * rz - (p3[1] - p1[1]) * rx) / denom;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+/** Minimum distance between two line segments in the XZ plane (0 when they intersect). */
 function segSegDistance(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): number {
+  if (segSegIntersects(p1, p2, p3, p4)) return 0;
   const pointSeg = (p: StreetVec2, a: StreetVec2, b: StreetVec2): number => {
     const abx = b[0] - a[0];
     const abz = b[1] - a[1];
@@ -1001,14 +1052,27 @@ function levelForStreets(
   const arterialCut = Math.max(1, Math.ceil(nonLane.length * 0.28));
   for (let r = 0; r < ranked.length && arterial.size < arterialCut; r += 1) arterial.add(ranked[r]!);
 
+  // A wide road must never stub out mid-district: an arterial chain whose end dangles at an
+  // INTERIOR degree-1 node is demoted to a local street — cul-de-sacs are fine for streets and
+  // lanes, but a boulevard/avenue that just stops mid-map reads as broken pavement. Rim endpoints
+  // stay arterial (the road exits the district).
+  const interiorDeadEnd = (ci: number): boolean => {
+    const chain = chains[ci]!;
+    if (chain.loop) return false;
+    for (const endNode of [chain.nodes[0]!, chain.nodes[chain.nodes.length - 1]!]) {
+      if ((ctx.degree[endNode] ?? 0) <= 1 && !ctx.isRim(endNode)) return true;
+    }
+    return false;
+  };
   // Connectivity repair: an arterial chain must not terminate at an interior junction whose other
-  // chains are all non-arterial. Extend through the most-central neighbor, or demote if impossible.
+  // chains are all non-arterial, and must not dead-end at an interior node. Extend through the
+  // most-central non-stub neighbor, or demote when impossible.
   const bestNeighborAt = (node: number, self: number): number => {
     const here = ctx.chainsAt.get(node) ?? [];
     let best = -1;
     let bestScore = -Infinity;
     for (const ci of here) {
-      if (ci === self || chains[ci]!.lane || arterial.has(ci)) continue;
+      if (ci === self || chains[ci]!.lane || arterial.has(ci) || interiorDeadEnd(ci)) continue;
       if (score[ci]! > bestScore) {
         bestScore = score[ci]!;
         best = ci;
@@ -1025,9 +1089,14 @@ function levelForStreets(
     for (const ci of Array.from(arterial)) {
       const chain = chains[ci]!;
       if (chain.loop) continue; // a closed ring has no dangling terminus
+      if (interiorDeadEnd(ci)) {
+        arterial.delete(ci);
+        changed = true;
+        continue;
+      }
       for (const endNode of [chain.nodes[0]!, chain.nodes[chain.nodes.length - 1]!]) {
         if (ctx.isRim(endNode)) continue; // rim endpoints are fine
-        if ((ctx.degree[endNode] ?? 0) < 2) continue; // a genuine cul-de-sac terminus is fine
+        if ((ctx.degree[endNode] ?? 0) < 2) continue; // unreachable for arterials (demoted above)
         const here = ctx.chainsAt.get(endNode) ?? [];
         const connected = here.some((other) => other !== ci && arterial.has(other));
         if (connected) continue;
@@ -1043,7 +1112,10 @@ function levelForStreets(
       }
     }
   }
-  if (arterial.size === 0 && ranked.length > 0) arterial.add(ranked[0]!);
+  if (arterial.size === 0 && ranked.length > 0) {
+    const fallback = ranked.find((ci) => !interiorDeadEnd(ci)) ?? ranked[0]!;
+    arterial.add(fallback);
+  }
 
   for (let ci = 0; ci < chains.length; ci += 1) {
     if (chains[ci]!.lane) {

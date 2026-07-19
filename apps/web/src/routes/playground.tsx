@@ -187,7 +187,10 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
 
 function Playground() {
   const [mode, setMode] = useState<Mode>("city");
-  const [view, setView] = useState<View>("3d");
+  // `?view=map` makes the 2D plan view shareable/linkable (and screenshotable headlessly).
+  const [view, setView] = useState<View>(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "map" ? "map" : "3d",
+  );
   const [dials, setDials] = useState<Dials>(DEFAULTS);
   const [worldReady, setWorldReady] = useState(false);
   const viewerHost = useRef<HTMLDivElement>(null);

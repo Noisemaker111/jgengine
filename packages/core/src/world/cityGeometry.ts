@@ -328,6 +328,108 @@ export function rectCorners(cx: number, cz: number, hw: number, hd: number, rota
   return out;
 }
 
+/** A rotated rectangle: center, half-extents, and yaw in the engine rotationY convention. */
+export interface OrientedRect {
+  x: number;
+  z: number;
+  hw: number;
+  hd: number;
+  angle: number;
+}
+
+/**
+ * Separating-axis test for two rotated rectangles: true when a gap exists (no overlap).
+ * @capability city-district exact overlap test between two rotated rectangles (plots, lots, footprints)
+ */
+export function rectsSeparated(a: OrientedRect, b: OrientedRect): boolean {
+  const axes: [number, number][] = [];
+  for (const angle of [a.angle, b.angle]) {
+    axes.push([Math.cos(angle), -Math.sin(angle)], [Math.sin(angle), Math.cos(angle)]);
+  }
+  const ca = rectCorners(a.x, a.z, a.hw, a.hd, a.angle);
+  const cb = rectCorners(b.x, b.z, b.hw, b.hd, b.angle);
+  for (const [ax, az] of axes) {
+    let minA = Infinity;
+    let maxA = -Infinity;
+    let minB = Infinity;
+    let maxB = -Infinity;
+    for (const [x, z] of ca) {
+      const p = x * ax + z * az;
+      if (p < minA) minA = p;
+      if (p > maxA) maxA = p;
+    }
+    for (const [x, z] of cb) {
+      const p = x * ax + z * az;
+      if (p < minB) minB = p;
+      if (p > maxB) maxB = p;
+    }
+    if (maxA < minB || maxB < minA) return true; // gap on this axis → no overlap
+  }
+  return false;
+}
+
+/** True when a segment touches an axis-aligned box (separating-axis: x, z, and the segment normal). */
+function segmentTouchesAabb(
+  ax: number,
+  az: number,
+  bx: number,
+  bz: number,
+  minX: number,
+  minZ: number,
+  maxX: number,
+  maxZ: number,
+): boolean {
+  if (Math.max(ax, bx) < minX || Math.min(ax, bx) > maxX) return false;
+  if (Math.max(az, bz) < minZ || Math.min(az, bz) > maxZ) return false;
+  const nx = -(bz - az);
+  const nz = bx - ax;
+  const d0 = nx * (minX - ax) + nz * (minZ - az);
+  const d1 = nx * (maxX - ax) + nz * (minZ - az);
+  const d2 = nx * (maxX - ax) + nz * (maxZ - az);
+  const d3 = nx * (minX - ax) + nz * (maxZ - az);
+  if (d0 > 0 && d1 > 0 && d2 > 0 && d3 > 0) return false;
+  if (d0 < 0 && d1 < 0 && d2 < 0 && d3 < 0) return false;
+  return true;
+}
+
+/**
+ * True when a rotated rect stays at least `clearance` away from every segment of a polyline —
+ * the plot-contract test that keeps building plots off road corridors (pass the road half-width
+ * as the clearance). Exact segment-vs-expanded-rect intersection, not corner sampling.
+ * @capability city-district keep a rotated rect (plot/footprint) clear of a road corridor polyline
+ */
+export function rectClearsPolyline(rect: OrientedRect, path: readonly Vec2[], clearance: number): boolean {
+  if (path.length < 2) return true;
+  const c = Math.cos(rect.angle);
+  const s = Math.sin(rect.angle);
+  const ex = rect.hw + clearance;
+  const ez = rect.hd + clearance;
+  // Cheap world-space bbox reject before transforming segments into the rect frame.
+  const reach = Math.hypot(ex, ez);
+  const minX = rect.x - reach;
+  const maxX = rect.x + reach;
+  const minZ = rect.z - reach;
+  const maxZ = rect.z + reach;
+  let px = path[0]![0];
+  let pz = path[0]![1];
+  let plx = (px - rect.x) * c - (pz - rect.z) * s;
+  let plz = (px - rect.x) * s + (pz - rect.z) * c;
+  for (let i = 1; i < path.length; i += 1) {
+    const qx = path[i]![0];
+    const qz = path[i]![1];
+    const inside =
+      !(Math.max(px, qx) < minX || Math.min(px, qx) > maxX || Math.max(pz, qz) < minZ || Math.min(pz, qz) > maxZ);
+    const qlx = (qx - rect.x) * c - (qz - rect.z) * s;
+    const qlz = (qx - rect.x) * s + (qz - rect.z) * c;
+    if (inside && segmentTouchesAabb(plx, plz, qlx, qlz, -ex, -ez, ex, ez)) return false;
+    px = qx;
+    pz = qz;
+    plx = qlx;
+    plz = qlz;
+  }
+  return true;
+}
+
 /** True when the whole rotated rect (corners + edge midpoints) sits inside the ring. */
 export function rectInsidePolygon(ring: readonly Vec2[], cx: number, cz: number, hw: number, hd: number, rotationY: number): boolean {
   const corners = rectCorners(cx, cz, hw, hd, rotationY);

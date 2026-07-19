@@ -176,3 +176,15 @@ bun run gate fails on current main: check-game-shape rejects Games/vice-isle/src
 2026-07-19T21:58:56.045Z — claude-opus-4-8 — Claude
 
 driving the-robots for tracer evidence → 'bun run drive' crashes with 'Cannot find package gifenc from scripts/gif.ts'; gifenc not installed after agent:bootstrap
+
+2026-07-19T23:26:44.502Z — claude-fable-5 — Claude
+
+capturing playground before/after evidence → shoot --url writes the PNG under a stale default identity name (world-of-warcraft-ui.png), so arbitrary-URL captures silently overwrite an unrelated shot; --url should derive the filename from the URL
+
+2026-07-19T23:26:44.543Z — claude-fable-5 — Claude
+
+git-stashing core files mid-session to capture a before screenshot → Vite dev SSR/client module graph pinned a stale timestamped module (does not provide an export named rectClearsPolyline) and never recovered through HMR; needed a full dev-server restart
+
+2026-07-19T23:30:14.694Z — claude-fable-5 — Claude
+
+running bun run gate on a clean city-generation branch → check-game-shape fails on pre-existing main state (Games/vice-isle/src/editorKinds.ts must live under src/game/), so gate can never be green regardless of the change under test

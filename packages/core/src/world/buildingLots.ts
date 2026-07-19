@@ -11,7 +11,7 @@
  *
  * @capability world-environment lots aligned to and facing road frontage, with a setback sidewalk strip
  */
-import type { Vec2 } from "./cityGeometry";
+import { rectClearsPolyline, rectsSeparated, type OrientedRect, type Vec2 } from "./cityGeometry";
 import type { WorldBounds } from "./features";
 
 /** One road the frontage placer lines with buildings: a centerline polyline and its full width. */
@@ -44,6 +44,11 @@ export interface BuildingLotOptions {
   bothSides?: boolean;
   /** Clip region; lots whose center falls outside are dropped. Omit to keep every lot. */
   area?: LotArea;
+  /**
+   * Extra road corridors lots must keep clear of WITHOUT lining them with frontage — service
+   * alleys, lanes, trails. Every lot's full footprint is kept off these (and off `roads`).
+   */
+  avoid?: readonly RoadFrontage[];
   /**
    * Seed forwarded by callers for parity with other feature configs. Lot GEOMETRY is fully
    * determined by the roads and dials (so a layout is identical without it); per-building variation
@@ -126,11 +131,13 @@ export function facingRotation(outwardNormal: Vec2): number {
 }
 
 /**
- * Derive street-aligned building lots from road frontage. Lots are stepped along each road at
- * `footprint.w + spacing`, offset to each side by `width / 2 + setback + footprint.d / 2`, and
- * turned to face the road. Cross-road overlaps are rejected by a bounded nearest-neighbour test, so
- * two roads meeting at a corner don't stack buildings. Deterministic: identical inputs (including
- * seed) always yield the identical list.
+ * Derive street-aligned building lots (PLOTS) from road frontage. Lots are stepped along each road
+ * at `footprint.w + spacing`, offset to each side by `width / 2 + setback + footprint.d / 2`, and
+ * turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap
+ * (true oriented-rect separation with the spacing gap, so corners and curved frontage can't stack
+ * buildings), and no plot footprint ever touches any road corridor in `roads` or `avoid` — not
+ * just its own frontage road. Deterministic: identical inputs (including seed) always yield the
+ * identical list.
  * @capability building-lots derive street-facing building lots from road frontage
  */
 export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] {
@@ -142,13 +149,21 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
   const step = Math.max(1, footprint.w + spacing);
 
   const sides: readonly (1 | -1)[] = bothSides ? [1, -1] : [1];
-  // Minimum center separation for cross-road de-dup: half the footprint diagonal, a touch under
-  // the along-road step so same-road neighbours are never rejected.
-  const minSep = Math.min(step * 0.95, Math.hypot(footprint.w, footprint.d) * 0.5);
-  const minSep2 = minSep * minSep;
+  const corridors: { path: readonly Vec2[]; half: number }[] = [];
+  for (const road of options.roads) corridors.push({ path: road.path, half: road.width / 2 });
+  for (const road of options.avoid ?? []) corridors.push({ path: road.path, half: road.width / 2 });
 
   const lots: PlacedBuildingLot[] = [];
-  const accepted: Vec2[] = [];
+  const accepted: OrientedRect[] = [];
+  const hw = footprint.w / 2;
+  const hd = footprint.d / 2;
+  // Gap grown onto the candidate for the plot-vs-plot separation test. Half the spacing on each
+  // rect keeps same-road neighbours (spaced exactly `spacing` apart) accepted while anything
+  // closer — corner stacking, inside-of-curve pinches — is rejected.
+  const gap = Math.max(0.1, spacing * 0.45);
+  // Plots may touch the asphalt edge but never intrude into it; the tiny epsilon keeps an exact
+  // setback-0 front face (touching the corridor boundary) legal.
+  const roadClearanceSlack = 0.02;
 
   for (let r = 0; r < options.roads.length && lots.length < maxLots; r += 1) {
     const road = options.roads[r]!;
@@ -172,25 +187,38 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
         const cx = station.p[0] + nx * offset;
         const cz = station.p[1] + nz * offset;
         if (!inArea(options.area, cx, cz)) continue;
+        const rotationY = facingRotation([nx, nz]);
+        const rect: OrientedRect = { x: cx, z: cz, hw, hd, angle: rotationY };
+        // Plot-vs-plot: reject any candidate whose rect (grown by the spacing gap) overlaps an
+        // accepted plot — regardless of which road placed it.
+        const grown: OrientedRect = { ...rect, hw: hw + gap, hd: hd + gap };
         let clash = false;
-        for (const [ax, az] of accepted) {
-          const dx = ax - cx;
-          const dz = az - cz;
-          if (dx * dx + dz * dz < minSep2) {
+        for (const other of accepted) {
+          if (!rectsSeparated(grown, other)) {
             clash = true;
             break;
           }
         }
         if (clash) continue;
+        // Plot-vs-road: the full footprint stays off every corridor (frontage roads AND avoid
+        // corridors), so a plot can never straddle a crossing street.
+        let onRoad = false;
+        for (const corridor of corridors) {
+          if (!rectClearsPolyline(rect, corridor.path, corridor.half - roadClearanceSlack)) {
+            onRoad = true;
+            break;
+          }
+        }
+        if (onRoad) continue;
         lots.push({
           center: [cx, cz],
-          rotationY: facingRotation([nx, nz]),
+          rotationY,
           footprint: { w: footprint.w, d: footprint.d },
           road: r,
           side,
           frontDistance: front,
         });
-        accepted.push([cx, cz]);
+        accepted.push(rect);
       }
     }
   }
