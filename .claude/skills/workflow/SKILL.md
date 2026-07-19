@@ -17,7 +17,9 @@ Do not open a multi-issue program or log papercuts until bootstrap succeeds.
 
 ## Scope and issue
 
-Start from current `origin/main` on a fresh task branch without discarding user work. Search open issues before creating one. Claim tracked work once with `Working on this in <branch>`; close fixed issues through the PR body. Prefer **one shippable issue per session** unless the user explicitly requested a multi-slice program.
+Start from current `origin/main` on a fresh task branch without discarding user work. Search open issues before creating one. Prefer **one shippable issue per session** unless the user explicitly requested a multi-slice program.
+
+**Claim the issue before you write any code — a required, verifiable action, not a formality.** As soon as you have picked the issue and cut its branch, post a comment on the issue thread reading `Working on this in <branch>` with `mcp__github__add_issue_comment` (or `gh issue comment <N> --body "Working on this in <branch>"`). Do this once per issue, up front — before implementing, never deferred to PR time. Skipping the comment leaves the issue unclaimed and lets another agent collide with your work, so an issue that reaches a PR with no claim comment on its thread means the claim step was missed: post it before continuing. Close fixed issues through the PR body (`Closes #N`).
 
 Choose the PR boundary by cohesion:
 

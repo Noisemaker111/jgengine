@@ -20,9 +20,12 @@ Group surviving issues by `workflow` PR-boundary rules, then for each group:
 1. Restate the acceptance criteria in a line or two from the issue thread. If an
    issue is too vague to act on, comment on it asking for the missing detail and
    skip it rather than guess.
-2. Deliver through the `workflow` skill (claim, fresh branch off `origin/main`,
-   implement, verify, ready PR with `Closes #N`), routing domain guidance
-   through `jgengine` intake.
+2. **Post the claim comment before implementing** — `Working on this in <branch>`
+   via `mcp__github__add_issue_comment` — then deliver through the `workflow`
+   skill (fresh branch off `origin/main`, implement, verify, ready PR with
+   `Closes #N`), routing domain guidance through `jgengine` intake. The claim
+   comment goes up front, not at PR time; an issue that reaches a PR with no
+   claim comment on its thread was never actually claimed.
 3. Run independent groups as parallel subagent lanes in a single batch; keep
    groups touching the same files in one sequential lane.
 
