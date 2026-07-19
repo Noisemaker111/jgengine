@@ -47,7 +47,7 @@ import type {
   SpawnPose,
 } from "../scene/entityStore";
 import type { Forms } from "../scene/form";
-import type { EntityColliderSet, ModelBodySource } from "../scene/colliders";
+import type { EntityColliderSet, MeasuredBounds, ModelBodySource } from "../scene/colliders";
 import type { ObjectRaycastHit, ObjectRaycastInput } from "../scene/objectQuery";
 import type { ObjectStore } from "../scene/objectStore";
 import type { Roster } from "../scene/roster";
@@ -153,6 +153,15 @@ export interface SceneObjectContext extends ObjectStore {
   raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[];
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
+  /**
+   * Report the entity-local AABB the renderer actually mounted for `catalogId` — stored per catalog
+   * id as a blocking physical body and consulted after authored `colliders` and index-`dims` fitted
+   * models, before the visual-scale fallback. The shell reports custom `renderObject` content and
+   * dims-less models automatically, so a placed prop's body wraps its real rendered shape instead of
+   * a unit-cube guess. Pass `null` to clear. Returns `false` when the bounds are degenerate.
+   * @capability measured-colliders hitboxes and blocking bodies wrap what the renderer actually mounted — custom render props and dims-less models stop falling back to fixed-size boxes.
+   */
+  reportBounds(catalogId: string, bounds: MeasuredBounds | null): boolean;
   /**
    * Per-instance selection/highlight state for placed objects — the reactive counterpart to
    * `worldHealthBars`/`nameplates` (entities), so a build-mode or RTS selection ring reads
@@ -270,6 +279,17 @@ export interface SceneEntityContext {
   invalidateSpatial: SpatialApi["invalidate"];
   setColliders(instanceId: string, colliders: EntityColliderSet | null): void;
   collidersOf(instanceId: string): EntityColliderSet | null;
+  /**
+   * Report the entity-local AABB the renderer actually mounted for `kind` — stored per kind as a
+   * tight damage hitbox and consulted after authored `colliders` and index-`dims` fitted models,
+   * before the scale/humanoid-default fallbacks. The shell reports custom `renderEntity` content and
+   * dims-less models automatically, so hitboxes wrap the rendered mesh instead of the fixed
+   * 0.7×1.8×0.7 box. Runtime-measured on the client; authoritative hosts that never render should
+   * author `colliders` or model `dims` instead. Pass `null` to clear. Returns `false` when the
+   * bounds are degenerate.
+   * @capability measured-hitboxes an entity rendered with a custom mesh takes hits in a box matching its rendered bounds, not the fixed humanoid rectangle.
+   */
+  reportBounds(kind: string, bounds: MeasuredBounds | null): boolean;
   /** Uniform visual scale from the entity's catalog entry (1 when unscaled). */
   visualScaleOf(instanceId: string): number;
   form: Forms;

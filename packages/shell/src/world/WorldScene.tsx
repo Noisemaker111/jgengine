@@ -18,6 +18,7 @@ import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarge
 
 import { colorFromId } from "../worldSky";
 import { DefaultSurface, detailMaps } from "../render/defaultSurface";
+import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
 import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
@@ -81,11 +82,14 @@ function EntityMarker({
         </mesh>
       ) : null}
       {custom !== undefined && custom !== null ? (
-        custom
+        <MeasuredBoundsGroup target="entity" measureKey={name}>
+          {custom}
+        </MeasuredBoundsGroup>
       ) : model !== undefined ? (
         <IsolatedEntityModel
           model={model}
           instanceId={entityId}
+          measure={{ target: "entity", key: name }}
           fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
         />
       ) : sprite !== undefined ? (
@@ -148,9 +152,11 @@ function ObjectMarker({
   return (
     <group ref={groupRef} userData={{ [POINTER_OBJECT_KEY]: instanceId }}>
       {custom !== undefined && custom !== null ? (
-        custom
+        <MeasuredBoundsGroup target="object" measureKey={object.catalogId}>
+          {custom}
+        </MeasuredBoundsGroup>
       ) : model !== undefined ? (
-        <IsolatedEntityModel model={model} instanceId={instanceId} />
+        <IsolatedEntityModel model={model} instanceId={instanceId} measure={{ target: "object", key: object.catalogId }} />
       ) : style?.hidden === true ? null : (
         <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />

@@ -943,6 +943,7 @@
 - `DEFAULT_ENTITY_HIT_RADIUS` (const): const DEFAULT_ENTITY_HIT_RADIUS: 0.5 — ⚠ undocumented
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
 - `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
+- `MeasuredBounds` (interface): interface MeasuredBounds — Entity-local AABB of what the renderer actually mounted for a kind — the runtime counterpart to index-measured `dims`. Reported through `ctx.scene.entity.reportBounds` / `ctx.scene.object.reportBounds` (the shell does this automatically for custom `renderEntity`/`renderObject` content and models without index dims) so collider resolution can wrap the real rendered shape instead of a fixed-size guess.
 - `ModelBodySource` (interface): interface ModelBodySource — The render-config subset collider fitting reads — structurally satisfied by a resolved `ModelConfig`, so the shell can hand its render config straight to the fitting math without a conversion step.
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
 
