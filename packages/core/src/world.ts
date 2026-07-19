@@ -381,6 +381,14 @@ export {
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
 export {
+  createDamageDirectionTracker,
+  type DamageDirectionOptions,
+  type DamageDirectionSnapshot,
+  type DamageDirectionTracker,
+  type DamageIndicator,
+  type HitInput,
+} from "./vfx/damageDirection";
+export {
   createParticleSystem,
   type Curve,
   type EmitterConfig,

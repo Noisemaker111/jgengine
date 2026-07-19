@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Damage-direction indicators.** `@jgengine/core/vfx/damageDirection`' `createDamageDirectionTracker` is a
+  serializable, allocation-aware "hit-from" brain: `registerHit({ angle, intensity?, kind? })` (angle in radians,
+  `0` = front, free-string `kind` never interpreted) turns each hit into a directional indicator that fades over a
+  duration on an injected clock, with `active()` reporting live indicators at eased current intensity, optional
+  same-direction merging, a bounded pool, `subscribe`, and `snapshot`/`restore`. `@jgengine/react`'s
+  `DamageDirectionOverlay` (+ `useDamageDirection` hook) renders the classic red arcs flaring around a center reticle
+  toward each recent hit, opacity/scale from intensity, color per `kind`/HudTheme, `pointer-events: none`. New
+  `damage-direction` dev demo. Genre-agnostic, renderer-free core.
 - **Turnkey day-night cycle.** `@jgengine/core/time/dayNightCycle`' `createDayNightCycle` is a genre-agnostic,
   serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels
   and tint/light colors (`DayNightKeyframe` → `DayNightSample`), with `pause`/`play`/`setSpeed`/`setDayFraction`,

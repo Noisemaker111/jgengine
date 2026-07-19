@@ -101,6 +101,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
 
+## damage-direction-overlay — drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none
+
+- `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/react"`
+
 ## day-night-sky — drop-in R3F presenter that drives the engine's existing sky dome and lights from a serializable day-night cycle for a moving, color-graded day-night look
 
 - `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
@@ -425,6 +429,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
 
 - `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
+
+## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
+
+- `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/react"`
 
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 

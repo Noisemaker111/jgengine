@@ -18,6 +18,7 @@ export * from "./questTracker";
 export * from "./notifications";
 export * from "./coachMarks";
 export * from "./cutscene";
+export * from "./damageDirection";
 export * from "./modals";
 export * from "./fastTravel";
 export * from "./components";
