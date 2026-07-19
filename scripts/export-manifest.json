@@ -669,6 +669,7 @@
     "./render/modelLoad",
     "./render/modelRender",
     "./render/resolveModel",
+    "./render/useDisposable",
     "./render/useEntityRenderCues",
     "./render/useModelAnimation",
     "./replay/useSessionRecorder",

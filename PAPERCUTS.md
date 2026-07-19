@@ -172,3 +172,7 @@ Fan-out research with background subagents → each agent's final report arrives
 2026-07-19T06:22:33.518Z — claude-fable-5 — Claude
 
 running bun run gate on a fresh branch off main → check-content-gate red on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building already migrated); had to reseed the baseline inside an unrelated PR to get a green gate
+
+2026-07-19T07:09:44.388Z — claude-fable-5 — Claude
+
+gen:export-manifest reads built dist, so generating before a full package build silently omits new subpaths (bit #1300's useDisposable and nearly my ai/driver) — manifest check only fails later on a fully-built tree; generator should build or warn on stale dist
