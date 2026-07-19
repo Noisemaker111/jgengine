@@ -1,6 +1,16 @@
 export { formatDistance } from "./format/distance";
 export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
 export { formatSpeed } from "./format/speed";
+export {
+  createI18n,
+  interpolate,
+  type Catalog,
+  type I18n,
+  type I18nOptions,
+  type Locale,
+  type Messages,
+  type TParams,
+} from "./i18n/i18n";
 export { resolveGameLook, type LookPreset } from "./render/lookPreset";
 export {
   STUDIO_STAGE_POST,

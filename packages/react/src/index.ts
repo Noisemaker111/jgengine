@@ -9,6 +9,7 @@ export * from "./store";
 export * from "./settings";
 export * from "./save";
 export * from "./achievements";
+export * from "./i18n";
 export * from "./components";
 export * from "./hud";
 export * from "./bars";
