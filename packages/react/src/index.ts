@@ -12,6 +12,7 @@ export * from "./achievements";
 export * from "./components";
 export * from "./hud";
 export * from "./bars";
+export * from "./entityFrames";
 export * from "./barsPreview";
 export * from "./iconTreatment";
 export * from "./iconsPreview";

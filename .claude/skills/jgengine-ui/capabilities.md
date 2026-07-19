@@ -81,6 +81,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/react"`
 
+## entity-frames — overlay that renders caller-composed frames over on-screen entities
+
+- `EntityFrames` (function) · `import { EntityFrames } from "@jgengine/react"`
+- `EntityScreenProjection` (interface) · `import { EntityScreenProjection } from "@jgengine/react"`
+- `WorldEntityFrames` (function) · `import { WorldEntityFrames } from "@jgengine/shell/world/WorldEntityFrames"`
+- `projectWorldToScreen` (function) · `import { projectWorldToScreen } from "@jgengine/shell/world/WorldEntityFrames"`
+- `useWorldProjection` (function) · `import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames"`
+
 ## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`

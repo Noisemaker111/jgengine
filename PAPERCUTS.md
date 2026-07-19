@@ -93,6 +93,10 @@ verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <pat
 
 Consumer sim: WoW-like needed overhead enemy nameplates/healthbars; jgengine-ui has bars but no floating world-anchored entity-frame seam or recipe, so it drops off agent plans
 
+2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive are monorepo scripts — so the AGENTS.md rule 'visual claims are screenshot-judged harshly by you' is unenforceable for exactly the outside users it targets; ship a jgengine shoot CLI verb
+
 2026-07-19T00:10:56.438Z — claude-fable-5 — NoisemakerJon
 
 Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
