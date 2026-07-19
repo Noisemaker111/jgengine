@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { rolesFromClips } from "@jgengine/core/game/clipRoles";
 import type { EditorSession } from "@jgengine/core/editor/index";
 
 import { TERRAIN_MATERIALS } from "./uiStore";
@@ -10,6 +11,16 @@ export interface EditorAssetEntry {
   label: string;
   kind: "model" | "catalog" | "marker";
   url?: string;
+  /** Animation clip names from the asset index — present on rigged catalog assets. */
+  clips?: readonly string[];
+}
+
+/** "idle · walk · run" summary of a rigged asset's detected animation roles for the browser row badge.
+ * @internal
+ */
+export function describeClipRoles(clips: readonly string[]): string {
+  const roles = Object.keys(rolesFromClips(clips));
+  return roles.length === 0 ? "no roles detected" : roles.join(" · ");
 }
 
 /** Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone. */
@@ -100,6 +111,14 @@ export function AssetBrowser({
               <div className="truncate text-[10px] text-neutral-500">
                 {entry.kind} · {entry.id}
               </div>
+              {entry.clips !== undefined && entry.clips.length > 0 ? (
+                <div
+                  className="truncate text-[10px] text-emerald-400/80"
+                  title={`${entry.clips.length} animation clips (auto-animates when placed):\n${entry.clips.join("\n")}`}
+                >
+                  ▶ {entry.clips.length} clips · {describeClipRoles(entry.clips)}
+                </div>
+              ) : null}
             </div>
             <button
               type="button"
@@ -138,7 +157,10 @@ export function AssetBrowser({
 }
 
 /** Turns a game's asset catalog ids into editor asset entries for the browser panel. */
-export function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string } | null): EditorAssetEntry[] {
+export function assetsFromCatalog(
+  ids: readonly string[],
+  resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null,
+): EditorAssetEntry[] {
   return ids.map((id) => {
     const resolved = resolve?.(id);
     return {
@@ -146,6 +168,7 @@ export function assetsFromCatalog(ids: readonly string[], resolve?: (id: string)
       label: id,
       kind: "model" as const,
       ...(resolved?.url === undefined ? {} : { url: resolved.url }),
+      ...(resolved?.clips === undefined ? {} : { clips: resolved.clips }),
     };
   });
 }

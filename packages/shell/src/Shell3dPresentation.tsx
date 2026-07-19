@@ -57,6 +57,7 @@ import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { CollisionDebugWorld } from "./devtools/CollisionDebugWorld";
 import { DevtoolsRendererProbe } from "./devtools/DevtoolsOverlay";
 import {
+  CAMERA_TRANSPARENT_USERDATA,
   GameCameraRig,
   PlayerFovProvider,
   PlayerFovSlider,
@@ -520,7 +521,14 @@ export function Shell3dPresentation({
                       hideLocalActor={firstPerson}
                     />
                   </CullingProvider>
-                  {WorldOverlay !== undefined ? <WorldOverlay ctx={ctx} /> : null}
+                  {WorldOverlay !== undefined ? (
+                    // Author decor is presentation dressing, not collision geometry — mark it
+                    // camera-transparent so the orbit spring-arm never yanks toward it. A child
+                    // that should block the camera opts back in with userData.jgCameraCollide.
+                    <group userData={CAMERA_TRANSPARENT_USERDATA}>
+                      <WorldOverlay ctx={ctx} />
+                    </group>
+                  ) : null}
                   {bars !== null ? (
                     <WorldEntityBars
                       statId={bars.statId}
@@ -535,6 +543,7 @@ export function Shell3dPresentation({
                       roles={nameplates.roles}
                       resolveRole={resolveEntityRole}
                       {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
+                      {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
                     />
                   ) : null}
                   <WorldItems config={playable.worldItem} />

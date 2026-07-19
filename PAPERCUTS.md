@@ -191,3 +191,25 @@ drive vice-isle --key KeyW:12000: player never moves (three identical shots from
 2026-07-19T00:30:01.147Z — claude-opus-4-8 — NoisemakerJon
 
 Opened the-robots/loopline editor (?mode=editor) → infinite React 'Maximum update depth exceeded' loop in useGlbThumbnail/AssetThumbnail (ContentBrowser/BottomDock), triggered when GLB model textures fail to load; the GameUiErrorBoundary then blanks the whole editor chrome. Standalone/spire-cards editors (no failing model assets) are unaffected.
+2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
+
+PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
+2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
+
+verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
+
+2026-07-19T01:23:41.909Z — claude-opus-4-8 — NoisemakerJon
+
+adding an apps/web route → bun --cwd apps/web run check-types is red on origin/main: playground.tsx can't resolve @jgengine/core/world/cityGenerator & streetGenerator even though their dist files exist, so a new page's typecheck is noisy with unrelated pre-existing errors
+
+2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
+
+Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
+
+2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
+
+switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop
+
+2026-07-19T02:05:06.289Z — claude-fable-5 — Claude
+
+pushing a restarted branch after its PR squash-merged + remote branch auto-deleted: push --force-with-lease rejects with 'stale info' and fetch of the branch says no remote ref — needed git fetch --prune before push; workflow skill could mention prune in the merged-branch restart recipe

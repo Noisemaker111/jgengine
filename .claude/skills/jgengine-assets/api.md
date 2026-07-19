@@ -122,6 +122,7 @@
 ## @jgengine/assets/dims
 
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
+- `readGlbClips` (function): function readGlbClips(bytes: Uint8Array): string[] | null — Animation clip names read from a GLB's JSON chunk, de-duplicated and order-preserving; `null` for an unreadable GLB or one with no (named) animations.
 - `readGlbCollisionMesh` (function): function readGlbCollisionMesh(bytes: Uint8Array): CollisionMeshData | null — Extract a model-space collision triangle soup from a GLB and compress it with {@link encodeCollisionMesh}. Walks the default scene, transforming each TRIANGLES primitive's float32 VEC3 positions by the node's world matrix, and returns `null` for a JSON-only GLB or when no triangle survives quantization.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
 
@@ -162,7 +163,7 @@
 ## @jgengine/assets/indexGen
 
 - `ReindexResult` (interface): interface ReindexResult — ⚠ undocumented
-- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData): IndexEntry — ⚠ undocumented
+- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData, clips?: readonly string[]): IndexEntry — ⚠ undocumented
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented

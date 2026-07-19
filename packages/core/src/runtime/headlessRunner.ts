@@ -42,6 +42,18 @@ export interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultipl
   models?: GameContextModels;
 }
 
+/** Canvas-free command/intent surface for {@link HeadlessRunner} — invoke a game's registered UI commands and read the resulting reactive state off `ctx`. */
+export interface HeadlessCommandInterface {
+  /** Invoke a registered command/intent by name against the live context. Throws on `unknown-command` or a validation rejection so a headless UI-flow test fails loudly instead of silently no-op'ing. */
+  invoke(name: string, input?: unknown): void;
+  /** Non-throwing {@link invoke} returning the raw command result (inspect `status`). */
+  tryInvoke(name: string, input?: unknown): ReturnType<GameContext["game"]["commands"]["run"]>;
+  /** Registered command names. */
+  names(): string[];
+  /** Is a command registered? */
+  has(name: string): boolean;
+}
+
 /**
  * A renderer-free driver for a game loop: builds a {@link GameContext} from a {@link GameDefinition}, runs the init
  * hooks, then advances the simulation one step at a time from injected input. No React, R3F, or three.js — the whole
@@ -64,6 +76,8 @@ export interface HeadlessRunner {
   step(dtSeconds: number, input?: HeadlessInput): number;
   /** Publish input without advancing — for pre-seeding the held set before the first {@link step}. */
   publishInput(input: HeadlessInput): void;
+  /** Drive the game's own UI commands / intents headlessly — the same registry `ctx.game.commands` and the shell's command sink dispatch into. No renderer, no pointer simulation: dispatch an intent, then read reactive state off `ctx`. */
+  readonly ui: HeadlessCommandInterface;
 }
 
 export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(
@@ -100,6 +114,20 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     input: ctx.input,
     userId: player.userId,
     publishInput,
+    ui: {
+      invoke(name, input) {
+        const result = ctx.game.commands.run(name, input);
+        if (result.status === "unknown-command") {
+          throw new Error(`headless ui.invoke: unknown command "${name}" — define it via ctx.game.commands.define`);
+        }
+        if (result.status === "rejected") {
+          throw new Error(`headless ui.invoke: command "${name}" rejected — ${result.reason}`);
+        }
+      },
+      tryInvoke: (name, input) => ctx.game.commands.run(name, input),
+      names: () => ctx.game.commands.names(),
+      has: (name) => ctx.game.commands.has(name),
+    },
     step(dtSeconds, input) {
       if (input !== undefined) publishInput(input);
       const dt = Math.min(dtSeconds, maxStep);
