@@ -1,6 +1,8 @@
 import type { EditorSession, EditorVec3, EditorVolumeShape } from "@jgengine/core/editor/index";
 import type { TerraformFalloff, TerraformShape } from "@jgengine/core/world/terraform";
 
+import type { ClipPreviewSession } from "./shell/clipPreview";
+
 /** Which top-level editor tool is active: object placement/selection, or terrain sculpting. */
 export type EditorTool = "select" | "terrain";
 
@@ -152,6 +154,11 @@ export interface EditorUiState {
   sculpt: SculptSettings;
   paint: PaintSettings;
   contextMenu: EditorContextMenuState | null;
+  /**
+   * Active viewport clip-preview session (rigged asset + playback driver), or null when nothing is
+   * previewing. Driven by the Animation dock's clip mode; rendered by `ClipPreviewLayer`.
+   */
+  clipPreview: ClipPreviewSession | null;
 }
 
 /** Subscribable store for the editor's transient UI state (gizmo, snapping, placement). */
@@ -197,6 +204,7 @@ export function createEditorUiStore(): EditorUiStore {
     sculpt: { ...DEFAULT_SCULPT_SETTINGS },
     paint: { ...DEFAULT_PAINT_SETTINGS },
     contextMenu: null,
+    clipPreview: null,
   };
   const listeners = new Set<() => void>();
   const emit = () => {

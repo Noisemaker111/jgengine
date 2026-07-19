@@ -17,6 +17,7 @@ import {
 } from "@jgengine/core/scene/sceneKinds";
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
+import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
 import { useGameContext } from "@jgengine/react/provider";
 
 import {
@@ -29,6 +30,20 @@ import {
 } from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 import { TriggerInspector } from "./TriggerInspector";
+import { describeClipRoles, type EditorAssetEntry } from "./AssetBrowser";
+import {
+  animationMode,
+  animationMetaPatch,
+  LOCOMOTION_ROLES,
+  ONE_SHOT_EVENTS,
+  readAnimationSetting,
+  setAnimationMode,
+  setLocomotionClip,
+  setLocomotionNumber,
+  setOneShotClip,
+  type AnimationMode,
+  type AnimationSetting,
+} from "./modelAnimationAuthoring";
 import { listParentCandidates } from "./parentCandidates";
 import type { EditorHostApi } from "./session";
 import type { EditorUiStore } from "./uiStore";
@@ -343,6 +358,137 @@ function ComponentAddBar({
   );
 }
 
+/** A labeled clip dropdown (never free-text) for a role/event; "— none —" clears the binding. */
+function ClipSelectRow({
+  label,
+  clips,
+  value,
+  onChange,
+}: {
+  label: string;
+  clips: readonly string[];
+  value: string | null;
+  onChange: (clip: string | null) => void;
+}) {
+  return (
+    <FieldRow label={label}>
+      <select
+        className={`h-6.5 w-full min-w-0 px-1.5 ${INPUT_CLS}`}
+        value={value ?? ""}
+        aria-label={`${label} clip`}
+        onChange={(event) => onChange(event.target.value === "" ? null : event.target.value)}
+      >
+        <option value="">— none —</option>
+        {clips.map((clip) => (
+          <option key={clip} value={clip}>
+            {clip}
+          </option>
+        ))}
+      </select>
+    </FieldRow>
+  );
+}
+
+const ANIMATION_MODE_HINT: Record<AnimationMode, string> = {
+  default: "Inherits the catalog default: a rigged asset auto-animates from its clip roles.",
+  auto: "Forces derivation of idle/walk/run + hit/death/attack from this rig's clip names.",
+  none: "Renders the bind pose — no clip playback.",
+  custom: "Author explicit role→clip bindings below; unset roles fall back to the rig's defaults.",
+};
+
+/**
+ * Inspector section authoring a placement's `ModelConfig.animation` for a rigged catalog asset.
+ * Persists to `marker.meta.animation` through the passed `onChange` (an undoable `setMarker` dispatch).
+ * All clip picks are dropdowns over the asset's real clip list — never free-text.
+ */
+function ModelAnimationSection({
+  clips,
+  setting,
+  onChange,
+}: {
+  clips: readonly string[];
+  setting: AnimationSetting | undefined;
+  onChange: (next: AnimationSetting | undefined) => void;
+}) {
+  const mode = animationMode(setting);
+  const config = mode === "custom" && typeof setting === "object" ? setting : null;
+  return (
+    <div className="space-y-2.5">
+      <div className="text-[10px] text-neutral-500">
+        {clips.length} clips · {describeClipRoles(clips)}
+      </div>
+      <FieldRow label="Mode">
+        <select
+          className={`h-6.5 w-full min-w-0 px-1.5 ${INPUT_CLS}`}
+          value={mode}
+          aria-label="Animation mode"
+          onChange={(event) => onChange(setAnimationMode(setting, event.target.value as AnimationMode, clips))}
+        >
+          <option value="default">Default (catalog)</option>
+          <option value="auto">Auto (derive)</option>
+          <option value="none">None (bind pose)</option>
+          <option value="custom">Custom</option>
+        </select>
+      </FieldRow>
+      {config === null ? (
+        <div className="text-[10px] leading-relaxed text-neutral-600">{ANIMATION_MODE_HINT[mode]}</div>
+      ) : (
+        <>
+          <div className="space-y-1.5 rounded-[6px] border border-white/[0.06] bg-white/[0.02] p-2">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">Locomotion states</div>
+            {LOCOMOTION_ROLES.map((role) => (
+              <ClipSelectRow
+                key={role}
+                label={role}
+                clips={clips}
+                value={config.states?.[role] ?? null}
+                onChange={(clip) => onChange(setLocomotionClip(setting, role, clip))}
+              />
+            ))}
+            <FieldRow label="walkSpeed" title="Speed (u/s) above which the entity counts as moving (walk).">
+              <AxisNumberField
+                label="u/s"
+                step={0.1}
+                value={config.states?.walkSpeed ?? 0.5}
+                onCommit={(value) => onChange(setLocomotionNumber(setting, "walkSpeed", Math.max(0, value)))}
+              />
+            </FieldRow>
+            <FieldRow label="runSpeed" title="Speed above which the run clip plays (when a run clip is set).">
+              <AxisNumberField
+                label="u/s"
+                step={0.5}
+                value={config.states?.runSpeed ?? 6}
+                onCommit={(value) => onChange(setLocomotionNumber(setting, "runSpeed", Math.max(0, value)))}
+              />
+            </FieldRow>
+            <FieldRow label="fadeSec" title="Crossfade duration (s) when the locomotion state changes.">
+              <AxisNumberField
+                label="s"
+                step={0.05}
+                value={config.states?.fadeSec ?? 0.2}
+                onCommit={(value) => onChange(setLocomotionNumber(setting, "fadeSec", Math.max(0, value)))}
+              />
+            </FieldRow>
+          </div>
+          <div className="space-y-1.5 rounded-[6px] border border-white/[0.06] bg-white/[0.02] p-2">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">One-shot events</div>
+            <div className="text-[10px] text-neutral-600">hit / death auto-fire on damage/death; others via playEntityAnimation.</div>
+            {ONE_SHOT_EVENTS.map((event) => (
+              <ClipSelectRow
+                key={event}
+                label={event}
+                clips={clips}
+                value={config.oneShots?.[event] ?? null}
+                onChange={(clip) => onChange(setOneShotClip(setting, event, clip))}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Section({
   id,
   title,
@@ -445,6 +591,7 @@ export function InspectorPanel({
   ui,
   onClose,
   api,
+  assets,
   tab,
   onSelectTab,
   collapsed,
@@ -455,6 +602,8 @@ export function InspectorPanel({
   onClose?: () => void;
   /** Host API for RPC-backed actions (material assignment, camera). */
   api?: EditorHostApi;
+  /** Live browser asset list, used to resolve a placed marker's rig clips for animation authoring. */
+  assets?: readonly EditorAssetEntry[];
   /** Controlled active tab; omit for local state. */
   tab?: InspectorTab;
   onSelectTab?: (tab: InspectorTab) => void;
@@ -592,6 +741,11 @@ export function InspectorPanel({
     const marker = selectedMarker;
     const onMeta = (patch: Record<string, unknown>, coalesce: string) =>
       session.dispatch({ type: "setMarker", id: marker.id, patch: { meta: { ...marker.meta, ...patch } } }, { coalesce: `${coalesce}:${marker.id}` });
+    // Rig clips for animation authoring: this placement's catalog asset must carry animation clips.
+    const markerCatalog = markerCatalogId(marker);
+    const markerRigAsset = markerCatalog === null ? undefined : assets?.find((entry) => entry.id === markerCatalog);
+    const markerRigClips =
+      markerRigAsset?.clips !== undefined && markerRigAsset.clips.length > 0 ? markerRigAsset.clips : null;
     const hasTrigger = hasAuthoredTrigger(marker.meta);
     const hasMaterial = hasMaterialAssignment(marker.meta);
     const hasGenerator = typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined;
@@ -731,6 +885,15 @@ export function InspectorPanel({
                 <ParentField session={session} id={marker.id} />
               </div>
             </Section>
+            {markerRigClips !== null ? (
+              <Section id="modelAnimation" title="Animation" icon="film" sections={sections}>
+                <ModelAnimationSection
+                  clips={markerRigClips}
+                  setting={readAnimationSetting(marker.meta)}
+                  onChange={(next) => onMeta(animationMetaPatch(next) as Record<string, unknown>, "animation")}
+                />
+              </Section>
+            ) : null}
             {marker.meta !== undefined ? (
               <Section id="meta" title="Raw metadata" icon="script" sections={sections}>
                 <pre className="max-h-48 overflow-auto rounded-[5px] border border-white/[0.06] bg-black/40 p-2 text-[10px] text-neutral-400">

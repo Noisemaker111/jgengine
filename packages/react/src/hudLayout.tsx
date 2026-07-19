@@ -29,6 +29,7 @@ import {
   type HudResizeAxes,
 } from "@jgengine/core/ui/hudDocument";
 import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
+import type { HudOverflow } from "@jgengine/core/ui/hudScale";
 import {
   isMobileMode,
   type HudPriority,
@@ -55,6 +56,92 @@ const EDIT_BAR_Z = 100000;
 const REGION_GAP = 10;
 const COMPACT_HUD_SCALE = 0.85;
 const HUD_ANCHORS = Object.keys(HUD_ANCHOR_FRACTIONS) as HudAnchor[];
+
+/**
+ * Attribute a game puts on any HUD surface it *wants* to bleed past the viewport
+ * (a full-bleed backdrop, a deliberately clipped ticker), so the boundary check
+ * skips it. Opt-out, on purpose: the default is that shown UI must fit on screen.
+ */
+const ALLOW_OVERFLOW_ATTR = "data-hud-allow-overflow";
+/** Opt-in marker for a custom window mounted deeper than a direct HudCanvas child. */
+const WINDOW_ATTR = "data-hud-window";
+
+/**
+ * Dev-only, prod-safe. The on-screen boundary overlay must never reach players,
+ * so anything we cannot positively identify as a dev build resolves to `false`.
+ */
+function isDevBuild(): boolean {
+  try {
+    const meta = import.meta as unknown as { env?: { DEV?: boolean; PROD?: boolean } };
+    if (meta.env?.DEV === true) return true;
+    if (meta.env?.PROD === true) return false;
+  } catch {
+    /* import.meta.env unavailable under this bundler */
+  }
+  const nodeEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+    ?.env?.NODE_ENV;
+  if (typeof nodeEnv === "string") return nodeEnv !== "production";
+  return false;
+}
+
+/** True unless the element (or an ancestor) is hidden, collapsed, or removed from the a11y tree. */
+function isSurfaceShown(el: Element): boolean {
+  if (el.closest('[aria-hidden="true"]') !== null) return false;
+  const checkable = el as Element & {
+    checkVisibility?: (options?: Record<string, boolean>) => boolean;
+  };
+  if (typeof checkable.checkVisibility === "function") {
+    return checkable.checkVisibility({
+      contentVisibilityAuto: true,
+      opacityProperty: true,
+      visibilityProperty: true,
+    });
+  }
+  if (typeof getComputedStyle !== "function") return true;
+  const style = getComputedStyle(el);
+  return style.visibility !== "hidden" && style.display !== "none" && Number(style.opacity) > 0.01;
+}
+
+function surfaceId(el: Element): string {
+  return (
+    el.getAttribute("data-hud-panel") ??
+    el.getAttribute(WINDOW_ATTR) ??
+    el.getAttribute("data-hud-id") ??
+    el.getAttribute("aria-label") ??
+    (el.id.length > 0 ? el.id : null) ??
+    "<ui>"
+  );
+}
+
+/**
+ * Every HUD surface whose bounds we hold to the viewport: registered panels,
+ * any element tagged as a window, and the game's own direct children of the
+ * canvas (custom modals dropped straight into the HUD layer). Opted-out and
+ * hidden surfaces are dropped here so a closed drawer never reaches the check.
+ */
+function collectBoundarySurfaces(canvas: HTMLElement): { id: string; el: Element }[] {
+  const seen = new Set<Element>();
+  const out: { id: string; el: Element }[] = [];
+  const consider = (el: Element) => {
+    if (seen.has(el)) return;
+    seen.add(el);
+    if (el.closest(`[${ALLOW_OVERFLOW_ATTR}]`) !== null) return;
+    if (!isSurfaceShown(el)) return;
+    out.push({ id: surfaceId(el), el });
+  };
+  for (const el of canvas.querySelectorAll(`[data-hud-panel],[${WINDOW_ATTR}]`)) consider(el);
+  for (const el of Array.from(canvas.children)) {
+    if (
+      el.hasAttribute("data-hud-region") ||
+      el.hasAttribute("data-hud-edit-bar") ||
+      el.hasAttribute("data-hud-overflow-overlay")
+    ) {
+      continue;
+    }
+    consider(el);
+  }
+  return out;
+}
 
 /**
  * How a panel behaves on compact (phone-scale) displays. `keep` stays visible
@@ -329,6 +416,7 @@ export function HudCanvas({
   const fitEnabled = hudViewport?.fitEnabled === true;
   const [viewport, setViewport] = useState<HudSize | null>(null);
   const [regions, setRegions] = useState<HudRegionElements>({});
+  const [offenders, setOffenders] = useState<(HudOverflow & { x: number; y: number; width: number; height: number })[]>([]);
   const regionRefs = useMemo(() => {
     const refs = {} as Record<HudAnchor, (el: HTMLDivElement | null) => void>;
     for (const anchor of HUD_ANCHORS) {
@@ -414,16 +502,21 @@ export function HudCanvas({
     if (typeof requestAnimationFrame !== "function") return;
     let frame = 0;
     let lastReport = "";
+    const dev = isDevBuild();
     const check = () => {
       frame = 0;
       const hostRect = host.getBoundingClientRect();
       if (hostRect.width <= 0 || hostRect.height <= 0) return;
-      const panels: { id: string; rect: { x: number; y: number; width: number; height: number } }[] = [];
-      for (const el of canvas.querySelectorAll("[data-hud-panel]")) {
-        const rect = el.getBoundingClientRect();
+      const viewportSize = { width: hostRect.width, height: hostRect.height };
+      const surfaces: {
+        id: string;
+        rect: { x: number; y: number; width: number; height: number };
+      }[] = [];
+      for (const surface of collectBoundarySurfaces(canvas)) {
+        const rect = surface.el.getBoundingClientRect();
         if (rect.width === 0 && rect.height === 0) continue;
-        panels.push({
-          id: el.getAttribute("data-hud-panel") ?? "?",
+        surfaces.push({
+          id: surface.id,
           rect: {
             x: rect.left - hostRect.left,
             y: rect.top - hostRect.top,
@@ -432,8 +525,10 @@ export function HudCanvas({
           },
         });
       }
-      const offenders = overflowingPanels(panels, { width: hostRect.width, height: hostRect.height });
-      const report = offenders.length === 0 ? "" : JSON.stringify(offenders);
+      // overflowingPanels reports only surfaces that are partly on screen *and*
+      // cross an edge — a closed/parked/off-screen menu is never an offender.
+      const escaped = overflowingPanels(surfaces, viewportSize);
+      const report = escaped.length === 0 ? "" : JSON.stringify(escaped);
       if (report === lastReport) return;
       lastReport = report;
       if (report === "") {
@@ -441,7 +536,15 @@ export function HudCanvas({
       } else {
         canvas.setAttribute("data-hud-overflow", report);
         console.warn(
-          `[jgengine] HUD panels overflow the ${Math.round(hostRect.width)}x${Math.round(hostRect.height)} viewport: ${report}`,
+          `[jgengine] HUD UI escapes the ${Math.round(hostRect.width)}x${Math.round(hostRect.height)} viewport: ${report}`,
+        );
+      }
+      if (dev) {
+        setOffenders(
+          escaped.map((overflow) => {
+            const rect = surfaces.find((s) => s.id === overflow.id)?.rect;
+            return { ...overflow, x: rect?.x ?? 0, y: rect?.y ?? 0, width: rect?.width ?? 0, height: rect?.height ?? 0 };
+          }),
         );
       }
     };
@@ -517,10 +620,59 @@ export function HudCanvas({
           />
         ))}
         {children}
+        {offenders.length > 0 ? (
+          <div
+            data-hud-overflow-overlay=""
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: EDIT_BAR_Z - 1 }}
+          >
+            {offenders.map((o) => (
+              <div
+                key={o.id}
+                style={{
+                  position: "absolute",
+                  left: o.x / scale,
+                  top: o.y / scale,
+                  width: o.width / scale,
+                  height: o.height / scale,
+                  border: "2px solid rgba(255, 64, 64, 0.95)",
+                  boxShadow: "0 0 0 2px rgba(255, 64, 64, 0.3)",
+                  boxSizing: "border-box",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    bottom: "100%",
+                    marginBottom: 2,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    background: "rgba(180, 20, 20, 0.95)",
+                    color: "#fff",
+                    font: "600 10px/1.4 system-ui, sans-serif",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  ⚠ {o.id} escapes viewport ({overflowEdges(o)})
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
         {editing ? <HudEditBar layout={layout} /> : null}
       </div>
     </HudCanvasContext.Provider>
   );
+}
+
+/** Human-readable edge list for the dev boundary badge, e.g. `right +260 · bottom +56`. */
+function overflowEdges(overflow: HudOverflow): string {
+  const parts: string[] = [];
+  if (overflow.left > 0) parts.push(`left +${overflow.left}`);
+  if (overflow.top > 0) parts.push(`top +${overflow.top}`);
+  if (overflow.right > 0) parts.push(`right +${overflow.right}`);
+  if (overflow.bottom > 0) parts.push(`bottom +${overflow.bottom}`);
+  return parts.length > 0 ? parts.join(" · ") : "edge";
 }
 
 interface PanelDrag {

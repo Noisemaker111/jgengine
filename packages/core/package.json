@@ -1,7 +1,7 @@
 {
   "name": "@jgengine/core",
   "version": "0.13.0",
-  "description": "jgengine core — agent-first game framework SDK (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. https://jgengine.com",
+  "description": "jgengine core — pure-TypeScript game framework SDK (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. Agent skills ship in the tarball. https://jgengine.com",
   "keywords": [
     "jgengine",
     "agent-first",

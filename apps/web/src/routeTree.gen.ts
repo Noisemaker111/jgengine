@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhyRouteImport } from './routes/why'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PlaygroundRouteImport } from './routes/playground'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CapabilitiesRouteImport } from './routes/capabilities'
 import { Route as AdoptRouteImport } from './routes/adopt'
@@ -34,6 +36,16 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const PlaygroundRoute = PlaygroundRouteImport.update({
   id: '/playground',
   path: '/playground',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: '/llms-full.txt',
+  path: '/llms-full.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditorRoute = EditorRouteImport.update({
@@ -82,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/adopt': typeof AdoptRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/playground': typeof PlaygroundRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/why': typeof WhyRoute
@@ -95,6 +109,8 @@ export interface FileRoutesByTo {
   '/adopt': typeof AdoptRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/playground': typeof PlaygroundRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/why': typeof WhyRoute
@@ -109,6 +125,8 @@ export interface FileRoutesById {
   '/adopt': typeof AdoptRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/playground': typeof PlaygroundRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/why': typeof WhyRoute
@@ -124,6 +142,8 @@ export interface FileRouteTypes {
     | '/adopt'
     | '/capabilities'
     | '/editor'
+    | '/llms-full.txt'
+    | '/llms.txt'
     | '/playground'
     | '/sitemap.xml'
     | '/why'
@@ -137,6 +157,8 @@ export interface FileRouteTypes {
     | '/adopt'
     | '/capabilities'
     | '/editor'
+    | '/llms-full.txt'
+    | '/llms.txt'
     | '/playground'
     | '/sitemap.xml'
     | '/why'
@@ -150,6 +172,8 @@ export interface FileRouteTypes {
     | '/adopt'
     | '/capabilities'
     | '/editor'
+    | '/llms-full.txt'
+    | '/llms.txt'
     | '/playground'
     | '/sitemap.xml'
     | '/why'
@@ -164,6 +188,8 @@ export interface RootRouteChildren {
   AdoptRoute: typeof AdoptRoute
   CapabilitiesRoute: typeof CapabilitiesRoute
   EditorRoute: typeof EditorRoute
+  LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   PlaygroundRoute: typeof PlaygroundRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WhyRoute: typeof WhyRoute
@@ -194,6 +220,20 @@ declare module '@tanstack/react-router' {
       path: '/playground'
       fullPath: '/playground'
       preLoaderRoute: typeof PlaygroundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms-full.txt': {
+      id: '/llms-full.txt'
+      path: '/llms-full.txt'
+      fullPath: '/llms-full.txt'
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor': {
@@ -260,6 +300,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdoptRoute: AdoptRoute,
   CapabilitiesRoute: CapabilitiesRoute,
   EditorRoute: EditorRoute,
+  LlmsFullDottxtRoute: LlmsFullDottxtRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   PlaygroundRoute: PlaygroundRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WhyRoute: WhyRoute,

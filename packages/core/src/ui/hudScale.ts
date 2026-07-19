@@ -79,7 +79,27 @@ export function rectOverflow(rect: HudRect, viewport: HudSize, tolerance = 1.5):
   return { left: round(left), top: round(top), right: round(right), bottom: round(bottom) };
 }
 
-/** Every panel rect that escapes the viewport — the data behind the HUD overflow gate. */
+/**
+ * True when at least `minVisiblePx²` of `rect` actually falls inside `viewport`.
+ * The boundary check uses this to tell a *shown* surface from a *closed* one: a
+ * mail drawer parked fully off-screen (or a menu that has not been opened) never
+ * intersects the viewport, so it is not "escaping" — it is simply not on screen.
+ * Only a surface that is partly visible and partly past an edge is a real defect.
+ *
+ * @internal Consumed transitively through {@link overflowingPanels}; exported for unit tests.
+ */
+export function rectIntersectsViewport(rect: HudRect, viewport: HudSize, minVisiblePx = 1): boolean {
+  const visibleWidth = Math.min(rect.x + rect.width, viewport.width) - Math.max(rect.x, 0);
+  const visibleHeight = Math.min(rect.y + rect.height, viewport.height) - Math.max(rect.y, 0);
+  return visibleWidth >= minVisiblePx && visibleHeight >= minVisiblePx;
+}
+
+/**
+ * Every panel rect that escapes the viewport — the data behind the HUD overflow
+ * gate. A rect is only reported when it is partly visible *and* crosses an edge;
+ * a fully off-screen (closed/hidden) surface is skipped, so parked drawers and
+ * unopened menus never raise a false alarm.
+ */
 export function overflowingPanels(
   panels: readonly { id: string; rect: HudRect }[],
   viewport: HudSize,
@@ -87,6 +107,7 @@ export function overflowingPanels(
 ): HudOverflow[] {
   const out: HudOverflow[] = [];
   for (const panel of panels) {
+    if (!rectIntersectsViewport(panel.rect, viewport)) continue;
     const overflow = rectOverflow(panel.rect, viewport, tolerance);
     if (overflow !== null) out.push({ id: panel.id, ...overflow });
   }

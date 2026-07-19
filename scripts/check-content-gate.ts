@@ -11,10 +11,23 @@ const ROOT = process.cwd();
 const GAMES_DIR = join(ROOT, "Games");
 const CONTENT_BASELINE = join(ROOT, "scripts/content-gate-baseline.json");
 const COORD_BASELINE = join(ROOT, "scripts/coordinate-literal-baseline.json");
+const BUILDER_BASELINE = join(ROOT, "scripts/content-builder-baseline.json");
 const OWNERSHIP_MANIFEST = "scene-ownership.json";
 
 const GAME_THRESHOLD = 20;
 const FILE_THRESHOLD = 15;
+
+/**
+ * Content-bearing feature builders from `@jgengine/core/world/features`. Unlike coordinate
+ * literals, a parameterized fill (`grass({ area, density })`, `building({ count, style })`,
+ * `road({ path })`, a bounded `ocean({ bounds })`, `pad({ center, size })`) authors visible
+ * world *content* — turf, structures, streets, water bodies, platforms — with no scoreable
+ * coordinates, so it slips past the coordinate lint entirely. For an authored game these are the
+ * scene document's job (author them in the editor, consume at runtime), never game code. See #1125.
+ */
+const CONTENT_BUILDERS = ["grass", "building", "road", "ocean", "pad"] as const;
+type ContentBuilder = (typeof CONTENT_BUILDERS)[number];
+const FEATURE_MODULE = /@jgengine\/core\/world\/features/;
 
 interface OwnershipDeclaration {
   /** The game legitimately owns runtime-only/geometry-free content it declared cleanly. */
@@ -93,6 +106,50 @@ function coordScore(txt: string): number {
   return posObj + keyedTup + runTup;
 }
 
+/**
+ * Which content builders a file imports from the feature module. Tying detection to the import
+ * (not a bare name) keeps unrelated local helpers — e.g. a `pad(value)` string-padding function —
+ * from false-positiving, and only flags the actual `@jgengine/core/world/features` fills.
+ */
+function importedContentBuilders(txt: string): Set<ContentBuilder> {
+  const set = new Set<ContentBuilder>();
+  const re = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["']([^"']+)["']/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(txt)) !== null) {
+    if (!FEATURE_MODULE.test(m[2])) continue;
+    for (const raw of m[1].split(",")) {
+      const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]?.trim() ?? "";
+      if ((CONTENT_BUILDERS as readonly string[]).includes(name)) set.add(name as ContentBuilder);
+    }
+  }
+  return set;
+}
+
+/**
+ * Content builders actually called as fills in this file. A default `ocean()` is an ambient
+ * full-world water plane (environment tuning), so only a *bounded* ocean — one passing explicit
+ * `bounds`/`position` — counts as placed content per #1125; the other builders are content the
+ * moment they are called.
+ */
+function contentBuilderCalls(txt: string): ContentBuilder[] {
+  const found = new Set<ContentBuilder>();
+  for (const builder of importedContentBuilders(txt)) {
+    if (builder === "ocean") {
+      const re = /\bocean\s*\(/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(txt)) !== null) {
+        if (/\bbounds\b|\bposition\b/.test(txt.slice(m.index, m.index + 400))) {
+          found.add(builder);
+          break;
+        }
+      }
+    } else if (new RegExp(`\\b${builder}\\s*\\(`).test(txt)) {
+      found.add(builder);
+    }
+  }
+  return [...found];
+}
+
 function walk(dir: string, out: string[]): void {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -106,6 +163,8 @@ interface GameScan {
   gameScore: number;
   authored: boolean;
   fileOffenders: string[];
+  /** `Games/<id>/src/<file>:<builder>` for each content-builder fill called in game source. */
+  builderOffenders: string[];
 }
 
 function scanGame(id: string): GameScan | null {
@@ -116,12 +175,15 @@ function scanGame(id: string): GameScan | null {
   let gameScore = 0;
   let authored = false;
   const fileOffenders: string[] = [];
+  const builderOffenders: string[] = [];
   for (const file of files) {
     const txt = readFileSync(file, "utf8");
     if (/\bAuthoredScene\b|\bAuthoredPaths\b/.test(txt)) authored = true;
     const score = coordScore(txt);
     gameScore += score;
-    if (score >= FILE_THRESHOLD) fileOffenders.push(relative(ROOT, file).replaceAll("\\", "/"));
+    const rel = relative(ROOT, file).replaceAll("\\", "/");
+    if (score >= FILE_THRESHOLD) fileOffenders.push(rel);
+    for (const builder of contentBuilderCalls(txt)) builderOffenders.push(`${rel}:${builder}`);
   }
   const sceneDoc = join(src, "editor.scene.json");
   if (existsSync(sceneDoc)) {
@@ -135,7 +197,8 @@ function scanGame(id: string): GameScan | null {
     } catch { /* ignore */ }
   }
   fileOffenders.sort();
-  return { id, gameScore, authored, fileOffenders };
+  builderOffenders.sort();
+  return { id, gameScore, authored, fileOffenders, builderOffenders };
 }
 
 function scanAll(): GameScan[] {
@@ -150,15 +213,23 @@ function scanAll(): GameScan[] {
   return out;
 }
 
-function currentOffenders(scans: GameScan[], declared: ReadonlySet<string>): { games: string[]; files: string[] } {
+function currentOffenders(
+  scans: GameScan[],
+  declared: ReadonlySet<string>,
+): { games: string[]; files: string[]; builders: string[] } {
   const games: string[] = [];
   const files: string[] = [];
+  const builders: string[] = [];
   for (const scan of scans) {
+    // A clean scene-ownership.json declaration exempts the whole game from every content check.
     if (declared.has(scan.id)) continue;
     if (!scan.authored && scan.gameScore >= GAME_THRESHOLD) games.push(scan.id);
     files.push(...scan.fileOffenders);
+    // Parameterized fills are content only when the game is authored — a fully procedural game
+    // with no scene document is out of scope for the "author it in the editor" rule.
+    if (scan.authored) builders.push(...scan.builderOffenders);
   }
-  return { games: games.sort(), files: files.sort() };
+  return { games: games.sort(), files: files.sort(), builders: builders.sort() };
 }
 
 function readBaseline(path: string): string[] {
@@ -179,19 +250,22 @@ function main(argv: string[]): number {
     if (declaration.declared) declared.add(scan.id);
     declarationProblems.push(...declaration.problems);
   }
-  const { games, files } = currentOffenders(scans, declared);
+  const { games, files, builders } = currentOffenders(scans, declared);
 
   if (argv.includes("--update")) {
     writeBaseline(CONTENT_BASELINE, games);
     writeBaseline(COORD_BASELINE, files);
+    writeBaseline(BUILDER_BASELINE, builders);
     console.log(
-      `check-content-gate: baselines written — ${games.length} offender game(s), ${files.length} coordinate-literal file(s)`,
+      `check-content-gate: baselines written — ${games.length} offender game(s), ${files.length} coordinate-literal file(s), ` +
+        `${builders.length} content-builder call(s)`,
     );
     return 0;
   }
 
   const contentBaseline = new Set(readBaseline(CONTENT_BASELINE));
   const coordBaseline = new Set(readBaseline(COORD_BASELINE));
+  const builderBaseline = new Set(readBaseline(BUILDER_BASELINE));
   const problems: string[] = [...declarationProblems];
 
   for (const id of games) {
@@ -227,6 +301,28 @@ function main(argv: string[]): number {
     }
   }
 
+  const builderSet = new Set(builders);
+  for (const entry of builders) {
+    if (!builderBaseline.has(entry)) {
+      const sep = entry.lastIndexOf(":");
+      const file = entry.slice(0, sep);
+      const builder = entry.slice(sep + 1);
+      problems.push(
+        `${file}: authored game calls the content builder ${builder}(...). Parameterized fills author visible world content ` +
+          `(vegetation/structures/roads/pads/bounded water), which belongs in the scene document — author it in the editor ` +
+          `(jgengine-editor skill) as an editor.scene.json volume/kind and consume it at runtime, not as a code-side fill. If this ` +
+          `content is genuinely runtime-only, declare it in Games/${file.split("/")[1]}/src/scene-ownership.json (a SceneOwnershipManifest with a reason).`,
+      );
+    }
+  }
+  for (const entry of builderBaseline) {
+    if (!builderSet.has(entry)) {
+      problems.push(
+        `content-builder-baseline.json lists "${entry}" but that content-builder call is gone (moved to the editor, or the game is now exempt). Remove it — the baseline only shrinks.`,
+      );
+    }
+  }
+
   if (problems.length > 0) {
     console.error(
       `\ncheck-content-gate: ${problems.length} content-governance issue(s):\n` +
@@ -234,8 +330,10 @@ function main(argv: string[]): number {
         `\n\nRule: scene/level geometry and placement are authored in the scene editor and saved into\n` +
         `editor.scene.json, then rendered at runtime by <AuthoredScene>/<AuthoredPaths> — never hand-rolled\n` +
         `as mesh generation or magic-number placement arrays in game code (CLAUDE.md → "Author scenes in\n` +
-        `the editor"). Two shrinking baselines pin today's known offenders so main stays green while the\n` +
-        `per-game migrations land; both may only lose entries, never gain them. After a migration reseed with\n` +
+        `the editor"). Parameterized content fills (grass()/building()/road()/pad()/bounded ocean()) in an\n` +
+        `authored game are the same violation with no scoreable coordinates and are caught independently.\n` +
+        `Three shrinking baselines pin today's known offenders so main stays green while the per-game\n` +
+        `migrations land; all may only lose entries, never gain them. After a migration reseed with\n` +
         `  bun run check-content-gate --update\n` +
         `and commit the trimmed baselines. Genuinely procedural / geometry-free games declare their\n` +
         `runtime-only content in Games/<id>/src/scene-ownership.json (a SceneOwnershipManifest) instead of a\n` +
@@ -245,8 +343,9 @@ function main(argv: string[]): number {
   }
 
   console.log(
-    `check-content-gate: clean — ${games.length} game(s) and ${files.length} file(s) baselined; ` +
-      `${declared.size} game(s) with declared runtime-only content; no new hard-coded-geometry offenders`,
+    `check-content-gate: clean — ${games.length} game(s), ${files.length} coordinate-literal file(s), and ` +
+      `${builders.length} content-builder call(s) baselined; ${declared.size} game(s) with declared runtime-only content; ` +
+      `no new hard-coded-geometry or content-fill offenders`,
   );
   return 0;
 }

@@ -304,3 +304,11 @@ pushing a restarted branch after its PR squash-merged + remote branch auto-delet
 2026-07-19T03:00:51.246Z — claude-fable-5 — Claude
 
 Running bun run gate as a Claude background Bash task → the task harness reported 'completed (exit 0)' while guard.ts subprocesses were still running, so the output file was truncated mid-run and the verdict untrustworthy; had to kill overlapping runs and re-run with an explicit exit-code marker file
+
+2026-07-19T03:45:07.086Z — claude-opus-4-8 — Claude
+
+shipping a UI boundary check → check-export-manifest fails on main: scripts/export-manifest.json was stale (missing @jgengine/jgengine ./upgrade subpath), forcing an unrelated regen into my PR
+
+2026-07-19T03:57:16.316Z — fable — Claude
+
+Adding an /agents.md server route to apps/web → Vite dev static middleware intercepts .md URLs and 404s before TanStack SSR sees them, while .txt/.xml server routes work; had to ship the brief as /llms-full.txt instead

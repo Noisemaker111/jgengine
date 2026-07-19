@@ -15,6 +15,31 @@ run inside a game project diffs the installed `@jgengine/*` versions against the
 latest release and prints every Migrate step and Adopt-worthy addition in
 between (`--json` for structured output).
 
+## [Unreleased]
+
+<!--
+Every PR that changes `packages/*/src` records its consumer-facing change here, so
+the next release's notes are complete by construction. Add a bullet under the right
+subhead below. `bun run check-changelog` fails a source PR whose `[Unreleased]` block
+is untouched; pure refactors/tests bypass with `[skip changelog]` in a commit message.
+At publish, rename this heading to the new version and mirror the entries into
+`packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
+-->
+
+### Migrate
+
+- _Nothing yet._
+
+### Added
+
+- Editor: viewport clip preview for rigged assets (Animation dock "Clips" mode — pick a rig or placed instance, play/scrub/loop/speed any catalog clip) and an Inspector "Animation" section that authors a placement's `ModelConfig.animation` (role→clip dropdowns, auto/none, walk/run/fade, one-shot event bindings) as undoable `marker.meta.animation` edits. New subpaths: `@jgengine/editor/shell/clipPreview`, `@jgengine/editor/modelAnimationAuthoring`, `@jgengine/editor/ClipPreviewLayer`.
+
+### Changed
+
+- **Combat VFX no longer render as black squares under AO/DOF post-processing** (#1247) — GTAO/Bokeh scene prepasses skip overlay effects. Games with custom additive overlay effects opt out the same way: spread `POSTFX_OVERLAY_USERDATA` (`@jgengine/shell/postfx/postfxOverlay`) onto the overlay group's `userData`.
+
+### Removed
+
 ## 0.13.0
 
 ### Migrate

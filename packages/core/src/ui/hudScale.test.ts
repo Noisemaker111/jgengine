@@ -4,6 +4,7 @@ import {
   DEFAULT_HUD_DESIGN_SIZE,
   hudScaleForViewport,
   overflowingPanels,
+  rectIntersectsViewport,
   rectOverflow,
   resolveHudFit,
 } from "./hudScale";
@@ -72,6 +73,26 @@ describe("rectOverflow", () => {
   });
 });
 
+describe("rectIntersectsViewport", () => {
+  const viewport = { width: 390, height: 844 };
+
+  test("a shown panel intersects", () => {
+    expect(rectIntersectsViewport({ x: 10, y: 10, width: 100, height: 50 }, viewport)).toBe(true);
+  });
+
+  test("a panel clipped at an edge still intersects (it is partly shown)", () => {
+    expect(rectIntersectsViewport({ x: -40, y: 10, width: 100, height: 50 }, viewport)).toBe(true);
+  });
+
+  test("a drawer parked fully off the left edge does not intersect", () => {
+    expect(rectIntersectsViewport({ x: -400, y: 10, width: 380, height: 600 }, viewport)).toBe(false);
+  });
+
+  test("a menu parked fully below the viewport does not intersect", () => {
+    expect(rectIntersectsViewport({ x: 10, y: 900, width: 200, height: 300 }, viewport)).toBe(false);
+  });
+});
+
 describe("overflowingPanels", () => {
   test("names only the escaping panels", () => {
     const result = overflowingPanels(
@@ -84,5 +105,13 @@ describe("overflowingPanels", () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe("quest-log");
     expect(result[0]?.right).toBe(260);
+  });
+
+  test("a closed drawer parked off-screen is not reported", () => {
+    const result = overflowingPanels(
+      [{ id: "mail", rect: { x: -400, y: 10, width: 380, height: 600 } }],
+      { width: 390, height: 844 },
+    );
+    expect(result).toHaveLength(0);
   });
 });
