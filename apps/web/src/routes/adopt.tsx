@@ -72,6 +72,7 @@ const hit = applyStatPoolDelta(access, "hero", "health", -12); // hit.applied ==
     get: "A serializable, replay-safe resolution you can run on the authority and mirror to clients.",
     filename: "damage.ts",
     code: `import { resolveDamageHit } from "@jgengine/core/combat/damageResolution";
+import { applyStatPoolDelta } from "@jgengine/core/stats/statPool";
 
 const result = resolveDamageHit({
   channel: "kinetic",
@@ -80,7 +81,8 @@ const result = resolveDamageHit({
   targetTraits: enemy.armored ? ["armored"] : [],
   matchup: { entries: { kinetic: { armored: { impact: 0.5 } } } },
 });
-applyToMyHealthStore(enemy.id, -result.impact); // 12 vs the armored enemy`,
+// Drain it through the same two-method adapter from health.ts above.
+applyStatPoolDelta(access, enemy.id, "health", -result.impact); // -12 vs the armored enemy`,
   },
   {
     glyph: "✨",

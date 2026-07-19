@@ -113,8 +113,9 @@ const death = createDeathSystem({
 
 const backend = createWsBackend({
   url: "wss://your-host.example/game",
-  gameId: "meadow-run",
+  userId: player.id,
 });
+const { serverId } = await backend.createSession({ gameId: "meadow-run" });
 // Reconnect, snapshot sync, and save cadence are handled for you.`,
   },
   {
