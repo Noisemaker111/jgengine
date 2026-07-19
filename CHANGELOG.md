@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Turnkey day-night cycle.** `@jgengine/core/time/dayNightCycle`' `createDayNightCycle` is a genre-agnostic,
+  serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels
+  and tint/light colors (`DayNightKeyframe` → `DayNightSample`), with `pause`/`play`/`setSpeed`/`setDayFraction`,
+  `subscribe`, `snapshot`/`restore`, and a `calendar()` adapter so it drops straight into any `{ dayFraction }` sky
+  seam. The shell's `@jgengine/shell/environment` adds `DayNightSky`, a drop-in R3F presenter that drives the existing
+  `SkyDome` shader and lights from the model each frame — wire one thing for a moving, color-graded day-night sky
+  instead of hand-rolling a clock plus a color lerp. `phase`/`kind` strings stay free-form; the model never interprets
+  them. New `day-night` dev demo.
 - **Coach-marks / tutorial hints.** `@jgengine/core/ui/coachMarks`' `createCoachMarkSequence` is a genre-agnostic
   onboarding model: an ordered list of `CoachMarkStep`s (title, body, optional `anchor`/`placement`, and a data-first
   string `condition`), a persisted "seen" set so completed hints never re-show, condition-gating via `satisfy`/

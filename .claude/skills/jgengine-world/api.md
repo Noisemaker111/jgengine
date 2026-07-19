@@ -1303,6 +1303,15 @@
 
 - `GameTime` (interface): interface GameTime — ⚠ undocumented
 
+## @jgengine/core/time/dayNightCycle
+
+- `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
+- `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
+- `DayNightKeyframe` (interface): interface DayNightKeyframe — Turnkey day-night cycle: one serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. A game wires this one model and drives an existing sky/daylight seam from `sample()` instead of hand-rolling a clock plus a color lerp.
+- `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
+- `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
+- `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
+
 ## @jgengine/core/time/gameClock
 
 - `DEFAULT_TIME_SCALE` (const): const DEFAULT_TIME_SCALE: 24 — Simulation clock: real time scaled into game time, plus the derived game-day counter.
@@ -1575,6 +1584,11 @@
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
+- `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
+- `DayNightCycleOptions` (interface): interface DayNightCycleOptions — Options for {@link createDayNightCycle}.
+- `DayNightKeyframe` (interface): interface DayNightKeyframe — Turnkey day-night cycle: one serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. A game wires this one model and drives an existing sky/daylight seam from `sample()` instead of hand-rolling a clock plus a color lerp.
+- `DayNightSample` (interface): interface DayNightSample — The interpolated day-night look at a moment: day fraction, active phase, and blended colors.
+- `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
 - `DrapeOptions` (interface): interface DrapeOptions — Shaping for surface draping: subdivision spacing and a lift to keep the line off the ground.
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
@@ -1986,6 +2000,7 @@
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
+- `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
 - `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
 - `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented

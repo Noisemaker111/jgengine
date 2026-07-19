@@ -360,6 +360,14 @@ export {
 export { type HiddenStateSource, type SensorProbeOptions, type SensorReading } from "./sensor/hiddenStateProbe";
 export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
+export {
+  createDayNightCycle,
+  type DayNightCycle,
+  type DayNightCycleOptions,
+  type DayNightKeyframe,
+  type DayNightSample,
+  type DayNightSnapshot,
+} from "./time/dayNightCycle";
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
 export {
