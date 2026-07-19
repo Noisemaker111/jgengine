@@ -12,6 +12,32 @@ Agents building on the published SDK can also read this programmatically:
 same data as typed values, so an updater can diff its installed version against
 the latest and surface the migration steps.
 
+## 0.13.0
+
+### Migrate
+
+- **Nothing required** — this release is additive fixes, defaults, and new drop-in primitives. Bump `@jgengine/*` pins to `^0.13.0` (CLI `jgengine` is 0.10.0; `@jgengine/github` unchanged at 0.1.0) and rebuild.
+- Two defaults changed in the player's favor, both overridable: **offline games now persist to localStorage automatically** (#1207) and **rigged catalog assets animate by default** via clip metadata + semantic clip roles (#1209). If a game relied on rigged models staying frozen or on saves being memory-only, opt out explicitly; otherwise you get better behavior for free.
+
+### Added
+
+- **Drop-in inventory grid, window manager, and character sheet** (#1220) — `@jgengine/react` ships `InventoryGrid` (real drag/stack/split), a toggleable-window system (`panels`: bag, character sheet, spellbook-style windows with `@jgengine/core/ui/panelModel` state), and a `CharacterSheet` paperdoll, all HudTheme-skinnable — wire in a line or two instead of re-deriving from raw divs.
+- **Serializable runtime snapshots** (#1179) — capture/restore of live runtime state, including magazine state (`@jgengine/core/combat/magazine`) and stat modifiers, for saves and replication.
+- **Portable weapon plumbing** (#1211) — `@jgengine/core/combat/weaponFire` composes trigger → magazine → spread → projectile/hitscan as data, no game-local glue.
+- **Portable leveling** (#1206) and **portable damage-pool access** (#1208) — progression and damage pools exposed as genre-agnostic seams on the game context.
+- **Named combat VFX presets** (#1204) — `@jgengine/core/combat/vfxPresets`: a visible attack is one line.
+- **Runtime-measured render-bounds hitboxes** (#1227) — colliders wrap what the shell actually mounts, not the raw asset bounds.
+- **Character motion feel** — procedural part motion for rig-less part-composed characters (#1222) plus squash & stretch and death splat (#1229).
+- **City fabric** (#1191) — `streetGenerator` + `cityGenerator`, editor bake verb, street-aware lots, road junctions, grounding, and a web playground.
+- **`jgengine recipe` CLI** (#1214, #1231) — vetted wired compositions, compile-pinned against the SDK, listed and copied from the CLI.
+- **Editor/debug modes mirror to the URL** with a proper editor exit (#1203); game template ships a dependency-free WebGL screenshot script (#1202).
+
+### Changed
+
+- Offline games persist to localStorage by default (#1207); rigged assets animate by default (#1209).
+- RTS camera pan inversion fixed (#1228); sprite raycast warning silenced and duplicate nameplate health bars removed (#1194); scaffolded F2+E editor Tailwind `@source` renders its theme (#1195).
+- Outside-game DX: stat-pool no-op stability, camera-transparent decor, cleaner install/version output, headless UI-intent seam (#1223); new-game briefs direct engine bugs/gaps upstream (#1200).
+
 ## 0.12.0
 
 ### Migrate

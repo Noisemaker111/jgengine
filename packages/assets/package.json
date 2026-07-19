@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/assets",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Self-generating, license-verified index of thousands of CC0 3D models for JGengine. Sources fetch from providers' own CDNs at pull time; the npm tarball ships only the typed index and CLI (no GLB bytes).",
   "license": "Apache-2.0",
   "type": "module",
@@ -35,7 +35,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.12.0",
+    "@jgengine/core": "^0.13.0",
     "fflate": "^0.8.2"
   },
   "devDependencies": {
