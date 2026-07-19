@@ -102,6 +102,13 @@ export function Header() {
             Capabilities
           </Link>
           <Link
+            to="/adopt"
+            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+          >
+            Adopt
+          </Link>
+          <Link
             to="/editor"
             className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
             activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
@@ -160,6 +167,11 @@ export function Footer() {
                 <li>
                   <Link to="/capabilities" className="transition hover:text-emerald-300">
                     Capabilities
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/adopt" className="transition hover:text-emerald-300">
+                    Drop-in adoption
                   </Link>
                 </li>
                 <li>

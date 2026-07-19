@@ -6,16 +6,22 @@ export interface ResolvedWorldOverlayBars {
   statId: string;
   roles?: readonly CatalogEntityRole[];
   maxDistance?: number;
+  /** Nameplates only: draw the built-in HP bar. `false` yields a name-only plate. Defaults to `true`. */
+  showHealth?: boolean;
 }
 
 /**
  * Normalize `worldHealthBars` / `nameplates` (`boolean | object | undefined`) into a
  * single resolved shape. `undefined` / `false` → `null` (off); `true` → default stat `"health"`;
- * object → explicit fields with `statId` defaulting to `"health"`.
+ * object → explicit fields with `statId` defaulting to `"health"`. `showHealth` is nameplate-only
+ * (ignored by `worldHealthBars`, which is itself a bar).
  * @internal
  */
 export function resolveWorldOverlayBars(
-  config: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number } | undefined,
+  config:
+    | boolean
+    | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number; showHealth?: boolean }
+    | undefined,
 ): ResolvedWorldOverlayBars | null {
   if (config === undefined || config === false) return null;
   if (config === true) return { statId: "health" };
@@ -23,6 +29,7 @@ export function resolveWorldOverlayBars(
     statId: config.statId ?? "health",
     ...(config.roles === undefined ? {} : { roles: config.roles }),
     ...(config.maxDistance === undefined ? {} : { maxDistance: config.maxDistance }),
+    ...(config.showHealth === undefined ? {} : { showHealth: config.showHealth }),
   };
 }
 

@@ -144,17 +144,27 @@ if (cold) {
   );
 }
 
+const originUrl = git("remote", "get-url", "origin") ?? "";
+const owner = (originUrl.match(/[:/]([^/]+)\/[^/]+?(?:\.git)?$/) ?? [])[1] ?? "";
+const autoMerge = owner === "Noisemaker111";
+const mergePolicy = autoMerge
+  ? `MERGE POLICY (${owner} repo): enable squash auto-merge when you open the PR ` +
+    `(enable_pr_auto_merge, or gh pr merge --squash --auto) so GitHub lands it itself once CI ` +
+    `passes — the user never merges by hand, so do not wait for or babysit the merge. Never ` +
+    `publish an npm release or bump a version to force release; the user owns release/publish ` +
+    `timing.`
+  : `NEVER merge and never enable auto-merge — auto-merge is only for the Noisemaker111 repo. ` +
+    `The user merges PRs themselves by asking in chat; the PR sits parked until then.`;
+
 emit(
   [
     `Cloud session on branch "${branch}" (default: ${defaultBranch}).`,
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
       `tools (ready for review), subscribe_pr_activity on it, report the PR link, and END ` +
       `THE TURN. Never wait or poll on CI — the subscription delivers failures as events, ` +
-      `silence is green (PRs run only the ~30s quick job). NEVER merge — no ` +
-      `merge_pull_request, no enable_pr_auto_merge. The user merges PRs themselves by asking ` +
-      `in chat; the PR sits parked until then, and a user-requested merge ends at "merged" — ` +
-      `no post-merge babysitting of ${defaultBranch}. A CI failure event → fix on the same ` +
-      `branch, push, end turn. ` +
+      `silence is green (PRs run only the ~30s quick job). ${mergePolicy} A CI failure event ` +
+      `→ fix on the same branch, push (auto-merge stays armed and lands the fixed run), end ` +
+      `turn. ` +
       `New task in the same session → fresh claude/... branch off origin/${defaultBranch}, ` +
       `separate PR; never stack it on a parked branch. Never arm send_later check-ins or ` +
       `scheduled remote sessions for CI. No worktrees — every session is its own isolated ` +

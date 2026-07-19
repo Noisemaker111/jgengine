@@ -55,7 +55,7 @@ assets pull <source-id> [--dir public] [--mirror <baseUrl>] [--offline]
                                                # download + extract a pack into <dir>/models|materials|sprites/<source>/
 assets register <path|url> --category <c> --license <l> [--author <a>]
                                                # register a one-off single into the shipped index
-assets reindex [public/models]                # regenerate generated/*.json from pulled model packs
+assets reindex [public/models]                # regenerate generated/*.json (dims + animation clip names) from pulled model packs
 assets reindex-sprites [public/sprites]       # regenerate generated-sprites/*.json from pulled sprite packs
 assets verify                                 # license + alias-integrity gate
 assets provenance <id> [<id>...]              # resolve each id's owner (committed/provisioned/dangling); non-zero on any dangling

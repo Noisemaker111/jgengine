@@ -1,6 +1,21 @@
-import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { GameContextModels } from "@jgengine/core/runtime/gameContext";
+
+/**
+ * The `ModelConfig` a resolved catalog ref renders as. Stamps `animation: "auto"` so any rigged
+ * catalog asset animates by default — the shell derives idle/walk/run states and one-shots from
+ * the loaded GLB's clip names; clipless models are unaffected. An explicit `style.animation`
+ * (merged after resolve) or `"none"` overrides.
+ */
+function catalogModelConfig(ref: ModelAssetRef): ModelConfig {
+  return {
+    url: ref.url,
+    ...(ref.dims === undefined ? {} : { dims: ref.dims }),
+    ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
+    animation: "auto",
+  };
+}
 
 export interface ModelResolveContext {
   seam: "entityModels" | "objectModels" | "scatterModels";
@@ -28,11 +43,7 @@ export function resolveModel(
       `[jgengine] missing ${where} — not in the asset catalog. Fix the id, register it, or omit the mapping to keep the deliberate primitive/sprite fallback.`,
     );
   }
-  return {
-    url: ref.url,
-    ...(ref.dims === undefined ? {} : { dims: ref.dims }),
-    ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
-  };
+  return catalogModelConfig(ref);
 }
 
 /** Soft lookup used when an object catalog id may double as a model asset id.
@@ -41,11 +52,7 @@ export function resolveModel(
 export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined {
   const ref = assets.resolve(id);
   if (ref === null) return undefined;
-  return {
-    url: ref.url,
-    ...(ref.dims === undefined ? {} : { dims: ref.dims }),
-    ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
-  };
+  return catalogModelConfig(ref);
 }
 
 /**

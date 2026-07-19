@@ -23,7 +23,7 @@ export const game = defineGame({
   assets,
   objectModels,
   renderEntity,
-  pointer: { moveCommand: "world.pointer", select: true },
+  pointer: { moveCommand: "world.pointer" },
   touch: { buttons: [] },
   lighting: {
     ambient: { color: "#c3b0e0", intensity: 0.75 },
@@ -35,10 +35,10 @@ export const game = defineGame({
     followEntityId: null,
     frustum: { far: 1200 },
     rts: {
-      start: { x: 0, z: 5 },
+      start: { x: 0, z: 0 },
       height: 19,
       pitch: 1.0,
-      yaw: Math.PI / 4,
+      yaw: 0,
       panSpeed: 30,
       edgeScroll: true,
       rotateSpeed: 1.1,

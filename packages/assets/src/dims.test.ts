@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readGlbCollisionMesh, readGlbDims } from "./dims";
+import { readGlbClips, readGlbCollisionMesh, readGlbDims } from "./dims";
 
 interface Node {
   mesh?: number;
@@ -103,6 +103,27 @@ describe("readGlbDims", () => {
       }),
     );
     expect(dims).toBeNull();
+  });
+});
+
+describe("readGlbClips", () => {
+  test("reads clip names in order, de-duplicated", () => {
+    const glb = buildGlb({
+      animations: [{ name: "Idle" }, { name: "Walking_A" }, { name: "Idle" }, { name: "Death_A" }],
+    });
+    expect(readGlbClips(glb)).toEqual(["Idle", "Walking_A", "Death_A"]);
+  });
+
+  test("returns null when the GLB has no animations", () => {
+    expect(readGlbClips(glbWith([0, 0, 0], [1, 1, 1]))).toBeNull();
+  });
+
+  test("skips unnamed animations and returns null when none are named", () => {
+    expect(readGlbClips(buildGlb({ animations: [{}, { name: "" }] }))).toBeNull();
+  });
+
+  test("returns null for non-GLB bytes", () => {
+    expect(readGlbClips(new Uint8Array([1, 2, 3, 4]))).toBeNull();
   });
 });
 
