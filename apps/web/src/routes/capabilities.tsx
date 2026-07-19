@@ -168,6 +168,8 @@ type LiveSpec = {
   blurb: string;
   filename: string;
   code: string;
+  /** Visible kudos for the open work this specimen's look descends from. */
+  credit?: { label: string; url: string };
 };
 
 const LIVE_SPECIMENS: LiveSpec[] = [
@@ -187,6 +189,10 @@ const wind = windField({ speed: 2.6, gust: 1.6, turbulence: 0.6 });
 // per frame, lean each blade by the real field vector at its point
 const [wx, wz] = wind.atPoint(blade.x, blade.z, elapsed);
 // ↑ the meadow beside this code runs exactly this call, per blade`,
+    credit: {
+      label: "meadow look: kudos to achrefelouafi's GrassSystemThreeJS — go star it",
+      url: "https://github.com/achrefelouafi/GrassSystemThreeJS",
+    },
   },
   {
     key: "catenary",
@@ -205,6 +211,10 @@ const points = catenaryCurve(
   56,
 );
 // drag a pole in the demo → the cable re-solves from these anchors`,
+    credit: {
+      label: "poles + festoon look: kudos to achrefelouafi's PoleGeneratorThreeJS — go star it",
+      url: "https://github.com/achrefelouafi/PoleGeneratorThreeJS",
+    },
   },
   {
     key: "terrain",
@@ -258,10 +268,20 @@ function Capabilities() {
         <div className="mt-10 space-y-16 sm:mt-12 sm:space-y-20">
           {LIVE_SPECIMENS.map((spec, i) => (
             <section key={spec.key} className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12">
-              <div className={i % 2 === 1 ? "lg:order-2" : ""}>
+              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
                 <LiveSpecimen specimen={spec.key} />
+                {spec.credit && (
+                  <a
+                    href={spec.credit.url}
+                    className="mt-2.5 inline-flex items-center gap-1.5 font-mono text-[11px] text-slate-500 transition hover:text-emerald-300"
+                  >
+                    <span aria-hidden>♥</span>
+                    {spec.credit.label}
+                    <span aria-hidden>↗</span>
+                  </a>
+                )}
               </div>
-              <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-1" : ""}`}>
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/90">{spec.domain}</p>
                 <h3 className="mt-3 text-balance text-2xl font-bold tracking-tight text-slate-50">{spec.title}</h3>
                 <p className="mt-3 text-pretty leading-relaxed text-slate-400">{spec.blurb}</p>
