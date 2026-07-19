@@ -128,6 +128,16 @@ export {
   type ModalStackSnapshot,
 } from "./ui/modalStack";
 export {
+  createObjectiveBanner,
+  type ObjectiveBannerAnnouncement,
+  type ObjectiveBannerController,
+  type ObjectiveBannerOptions,
+  type ObjectiveBannerPhase,
+  type ObjectiveBannerSnapshot,
+  type ObjectiveBannerView,
+  type StoredObjectiveBanner,
+} from "./ui/objectiveBanner";
+export {
   orientationGateActive,
   orientationHintActive,
   resolveOrientationRequirement,

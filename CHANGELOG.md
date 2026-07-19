@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Stage / objective banner.** `@jgengine/core/ui/objectiveBanner`' `createObjectiveBanner` is a genre-agnostic,
+  serializable announcement queue: a game calls `announce({ title, subtitle?, kind?, holdMs?, inMs?, outMs? })` and the
+  controller flies the classic transient centered title stamp ("WAVE 3", "VICTORY", "OBJECTIVE COMPLETE") in, holds it,
+  and fades it out — one banner at a time — on an injected clock (`advance()`), exposing the current banner plus its
+  phase (`in`/`hold`/`out`) and `progress` `0..1` for a renderer to animate. `kind` is a free label the game styles; the
+  model never interprets it. Allocation-aware (the `current()` view is pooled) with `subscribe` + `snapshot`/`restore`.
+  `@jgengine/react`' `ObjectiveBannerHost` subscribes, drives the clock per frame, and maps phase + progress to
+  opacity/scale/translate, HudTheme-skinnable and colorable per `kind` via `kindThemes`. Demo: `objective-banner`.
 - **Talent / skill-tree widget.** `@jgengine/react`'s `TalentTree` is a drop-in widget over the existing
   talent model (`@jgengine/core/game/talents`): pass the node definitions plus a live `createTalentTree`
   instance and it lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite

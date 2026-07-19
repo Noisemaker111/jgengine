@@ -134,6 +134,7 @@ export const gameRegistry: GameRegistry = {
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
+  "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),
   "talent-tree": () => import("./demo/talentTreeDemo").then((module) => module.talentTreeDemoGame),
   "countdown-timer": () => import("./demo/countdownTimerDemo").then((module) => module.countdownTimerDemoGame),
   "dialogue": () => import("./demo/dialogueDemo").then((module) => module.dialogueDemoGame),
