@@ -37,6 +37,56 @@ import {
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
+import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
+
+/** One reload retry absorbs Vite's transient post-HMR rebuild window; see capture-retry.ts. */
+const CAPTURE_MAX_ATTEMPTS = 2;
+
+/**
+ * Navigate to `url` and wait for an honest frame, reloading fresh once if the
+ * first attempt lands in Vite's transient post-HMR rebuild window (stale module
+ * graph → "start menu still on screen" / readiness timeout). The retry waits for
+ * the dev server to settle, disables the page HTTP cache so no stale module is
+ * reused, and re-navigates — turning the old "fails twice until daemon stop/start"
+ * into an automatic in-invocation recovery. Deterministic failures (unknown state,
+ * unregistered command) are not stale-shaped, so they surface on the first attempt.
+ */
+async function navigateForCapture(
+  session: CdpSession,
+  url: string,
+  devBase: string,
+  timeoutMs: number,
+): Promise<void> {
+  for (let attempt = 1; ; attempt += 1) {
+    await session.send("Page.navigate", { url });
+    try {
+      await waitCaptureReady(session, timeoutMs);
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!shouldRetryCapture({ attempt, maxAttempts: CAPTURE_MAX_ATTEMPTS, message })) throw error;
+      const settleMs = retrySettleMs(attempt);
+      console.error(
+        `shoot: capture attempt ${attempt} hit a stale page after HMR (${message}) — settling ${settleMs}ms for the dev server, then reloading fresh`,
+      );
+      await settleDevServer(devBase, settleMs);
+      // Force the reload past any cached (pre-edit) module for the retry only,
+      // so the normal first-attempt path keeps the warm cache and its speed.
+      await session.send("Network.enable");
+      await session.send("Network.setCacheDisabled", { cacheDisabled: true });
+    }
+  }
+}
+
+/** Wait `waitMs` for Vite to finish an in-flight rebuild, then confirm it still serves. */
+async function settleDevServer(base: string, waitMs: number): Promise<void> {
+  await new Promise((r) => setTimeout(r, waitMs));
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    if (await isUp(base)) return;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
 
 type Mode = "ui" | "play" | "poster" | "preview";
 type DeviceArg = Device | "both";
@@ -278,9 +328,7 @@ async function shootOne(
     await applyDevice(session, device, args.size);
     mark("setup");
     const url = targetUrl(args, device, devBase);
-    await session.send("Page.navigate", { url });
-    mark("navigate");
-    await waitCaptureReady(session, args.timeoutMs);
+    await navigateForCapture(session, url, devBase, args.timeoutMs);
     mark("ready");
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");

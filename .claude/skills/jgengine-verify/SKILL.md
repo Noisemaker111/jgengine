@@ -52,7 +52,7 @@ When a game is reported slow, play it and pull the debug menu's perf data instea
 Inside the engine monorepo, start one managed capture session before the first visual shot:
 
 1. Run `bun run shoot daemon start`. The command must report a live Chrome/Vite pair; a non-zero exit means visual capture is unavailable, not permission to repeat cold foreground launches.
-2. Iterate with `bun run shoot <game> --mode play --size half --inspect`. Plain `shoot` auto-attaches to the live daemon; reuse it for every state or viewport in the loop.
+2. Iterate with `bun run shoot <game> --mode play --size half --inspect`. Plain `shoot` auto-attaches to the live daemon; reuse it for every state or viewport in the loop. Editing a game's scene/code while the daemon stays live is fine: each capture opens a fresh page against the warm Vite, and a shot that lands in Vite's transient post-HMR rebuild window auto-reloads once (cache-bypassed) to pick up the new build — no daemon stop/start needed.
 3. Reject blank, sparse, overflow, and collision failures from the metrics pass before opening a PNG. Open only captures whose claim truly needs visual judgment.
 4. Capture the final accepted state at full resolution, then embed final visual evidence with `bun run pr-shots`.
 
@@ -67,7 +67,7 @@ Screenshots come from the game's own dev server. Read every screenshot adversari
 - One visible bug is a fail. If any defect is present in the shot, the claim is not proven — report the defect and its pixel location, do not average it away, talk yourself out of it, or call the overall look acceptable "apart from" it. Fix it or narrow the claim and re-capture.
 - Never write "all good", "looks good", "ships", or an equivalent sign-off without an accompanying list of what you inspected and what, if anything, you found. A bare approval with no itemized pass is not a review.
 - Use deterministic preview states for HUD/menu captures; use live play for integration and scene look.
-- Menu-gated games declare `capture.play`/`capture.states` (see `GameCaptureConfig`) rather than hand-driving setup repeatedly. `capture.play` dispatches once at context-ready; if a play-mode shot fails with "a start menu still on screen" while `play` *is* declared, an async boot step (whole-world save restore, hydration) is resetting the start gate after those commands ran — fix the game so the restore preserves an already-live session, not the capture command.
+- Menu-gated games declare `capture.play`/`capture.states` (see `GameCaptureConfig`) rather than hand-driving setup repeatedly. `capture.play` dispatches once at context-ready; if a play-mode shot fails with "a start menu still on screen" while `play` *is* declared, an async boot step (whole-world save restore, hydration) is resetting the start gate after those commands ran — fix the game so the restore preserves an already-live session, not the capture command. (A transient post-HMR stale page is not this: `shoot` already auto-reloads once for it, so a menu-on-screen failure that *survives* that reload is a real game boot bug.)
 - Inspect desktop and mobile when responsive UI changes.
 - Run pixel inspection for blank/sparse/contrast regressions, then open the PNG and judge it against the UI scorecard.
 - If a WebGL capture hangs once, do not repeat the same foreground command; fall back to deterministic scene evidence and report the capture failure.
