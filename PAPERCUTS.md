@@ -181,14 +181,6 @@ verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't lo
 
 Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
 
-2026-07-19T01:58:14.989Z — claude-fable-5 — NoisemakerJon
-
-regenerating scripts/export-manifest.json → gen-export-manifest reads dist, so orphaned dist files from incremental builds (deleted/renamed source never cleaned from dist) leak phantom public subpaths into the manifest and can mask real removals — found packages/core/dist/devtools/urlFlags.js orphaned with no src counterpart, and main's committed manifest still lists the deleted ./handlers/pathNetwork; the generator should cross-check dist entries against src (or builds should clean orphans)
-
-2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
-
-switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop
-
 2026-07-19T03:47:57.282Z — claude-opus-4-8 — Claude
 
 Wiring in-game before/after screenshots for HudTheme/IconTreatment adoption -> the deterministic engine preview fixtures (hudThemePreview/iconsPreview/barsPreview) render the REAL components but the shoot harness only auto-discovers Games/*/src/preview.tsx, so exported @jgengine/react previews have no capture route without a hand-rolled --url mount; games' own preview.tsx are static posters, not the real HUD, so painted-icon adoption can't be screenshotted without booting full --mode play.
