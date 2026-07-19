@@ -290,6 +290,8 @@ const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0
 export const DEFAULT_OBSTACLE_PLAYER_RADIUS = 0.3;
 /** Feet-to-head span used for the obstacle's vertical overlap test; matches DEFAULT_VOXEL_DIMS.height. */
 const OBSTACLE_PLAYER_HEIGHT = 1.8;
+/** Extra nudge past a solid face when depenetrating so the escaped capsule lands just outside, not on, the box. */
+const PENETRATION_EPSILON = 1e-3;
 
 interface ObstacleBounds {
   minX: number;
@@ -376,20 +378,47 @@ export function resolveObstacleStep(
     );
   }
 
-  let resultX = stepX;
+  // Depenetration escape: axis-clamped sliding alone returns zero on BOTH axes once the capsule is
+  // strictly inside a solid box (a prior frame wedged it into a corner, an object spawned overlapping
+  // it, or a ground snap dropped it in), so the player locks up forever — "I collide and get stuck".
+  // Boxes the capsule is inside are pushed out here along their shallowest face and excluded from the
+  // slide below; resting exactly on a face (the clamp's natural stopping point) is not "inside", so
+  // normal wall contact never triggers an escape and every existing slide case is unchanged.
+  let escapeX = 0;
+  let escapeZ = 0;
+  const slideBoxes: ObstacleBounds[] = [];
   for (const box of nearby) {
+    const insideX = current[0] > box.minX && current[0] < box.maxX;
+    const insideZ = current[2] > box.minZ && current[2] < box.maxZ;
+    if (!insideX || !insideZ) {
+      slideBoxes.push(box);
+      continue;
+    }
+    const toMinX = current[0] - box.minX;
+    const toMaxX = box.maxX - current[0];
+    const toMinZ = current[2] - box.minZ;
+    const toMaxZ = box.maxZ - current[2];
+    const minPen = Math.min(toMinX, toMaxX, toMinZ, toMaxZ);
+    if (minPen === toMinX) escapeX = Math.min(escapeX, -(toMinX + PENETRATION_EPSILON));
+    else if (minPen === toMaxX) escapeX = Math.max(escapeX, toMaxX + PENETRATION_EPSILON);
+    else if (minPen === toMinZ) escapeZ = Math.min(escapeZ, -(toMinZ + PENETRATION_EPSILON));
+    else escapeZ = Math.max(escapeZ, toMaxZ + PENETRATION_EPSILON);
+  }
+
+  let resultX = stepX;
+  for (const box of slideBoxes) {
     if (current[2] <= box.minZ || current[2] >= box.maxZ) continue;
     resultX = clampAxisStep(current[0], resultX, box.minX, box.maxX);
   }
 
   const nextX = current[0] + resultX;
   let resultZ = stepZ;
-  for (const box of nearby) {
+  for (const box of slideBoxes) {
     if (nextX <= box.minX || nextX >= box.maxX) continue;
     resultZ = clampAxisStep(current[2], resultZ, box.minZ, box.maxZ);
   }
 
-  return { stepX: resultX, stepZ: resultZ };
+  return { stepX: resultX + escapeX, stepZ: resultZ + escapeZ };
 }
 
 const OBSTACLE_GATHER_RADIUS = 3;
