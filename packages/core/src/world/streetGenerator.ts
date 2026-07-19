@@ -236,6 +236,15 @@ export interface StreetNetworkRules {
   elevation?: number;
   /** Maximum road slope (rise/run) the grade cap enforces on every street's height sequence. Default 0.07. */
   maxGrade?: number;
+  /** SPACE-FILLING circuit layout dial, 0..1. 0 (default) = the hull construction (a flowing loop around
+   *  an empty middle), BYTE-IDENTICAL to a pre-compactness network. Rising values switch the circuit
+   *  LAYOUT stage to a grid spanning-tree CYCLE that folds back through its own interior: parallel
+   *  adjacent runs one corridor pitch apart, switchback esses, consecutive hairpins, and long straights
+   *  from straight tree branches, with footprint coverage rising with the dial (~45% of grid cells at
+   *  0.5, ~85% at 1). Everything downstream — spline fit, curvature floor, straight designation,
+   *  self-clearance, edge distribution, elevation, pit lane — is reused unchanged. Only meaningful in
+   *  circuit mode; ignored by the street net. */
+  compactness?: number;
 }
 
 /** Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network. */
@@ -1308,6 +1317,191 @@ function distributeLoopEdges(
 }
 
 /**
+ * The corridor PITCH for the grid-cycle layout: the world spacing between anti-parallel loop strands and
+ * the diameter of a leaf hairpin. Sized so, AFTER the curvature floor bulges tight corners, (a) two
+ * parallel corridors keep their centrelines ≥ ~1.5·trackWidth apart (well clear) and (b) a hairpin
+ * U-turn around a tree leaf has radius pitch/2 ≥ minCurveRadius. The `1.2·minR` term is the
+ * post-smoothing bulge budget; the `2.4·minR` floor guarantees the hairpin radius margin. @internal
+ */
+function gridCorridorPitch(rules: StreetNetworkRules): number {
+  const trackWidth = rules.width * WIDTH_MULT.avenue;
+  const minR = Math.max(1, rules.minCurveRadius);
+  return Math.max(2 * trackWidth + 1.2 * minR, 2.4 * minR);
+}
+
+/** Blob coverage fraction for the grid cycle: ~45% of cells at compactness 0.5, ~85% at 1, tapering to a
+ *  near-ring at low compactness so the dial's low end reads as an open GP track. @internal */
+function gridCoverage(compactness: number): number {
+  return Math.max(0.18, Math.min(0.9, 0.05 + compactness * 0.8));
+}
+
+/**
+ * SPACE-FILLING grid-cycle LAYOUT — the `compactness` construction. Overlay a coarse grid on the usable
+ * footprint (node spacing = 2·{@link gridCorridorPitch} so corridors clear after smoothing), grow a
+ * seeded connected blob of cells from the centre (fraction `coverage`), build a seeded random spanning
+ * tree over the blob with a DIRECTION-PERSISTENCE bias (longer straight corridors as compactness falls),
+ * then trace the single closed wall-follower loop AROUND the tree (the boundary of the tree thickened by
+ * half a corridor on each side). That loop is provably one self-avoiding cycle that folds back through
+ * the interior: straight tree branches → straights, leaves → hairpins, parallel branches → switchback
+ * esses. Its rectilinear corners (collinear runs collapsed, small seeded jitter to de-grid) are returned
+ * as CONTROL POINTS for the same curve-first centerline pipeline the hull layout feeds. Returns null on a
+ * degenerate footprint or blob. @internal
+ */
+function buildGridCycleControl(
+  rules: StreetNetworkRules,
+  hx: number,
+  hz: number,
+  rng: () => number,
+  compactness: number,
+  coverage: number,
+): StreetVec2[] | null {
+  const pitch = gridCorridorPitch(rules);
+  // Keep the ENTIRE loop (its corner span plus the spline's convex overshoot) clear of the footprint rim
+  // so the final centerline's footprint clamp never flattens an arc into a sharp corner (which would
+  // defeat the curvature floor). The corner half-span for N node columns is (N − 0.5)·pitch, so the
+  // largest N with (N − 0.5)·pitch ≤ margin·hx is floor(margin·hx/pitch + 0.5).
+  const margin = 0.84;
+  const N = Math.max(2, Math.min(12, Math.floor((margin * hx) / pitch + 0.5)));
+  const M = Math.max(2, Math.min(12, Math.floor((margin * hz) / pitch + 0.5)));
+  if (N < 2 || M < 2) return null;
+  const total = N * M;
+  const dirs: readonly [number, number][] = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  const cellId = (i: number, j: number): number => j * N + i;
+  const inGrid = (i: number, j: number): boolean => i >= 0 && i < N && j >= 0 && j < M;
+  const ci = Math.floor(N / 2);
+  const cj = Math.floor(M / 2);
+
+  // 1. Blob growth — a connected random cell subset from the centre cell.
+  const target = Math.max(3, Math.min(total, Math.round(Math.max(0.18, Math.min(0.9, coverage)) * total)));
+  const selected = new Set<number>([cellId(ci, cj)]);
+  let guard = 0;
+  while (selected.size < target && guard < total * 12) {
+    guard += 1;
+    const arr = Array.from(selected);
+    const from = arr[Math.floor(rng() * arr.length)]!;
+    const d = dirs[Math.floor(rng() * 4)]!;
+    const ni = (from % N) + d[0];
+    const nj = Math.floor(from / N) + d[1];
+    if (!inGrid(ni, nj)) continue;
+    selected.add(cellId(ni, nj));
+  }
+  if (selected.size < 3) return null;
+
+  // 2. Direction-biased random spanning tree (recursive-backtracker DFS). Persisting the entry direction
+  //    with probability `pPersist` (higher as compactness falls) grows long straight corridors.
+  const start = cellId(ci, cj);
+  const visited = new Set<number>([start]);
+  const enterDir = new Map<number, number>();
+  const treeEdges: [number, number][] = [];
+  const stack = [start];
+  // Direction-persistence probability: high everywhere so corridors run straight for a while (real
+  // straights survive), and higher still as compactness falls so low-compactness laps read as open GP
+  // tracks with a couple of interior excursions rather than a dense maze.
+  const pPersist = 0.55 + (1 - compactness) * 0.35;
+  while (stack.length > 0) {
+    const cur = stack[stack.length - 1]!;
+    const cfi = cur % N;
+    const cfj = Math.floor(cur / N);
+    const opts: { cell: number; dir: number }[] = [];
+    for (let d = 0; d < 4; d += 1) {
+      const ni = cfi + dirs[d]![0];
+      const nj = cfj + dirs[d]![1];
+      if (!inGrid(ni, nj)) continue;
+      const nc = cellId(ni, nj);
+      if (!selected.has(nc) || visited.has(nc)) continue;
+      opts.push({ cell: nc, dir: d });
+    }
+    if (opts.length === 0) {
+      stack.pop();
+      continue;
+    }
+    let choice = opts[Math.floor(rng() * opts.length)]!;
+    const pref = enterDir.get(cur);
+    if (pref !== undefined) {
+      const straightOpt = opts.find((o) => o.dir === pref);
+      if (straightOpt !== undefined && rng() < pPersist) choice = straightOpt;
+    }
+    visited.add(choice.cell);
+    enterDir.set(choice.cell, choice.dir);
+    treeEdges.push([cur, choice.cell]);
+    stack.push(choice.cell);
+  }
+
+  // 3. Thin-tree occupancy on the DOUBLED grid: node cell (i,j) → pixel (2i,2j); a tree edge → the pixel
+  //    between its endpoints. No pixel ever lands on (odd,odd), so the set has no 2×2 block (no ambiguous
+  //    saddle) and, being a tree, no hole — its boundary is a single clean rectilinear loop.
+  const W = 2 * N - 1;
+  const H = 2 * M - 1;
+  const occ = new Set<number>();
+  const pix = (x: number, y: number): number => y * W + x;
+  const has = (x: number, y: number): boolean => x >= 0 && x < W && y >= 0 && y < H && occ.has(pix(x, y));
+  for (const c of visited) occ.add(pix(2 * (c % N), 2 * Math.floor(c / N)));
+  for (const [a, b] of treeEdges) {
+    occ.add(pix((a % N) + (b % N), Math.floor(a / N) + Math.floor(b / N)));
+  }
+
+  // 4. Trace the boundary as directed unit edges with the occupied region on the LEFT (→ CCW), keyed by
+  //    start corner. Non-saddle thin region ⇒ the map is a permutation ⇒ chaining yields one closed loop.
+  const nextC = new Map<number, [number, number]>();
+  const ckey = (x: number, y: number): number => y * (W + 2) + x;
+  let sx = Infinity;
+  let sy = Infinity;
+  for (const p of occ) {
+    const x = p % W;
+    const y = Math.floor(p / W);
+    if (!has(x, y - 1)) nextC.set(ckey(x, y), [x + 1, y]);
+    if (!has(x + 1, y)) nextC.set(ckey(x + 1, y), [x + 1, y + 1]);
+    if (!has(x, y + 1)) nextC.set(ckey(x + 1, y + 1), [x, y + 1]);
+    if (!has(x - 1, y)) nextC.set(ckey(x, y + 1), [x, y]);
+    if (y < sy || (y === sy && x < sx)) {
+      sx = x;
+      sy = y;
+    }
+  }
+  if (!Number.isFinite(sx)) return null;
+  const trace: [number, number][] = [];
+  let curX = sx;
+  let curY = sy;
+  let steps = 0;
+  const limit = (W + 2) * (H + 2) * 4;
+  do {
+    trace.push([curX, curY]);
+    const nx = nextC.get(ckey(curX, curY));
+    if (nx === undefined) break;
+    curX = nx[0];
+    curY = nx[1];
+    steps += 1;
+  } while ((curX !== sx || curY !== sy) && steps < limit);
+  if (trace.length < 4) return null;
+
+  // 5. Keep only turn corners (collapse collinear runs so straights survive as one edge), map to world,
+  //    and add a small seeded jitter (well under a corridor pitch) to de-grid the look.
+  const T = trace.length;
+  const halfX = (2 * N - 1) / 2;
+  const halfY = (2 * M - 1) / 2;
+  const jAmp = compactness * pitch * 0.06;
+  const out: StreetVec2[] = [];
+  for (let i = 0; i < T; i += 1) {
+    const prev = trace[(i - 1 + T) % T]!;
+    const c = trace[i]!;
+    const nxt = trace[(i + 1) % T]!;
+    const cross = (c[0] - prev[0]) * (nxt[1] - c[1]) - (c[1] - prev[1]) * (nxt[0] - c[0]);
+    if (cross === 0) continue; // collinear pass-through — drop it, keeping the straight run one edge
+    const jx = jAmp > 0 ? (rng() - 0.5) * 2 * jAmp : 0;
+    const jz = jAmp > 0 ? (rng() - 0.5) * 2 * jAmp : 0;
+    const wx = (c[0] - halfX) * pitch + jx;
+    const wz = (c[1] - halfY) * pitch + jz;
+    out.push([Math.max(-hx + 1, Math.min(hx - 1, wx)), Math.max(-hz + 1, Math.min(hz - 1, wz))]);
+  }
+  return out.length >= 6 ? out : null;
+}
+
+/**
  * Grow a closed race CIRCUIT as a CURVE-FIRST centerline, not a filleted polygon. The global layout
  * synthesis (hull + deep inward displacement + control-point corner templates) is kept, but its polygon
  * is treated as CONTROL POINTS: 1–3 edges are collapsed onto lines as deliberate straights, then a
@@ -1392,8 +1586,51 @@ function buildCircuit(
     return { loop, straight };
   };
 
+  // The `compactness` dial swaps the LAYOUT source: 0 keeps the hull synthesis (byte-identical), rising
+  // values switch to the space-filling grid spanning-tree cycle. Everything below (spline fit, curvature
+  // floor, straights, clearance, edges) is shared verbatim so only the control-polygon source changes.
+  const compactness = Math.max(0, Math.min(1, rules.compactness ?? 0));
+  const baseCoverage = gridCoverage(compactness);
+  // A space-filling grid lap should still carry a deliberate main straight of ~3 corridor pitches (a
+  // straight tree branch) alongside the base axis-fraction floor.
+  const compactStraightGate = compactness > 0 ? Math.max(straightMin, 3 * gridCorridorPitch(rules)) : straightMin;
   let chosen: { loop: StreetVec2[]; straight: boolean[] } | null = null;
-  for (let attempt = 0; attempt < MAX_CIRCUIT_TRIES; attempt += 1) {
+  // Fallback compact candidate (the FIRST clearing one, i.e. the densest / most space-filling, since
+  // coverage only shrinks over attempts): used if no attempt also lands the preferred main straight, so a
+  // seed that never grows a long straight still keeps a folded lap instead of collapsing to the hull.
+  let denseCompact: { loop: StreetVec2[]; straight: boolean[] } | null = null;
+  // Each compact attempt runs the full dense curvature-floored centerline, so cap retries tighter than the
+  // hull path; taking the densest clearing candidate with a real straight usually stops in 1–3 attempts.
+  const maxTries = compactness > 0 ? 8 : MAX_CIRCUIT_TRIES;
+  // A densely-folded compact candidate can clear spatially yet still hide a tight spot the bounded
+  // curvature-floor relaxation couldn't fully open; reject those so an accepted lap always holds the floor.
+  const floorHolds = (loop: StreetVec2[]): boolean => {
+    const L = loop.length;
+    for (let i = 0; i < L; i += 1) {
+      if (circumRadius(loop[(i - 1 + L) % L]!, loop[i]!, loop[(i + 1) % L]!) < minR * 0.95) return false;
+    }
+    return true;
+  };
+  for (let attempt = 0; attempt < maxTries; attempt += 1) {
+    if (compactness > 0) {
+      // Shrink blob coverage gently per retry so a curvature-floor clearance violation resolves
+      // deterministically (a sparser grid folds less tightly) without sacrificing space-filling density.
+      const coverage = Math.max(0.4, baseCoverage - attempt * 0.03);
+      const candidate = buildGridCycleControl(rules, hx, hz, streams(`circuit:grid:${attempt}`), compactness, coverage);
+      if (candidate === null || candidate.length < 6) continue;
+      const cl = centerline(candidate, streams(`circuit:grid-straight:${attempt}`));
+      if (cl === null) continue;
+      if (!loopSelfClearing(cl.loop, clearance, gapMin)) continue;
+      if (!floorHolds(cl.loop)) continue; // curvature floor must hold on the final spline
+      const sr = longestStraightRun(cl.loop, cl.straight);
+      if (sr < straightMin) continue; // no readable straight at all — reject
+      if (denseCompact === null) denseCompact = cl; // first clearing candidate = densest
+      if (sr >= compactStraightGate) {
+        chosen = cl; // densest clearing lap that also lands the preferred main straight
+        break;
+      }
+      continue;
+    }
     // Fold aggression decays over retries: early attempts push deep folds (a cool, folded circuit);
     // if none clear, later attempts relax toward a gentler layout so the safe fallback stays rare.
     const aggression = Math.max(0.42, 1 - attempt * 0.075);
@@ -1406,6 +1643,9 @@ function buildCircuit(
     chosen = cl;
     break;
   }
+  // Keep the densest clearing space-filling lap when none also met the preferred main-straight length;
+  // only the total absence of a clearing compact candidate drops through to the hull fallback below.
+  if (chosen === null && denseCompact !== null) chosen = denseCompact;
   if (chosen === null) chosen = centerline(fallbackTrack(rules, hx, hz), streams("circuit:fallback"));
   if (chosen === null) {
     // Degenerate footprint — a bare inset ellipse keeps the loop contract alive.
