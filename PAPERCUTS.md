@@ -180,3 +180,7 @@ verifying vice-isle movement fix → bun run drive --playtest in the cloud conta
 2026-07-19T04:59:59.942Z — claude-fable-5 — Claude
 
 releasing 0.14.0 → bun test scripts fails on a clean main checkout: packages/core/src/world.ts barrel is out of sync with gen-barrels output (scatterCoverage symbol ordering from #1279); had to regenerate and fold the fix into the release PR
+
+2026-07-19T05:52:23.682Z — claude-fable-5 — Claude
+
+Fan-out research with background subagents → each agent's final report arrives truncated to ~2000 chars in the task-notification and asking the agent to Write its full report to the scratchpad silently fails (file never appears on disk, agent claims success); had to re-poke each agent to paste the full report inline as reply text, which does deliver in full.
