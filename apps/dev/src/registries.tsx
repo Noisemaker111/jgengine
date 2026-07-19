@@ -132,6 +132,7 @@ export const gameRegistry: GameRegistry = {
   "bookcase-stage": () =>
     import("./demo/bookcaseStageDemo").then((module) => module.bookcaseStageGame),
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
+  "localization": () => import("./demo/localizationDemo").then((module) => module.localizationDemoGame),
   "world-pings": () => import("./demo/worldPingDemo").then((module) => module.worldPingDemoGame),
   "sensor-showcase": () =>
     import("./demo/sensorShowcase").then((module) => module.sensorShowcaseGame),

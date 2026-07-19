@@ -24,6 +24,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   format: "jgengine-ui",
   game: "jgengine-gameplay",
   gameplay: "jgengine-gameplay",
+  i18n: "jgengine-ui",
   input: "jgengine-world",
   interaction: "jgengine-world",
   inventory: "jgengine-gameplay",

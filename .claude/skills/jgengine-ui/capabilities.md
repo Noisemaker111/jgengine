@@ -182,6 +182,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `BarTokens` (interface) · `import { BarTokens } from "@jgengine/react"`
 - `barTokens` (function) · `import { barTokens } from "@jgengine/react"`
 
+## i18n — translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching
+
+- `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -306,6 +310,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
 
+## trans — inline translated-message component bound to the active locale
+
+- `Trans` (function) · `import { Trans } from "@jgengine/react"`
+
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
@@ -313,6 +321,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
+
+- `useT` (function) · `import { useT } from "@jgengine/react"`
 
 ## vital-bar — compact current/max vital meter for an entity summary
 

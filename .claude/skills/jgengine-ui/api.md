@@ -22,6 +22,17 @@
 - `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
+## @jgengine/core/i18n/i18n
+
+- `Catalog` (type): type Catalog = Readonly<Record<Locale, Messages>> — All locales' message tables, keyed by locale.
+- `I18n` (interface): interface I18n — Runtime translator over a message {@link Catalog} — active locale, lookup with fallback, interpolation, and pluralization.
+- `I18nOptions` (interface): interface I18nOptions — Configuration for {@link createI18n}.
+- `Locale` (type): type Locale = string — A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}.
+- `Messages` (type): type Messages = Readonly<Record<string, string>> — Flat message table for one locale: key → template string with `{param}` slots.
+- `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
+- `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
+- `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
+
 ## @jgengine/core/render/lookPreset
 
 - `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
@@ -80,6 +91,7 @@
 - `ActionDef` (interface): interface ActionDef — A caller-authored contextual action — the DATA input to the model. Every field except `id` is optional so a build button, a stance toggle, and a cooldown ability all use the same shape. Catalog-id mapping (turning `icon`/`label` into art and copy) stays caller-owned.
 - `ActionReason` (interface): interface ActionReason — A single blocking reason: a stable machine `code` plus caller-facing `message`.
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
+- `Catalog` (type): type Catalog = Readonly<Record<Locale, Messages>> — All locales' message tables, keyed by locale.
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
 - `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
 - `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
@@ -107,13 +119,17 @@
 - `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
 - `HudSize` (interface): interface HudSize — ⚠ undocumented
 - `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
+- `I18n` (interface): interface I18n — Runtime translator over a message {@link Catalog} — active locale, lookup with fallback, interpolation, and pluralization.
+- `I18nOptions` (interface): interface I18nOptions — Configuration for {@link createI18n}.
 - `Insets` (interface): interface Insets — Edge insets in CSS pixels (safe areas, reservations).
 - `LayoutCollision` (interface): interface LayoutCollision — One detected forbidden/warned overlap between two regions.
 - `LayoutCollisionPolicy` (type): type LayoutCollisionPolicy = "forbid" | "allow" | "warn" — How a region participates in collision reporting.
 - `LayoutOrientation` (type): type LayoutOrientation = "portrait" | "landscape" — A concrete device orientation.
 - `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
 - `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
+- `Locale` (type): type Locale = string — A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}.
 - `LookPreset` (type): type LookPreset = "cinematic" | "flat" — Named default-look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `Messages` (type): type Messages = Readonly<Record<string, string>> — Flat message table for one locale: key → template string with `{param}` slots.
 - `MobileHudBehavior` (type): type MobileHudBehavior = | "persistent" | "compact" | "icon" | "transient" | "hidden" | "sheet" | "modal" — How a HUD element adapts on phones.
 - `PanelDef` (interface): interface PanelDef — A caller-authored panel/window declaration — the DATA input to the model. Only `id` is required so a bag, a character sheet, and a one-off dialog all share the shape.
 - `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/react/panels` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
@@ -140,6 +156,7 @@
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `SummarizeSelectionOptions` (interface): interface SummarizeSelectionOptions — Options for {@link summarizeSelection}.
 - `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 - `TooltipContent` (interface): interface TooltipContent — Structured tooltip content — a renderer lays these fields out; the model owns what is shown.
 - `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
@@ -154,6 +171,7 @@
 - `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
 - `closePanel` (function): function closePanel(state: PanelState, id: string): PanelState — Close panel `id`. No-op if it is already closed. Its position override is kept so reopening restores the last placement.
 - `closeTopPanel` (function): function closeTopPanel(state: PanelState): PanelState — Close the topmost closable open panel — the ESC handler. Skips panels pinned with `closable: false` and returns the same state when nothing closable is open.
+- `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `createPanelState` (function): function createPanelState(defs: readonly PanelDef[]): PanelState — Build the initial {@link PanelState} from the panel defs: panels flagged `initial` start open (in declaration order, respecting group exclusivity), and every def's group/closable is captured into the state so later reducers need no defs.
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `focusPanel` (function): function focusPanel(state: PanelState, id: string): PanelState — Raise open panel `id` to the top of the focus stack (assign it the highest z). No-op if it is closed or already on top, so a pointer-down that refocuses the top window returns the same state.
@@ -163,6 +181,7 @@
 - `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 - `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
+- `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 - `isOpen` (function): function isOpen(state: PanelState, id: string): boolean — Whether panel `id` is currently open.
 - `listHudPanelTypes` (function): function listHudPanelTypes(): HudPanelTypeDef[] — Every registered panel type, sorted by id — editor palette / agent listing.
 - `moveGridFocus` (function): function moveGridFocus(current: number, count: number, columns: number, dir: FocusDirection, options?: GridFocusOptions): number — Pure grid focus math for keyboard and controller navigation of an action card laid out in `columns`-wide rows. Given the current index (`-1` for none) it returns the next index, clamped to `[0, count)` — or wrapped when `wrap` is set. `left/right` move within/across columns, `up/down` across rows, `next/prev` walk the flat order, `first/last` jump to the ends. Renderer-agnostic: radial and list layouts pass `columns: 1` (or `count`) to get sensible 1-D stepping.
@@ -434,6 +453,7 @@
 - `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
+- `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
 - `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
 - `IconTreatment` (function): function IconTreatment({ icon, glyph, school = "neutral", size = 44, count, keycap, active = false, className, style, }: IconTreatmentProps): React.JSX.Element — A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges.
 - `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
@@ -529,6 +549,7 @@
 - `StatTone` (type): type StatTone = keyof typeof TONES — A stat tone — picks the bar's color ramp.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
+- `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
 - `UseActionBarOptions` (interface): interface UseActionBarOptions — Options for {@link useActionBar}.
 - `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
 - `UsePanelsOptions` (interface): interface UsePanelsOptions — Options for {@link usePanels}.
@@ -613,6 +634,7 @@
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
+- `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useInventoryGrid` (function): function useInventoryGrid(inventoryId: string): InventoryGridBinding — Binds a live inventory to a HUD grid: `slots` from {@link useInventory}, and `move`/`split` that run the built-in `inventory.move`/`inventory.split` commands (which notify, so the grid re-renders).
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
@@ -620,6 +642,7 @@
 - `useLeaderboard` (function): function useLeaderboard(stat: string, options: { scope: LeaderboardScope; limit?: number }): { userId: string; value: number }[] — ⚠ undocumented
 - `useLiveMarkers` (function): function useLiveMarkers(rebuild: (markers: MarkerSet, ctx: GameContext) => void, options?: { intervalMs?: number; deps?: DependencyList }): MarkerSet — A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set and calls `rebuild(markers, ctx)` to repopulate it from the current scene, so a HUD map never hand-rolls a `setInterval` + `markers.clear()` + rescan. Each heartbeat also re-renders the calling component, so player-centered props derived from the live scene each tick (`center`, `facingYaw`, zone name) stay fresh — this fully subsumes the hand-rolled ticker, not just the marker rebuild. The set is stable across renders and re-seeded whenever `ctx`, `intervalMs`, or the supplied `deps` change. SSR-safe: the heartbeat only arms when `window` is available.
 - `useLocalPlayerDead` (function): function useLocalPlayerDead(healthStatId = "health"): boolean — ⚠ undocumented
+- `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 - `useNearestWorldItem` (function): function useNearestWorldItem(radius: number): WorldItemRecord | null — Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
@@ -629,6 +652,7 @@
 - `useParty` (function): function useParty(): PartyMemberEntry[] — ⚠ undocumented
 - `usePartyInvites` (function): function usePartyInvites(): PartyInviteEntry[] — ⚠ undocumented
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
+- `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
 - `usePresence` (function): function usePresence(userId: string): PresenceInfo — ⚠ undocumented
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
 - `useRafLoop` (function): function useRafLoop(onFrame: (deltaSeconds: number) => void, active = true): void — Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame. The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for DOM-side animation outside the renderer.
@@ -646,6 +670,7 @@
 - `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
 - `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
+- `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
 - `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
@@ -933,6 +958,15 @@
 - `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
+
+## @jgengine/react/i18n
+
+- `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
+- `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
+- `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
+- `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
+- `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
+- `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
 
 ## @jgengine/react/iconTreatment
 
