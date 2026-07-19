@@ -199,3 +199,11 @@ adding an apps/web route → bun --cwd apps/web run check-types is red on origin
 2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
 
 Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
+
+2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
+
+switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop
+
+2026-07-19T02:05:06.289Z — claude-fable-5 — Claude
+
+pushing a restarted branch after its PR squash-merged + remote branch auto-deleted: push --force-with-lease rejects with 'stale info' and fetch of the branch says no remote ref — needed git fetch --prune before push; workflow skill could mention prune in the merged-branch restart recipe
