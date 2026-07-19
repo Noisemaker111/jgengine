@@ -255,6 +255,180 @@
       "meta": {
         "assetId": "car_bus"
       }
+    },
+    {
+      "id": "placed_car_muscle_neon_8",
+      "kind": "vehicle_spawn",
+      "position": { "x": 48, "y": 0, "z": -72 },
+      "rotationY": 0,
+      "color": "#d64545",
+      "label": "Bandolero",
+      "meta": { "assetId": "car_muscle" }
+    },
+    {
+      "id": "placed_car_compact_ocean_9",
+      "kind": "vehicle_spawn",
+      "position": { "x": -150, "y": 0, "z": -30 },
+      "rotationY": 0,
+      "color": "#f2c14e",
+      "label": "Pico",
+      "meta": { "assetId": "car_compact" }
+    },
+    {
+      "id": "placed_car_suv_heights_10",
+      "kind": "vehicle_spawn",
+      "position": { "x": 52, "y": 0, "z": -210 },
+      "rotationY": 1.5708,
+      "color": "#3d5a45",
+      "label": "Vagabond",
+      "meta": { "assetId": "car_suv" }
+    },
+    {
+      "id": "placed_car_muscle_port_11",
+      "kind": "vehicle_spawn",
+      "position": { "x": 150, "y": 0, "z": 150 },
+      "rotationY": 0,
+      "color": "#7a3b3b",
+      "label": "Bandolero",
+      "meta": { "assetId": "car_muscle" }
+    },
+    {
+      "id": "placed_car_compact_midtown_12",
+      "kind": "vehicle_spawn",
+      "position": { "x": 72, "y": 0, "z": 66 },
+      "rotationY": 1.5708,
+      "color": "#4e88c7",
+      "label": "Pico",
+      "meta": { "assetId": "car_compact" }
+    },
+    {
+      "id": "placed_car_sport_downtown_13",
+      "kind": "vehicle_spawn",
+      "position": { "x": 30, "y": 0, "z": 10 },
+      "rotationY": 0,
+      "color": "#33c1b1",
+      "label": "Cicada GT",
+      "meta": { "assetId": "car_sport" }
+    },
+    {
+      "id": "placed_car_compact_beach_14",
+      "kind": "vehicle_spawn",
+      "position": { "x": -150, "y": 0, "z": 180 },
+      "rotationY": 0,
+      "color": "#e0843c",
+      "label": "Pico",
+      "meta": { "assetId": "car_compact" }
+    },
+    {
+      "id": "placed_car_muscle_villa_15",
+      "kind": "vehicle_spawn",
+      "position": { "x": 86, "y": 0, "z": -250 },
+      "rotationY": 3.14159,
+      "color": "#333844",
+      "label": "Bandolero",
+      "meta": { "assetId": "car_muscle" }
+    },
+    {
+      "id": "bounty_marina",
+      "kind": "bounty",
+      "position": { "x": -150, "y": 0, "z": 90 },
+      "label": "The marina"
+    },
+    {
+      "id": "bounty_plaza",
+      "kind": "bounty",
+      "position": { "x": 12, "y": 0, "z": -8 },
+      "label": "Vice plaza"
+    },
+    {
+      "id": "bounty_wharf",
+      "kind": "bounty",
+      "position": { "x": 166, "y": 0, "z": 214 },
+      "label": "Carmine wharf"
+    },
+    {
+      "id": "bounty_ridge",
+      "kind": "bounty",
+      "position": { "x": 44, "y": 0, "z": -256 },
+      "label": "Sunset ridge"
+    },
+    {
+      "id": "bounty_canal",
+      "kind": "bounty",
+      "position": { "x": 100, "y": 0, "z": -20 },
+      "label": "Canal district"
+    },
+    {
+      "id": "stash_pier",
+      "kind": "stash",
+      "position": { "x": 168, "y": 0, "z": 232 },
+      "label": "Pier's end"
+    },
+    {
+      "id": "stash_beach",
+      "kind": "stash",
+      "position": { "x": -172, "y": 0, "z": -56 },
+      "label": "Under the boardwalk"
+    },
+    {
+      "id": "stash_alley",
+      "kind": "stash",
+      "position": { "x": 12, "y": 0, "z": -32 },
+      "label": "Neon back-alley"
+    },
+    {
+      "id": "stash_villa",
+      "kind": "stash",
+      "position": { "x": 100, "y": 0, "z": -256 },
+      "label": "Villa poolside"
+    },
+    {
+      "id": "stash_dock",
+      "kind": "stash",
+      "position": { "x": 114, "y": 0, "z": 208 },
+      "label": "Container stack"
+    },
+    {
+      "id": "stash_promenade",
+      "kind": "stash",
+      "position": { "x": -40, "y": 0, "z": 96 },
+      "label": "Midtown promenade"
+    },
+    {
+      "id": "stash_marina",
+      "kind": "stash",
+      "position": { "x": -148, "y": 0, "z": 44 },
+      "label": "Marina lockup"
+    },
+    {
+      "id": "stash_eastlot",
+      "kind": "stash",
+      "position": { "x": 148, "y": 0, "z": -64 },
+      "label": "East side lot"
+    },
+    {
+      "id": "stash_hilltop",
+      "kind": "stash",
+      "position": { "x": 44, "y": 0, "z": -204 },
+      "label": "Palm Heights overlook"
+    },
+    {
+      "id": "stash_midstrip",
+      "kind": "stash",
+      "position": { "x": -48, "y": 0, "z": 152 },
+      "label": "Midtown strip roof"
+    },
+    {
+      "id": "stash_canalside",
+      "kind": "stash",
+      "position": { "x": 108, "y": 0, "z": 104 },
+      "label": "Canalside"
+    },
+    {
+      "id": "stash_overlook",
+      "kind": "stash",
+      "position": { "x": -152, "y": 0, "z": -104 },
+      "label": "Ocean overlook"
     }
   ],
   "volumes": [

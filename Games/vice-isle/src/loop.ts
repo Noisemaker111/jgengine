@@ -18,6 +18,7 @@ import { vehicleById } from "./game/entities/vehicles/catalog";
 import { advanceBustedHold, BUSTED_HOLD_SEC, BUSTED_RADIUS, bustedFine, clinicFee } from "./game/failStates";
 import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
 import { onBountyKilled, tickBounties } from "./game/jobs/bounties";
+import { resetStashRuntime, tickStashes } from "./game/jobs/stashes";
 import { loadouts } from "./game/loadouts";
 import { CRED_BY_QUEST, grantCred, RACE_WIN_CRED } from "./game/progression/cred";
 import { QUESTS } from "./game/quests/catalog";
@@ -353,6 +354,7 @@ async function resumeFromSave(ctx: GameContext): Promise<void> {
 function onInit(ctx: GameContext): void {
   resetWeaponState();
   resetMissionState();
+  resetStashRuntime();
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
   for (const table of lootTables) ctx.game.loot.register(table);
@@ -409,6 +411,7 @@ function onTick(ctx: GameContext, dt: number): void {
   tickMissions(ctx);
   tickMissionSpawns(ctx, dt);
   tickBounties(ctx);
+  tickStashes(ctx);
   tickRaceEconomy(ctx);
   tickBusted(ctx, dt);
   tickPedPanic(ctx, dt);
