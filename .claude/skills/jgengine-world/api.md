@@ -1851,6 +1851,11 @@
 - `WaterSurface` (interface): interface WaterSurface — ⚠ undocumented
 - `WaveManifest` (interface): interface WaveManifest — ⚠ undocumented
 - `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented
+- `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
+- `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
+- `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
+- `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
+- `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
 - `WeatherState` (interface): interface WeatherState — ⚠ undocumented
@@ -1958,6 +1963,7 @@
 - `createVisibilityField` (function): function createVisibilityField(config: VisibilityFieldConfig): VisibilityField — Build a per-group gameplay visibility field. First adopters: an RTS/stealth team whose scout observes terrain (which stays remembered after it leaves) while enemy units re-hide once no scout observes their cell, and any authoritative host that must filter hidden entities out of a client's replica.
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 - `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
+- `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
 - `customRegion` (function): function customRegion<P extends SamplePoint>(spec: { dimensions: 2 | 3; sample: (rng: () => number) => P; contains: (point: P) => boolean; isEmpty?: boolean; }): SampleRegion<P> — Wrap a caller-defined sampler and bounds test as a {@link SampleRegion} — the escape hatch for regions the built-ins do not cover (a navmesh cell, a heightfield mask, a spline tube).
 - `dashSegments` (function): function dashSegments(path: readonly RoadPoint[], dashLength = 3, gapLength = 3, exclude: readonly DashExclusion[] = []): readonly (readonly RoadPoint[])[] — Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line, `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back through {@link buildRoadRibbon} with a thin width to mesh the dashes. Pass `exclude` circles (junction patches) to interrupt the center line through intersections — any dash whose midpoint lands inside an exclusion is dropped.
 - `defineAttackMoveOrder` (function): function defineAttackMoveOrder<TCtx extends OrderMover & OrderTargeting>(config: EngagementKindConfig = {}): OrderKind<TCtx, AttackMoveOrderPayload> — Attack-move: advance toward a destination but break off to engage any hostile acquired within `aggroRadius`, pursuing it to `attackRange` and writing the engagement intent into `order.state` for the game to act on. Completes on reaching the destination with nothing to engage.
@@ -3109,6 +3115,15 @@
 - `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `WATER_VOLUME_KIND` (const): const WATER_VOLUME_KIND: "water" — The editor volume kind marking a box as a water surface.
 - `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
+
+## @jgengine/core/world/waypoints
+
+- `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
+- `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
+- `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
+- `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
+- `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
+- `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
 
 ## @jgengine/core/world/weather
 

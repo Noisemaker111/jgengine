@@ -93,6 +93,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
 
+## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, and click-to-place without firing a click after a pan
+
+- `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`
+
 ## game-context-bridge — re-provide the GameContext across a nested Canvas/reconciler boundary
 
 - `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
@@ -173,6 +177,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
+
+## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
+
+- `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
@@ -293,6 +301,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vital-bar — compact current/max vital meter for an entity summary
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
+
+## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
+
+- `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/react"`
 
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 
