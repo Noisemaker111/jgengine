@@ -93,6 +93,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
 
+## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
+
+- `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
+
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
@@ -401,6 +405,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+
+- `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
 
 ## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
 

@@ -1191,6 +1191,17 @@
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 
+## @jgengine/core/scene/sequenceDirector
+
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+
 ## @jgengine/core/scene/spatial
 
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
@@ -1566,6 +1577,7 @@
 - `ControlGroupInput` (interface): interface ControlGroupInput — A decoded control-group key press plus the memory needed to detect a double-tap.
 - `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Digit: recall the set saved under `key` into the active selection. */ | { kind: "recall"; key: string } /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */ | { kind: "focus"; key: string } — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
@@ -1579,6 +1591,7 @@
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
 - `ElevationSummary` (interface): interface ElevationSummary — Aggregate elevation statistics over a region — the selection min/max/mean and legend range.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
 - `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
 - `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
@@ -1820,6 +1833,11 @@
 - `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
 - `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
 - `SensorReading` (interface): interface SensorReading — ⚠ undocumented
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `SimClock` (interface): interface SimClock — ⚠ undocumented
 - `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
 - `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
@@ -2018,6 +2036,7 @@
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
