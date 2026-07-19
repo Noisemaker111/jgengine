@@ -30,6 +30,7 @@ jobs:
       - run: bun run check-stage-skills
       - run: bun run check-skills
       - run: git fetch --no-tags origin main
+      - run: bun run check-changelog
       - run: bun run build
       - run: bun run check-skill-api
       - run: bun run check-orphan-ratchet

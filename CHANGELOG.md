@@ -15,6 +15,27 @@ run inside a game project diffs the installed `@jgengine/*` versions against the
 latest release and prints every Migrate step and Adopt-worthy addition in
 between (`--json` for structured output).
 
+## [Unreleased]
+
+<!--
+Every PR that changes `packages/*/src` records its consumer-facing change here, so
+the next release's notes are complete by construction. Add a bullet under the right
+subhead below. `bun run check-changelog` fails a source PR whose `[Unreleased]` block
+is untouched; pure refactors/tests bypass with `[skip changelog]` in a commit message.
+At publish, rename this heading to the new version and mirror the entries into
+`packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
+-->
+
+### Migrate
+
+- _Nothing yet._
+
+### Added
+
+### Changed
+
+### Removed
+
 ## 0.13.0
 
 ### Migrate
