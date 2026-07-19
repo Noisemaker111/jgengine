@@ -238,6 +238,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
 - `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
+## notification-center — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts
+
+- `createNotificationCenter` (function) · `import { createNotificationCenter } from "@jgengine/core/gameplay"`
+
 ## objectives — check progress of a threshold objective against a live metric
 
 - `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`

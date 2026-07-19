@@ -549,6 +549,15 @@
 - `AUTO_ONE_SHOT_EVENTS` (const): const AUTO_ONE_SHOT_EVENTS: readonly ["hit", "death"] — The two one-shot events the shell fires automatically for an entity, from `combat.hitReaction` and `entity.died`.
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 
+## @jgengine/core/game/notifications
+
+- `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
+- `NotificationEntry` (interface): interface NotificationEntry<TMeta = unknown> — One persistent notification — unlike a transient toast, it stays in the log until dismissed.
+- `NotificationFilter` (interface): interface NotificationFilter — Filter for {@link NotificationStore.list}.
+- `NotificationInput` (interface): interface NotificationInput<TMeta = unknown> — Fields accepted by {@link NotificationStore.push}.
+- `NotificationStore` (interface): interface NotificationStore<TMeta = unknown> — Serializable, observable log of persistent notifications with read tracking.
+- `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
+
 ## @jgengine/core/game/objectives
 
 - `ObjectiveStatus` (interface): interface ObjectiveStatus — Evaluated state of one {@link ThresholdObjective} against a current metric value.
@@ -1078,6 +1087,11 @@
 - `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+- `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
+- `NotificationEntry` (interface): interface NotificationEntry<TMeta = unknown> — One persistent notification — unlike a transient toast, it stays in the log until dismissed.
+- `NotificationFilter` (interface): interface NotificationFilter — Filter for {@link NotificationStore.list}.
+- `NotificationInput` (interface): interface NotificationInput<TMeta = unknown> — Fields accepted by {@link NotificationStore.push}.
+- `NotificationStore` (interface): interface NotificationStore<TMeta = unknown> — Serializable, observable log of persistent notifications with read tracking.
 - `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
@@ -1298,6 +1312,7 @@
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
+- `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
 - `createPairKeyCodec` (function): function createPairKeyCodec(options: PairKeyOptions = {}): PairKeyCodec — Build a pair-key codec for keyed relation values. Ids are escaped before joining, so any id (including ones containing the separator or a backslash) round-trips through {@link PairKeyCodec.key} → {@link PairKeyCodec.parse} without collision. Undirected codecs (the default) canonicalize so `key(a, b) === key(b, a)`.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
 - `createPriceHistory` (function): function createPriceHistory(config: PriceHistoryConfig): PriceHistory — The "market price" readout behind every auction house: a bounded rolling record of completed sales per item, aggregated into min/max/volume-weighted-average/latest unit-price stats so games can show current value and recent trends. Memory is bounded by `maxSamplesPerItem` (oldest samples drop first) and optionally by a sliding time window; timestamps are injected by the caller so the history stays deterministic.

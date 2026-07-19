@@ -32,6 +32,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Notification center.** `@jgengine/core/game/notifications`' `createNotificationCenter` is a persistent,
+  read-tracked notification log (newest-first, capped, serializable, observable) — the durable counterpart to
+  transient toasts: `push`, `list({ kind, unreadOnly })`, `unreadCount`, `markRead`/`markAllRead`, `remove`,
+  `clear`, `snapshot`/`restore`. New `@jgengine/react`: `useNotifications`, `NotificationBell` (icon + unread
+  badge), and `NotificationCenter` (scrollable panel with kind markers, relative time, unread highlight, and
+  mark-all-read/clear). First adopter: the apps/dev `notification-center` demo.
 - **Photo mode.** `@jgengine/core/ui/photoMode`'s `createPhotoModeStore` is a serializable, observable
   photo-mode state (active + hide-HUD) a game binds its capture flow to. New `@jgengine/react`
   `usePhotoMode` + `PhotoModeControls` (hide-HUD toggle, capture, exit). New `@jgengine/shell/render/

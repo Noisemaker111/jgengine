@@ -144,6 +144,14 @@ export {
 } from "./game/lootPipeline";
 export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./game/lootTable";
 export { resolveOneShotClip } from "./game/modelAnimation";
+export {
+  createNotificationCenter,
+  type NotificationCenterOptions,
+  type NotificationEntry,
+  type NotificationFilter,
+  type NotificationInput,
+  type NotificationStore,
+} from "./game/notifications";
 export { evaluateObjective } from "./game/objectives";
 export {
   createLayerRegistry,

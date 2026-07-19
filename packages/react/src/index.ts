@@ -15,6 +15,7 @@ export * from "./photoMode";
 export * from "./radialMenu";
 export * from "./quickMenu";
 export * from "./questTracker";
+export * from "./notifications";
 export * from "./components";
 export * from "./hud";
 export * from "./bars";
