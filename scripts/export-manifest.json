@@ -378,6 +378,7 @@
     "./turn/intent",
     "./turn/turnLoop",
     "./ui",
+    "./ui/accessibility",
     "./ui/actionModel",
     "./ui/gameLayout",
     "./ui/hudDocument",
@@ -503,6 +504,7 @@
   ],
   "@jgengine/react": [
     ".",
+    "./accessibility",
     "./achievements",
     "./actionHud",
     "./bars",

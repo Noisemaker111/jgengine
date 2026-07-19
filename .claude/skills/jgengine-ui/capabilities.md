@@ -4,6 +4,14 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## accessibility-provider — apply accessibility preferences to a subtree — text-scale CSS var, reduced-motion/high-contrast/colorblind/captions data attrs, and the colorblind color-matrix filter
+
+- `AccessibilityProvider` (function) · `import { AccessibilityProvider } from "@jgengine/react"`
+
+## accessibility-store — serializable, observable accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) a game binds to its settings and presentation
+
+- `createAccessibilityStore` (function) · `import { createAccessibilityStore } from "@jgengine/core/ui"`
+
 ## achievement-gallery — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
 
 - `AchievementGallery` (function) · `import { AchievementGallery } from "@jgengine/react"`
@@ -60,6 +68,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
+
+## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
+
+- `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
 
 ## controls-list — keybind-derived control legend that hides on touch
 

@@ -86,12 +86,17 @@
 
 ## @jgengine/core/ui
 
+- `AccessibilityState` (interface): interface AccessibilityState — Serializable accessibility preferences a game reads to adapt its presentation.
+- `AccessibilityStore` (interface): interface AccessibilityStore — Observable, serializable accessibility-preferences store.
 - `ActionCooldown` (interface): interface ActionCooldown — Cooldown state for an action, expressed so a radial sweep or countdown can render directly.
 - `ActionCost` (interface): interface ActionCost — Headless view model for a contextual action collection — the data layer behind an RTS command card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean* (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The React renderers in `@jgengine/react/actionHud` consume this; a game can swap either without forking the logic here.
 - `ActionDef` (interface): interface ActionDef — A caller-authored contextual action — the DATA input to the model. Every field except `id` is optional so a build button, a stance toggle, and a cooldown ability all use the same shape. Catalog-id mapping (turning `icon`/`label` into art and copy) stays caller-owned.
 - `ActionReason` (interface): interface ActionReason — A single blocking reason: a stable machine `code` plus caller-facing `message`.
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
+- `COLORBLIND_MATRICES` (const): const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> — `feColorMatrix` `values` strings for each colorblind mode — simulate how a viewer with that condition perceives color (and a grayscale mode). `"none"` maps to `null` (no filter). Consumed by the React `ColorblindFilters` defs.
 - `Catalog` (type): type Catalog = Readonly<Record<Locale, Messages>> — All locales' message tables, keyed by locale.
+- `ColorblindMode` (type): type ColorblindMode = "none" | "protanopia" | "deuteranopia" | "tritanopia" | "grayscale" — Colorblind simulation/daltonization modes the engine ships matrices for.
+- `DEFAULT_ACCESSIBILITY` (const): const DEFAULT_ACCESSIBILITY: AccessibilityState — The out-of-the-box accessibility state (all assistance off, `textScale` 1).
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
 - `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
 - `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
@@ -156,6 +161,8 @@
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `SummarizeSelectionOptions` (interface): interface SummarizeSelectionOptions — Options for {@link summarizeSelection}.
 - `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
+- `TEXT_SCALE_MAX` (const): const TEXT_SCALE_MAX: 2 — Maximum UI text scale.
+- `TEXT_SCALE_MIN` (const): const TEXT_SCALE_MIN: 0.75 — Minimum UI text scale.
 - `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 - `TooltipContent` (interface): interface TooltipContent — Structured tooltip content — a renderer lays these fields out; the model owns what is shown.
@@ -169,8 +176,10 @@
 - `actionCost` (function): function actionCost(resourceId: string, amount: number, available?: number): ActionCost — Build an {@link ActionCost}. `met` is true unless `available` is provided and below `amount`.
 - `actionTooltip` (function): function actionTooltip(action: ResolvedAction): TooltipContent — Build {@link TooltipContent} from a {@link ResolvedAction}: title from the label, the group as a subtitle, the description as the body, and the blocking reasons as warning notes. The single place an action's tooltip copy is assembled, so every renderer shows the same thing.
 - `busVolumeSettingId` (function): function busVolumeSettingId(busId: string): string — ⚠ undocumented
+- `clampTextScale` (function): function clampTextScale(scale: number): number — Clamp a text-scale multiplier into the supported `[TEXT_SCALE_MIN, TEXT_SCALE_MAX]` range.
 - `closePanel` (function): function closePanel(state: PanelState, id: string): PanelState — Close panel `id`. No-op if it is already closed. Its position override is kept so reopening restores the last placement.
 - `closeTopPanel` (function): function closeTopPanel(state: PanelState): PanelState — Close the topmost closable open panel — the ESC handler. Skips panels pinned with `closable: false` and returns the same state when nothing closable is open.
+- `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `createPanelState` (function): function createPanelState(defs: readonly PanelDef[]): PanelState — Build the initial {@link PanelState} from the panel defs: panels flagged `initial` start open (in declaration order, respecting group exclusivity), and every def's group/closable is captured into the state so later reducers need no defs.
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
@@ -194,6 +203,7 @@
 - `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate. A rect is only reported when it is partly visible *and* crosses an edge; a fully off-screen (closed/hidden) surface is skipped, so parked drawers and unopened menus never raise a false alarm.
 - `panelByHotkey` (function): function panelByHotkey(defs: readonly PanelDef[], code: string): string | null — Find the panel whose `hotkey` matches `code`, case-insensitively — the keybind router. `code` may be a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`); it is compared verbatim to each def's `hotkey`, so author the hotkey in whichever form the caller feeds in. Returns the first match's id, or null.
 - `placePopover` (function): function placePopover(anchor: UiRect, content: UiSize, viewport: UiSize, options?: PopoverOptions): PopoverPlacement — Position a popover/tooltip of `content` size against its `anchor` rectangle inside `viewport`: open on the `preferred` side, flip to the opposite when that side lacks room and the opposite has more, then clamp the top-left so the box stays fully on screen (respecting `margin`). Pure and deterministic — no DOM reads — so it is SSR-safe and unit-testable, and the React tooltip is a thin shell over it.
+- `reducedMotionDuration` (function): function reducedMotionDuration(state: AccessibilityState, ms: number, reduced = 0): number — Return `ms` when motion is allowed, or `reduced` (default 0) when `reducedMotion` is set — the animation-duration gate.
 - `registerHudPanelType` (function): function registerHudPanelType(def: HudPanelTypeDef): void — Register a HUD panel type so the editor can list/add/configure it and canvas resize knows axes.
 - `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
 - `resolveAction` (function): function resolveAction(def: ActionDef): ResolvedAction — Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`, and order the blocking `reasons`. Pure — the same input always yields the same view model.
@@ -206,6 +216,19 @@
 - `summarizeSelection` (function): function summarizeSelection(members: readonly EntitySummaryDef[], options?: SummarizeSelectionOptions): SelectionView — Summarize a selected-entity list into a {@link SelectionView}: resolve the primary focus, keep the ordered members, and bucket them by `kind`. Pure and stable — deterministic group ordering and a clamped focus index, so it is safe to call every render and to assert on in a test.
 - `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
 - `togglePanel` (function): function togglePanel(state: PanelState, id: string): PanelState — Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key behavior behind a keybind like `B` for the bag.
+
+## @jgengine/core/ui/accessibility
+
+- `AccessibilityState` (interface): interface AccessibilityState — Serializable accessibility preferences a game reads to adapt its presentation.
+- `AccessibilityStore` (interface): interface AccessibilityStore — Observable, serializable accessibility-preferences store.
+- `COLORBLIND_MATRICES` (const): const COLORBLIND_MATRICES: Record<ColorblindMode, string | null> — `feColorMatrix` `values` strings for each colorblind mode — simulate how a viewer with that condition perceives color (and a grayscale mode). `"none"` maps to `null` (no filter). Consumed by the React `ColorblindFilters` defs.
+- `ColorblindMode` (type): type ColorblindMode = "none" | "protanopia" | "deuteranopia" | "tritanopia" | "grayscale" — Colorblind simulation/daltonization modes the engine ships matrices for.
+- `DEFAULT_ACCESSIBILITY` (const): const DEFAULT_ACCESSIBILITY: AccessibilityState — The out-of-the-box accessibility state (all assistance off, `textScale` 1).
+- `TEXT_SCALE_MAX` (const): const TEXT_SCALE_MAX: 2 — Maximum UI text scale.
+- `TEXT_SCALE_MIN` (const): const TEXT_SCALE_MIN: 0.75 — Minimum UI text scale.
+- `clampTextScale` (function): function clampTextScale(scale: number): number — Clamp a text-scale multiplier into the supported `[TEXT_SCALE_MIN, TEXT_SCALE_MAX]` range.
+- `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
+- `reducedMotionDuration` (function): function reducedMotionDuration(state: AccessibilityState, ms: number, reduced = 0): number — Return `ms` when motion is allowed, or `reduced` (default 0) when `reducedMotion` is set — the animation-duration gate.
 
 ## @jgengine/core/ui/actionModel
 
@@ -343,6 +366,7 @@
 ## @jgengine/react
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to, and wraps the tree in the selected colorblind `feColorMatrix` filter. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
 - `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
 - `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
 - `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
@@ -380,6 +404,7 @@
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
+- `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
@@ -602,6 +627,7 @@
 - `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
+- `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
@@ -653,6 +679,7 @@
 - `usePartyInvites` (function): function usePartyInvites(): PartyInviteEntry[] — ⚠ undocumented
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
 - `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
+- `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
 - `usePresence` (function): function usePresence(userId: string): PresenceInfo — ⚠ undocumented
 - `useQuestJournal` (function): function useQuestJournal(): QuestInstance[] — ⚠ undocumented
 - `useRafLoop` (function): function useRafLoop(onFrame: (deltaSeconds: number) => void, active = true): void — Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame. The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for DOM-side animation outside the renderer.
@@ -678,6 +705,13 @@
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+
+## @jgengine/react/accessibility
+
+- `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to, and wraps the tree in the selected colorblind `feColorMatrix` filter. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
+- `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
+- `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
+- `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
 
 ## @jgengine/react/achievements
 
