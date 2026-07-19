@@ -147,6 +147,35 @@ export function useInventory(inventoryId: string): readonly InventorySlot[] {
   return useGameStore((ctx) => ctx.player.inventory.state(inventoryId).slots);
 }
 
+/** Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so React re-renders. */
+export interface InventoryGridBinding {
+  slots: readonly InventorySlot[];
+  move(from: number, to: number): void;
+  split(slot: number, amount: number, toSlot?: number): void;
+}
+
+/**
+ * Binds a live inventory to a HUD grid: `slots` from {@link useInventory}, and `move`/`split` that run
+ * the built-in `inventory.move`/`inventory.split` commands (which notify, so the grid re-renders).
+ */
+export function useInventoryGrid(inventoryId: string): InventoryGridBinding {
+  const slots = useInventory(inventoryId);
+  const { commands } = useGame();
+  const move = useCallback(
+    (from: number, to: number) => {
+      commands.run("inventory.move", { inventoryId, from, to });
+    },
+    [commands, inventoryId],
+  );
+  const split = useCallback(
+    (slot: number, amount: number, toSlot?: number) => {
+      commands.run("inventory.split", toSlot === undefined ? { inventoryId, slot, amount } : { inventoryId, slot, amount, toSlot });
+    },
+    [commands, inventoryId],
+  );
+  return useMemo(() => ({ slots, move, split }), [slots, move, split]);
+}
+
 export function useCurrency(currencyId: string): number {
   return useGameStore((ctx) => ctx.game.economy.balance(ctx.player.userId, currencyId));
 }

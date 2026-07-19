@@ -5,10 +5,13 @@ import type { GameIconName } from "./gameIcons";
 
 /**
  * Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`,
- * `WeaponSlots`, `ArmorSlots`, `PotionSlots` — never a mega inventory that bundles every category.
- * Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for
- * filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` /
- * `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
+ * `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a
+ * single gear category. A full multi-category backpack that binds to a live inventory with
+ * drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`)
+ * there, and use these atomic grids for the equip slots around it. Each renders a grid of painted
+ * {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder
+ * for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034).
+ * Composition stays the game's; the engine ships the grid.
  *
  * @capability hud-slots atomic themed equipment/weapon/armor/potion slot grids with painted icons
  */

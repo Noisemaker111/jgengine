@@ -1420,7 +1420,16 @@
 - `ItemTraits` (interface): interface ItemTraits — ⚠ undocumented
 - `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented
 - `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented
+- `SplitResult` (type): type SplitResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" } — Outcome of {@link splitStack}: the new state, or a rejection reason.
 - `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented
+- `countItem` (function): function countItem(state: InventoryState, itemId: string): number — Total quantity of `itemId` summed across every stack in the inventory.
+- `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — A bag of stackable items supporting add, remove, count, and move — the base inventory model.
+- `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count.
+- `hasItem` (function): function hasItem(state: InventoryState, itemId: string, count: number): boolean — True when the inventory holds at least `count` of `itemId`.
+- `moveItem` (function): function moveItem(from: InventoryState, fromSlot: number, to: InventoryState, toLayout: InventoryLayout, traits: ItemTraits, toSlot?: number): MoveResult — Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with remainder, or relocating across two inventories. Rejects on empty source, wrong kind, or no space.
+- `putItem` (function): function putItem(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, itemId: string, count: number, options?: { slot?: number }): PutResult — Add `count` of `itemId` — into a specific `options.slot`, or auto-stacked across free/partial slots. Rejects on no space or wrong kind.
+- `splitStack` (function): function splitStack(state: InventoryState, slot: number, amount: number, toSlot?: number): SplitResult — Splits `amount` off the stack in `slot` into `toSlot` (or the first empty slot when `toSlot` is omitted). Limit-agnostic: it does not consult {@link ItemTraits}, so a same-item target merges by simple addition. Rejects an empty source, `amount <= 0`, `amount >= stack count` (a split must leave both sides non-empty), no free slot, or a target holding a different item.
+- `takeItem` (function): function takeItem(state: InventoryState, itemId: string, count: number): TakeResult — Remove `count` of `itemId`, draining from the last matching stacks first. Rejects if fewer than `count` are held.
 
 ## @jgengine/core/inventory/shapedGrid
 

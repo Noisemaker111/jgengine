@@ -24,12 +24,16 @@ export type MoveResult =
   | { status: "ok"; from: InventoryState; to: InventoryState }
   | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" };
 
+/** Outcome of {@link splitStack}: the new state, or a rejection reason. */
+export type SplitResult =
+  | { status: "ok"; state: InventoryState }
+  | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" };
+
 /**
  * A bag of stackable items supporting add, remove, count, and move — the base inventory model.
  *
  * @capability inventory-grid a bag of stackable items with add, remove, and move
-  * @internal
-  */
+ */
 export function createEmptyInventory(layout: InventoryLayout): InventoryState {
   return { slots: new Array(layout.slots).fill(null) };
 }
@@ -114,7 +118,7 @@ function explicitPut(
   return { status: "ok", state: { slots } };
 }
 
-/** @internal */
+/** Add `count` of `itemId` — into a specific `options.slot`, or auto-stacked across free/partial slots. Rejects on no space or wrong kind. */
 export function putItem(
   state: InventoryState,
   layout: InventoryLayout,
@@ -127,7 +131,7 @@ export function putItem(
   return autoPut(state, layout, traits, itemId, count);
 }
 
-/** @internal */
+/** Remove `count` of `itemId`, draining from the last matching stacks first. Rejects if fewer than `count` are held. */
 export function takeItem(state: InventoryState, itemId: string, count: number): TakeResult {
   if (count <= 0) return { status: "ok", state };
   if (countItem(state, itemId) < count) return { status: "rejected", reason: "insufficient" };
@@ -146,19 +150,19 @@ export function takeItem(state: InventoryState, itemId: string, count: number): 
   return { status: "ok", state: { slots } };
 }
 
-/** @internal */
+/** Total quantity of `itemId` summed across every stack in the inventory. */
 export function countItem(state: InventoryState, itemId: string): number {
   let total = 0;
   for (const slot of state.slots) if (slot !== null && slot.itemId === itemId) total += slot.count;
   return total;
 }
 
-/** @internal */
+/** True when the inventory holds at least `count` of `itemId`. */
 export function hasItem(state: InventoryState, itemId: string, count: number): boolean {
   return countItem(state, itemId) >= count;
 }
 
-/** @internal */
+/** Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with remainder, or relocating across two inventories. Rejects on empty source, wrong kind, or no space. */
 export function moveItem(
   from: InventoryState,
   fromSlot: number,
@@ -217,6 +221,46 @@ export function moveItem(
   };
 }
 
+/**
+ * Splits `amount` off the stack in `slot` into `toSlot` (or the first empty slot when `toSlot` is
+ * omitted). Limit-agnostic: it does not consult {@link ItemTraits}, so a same-item target merges by
+ * simple addition. Rejects an empty source, `amount <= 0`, `amount >= stack count` (a split must
+ * leave both sides non-empty), no free slot, or a target holding a different item.
+ *
+ * @capability inventory-split split a stack into a target or first-empty slot
+ */
+export function splitStack(
+  state: InventoryState,
+  slot: number,
+  amount: number,
+  toSlot?: number,
+): SplitResult {
+  if (slot < 0 || slot >= state.slots.length) return { status: "rejected", reason: "invalid-slot" };
+  const source = state.slots[slot];
+  if (source === null) return { status: "rejected", reason: "empty-slot" };
+  if (amount <= 0 || amount >= source.count) return { status: "rejected", reason: "invalid-amount" };
+
+  let target = toSlot;
+  if (target === undefined) {
+    target = state.slots.findIndex((s) => s === null);
+    if (target === -1) return { status: "rejected", reason: "no-space" };
+  } else {
+    if (target < 0 || target >= state.slots.length) return { status: "rejected", reason: "invalid-slot" };
+    if (target === slot) return { status: "rejected", reason: "slot-occupied" };
+    const dest = state.slots[target];
+    if (dest !== null && dest.itemId !== source.itemId) return { status: "rejected", reason: "slot-occupied" };
+  }
+
+  const slots = state.slots.slice();
+  const dest = slots[target];
+  slots[slot] = { itemId: source.itemId, count: source.count - amount };
+  slots[target] =
+    dest === null || dest === undefined
+      ? { itemId: source.itemId, count: amount }
+      : { itemId: source.itemId, count: dest.count + amount };
+  return { status: "ok", state: { slots } };
+}
+
 export interface InventorySet<TId extends string> {
   put(id: TId, itemId: string, count: number, options?: { slot?: number }): PutResult;
   take(id: TId, itemId: string, count: number): TakeResult;
@@ -227,7 +271,7 @@ export interface InventorySet<TId extends string> {
   replaceState(id: TId, state: InventoryState): void;
 }
 
-/** @internal */
+/** Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count. */
 export function createInventorySet<TId extends string>(
   layouts: Record<TId, InventoryLayout>,
   traits: ItemTraits,

@@ -6,6 +6,7 @@ import {
   hasItem,
   moveItem,
   putItem,
+  splitStack,
   takeItem,
   type InventoryLayout,
   type InventoryState,
@@ -176,6 +177,50 @@ describe("moveItem", () => {
     const to: InventoryState = { slots: [null, null] };
     const result = moveItem(from, 0, to, toolbeltLayout, traits, 0);
     expect(result).toEqual({ status: "rejected", reason: "wrong-kind" });
+  });
+});
+
+describe("splitStack", () => {
+  test("splits an amount into the first empty slot when no target is given", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10 }, null, null] };
+    const result = splitStack(state, 0, 4);
+    expect(result).toEqual({
+      status: "ok",
+      state: { slots: [{ itemId: "stone", count: 6 }, { itemId: "stone", count: 4 }, null] },
+    });
+  });
+
+  test("splits into an explicit empty target slot", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10 }, null, null] };
+    const result = splitStack(state, 0, 3, 2);
+    expect(result).toEqual({
+      status: "ok",
+      state: { slots: [{ itemId: "stone", count: 7 }, null, { itemId: "stone", count: 3 }] },
+    });
+  });
+
+  test("merges into an explicit target holding the same item", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10 }, { itemId: "stone", count: 5 }] };
+    const result = splitStack(state, 0, 4, 1);
+    expect(result).toEqual({
+      status: "ok",
+      state: { slots: [{ itemId: "stone", count: 6 }, { itemId: "stone", count: 9 }] },
+    });
+  });
+
+  test("rejects an empty source, a bad amount, a full inventory, and a foreign target", () => {
+    const empty: InventoryState = { slots: [null, { itemId: "stone", count: 4 }] };
+    expect(splitStack(empty, 0, 2)).toEqual({ status: "rejected", reason: "empty-slot" });
+    expect(splitStack(empty, 5, 2)).toEqual({ status: "rejected", reason: "invalid-slot" });
+
+    const stack: InventoryState = { slots: [{ itemId: "stone", count: 4 }, null] };
+    expect(splitStack(stack, 0, 0)).toEqual({ status: "rejected", reason: "invalid-amount" });
+    expect(splitStack(stack, 0, 4)).toEqual({ status: "rejected", reason: "invalid-amount" });
+
+    const full: InventoryState = { slots: [{ itemId: "stone", count: 4 }, { itemId: "sword", count: 1 }] };
+    expect(splitStack(full, 0, 2)).toEqual({ status: "rejected", reason: "no-space" });
+    expect(splitStack(full, 0, 2, 1)).toEqual({ status: "rejected", reason: "slot-occupied" });
+    expect(splitStack(full, 0, 2, 0)).toEqual({ status: "rejected", reason: "slot-occupied" });
   });
 });
 

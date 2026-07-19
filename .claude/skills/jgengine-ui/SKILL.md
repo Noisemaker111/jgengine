@@ -16,7 +16,7 @@ Search [capabilities.md](capabilities.md), use [api.md](api.md) for signatures, 
 1. Write the game's UI art direction first (see [reference.md](reference.md) §1) — fantasy, shape/material language, hierarchy, forbidden patterns. Stock glass widgets are not a stand-in for this step.
 2. Define the real UI states: attract/menu, live play, pause, results, empty/error, and relevant overlays.
 3. Read state through selectors/hooks; keep simulation mutation behind commands.
-4. Compose custom markup for this game. Prefer headless data + game-owned chrome. When a second presentation is plausible, split data / renderer / chrome (minimap stack example: `useLiveMarkers` → track/renderer → game frame; see reference §6).
+4. Compose this game's UI, reaching first for the shipped building blocks — `InventoryGrid`, `usePanels`/`PanelHost`/`Window`, `CharacterSheet`/`Paperdoll`, and the action/selection bars — and composing + reskinning them; only hand-roll custom markup where no building block fits. Toggleable windows (bag `B`, character `C`, etc.) come from `usePanels`, not hand-rolled open/close state. Prefer headless data + game-owned chrome. When a second presentation is plausible, split data / renderer / chrome (minimap stack example: `useLiveMarkers` → track/renderer → game frame; see reference §6).
 5. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit.
 6. Add preview fixtures using the real components for fast deterministic capture.
 7. Verify desktop and mobile layouts through `jgengine-verify`. A HUD that could pass for another game's default chrome fails visual review.
@@ -28,8 +28,8 @@ Existing React games keep their entity store and use the focused
 ## Product rules
 
 - **Every game owns its UI end-to-end.** Custom composition, skin, placement, terminology, motion, and one main menu. The website/runner is a bare loader.
-- Engine packages do not supply a finished game face. Shared UI is headless or unskinned building blocks: layout (`HudCanvas`/`HudPanel`), data hooks, interaction models, tokens. Optional styled widgets exist for previews and scaffolding only — shipping them unskinned as the product is out of policy (see [AGENTS.md](../../../AGENTS.md)).
-- Never reach for genre HUD kits, theme presets, or "default RPG/FPS chrome" as the game's identity. Build the look this pitch needs.
+- Engine packages ship both headless seams *and* good drop-in building blocks. The seams are layout (`HudCanvas`/`HudPanel`), data hooks, interaction models, and tokens; the building blocks are the parts almost every game needs — inventory grids (`InventoryGrid`), toggleable windows (`usePanels`/`PanelHost`/`Window`), character sheets (`CharacterSheet`/`Paperdoll`), stat/vitals bars, and action/selection bars. Composing and reskinning these is using the engine correctly, not out of policy. What stays out of scope is a whole finished game *face* or a genre theme preset shipped as the product (see [AGENTS.md](../../../AGENTS.md)).
+- Never reach for a genre HUD kit, theme preset, or "default RPG/FPS chrome" as the game's *identity*. Composing the shared building blocks (bag, character, spellbook, action-bar windows) is fine and expected — it's a prefab genre *look/identity* dropped in unchanged that's discouraged. Build the look this pitch needs on top of them.
 - Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
 - SSR-visible output is hydration-stable; round computed SVG values at the boundary.
 
