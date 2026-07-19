@@ -89,6 +89,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
 
+## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
+
+- `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
+
 ## controls-list — keybind-derived control legend that hides on touch
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
@@ -254,6 +258,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/react"`
 
+## modal-host — full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog
+
+- `ModalHost` (function) · `import { ModalHost } from "@jgengine/react"`
+
+## modal-stack — serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result
+
+- `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
+
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
@@ -314,6 +326,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
 
+## pause-menu — reskinnable pause-menu building block — Resume plus a game-filled Settings/Quit slot list, HudTheme-driven
+
+- `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/react"`
+
 ## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
 
 - `createPhotoModeStore` (function) · `import { createPhotoModeStore } from "@jgengine/core/ui"`
@@ -358,6 +374,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
+## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
+
+- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
+
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 
 - `SelectionCollectionChrome` (function) · `import { SelectionCollectionChrome } from "@jgengine/react"`
@@ -401,6 +421,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
+
+## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
+
+- `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
 
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 

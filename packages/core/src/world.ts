@@ -381,6 +381,17 @@ export {
   type ParticleSystem,
   type Range,
 } from "./vfx/particles";
+export {
+  createScreenEffects,
+  type ScreenEffect,
+  type ScreenEffectEasing,
+  type ScreenEffectShape,
+  type ScreenEffectSpec,
+  type ScreenEffectsController,
+  type ScreenEffectsOptions,
+  type ScreenEffectsSnapshot,
+  type StoredScreenEffect,
+} from "./vfx/screenEffects";
 export { type BoundsSpec, type Vec3 } from "./visibility/bounds";
 export { type CameraVisibilityContext } from "./visibility/camera";
 export { type VisibilityConfig } from "./visibility/config";

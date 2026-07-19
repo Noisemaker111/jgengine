@@ -135,6 +135,8 @@ export const gameRegistry: GameRegistry = {
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "cutscene": () => import("./demo/cutsceneDemo").then((module) => module.cutsceneDemoGame),
+  "pause-menu": () => import("./demo/pauseMenuDemo").then((module) => module.pauseMenuDemoGame),
+  "screen-effects": () => import("./demo/screenEffectsDemo").then((module) => module.screenEffectsDemoGame),
   "fast-travel": () => import("./demo/fastTravelDemo").then((module) => module.fastTravelDemoGame),
   "particle-vfx": () => import("./demo/particleDemo").then((module) => module.particleDemoGame),
   "photo-mode": () => import("./demo/photoModeDemo").then((module) => module.photoModeDemoGame),
