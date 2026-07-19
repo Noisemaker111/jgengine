@@ -187,3 +187,7 @@ bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails 
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
+
+2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
+
+Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
