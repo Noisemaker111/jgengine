@@ -172,6 +172,20 @@ export function findSchemaPreset(schema: ParamSchema, id: string): ParamPreset |
 /** Parsed params after `parseParams`: every schema field present with a validated, defaulted value. */
 export type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]>;
 
+/**
+ * Marks a kind as *scatterable* — it fills an authored area with instances at one density under a
+ * bounded budget — so the editor renders the shared `CoverageSection` (Area → Assets → Density slider
+ * + budget note) that gives grass/scatter/city one authoring gesture. `spec` selects the unit + budget
+ * from `@jgengine/core/world/scatterCoverage`; `densityKey` is the single density slider hoisted into
+ * the coverage header (and hidden from the schema body below); `assetsKey` is the optional weighted
+ * "what fills it" palette summarized in the header.
+ */
+export interface SceneKindCoverage {
+  spec: import("../world/scatterCoverage").ScatterCoverageKind;
+  densityKey: string;
+  assetsKey?: string;
+}
+
 function num(value: unknown, fallback: number, min?: number, max?: number): number {
   let n = typeof value === "number" && Number.isFinite(value) ? value : fallback;
   if (min !== undefined) n = Math.max(min, n);
@@ -376,6 +390,12 @@ export interface SceneKindDefinition<TResolved = unknown> {
   resolve?: (object: SceneKindObject, params: ParsedParams, context: SceneKindResolveContext) => TResolved;
   /** Optional one-line readout under the inspector fields (estimate, dimensions) — owned by the studio. */
   note?: (object: SceneKindObject, params: ParsedParams) => string;
+  /**
+   * Optional scatterable-coverage descriptor. When set, the editor leads this kind's inspector with
+   * the shared Area / Assets / Density `CoverageSection` and surfaces the budget clamp-and-warn note,
+   * giving every scatterable kind (grass/scatter/city) one authoring pattern.
+   */
+  coverage?: SceneKindCoverage;
 }
 
 /** The raw document object a resolver receives — shape shared by markers, volumes, and paths. */

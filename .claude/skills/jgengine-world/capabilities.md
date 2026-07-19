@@ -355,6 +355,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
 - `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
 
+## scatter-coverage — shared density/budget semantics for scatterable kinds
+
+- `ScatterCoverageKind` (type) · `import { ScatterCoverageKind } from "@jgengine/core/world"`
+
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
 - `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`

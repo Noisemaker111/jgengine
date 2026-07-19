@@ -265,6 +265,7 @@ export function SchemaInspector({
   note,
   meta,
   onMeta,
+  hideKeys,
 }: {
   schema: ParamSchema;
   label: string;
@@ -272,11 +273,15 @@ export function SchemaInspector({
   note?: string;
   meta: Record<string, unknown> | undefined;
   onMeta: MetaPatch;
+  /** Field keys to omit from this body — hoisted elsewhere (e.g. the density slider in `CoverageSection`). */
+  hideKeys?: readonly string[];
 }) {
   const groups = schema.groups ?? [];
   const grouped = new Set(groups.map((group) => group.id));
+  const hidden = hideKeys === undefined || hideKeys.length === 0 ? null : new Set(hideKeys);
+  const visible = hidden === null ? schema.fields : schema.fields.filter((field) => !hidden.has(field.key));
   // Fields with no group (or a group not declared in schema.groups) render first, headerless.
-  const ungrouped = schema.fields.filter((field) => field.group === undefined || !grouped.has(field.group));
+  const ungrouped = visible.filter((field) => field.group === undefined || !grouped.has(field.group));
   return (
     <div className="space-y-2 rounded-lg border p-2.5" style={{ borderColor: `${accent}26`, backgroundColor: `${accent}10` }}>
       <div className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
@@ -290,12 +295,15 @@ export function SchemaInspector({
           <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
         ),
       )}
-      {groups.map((group) => (
+      {groups
+        .map((group) => ({ group, fields: visible.filter((field) => field.group === group.id) }))
+        .filter((entry) => entry.fields.length > 0)
+        .map(({ group, fields }) => (
         <GroupSection
           key={group.id}
           title={group.label}
           accent={accent}
-          fields={schema.fields.filter((field) => field.group === group.id)}
+          fields={fields}
           schema={schema}
           meta={meta}
           onMeta={onMeta}
