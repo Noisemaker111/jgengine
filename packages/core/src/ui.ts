@@ -127,6 +127,7 @@ export {
   type PanelPosition,
   type PanelState,
 } from "./ui/panelModel";
+export { DEFAULT_PHOTO_MODE, createPhotoModeStore, type PhotoModeState, type PhotoModeStore } from "./ui/photoMode";
 export {
   radialIndexFromAngle,
   radialIndexFromVector,

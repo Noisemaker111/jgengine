@@ -100,6 +100,7 @@
 - `DEFAULT_GRAPHICS_QUALITY` (const): const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality — ⚠ undocumented
 - `DEFAULT_GRAPHICS_SHADOWS` (const): const DEFAULT_GRAPHICS_SHADOWS: true — ⚠ undocumented
 - `DEFAULT_MASTER_VOLUME` (const): const DEFAULT_MASTER_VOLUME: 1 — ⚠ undocumented
+- `DEFAULT_PHOTO_MODE` (const): const DEFAULT_PHOTO_MODE: PhotoModeState — The out-of-the-box photo-mode state: not active, HUD hidden when it engages.
 - `DEFAULT_UI_SCALE` (const): const DEFAULT_UI_SCALE: 1 — Player-controlled multiplier on the HUD's computed fit scale — one lever on desktop and mobile alike.
 - `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
 - `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
@@ -139,6 +140,8 @@
 - `PanelDef` (interface): interface PanelDef — A caller-authored panel/window declaration — the DATA input to the model. Only `id` is required so a bag, a character sheet, and a one-off dialog all share the shape.
 - `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/react/panels` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
 - `PanelState` (interface): interface PanelState — Serializable state for a set of panels: which are `open`, their `z` focus stack (higher renders on top), optional per-panel `pos` overrides, and the `meta` registry (group/closable) captured from the defs so the reducers below need no defs argument. Plain JSON — persist and rehydrate it freely.
+- `PhotoModeState` (interface): interface PhotoModeState — Serializable photo-mode preferences a game reads to compose its capture UI.
+- `PhotoModeStore` (interface): interface PhotoModeStore — Observable photo-mode store — genre-agnostic state a game binds its capture flow to.
 - `PopoverOptions` (interface): interface PopoverOptions — Options for {@link placePopover}.
 - `PopoverPlacement` (interface): interface PopoverPlacement — The resolved popover position — the side it actually opened on and its clamped top-left.
 - `PopoverSide` (type): type PopoverSide = "top" | "bottom" | "left" | "right" — Which side of its anchor a popover opens toward.
@@ -185,6 +188,7 @@
 - `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `createPanelState` (function): function createPanelState(defs: readonly PanelDef[]): PanelState — Build the initial {@link PanelState} from the panel defs: panels flagged `initial` start open (in declaration order, respecting group exclusivity), and every def's group/closable is captured into the state so later reducers need no defs.
+- `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with React `PhotoModeControls` and shell `captureCanvas`.
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `focusPanel` (function): function focusPanel(state: PanelState, id: string): PanelState — Raise open panel `id` to the top of the focus stack (assign it the highest z). No-op if it is closed or already on top, so a pointer-down that refocuses the top window returns the same state.
 - `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
@@ -336,6 +340,13 @@
 - `orderedOpen` (function): function orderedOpen(state: PanelState, defs: readonly PanelDef[]): PanelDef[] — The open panels' defs sorted ascending by z — the render order for a window host (map to elements so the last, highest-z window paints on top). Defs unknown to the state are skipped.
 - `panelByHotkey` (function): function panelByHotkey(defs: readonly PanelDef[], code: string): string | null — Find the panel whose `hotkey` matches `code`, case-insensitively — the keybind router. `code` may be a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`); it is compared verbatim to each def's `hotkey`, so author the hotkey in whichever form the caller feeds in. Returns the first match's id, or null.
 - `togglePanel` (function): function togglePanel(state: PanelState, id: string): PanelState — Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key behavior behind a keybind like `B` for the bag.
+
+## @jgengine/core/ui/photoMode
+
+- `DEFAULT_PHOTO_MODE` (const): const DEFAULT_PHOTO_MODE: PhotoModeState — The out-of-the-box photo-mode state: not active, HUD hidden when it engages.
+- `PhotoModeState` (interface): interface PhotoModeState — Serializable photo-mode preferences a game reads to compose its capture UI.
+- `PhotoModeStore` (interface): interface PhotoModeStore — Observable photo-mode store — genre-agnostic state a game binds its capture flow to.
+- `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with React `PhotoModeControls` and shell `captureCanvas`.
 
 ## @jgengine/core/ui/radialMenu
 
@@ -538,6 +549,8 @@
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PhotoModeControls` (function): function PhotoModeControls({ store, onCapture, className, style }: PhotoModeControlsProps): ReactNode — Photo-mode toolbar — a hide/show-HUD toggle, a capture button, and an exit button, bound to a `createPhotoModeStore`. Presentation-only: the game wires `onCapture` to shell `captureCanvas`/`downloadImage` and reads `hideHud` to drop its gameplay HUD.
+- `PhotoModeControlsProps` (interface): interface PhotoModeControlsProps — Props for {@link PhotoModeControls}.
 - `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
 - `Popover` (function): function Popover({ open, anchorRef, side = "top", gap = 8, role = "tooltip", id, children, className, style, }: { open: boolean; anchorRef: { current: HTMLElement | null }; side?: PopoverSide; gap?: number; role?: string; id?: string; children: ReactNode; className?: string; style?: CSSProperties; }… — An accessible popover shell positioned by the pure {@link placePopover} math — flips and clamps against the viewport, renders nothing while closed, and defaults to `role="tooltip"`. Reuse it for an action's hover/focus description or any anchored panel.
 - `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
@@ -703,6 +716,7 @@
 - `usePanels` (function): function usePanels(defs: readonly PanelDef[], options?: UsePanelsOptions): PanelsManager — The DATA/HOOK layer: wrap the core panel model in state and install a window keybind listener — per-panel hotkeys toggle their window and ESC closes the topmost closable one. Hotkeys are ignored while the player is typing in an input/textarea/contenteditable. The listener is cleaned up on unmount and SSR-safe (armed in an effect). Feed the returned manager to {@link PanelHost}, or drive a bespoke window layout from it directly.
 - `useParty` (function): function useParty(): PartyMemberEntry[] — ⚠ undocumented
 - `usePartyInvites` (function): function usePartyInvites(): PartyInviteEntry[] — ⚠ undocumented
+- `usePhotoMode` (function): function usePhotoMode(store: PhotoModeStore): PhotoModeState — Subscribe to a photo-mode store's live state.
 - `usePlayer` (function): function usePlayer(): { userId: string; isNew: boolean } — ⚠ undocumented
 - `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
 - `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
@@ -1115,6 +1129,12 @@
 - `Window` (function): function Window({ title, ariaLabel, closable = true, onClose, x, y, onMove, z, width, variation, shape, className, style, bodyStyle, children, }: { title: ReactNode; ariaLabel?: string; closable?: boolean; onClose?: () => void; /** Initial (uncontrolled) or current (controlled, with `onMove`) x posi… — A single standalone window — title bar, close button, and title-bar drag over {@link HudFrame} chrome — usable without the {@link usePanels} manager for a one-off dialog. Position is uncontrolled (seeded by `x`/`y`) unless both `x`/`y` and `onMove` are supplied, in which case the caller owns placement. Accessible: `role="dialog"` with an `aria-label` and a focusable close button.
 - `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
 - `usePanels` (function): function usePanels(defs: readonly PanelDef[], options?: UsePanelsOptions): PanelsManager — The DATA/HOOK layer: wrap the core panel model in state and install a window keybind listener — per-panel hotkeys toggle their window and ESC closes the topmost closable one. Hotkeys are ignored while the player is typing in an input/textarea/contenteditable. The listener is cleaned up on unmount and SSR-safe (armed in an effect). Feed the returned manager to {@link PanelHost}, or drive a bespoke window layout from it directly.
+
+## @jgengine/react/photoMode
+
+- `PhotoModeControls` (function): function PhotoModeControls({ store, onCapture, className, style }: PhotoModeControlsProps): ReactNode — Photo-mode toolbar — a hide/show-HUD toggle, a capture button, and an exit button, bound to a `createPhotoModeStore`. Presentation-only: the game wires `onCapture` to shell `captureCanvas`/`downloadImage` and reads `hideHud` to drop its gameplay HUD.
+- `PhotoModeControlsProps` (interface): interface PhotoModeControlsProps — Props for {@link PhotoModeControls}.
+- `usePhotoMode` (function): function usePhotoMode(store: PhotoModeStore): PhotoModeState — Subscribe to a photo-mode store's live state.
 
 ## @jgengine/react/preview
 
@@ -1746,6 +1766,13 @@
 
 - `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
 - `ModelResolveContext` (interface): interface ModelResolveContext — ⚠ undocumented
+
+## @jgengine/shell/render/sceneCapture
+
+- `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
+- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button). Mount it inside the game's `WorldOverlay`; call `bind` receives a `() => string | null` that grabs the current frame. Renders nothing.
+- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
+- `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
 
 ## @jgengine/shell/render/useDisposable
 

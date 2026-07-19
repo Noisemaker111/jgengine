@@ -52,6 +52,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
 
+## capture-canvas — read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
+
+- `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/shell/render/sceneCapture"`
+
 ## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
 
 - `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/react"`
@@ -278,6 +282,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `togglePanel` (function) · `import { togglePanel } from "@jgengine/core/ui"`
 
+## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
+
+- `createPhotoModeStore` (function) · `import { createPhotoModeStore } from "@jgengine/core/ui"`
+
+## photo-mode-controls — photo-mode toolbar (hide-HUD toggle, capture, exit) bound to a photo-mode store
+
+- `PhotoModeControls` (function) · `import { PhotoModeControls } from "@jgengine/react"`
+
 ## placement-ghost — render valid/invalid placement preview mesh
 
 - `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
@@ -309,6 +321,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
+
+## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
+
+- `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 
