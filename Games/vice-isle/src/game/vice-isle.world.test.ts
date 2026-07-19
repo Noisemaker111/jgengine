@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-import { world } from "../world";
+import { deriveBuildingLots } from "@jgengine/core/world/buildingLots";
+import { isOnRoad } from "@jgengine/core/world/roads";
+import { streets, world } from "../world";
 import {
   BOUNTY_SPOTS,
   BRIEFCASE_POS,
@@ -118,9 +120,12 @@ describe("vice-isle world", () => {
     expect(summary.isEmpty).toBe(false);
   });
 
-  test("four districts stand as structure groups", () => {
-    expect(summary.counts.structureGroups).toBe(4);
-    expect(summary.counts.buildings).toBeGreaterThanOrEqual(40);
+  test("the city is built from collidable street lots, not walk-through structure clusters", () => {
+    // Buildings are authored at runtime as solid, street-facing scene-object lots (see
+    // game/world/setup.ts). The environment feature therefore ships no `building()` structure
+    // clusters — those rendered but never blocked the player and overlapped the street grid.
+    expect(summary.counts.structureGroups).toBe(0);
+    expect(world.structures ?? []).toHaveLength(0);
   });
 
   test("terrain has relief, water, and its own coastal palette", () => {
@@ -129,12 +134,29 @@ describe("vice-isle world", () => {
     expect(summary.terrain?.palette.low).not.toBe("#30402c");
   });
 
-  test("structure groups carry their own styles, not the generic default", () => {
-    const styles = summary.structures.map((s) => s.style);
-    expect(styles).toContain("coastal");
-    expect(styles).toContain("neon");
-    expect(styles).toContain("industrial");
-    expect(styles.every((s) => s !== "generic")).toBe(true);
+  test("frontage building lots line every street and none straddle the asphalt", () => {
+    // Mirrors game/world/setup.ts placeBuildings: the same frontage engine + off-road clearance
+    // filter that keeps buildings out of the middle of the streets.
+    const CLEARANCE = 16;
+    const lots = deriveBuildingLots({
+      roads: streets.map((street) => ({ path: street.path, width: street.width })),
+      footprint: { w: 22, d: 16 },
+      spacing: 8,
+      setback: 4,
+      bothSides: true,
+      seed: "vice-isle-lots",
+      area: { center: [0, 0], halfExtents: [320, 320] },
+      maxLots: 320,
+    });
+    const kept = lots.filter(
+      (lot) => !streets.some((street) => isOnRoad(street.path, street.width + CLEARANCE, lot.center[0], lot.center[1])),
+    );
+    // A real city's worth of street-facing buildings survive the filter…
+    expect(kept.length).toBeGreaterThanOrEqual(60);
+    // …and not one of them sits on a road surface (checked against the raw asphalt width).
+    for (const lot of kept) {
+      expect(streets.some((street) => isOnRoad(street.path, street.width, lot.center[0], lot.center[1]))).toBe(false);
+    }
   });
 
   test("nine street ribbons ride the road primitive", () => {

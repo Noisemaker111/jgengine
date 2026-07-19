@@ -2,7 +2,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { patrol } from "@jgengine/core/scene/behaviors";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
-import { furnitureSpots, laneCenters, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
+import { deriveBuildingLots } from "@jgengine/core/world/buildingLots";
+import { isOnRoad } from "@jgengine/core/world/roads";
+import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
 import { streets } from "../../world";
 import { buildingsByStyle, type BuildingStyle } from "./buildings";
 import {
@@ -14,6 +16,8 @@ import {
   MARCO_POS,
   SAFEHOUSE_POS,
   VCPD_POS,
+  WORLD_D,
+  WORLD_W,
 } from "./districts";
 
 function ground(ctx: GameContext, x: number, z: number): readonly [number, number, number] {
@@ -42,6 +46,40 @@ const STREET_BLOCKERS: readonly (readonly [number, number])[] = [
   [VCPD_POS[0], VCPD_POS[2]],
 ];
 
+/** A rectangular city block bounded by two avenues (`x0`/`x1`) and two streets (`z0`/`z1`) from the grid. */
+interface TrafficBlock {
+  x0: number;
+  x1: number;
+  z0: number;
+  z1: number;
+}
+
+/** Blocks whose four sides are authored avenues (x ∈ {−180,−60,60,180}) and streets (z ∈ {−240,−120,0,120,240}). */
+const TRAFFIC_BLOCKS: readonly TrafficBlock[] = [
+  { x0: -60, x1: 60, z0: -120, z1: 0 },
+  { x0: -60, x1: 60, z0: 0, z1: 120 },
+  { x0: 60, x1: 180, z0: -240, z1: -120 },
+  { x0: -180, x1: -60, z0: 0, z1: 120 },
+  { x0: 60, x1: 180, z0: 0, z1: 120 },
+];
+
+/** Lane inset (world units) pulling the loop off the street centerline into the block's inner lane. */
+const TRAFFIC_LANE_INSET = 2.4;
+
+/** Clockwise rectangle of corner waypoints for a block, inset so cars ride the inner (right-hand) lane. */
+function blockLoopWaypoints(block: TrafficBlock): Waypoint[] {
+  const ax0 = block.x0 + TRAFFIC_LANE_INSET;
+  const ax1 = block.x1 - TRAFFIC_LANE_INSET;
+  const az0 = block.z0 + TRAFFIC_LANE_INSET;
+  const az1 = block.z1 - TRAFFIC_LANE_INSET;
+  return [
+    [ax0, 0, az0],
+    [ax1, 0, az0],
+    [ax1, 0, az1],
+    [ax0, 0, az1],
+  ];
+}
+
 function styleAt(x: number, z: number, rng: () => number): BuildingStyle {
   const district = districtAt(x, z);
   if (district?.id === "downtown") return rng() < 0.45 ? "tower" : "commercial";
@@ -49,20 +87,44 @@ function styleAt(x: number, z: number, rng: () => number): BuildingStyle {
   return "suburban";
 }
 
+/** Lot footprint fed to the frontage engine: `w` frontage (along the road), `d` depth (into the block). */
+const BUILDING_FOOTPRINT = { w: 22, d: 16 };
+/**
+ * Extra margin (world units) added to a road's width when rejecting lots that straddle it. A lot whose
+ * center falls within `(road.width + clearance) / 2` of ANY road centerline is dropped — the frontage
+ * engine already sets each lot back from the road it lines, so this only culls the corner lots a
+ * CROSSING street would run through. Without it, buildings spawn in the middle of the cross streets.
+ */
+const BUILDING_ROAD_CLEARANCE = 16;
+
+/**
+ * Line every authored street with collidable, street-facing buildings using the engine's street-aware
+ * frontage placer (`deriveBuildingLots` — the same lot engine `generateCity` composes over) instead of
+ * hand-eyeballed furniture offsets. Lots set back past the curb and are dropped wherever they'd straddle
+ * a crossing street or a gameplay POI, so no building ever lands on the asphalt. Each lot is placed as a
+ * scene object, so it gets a fitted physical collider and blocks the player like a real building.
+ */
 function placeBuildings(ctx: GameContext, rng: () => number): void {
-  for (const street of streets) {
-    const vertical = street.path[0]![0] === street.path[1]![0];
-    if (!vertical) continue;
-    for (const spot of furnitureSpots(street, { spacing: 27, outset: 11, sides: "both", stagger: false })) {
-      const [x, z] = spot.position;
-      if (STREET_BLOCKERS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 22)) continue;
-      const options = buildingsByStyle(styleAt(x, z, rng));
-      const pick = options[Math.floor(rng() * options.length)];
-      if (pick === undefined) continue;
-      ctx.scene.object.place(pick.id, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
-        rotation: spot.heading + Math.PI,
-      });
-    }
+  const lots = deriveBuildingLots({
+    roads: streets.map((street) => ({ path: street.path, width: street.width })),
+    footprint: BUILDING_FOOTPRINT,
+    spacing: 8,
+    setback: 4,
+    bothSides: true,
+    seed: "vice-isle-lots",
+    area: { center: [0, 0], halfExtents: [WORLD_W / 2, WORLD_D / 2] },
+    maxLots: 320,
+  });
+  for (const lot of lots) {
+    const [x, z] = lot.center;
+    if (streets.some((street) => isOnRoad(street.path, street.width + BUILDING_ROAD_CLEARANCE, x, z))) continue;
+    if (STREET_BLOCKERS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 22)) continue;
+    const options = buildingsByStyle(styleAt(x, z, rng));
+    const pick = options[Math.floor(rng() * options.length)];
+    if (pick === undefined) continue;
+    ctx.scene.object.place(pick.id, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
+      rotation: lot.rotationY,
+    });
   }
 }
 
@@ -134,27 +196,28 @@ export function setupWorld(ctx: GameContext): void {
     }
   }
 
-  const trafficRoads = [1, 2, 5, 6, 7];
-  trafficRoads.forEach((roadIndex, i) => {
-    const street = streets[roadIndex];
-    if (street === undefined) return;
-    const [forward, reverse] = laneCenters(street);
-    const loop = [...forward.path, ...reverse.path];
+  // Traffic circulates real city blocks: each car drives a rectangle whose four edges ride four
+  // authored streets and turns at each intersection, so cars flow through the grid instead of looping
+  // forward-and-back on a single segment (the old `[...forward, ...reverse]` path, which read as cars
+  // driving tight circles). The rectangle is inset toward the block interior so cars keep to the
+  // right-hand lane of each leg.
+  TRAFFIC_BLOCKS.forEach((block, i) => {
+    const waypoints = blockLoopWaypoints(block);
+    const start = waypoints[0]!;
     for (let lap = 0; lap < 2; lap += 1) {
       const id = `traffic_${i}_${lap}`;
       const kind = (i + lap) % 3 === 2 ? "car_muscle" : "car_compact";
-      const start = loop[0]!;
       ctx.scene.entity.spawn(kind, {
         id,
-        position: ground(ctx, start[0], start[1]),
+        position: ground(ctx, start[0], start[2]),
         role: "prop",
         behaviors: [
           patrol({
-            waypoints: loop.map(([x, z]) => [x, 0, z] as const),
+            waypoints,
             speed: 8,
             loop: true,
             groundClamp: true,
-            startProgress: { kind: "distance", value: 8 * (rng() * 200 + lap * 90) },
+            startProgress: { kind: "distance", value: 8 * (rng() * 60 + lap * 90) },
           }),
         ],
       });

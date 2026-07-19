@@ -1,6 +1,5 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import {
-  building,
   environment,
   grass,
   ocean,
@@ -87,52 +86,12 @@ export const world: EnvironmentWorldFeature = environment({
       seed: "vice-palms",
     }),
   ],
-  structures: [
-    building({
-      count: 10,
-      position: [-118, -70],
-      footprint: { w: 12, d: 12 },
-      stories: [2, 4],
-      storyHeight: 3.4,
-      spacing: 9,
-      style: "coastal",
-      palette: { wall: "#f4a7c3", window: "#22262e" },
-      seed: "vice-beach",
-    }),
-    building({
-      count: 14,
-      position: [40, -60],
-      footprint: { w: 16, d: 16 },
-      stories: [6, 14],
-      storyHeight: 3.6,
-      spacing: 8,
-      style: "neon",
-      palette: { window: "#1b1e26" },
-      seed: "vice-downtown",
-    }),
-    building({
-      count: 10,
-      position: [130, 190],
-      footprint: { w: 18, d: 14 },
-      stories: [1, 3],
-      storyHeight: 4,
-      spacing: 10,
-      style: "industrial",
-      palette: { wall: "#b3552f", window: "#23262c" },
-      seed: "vice-docks",
-    }),
-    building({
-      count: 8,
-      position: [70, -240],
-      footprint: { w: 13, d: 13 },
-      stories: [1, 2],
-      storyHeight: 3.4,
-      spacing: 14,
-      style: "village",
-      palette: { wall: "#f0e3c0", window: "#2a2d34" },
-      seed: "vice-heights",
-    }),
-  ],
+  // The city's buildings are authored at runtime as collidable, street-facing scene-object lots (see
+  // `game/world/setup.ts` → `placeBuildings`, driven by the engine's `deriveBuildingLots` frontage
+  // engine). The old `structures: [building(...)]` clusters were rendered and blocked NPC navigation
+  // but were NOT part of the player's movement-obstacle set (only scene objects are), so the player
+  // walked straight through them — and, being center-anchored clusters, they overlapped the street
+  // grid. Both problems are gone now that every building is a solid lot set back from the road.
 });
 
 export const physics: PhysicsConfig = { gravity: -28, jumpVelocity: 7.4 };
