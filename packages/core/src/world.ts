@@ -554,6 +554,20 @@ export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
 export { buildRoadRibbon, dashSegments } from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
+export {
+  budgetWarning,
+  CITY_BUILDING_BUDGET,
+  densityCoverage,
+  describeScatterCoverage,
+  placedCoverage,
+  scatterCoverageSpec,
+  scatterFootprintArea,
+  SCATTER_COVERAGE_SPECS,
+  SCATTER_INSTANCE_BUDGET,
+  type ScatterCoverage,
+  type ScatterCoverageKind,
+  type ScatterCoverageSpec,
+} from "./world/scatterCoverage";
 export { pickWeighted, scatterItems, type ScatterInstance } from "./world/scatterItems";
 export {
   SCATTER_PATH_KIND,

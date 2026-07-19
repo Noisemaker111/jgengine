@@ -7,6 +7,7 @@ import {
   type Vec2,
 } from "./geometry";
 import { scatter } from "./scatter";
+import { SCATTER_INSTANCE_BUDGET } from "./scatterCoverage";
 import type { SceneDocumentLike, ScenePathLike } from "./sceneShapes";
 import type { TerrainNormal } from "./terrain";
 
@@ -268,6 +269,10 @@ export function resolveScatterRegion(
       scale: rules.minScale + (rules.maxScale - rules.minScale) * scaleRoll,
       ...(normal === undefined ? {} : { normal }),
     });
+    // Bounded work: a single region never emits more than the shared instance budget, matching the
+    // grass patch cap so the inspector's "capped at N (budget)" note is truthful. Placements are
+    // generated in deterministic scatter order, so the truncated set is deterministic too.
+    if (instances.length >= SCATTER_INSTANCE_BUDGET) break;
   }
   return instances;
 }
