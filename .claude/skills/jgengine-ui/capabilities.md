@@ -262,6 +262,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/react"`
 
+## objective-banner — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore
+
+- `createObjectiveBanner` (function) · `import { createObjectiveBanner } from "@jgengine/core/ui"`
+
+## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
+
+- `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
@@ -401,6 +409,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
+
+## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+
+- `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/react"`
 
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 

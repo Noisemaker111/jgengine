@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Stage / objective banner.** `@jgengine/core/ui/objectiveBanner`' `createObjectiveBanner` is a genre-agnostic,
+  serializable announcement queue: a game calls `announce({ title, subtitle?, kind?, holdMs?, inMs?, outMs? })` and the
+  controller flies the classic transient centered title stamp ("WAVE 3", "VICTORY", "OBJECTIVE COMPLETE") in, holds it,
+  and fades it out — one banner at a time — on an injected clock (`advance()`), exposing the current banner plus its
+  phase (`in`/`hold`/`out`) and `progress` `0..1` for a renderer to animate. `kind` is a free label the game styles; the
+  model never interprets it. Allocation-aware (the `current()` view is pooled) with `subscribe` + `snapshot`/`restore`.
+  `@jgengine/react`' `ObjectiveBannerHost` subscribes, drives the clock per frame, and maps phase + progress to
+  opacity/scale/translate, HudTheme-skinnable and colorable per `kind` via `kindThemes`. Demo: `objective-banner`.
 - **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
   serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
   (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a
