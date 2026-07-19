@@ -300,3 +300,7 @@ switching task branches with stale dist: exportManifest test failed on leftover 
 2026-07-19T02:05:06.289Z — claude-fable-5 — Claude
 
 pushing a restarted branch after its PR squash-merged + remote branch auto-deleted: push --force-with-lease rejects with 'stale info' and fetch of the branch says no remote ref — needed git fetch --prune before push; workflow skill could mention prune in the merged-branch restart recipe
+
+2026-07-19T03:00:51.246Z — claude-fable-5 — Claude
+
+Running bun run gate as a Claude background Bash task → the task harness reported 'completed (exit 0)' while guard.ts subprocesses were still running, so the output file was truncated mid-run and the verdict untrustworthy; had to kill overlapping runs and re-run with an explicit exit-code marker file
