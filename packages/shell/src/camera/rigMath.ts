@@ -111,6 +111,22 @@ export function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number
   };
 }
 
+/**
+ * World-space direction for RTS pan input: `panX` slides along screen-right,
+ * `panZ` along the camera's ground-plane forward, for a camera posed by
+ * `topDownPose` at the same yaw. Normalized; zero input returns zero.
+ * @internal
+ */
+export function rtsPanWorldDir(panX: number, panZ: number, yaw: number): Vec3 {
+  const forward = forwardVector(yaw);
+  const right = rightVector(yaw);
+  const x = panX * right.x + panZ * forward.x;
+  const z = panX * right.z + panZ * forward.z;
+  const len = Math.hypot(x, z);
+  if (len === 0) return { x: 0, y: 0, z: 0 };
+  return { x: x / len, y: 0, z: z / len };
+}
+
 /** Exponential spring-arm approach toward a desired point (frame-rate independent).
  * @internal
  */

@@ -34,7 +34,6 @@ export const LUMBER_NODE_BUDGET = 500;
  * player keep; razing the warcamp cuts off reinforcements (that is how the tide is stemmed). */
 export const ENEMY_WAVE_FIRST_DELAY = 30;
 export const ENEMY_WAVE_INTERVAL = 42;
-/** Hold new waves while this many Marauders are already fielded — bounded pressure, not a swarm. */
+/** Hold new waves while this many Marauders are already fielded — bounded pressure, not a swarm. The
+ * director clock freezes at the cap and resumes when the roster thins, so held waves never dump. */
 export const ENEMY_WAVE_MAX_FIELDED = 22;
-/** When at the fielded cap, recheck this often instead of waiting a full interval. */
-export const ENEMY_WAVE_RECHECK = 6;

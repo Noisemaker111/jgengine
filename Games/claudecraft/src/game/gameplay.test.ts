@@ -600,3 +600,56 @@ describe("claudecraft gameplay (headless)", () => {
     expect(worldBossLockedOut(ctx, USER)).toBe(true);
   });
 });
+
+// craft.make resolves through the @jgengine/core craft() primitive; these lock the
+// three observable outcomes with a fully controlled 24-slot bag.
+describe("claudecraft crafting resolve (headless)", () => {
+  let ctx: GameContext;
+
+  beforeAll(() => {
+    ctx = createGameContext({
+      definition: game.game,
+      content,
+      player: { userId: USER, isNew: true },
+    });
+    loop.onInit?.(ctx);
+    loop.onNewPlayer?.(ctx);
+  });
+
+  function clearBags(): void {
+    ctx.player.inventory.replaceState("bags", { slots: new Array(24).fill(null) });
+  }
+
+  test("success consumes inputs, grants the output, and skills up", () => {
+    clearBags();
+    ctx.player.inventory.put("bags", "spider_leg", 1);
+    const before = professionsStore.read(ctx, USER).crafting;
+    const result = ctx.game.commands.run("craft.make", { recipeId: "recipe_tough_jerky" });
+    expect(result.status).toBe("applied");
+    expect(ctx.player.inventory.count("bags", "spider_leg")).toBe(0);
+    expect(ctx.player.inventory.count("bags", "tough_jerky")).toBe(1);
+    expect(professionsStore.read(ctx, USER).crafting).toBe(before + 1);
+  });
+
+  test("missing input leaves the bag untouched and grants nothing", () => {
+    clearBags();
+    const before = professionsStore.read(ctx, USER).crafting;
+    ctx.game.commands.run("craft.make", { recipeId: "recipe_tough_jerky" });
+    expect(ctx.player.inventory.count("bags", "spider_leg")).toBe(0);
+    expect(ctx.player.inventory.count("bags", "tough_jerky")).toBe(0);
+    expect(professionsStore.read(ctx, USER).crafting).toBe(before);
+  });
+
+  test("full bags reject atomically: inputs preserved, no output, no skill-up", () => {
+    clearBags();
+    // One slot holds 2 spider_legs (survives the take), the other 23 slots are full
+    // singletons, so consuming an input frees no room for the output stack.
+    ctx.player.inventory.put("bags", "spider_leg", 2);
+    for (let i = 0; i < 23; i += 1) ctx.player.inventory.put("bags", `filler_${i}`, 1);
+    const before = professionsStore.read(ctx, USER).crafting;
+    ctx.game.commands.run("craft.make", { recipeId: "recipe_tough_jerky" });
+    expect(ctx.player.inventory.count("bags", "spider_leg")).toBe(2);
+    expect(ctx.player.inventory.count("bags", "tough_jerky")).toBe(0);
+    expect(professionsStore.read(ctx, USER).crafting).toBe(before);
+  });
+});

@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { advanceHeat, createHeatState, type HeatConfig, type HeatGain, type HeatState } from "@jgengine/core/ai/heatSystem";
+import { advancePursuit, armPursuit, createPursuitState, type PursuitState } from "@jgengine/core/ai/pursuit";
 import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
 import { seededRng } from "@jgengine/core/random/rng";
 import { vehicleById } from "../entities/vehicles/catalog";
@@ -42,6 +43,8 @@ export function createPursuit(driving: Driving): Pursuit {
   const rng = seededRng("vice-isle-cops");
   let cruiserCounter = 0;
   let cruiserTimer = 0;
+  /** Per-cop attack-cooldown state, owned by the pursuit primitive instead of stashed on `entity.meta`. */
+  const copPursuit = new Map<string, PursuitState>();
 
   function publishWanted(ctx: GameContext): void {
     wantedStore.write(ctx, { heat: heatState.heat, stars: heatState.level, peakStars } satisfies WantedSnapshot);
@@ -64,7 +67,10 @@ export function createPursuit(driving: Driving): Pursuit {
     publishWanted(ctx);
 
     if (step.standDown) {
-      for (const cop of cops) ctx.scene.entity.despawn(cop.id);
+      for (const cop of cops) {
+        ctx.scene.entity.despawn(cop.id);
+        copPursuit.delete(cop.id);
+      }
       for (const cruiser of ctx.scene.entity.list().filter((e) => e.id.startsWith("cruiser_"))) {
         ctx.scene.entity.despawn(cruiser.id);
         driving.dropCarSim(cruiser.id);
@@ -91,14 +97,17 @@ export function createPursuit(driving: Driving): Pursuit {
     const playerPos = driving.playerWorldPos(ctx);
     if (playerPos === null) return;
     const cops = ctx.scene.entity.list().filter((e) => e.name === "cop_patrol" || e.name === "cop_swat");
-    const now = ctx.time.now();
 
     for (const cop of cops) {
       const dist = Math.hypot(cop.position[0] - playerPos[0], cop.position[2] - playerPos[2]);
       if (heatState.level === 0) {
-        if (dist > 70) ctx.scene.entity.despawn(cop.id);
+        if (dist > 70) {
+          ctx.scene.entity.despawn(cop.id);
+          copPursuit.delete(cop.id);
+        }
         continue;
       }
+      // The caller still drives the actual move: close to within 2.5m and stop.
       if (dist > 2.5) {
         ctx.scene.entity.moveToward(cop.id, [playerPos[0], playerPos[1], playerPos[2]], {
           speed: cop.name === "cop_swat" ? 5.6 : 5.2,
@@ -106,17 +115,24 @@ export function createPursuit(driving: Driving): Pursuit {
           dt,
         });
       }
-      if (dist < 16 && ctx.scene.entity.hasLineOfSight(cop.id, ctx.player.userId)) {
-        const meta = (cop.meta ?? {}) as { nextShotAt?: number };
-        if ((meta.nextShotAt ?? 0) <= now) {
-          ctx.scene.entity.update(cop.id, { meta: { ...meta, nextShotAt: now + (cop.name === "cop_swat" ? 0.7 : 1.2) } });
-          ctx.scene.entity.effect({
-            from: cop.id,
-            to: ctx.player.userId,
-            effect: "damage",
-            via: { amount: cop.name === "cop_swat" ? 9 : 5 },
-          });
-        }
+      // The pursuit primitive owns the wall-clock attack cadence (was `entity.meta.nextShotAt`):
+      // fire only within 16m with line of sight, on a per-cop cooldown that keeps counting during
+      // the chase (`"always"`), so a cop that closes in can shoot the instant it has a clear line.
+      let state = copPursuit.get(cop.id);
+      if (state === undefined) {
+        state = createPursuitState();
+        copPursuit.set(cop.id, state);
+      }
+      const canShoot = dist < 16 && ctx.scene.entity.hasLineOfSight(cop.id, ctx.player.userId);
+      const action = advancePursuit(state, dt, canShoot ? dist : null, 16);
+      if (action === "attack") {
+        armPursuit(state, cop.name === "cop_swat" ? 0.7 : 1.2);
+        ctx.scene.entity.effect({
+          from: cop.id,
+          to: ctx.player.userId,
+          effect: "damage",
+          via: { amount: cop.name === "cop_swat" ? 9 : 5 },
+        });
       }
     }
   }

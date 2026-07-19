@@ -34,6 +34,15 @@ describe("buildCatalog", () => {
     for (const entry of generatedIndex) expect(catalog.has(entry.id)).toBe(true);
   });
 
+  test("rigged pack entries carry clips read at reindex", () => {
+    const catalog = buildCatalog({ basePath: "/models" });
+    const clips = catalog.resolve("kaykit-skeletons/Skeleton_Warrior")?.clips;
+    expect(clips).toBeDefined();
+    expect(clips).toContain("Idle");
+    expect(clips).toContain("Walking_A");
+    expect(catalog.resolve("kaykit-dungeon/floor_tile_large")?.clips).toBeUndefined();
+  });
+
   test("extras resolve to their url", () => {
     const catalog = buildCatalog({
       basePath: "/models",
