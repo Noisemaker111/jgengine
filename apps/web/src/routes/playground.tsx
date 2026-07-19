@@ -34,6 +34,9 @@ interface Dials {
   lotD: number;
   setback: number;
   landmarks: number;
+  blockFill: number;
+  elevation: number;
+  trackDensity: number;
 }
 
 const DEFAULTS: Dials = {
@@ -48,8 +51,17 @@ const DEFAULTS: Dials = {
   lotW: 12,
   lotD: 10,
   setback: 3,
-  landmarks: 0.06,
+  landmarks: 0.08,
+  blockFill: 0.45,
+  elevation: 0.35,
+  trackDensity: 0.35,
 };
+
+/** City vs. circuit start their Elevation dial in different places — gentle hills vs. a rolling lap. */
+const CITY_ELEVATION = 0.35;
+const CIRCUIT_ELEVATION = 0.5;
+/** Cap on road grade handed to the street rules (0..1). The generator clamps crest/dip steepness to it. */
+const MAX_GRADE = 0.12;
 
 const CIRCUIT_RULES: Omit<StreetNetworkRules, "seed"> = {
   gridness: 0,
@@ -115,10 +127,163 @@ function Slider({
   );
 }
 
+type Pt = readonly [number, number];
+
+interface MapCorner {
+  apex: Pt;
+  radius: number;
+  turnSign: number;
+}
+
+/**
+ * Pure (THREE-free) corner detector for the SVG track map: fit a circumradius over each sliding point
+ * triple around the closed loop and group consecutive high-curvature runs into one numbered corner.
+ * Mirrors `analyzeTrackCorners` in cityScene — duplicated here on purpose so the route bundle never
+ * pulls in three.js just to draw a map.
+ */
+function circuitCorners(points: readonly Pt[], maxRadius = 130, mergeGap = 2): MapCorner[] {
+  const closed =
+    points.length > 2 &&
+    Math.hypot(points[0]![0] - points[points.length - 1]![0], points[0]![1] - points[points.length - 1]![1]) < 1e-6;
+  const pts = closed ? points.slice(0, -1) : points.slice();
+  const n = pts.length;
+  if (n < 6) return [];
+  const radius = new Float64Array(n);
+  const sign = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) {
+    const a = pts[(i - 1 + n) % n]!;
+    const b = pts[i]!;
+    const c = pts[(i + 1) % n]!;
+    const la = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const lb = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    const lc = Math.hypot(a[0] - c[0], a[1] - c[1]);
+    const cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    const area = Math.abs(cross) / 2;
+    radius[i] = area < 1e-6 ? Infinity : (la * lb * lc) / (4 * area);
+    sign[i] = Math.sign(cross);
+  }
+  const turnAt = (j: number): number => {
+    const a = pts[(j - 1 + n) % n]!;
+    const b = pts[j]!;
+    const c = pts[(j + 1) % n]!;
+    const ux = b[0] - a[0];
+    const uz = b[1] - a[1];
+    const vx = c[0] - b[0];
+    const vz = c[1] - b[1];
+    const lu = Math.hypot(ux, uz);
+    const lv = Math.hypot(vx, vz);
+    if (lu < 1e-6 || lv < 1e-6) return 0;
+    return Math.acos(Math.max(-1, Math.min(1, (ux * vx + uz * vz) / (lu * lv))));
+  };
+  const corner = Array.from({ length: n }, (_, i) => radius[i]! < maxRadius);
+  const corners: MapCorner[] = [];
+  let i = 0;
+  while (i < n) {
+    if (!corner[i]) {
+      i += 1;
+      continue;
+    }
+    let last = i;
+    let gap = 0;
+    let k = i;
+    while (k < n) {
+      if (corner[k]) {
+        last = k;
+        gap = 0;
+      } else if (++gap > mergeGap) {
+        break;
+      }
+      k += 1;
+    }
+    let apexIndex = i;
+    for (let j = i; j <= last; j += 1) if (radius[j]! < radius[apexIndex]!) apexIndex = j;
+    // True corner radius: run arc length / total heading change (R = L / Δθ).
+    let arc = 0;
+    let turn = 0;
+    for (let j = i; j <= last; j += 1) {
+      const b = pts[j]!;
+      const c = pts[(j + 1) % n]!;
+      arc += Math.hypot(c[0] - b[0], c[1] - b[1]);
+      turn += turnAt(j);
+    }
+    const fitted = turn > 1e-2 ? Math.min(400, arc / turn) : radius[apexIndex]!;
+    corners.push({ apex: pts[apexIndex]!, radius: Math.max(8, Math.round(fitted)), turnSign: sign[apexIndex]! || 1 });
+    i = last + 1;
+  }
+  return corners;
+}
+
 function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: GeneratedCity | null; size: number }) {
   const view = size * 2 + 40;
   const toX = (x: number) => x + view / 2;
   const toZ = (z: number) => z + view / 2;
+
+  const loop = network.mode === "circuit" ? network.streets.find((s) => s.loop) ?? network.streets[0] : undefined;
+  const loopPts = loop?.points ?? [];
+  const corners = loop !== undefined ? circuitCorners(loopPts) : [];
+  // Dense compactness-1 layouts detect 12-20+ corners; a label on every one collides into an
+  // unreadable smear. Above 14, label only the corners tighter than the median radius (the ones a
+  // driver actually brakes for) while every corner keeps its apex dot — T-numbers stay the true
+  // sequential index so the labelled subset reads as T1…Tn with gaps, never renumbered.
+  const LABEL_ALL_MAX = 14;
+  const labelEveryCorner = corners.length <= LABEL_ALL_MAX;
+  let radiusCutoff = Infinity;
+  if (!labelEveryCorner) {
+    const sorted = corners.map((c) => c.radius).sort((a, b) => a - b);
+    const mid = sorted.length >> 1;
+    radiusCutoff = sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+  }
+  // Loop centroid — labels are pushed radially outward from it so they never sit on the track line.
+  let cx = 0;
+  let cz = 0;
+  const unique = loopPts.length > 1 ? loopPts.slice(0, -1) : loopPts;
+  for (const p of unique) {
+    cx += p[0];
+    cz += p[1];
+  }
+  if (unique.length > 0) {
+    cx /= unique.length;
+    cz /= unique.length;
+  }
+  const half = (loop?.width ?? 12) / 2;
+
+  // Checkered start/finish band across the track at the loop's first point.
+  const startBand: { pts: string; fill: string }[] = [];
+  let startLabel: { x: number; y: number } | null = null;
+  if (loop !== undefined && unique.length >= 3) {
+    const s0 = unique[0]!;
+    const prev = unique[unique.length - 1]!;
+    const next = unique[1]!;
+    let tx = next[0] - prev[0];
+    let tz = next[1] - prev[1];
+    const tl = Math.hypot(tx, tz) || 1;
+    tx /= tl;
+    tz /= tl;
+    const nx = -tz;
+    const nz = tx;
+    const cols = 8;
+    const rows = 2;
+    const depth = Math.max(6, half * 0.9);
+    const at = (u: number, v: number): Pt => [s0[0] + nx * u + tx * v, s0[1] + nz * u + tz * v];
+    for (let r = 0; r < rows; r += 1) {
+      for (let cI = 0; cI < cols; cI += 1) {
+        const u0 = -half + (cI / cols) * 2 * half;
+        const u1 = -half + ((cI + 1) / cols) * 2 * half;
+        const v0 = -depth / 2 + (r / rows) * depth;
+        const v1 = -depth / 2 + ((r + 1) / rows) * depth;
+        const a = at(u0, v0);
+        const b = at(u1, v0);
+        const c = at(u1, v1);
+        const d = at(u0, v1);
+        startBand.push({
+          pts: [a, b, c, d].map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" "),
+          fill: (cI + r) % 2 === 0 ? "#0b1017" : "#f8fafc",
+        });
+      }
+    }
+    startLabel = { x: toX(s0[0] + nx * (half + 10)), y: toZ(s0[1] + nz * (half + 10)) };
+  }
+
   return (
     <svg viewBox={`0 0 ${view} ${view}`} className="h-full w-full">
       {network.streets.map((street, i) => (
@@ -159,27 +324,44 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
           rx={1}
         />
       ))}
-      {network.mode === "circuit" && network.streets[0] !== undefined ? (
-        <g>
-          <circle
-            cx={toX(network.streets[0].points[0]![0])}
-            cy={toZ(network.streets[0].points[0]![1])}
-            r={7}
-            fill="#fff"
-            stroke="#0b1017"
-            strokeWidth={2}
-          />
-          <text
-            x={toX(network.streets[0].points[0]![0]) + (toX(network.streets[0].points[0]![0]) > view * 0.7 ? -12 : 12)}
-            y={toZ(network.streets[0].points[0]![1]) + 4}
-            fill="#f8fafc"
-            fontSize={12}
-            fontFamily="monospace"
-            textAnchor={toX(network.streets[0].points[0]![0]) > view * 0.7 ? "end" : "start"}
-          >
-            START/FINISH
-          </text>
-        </g>
+      {/* Numbered corners with fitted radii, labels pushed outward from the loop centroid. */}
+      {corners.map((corner, i) => {
+        const ax = corner.apex[0];
+        const az = corner.apex[1];
+        // Every corner keeps a dot; only the labelled subset draws a leader line + T/R text.
+        const labelled = labelEveryCorner || corner.radius < radiusCutoff;
+        if (!labelled) {
+          return <circle key={`c${i}`} cx={toX(ax)} cy={toZ(az)} r={1.8} fill="#34d399" opacity={0.7} />;
+        }
+        let ox = ax - cx;
+        let oz = az - cz;
+        const ol = Math.hypot(ox, oz) || 1;
+        ox /= ol;
+        oz /= ol;
+        const lx = toX(ax + ox * (half + 16));
+        const ly = toZ(az + oz * (half + 16));
+        const anchor = ox > 0.35 ? "start" : ox < -0.35 ? "end" : "middle";
+        return (
+          <g key={`c${i}`}>
+            <line x1={toX(ax)} y1={toZ(az)} x2={lx} y2={ly} stroke="#34d399" strokeWidth={0.6} opacity={0.5} />
+            <circle cx={toX(ax)} cy={toZ(az)} r={2.4} fill="#34d399" />
+            <text x={lx} y={ly - 4} fill="#e2e8f0" fontSize={11} fontFamily="monospace" fontWeight={600} textAnchor={anchor}>
+              T{i + 1}
+            </text>
+            <text x={lx} y={ly + 7} fill="#5eead4" fontSize={9} fontFamily="monospace" textAnchor={anchor}>
+              R{corner.radius}
+            </text>
+          </g>
+        );
+      })}
+      {/* Checkered start/finish band crossing the track. */}
+      {startBand.map((cell, i) => (
+        <polygon key={`sf${i}`} points={cell.pts} fill={cell.fill} stroke="#0b1017" strokeWidth={0.3} />
+      ))}
+      {startLabel !== null ? (
+        <text x={startLabel.x} y={startLabel.y} fill="#f8fafc" fontSize={10} fontFamily="monospace" fontWeight={600} textAnchor="middle">
+          START/FINISH
+        </text>
       ) : null}
     </svg>
   );
@@ -197,26 +379,36 @@ function Playground() {
 
   const result = useMemo(() => {
     if (mode === "circuit") {
-      const network = generateStreets(
-        { seed: dials.seed, ...CIRCUIT_RULES, winding: dials.winding, segmentLength: dials.segmentLength },
-        dials.size,
-        dials.size,
-      );
+      // Built as a standalone const (not an inline literal) so the extra `elevation`/`maxGrade` dials
+      // pass through cleanly whether or not the core rules type has adopted them yet.
+      const circuitRules = {
+        seed: dials.seed,
+        ...CIRCUIT_RULES,
+        winding: dials.winding,
+        segmentLength: dials.segmentLength,
+        compactness: dials.trackDensity,
+        elevation: dials.elevation,
+        maxGrade: MAX_GRADE,
+      };
+      const network = generateStreets(circuitRules, dials.size, dials.size);
       return { network, city: null as GeneratedCity | null };
     }
+    const cityStreets = {
+      gridness: dials.gridness,
+      connectivity: dials.connectivity,
+      branching: dials.branching,
+      winding: dials.winding,
+      segmentLength: dials.segmentLength,
+      boulevards: dials.boulevards,
+      elevation: dials.elevation,
+      maxGrade: MAX_GRADE,
+    };
     const city = generateCity(
       {
         seed: dials.seed,
-        streets: {
-          gridness: dials.gridness,
-          connectivity: dials.connectivity,
-          branching: dials.branching,
-          winding: dials.winding,
-          segmentLength: dials.segmentLength,
-          boulevards: dials.boulevards,
-        },
+        streets: cityStreets,
         lots: { footprint: { w: dials.lotW, d: dials.lotD }, setback: dials.setback },
-        content: { landmarks: dials.landmarks },
+        content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
       },
       dials.size,
       dials.size,
@@ -256,6 +448,9 @@ function Playground() {
       seed: dials.seed,
       heightScale: mode === "circuit" ? 0.5 : 1,
       animate: !builtOnce.current,
+      mode,
+      elevation: dials.elevation,
+      extent: dials.size,
     });
     builtOnce.current = true;
     // Screenshot tooling (jgengine-verify) waits for this flag; give the
@@ -268,8 +463,8 @@ function Playground() {
 
   const rpc =
     mode === "circuit"
-      ? `{"method":"generate_streets","seed":"${dials.seed}","mode":"circuit","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"winding":${dials.winding},"segmentLength":${dials.segmentLength}}}`
-      : `{"method":"generate_streets","seed":"${dials.seed}","mode":"net","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"gridness":${dials.gridness},"connectivity":${dials.connectivity},"branching":${dials.branching},"winding":${dials.winding},"segmentLength":${dials.segmentLength},"boulevards":${dials.boulevards}}}`;
+      ? `{"method":"generate_streets","seed":"${dials.seed}","mode":"circuit","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"winding":${dials.winding},"segmentLength":${dials.segmentLength},"compactness":${dials.trackDensity},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`
+      : `{"method":"generate_streets","seed":"${dials.seed}","mode":"net","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"gridness":${dials.gridness},"connectivity":${dials.connectivity},"branching":${dials.branching},"winding":${dials.winding},"segmentLength":${dials.segmentLength},"boulevards":${dials.boulevards},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`;
 
   return (
     <Page>
@@ -287,7 +482,8 @@ function Playground() {
                 type="button"
                 onClick={() => {
                   setMode(m);
-                  if (m === "circuit" && dials.winding < 0.3) set({ winding: 0.5 });
+                  if (m === "circuit") set({ winding: dials.winding < 0.3 ? 0.5 : dials.winding, elevation: CIRCUIT_ELEVATION });
+                  else set({ elevation: CITY_ELEVATION });
                 }}
                 className={`flex-1 rounded-full px-3 py-1.5 text-sm capitalize transition ${
                   mode === m ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.04] text-slate-400 hover:text-slate-200"
@@ -316,6 +512,7 @@ function Playground() {
           <Slider label="World half-size" value={dials.size} min={140} max={400} step={20} onChange={(v) => set({ size: v })} />
           <Slider label="Block size" value={dials.segmentLength} min={50} max={160} step={5} onChange={(v) => set({ segmentLength: v })} />
           <Slider label="Winding" value={dials.winding} min={0} max={0.8} step={0.05} onChange={(v) => set({ winding: v })} />
+          <Slider label="Elevation" value={dials.elevation} min={0} max={1} step={0.05} onChange={(v) => set({ elevation: v })} />
           {mode === "city" ? (
             <>
               <Slider label="Gridness" value={dials.gridness} min={0} max={1} step={0.05} onChange={(v) => set({ gridness: v })} />
@@ -326,8 +523,11 @@ function Playground() {
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
               <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
+              <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
-          ) : null}
+          ) : (
+            <Slider label="Track density" value={dials.trackDensity} min={0} max={1} step={0.05} onChange={(v) => set({ trackDensity: v })} />
+          )}
           <div className="text-xs leading-relaxed text-slate-500">
             {mode === "city" ? (
               <>
@@ -337,7 +537,9 @@ function Playground() {
             ) : (
               <>
                 A closed circuit of <span className="text-emerald-300">{result.network.edges.length}</span> welded segments — the
-                same engine, loopiness turned to 1.
+                same engine, loopiness at 1. Track density{" "}
+                <span className="text-emerald-300">{dials.trackDensity}</span> folds the lap into its footprint: 0 keeps an open,
+                flowing loop; 1 fills the interior with parallel corridors and switchbacks.
               </>
             )}
           </div>

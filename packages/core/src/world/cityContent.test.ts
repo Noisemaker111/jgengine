@@ -10,6 +10,7 @@ import {
   rollClassPlacement,
   zoneBand,
   zoneMetric,
+  CITY_FILLER_CLASSES,
   CITY_LANDMARK_CLASSES,
   CITY_LOT_CLASSES,
   type CityLotClass,
@@ -208,5 +209,26 @@ describe("buildLotPieces", () => {
     }
     const barn = buildLotPieces("barn", 14, 11, 1, 3, rngFor("band:barn"));
     for (const piece of barn) expect(piece.banded).toBe(false);
+  });
+
+  test("interior filler classes (garage/depot) mass into valid grounded structures", () => {
+    for (const cls of CITY_FILLER_CLASSES) {
+      const a = buildLotPieces(cls, 16, 15, cls === "garage" ? 4 : 1, 3, rngFor(`filler:${cls}`));
+      const b = buildLotPieces(cls, 16, 15, cls === "garage" ? 4 : 1, 3, rngFor(`filler:${cls}`));
+      expect(a).toEqual(b); // deterministic
+      expect(a.length).toBeGreaterThan(0);
+      expect(a.some((p) => p.grounded)).toBe(true);
+      for (const piece of a) {
+        for (const v of [...piece.offset, ...piece.size]) expect(Number.isFinite(v)).toBe(true);
+        for (const v of piece.size) expect(v).toBeGreaterThan(0);
+      }
+    }
+    // A garage reads as a banded parking box; a depot carries a broad gable roof.
+    expect(buildLotPieces("garage", 16, 15, 4, 3, rngFor("g")).some((p) => p.banded)).toBe(true);
+    expect(buildLotPieces("depot", 18, 16, 1, 3, rngFor("d")).some((p) => p.shape === "gable")).toBe(true);
+  });
+
+  test("filler classes are kept out of the weightable lot-class set", () => {
+    for (const f of CITY_FILLER_CLASSES) expect(CITY_LOT_CLASSES).not.toContain(f as unknown as CityLotClass);
   });
 });
