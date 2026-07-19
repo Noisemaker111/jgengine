@@ -20,7 +20,8 @@
         "x": 0.13394510746002197,
         "z": -0.000002041459083557129
       },
-      "minY": -0.0000015422701835632324
+      "minY": -0.0000015422701835632324,
+      "maxY": 0.5848510265350342
     }
   },
   {
@@ -44,7 +45,8 @@
         "x": 0.1252328995615244,
         "z": -0.000002041459083557129
       },
-      "minY": -0.38292860984802246
+      "minY": -0.38292860984802246,
+      "maxY": 0.30198147892951965
     }
   },
   {
@@ -68,7 +70,8 @@
         "x": -0.000014105811715126038,
         "z": 0.016935043036937714
       },
-      "minY": 6.854534007061375e-8
+      "minY": 6.854534007061375e-8,
+      "maxY": 0.3651244640350342
     }
   },
   {
@@ -92,7 +95,8 @@
         "x": 0.0000034403055906295776,
         "z": 0.016935043036937714
       },
-      "minY": -0.38292860984802246
+      "minY": -0.38292860984802246,
+      "maxY": 0.36561787128448486
     }
   },
   {
@@ -116,7 +120,8 @@
         "x": 0,
         "z": -0.000012181699275970459
       },
-      "minY": -0.2508419454097748
+      "minY": -0.2508419454097748,
+      "maxY": 1.0012037754058838
     }
   },
   {
@@ -140,7 +145,8 @@
         "x": 0.000012189149856567383,
         "z": -1.1175870895385742e-8
       },
-      "minY": -0.32942676544189453
+      "minY": -0.32942676544189453,
+      "maxY": 1.1677672863006592
     }
   },
   {
@@ -164,7 +170,8 @@
         "x": 0,
         "z": 0.4317329525947571
       },
-      "minY": -0.17123575508594513
+      "minY": -0.17123575508594513,
+      "maxY": 0.3369264304637909
     }
   },
   {
@@ -188,8 +195,106 @@
         "x": 0,
         "z": 0.019333792850375175
       },
-      "minY": -0.000026458501451998018
-    }
+      "minY": -0.000026458501451998018,
+      "maxY": 2.6302281856678036
+    },
+    "clips": [
+      "1H_Melee_Attack_Chop",
+      "1H_Melee_Attack_Jump_Chop",
+      "1H_Melee_Attack_Slice_Diagonal",
+      "1H_Melee_Attack_Slice_Horizontal",
+      "1H_Melee_Attack_Stab",
+      "1H_Ranged_Aiming",
+      "1H_Ranged_Reload",
+      "1H_Ranged_Shoot",
+      "1H_Ranged_Shooting",
+      "2H_Melee_Attack_Chop",
+      "2H_Melee_Attack_Slice",
+      "2H_Melee_Attack_Spin",
+      "2H_Melee_Attack_Spinning",
+      "2H_Melee_Attack_Stab",
+      "2H_Melee_Idle",
+      "2H_Ranged_Aiming",
+      "2H_Ranged_Reload",
+      "2H_Ranged_Shoot",
+      "2H_Ranged_Shooting",
+      "Block",
+      "Block_Attack",
+      "Block_Hit",
+      "Blocking",
+      "Cheer",
+      "Death_A",
+      "Death_A_Pose",
+      "Death_B",
+      "Death_B_Pose",
+      "Death_C_Pose",
+      "Death_C_Skeletons",
+      "Death_C_Skeletons_Resurrect",
+      "Dodge_Backward",
+      "Dodge_Forward",
+      "Dodge_Left",
+      "Dodge_Right",
+      "Dualwield_Melee_Attack_Chop",
+      "Dualwield_Melee_Attack_Slice",
+      "Dualwield_Melee_Attack_Stab",
+      "Hit_A",
+      "Hit_B",
+      "Idle",
+      "Idle_B",
+      "Idle_Combat",
+      "Interact",
+      "Jump_Full_Long",
+      "Jump_Full_Short",
+      "Jump_Idle",
+      "Jump_Land",
+      "Jump_Start",
+      "Lie_Down",
+      "Lie_Idle",
+      "Lie_Pose",
+      "Lie_StandUp",
+      "PickUp",
+      "Running_A",
+      "Running_B",
+      "Running_C",
+      "Running_Strafe_Left",
+      "Running_Strafe_Right",
+      "Sit_Chair_Down",
+      "Sit_Chair_Idle",
+      "Sit_Chair_Pose",
+      "Sit_Chair_StandUp",
+      "Sit_Floor_Down",
+      "Sit_Floor_Idle",
+      "Sit_Floor_Pose",
+      "Sit_Floor_StandUp",
+      "Skeleton_Inactive_Standing_Pose",
+      "Skeletons_Awaken_Floor",
+      "Skeletons_Awaken_Floor_Long",
+      "Skeletons_Awaken_Standing",
+      "Skeletons_Inactive_Floor_Pose",
+      "Spawn_Air",
+      "Spawn_Ground",
+      "Spawn_Ground_Skeletons",
+      "Spellcast_Long",
+      "Spellcast_Raise",
+      "Spellcast_Shoot",
+      "Spellcast_Summon",
+      "Spellcasting",
+      "T-Pose",
+      "Taunt",
+      "Taunt_Longer",
+      "Throw",
+      "Unarmed_Idle",
+      "Unarmed_Melee_Attack_Kick",
+      "Unarmed_Melee_Attack_Punch_A",
+      "Unarmed_Melee_Attack_Punch_B",
+      "Unarmed_Pose",
+      "Use_Item",
+      "Walking_A",
+      "Walking_B",
+      "Walking_Backwards",
+      "Walking_C",
+      "Walking_D_Skeletons"
+    ]
   },
   {
     "id": "kaykit-skeletons/Skeleton_Minion",
@@ -212,8 +317,106 @@
         "x": 0,
         "z": -0.002302810549736023
       },
-      "minY": -0.000026458501451998018
-    }
+      "minY": -0.000026458501451998018,
+      "maxY": 2.1660871505737305
+    },
+    "clips": [
+      "1H_Melee_Attack_Chop",
+      "1H_Melee_Attack_Jump_Chop",
+      "1H_Melee_Attack_Slice_Diagonal",
+      "1H_Melee_Attack_Slice_Horizontal",
+      "1H_Melee_Attack_Stab",
+      "1H_Ranged_Aiming",
+      "1H_Ranged_Reload",
+      "1H_Ranged_Shoot",
+      "1H_Ranged_Shooting",
+      "2H_Melee_Attack_Chop",
+      "2H_Melee_Attack_Slice",
+      "2H_Melee_Attack_Spin",
+      "2H_Melee_Attack_Spinning",
+      "2H_Melee_Attack_Stab",
+      "2H_Melee_Idle",
+      "2H_Ranged_Aiming",
+      "2H_Ranged_Reload",
+      "2H_Ranged_Shoot",
+      "2H_Ranged_Shooting",
+      "Block",
+      "Block_Attack",
+      "Block_Hit",
+      "Blocking",
+      "Cheer",
+      "Death_A",
+      "Death_A_Pose",
+      "Death_B",
+      "Death_B_Pose",
+      "Death_C_Pose",
+      "Death_C_Skeletons",
+      "Death_C_Skeletons_Resurrect",
+      "Dodge_Backward",
+      "Dodge_Forward",
+      "Dodge_Left",
+      "Dodge_Right",
+      "Dualwield_Melee_Attack_Chop",
+      "Dualwield_Melee_Attack_Slice",
+      "Dualwield_Melee_Attack_Stab",
+      "Hit_A",
+      "Hit_B",
+      "Idle",
+      "Idle_B",
+      "Idle_Combat",
+      "Interact",
+      "Jump_Full_Long",
+      "Jump_Full_Short",
+      "Jump_Idle",
+      "Jump_Land",
+      "Jump_Start",
+      "Lie_Down",
+      "Lie_Idle",
+      "Lie_Pose",
+      "Lie_StandUp",
+      "PickUp",
+      "Running_A",
+      "Running_B",
+      "Running_C",
+      "Running_Strafe_Left",
+      "Running_Strafe_Right",
+      "Sit_Chair_Down",
+      "Sit_Chair_Idle",
+      "Sit_Chair_Pose",
+      "Sit_Chair_StandUp",
+      "Sit_Floor_Down",
+      "Sit_Floor_Idle",
+      "Sit_Floor_Pose",
+      "Sit_Floor_StandUp",
+      "Skeleton_Inactive_Standing_Pose",
+      "Skeletons_Awaken_Floor",
+      "Skeletons_Awaken_Floor_Long",
+      "Skeletons_Awaken_Standing",
+      "Skeletons_Inactive_Floor_Pose",
+      "Spawn_Air",
+      "Spawn_Ground",
+      "Spawn_Ground_Skeletons",
+      "Spellcast_Long",
+      "Spellcast_Raise",
+      "Spellcast_Shoot",
+      "Spellcast_Summon",
+      "Spellcasting",
+      "T-Pose",
+      "Taunt",
+      "Taunt_Longer",
+      "Throw",
+      "Unarmed_Idle",
+      "Unarmed_Melee_Attack_Kick",
+      "Unarmed_Melee_Attack_Punch_A",
+      "Unarmed_Melee_Attack_Punch_B",
+      "Unarmed_Pose",
+      "Use_Item",
+      "Walking_A",
+      "Walking_B",
+      "Walking_Backwards",
+      "Walking_C",
+      "Walking_D_Skeletons"
+    ]
   },
   {
     "id": "kaykit-skeletons/Skeleton_Quiver",
@@ -236,7 +439,8 @@
         "x": 0,
         "z": 0.021125268191099167
       },
-      "minY": -0.40598809719085693
+      "minY": -0.40598809719085693,
+      "maxY": 0.5233743786811829
     }
   },
   {
@@ -260,8 +464,106 @@
         "x": 0,
         "z": -0.00515421107411701
       },
-      "minY": -0.000026527046429691836
-    }
+      "minY": -0.000026527046429691836,
+      "maxY": 2.3079221679295943
+    },
+    "clips": [
+      "1H_Melee_Attack_Chop",
+      "1H_Melee_Attack_Jump_Chop",
+      "1H_Melee_Attack_Slice_Diagonal",
+      "1H_Melee_Attack_Slice_Horizontal",
+      "1H_Melee_Attack_Stab",
+      "1H_Ranged_Aiming",
+      "1H_Ranged_Reload",
+      "1H_Ranged_Shoot",
+      "1H_Ranged_Shooting",
+      "2H_Melee_Attack_Chop",
+      "2H_Melee_Attack_Slice",
+      "2H_Melee_Attack_Spin",
+      "2H_Melee_Attack_Spinning",
+      "2H_Melee_Attack_Stab",
+      "2H_Melee_Idle",
+      "2H_Ranged_Aiming",
+      "2H_Ranged_Reload",
+      "2H_Ranged_Shoot",
+      "2H_Ranged_Shooting",
+      "Block",
+      "Block_Attack",
+      "Block_Hit",
+      "Blocking",
+      "Cheer",
+      "Death_A",
+      "Death_A_Pose",
+      "Death_B",
+      "Death_B_Pose",
+      "Death_C_Pose",
+      "Death_C_Skeletons",
+      "Death_C_Skeletons_Resurrect",
+      "Dodge_Backward",
+      "Dodge_Forward",
+      "Dodge_Left",
+      "Dodge_Right",
+      "Dualwield_Melee_Attack_Chop",
+      "Dualwield_Melee_Attack_Slice",
+      "Dualwield_Melee_Attack_Stab",
+      "Hit_A",
+      "Hit_B",
+      "Idle",
+      "Idle_B",
+      "Idle_Combat",
+      "Interact",
+      "Jump_Full_Long",
+      "Jump_Full_Short",
+      "Jump_Idle",
+      "Jump_Land",
+      "Jump_Start",
+      "Lie_Down",
+      "Lie_Idle",
+      "Lie_Pose",
+      "Lie_StandUp",
+      "PickUp",
+      "Running_A",
+      "Running_B",
+      "Running_C",
+      "Running_Strafe_Left",
+      "Running_Strafe_Right",
+      "Sit_Chair_Down",
+      "Sit_Chair_Idle",
+      "Sit_Chair_Pose",
+      "Sit_Chair_StandUp",
+      "Sit_Floor_Down",
+      "Sit_Floor_Idle",
+      "Sit_Floor_Pose",
+      "Sit_Floor_StandUp",
+      "Skeleton_Inactive_Standing_Pose",
+      "Skeletons_Awaken_Floor",
+      "Skeletons_Awaken_Floor_Long",
+      "Skeletons_Awaken_Standing",
+      "Skeletons_Inactive_Floor_Pose",
+      "Spawn_Air",
+      "Spawn_Ground",
+      "Spawn_Ground_Skeletons",
+      "Spellcast_Long",
+      "Spellcast_Raise",
+      "Spellcast_Shoot",
+      "Spellcast_Summon",
+      "Spellcasting",
+      "T-Pose",
+      "Taunt",
+      "Taunt_Longer",
+      "Throw",
+      "Unarmed_Idle",
+      "Unarmed_Melee_Attack_Kick",
+      "Unarmed_Melee_Attack_Punch_A",
+      "Unarmed_Melee_Attack_Punch_B",
+      "Unarmed_Pose",
+      "Use_Item",
+      "Walking_A",
+      "Walking_B",
+      "Walking_Backwards",
+      "Walking_C",
+      "Walking_D_Skeletons"
+    ]
   },
   {
     "id": "kaykit-skeletons/Skeleton_Shield_Large_A",
@@ -284,7 +586,8 @@
         "x": 0.0022474825382232666,
         "z": 0.011898629367351532
       },
-      "minY": -0.5675097703933716
+      "minY": -0.5675097703933716,
+      "maxY": 0.5674780011177063
     }
   },
   {
@@ -308,7 +611,8 @@
         "x": 0.0022474825382232666,
         "z": 0.024175435304641724
       },
-      "minY": -0.5675097703933716
+      "minY": -0.5675097703933716,
+      "maxY": 0.5674780011177063
     }
   },
   {
@@ -332,7 +636,8 @@
         "x": -7.450580596923828e-8,
         "z": 0.03327088803052902
       },
-      "minY": -0.4160875082015991
+      "minY": -0.4160875082015991,
+      "maxY": 0.4160875082015991
     }
   },
   {
@@ -356,7 +661,8 @@
         "x": -7.450580596923828e-8,
         "z": 0.20790588855743408
       },
-      "minY": -0.4160875082015991
+      "minY": -0.4160875082015991,
+      "maxY": 0.4160875082015991
     }
   },
   {
@@ -380,7 +686,8 @@
         "x": -0.1588648110628128,
         "z": 0.008223429322242737
       },
-      "minY": -0.8462717533111572
+      "minY": -0.8462717533111572,
+      "maxY": 1.255488395690918
     }
   },
   {
@@ -404,7 +711,105 @@
         "x": 0,
         "z": -0.028848545625805855
       },
-      "minY": -0.000026527046429691836
-    }
+      "minY": -0.000026527046429691836,
+      "maxY": 2.5904352927225673
+    },
+    "clips": [
+      "1H_Melee_Attack_Chop",
+      "1H_Melee_Attack_Jump_Chop",
+      "1H_Melee_Attack_Slice_Diagonal",
+      "1H_Melee_Attack_Slice_Horizontal",
+      "1H_Melee_Attack_Stab",
+      "1H_Ranged_Aiming",
+      "1H_Ranged_Reload",
+      "1H_Ranged_Shoot",
+      "1H_Ranged_Shooting",
+      "2H_Melee_Attack_Chop",
+      "2H_Melee_Attack_Slice",
+      "2H_Melee_Attack_Spin",
+      "2H_Melee_Attack_Spinning",
+      "2H_Melee_Attack_Stab",
+      "2H_Melee_Idle",
+      "2H_Ranged_Aiming",
+      "2H_Ranged_Reload",
+      "2H_Ranged_Shoot",
+      "2H_Ranged_Shooting",
+      "Block",
+      "Block_Attack",
+      "Block_Hit",
+      "Blocking",
+      "Cheer",
+      "Death_A",
+      "Death_A_Pose",
+      "Death_B",
+      "Death_B_Pose",
+      "Death_C_Pose",
+      "Death_C_Skeletons",
+      "Death_C_Skeletons_Resurrect",
+      "Dodge_Backward",
+      "Dodge_Forward",
+      "Dodge_Left",
+      "Dodge_Right",
+      "Dualwield_Melee_Attack_Chop",
+      "Dualwield_Melee_Attack_Slice",
+      "Dualwield_Melee_Attack_Stab",
+      "Hit_A",
+      "Hit_B",
+      "Idle",
+      "Idle_B",
+      "Idle_Combat",
+      "Interact",
+      "Jump_Full_Long",
+      "Jump_Full_Short",
+      "Jump_Idle",
+      "Jump_Land",
+      "Jump_Start",
+      "Lie_Down",
+      "Lie_Idle",
+      "Lie_Pose",
+      "Lie_StandUp",
+      "PickUp",
+      "Running_A",
+      "Running_B",
+      "Running_C",
+      "Running_Strafe_Left",
+      "Running_Strafe_Right",
+      "Sit_Chair_Down",
+      "Sit_Chair_Idle",
+      "Sit_Chair_Pose",
+      "Sit_Chair_StandUp",
+      "Sit_Floor_Down",
+      "Sit_Floor_Idle",
+      "Sit_Floor_Pose",
+      "Sit_Floor_StandUp",
+      "Skeleton_Inactive_Standing_Pose",
+      "Skeletons_Awaken_Floor",
+      "Skeletons_Awaken_Floor_Long",
+      "Skeletons_Awaken_Standing",
+      "Skeletons_Inactive_Floor_Pose",
+      "Spawn_Air",
+      "Spawn_Ground",
+      "Spawn_Ground_Skeletons",
+      "Spellcast_Long",
+      "Spellcast_Raise",
+      "Spellcast_Shoot",
+      "Spellcast_Summon",
+      "Spellcasting",
+      "T-Pose",
+      "Taunt",
+      "Taunt_Longer",
+      "Throw",
+      "Unarmed_Idle",
+      "Unarmed_Melee_Attack_Kick",
+      "Unarmed_Melee_Attack_Punch_A",
+      "Unarmed_Melee_Attack_Punch_B",
+      "Unarmed_Pose",
+      "Use_Item",
+      "Walking_A",
+      "Walking_B",
+      "Walking_Backwards",
+      "Walking_C",
+      "Walking_D_Skeletons"
+    ]
   }
 ]

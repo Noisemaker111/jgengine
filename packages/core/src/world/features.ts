@@ -311,6 +311,33 @@ export interface SkyEnvironmentConfig {
   volumetricClouds?: VolumetricCloudsConfig;
 }
 
+/** One road a `building({ along })` frontage lines with buildings: centerline + full width. */
+export interface BuildingFrontageRoad {
+  /** Road centerline vertices in world XZ; at least two points. */
+  path: readonly EnvironmentVec2[];
+  /** Road full width in world units; lots set back from `width / 2`. */
+  width: number;
+}
+
+/**
+ * Street-aware placement for `building()`: instead of a grid scattered around `position`, lots are
+ * stepped along each road's frontage, offset by a consistent setback (a curb + sidewalk strip), and
+ * turned so every building FRONT faces its road. `footprint` (`w` = frontage width, `d` = depth) and
+ * `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
+ */
+export interface BuildingFrontageConfig {
+  /** Roads whose frontage is lined with lots. */
+  roads: readonly BuildingFrontageRoad[];
+  /** Sidewalk strip between the curb (`width / 2`) and the building front, world units. Default 3. */
+  setback?: number;
+  /** Place lots on both sides of each road. Default true. */
+  bothSides?: boolean;
+  /** Clip region; lots whose center falls outside are dropped. Omit to keep every lot. */
+  area?: { center?: EnvironmentVec2; halfExtents: EnvironmentVec2 };
+  /** Hard cap on emitted lots so a long network stays bounded. Default 400. */
+  maxLots?: number;
+}
+
 export interface BuildingEnvironmentConfig {
   count?: number;
   position?: EnvironmentVec2;
@@ -323,6 +350,11 @@ export interface BuildingEnvironmentConfig {
   /** Explicit per-part-kind hex colors; any part left unset falls back to the resolved `style` palette. */
   palette?: BuildingPaletteOverrides;
   seed?: string;
+  /**
+   * Street-aware placement: derive lots along the given roads' frontage (facing each street, set
+   * back by a sidewalk strip) instead of the grid around `position`. See {@link BuildingFrontageConfig}.
+   */
+  along?: BuildingFrontageConfig;
 }
 
 export type PadSize = readonly [number, number] | { radius: number };
@@ -376,7 +408,7 @@ export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along">;
 
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
@@ -790,12 +822,14 @@ export function island(config: TerrainIslandConfig): TerrainIslandDescriptor {
   return { ...descriptor, kind: "island", origin };
 }
 
-/** Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. */
+/** Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`. */
 export function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor {
   return withOptional(
     {
       kind: "building" as const,
-      count: config.count ?? 1,
+      // In frontage mode the road network sizes the district; `count` becomes an upper bound, so a
+      // caller that just says `along` gets a filled street rather than a single grid building.
+      count: config.count ?? (config.along === undefined ? 1 : config.along.maxLots ?? 400),
       footprint: config.footprint ?? { w: 8, d: 8 },
       stories: config.stories ?? [1, 4],
       storyHeight: config.storyHeight ?? 3,
@@ -806,6 +840,7 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       ...(config.seed === undefined ? {} : { seed: config.seed }),
       ...(config.position === undefined ? {} : { position: config.position }),
       ...(config.palette === undefined ? {} : { palette: config.palette }),
+      ...(config.along === undefined ? {} : { along: config.along }),
     },
   );
 }

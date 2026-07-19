@@ -24,3 +24,8 @@ export {
 } from "./shakeChannel";
 export { rtsPanKeysConflict } from "./rigMath";
 export { GAME_SIM_FRAME_PRIORITY } from "./orbitCameraMath";
+export {
+  CAMERA_TRANSPARENT_USERDATA,
+  isCameraOccluderTransparent,
+  type CameraOccluder,
+} from "./cameraCollision";

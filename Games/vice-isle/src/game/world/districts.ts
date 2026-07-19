@@ -48,9 +48,24 @@ export const ROADS: readonly RoadSegment[] = editorLayers.paths
     return { from: [from.x, from.z] as const, to: [to.x, to.z] as const };
   });
 
-export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] = (
-  editorLayers.paths.find((path) => path.id === "race-loop")?.points ?? []
-).map((point) => [point.x, point.z] as const);
+export interface RaceRoute {
+  id: string;
+  label: string;
+  checkpoints: readonly (readonly [number, number])[];
+}
+
+export const RACE_ROUTES: readonly RaceRoute[] = editorLayers.paths
+  .filter((path) => path.kind === "route")
+  .map((path) => ({
+    id: path.id,
+    label: path.label ?? path.id,
+    checkpoints: path.points.map((point) => [point.x, point.z] as const),
+  }));
+
+export const OCEAN_LOOP_ID = "race-loop";
+
+export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] =
+  RACE_ROUTES.find((route) => route.id === OCEAN_LOOP_ID)?.checkpoints ?? [];
 
 export const AUTHORED_VEHICLE_SPAWNS: readonly AuthoredVehicleSpawn[] = editorLayers.markers
   .filter((marker) => marker.kind === "vehicle_spawn")

@@ -69,11 +69,9 @@ bun run gate on fresh branch off main → check-content-gate failed on a stale c
 Renaming a core export with a whole-word sed also rewrote import path specifiers (game/defineGame → game/defineGameDefinition) and bun run build still passed because package build tsconfigs exclude tests/games — a check-types or test run is the only thing that catches specifier breakage after mechanical renames
 
 
-<<<<<<< HEAD
 2026-07-18T22:43:40.443Z — claude-fable-5 — Claude
 
 world redesign PR: main is broken — packages/editor/src/EditorChrome.tsx had a duplicate ')}' (merge #1176) that fails 'bun run build'; agent:bootstrap earlier reported success anyway, so the breakage only surfaced mid-task at gen:skill-api
-=======
 2026-07-18T20:17:34.900Z — grok-4.5 — NoisemakerJon
 
 recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
@@ -157,7 +155,26 @@ retrying the full gate after the isolated editor build passed -> 6337 tests pass
 2026-07-18T22:23:17.244Z — claude — Claude
 
 ran bun run gate for a scripts/docs change → gate is already red on main: check-skill-api reports 14 unadopted editor exports (LightingPanel, AnimationPanel, pathFlythrough, materialAssignments, networkSnapshot, skyConfigFromEnvironment) from the merged issue-1110 PRs and a stale jgengine-editor api.md
->>>>>>> origin/main
+
+2026-07-18T23:02:42.440Z — fable — Claude
+
+drive --shot <value>: passing an absolute path breaks (script builds shots/<game>-<path>.png → ENOENT); only bare names work, flag docs don't say so
+
+2026-07-18T23:02:42.473Z — fable — Claude
+
+editor CLI: export_document returns result.json but import_document with a wrong param key fails with 'JSON Parse error: Unexpected identifier undefined' instead of naming the expected 'json' param
+
+2026-07-18T23:02:42.508Z — fable — Claude
+
+editor CLI has no add_path verb — authoring a new route path headlessly requires a full export_document/import_document roundtrip
+
+2026-07-18T23:02:42.541Z — fable — Claude
+
+shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
+
+2026-07-18T23:09:33.687Z — fable — Claude
+
+vice-isle drive rpc editor_summon: editor host mounts then React 'Maximum update depth exceeded' loop in editor shell ContentBrowser/AssetThumbnail — page goes black, editor verbs unreachable (wanted an editor-view screenshot of authored paths)
 
 2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
 
@@ -182,3 +199,52 @@ Building a WoW-like on the SDK: on a lethal ctx.scene.entity.effect() hit the en
 2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
 
 verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <path> run <script>' (space form) mis-parses and prints bun-run help instead of running; only 'bun --cwd=<path> run <script>' (equals form) works. Docs/skills should switch to the = form or bun --filter.
+
+2026-07-18T23:54:36.026Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim verdict: a scaffolded WoW-like shipped with primitive-marker enemies and box props because nothing in the intake/create flow gates completion on entityModels/objectModels being set; the assets skill and npx jgengine assets pull (Quaternius sci-fi robots) were installed and never triggered. Make an asset pass a required step in the jgengine skill build phase
+
+2026-07-18T23:54:36.178Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: player death had no designed moment — lethal hit silently teleports to spawn. createDownedState exists but no skill step says 'player death must be a visible designed flow (death/downed screen, respawn)'. Add it to game-design/jgengine-ui checklists
+
+2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: WoW-like needed overhead enemy nameplates/healthbars; jgengine-ui has bars but no floating world-anchored entity-frame seam or recipe, so it drops off agent plans
+
+2026-07-18T23:54:36.442Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive are monorepo scripts — so the AGENTS.md rule 'visual claims are screenshot-judged harshly by you' is unenforceable for exactly the outside users it targets; ship a jgengine shoot CLI verb
+
+2026-07-19T00:10:56.438Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
+2026-07-18T23:42:10.479Z — fable — Claude
+
+drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
+
+2026-07-19T00:30:01.147Z — claude-opus-4-8 — NoisemakerJon
+
+Opened the-robots/loopline editor (?mode=editor) → infinite React 'Maximum update depth exceeded' loop in useGlbThumbnail/AssetThumbnail (ContentBrowser/BottomDock), triggered when GLB model textures fail to load; the GameUiErrorBoundary then blanks the whole editor chrome. Standalone/spire-cards editors (no failing model assets) are unaffected.
+2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
+
+PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
+2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
+
+verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
+
+2026-07-19T01:23:41.909Z — claude-opus-4-8 — NoisemakerJon
+
+adding an apps/web route → bun --cwd apps/web run check-types is red on origin/main: playground.tsx can't resolve @jgengine/core/world/cityGenerator & streetGenerator even though their dist files exist, so a new page's typecheck is noisy with unrelated pre-existing errors
+
+2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
+
+Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
+
+2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
+
+switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop
+
+2026-07-19T02:05:06.289Z — claude-fable-5 — Claude
+
+pushing a restarted branch after its PR squash-merged + remote branch auto-deleted: push --force-with-lease rejects with 'stale info' and fetch of the branch says no remote ref — needed git fetch --prune before push; workflow skill could mention prune in the merged-branch restart recipe

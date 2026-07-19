@@ -3,7 +3,7 @@
  * the whole synthesis, from a rigid Manhattan grid (`gridness` 1, `curviness` 0) to winding
  * hillside estates, a two-road crossroads farm town, or — at the loopiness-high / branching-and-
  * connectivity-low corner — a closed RACE CIRCUIT. Streets come from the unified seed-driven
- * {@link buildPathNetwork} engine (city and track are the same generator at opposite slider
+ * {@link generateStreets} engine (city and track are the same generator at opposite slider
  * extremes), carry a visible hierarchy (boulevards with medians, avenues, streets, lanes —
  * optionally gravel), and connect or deliberately dead-end into cul-de-sac bulbs; water gaps become
  * styled bridge decks and ridges become tunnel bores, both path features on continuous streets so a
@@ -54,13 +54,13 @@ import { furnitureSpots } from "./streets";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { RoadPoint } from "./roads";
 import {
-  buildPathNetwork,
-  pathNetworkMode,
-  type PathFeatureKind,
-  type PathLevel,
-  type PathNetworkRules,
-  type PathStreet,
-} from "./pathNetwork";
+  generateStreets,
+  streetNetworkMode,
+  type StreetFeatureKind,
+  type StreetLevel,
+  type StreetNetworkRules,
+  type Street,
+} from "./streetGenerator";
 import {
   buildablePolygon,
   carveCorridors,
@@ -735,7 +735,7 @@ export interface CityStreet {
   /** Cul-de-sac turning bulb at a dangling end, when the lane never reconnected. */
   bulb?: RoadPoint;
   /** Bridge/tunnel spans along this street as `[from, to]` index windows into `points`. */
-  features?: readonly { kind: PathFeatureKind; from: number; to: number; bankHeight: number }[];
+  features?: readonly { kind: StreetFeatureKind; from: number; to: number; bankHeight: number }[];
 }
 
 /** One crossing of two through streets: patch center/radius plus crosswalk arm directions. */
@@ -929,7 +929,7 @@ interface LocalStreet {
   surface: CityStreet["surface"];
   sidewalk: boolean;
   bulb?: [number, number];
-  features?: readonly { kind: PathFeatureKind; from: number; to: number; bankHeight: number }[];
+  features?: readonly { kind: StreetFeatureKind; from: number; to: number; bankHeight: number }[];
 }
 
 function axisValue(value: unknown): number | undefined {
@@ -1630,7 +1630,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   const streams = seededStreams(`city:${rules.seed.length > 0 ? rules.seed : object.id}`);
   // The unified path-network engine grows the whole road/track graph from the sliders — a city street
   // net and a closed race circuit are the SAME generator at opposite slider extremes.
-  const netRules: PathNetworkRules = {
+  const netRules: StreetNetworkRules = {
     seed: rules.seed.length > 0 ? rules.seed : object.id,
     gridness: rules.gridness,
     loopiness: rules.loopiness,
@@ -1646,16 +1646,16 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     width: rules.streetWidth,
     boulevards: rules.boulevards,
   };
-  const network = buildPathNetwork(netRules, hx, hz, {
+  const network = generateStreets(netRules, hx, hz, {
     heightAt: heightAt ?? undefined,
     minElevation: rules.minElevation,
     bridges: rules.bridges,
     tunnels: rules.tunnels,
   });
   // Resolve each generated street's surface + sidewalk from its hierarchy level.
-  const surfaceFor = (level: PathLevel): CityStreet["surface"] =>
+  const surfaceFor = (level: StreetLevel): CityStreet["surface"] =>
     rules.surface === "gravel" || (level === "lane" && rules.gravelLanes) ? "gravel" : "asphalt";
-  const local: LocalStreet[] = network.streets.slice(0, MAX_STREETS).map((street: PathStreet) => {
+  const local: LocalStreet[] = network.streets.slice(0, MAX_STREETS).map((street: Street) => {
     const surface = surfaceFor(street.level);
     return {
       points: street.points.map(([x, z]) => [x, z] as [number, number]),
@@ -1943,7 +1943,7 @@ export function registerCityKind(): void {
       const resolved = resolveCityObject(object);
       if (resolved === null) return "Give the volume a box footprint.";
       if (resolved.streets.length === 0) return `Footprint too small — needs at least ${Math.ceil(resolved.rules.blockSize * 1.5)} m across.`;
-      const mode = pathNetworkMode({
+      const mode = streetNetworkMode({
         seed: resolved.rules.seed,
         gridness: resolved.rules.gridness,
         loopiness: resolved.rules.loopiness,
