@@ -223,6 +223,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vfx-presets — render a named attack visual (arrow, fireball, lightning, web, slash, shield, heal, explosion) in one call
 
 - `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
+
 ## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
 
 - `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`
