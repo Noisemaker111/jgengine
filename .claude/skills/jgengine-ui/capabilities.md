@@ -422,6 +422,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
 
+## talent-tree — drop-in skill/talent-tree widget over the talents model — branch/tier node layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
+
+- `TalentTree` (function) · `import { TalentTree } from "@jgengine/react"`
+
 ## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
 
 - `TimerReadout` (function) · `import { TimerReadout } from "@jgengine/react"`

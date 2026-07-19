@@ -35,6 +35,7 @@ export * from "./slots";
 export * from "./inventoryGrid";
 export * from "./panels";
 export * from "./characterSheet";
+export * from "./talentTree";
 export * from "./hudTheme";
 export * from "./hudThemePreview";
 export * from "./hudFrame";

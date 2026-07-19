@@ -399,6 +399,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
 
+## talent-tree-view — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
+
+- `talentTreeView` (function) · `import { talentTreeView } from "@jgengine/core/gameplay"`
+
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 
 - `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
