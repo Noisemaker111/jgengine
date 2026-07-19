@@ -1,10 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { readPromotedScene, registerRootGameScript, writeGame } from "./create";
+import { readPromotedScene, registerRootGameScript, runCreate, writeGame } from "./create";
 import { diagnose } from "./doctor";
+import { cliVersion, sdkVersion } from "./pkg";
 import { parseCreateName } from "./templates";
 
 function scratch(): string {
@@ -74,6 +75,32 @@ describe("writeGame", () => {
     expect(readFileSync(join(dir, "index.html"), "utf8")).toContain("<title>My Game Name</title>");
     const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name: string };
     expect(pkg.name).toBe("my-game-name");
+  });
+
+  test("standalone scaffold pins @jgengine/* deps to a caret range on the resolved sdk version", () => {
+    const dir = join(scratch(), "caret-game");
+    writeGame(dir, "caret-game", "Caret Game", "standalone");
+    const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    const version = sdkVersion();
+    expect(pkg.dependencies["@jgengine/core"]).toBe(`^${version}`);
+    expect(pkg.dependencies["@jgengine/assets"]).toBe(`^${version}`);
+  });
+});
+
+describe("runCreate", () => {
+  test("prints the resolved sdk version scaffolded for standalone games", () => {
+    const target = join(scratch(), "Version Probe");
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const code = runCreate([target, "--standalone", "--no-install", "--no-skills"]);
+      expect(code).toBe(0);
+      const lines = log.mock.calls.map((call) => String(call[0]));
+      expect(lines).toContain(`  scaffolding @jgengine/* ^${sdkVersion()} (jgengine CLI ${cliVersion()})`);
+    } finally {
+      log.mockRestore();
+    }
   });
 });
 

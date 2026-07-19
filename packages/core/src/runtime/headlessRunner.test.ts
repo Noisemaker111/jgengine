@@ -110,3 +110,69 @@ describe("createHeadlessRunner", () => {
     expect(runner.ctx.scene.entity.get("p1")!.position[0]).toBeGreaterThan(startX);
   });
 });
+
+describe("headless ui-intent seam", () => {
+  const ENERGY_MAX_KEY = "player.energyMax";
+
+  function energyGame() {
+    return defineGameDefinition({
+      name: "Headless UI",
+      multiplayer: offline(),
+      world: environment({ terrain: terrain(), vegetation: grass({ density: 0.4 }) }),
+      loop: {
+        onInit(ctx: GameContext) {
+          ctx.game.commands.define<{ max: number }>("player.setEnergyMax", {
+            validate(_state, input) {
+              return input.max > 0 ? null : { reason: "max must be positive" };
+            },
+            apply(state, input) {
+              state.game.store.set(ENERGY_MAX_KEY, input.max);
+            },
+          });
+        },
+      },
+    });
+  }
+
+  function bootUi() {
+    const game = energyGame();
+    const runner = createHeadlessRunner({
+      definition: game,
+      content,
+      loop: game.loop,
+      player: { userId: "p1", isNew: true },
+    });
+    return { game, runner };
+  }
+
+  test("ui.invoke dispatches a defined command and updates reactive state", () => {
+    const { runner } = bootUi();
+    expect(runner.ctx.game.store.get(ENERGY_MAX_KEY)).toBeUndefined();
+
+    runner.ui.invoke("player.setEnergyMax", { max: 150 });
+
+    expect(runner.ctx.game.store.get(ENERGY_MAX_KEY)).toBe(150);
+  });
+
+  test("ui.invoke throws on an unknown command", () => {
+    const { runner } = bootUi();
+    expect(() => runner.ui.invoke("does.not.exist")).toThrow(/unknown command/);
+  });
+
+  test("ui.invoke throws on rejection; ui.tryInvoke reports it instead", () => {
+    const { runner } = bootUi();
+
+    expect(() => runner.ui.invoke("player.setEnergyMax", { max: -5 })).toThrow(/rejected/);
+    expect(runner.ctx.game.store.get(ENERGY_MAX_KEY)).toBeUndefined();
+
+    const result = runner.ui.tryInvoke("player.setEnergyMax", { max: -5 });
+    expect(result.status).toBe("rejected");
+  });
+
+  test("ui.has and ui.names reflect defined commands", () => {
+    const { runner } = bootUi();
+    expect(runner.ui.has("player.setEnergyMax")).toBe(true);
+    expect(runner.ui.has("does.not.exist")).toBe(false);
+    expect(runner.ui.names()).toContain("player.setEnergyMax");
+  });
+});

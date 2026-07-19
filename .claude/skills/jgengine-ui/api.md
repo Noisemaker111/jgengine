@@ -1036,7 +1036,9 @@
 
 ## @jgengine/shell/camera
 
+- `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
+- `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
@@ -1053,6 +1055,7 @@
 - `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
+- `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
@@ -1090,6 +1093,12 @@
 ## @jgengine/shell/camera/cameraBlendMath
 
 - `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
+
+## @jgengine/shell/camera/cameraCollision
+
+- `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
+- `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
+- `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 
 ## @jgengine/shell/camera/cameraRigs
 
