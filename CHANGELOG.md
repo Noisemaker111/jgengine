@@ -28,7 +28,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
-- _Nothing yet._
+- Walking-player object collision is now **on by default** (`PlayerMovementConfig.collideObjects`
+  defaults `true`): placed scene objects with blocking colliders stop, support, and are stood upon by
+  the player without opting in. A game that relies on walking through placed objects sets
+  `movement: { collideObjects: false }` (or gives those objects non-blocking colliders).
+- Ground drops taller than `movement.stepHeight` (default 0.4) now fall under gravity instead of
+  snapping the feet down in one frame. Games that teleport-spawned players high above the ground will
+  see them fall to it.
 
 ### Added
 
@@ -155,6 +161,20 @@ At publish, rename this heading to the new version and mirror the entries into
 - **Offline autosave no longer starves in a living world** (`@jgengine/core/runtime/runtimeSave`) — `autosave` mode previously debounced by *resetting* its timer on every world change, so an open world that mutates every frame (AI, physics, the day/night clock) pushed the timer forward faster than it could fire and never persisted; a game that drove no explicit `checkpoint()` effectively never saved. Autosave is now a trailing timer: the first unsaved change arms it, later changes ride the same timer, and it captures the latest snapshot when it fires — at most one write per `autosaveMs` and always within one interval, even while the world never idles. No API change; behavior only.
 - **Effect consolidation phase 2: subscriptions on `useSyncExternalStore`, dispose pairs on `useDisposable`** (`@jgengine/react`, `@jgengine/shell`, `@jgengine/editor`, #1304) — hand-rolled `subscribe(() => setTick)` re-render mirrors across the editor chrome/panels, shell settings (`useSettingsRevision`), camera director, WorldHud selection, and AuthoredScene live-document hook now ride `useSyncExternalStore` (fewer redundant render passes, identical update timing); ~15 shell renderers moved their `useMemo` + dispose-effect pairs onto `useDisposable`; derived-state/prop-reset/focus effects were removed in favor of render-time derivation and `autoFocus` (editor inspector fields, hierarchy active row, animation panel, play-control mirrors via the new shared `usePlayControl`, GamePlayerShell binding overrides — kills a one-frame stale-keybinds render on game switch; `GameViewport` now renders `data-jg-layout-collision` declaratively). No public API removals; `usePlayControl` (`@jgengine/editor`) is new.
 
+- **Blocking colliders are now walkable surfaces, and collision is on by default** (`@jgengine/core`
+  movement, #1402) — the walking controller treats placed objects' blocking colliders as ground:
+  `collideObjects` defaults `true`; a ledge within the new `PlayerMovementConfig.stepHeight`
+  (default 0.4) is stepped up instead of walling; a jump that clears an object's top **lands standing
+  on it** (new `obstacleSupportHeight`, integrated in absolute space so the arc stays continuous over
+  changing ground) instead of sinking inside the box and being rubber-banded out by depenetration; and
+  walking off a drop taller than a step falls under gravity instead of teleporting the feet down.
+- **Movement and vehicles no longer tunnel through solids** (`@jgengine/core`, #1402) — the shared
+  axis clamp in `resolveObstacleStep` is now swept: a step whose target lands *beyond* a box's far
+  face stops on the near face instead of passing straight through (fast cars, dashes/impulses, low-FPS
+  frames, thin walls). The walking broadphase also derives its reach from the scene's actual largest
+  blocking collider instead of a hardcoded 4 m bound, so the player no longer walks through the edges
+  of wide buildings whose center point sat outside the query; and the kinematic-vehicle clamp passes
+  collider `offset`/compound `boxes` through instead of silently dropping them.
 - **Walking collision now depenetrates instead of locking.** `resolveObstacleStep`
   (movement) previously slid along box faces but had no escape once the capsule was
   strictly *inside* a solid box — its per-axis clamps returned zero on both axes and the

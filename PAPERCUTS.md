@@ -156,3 +156,7 @@ bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — comp
 2026-07-19T18:26:23.894Z — claude-fable-5 — Claude
 
 running bun run gate for a touch-controls PR → gate is red on main itself: check-game-shape flags Games/vice-isle/src/editorKinds.ts(+test) from merged #1369 as off-shape, masking my own results; the offending PR landed without gate catching it
+
+2026-07-19T20:38:47.201Z — claude-fable-5 — Claude
+
+Running bun run gate on a fresh branch off origin/main → check-game-shape fails on pre-existing Games/vice-isle/src/editorKinds.ts(+test) placement, aborting the gate before test:all for unrelated PRs

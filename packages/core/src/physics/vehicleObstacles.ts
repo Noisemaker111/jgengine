@@ -62,7 +62,13 @@ export function createVehicleObstacleClamp(options: {
   const radius = options.radius ?? DEFAULT_VEHICLE_RADIUS;
   // Grow-only scratch of Y-normalised solids, reused across ticks so a sustained crash allocates nothing
   // after warm-up. Per-clamp (closure-local) so concurrent cars never share it.
-  const scratch: { position: [number, number, number]; halfExtents?: readonly [number, number, number] }[] = [];
+  const scratch: {
+    position: [number, number, number];
+    halfExtents?: readonly [number, number, number];
+    offset?: readonly [number, number, number];
+    boxes?: CollisionObstacle["boxes"];
+  }[] = [];
+  const offsetScratch: [number, number, number][] = [];
   let pending: VehicleImpact | null = null;
 
   function vehicleView(source: readonly CollisionObstacle[]): readonly CollisionObstacle[] {
@@ -78,6 +84,23 @@ export function createVehicleObstacleClamp(options: {
       entry.position[1] = CAR_BODY_MID_Y;
       entry.position[2] = from.position[2];
       entry.halfExtents = from.halfExtents;
+      // Keep the collider's XZ offset (a fitted body centred away from the placement point) but zero
+      // its Y: with the body pinned to CAR_BODY_MID_Y a vertical offset would push the box out of the
+      // stepper's pedestrian-span gate and the car would drive through a tall building's collider.
+      const fromOffset = from.offset;
+      if (fromOffset !== undefined && (fromOffset[0] !== 0 || fromOffset[2] !== 0)) {
+        let flat = offsetScratch[i];
+        if (flat === undefined) {
+          flat = [0, 0, 0];
+          offsetScratch[i] = flat;
+        }
+        flat[0] = fromOffset[0];
+        flat[2] = fromOffset[2];
+        entry.offset = flat;
+      } else {
+        entry.offset = undefined;
+      }
+      entry.boxes = from.boxes;
     }
     if (scratch.length > n) scratch.length = n;
     return scratch;
