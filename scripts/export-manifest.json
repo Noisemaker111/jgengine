@@ -60,6 +60,7 @@
     "./combat/statusApplication",
     "./combat/telegraph",
     "./combat/thresholdCrossings",
+    "./combat/vfxPresets",
     "./commands/commandRegistry",
     "./crafting/crop",
     "./crafting/production",

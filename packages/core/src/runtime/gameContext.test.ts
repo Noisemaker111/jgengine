@@ -651,6 +651,36 @@ describe("float text and projectile events", () => {
     expect(events[1]!.radius).toBe(6);
   });
 
+  test("the vfx verb renders a named preset with zero color/kind tuning", () => {
+    const ctx = makeContext();
+    const events: CombatVfxEvent[] = [];
+    ctx.game.events.on("combat.vfx", (event) => events.push(event));
+    const caster = ctx.scene.entity.spawn("caster", { position: [0, 0, 0] });
+    const target = ctx.scene.entity.spawn("target", { position: [5, 0, 1] });
+
+    ctx.scene.entity.vfx({ preset: "arrow", from: caster, to: target });
+    expect(events[0]!.kind).toBe("projectile");
+    expect(events[0]!.color).toBe(0xd8c9a0);
+    expect(events[0]!.from).toEqual([0, 0, 0]);
+    expect(events[0]!.to).toEqual([5, 0, 1]);
+
+    ctx.scene.entity.vfx({ preset: "lightning", from: caster, to: target });
+    expect(events[1]!.kind).toBe("beam");
+
+    ctx.scene.entity.vfx({ preset: "explosion", from: [2, 0, 2] });
+    expect(events[2]!.kind).toBe("nova");
+    expect(events[2]!.radius).toBe(3);
+
+    // An explicit field overrides the preset.
+    ctx.scene.entity.vfx({ preset: "fireball", color: 0x00ff00, from: caster, to: target });
+    expect(events[3]!.kind).toBe("projectile");
+    expect(events[3]!.color).toBe(0x00ff00);
+
+    // An unknown flavor still shows something rather than nothing.
+    ctx.scene.entity.vfx({ preset: "totally-made-up", from: caster, to: target });
+    expect(events[4]!.kind).toBe("spark");
+  });
+
   test("settling a projectile emits projectile.settled with origin and hit flag", () => {
     const ctx = makeContext();
     const shots: ProjectileSettledEvent[] = [];
