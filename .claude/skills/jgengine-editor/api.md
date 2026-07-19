@@ -606,7 +606,7 @@
 
 ## @jgengine/editor/handlers/document
 
-- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "add_path" | "set_marker" | "set_note" | "set_meta" | "apply_preset" | "select" | "clear_selecti… — Document, selection, camera, mode, asset placement, and status verbs.
+- `documentHandlers` (const): const documentHandlers: Pick< HandlerTable, | "editor_status" | "set_mode" | "perf_report" | "list_layers" | "list_selection" | "get_marker" | "get_volume" | "set_transform" | "set_volume" | "set_path" | "add_path" | "add_marker" | "set_marker" | "set_note" | "set_meta" | "apply_preset" | "select" |… — Document, selection, camera, mode, asset placement, and status verbs.
 
 ## @jgengine/editor/handlers/grids
 

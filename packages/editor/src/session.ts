@@ -67,6 +67,18 @@ export type EditorBridgeRequest =
       label?: string;
       meta?: Record<string, unknown>;
     }
+  | {
+      method: "add_marker";
+      id: string;
+      kind: string;
+      x: number;
+      y?: number;
+      z: number;
+      color?: string;
+      label?: string;
+      rotationY?: number;
+      meta?: Record<string, unknown>;
+    }
   | { method: "set_marker"; id: string; kind?: string; color?: string; label?: string; rotationY?: number; meta?: Record<string, unknown> }
   | { method: "set_note"; id: string; text?: string; meta?: Record<string, unknown> }
   | { method: "set_meta"; id: string; patch: Record<string, unknown> }

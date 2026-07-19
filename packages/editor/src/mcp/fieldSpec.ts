@@ -64,6 +64,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   set_volume: [req(s("id")), n("radius"), n("height"), n("x"), n("y"), n("z")],
   set_path: [req(s("id")), s("kind"), n("width"), s("color"), s("label"), o("meta")],
   add_path: [req(s("id")), req(oa("points", [req(n("x")), n("y"), req(n("z"))])), s("kind"), n("width"), s("color"), s("label"), o("meta")],
+  add_marker: [req(s("id")), req(s("kind")), req(n("x")), n("y"), req(n("z")), s("color"), s("label"), n("rotationY"), o("meta")],
   set_marker: [req(s("id")), s("kind"), s("color"), s("label"), n("rotationY"), o("meta")],
   set_note: [req(s("id")), s("text"), o("meta")],
   set_meta: [req(s("id")), req(o("patch"))],

@@ -63,6 +63,19 @@ bun packages/editor/src/mcp/cli.ts --game <id> \
 - **Optional:** `kind` (defaults to `route`), `width`, `color`, `label`, `meta` — `meta` is validated against the kind's registered schema, same as `set_path`.
 - **Id collisions re-id.** Placeable ids are one document-global namespace, so a colliding `id` is minted a `_copy` suffix; the response's `result` carries the id the path actually landed under. Patch it afterwards with `set_path`/`set_meta`, or make gameplay reference the stable id/kind rather than copying coordinates.
 
+## Marker authoring
+
+Place a new point marker (a spawn, checkpoint, pickup, bounty, or a game's own custom kind) headlessly with **`add_marker`** — the one-shot counterpart to `add_path`, no `export_document`/`import_document` roundtrip and no hand-editing the JSON. It dispatches the `addMarker` session command (one undoable edit) and mutates `EditorDocument.markers`:
+
+```sh
+bun packages/editor/src/mcp/cli.ts --game <id> \
+  --rpc '{"method":"add_marker","id":"stash_pier","kind":"stash","x":168,"z":232,"label":"Pier'\''s end","meta":{"value":300}}' --save
+```
+
+- **Required:** `id`, `kind`, and `x`/`z` (`y` optional, defaults to `0`). A game reads its own custom kinds off the document (`editorLayers.markers.filter(m => m.kind === "stash")`), so no engine change is needed to introduce one.
+- **Optional:** `color`, `label`, `rotationY`, `meta` — `meta` is validated against the kind's registered schema when one exists (custom kinds skip validation), same as `set_marker`.
+- **Id collisions re-id** exactly as `add_path`; the response's `result` carries the id the marker landed under. Use `place_asset` instead when the marker should carry a mesh (it stamps `catalogId`/`meta.assetId`); `add_marker` is for logical, mesh-free markers.
+
 ## Pure API (`@jgengine/editor`)
 
 ```ts
