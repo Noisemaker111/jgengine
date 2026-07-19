@@ -588,6 +588,7 @@
     "./camera/GameOrbitCamera",
     "./camera/PlayerFov",
     "./camera/cameraBlendMath",
+    "./camera/cameraCollision",
     "./camera/cameraRigs",
     "./camera/fovPreference",
     "./camera/index",
