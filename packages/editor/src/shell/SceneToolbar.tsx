@@ -398,26 +398,37 @@ export function SceneToolbar({
               {entry.label}
             </button>
           ))}
-          <div className={`px-2 pb-1 pt-2 ${MICRO_LABEL}`}>Studios</div>
-          {studioKinds.map((definition) => (
-            <button
-              key={definition.kind}
-              type="button"
-              className={`${MENU_ITEM}`}
-              style={{ color: definition.accent ?? "#34d399" }}
-              onClick={() =>
-                pick(
-                  definition.target === "path"
-                    ? { tool: "path", kind: definition.kind }
-                    : definition.target === "volume"
-                      ? { tool: "volume", kind: definition.kind, shape: "box" }
-                      : { tool: "marker", kind: definition.kind },
-                )
-              }
-            >
-              {definition.label}
-              {definition.target === "path" ? (definition.pathShape === "line" ? " (draw line)" : " (lasso)") : ""}
-            </button>
+          {/* Registered kinds group under their own `addCategory` header (built-ins use "Studios";
+              a game's `definePlaceableMarkerKind({ category })` gets its own section), in first-seen
+              order so a game's custom kinds read as theirs, not lumped under a generic label. */}
+          {[...studioKinds.reduce((groups, definition) => {
+            const category = definition.addCategory ?? "Studios";
+            (groups.get(category) ?? groups.set(category, []).get(category)!).push(definition);
+            return groups;
+          }, new Map<string, typeof studioKinds>())].map(([category, defs]) => (
+            <div key={category}>
+              <div className={`px-2 pb-1 pt-2 ${MICRO_LABEL}`}>{category}</div>
+              {defs.map((definition) => (
+                <button
+                  key={definition.kind}
+                  type="button"
+                  className={`${MENU_ITEM}`}
+                  style={{ color: definition.accent ?? "#34d399" }}
+                  onClick={() =>
+                    pick(
+                      definition.target === "path"
+                        ? { tool: "path", kind: definition.kind }
+                        : definition.target === "volume"
+                          ? { tool: "volume", kind: definition.kind, shape: "box" }
+                          : { tool: "marker", kind: definition.kind },
+                    )
+                  }
+                >
+                  {definition.label}
+                  {definition.target === "path" ? (definition.pathShape === "line" ? " (draw line)" : " (lasso)") : ""}
+                </button>
+              ))}
+            </div>
           ))}
           <div className={`px-2 pb-1 pt-2 ${MICRO_LABEL}`}>Paths & notes</div>
           <button type="button" className={MENU_ITEM} onClick={() => pick({ tool: "path", kind: "route" })}>

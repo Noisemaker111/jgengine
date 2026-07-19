@@ -433,6 +433,35 @@ export function registerSceneKind<TResolved>(definition: SceneKindDefinition<TRe
   registry.set(definition.kind, definition as SceneKindDefinition);
 }
 
+/**
+ * Declare a game's own **click-to-place** marker kind in one call — the light path for logical
+ * markers a game reads off the document by `kind` (a stash, checkpoint, spawn point, bounty…), with
+ * none of a full studio's schema/resolver boilerplate. Registering it makes the kind a click-to-place
+ * tool in the editor's `+ Add` menu (grouped under `category`) and gives its markers an inspector for
+ * any `fields` you pass. Call at module load from a module the editor loads (a game's `editorLayers`
+ * import graph). Rendering is unaffected — the game still reads `kind` off `editorLayers.markers`.
+ */
+export function definePlaceableMarkerKind(options: {
+  kind: string;
+  label: string;
+  /** `+ Add` menu section header this kind groups under. Defaults to `"Custom"`. */
+  category?: string;
+  /** Accent hex for the menu entry + inspector header. */
+  accent?: string;
+  /** Optional inspector fields written into each marker's `meta` (e.g. a payout value). */
+  fields?: readonly ParamField[];
+}): string {
+  registerSceneKind({
+    kind: options.kind,
+    target: "marker",
+    label: options.label,
+    addCategory: options.category ?? "Custom",
+    ...(options.accent === undefined ? {} : { accent: options.accent }),
+    schema: { fields: options.fields ?? [] },
+  });
+  return options.kind;
+}
+
 /** The registered definition for a kind, or undefined if the kind is a plain (non-studio) kind. @internal */
 export function getSceneKind(kind: string): SceneKindDefinition | undefined {
   return registry.get(kind);
