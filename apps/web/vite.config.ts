@@ -15,6 +15,7 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
 const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
 const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
+const coreSrc = fileURLToPath(new URL("../../packages/core/src", import.meta.url));
 
 const GAMES_INDEX_ID = "virtual:jgengine-games";
 
@@ -192,6 +193,9 @@ export default defineConfig({
     alias: [
       { find: /^@jgengine\/github$/, replacement: `${githubSrc}/index.ts` },
       { find: /^@jgengine\/github\/(.*)$/, replacement: `${githubSrc}/$1` },
+      // CI's web-build job never builds package dist; resolve core from source like github above.
+      { find: /^@jgengine\/core$/, replacement: `${coreSrc}/index.ts` },
+      { find: /^@jgengine\/core\/(.*)$/, replacement: `${coreSrc}/$1` },
     ],
   },
   plugins: [

@@ -921,6 +921,7 @@
     "./templates/editorWorkspace",
     "./templates/gameFiles",
     "./templates/names",
-    "./templates/types"
+    "./templates/types",
+    "./upgrade"
   ]
 }
