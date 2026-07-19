@@ -188,3 +188,7 @@ git-stashing core files mid-session to capture a before screenshot → Vite dev 
 2026-07-19T23:30:14.694Z — claude-fable-5 — Claude
 
 running bun run gate on a clean city-generation branch → check-game-shape fails on pre-existing main state (Games/vice-isle/src/editorKinds.ts must live under src/game/), so gate can never be green regardless of the change under test
+
+2026-07-19T23:44:43.990Z — claude-fable-5 — Claude
+
+proving city-placement fixes → bun run shoot of the playground page yields a full-page hero shot where the city viewport is a tiny corner; had to hand-roll a canvas plan renderer (streets + plot/massing rects + violation highlighting) to get legible before/after evidence — a first-class plan/diagnostic view (or shoot target) for generateCity output would make this one command
