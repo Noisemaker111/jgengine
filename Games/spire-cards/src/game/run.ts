@@ -1,4 +1,5 @@
 import { pileRng, shuffleWithRng } from "@jgengine/core/cards/cardPile";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
@@ -70,6 +71,12 @@ export function createRunStore(combat: CombatStore): RunStore {
     notify();
   }
 
+  // Publish the engine phase after every ctx-bearing mutation so the shell knows a
+  // finished climb from a live one (victory/defeat screens are `ended`, never `playing`).
+  function publishPhase(ctx: GameContext): void {
+    setGamePhase(ctx, phase === "victory" || phase === "defeat" ? "ended" : "playing");
+  }
+
   function advance(ctx: GameContext): void {
     encounterIndex += 1;
     phase = "combat";
@@ -107,15 +114,18 @@ export function createRunStore(combat: CombatStore): RunStore {
       rewardOptions = [];
       combat.start(ctx, currentEnemy(), { freshDeck: true });
       sync();
+      publishPhase(ctx);
     },
     canPlay(cardId) {
       return combat.canPlay(cardId);
     },
     playCard(ctx, cardId) {
       combat.playCard(ctx, cardId);
+      publishPhase(ctx);
     },
     endTurn(ctx) {
       combat.endTurn(ctx);
+      publishPhase(ctx);
     },
     canChooseReward(cardType) {
       return phase === "reward" && rewardOptions.some((card) => card.type === cardType);
@@ -124,10 +134,12 @@ export function createRunStore(combat: CombatStore): RunStore {
       if (!this.canChooseReward(cardType)) return;
       combat.addReward(ctx, cardType);
       advance(ctx);
+      publishPhase(ctx);
     },
     skipReward(ctx) {
       if (phase !== "reward") return;
       advance(ctx);
+      publishPhase(ctx);
     },
   };
 }

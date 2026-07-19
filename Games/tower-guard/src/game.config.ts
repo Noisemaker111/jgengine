@@ -13,6 +13,7 @@ import { physics, world } from "./world";
 
 export const game = defineGame({
   name: "Tower Guard",
+  lifecycle: "always-live",
   assets,
   world,
   physics,

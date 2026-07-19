@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "../runtime/gameContext";
 import { playControlsActive } from "./controlGate";
-import { GAME_PHASE_STORE_KEY, gamePhase, isPlaying, setGamePhase } from "./gamePhase";
+import { GAME_PHASE_STORE_KEY, gamePhase, isPlaying, setGamePhase, syncLifecyclePhase } from "./gamePhase";
 
 function fakeCtx(): GameContext {
   const map = new Map<string, unknown>();
@@ -32,5 +32,12 @@ describe("gamePhase", () => {
     setGamePhase(ctx, "ended");
     expect(playControlsActive(ctx)).toBe(false);
     expect(isPlaying(ctx)).toBe(false);
+  });
+
+  test('syncLifecyclePhase treats the "always-live" declaration as no lifecycle sync', () => {
+    const ctx = fakeCtx();
+    syncLifecyclePhase(ctx, "always-live");
+    expect(ctx.game.store.get(GAME_PHASE_STORE_KEY)).toBeUndefined();
+    expect(gamePhase(ctx)).toBe("playing");
   });
 });

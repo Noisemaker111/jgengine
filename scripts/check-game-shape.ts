@@ -43,6 +43,16 @@ function importsAuthoredScene(source: string): boolean {
   return /import\s[^;]*\bAuthoredScene\b[^;]*\sfrom\s/.test(source);
 }
 
+/** The game states its run-phase story in config: a `lifecycle` declaration (config or `"always-live"`). */
+function declaresLifecycle(configSource: string): boolean {
+  return /\blifecycle\b/.test(configSource);
+}
+
+/** The game publishes phase transitions itself via the core contract. */
+function callsSetGamePhase(source: string): boolean {
+  return /\bsetGamePhase\s*\(/.test(source);
+}
+
 for (const name of readdirSync(gamesDir)) {
   const gameDir = join(gamesDir, name);
   if (!statSync(gameDir).isDirectory()) continue;
@@ -118,12 +128,23 @@ for (const name of readdirSync(gamesDir)) {
     }
   }
 
+  let publishesPhase = existsSync(configPath) && declaresLifecycle(readFileSync(configPath, "utf8"));
   for (const file of sourceFilesUnder(srcDir)) {
-    if (importsAuthoredScene(readFileSync(file, "utf8"))) {
+    const source = readFileSync(file, "utf8");
+    if (importsAuthoredScene(source)) {
       problems.push(
         `${rel(file)}: imports AuthoredScene — base scene ownership belongs to defineGame({ editorLayers }); WorldOverlay is VFX-only`,
       );
     }
+    if (callsSetGamePhase(source)) publishesPhase = true;
+  }
+  if (!publishesPhase) {
+    problems.push(
+      `${rel(configPath)}: no run-phase story — the shell must never guess whether a menu or a live run is on screen ` +
+        `(an unset phase defaults to "playing" and paints touch controls over menus/results). Declare ` +
+        `lifecycle: {...} (or lifecycle: "always-live" if the game truly has no menu/pause/end screens) in ` +
+        `game.config.ts, or publish transitions with setGamePhase from @jgengine/core/game/gamePhase.`,
+    );
   }
 }
 
@@ -141,7 +162,9 @@ if (problems.length > 0) {
       `src/index.css for Tailwind (importing "./style.css") and a "dev" script in package.json to launch it.\n` +
       `src/style.css holds the game-specific CSS only — no "@import \\"tailwindcss\\"" — so the /play\n` +
       `runner's per-game lazy CSS chunk stays small instead of re-shipping the shared Tailwind base.\n` +
-      `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n`,
+      `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n` +
+      `Every game states its run-phase story: a lifecycle declaration in game.config.ts (LifecycleConfig\n` +
+      `or "always-live") or setGamePhase transitions — the shell never guesses menu vs live run.\n`,
   );
   process.exit(1);
 }

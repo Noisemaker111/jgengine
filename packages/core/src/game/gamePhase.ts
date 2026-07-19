@@ -25,7 +25,11 @@ export function setGamePhase(ctx: GameContext, phase: GamePhase): void {
   setPlayControlsActive(ctx, phase === "playing");
 }
 
-/** Current phase; defaults to `playing` when unset so always-live games need no wiring. */
+/**
+ * Current phase; defaults to `playing` when unset so `lifecycle: "always-live"` games need no wiring.
+ * A game never leaves this contract implicit — the game-shape gate requires every game to declare a
+ * `lifecycle` (config or `"always-live"`) or publish via {@link setGamePhase}.
+ */
 export function gamePhase(ctx: GameContext): GamePhase {
   const value = ctx.game.store.get(GAME_PHASE_STORE_KEY);
   return value === "menu" || value === "paused" || value === "ended" ? value : "playing";
@@ -44,8 +48,11 @@ export function isPlaying(ctx: GameContext): boolean {
  *
  * @internal
  */
-export function syncLifecyclePhase(ctx: GameContext, lifecycle: LifecycleConfig | undefined): void {
-  if (lifecycle === undefined) return;
+export function syncLifecyclePhase(
+  ctx: GameContext,
+  lifecycle: LifecycleConfig | "always-live" | undefined,
+): void {
+  if (lifecycle === undefined || lifecycle === "always-live") return;
   const desired = lifecycle.phaseOf(lifecycle.store.read(ctx));
   if (gamePhase(ctx) !== desired) setGamePhase(ctx, desired);
 }

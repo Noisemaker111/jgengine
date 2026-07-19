@@ -11,6 +11,7 @@ import { DAY_LENGTH, physics, world } from "./world";
 
 export const game = defineGame({
   name: "Starhome",
+  lifecycle: "always-live",
   world,
   physics,
   input: keybinds,

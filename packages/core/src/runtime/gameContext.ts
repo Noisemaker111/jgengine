@@ -167,7 +167,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
 
   const commandRegistry = createCommandRegistry<GameContext>();
-  if (definition.lifecycle !== undefined) {
+  if (definition.lifecycle !== undefined && definition.lifecycle !== "always-live") {
     const lifecycle = definition.lifecycle;
     commandRegistry.define(lifecycle.commands?.start ?? "start", {
       apply(state, input) {

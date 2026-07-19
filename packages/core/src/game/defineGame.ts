@@ -211,8 +211,15 @@ export interface GameDefinition<
   persist?: boolean | PersistConfig;
   ui?: unknown;
   loop?: GameLoop<GameContext>;
-  /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */
-  lifecycle?: LifecycleConfig;
+  /**
+   * The game's run-phase story — every game must state one; the game-shape gate refuses silence so the
+   * shell never guesses (guessing is how a touch dock ends up painted over a title screen). Either a
+   * declarative start/restart {@link LifecycleConfig} (the engine owns the command glue and phase sync),
+   * or the literal `"always-live"`: a truthful assertion that this game has no menu/pause/end screens and
+   * is live from boot (phase stays `"playing"`; no lifecycle commands are registered). Games with their
+   * own hand-rolled flow instead publish transitions via `setGamePhase` — that also satisfies the gate.
+   */
+  lifecycle?: LifecycleConfig | "always-live";
   /**
    * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
    * wire. Applied on every authoritative host (ws, Convex, loopback); clients need not set it. Unset

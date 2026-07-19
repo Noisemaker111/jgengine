@@ -10,6 +10,7 @@ import { physics, world } from "./world";
 
 export const game = defineGame({
   name: "Studio Showcase",
+  lifecycle: "always-live",
   world,
   physics,
   input: keybinds,

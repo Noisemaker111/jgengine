@@ -16,6 +16,7 @@ import { physics, world } from "./world";
 
 export const game = defineGame({
   name: "Duet Keys",
+  lifecycle: "always-live",
   world,
   physics,
   assets,

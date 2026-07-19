@@ -26,6 +26,8 @@ custom stat ids, immutable store writes, multiple level events, and JSON resume.
 
 Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. Keep boot/join in the game loop only when it is truly lifecycle glue. System ordering, frequency, and serialization are explicit; avoid a giant per-frame callback.
 
+Every game states its run-phase story — the shell never guesses menu vs live run (guessing paints touch controls over menus). Declare `lifecycle` in `game.config.ts`: a `LifecycleConfig` for menu/run/end flows, or the literal `"always-live"` when the game truly has no menu/pause/end screens. Hand-rolled flows instead publish transitions via `setGamePhase`. The game-shape gate refuses silence.
+
 ## Design rules
 
 - Caller data owns nouns, formulas, tables, costs, tiers, and content.
