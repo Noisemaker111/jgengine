@@ -87,6 +87,7 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
       build: "vite build",
       desktop: "jgengine desktop",
       preview: "vite preview",
+      shoot: "node scripts/shoot.mjs",
       "check-types": "tsc --noEmit -p tsconfig.json",
       test: "bun test src",
     },
@@ -129,6 +130,7 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       dev: "vite",
       build: "vite build",
       desktop: "jgengine desktop",
+      shoot: "node scripts/shoot.mjs",
       "check-types": "tsgo --noEmit -p tsconfig.json",
       test: "bun test src",
     },
@@ -202,14 +204,17 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 )}
 `;
 
-const indexCss = (variant: TemplateVariant) => `@import "tailwindcss";
+// Tailwind v4 only emits utility classes it finds in @source-scanned files. The F2+E editor summon
+// (GameHost) mounts @jgengine/editor's chrome into THIS page, so its classes must be scanned here too
+// — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
+const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss";
 @import "./style.css";
 ${
   variant === "in-repo"
     ? `@source "../../../packages/react/src";
-@source "../../../packages/shell/src";`
+@source "../../../packages/shell/src";${editor ? `\n@source "../../../packages/editor/src";` : ""}`
     : `@source "../node_modules/@jgengine/react/dist";
-@source "../node_modules/@jgengine/shell/dist";`
+@source "../node_modules/@jgengine/shell/dist";${editor ? `\n@source "../node_modules/@jgengine/editor/dist";` : ""}`
 }
 `;
 
@@ -219,6 +224,416 @@ body,
   height: 100%;
   margin: 0;
   background: #0a0a0a;
+}
+`;
+
+const gitignore = `node_modules/
+dist/
+shots/
+*.log
+.DS_Store
+`;
+
+// Dependency-free WebGL screenshot. Ships with every scaffold so a game built
+// outside the monorepo still has a reliable visual-capture rung (the engine's
+// own `bun run shoot` lives in apps/dev + scripts/ and does not travel with a
+// created game). Kept free of backticks and \${ so it embeds cleanly here.
+const shootMjs = `#!/usr/bin/env node
+/**
+ * shoot.mjs — dependency-free WebGL/R3F screenshot for this JGengine game.
+ *
+ * Why this exists: generic "screenshot this tab" tools routinely fail on a
+ * WebGL canvas. They grab a frame before the GPU has drawn, and
+ * React-Three-Fiber's canvas stays stuck at its 300x150 default whenever its
+ * parent never reports a real size. This script drives your own Vite dev
+ * server through Chrome's DevTools Protocol instead: it forces a real viewport
+ * (so the canvas sizes correctly), waits for an honestly-painted frame, then
+ * pulls pixels with Page.captureScreenshot. No Playwright, no npm deps — just
+ * Chrome/Chromium + Node 22+ (or Bun).
+ *
+ *   node scripts/shoot.mjs                          # 1600x900 -> shots/shot.png
+ *   node scripts/shoot.mjs --device mobile          # 390x844
+ *   node scripts/shoot.mjs --out shots/hud.png --settle 1500
+ *   node scripts/shoot.mjs --url http://127.0.0.1:5173/?mode=editor
+ *
+ * Runs under 'bun scripts/shoot.mjs' too. If Chrome is not auto-detected, set
+ * CHROME_PATH. The dev server is started for you when it is not already up.
+ */
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+
+const DEVICES = {
+  desktop: { width: 1600, height: 900, dsf: 1, mobile: false },
+  mobile: { width: 390, height: 844, dsf: 2, mobile: true },
+  "mobile-landscape": { width: 844, height: 390, dsf: 2, mobile: true },
+};
+
+const HELP = [
+  "shoot.mjs — screenshot this JGengine game (WebGL-safe, dependency-free)",
+  "",
+  "  --url <url>       page to capture (default http://127.0.0.1:<port>)",
+  "  --port <n>        dev-server port to use/start (default 5173)",
+  "  --device <name>   desktop | mobile | mobile-landscape (default desktop)",
+  "  --width <n>       viewport width override",
+  "  --height <n>      viewport height override",
+  "  --out <path>      output PNG (default shots/shot.png)",
+  "  --settle <ms>     extra wait after first honest frame (default 2000)",
+  "  --timeout <s>     max seconds to wait for a sized canvas (default 60)",
+  "  --help            show this text",
+  "",
+  "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
+].join("\\n");
+
+function parseArgs(argv) {
+  const args = {
+    url: undefined,
+    port: 5173,
+    device: "desktop",
+    width: undefined,
+    height: undefined,
+    out: undefined,
+    settle: 2000,
+    timeoutMs: 60_000,
+    help: false,
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const v = argv[i];
+    if (v === "--url") args.url = argv[++i];
+    else if (v === "--port") args.port = Number(argv[++i]);
+    else if (v === "--device") args.device = argv[++i];
+    else if (v === "--width") args.width = Number(argv[++i]);
+    else if (v === "--height") args.height = Number(argv[++i]);
+    else if (v === "--out") args.out = argv[++i];
+    else if (v === "--settle") args.settle = Number(argv[++i]);
+    else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
+    else if (v === "--help" || v === "-h") args.help = true;
+    else throw new Error("unknown argument: " + v);
+  }
+  if (!DEVICES[args.device]) {
+    throw new Error("--device must be desktop, mobile, or mobile-landscape (got " + args.device + ")");
+  }
+  return args;
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function findChrome() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    process.env.JG_CHROME,
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe",
+    "C:\\\\Program Files (x86)\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  ];
+  for (const c of candidates) {
+    if (c !== undefined && c.length > 0 && existsSync(c)) return c;
+  }
+  // Playwright's bundled Chromium (also present in many CI/agent images).
+  const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? "/opt/pw-browsers";
+  if (existsSync(root)) {
+    const direct = join(root, "chromium");
+    if (existsSync(direct) && statSync(direct).isFile()) return direct;
+    for (const entry of readdirSync(root)) {
+      if (!entry.startsWith("chromium")) continue;
+      for (const c of [
+        join(root, entry, "chrome-linux", "chrome"),
+        join(root, entry, "chrome-linux", "headless_shell"),
+      ]) {
+        if (existsSync(c)) return c;
+      }
+    }
+  }
+  throw new Error("No Chrome/Chromium found. Install Chrome or set CHROME_PATH.");
+}
+
+function launchChrome(port) {
+  const chrome = findChrome();
+  const userDataDir = join(tmpdir(), "jg-shoot-" + process.pid + "-" + port);
+  const child = spawn(
+    chrome,
+    [
+      "--remote-debugging-port=" + port,
+      "--user-data-dir=" + userDataDir,
+      "--headless=new",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
+      "--mute-audio",
+      "--hide-scrollbars",
+      // Software WebGL so the scene renders even with no GPU (headless/CI).
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+      "--ignore-gpu-blocklist",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "about:blank",
+    ],
+    { stdio: "ignore" },
+  );
+  return child;
+}
+
+async function isUp(url) {
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(1000) });
+    return r.ok || r.status === 404; // a served-but-routed page still means Vite is up
+  } catch {
+    return false;
+  }
+}
+
+async function waitForDebugger(port, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const r = await fetch("http://127.0.0.1:" + port + "/json/version", { signal: AbortSignal.timeout(500) });
+      if (r.ok) return;
+    } catch {
+      /* retry */
+    }
+    await sleep(150);
+  }
+  throw new Error("Chrome debugger never came up on port " + port);
+}
+
+/** Start the game's Vite dev server if nothing is already serving base. */
+async function ensureDevServer(base, port) {
+  if (await isUp(base)) return null;
+  const bin = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite");
+  if (!existsSync(bin)) {
+    throw new Error(
+      "nothing is serving " + base + " and node_modules/.bin/vite is missing.\\n" +
+        "Start your dev server first (bun dev) or run 'bun install'.",
+    );
+  }
+  const child = spawn(bin, ["--port", String(port), "--host", "127.0.0.1", "--strictPort"], {
+    stdio: "ignore",
+    detached: process.platform !== "win32",
+  });
+  for (let i = 0; i < 120; i += 1) {
+    await sleep(500);
+    if (await isUp(base)) return child;
+  }
+  child.kill();
+  throw new Error("dev server failed to start on port " + port);
+}
+
+class Cdp {
+  constructor(ws) {
+    this.ws = ws;
+    this.nextId = 0;
+    this.pending = new Map();
+    ws.addEventListener("message", (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(typeof event.data === "string" ? event.data : "");
+      } catch {
+        return;
+      }
+      if (msg.id === undefined) return;
+      const waiter = this.pending.get(msg.id);
+      if (waiter === undefined) return;
+      this.pending.delete(msg.id);
+      if (msg.error !== undefined) waiter.reject(new Error(msg.error.message));
+      else waiter.resolve(msg.result ?? {});
+    });
+  }
+
+  static connect(url, timeoutMs) {
+    return new Promise((res, rej) => {
+      const ws = new WebSocket(url);
+      const timer = setTimeout(() => {
+        ws.close();
+        rej(new Error("CDP connect timeout"));
+      }, timeoutMs);
+      ws.addEventListener("open", () => {
+        clearTimeout(timer);
+        res(new Cdp(ws));
+      });
+      ws.addEventListener("error", () => {
+        clearTimeout(timer);
+        rej(new Error("CDP connect error"));
+      });
+    });
+  }
+
+  send(method, params) {
+    const id = ++this.nextId;
+    return new Promise((res, rej) => {
+      this.pending.set(id, { resolve: res, reject: rej });
+      this.ws.send(JSON.stringify({ id, method, params }));
+    });
+  }
+
+  async evaluate(expression, opts) {
+    const result = await this.send("Runtime.evaluate", {
+      expression,
+      returnByValue: true,
+      ...(opts && opts.awaitPromise ? { awaitPromise: true } : {}),
+    });
+    return result.result ? result.result.value : undefined;
+  }
+
+  close() {
+    this.ws.close();
+  }
+}
+
+async function openPage(debugPort) {
+  for (const method of ["PUT", "GET"]) {
+    try {
+      const r = await fetch("http://127.0.0.1:" + debugPort + "/json/new?about:blank", {
+        method,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (r.ok) {
+        const info = await r.json();
+        if (info.webSocketDebuggerUrl) return Cdp.connect(info.webSocketDebuggerUrl, 15_000);
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  const list = await fetch("http://127.0.0.1:" + debugPort + "/json/list", { signal: AbortSignal.timeout(5000) });
+  const pages = await list.json();
+  const page = pages.find((p) => p.type === "page" && p.webSocketDebuggerUrl);
+  if (!page) throw new Error("no CDP page target available");
+  return Cdp.connect(page.webSocketDebuggerUrl, 15_000);
+}
+
+// Reads the honesty signals in one round-trip: the optional jgCapture handshake
+// (set by some hosts) plus the live canvas element size + backing-store size.
+const HONESTY_EXPR =
+  "(function(){var r=document.documentElement;var c=document.querySelector('canvas');" +
+  "return {cap:r.dataset.jgCapture||null,err:r.dataset.jgCaptureError||null," +
+  "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0};})()";
+const RAF_EXPR =
+  "new Promise(function(res){requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});})";
+
+function writePngAtomic(outPath, bytes) {
+  mkdirSync(dirname(outPath), { recursive: true });
+  const tmp = outPath + ".tmp";
+  writeFileSync(tmp, bytes);
+  if (existsSync(outPath)) unlinkSync(outPath);
+  renameSync(tmp, outPath);
+}
+
+async function waitForHonestFrame(session, url, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let last;
+  while (Date.now() < deadline) {
+    const s = await session.evaluate(HONESTY_EXPR);
+    last = s;
+    if (s && s.cap === "error") throw new Error("page reported a capture error: " + (s.err || "unknown"));
+    if (s && s.cap === "ready") return s;
+    if (s && s.hasCanvas && s.cw > 10 && s.ch > 10) return s;
+    await sleep(100);
+  }
+  if (last && last.hasCanvas) return last; // canvas exists but small — capture it anyway, warn below
+  throw new Error(
+    "timed out after " +
+      Math.round(timeoutMs / 1000) +
+      "s waiting for a sized <canvas> at " +
+      url +
+      " — is the game being served there?",
+  );
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    console.log(HELP);
+    return 0;
+  }
+
+  const profile = DEVICES[args.device];
+  const width = Number.isFinite(args.width) ? args.width : profile.width;
+  const height = Number.isFinite(args.height) ? args.height : profile.height;
+  const base = "http://127.0.0.1:" + args.port;
+  const target = new URL(args.url ?? base);
+  target.searchParams.set("capture", "1"); // honored by hosts that set data-jg-capture; ignored otherwise
+  const url = target.toString();
+  const outPath = resolve(args.out ?? join("shots", "shot.png"));
+
+  const server = await ensureDevServer(args.url ?? base, args.port);
+  const debugPort = 9200 + Math.floor((Date.now() % 700));
+  const chrome = launchChrome(debugPort);
+
+  let exitCode = 0;
+  try {
+    await waitForDebugger(debugPort, 30_000);
+    const session = await openPage(debugPort);
+    try {
+      await session.send("Page.enable");
+      await session.send("Runtime.enable");
+      // The fix for R3F's 300x150 default: give the page a real viewport BEFORE it lays out.
+      await session.send("Emulation.setDeviceMetricsOverride", {
+        width,
+        height,
+        deviceScaleFactor: profile.dsf,
+        mobile: profile.mobile,
+      });
+      await session.send("Page.navigate", { url });
+      const frame = await waitForHonestFrame(session, url, args.timeoutMs);
+      if (frame && frame.bw === 300 && frame.bh === 150) {
+        console.error(
+          "shoot: warning — canvas backing store is 300x150 (React-Three-Fiber's unsized default). " +
+            "Its parent has no real size; ensure html/body/#root have height:100%.",
+        );
+      }
+      // Let the scene paint a couple of frames, then settle for late assets.
+      await session.evaluate(RAF_EXPR, { awaitPromise: true });
+      await sleep(Number.isFinite(args.settle) ? args.settle : 2000);
+      const shot = await session.send("Page.captureScreenshot", {
+        format: "png",
+        fromSurface: true,
+        captureBeyondViewport: false,
+      });
+      if (typeof shot.data !== "string" || shot.data.length === 0) {
+        throw new Error("Page.captureScreenshot returned no data");
+      }
+      writePngAtomic(outPath, Buffer.from(shot.data, "base64"));
+      console.log(outPath + " (" + width + "x" + height + " " + args.device + ")");
+    } finally {
+      session.close();
+    }
+  } catch (error) {
+    exitCode = 1;
+    console.error("shoot: " + (error instanceof Error ? error.message : String(error)));
+  } finally {
+    try {
+      chrome.kill();
+    } catch {
+      /* ignore */
+    }
+    if (server) {
+      try {
+        if (process.platform !== "win32" && server.pid) process.kill(-server.pid, "SIGKILL");
+        else server.kill();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return exitCode;
+}
+
+try {
+  process.exit(await main());
+} catch (error) {
+  console.error("shoot: " + (error instanceof Error ? error.message : String(error)));
+  process.exit(1);
 }
 `;
 
@@ -587,21 +1002,34 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 \`GameHost\` owns the F2 chord family in every JGengine game, and it is **your** toolkit, not just the player's:
 
-- **F2+E — editor mode** (also \`?mode=editor\`): the scene editor on \`src/editor.scene.json\` — place spawns, props, zones, paths, vegetation; Ctrl+S saves.
-- **F2+D — debug mode**: engine devtools overlay (perf, logs, keybinds, live tunables with Save-to-source).
+- **F2+E — editor mode** (also \`?mode=editor\`): the scene editor on \`src/editor.scene.json\` — place spawns, props, zones, paths, vegetation; Ctrl+S saves. Leave it via the top-bar **Exit to game** button or **F2+Q**; the mode mirrors to the URL, so stripping \`?mode=editor\` (and reloading) also drops back to the game.
+- **F2+D — debug mode** (also \`?debug\`): engine devtools overlay (perf, logs, keybinds, live tunables with Save-to-source). Open/close mirrors to the \`?debug\` param — share the URL to reopen it, strip the param to close.
 - **F2+C — canvas mode**: drag/resize HUD panels; layout persists to the scene document's \`ui.panels\`.
 
 Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. See the \`jgengine-editor\` skill.
+
+## Hit an engine bug or gap? File it upstream, don't just work around it
+
+\`@jgengine/*\` is the shared engine, not your game. When a primitive misbehaves, clamps or ignores a value you passed, lacks a seam your game needs, or its API misled you into a false negative, that is an **engine** problem — every other game hits it too. Do not bury the finding in a local workaround comment, a hardcoded fallback, or your own notes. Keep your game moving with a minimal workaround if you must, then **file a short issue** at https://github.com/Noisemaker111/jgengine/issues (open it with your GitHub tooling, or hand the user the link) so it gets fixed once, for everyone. Include:
+
+- **What** you were doing and what you expected.
+- **Cause** — the underlying behavior you traced, precisely. e.g. *"\`HeadlessRunner.step(dt)\` clamps game-dt to \`maxStepSeconds\` (default 0.05s) regardless of the dt passed, so time-based tests need ~20 steps per second of game-time."*
+- **Why** it bit you — the false negative, wrong result, wasted time, or blocked path it caused.
+- **How** to reproduce (smallest steps) and, if you can see it, a suggested fix or the missing seam.
+- A **screenshot** whenever the problem is visual.
+
+Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing capability. One clear report beats a paragraph of workaround apologetics — the fix belongs in the engine, not in your game.
 
 ## Project rules
 
 - Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`index.css\`, \`style.css\` plus optional \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`; everything else under \`src/game/\`.
 - Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
-- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
-}, or the HUD is silently unstyled.
+}, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
+- Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
 `;
 
 export {
@@ -614,12 +1042,14 @@ export {
   gameConfigTs,
   gameModelsTs,
   gameUiTsx,
+  gitignore,
   indexCss,
   indexHtml,
   indexTsx,
   inRepoPackageJson,
   loopTs,
   mainTsx,
+  shootMjs,
   standalonePackageJson,
   styleCss,
   tsconfigJson,

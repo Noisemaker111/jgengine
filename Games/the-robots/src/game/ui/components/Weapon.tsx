@@ -2,7 +2,7 @@ import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../../ammo";
-import { gunById, magState, type GunDef } from "../../handroll";
+import { gunById, isReloading, magLoaded, type GunDef } from "../../handroll";
 import { ELEMENT_COLORS, RARITY_COLORS } from "../../palette";
 import { lastPickupStore, selectedSlotStore } from "../../stores";
 
@@ -19,7 +19,9 @@ export function AmmoPlate() {
   const { userId } = usePlayer();
   const selected = useSelectedSlot();
   const slots = useInventory("hotbar");
-  const nowMs = useNowMs();
+  // Subscribe to the frame clock so the loaded count and reload state refresh live as the player fires;
+  // magazine state is plain per-context data, not a reactive store, so this drives the re-read each frame.
+  useNowMs();
   const stack = slots[selected] ?? null;
   const gun = stack === null ? undefined : gunById(stack.itemId);
   const reserve = useEntityStat(userId, AMMO_STAT_IDS[gun?.ammo ?? "pistol"]);
@@ -28,8 +30,8 @@ export function AmmoPlate() {
   if (gun === undefined) {
     return <div className="text-sm font-bold uppercase tracking-widest text-stone-400">No weapon — find a gun</div>;
   }
-  const mag = magState(ctx, gun);
-  const reloading = mag.reloadingUntilMs > nowMs;
+  const loaded = magLoaded(ctx, gun);
+  const reloading = isReloading(ctx, gun);
 
   return (
     <div className="flex flex-col items-end gap-0.5">
@@ -50,10 +52,10 @@ export function AmmoPlate() {
       <div className="flex items-baseline gap-2">
         <span
           className={`text-5xl font-black tabular-nums drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] ${
-            reloading ? "animate-pulse text-amber-300" : mag.inMag === 0 ? "animate-pulse text-rose-400" : "text-stone-50"
+            reloading ? "animate-pulse text-amber-300" : loaded === 0 ? "animate-pulse text-rose-400" : "text-stone-50"
           }`}
         >
-          {reloading ? "—" : mag.inMag}
+          {reloading ? "—" : loaded}
         </span>
         <span className="text-lg font-bold tabular-nums text-stone-400">/ {Math.round(reserve?.current ?? 0)}</span>
       </div>

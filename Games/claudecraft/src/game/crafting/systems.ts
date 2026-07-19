@@ -1,3 +1,5 @@
+import { craft, type CraftContext } from "@jgengine/core/crafting/recipe";
+import type { InventoryLayout } from "@jgengine/core/inventory/inventoryModel";
 import { evaluateSkillCheck, type SkillCheckConfig } from "@jgengine/core/interaction/skillCheck";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { seededRng } from "@jgengine/core/random/rng";
@@ -6,9 +8,14 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { FISH_TABLE, FISHING_SPOTS, RECIPES, RECIPE_SKILL } from "./catalog";
 import { INTERACT_RANGE } from "../math/combat";
+import { inventories, traits } from "../inventories";
 import { professionsOf } from "../professions/gathering";
 import { fishingStore, professionsStore } from "../session/stores";
 import { ZONES } from "../world/zones";
+
+// Same layout + traits the live inventory set is built from (inventories.ts), so
+// core `craft()` computes byte-identical slot state to the facade's take/put.
+const BAGS_LAYOUT: InventoryLayout = { slots: inventories.bags.slots, accepts: inventories.bags.accepts };
 
 export { RECIPES, RECIPE_SKILL };
 
@@ -72,17 +79,23 @@ export function craftRecipe(ctx: GameContext, userId: string, recipeId: string):
     say(`Requires crafting ${skillReq}`);
     return;
   }
-  for (const input of recipe.inputs) {
-    if (ctx.player.inventory.count("bags", input.itemId) < input.count) {
-      say(`Missing ${input.itemId.replaceAll("_", " ")}`);
-      return;
+  // Input-check + input-consume + output-grant resolve through core `craft()`.
+  // The handroll never gated on stations, so satisfy any station the recipe names
+  // (recipes carry no `stationRange`/`requires`, so no-station/locked never fire).
+  const context: CraftContext =
+    recipe.station !== undefined ? { stations: [{ catalogId: recipe.station, position: [0, 0] }] } : {};
+  const inventory = ctx.player.inventory;
+  const result = craft(inventory.state("bags"), BAGS_LAYOUT, traits, recipe, context);
+  if (result.status === "rejected") {
+    if (result.reason === "missing-inputs") {
+      const first = result.missing[0];
+      if (first !== undefined) say(`Missing ${first.itemId.replaceAll("_", " ")}`);
+    } else if (result.reason === "no-output-space") {
+      say("Bags are full");
     }
+    return;
   }
-  for (const input of recipe.inputs) ctx.player.inventory.take("bags", input.itemId, input.count);
-  for (const output of recipe.outputs) {
-    const rejection = ctx.player.inventory.put("bags", output.itemId, output.count);
-    if (rejection !== null) say("Bags are full");
-  }
+  inventory.replaceState("bags", result.state);
   if (skills.crafting < Math.min(300, skillReq + 40)) {
     professionsStore.write(ctx, userId, { ...skills, crafting: skills.crafting + 1 });
   }

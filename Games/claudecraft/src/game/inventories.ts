@@ -1,6 +1,6 @@
 import type { InventoryDeclaration } from "@jgengine/core/game/defineGame";
 
-const traits = {
+export const traits = {
   stackLimit: (itemId: string) => stackLimits.get(itemId) ?? 1,
 };
 

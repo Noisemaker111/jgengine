@@ -13,11 +13,11 @@ import {
   enterDowned,
   ffylExpired,
   ffylPhase,
-  finishReloads,
   markRespawned,
   rollGun,
   secondWind,
   tickDots,
+  tickReloads,
   tickShields,
 } from "./game/handroll";
 import { itemUseHandlers } from "./game/items/use-handlers";
@@ -268,7 +268,7 @@ function onTick(ctx: GameContext, dt: number): void {
   tickEnemies(ctx, dt);
   tickShields(ctx, nowMs, dt);
   tickDots(ctx, nowMs);
-  finishReloads(ctx, nowMs);
+  tickReloads(ctx, dt);
   tickFfyl(ctx, nowMs);
   tickZoneAndStations(ctx, nowMs);
 }

@@ -18,6 +18,8 @@ export interface ModelAssetRef {
   collisionMesh?: CollisionMeshData;
   /** Authored asset-space metadata — canonical facing (degrees), source-unit scale, footprint, anchor, bounds, and rotation policy. The upstream owner of placement corrections; see {@link "scene/assetSpace".AssetSpace}. */
   space?: AssetSpace;
+  /** Animation clip names read from the GLB at asset reindex. Lets the shell auto-animate rigged catalog assets (semantic clip roles → default idle/walk/run + one-shots) with no game-side clip strings. */
+  clips?: readonly string[];
 }
 
 /**

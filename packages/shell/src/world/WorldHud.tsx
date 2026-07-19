@@ -102,6 +102,8 @@ export interface WorldNameplatesProps {
   maxDistance?: number;
   /** Minimum ms between position/health refreshes — trades smoothness for fewer re-renders at scale. Default 120. */
   tickMs?: number;
+  /** Draw the built-in HP bar under the name. Set `false` for a name-only plate when the game already draws its own health bar (its own HUD, or `worldHealthBars`). Default true. */
+  showHealth?: boolean;
   className?: string;
   nameplateClassName?: string;
   nameClassName?: string;
@@ -126,6 +128,7 @@ export function WorldNameplates({
   resolveRole,
   maxDistance = 40,
   tickMs = 120,
+  showHealth = true,
   className,
   nameplateClassName,
   nameClassName,
@@ -199,7 +202,7 @@ export function WorldNameplates({
               >
                 {sample.name}
               </span>
-              {sample.percent !== null ? (
+              {showHealth && sample.percent !== null ? (
                 <span
                   className={barClassName}
                   data-nameplate-bar

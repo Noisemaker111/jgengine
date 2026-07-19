@@ -163,7 +163,7 @@ describe("leveling.grantXp with cumulative thresholds", () => {
     expect(gained).toBe(4);
     expect(pools.level.current).toBe(5);
     expect(pools.xp.current).toBe(track.xpForLevel(5) + 10);
-    expect(seen).toEqual([5]);
+    expect(seen).toEqual([2, 3, 4, 5]);
   });
 
   test("a large grant caps at maxLevel and clamps the xp stat to the cap total", () => {
@@ -214,7 +214,9 @@ describe("leveling.grantXp", () => {
     const gained = track.grantXp(access, "p1", 200, (lvl) => seen.push(lvl));
     expect(gained).toBeGreaterThan(0);
     expect(pools.level.current).toBe(1 + gained);
-    expect(seen).toEqual([pools.level.current]);
+    expect(seen).toEqual(
+      Array.from({ length: gained }, (_, index) => 2 + index),
+    );
   });
 
   test("no level-up leaves the level stat and stays silent", () => {

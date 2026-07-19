@@ -593,16 +593,21 @@ function saveKey(name: string): string {
   return `jgengine:save:${slug === "" ? "game" : slug}`;
 }
 
-/** Explicit `options.save` wins (the shell can inject any backend, e.g. cloud); otherwise `defineGame({ persist })` auto-wires a localStorage save for offline/single-player worlds only. */
+/**
+ * Explicit `options.save` wins (the shell can inject any backend, e.g. cloud); otherwise an offline /
+ * single-player world auto-wires a `localStorage` whole-world save **by default** — a game gets `ctx.game.save`
+ * and autosave without touching `persist`. Only an explicit `persist: false` opts out; a host-authoritative
+ * multiplayer world never persists to `localStorage` (its host owns persistence) regardless of `persist`.
+ */
 function resolveSaveOptions<TAssetRef extends ModelAssetRef, TMultiplayer>(
   definition: GameDefinition<TAssetRef, TMultiplayer>,
   options: GameContextOptions<TAssetRef, TMultiplayer>,
 ): RuntimeSaveOptions | undefined {
   if (options.save !== undefined) return options.save;
   const persist = definition.persist;
-  if (persist === undefined || persist === false) return undefined;
+  if (persist === false) return undefined;
   if (!isOffline(definition.multiplayer)) return undefined;
-  const config: PersistConfig = persist === true ? {} : persist;
+  const config: PersistConfig = persist === undefined || persist === true ? {} : persist;
   return {
     backend: config.storage === "memory" ? memorySaveBackend() : localSaveBackend(),
     mode: config.mode,

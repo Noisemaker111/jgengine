@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "paths": {
+      "@jgengine/core": ["../core/dist/index.d.ts"],
+      "@jgengine/core/*": ["../core/dist/*"],
+      "@jgengine/shell": ["../shell/dist/index.d.ts"],
+      "@jgengine/shell/*": ["../shell/dist/*"],
+      "@jgengine/react": ["../react/dist/index.d.ts"],
+      "@jgengine/react/*": ["../react/dist/*"],
+      "@jgengine/ws": ["../ws/dist/index.d.ts"],
+      "@jgengine/ws/*": ["../ws/dist/*"],
+      "@jgengine/assets": ["../assets/dist/index.d.ts"],
+      "@jgengine/assets/*": ["../assets/dist/*"],
+      "@jgengine/editor": ["../editor/dist/index.d.ts"],
+      "@jgengine/editor/*": ["../editor/dist/*"]
+    }
+  },
+  "include": ["src/recipes/snippets"]
+}

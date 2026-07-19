@@ -1,6 +1,9 @@
 import { createResourceNodeField, type ResourceNodeField } from "@jgengine/core/world/resourceNode";
 import { createWorkQueue, type WorkQueueState } from "@jgengine/core/gameplay";
 import type { UnitReservation, UnitTrainingSpec } from "@jgengine/core/work/unitTraining";
+import type { SpawnDirectorState } from "@jgengine/core/ai/spawnDirector";
+
+import { createEnemyWaveDirector } from "./ai/waveManifest";
 
 import type { BuildSpec } from "./building";
 import { combatantDef, type CombatantKind } from "./catalog";
@@ -37,10 +40,12 @@ export interface NodeInfo {
 
 /** The enemy reinforcement clock. Serializable plain data the director advances each frame. */
 export interface EnemyWaveState {
-  /** Seconds until the next wave musters. */
-  timer: number;
+  /** The shared spawn-director cadence clock; emits one wave token per interval. */
+  director: SpawnDirectorState;
   /** How many waves have been sent so far — drives escalation of size and composition. */
   sent: number;
+  /** Seconds of opening grace remaining before the first wave may muster. */
+  grace: number;
 }
 
 export interface SessionState {
@@ -81,7 +86,7 @@ function fresh(): SessionState {
     buildArmed: null,
     supplyCap: TOWN_HALL_FOOD,
     attackMoveArmed: false,
-    enemyWave: { timer: ENEMY_WAVE_FIRST_DELAY, sent: 0 },
+    enemyWave: { director: createEnemyWaveDirector(), sent: 0, grace: ENEMY_WAVE_FIRST_DELAY },
     heroState: { abilityCooldown: 0 },
     over: false,
     victory: false,

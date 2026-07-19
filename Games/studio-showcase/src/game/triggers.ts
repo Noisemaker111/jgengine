@@ -1,3 +1,5 @@
+import { createToastQueue, type ToastQueue } from "@jgengine/core/game/toasts";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
   collectAuthoredTriggers,
   createAuthoredTriggerRuntime,
@@ -7,7 +9,6 @@ import {
   type AuthoredTriggerRuntime,
   type TriggerDispatchEvent,
 } from "@jgengine/core/scene/authoredTriggers";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { editorLayers } from "../editorLayers";
 
@@ -21,7 +22,11 @@ export type Announcement = {
   at: number;
 };
 
-let lastAnnouncement: Announcement | null = null;
+// Single-slot announcement store on top of the shared toast-feed primitive. `cap: 1` gives the same
+// replace-on-next-announce behavior the hand-rolled `lastAnnouncement` variable had; unlike a HUD toast,
+// an announcement never self-expires here (no `prune()` call anywhere), so pushes use an infinite TTL.
+const announcementQueue: ToastQueue<Announcement> = createToastQueue<Announcement>({ cap: 1 });
+
 let runtime: AuthoredTriggerRuntime | null = null;
 const listeners = new Set<() => void>();
 
@@ -40,11 +45,12 @@ function ensureRuntime(): AuthoredTriggerRuntime {
     triggers,
     handlers: {
       announce: (event: TriggerDispatchEvent) => {
-        lastAnnouncement = {
-          message: String(event.params.message ?? "Entered zone"),
-          tone: String(event.params.tone ?? "info"),
-          at: Date.now(),
-        };
+        const at = Date.now();
+        announcementQueue.push(
+          { message: String(event.params.message ?? "Entered zone"), tone: String(event.params.tone ?? "info"), at },
+          at,
+          Number.POSITIVE_INFINITY,
+        );
         notify();
       },
     },
@@ -54,7 +60,7 @@ function ensureRuntime(): AuthoredTriggerRuntime {
 
 /** Latest announce dispatch for the HUD readout. */
 export function currentAnnouncement(): Announcement | null {
-  return lastAnnouncement;
+  return announcementQueue.list()[0]?.body ?? null;
 }
 
 /** Subscribe to announcement changes — use with `useSyncExternalStore`. */
