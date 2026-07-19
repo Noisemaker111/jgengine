@@ -187,3 +187,7 @@ bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails 
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
+
+2026-07-19T01:23:41.909Z — claude-opus-4-8 — NoisemakerJon
+
+adding an apps/web route → bun --cwd apps/web run check-types is red on origin/main: playground.tsx can't resolve @jgengine/core/world/cityGenerator & streetGenerator even though their dist files exist, so a new page's typecheck is noisy with unrelated pre-existing errors
