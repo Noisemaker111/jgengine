@@ -234,7 +234,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `resolveSelection` (function) · `import { resolveSelection } from "@jgengine/core/gameplay"`
 - `validateLayers` (function) · `import { validateLayers } from "@jgengine/core/gameplay"`
 
-## part-motion — sample the root bob/sway/flinch/topple pose for a rig-less part-composed character
+## part-motion — sample the root bob/sway/squash/flinch/death pose for a rig-less part-composed character
 
 - `sampleBodyPose` (function) · `import { sampleBodyPose } from "@jgengine/core/game/partAnimation"`
 - `samplePartPose` (function) · `import { samplePartPose } from "@jgengine/core/game/partAnimation"`

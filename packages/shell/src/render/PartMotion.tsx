@@ -95,6 +95,7 @@ export function PartMotionRig({
       sampleBodyPose(input, model.partMotion, pose);
       root.position.set(pose.position[0], pose.position[1], pose.position[2]);
       root.rotation.set(pose.rotation[0], pose.rotation[1], pose.rotation[2]);
+      root.scale.set(pose.scale[0], pose.scale[1], pose.scale[2]);
     }
     for (let index = 0; index < parts.length; index += 1) {
       const part = parts[index]!;
@@ -109,6 +110,8 @@ export function PartMotionRig({
         baseRotation[1] + pose.rotation[1],
         baseRotation[2] + pose.rotation[2],
       );
+      const baseScale = part.scale ?? 1;
+      group.scale.set(baseScale * pose.scale[0], baseScale * pose.scale[1], baseScale * pose.scale[2]);
     }
   });
 
