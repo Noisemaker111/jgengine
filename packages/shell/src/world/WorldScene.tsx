@@ -18,6 +18,7 @@ import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarge
 
 import { colorFromId } from "../worldSky";
 import { DefaultSurface, detailMaps } from "../render/defaultSurface";
+import { useDisposable } from "../render/useDisposable";
 import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
 import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "../render/resolveModel";
@@ -193,7 +194,7 @@ function GroundPlane() {
     next.computeVertexNormals();
     return next;
   }, []);
-  const material = useMemo(() => {
+  const material = useDisposable(() => {
     const normal = detailMaps().normal.clone();
     normal.repeat.set(48, 48);
     normal.needsUpdate = true;
@@ -206,7 +207,6 @@ function GroundPlane() {
       envMapIntensity: 0.4,
     });
   }, []);
-  useEffect(() => () => material.dispose(), [material]);
 
   return <mesh rotation-x={-Math.PI / 2} geometry={geometry} material={material} receiveShadow />;
 }

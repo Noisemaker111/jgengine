@@ -1,6 +1,6 @@
 import { TransformControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import type { Group } from "three";
 
 /** Active TransformControls mode for the runtime selection gizmo. */
@@ -68,9 +68,10 @@ export const TransformGizmo = memo(function TransformGizmo({
   const controls = useThree((state) => state.controls) as { enabled?: boolean } | null;
   const anchorKey = `${position.x}:${position.y}:${position.z}:${rotationY}:${mode}`;
 
-  useEffect(() => {
-    setObject(groupRef.current);
-  }, [anchorKey]);
+  const anchorRef = useCallback((node: Group | null) => {
+    groupRef.current = node;
+    setObject(node);
+  }, []);
 
   useEffect(() => {
     const group = groupRef.current;
@@ -106,7 +107,7 @@ export const TransformGizmo = memo(function TransformGizmo({
 
   return (
     <>
-      <group ref={groupRef} />
+      <group ref={anchorRef} />
       {object !== null ? (
         <TransformControls
           object={object}

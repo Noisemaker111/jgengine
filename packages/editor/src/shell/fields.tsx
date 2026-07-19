@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 
 import { AXIS_COLORS, FOCUS_RING, INPUT_CLS, NUMERIC } from "./theme";
 
@@ -38,14 +38,13 @@ export function AxisNumberField({
   /** Multi-select mixed values: show an em dash until the user commits a concrete number. */
   mixed?: boolean;
 }) {
-  const [text, setText] = useState(() => (mixed ? "—" : formatValue(value, precision)));
+  // `text` only exists while the input has focus; otherwise the shown value derives from props.
+  const [text, setText] = useState("");
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{ pointerId: number; startX: number; startValue: number; moved: boolean } | null>(null);
 
-  useEffect(() => {
-    if (!editing) setText(mixed ? "—" : formatValue(value, precision));
-  }, [value, precision, editing, mixed]);
+  const formatted = mixed ? "—" : formatValue(value, precision);
 
   const commitText = (raw: string) => {
     if (raw === "—" || raw.trim().length === 0) return;
@@ -111,10 +110,13 @@ export function AxisNumberField({
         ref={inputRef}
         type="text"
         inputMode="decimal"
-        value={text}
+        value={editing ? text : formatted}
         disabled={disabled}
         aria-label={label}
-        onFocus={() => setEditing(true)}
+        onFocus={() => {
+          setText(formatted);
+          setEditing(true);
+        }}
         onDoubleClick={(event) => {
           event.stopPropagation();
           event.currentTarget.select();
@@ -126,7 +128,6 @@ export function AxisNumberField({
         onBlur={(event) => {
           setEditing(false);
           commitText(event.target.value);
-          setText(formatValue(Number.isFinite(Number(event.target.value)) ? Number(event.target.value) : value, precision));
         }}
         onKeyDown={(event) => {
           if (event.key === "Enter") event.currentTarget.blur();

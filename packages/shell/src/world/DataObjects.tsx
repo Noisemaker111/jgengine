@@ -2,6 +2,8 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
+import { useDisposable } from "../render/useDisposable";
+
 /**
  * Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city
  * of buildings, a crowd. By default each item is an extruded box (all boxes share
@@ -57,8 +59,8 @@ export function DataObjects<T>({
 }: DataObjectsProps<T>) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
-  const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.62, metalness: 0.04 }), []);
+  const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const material = useDisposable(() => new THREE.MeshStandardMaterial({ roughness: 0.62, metalness: 0.04 }), []);
   const hover = useMemo(() => new THREE.Color(hoverColor), [hoverColor]);
   const startRef = useRef<number | null>(null);
 
@@ -83,14 +85,6 @@ export function DataObjects<T>({
   useEffect(() => {
     startRef.current = null;
   }, [data]);
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   const duration = grow?.duration ?? 0;
 

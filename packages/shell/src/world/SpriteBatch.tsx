@@ -2,6 +2,8 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
+import { useDisposable } from "../render/useDisposable";
+
 export interface SpriteBatchInstance {
   /** World X position. */
   x: number;
@@ -80,14 +82,14 @@ export function SpriteBatch({
     texture.needsUpdate = true;
   }, [texture, pixelated]);
 
-  const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
+  const geometry = useDisposable(() => new THREE.PlaneGeometry(1, 1), []);
 
   const spriteUvOffset = useMemo(
     () => new THREE.InstancedBufferAttribute(new Float32Array(capacity * 2), 2),
     [capacity],
   );
 
-  const material = useMemo(() => {
+  const material = useDisposable(() => {
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
@@ -176,14 +178,6 @@ uniform vec2 spriteUvScale;`,
     mesh.instanceMatrix.needsUpdate = true;
     spriteUvOffset.needsUpdate = true;
   });
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   return (
     <instancedMesh

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
@@ -13,28 +13,40 @@ export interface EditorSummon {
   exitEditor: () => void;
 }
 
+function readEditorOpen(): boolean {
+  return readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE;
+}
+
+// `writeUrlParam` rewrites via `history.replaceState`, which never fires `popstate`, so setter
+// writes notify these listeners directly; `subscribeUrlChange` covers browser back/forward.
+const editorOpenListeners = new Set<() => void>();
+
+function subscribeEditorOpen(listener: () => void): () => void {
+  editorOpenListeners.add(listener);
+  const unsubscribeUrl = subscribeUrlChange(listener);
+  return () => {
+    editorOpenListeners.delete(listener);
+    unsubscribeUrl();
+  };
+}
+
+// Only touch `mode` for editor: leave `mode=poster`/`mode=ui` (and a bare `mode=play`) alone so
+// other runner modes keep their honest URL.
+function setEditorOpen(open: boolean): void {
+  if (open) writeUrlParam(EDITOR_MODE_PARAM, EDITOR_MODE_VALUE);
+  else if (readEditorOpen()) writeUrlParam(EDITOR_MODE_PARAM, null);
+  for (const listener of editorOpenListeners) listener();
+}
+
 /**
  * URL-backed editor summon: opens the editor via `window.__jgengineSummonEditor()` or the F2+E
- * chord (in play mode) and via `?mode=editor` at load, mirroring the flag into the URL through the
- * shared {@link writeUrlParam} seam so the address bar is the honest record — share it to reopen,
- * strip it to drop back to the game. `exitEditor` closes the editor and clears the param.
+ * chord (in play mode) and via `?mode=editor` at load. The URL is the single source of truth —
+ * toggling writes the flag through the shared {@link writeUrlParam} seam so the address bar is the
+ * honest record — share it to reopen, strip it to drop back to the game. `exitEditor` closes the
+ * editor and clears the param.
  */
 export function useEditorSummon(mode: string): EditorSummon {
-  const [editorOpen, setEditorOpen] = useState(
-    () => mode === EDITOR_MODE_VALUE || readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE,
-  );
-
-  // Mirror the flag into the URL and keep in step with browser back/forward. Only touch `mode` for
-  // editor: leave `mode=poster`/`mode=ui` (and a bare `mode=play`) alone so other runner modes keep
-  // their honest URL.
-  useEffect(() => {
-    if (editorOpen) writeUrlParam(EDITOR_MODE_PARAM, EDITOR_MODE_VALUE);
-    else if (readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE) writeUrlParam(EDITOR_MODE_PARAM, null);
-  }, [editorOpen]);
-  useEffect(
-    () => subscribeUrlChange(() => setEditorOpen(readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE)),
-    [],
-  );
+  const editorOpen = useSyncExternalStore(subscribeEditorOpen, readEditorOpen, readEditorOpen);
 
   useEffect(() => {
     if (editorOpen || mode !== "play") return;

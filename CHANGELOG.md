@@ -43,6 +43,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Effect consolidation phase 2: subscriptions on `useSyncExternalStore`, dispose pairs on `useDisposable`** (`@jgengine/react`, `@jgengine/shell`, `@jgengine/editor`, #1304) — hand-rolled `subscribe(() => setTick)` re-render mirrors across the editor chrome/panels, shell settings (`useSettingsRevision`), camera director, WorldHud selection, and AuthoredScene live-document hook now ride `useSyncExternalStore` (fewer redundant render passes, identical update timing); ~15 shell renderers moved their `useMemo` + dispose-effect pairs onto `useDisposable`; derived-state/prop-reset/focus effects were removed in favor of render-time derivation and `autoFocus` (editor inspector fields, hierarchy active row, animation panel, play-control mirrors via the new shared `usePlayControl`, GamePlayerShell binding overrides — kills a one-frame stale-keybinds render on game switch; `GameViewport` now renders `data-jg-layout-collision` declaratively). No public API removals; `usePlayControl` (`@jgengine/editor`) is new.
+
 - **Walking collision now depenetrates instead of locking.** `resolveObstacleStep`
   (movement) previously slid along box faces but had no escape once the capsule was
   strictly *inside* a solid box — its per-axis clamps returned zero on both axes and the

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, type ComponentType, type MutableRefObject } from "react";
+import { useCallback, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject } from "react";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { CameraDirector } from "@jgengine/core/runtime/cameraDirector";
@@ -51,11 +51,19 @@ export function GameCameraRig({
     [config?.shake?.decayPerSecond],
   );
 
-  const [, notifyDirectorChange] = useReducer((count: number) => count + 1, 0);
-  useEffect(() => {
-    if (director === undefined) return undefined;
-    return director.subscribe(notifyDirectorChange);
-  }, [director]);
+  const directorVersionRef = useRef(0);
+  const subscribeDirector = useCallback(
+    (onStoreChange: () => void) => {
+      if (director === undefined) return () => undefined;
+      return director.subscribe(() => {
+        directorVersionRef.current += 1;
+        onStoreChange();
+      });
+    },
+    [director],
+  );
+  const directorVersion = useCallback(() => directorVersionRef.current, []);
+  useSyncExternalStore(subscribeDirector, directorVersion, directorVersion);
 
   const directed = resolveDirectedCamera(
     director === undefined
