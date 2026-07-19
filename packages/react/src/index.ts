@@ -12,6 +12,7 @@ export * from "./achievements";
 export * from "./i18n";
 export * from "./accessibility";
 export * from "./radialMenu";
+export * from "./quickMenu";
 export * from "./questTracker";
 export * from "./components";
 export * from "./hud";

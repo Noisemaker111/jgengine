@@ -132,6 +132,7 @@ export {
   radialIndexFromVector,
   radialSlicePosition,
   radialSlices,
+  type RadialArc,
   type RadialSlice,
   type RadialVectorOptions,
 } from "./ui/radialMenu";

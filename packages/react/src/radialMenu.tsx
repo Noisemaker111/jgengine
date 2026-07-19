@@ -1,6 +1,11 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
-import { radialIndexFromVector, radialSlicePosition } from "@jgengine/core/ui/radialMenu";
+import {
+  radialIndexFromVector,
+  radialSlicePosition,
+  radialSlices,
+  type RadialArc,
+} from "@jgengine/core/ui/radialMenu";
 
 const TWO_PI = Math.PI * 2;
 
@@ -13,6 +18,14 @@ export interface RadialMenuOption {
   disabled?: boolean;
   /** Per-slice accent; falls back to the menu `accent`. */
   color?: string;
+  /** Keybind hint drawn on the slice (e.g. "1", "Q"). */
+  hotkey?: string;
+  /** Count/quantity badge (ammo, stack size). */
+  badge?: string | number;
+  /** Cooldown remaining as `0..1` — dims the slice and shows the fraction. */
+  cooldown?: number;
+  /** Draw a ► marker to signal the slice opens a submenu. */
+  hasSubmenu?: boolean;
 }
 
 /** Props for {@link RadialMenu}. */
@@ -26,6 +39,8 @@ export interface RadialMenuProps {
   size?: number;
   /** Neutral inner-hub radius (dead zone) in px. Default 52. */
   innerRadius?: number;
+  /** Partial arc instead of a full wheel (e.g. a bottom half or quarter). */
+  arc?: RadialArc;
   /** Force a highlighted slice (also the initial hover) — for controllers/tests. */
   highlightIndex?: number | null;
   accent?: string;
@@ -41,16 +56,19 @@ function wedgePath(cx: number, cy: number, innerR: number, outerR: number, cente
   const [x1, y1] = point(outerR, end);
   const [x2, y2] = point(innerR, end);
   const [x3, y3] = point(innerR, start);
-  return `M${x0},${y0} A${outerR},${outerR} 0 0 1 ${x1},${y1} L${x2},${y2} A${innerR},${innerR} 0 0 0 ${x3},${y3} Z`;
+  const large = half * 2 > Math.PI ? 1 : 0;
+  return `M${x0},${y0} A${outerR},${outerR} 0 ${large} 1 ${x1},${y1} L${x2},${y2} A${innerR},${innerR} 0 ${large} 0 ${x3},${y3} Z`;
 }
 
 /**
- * Radial / quick menu (weapon or emote wheel): a ring of selectable wedges the
- * player points at with the mouse (or a stick). Pointer angle drives the
- * highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`,
- * the neutral hub closes. The game supplies option icons/labels and skins it.
+ * Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of
+ * selectable wedges the player points at with the mouse (or a stick). Pointer
+ * angle drives the highlight via core `radialIndexFromVector`; click/confirm
+ * fires `onSelect`, the neutral hub closes. Options carry optional hotkeys,
+ * count badges, cooldowns, and submenu markers. The game supplies icons/labels
+ * and skins it.
  *
- * @capability radial-menu pointer/stick-driven radial quick menu (weapon/emote wheel) — angular slice selection with a neutral hub
+ * @capability radial-menu pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub
  */
 export function RadialMenu({
   options,
@@ -59,6 +77,7 @@ export function RadialMenu({
   onClose,
   size = 300,
   innerRadius = 52,
+  arc,
   highlightIndex,
   accent = "var(--jg-accent, #38bdf8)",
   className,
@@ -70,12 +89,10 @@ export function RadialMenu({
   const cx = size / 2;
   const cy = size / 2;
   const outerR = size / 2 - 3;
-  const half = count > 0 ? Math.PI / count : 0;
   const labelRadius = (innerRadius + outerR) / 2;
-  const slices = useMemo(
-    () => options.map((_, index) => (count > 0 ? index * (TWO_PI / count) : 0)),
-    [options, count],
-  );
+  const sweep = arc?.sweep ?? TWO_PI;
+  const half = count > 0 ? (sweep >= TWO_PI - 1e-6 ? Math.PI / count : sweep / count / 2) : 0;
+  const centers = useMemo(() => radialSlices(count, arc).map((slice) => slice.centerAngle), [count, arc]);
 
   if (!open || count === 0) return null;
 
@@ -104,14 +121,15 @@ export function RadialMenu({
           const rect = event.currentTarget.getBoundingClientRect();
           const px = ((event.clientX - rect.left) / rect.width) * size;
           const py = ((event.clientY - rect.top) / rect.height) * size;
-          setHovered(radialIndexFromVector(px - cx, py - cy, count, { deadZone: innerRadius }));
+          setHovered(radialIndexFromVector(px - cx, py - cy, count, { deadZone: innerRadius, ...arc }));
         }}
         onClick={commit}
       >
-        {slices.map((center, index) => {
+        {centers.map((center, index) => {
           const option = options[index]!;
           const isActive = index === active;
           const color = option.color ?? accent;
+          const onCooldown = option.cooldown !== undefined && option.cooldown > 0;
           return (
             <path
               key={option.id}
@@ -120,49 +138,49 @@ export function RadialMenu({
               data-disabled={option.disabled === true}
               d={wedgePath(cx, cy, innerRadius, outerR, center, half * 0.92)}
               fill={isActive ? color : "rgba(17,22,30,0.82)"}
-              fillOpacity={option.disabled === true ? 0.3 : isActive ? 0.9 : 0.82}
+              fillOpacity={option.disabled === true ? 0.3 : onCooldown ? 0.5 : isActive ? 0.9 : 0.82}
               stroke="rgba(148,163,184,0.35)"
               strokeWidth={1}
             />
           );
         })}
         <circle cx={cx} cy={cy} r={innerRadius - 6} fill="rgba(8,11,16,0.9)" stroke="rgba(148,163,184,0.3)" />
-        {slices.map((_, index) => {
+        {centers.map((_, index) => {
           const option = options[index]!;
-          const at = radialSlicePosition(index, count, labelRadius);
+          const at = radialSlicePosition(index, count, labelRadius, arc);
           const isActive = index === active;
+          const x = cx + at.x;
+          const y = cy + at.y;
           return (
-            <g key={option.id} transform={`translate(${cx + at.x} ${cy + at.y})`} style={{ pointerEvents: "none" }}>
+            <g key={option.id} transform={`translate(${x} ${y})`} style={{ pointerEvents: "none" }}>
               {option.icon !== undefined ? (
-                <foreignObject x={-18} y={-24} width={36} height={30} style={{ overflow: "visible" }}>
+                <foreignObject x={-18} y={-26} width={36} height={30} style={{ overflow: "visible" }}>
                   <div style={{ display: "flex", justifyContent: "center", fontSize: 20 }}>{option.icon}</div>
                 </foreignObject>
               ) : null}
               {option.label !== undefined ? (
-                <text
-                  y={option.icon !== undefined ? 16 : 4}
-                  textAnchor="middle"
-                  fontSize={11}
-                  fontWeight={700}
-                  fill={isActive ? "#f8fafc" : "rgba(226,232,240,0.8)"}
-                  fontFamily="ui-sans-serif, system-ui, sans-serif"
-                >
+                <text y={option.icon !== undefined ? 14 : 4} textAnchor="middle" fontSize={11} fontWeight={700}
+                  fill={isActive ? "#f8fafc" : "rgba(226,232,240,0.8)"} fontFamily="ui-sans-serif, system-ui, sans-serif">
                   {option.label}
                 </text>
+              ) : null}
+              {option.hotkey !== undefined ? (
+                <text y={-20} textAnchor="middle" fontSize={9} fontWeight={700} fill="rgba(148,163,184,0.9)">[{option.hotkey}]</text>
+              ) : null}
+              {option.badge !== undefined ? (
+                <text x={16} y={-8} textAnchor="middle" fontSize={10} fontWeight={700} fill={accent}>{option.badge}</text>
+              ) : null}
+              {option.cooldown !== undefined && option.cooldown > 0 ? (
+                <text y={28} textAnchor="middle" fontSize={9} fill="rgba(148,163,184,0.85)">{Math.ceil(option.cooldown * 100)}%</text>
+              ) : null}
+              {option.hasSubmenu === true ? (
+                <text x={22} y={4} textAnchor="middle" fontSize={11} fill="rgba(226,232,240,0.75)">▸</text>
               ) : null}
             </g>
           );
         })}
-        <text
-          x={cx}
-          y={cy + 4}
-          textAnchor="middle"
-          fontSize={12}
-          fontWeight={700}
-          fill="rgba(226,232,240,0.9)"
-          fontFamily="ui-sans-serif, system-ui, sans-serif"
-          style={{ pointerEvents: "none" }}
-        >
+        <text x={cx} y={cy + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill="rgba(226,232,240,0.9)"
+          fontFamily="ui-sans-serif, system-ui, sans-serif" style={{ pointerEvents: "none" }}>
           {active !== null && options[active] !== undefined ? options[active]!.label ?? "" : ""}
         </text>
       </svg>

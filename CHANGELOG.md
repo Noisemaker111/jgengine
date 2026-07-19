@@ -32,6 +32,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Quick menu takes many forms.** The radial menu grows into a full quick-menu family. `@jgengine/core/ui/radialMenu`
+  gains a `RadialArc` (`startAngle`/`sweep`) so the wheel can be a partial **arc** (bottom half, quarter, ping bar)
+  with bounds-aware selection. `@jgengine/react`'s `RadialMenu` now renders per-slice **hotkeys, count badges,
+  cooldowns, and submenu markers**, and takes an `arc`. New `@jgengine/react` **`QuickMenu`** presents one item
+  model in four forms — `radial` · `arc` · `list` · `grid` — with section headers, hotkeys, badges, cooldowns,
+  disabled states, and **nested submenus** (drill in / back). First adopter: the apps/dev quick-menu demo (form
+  switcher across all four).
 - **Radial / quick menu (weapon/emote wheel).** `@jgengine/core/ui/radialMenu` ships the pure geometry —
   `radialSlices`, `radialIndexFromAngle`, `radialIndexFromVector` (pointer/stick vector → slice with a
   neutral dead zone), `radialSlicePosition` — with slices centered from "up" clockwise. New `@jgengine/react`

@@ -544,6 +544,7 @@
     "./previewFixtures",
     "./provider",
     "./questTracker",
+    "./quickMenu",
     "./radialMenu",
     "./rotateDevice",
     "./save",
