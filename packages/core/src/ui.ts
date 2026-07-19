@@ -128,6 +128,14 @@ export {
   type PanelState,
 } from "./ui/panelModel";
 export {
+  radialIndexFromAngle,
+  radialIndexFromVector,
+  radialSlicePosition,
+  radialSlices,
+  type RadialSlice,
+  type RadialVectorOptions,
+} from "./ui/radialMenu";
+export {
   moveSelectionFocus,
   selectionWindow,
   summarizeSelection,
