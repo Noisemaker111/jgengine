@@ -679,9 +679,13 @@
 - `QuestSnapshotEntry` (type): type QuestSnapshotEntry = { questId: string; status: QuestStatus; progress: Record<string, number>; } — ⚠ undocumented
 - `QuestStatus` (type): type QuestStatus = "active" | "completed" — ⚠ undocumented
 - `QuestTurnIn` (interface): interface QuestTurnIn — ⚠ undocumented
+- `TrackedObjectiveView` (interface): interface TrackedObjectiveView — One objective as a tracker/HUD reads it — label + progress toward its count.
+- `TrackedQuestView` (interface): interface TrackedQuestView — A quest as a tracker/HUD reads it — title, status, and per-objective progress.
 - `applyQuestRewards` (function): function applyQuestRewards(rewards: QuestRewards, appliers: { grantXp?(amount: number): void; grantEconomy?(currencyId: string, amount: number): void; grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void; grantUnlock?(unlockId: string): void; }): { reason:… — ⚠ undocumented
 - `createQuestEvaluator` (function): function createQuestEvaluator(defs: QuestDef[] | Record<string, QuestDef>): QuestEvaluator — ⚠ undocumented
 - `createQuestJournal` (function): function createQuestJournal(deps: QuestJournalDeps): QuestJournal — Track accepted quests and their per-objective progress, granting rewards on completion.
+- `defaultObjectiveLabel` (function): function defaultObjectiveLabel(objective: QuestObjective): string — Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
+- `describeTrackedQuest` (function): function describeTrackedQuest(def: QuestDef, instance: QuestInstance, label: (objective: QuestObjective) => string = defaultObjectiveLabel): TrackedQuestView — Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title, status, labelled objective progress). Pass `label` to override the derived objective text.
 
 ## @jgengine/core/game/race
 
@@ -1192,6 +1196,8 @@
 - `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
 - `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
+- `TrackedObjectiveView` (interface): interface TrackedObjectiveView — One objective as a tracker/HUD reads it — label + progress toward its count.
+- `TrackedQuestView` (interface): interface TrackedQuestView — A quest as a tracker/HUD reads it — title, status, and per-objective progress.
 - `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
 - `TransformApi` (interface): interface TransformApi — Mutation surface a {@link GenTransform} uses to derive numeric fields after choices resolve. Every `set`/`add`/`mul` is captured as a {@link GenFieldRecord}, and `rng` is the same injected stream the choices drew from, so rolled derivations stay deterministic and explainable.
 - `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
@@ -1326,9 +1332,11 @@
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
 - `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
+- `defaultObjectiveLabel` (function): function defaultObjectiveLabel(objective: QuestObjective): string — Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
 - `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config: rawConfig, mode }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
+- `describeTrackedQuest` (function): function describeTrackedQuest(def: QuestDef, instance: QuestInstance, label: (objective: QuestObjective) => string = defaultObjectiveLabel): TrackedQuestView — Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title, status, labelled objective progress). Pass `label` to override the derived objective text.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
 - `diffParams` (function): function diffParams(before: Readonly<Record<string, number>>, after: Readonly<Record<string, number>>): readonly ParamDelta[] — Compute the per-parameter deltas between two value maps — the preview/diff of applying a change, for showing a player what a difficulty tier or mutator will do before they commit.
 - `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
