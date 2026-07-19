@@ -26,3 +26,5 @@ Every design pass yields an observed journey, a north star (promise, pillars, an
 ## Completion
 
 An audit is not completion for a build/improve request. Finish when the slice is playable, a fresh player can state goal/choice/consequence, failure/recovery behave as intended, and evidence supports the pillars. Use `jgengine-verify` and `workflow` to ship.
+
+**Required: player death is a designed, visible moment.** If the game can kill or down the player, death is part of the experience contract, not an invisible state reset. A lethal hit must resolve into an authored beat the player perceives and understands — a death or downed moment, the stakes it carries, and a legible path back into play (respawn, revive, restart) — never a silent teleport to spawn. Design what death means for this pitch (permadeath, checkpoint, bleed-out-and-revive, run reset) and treat "player dies with no acknowledged consequence" as a failure/recovery defect. `jgengine-ui` owns building the screen and respawn feedback.
