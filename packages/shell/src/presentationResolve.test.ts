@@ -36,12 +36,12 @@ describe("resolveWorldOverlayBars", () => {
 });
 
 describe("resolvePresentationEffects", () => {
-  test("undefined and true enable every combat channel", () => {
+  test("undefined and true enable every channel except opt-in tracers", () => {
     expect(resolvePresentationEffects(undefined)).toEqual({
       telegraphs: true,
       vfx: true,
       floatText: true,
-      tracers: true,
+      tracers: false,
       shake: true,
     });
     expect(resolvePresentationEffects(true)).toEqual(resolvePresentationEffects(undefined));
@@ -57,18 +57,29 @@ describe("resolvePresentationEffects", () => {
     });
   });
 
-  test("object form defaults missing keys to on so one channel can be disabled", () => {
-    expect(resolvePresentationEffects({ tracers: false })).toEqual({
+  test("tracers are opt-in: only an explicit tracers:true turns them on", () => {
+    expect(resolvePresentationEffects({}).tracers).toBe(false);
+    expect(resolvePresentationEffects({ tracers: true })).toEqual({
       telegraphs: true,
       vfx: true,
+      floatText: true,
+      tracers: true,
+      shake: true,
+    });
+  });
+
+  test("object form defaults other missing keys to on so one channel can be disabled", () => {
+    expect(resolvePresentationEffects({ vfx: false })).toEqual({
+      telegraphs: true,
+      vfx: false,
       floatText: true,
       tracers: false,
       shake: true,
     });
   });
 
-  test("object form can disable multiple channels", () => {
-    expect(resolvePresentationEffects({ vfx: false, shake: false })).toEqual({
+  test("object form can disable multiple channels while opting into tracers", () => {
+    expect(resolvePresentationEffects({ vfx: false, shake: false, tracers: true })).toEqual({
       telegraphs: true,
       vfx: false,
       floatText: true,

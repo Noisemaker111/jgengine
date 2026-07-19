@@ -1,6 +1,16 @@
 export { formatDistance } from "./format/distance";
 export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
 export { formatSpeed } from "./format/speed";
+export {
+  createI18n,
+  interpolate,
+  type Catalog,
+  type I18n,
+  type I18nOptions,
+  type Locale,
+  type Messages,
+  type TParams,
+} from "./i18n/i18n";
 export { resolveGameLook, type LookPreset } from "./render/lookPreset";
 export {
   STUDIO_STAGE_POST,
@@ -35,6 +45,18 @@ export {
   type SettingsVariant,
 } from "./settings/settingsModel";
 export {
+  COLORBLIND_MATRICES,
+  DEFAULT_ACCESSIBILITY,
+  TEXT_SCALE_MAX,
+  TEXT_SCALE_MIN,
+  clampTextScale,
+  createAccessibilityStore,
+  reducedMotionDuration,
+  type AccessibilityState,
+  type AccessibilityStore,
+  type ColorblindMode,
+} from "./ui/accessibility";
+export {
   actionByHotkey,
   actionCooldown,
   actionCooldownFromFraction,
@@ -50,6 +72,15 @@ export {
   type GridFocusOptions,
   type ResolvedAction,
 } from "./ui/actionModel";
+export {
+  createCoachMarkSequence,
+  type CoachMarkPlacement,
+  type CoachMarkSequence,
+  type CoachMarkSequenceOptions,
+  type CoachMarkSnapshot,
+  type CoachMarkStep,
+  type CoachMarkView,
+} from "./ui/coachMarks";
 export {
   type GameLayoutMode,
   type GameViewportLayout,
@@ -85,6 +116,28 @@ export {
   type HudViewportConfig,
 } from "./ui/hudScale";
 export {
+  MODAL_CANCEL,
+  MODAL_CONFIRM,
+  createModalStack,
+  type ModalInput,
+  type ModalRecord,
+  type ModalResolution,
+  type ModalStack,
+  type ModalStackEntry,
+  type ModalStackOptions,
+  type ModalStackSnapshot,
+} from "./ui/modalStack";
+export {
+  createObjectiveBanner,
+  type ObjectiveBannerAnnouncement,
+  type ObjectiveBannerController,
+  type ObjectiveBannerOptions,
+  type ObjectiveBannerPhase,
+  type ObjectiveBannerSnapshot,
+  type ObjectiveBannerView,
+  type StoredObjectiveBanner,
+} from "./ui/objectiveBanner";
+export {
   orientationGateActive,
   orientationHintActive,
   resolveOrientationRequirement,
@@ -105,6 +158,16 @@ export {
   type PanelPosition,
   type PanelState,
 } from "./ui/panelModel";
+export { DEFAULT_PHOTO_MODE, createPhotoModeStore, type PhotoModeState, type PhotoModeStore } from "./ui/photoMode";
+export {
+  radialIndexFromAngle,
+  radialIndexFromVector,
+  radialSlicePosition,
+  radialSlices,
+  type RadialArc,
+  type RadialSlice,
+  type RadialVectorOptions,
+} from "./ui/radialMenu";
 export {
   moveSelectionFocus,
   selectionWindow,

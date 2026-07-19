@@ -52,6 +52,26 @@ describe("createVehicleObstacleClamp — shallow graze", () => {
   });
 });
 
+describe("createVehicleObstacleClamp — tunneling", () => {
+  test("a single tick that crosses a thin wall entirely stops on its near face", () => {
+    // A 0.5m-thick wall; at 200 u/s the per-tick displacement (3.3m) used to overshoot the far face
+    // and the old clamp returned the full move — the car drove straight through the wall.
+    const wall: CollisionObstacle = { position: [0, 0.5, 10], halfExtents: [50, 1, 0.25] };
+    const clamp = createVehicleObstacleClamp({ obstacles: () => [wall], radius: RADIUS, dt: () => DT });
+    const allowed = clamp.clampMove([0, 8], [0, 8 + 200 * DT]);
+    expect(allowed[1]).toBeCloseTo(10 - 0.25 - RADIUS, 6); // stopped on the inflated near face
+    expect(clamp.takeImpact()!.closingSpeed).toBeGreaterThan(100);
+  });
+
+  test("a collider offset shifts where the car collides (offset is not dropped)", () => {
+    // The blocking box is centred 5m ahead of its placement point via offset.
+    const shifted: CollisionObstacle = { position: [0, 0, 5], offset: [0, 1, 5], halfExtents: [50, 1, 1] };
+    const clamp = createVehicleObstacleClamp({ obstacles: () => [shifted], radius: RADIUS, dt: () => DT });
+    const allowed = clamp.clampMove([0, 7.5], [0, 7.5 + 20 * DT]);
+    expect(allowed[1]).toBeCloseTo(10 - 1 - RADIUS, 6); // face at z=9 minus radius — not the placement z=5
+  });
+});
+
 describe("createVehicleObstacleClamp — passthrough", () => {
   test("no solids nearby returns the destination unchanged with no impact", () => {
     const clamp = createVehicleObstacleClamp({ obstacles: () => [], radius: RADIUS, dt: () => DT });

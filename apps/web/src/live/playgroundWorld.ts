@@ -23,6 +23,11 @@ const PALETTE: CityPalette = {
   lightA: 0x34d399,
   lightB: 0x22d3ee,
   fogDensity: 0.0014,
+  junction: 0x2b3c53,
+  sidewalk: 0x394a61,
+  roof: 0x1d2836,
+  trim: 0x556880,
+  accent: 0x8a5a3c,
 };
 
 export interface PlaygroundWorldHandle {

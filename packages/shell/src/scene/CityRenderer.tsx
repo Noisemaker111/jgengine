@@ -16,7 +16,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { roundPathCorners, buildRoadRibbon, dashSegments, type RoadPoint } from "@jgengine/core/world/roads";
+import {
+  roundPathCorners,
+  buildJunctionSurface,
+  buildRoadRibbon,
+  dashSegments,
+  GROUND_DECAL_LAYERS,
+  trimPathAtJunctions,
+  type JunctionApproach,
+  type RoadJunctionInput,
+  type RoadPoint,
+  type RoadRibbon,
+} from "@jgengine/core/world/roads";
 import { offsetPath } from "@jgengine/core/world/streets";
 import { triangulatePolygon, triangulateRingBand } from "@jgengine/core/world/cityGeometry";
 import {
@@ -48,6 +59,29 @@ const HEDGE_COLOR = "#3d6631";
 const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 
+/**
+ * City ground-decal stack. The single-owner {@link GROUND_DECAL_LAYERS} table fixes the authored-road
+ * heights, but a generated district drapes many more surface classes (sidewalk/park/median/curb) and
+ * wants more clearance over relief, so it keeps its own baseline while mirroring the table's ordering
+ * (terrain < road == junction < marking) and its two hard contracts: the welded junction surface
+ * shares the road layer (seam-welded, never stacked), and markings ride above the road with
+ * `polygonOffset`/`renderOrder` on the material. Values below preserve the district's prior look.
+ */
+const SIDEWALK_LAYER = 0.1;
+const PARK_LAYER = 0.12;
+const DRIVEWAY_LAYER = 0.12;
+const BRIDGE_DECK_LIFT = 0.12;
+const PARKING_LAYER = 0.13;
+const PLAZA_LAYER = 0.14;
+const ROAD_LAYER = 0.16; // asphalt/gravel carriageway AND the welded junction surface (seam-shared)
+const CROP_LAYER = 0.2;
+const CURB_LAYER = 0.24;
+const MARKING_LAYER = 0.26;
+const MEDIAN_LAYER = 0.3;
+
+/** Trim + weld tuning shared by {@link trimPathAtJunctions} and {@link buildJunctionSurface} for the district. */
+const JUNCTION_OPTS = { curbReturnRadius: 3, apronMargin: 0.6, filletSegments: 6, elevation: ROAD_LAYER, maxSegmentLength: 2 };
+
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
 const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 2.7, conifer: 2.5, palm: 2.6, cypress: 2.3 };
 
@@ -71,6 +105,15 @@ class MeshAccumulator {
   addRibbon(points: readonly RoadPoint[], width: number, sample: Sampler, elevation: number, color: THREE.Color | null = null): void {
     if (points.length < 2) return;
     const ribbon = buildRoadRibbon(points, width, sample, { elevation, maxSegmentLength: 2 });
+    const offset = this.positions.length / 3;
+    for (let i = 0; i < ribbon.positions.length; i += 1) this.positions.push(ribbon.positions[i]!);
+    for (let i = 0; i < ribbon.indices.length; i += 1) this.indices.push(ribbon.indices[i]! + offset);
+    this.pushColor(ribbon.positions.length / 3, color);
+  }
+
+  /** Append an already-draped ribbon/surface (absolute `[x,y,z]` positions) verbatim — e.g. a welded junction. */
+  addMesh(ribbon: RoadRibbon, color: THREE.Color | null = null): void {
+    if (ribbon.positions.length === 0) return;
     const offset = this.positions.length / 3;
     for (let i = 0; i < ribbon.positions.length; i += 1) this.positions.push(ribbon.positions[i]!);
     for (let i = 0; i < ribbon.indices.length; i += 1) this.indices.push(ribbon.indices[i]! + offset);
@@ -659,17 +702,41 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       ] as const) {
         const x = center[0] + along[0] * length * sa + perp[0] * width * sp;
         const z = center[1] + along[1] * length * sa + perp[1] * width * sp;
-        markings.positions.push(x, deckSampler(x, z) + 0.26, z);
+        markings.positions.push(x, deckSampler(x, z) + MARKING_LAYER, z);
       }
       markings.indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
     };
+
+    // Trim carriageways back to their junction boundaries and weld one surface per crossing (no
+    // overlapping ribbons hidden under a floating disc). Street endpoints coincide bitwise with
+    // junction nodes, so `trimPathAtJunctions` cuts each rounded ribbon exactly at the crossing; the
+    // terminal corners feed `buildJunctionSurface` per intersection. Any crossing that gets no trimmed
+    // approach (e.g. sliced past the intersection cap) falls back to the old rounded outline below.
+    const intersectionInputs: RoadJunctionInput[] = resolved.intersections.map((cross) => ({
+      x: cross.x,
+      z: cross.z,
+      arms: cross.arms.map((arm) => ({ angle: arm.angle, width: arm.width })),
+    }));
+    const approachesByCross = new Map<number, JunctionApproach[]>();
 
     for (const street of resolved.streets) {
       if (street.points.length < 2) continue;
       const rounded = roundPathCorners(street.points, Math.max(2.5, street.width * 1.15), 9);
       const surface = street.surface === "gravel" ? gravel : asphalt;
-      surface.addRibbon(rounded, street.width, deckSampler, 0.16);
-      if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, 0.1);
+      for (const sub of trimPathAtJunctions(rounded, street.width, intersectionInputs, JUNCTION_OPTS)) {
+        surface.addRibbon(sub.path, street.width, deckSampler, ROAD_LAYER);
+        for (const cut of sub.cuts) {
+          const approach: JunctionApproach = {
+            center: cut.center,
+            left: [cut.left[0], deckSampler(cut.left[0], cut.left[1]) + ROAD_LAYER, cut.left[1]],
+            right: [cut.right[0], deckSampler(cut.right[0], cut.right[1]) + ROAD_LAYER, cut.right[1]],
+          };
+          const list = approachesByCross.get(cut.junctionIndex);
+          if (list) list.push(approach);
+          else approachesByCross.set(cut.junctionIndex, [approach]);
+        }
+      }
+      if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, SIDEWALK_LAYER);
       // Curbs + painted edge/lane lines make a flat ribbon read as a real carriageway. Both break at
       // junctions (the crossing owns its own pavement), so clip the centerline first.
       if (street.surface === "asphalt") {
@@ -678,23 +745,23 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           if (run.length < 2) continue;
           const left = offsetPath(run, half);
           const right = offsetPath(run, -half);
-          curbs.addRibbon(left, 0.55, deckSampler, 0.24);
-          curbs.addRibbon(right, 0.55, deckSampler, 0.24);
+          curbs.addRibbon(left, 0.55, deckSampler, CURB_LAYER);
+          curbs.addRibbon(right, 0.55, deckSampler, CURB_LAYER);
           if (street.level !== "lane") {
             // White edge (fog) lines just inside the curb.
-            markings.addRibbon(offsetPath(run, half - 0.75), 0.16, deckSampler, 0.26);
-            markings.addRibbon(offsetPath(run, -(half - 0.75)), 0.16, deckSampler, 0.26);
+            markings.addRibbon(offsetPath(run, half - 0.75), 0.16, deckSampler, MARKING_LAYER);
+            markings.addRibbon(offsetPath(run, -(half - 0.75)), 0.16, deckSampler, MARKING_LAYER);
             // Avenue+ get dashed lane dividers either side of the centerline.
             if (street.level === "avenue") {
-              for (const dash of dashSegments(offsetPath(run, half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, 0.26);
-              for (const dash of dashSegments(offsetPath(run, -half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, 0.26);
+              for (const dash of dashSegments(offsetPath(run, half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, MARKING_LAYER);
+              for (const dash of dashSegments(offsetPath(run, -half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, MARKING_LAYER);
             }
           }
         }
       }
       if (street.bulb !== undefined) {
-        (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, 0.16);
-        if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, 0.1);
+        (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, ROAD_LAYER);
+        if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, SIDEWALK_LAYER);
       }
       if (street.surface === "asphalt" && street.level !== "lane") {
         if (street.level === "boulevard") {
@@ -706,9 +773,9 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             for (let i = 0; i + 1 < run.length; i += 1) runLength += Math.hypot(run[i + 1]![0] - run[i]![0], run[i + 1]![1] - run[i]![1]);
             if (runLength < 7) continue;
             const width = Math.max(1.3, street.width * 0.14);
-            medians.addRibbon(run, width, deckSampler, 0.3);
-            medians.addDisc(run[0]!, width / 2, deckSampler, 0.3, null, 8);
-            medians.addDisc(run[run.length - 1]!, width / 2, deckSampler, 0.3, null, 8);
+            medians.addRibbon(run, width, deckSampler, MEDIAN_LAYER);
+            medians.addDisc(run[0]!, width / 2, deckSampler, MEDIAN_LAYER, null, 8);
+            medians.addDisc(run[run.length - 1]!, width / 2, deckSampler, MEDIAN_LAYER, null, 8);
           }
         } else {
           for (const dash of dashSegments(rounded, 2.6, 3.6)) {
@@ -721,38 +788,46 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
                 break;
               }
             }
-            if (!inCross) markings.addRibbon(dash, 0.18, deckSampler, 0.26);
+            if (!inCross) markings.addRibbon(dash, 0.18, deckSampler, MARKING_LAYER);
           }
         }
       }
     }
+    // NOTE: streetGenerator's `Street.sidewalks` offset polylines are NOT surfaced here — this renderer
+    // consumes `resolveCityObject`'s `CityStreet` (which carries only a `sidewalk` boolean), and its
+    // sidewalks come from richer block curb→land bands below. Wiring the raw offset polylines would be a
+    // second, redundant sidewalk source, so it is intentionally skipped for this component's data flow.
     // Sidewalk band per block: the region between the curb ring (outer) and the land ring (inner).
     // Blocks whose two rings coincide (no sidewalk) drop out — every band triangle is degenerate,
     // so `addRingBand` emits nothing.
     if (useBlockSidewalks) {
       for (const block of resolved.blocks) {
-        sidewalks.addRingBand(block.curb, block.polygon, sample, 0.1);
+        sidewalks.addRingBand(block.curb, block.polygon, sample, SIDEWALK_LAYER);
       }
     }
     // Junctions: corner curb-return apron (sidewalk ring peeking out under the asphalt patch), the
     // patch itself, and a zebra crossing on every REAL arm — but only where the crossing warrants
     // it. Avenue-and-up arms (or a boulevard/avenue junction) get zebra stripes and the apron;
     // small residential crossings get just the asphalt patch.
-    for (const cross of resolved.intersections) {
+    resolved.intersections.forEach((cross, crossIndex) => {
       const bigLevel = cross.level === "boulevard" || cross.level === "avenue";
       const armZebra = (width: number): boolean => bigLevel || width >= resolved.rules.streetWidth * 1.4;
       const paved = resolved.rules.sidewalks && cross.level !== "lane";
-      // The junction pavement is the roads' union with rounded curb corners — a real crossing, not a
-      // stamped circle. A slightly larger apron underneath reads as the wrapped sidewalk/curb.
-      const outline = junctionOutline(cross);
-      if (outline !== null) {
-        if (paved) {
-          const apron = junctionOutline(cross, 1.15, resolved.rules.sidewalkWidth + 0.4);
-          if (apron !== null) sidewalks.addPolygon(apron, sample, 0.1);
-        }
-        patches.addPolygon(outline, deckSampler, 0.18);
+      // A slightly larger apron underneath the crossing reads as the wrapped sidewalk/curb.
+      if (paved) {
+        const apron = junctionOutline(cross, 1.15, resolved.rules.sidewalkWidth + 0.4);
+        if (apron !== null) sidewalks.addPolygon(apron, sample, SIDEWALK_LAYER);
+      }
+      // The junction pavement is welded onto the trimmed ribbon ends (seam-shared, no floating disc).
+      // Crossings that got no trimmed approach fall back to the rounded outline / disc, so coverage
+      // never regresses.
+      const approaches = approachesByCross.get(crossIndex);
+      if (approaches !== undefined && approaches.length > 0) {
+        patches.addMesh(buildJunctionSurface({ x: cross.x, z: cross.z }, approaches, deckSampler, JUNCTION_OPTS));
       } else {
-        patches.addDisc([cross.x, cross.z], cross.radius, deckSampler, 0.18);
+        const outline = junctionOutline(cross);
+        if (outline !== null) patches.addPolygon(outline, deckSampler, ROAD_LAYER);
+        else patches.addDisc([cross.x, cross.z], cross.radius, deckSampler, ROAD_LAYER);
       }
       if (paved) {
         const maxHalf = Math.max(...cross.arms.map((arm) => arm.width / 2));
@@ -770,12 +845,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           }
         }
       }
-    }
+    });
     for (const drive of resolved.driveways) {
-      (drive.surface === "gravel" ? gravelDrives : pavementDrives).addRibbon(drive.points, drive.width, sample, 0.12);
+      (drive.surface === "gravel" ? gravelDrives : pavementDrives).addRibbon(drive.points, drive.width, sample, DRIVEWAY_LAYER);
     }
     for (const pad of resolved.parkingLots) {
-      pavementDrives.addPatch(pad.center, pad.size, pad.rotationY, sample, 0.13);
+      pavementDrives.addPatch(pad.center, pad.size, pad.rotationY, sample, PARKING_LAYER);
       // Stall separators along the pad.
       const cos = Math.cos(pad.rotationY);
       const sin = Math.sin(pad.rotationY);
@@ -790,14 +865,14 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     for (const park of resolved.parks) {
       parkColor.set(PARK_COLORS[park.type]);
       parkColor.multiplyScalar(0.92 + park.jitter * 0.16);
-      const elevation = park.type === "plaza" ? 0.14 : 0.12;
+      const elevation = park.type === "plaza" ? PLAZA_LAYER : PARK_LAYER;
       // Block-pipeline parks carry a real road-derived polygon; the rect is only a coarse proxy.
       if (park.polygon !== undefined) parks.addPolygon(park.polygon, sample, elevation, parkColor);
       else parks.addPatch(park.center, park.size, park.rotationY, sample, elevation, parkColor);
       if (park.rows !== undefined) {
         const crop = new THREE.Color(CROP_COLORS[Math.floor(park.jitter * CROP_COLORS.length) % CROP_COLORS.length]);
         crop.multiplyScalar(0.9 + park.jitter * 0.2);
-        for (const row of park.rows) crops.addRibbon(row, 1.05, sample, 0.2, crop);
+        for (const row of park.rows) crops.addRibbon(row, 1.05, sample, CROP_LAYER, crop);
       }
     }
     return {
@@ -857,7 +932,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         const arch = bridge.style === "arch" ? Math.sin(t * Math.PI) * Math.min(1.6, span * 0.03) : 0.25;
         return hA + (hB - hA) * t + arch;
       };
-      decks.addRibbon(bridge.points, bridge.width + 1.2, deckY, 0.12);
+      decks.addRibbon(bridge.points, bridge.width + 1.2, deckY, BRIDGE_DECK_LIFT);
       // Curb strips give the deck visible thickness from the side.
       const tangent: readonly [number, number] = [abx / span, abz / span];
       const normal: readonly [number, number] = [-tangent[1], tangent[0]];
@@ -1115,8 +1190,16 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         </mesh>
       ) : null}
       {ground?.markings != null ? (
-        <mesh geometry={ground.markings}>
-          <meshStandardMaterial color={MARKING_COLOR} roughness={0.8} metalness={0} side={THREE.DoubleSide} />
+        <mesh geometry={ground.markings} renderOrder={1}>
+          <meshStandardMaterial
+            color={MARKING_COLOR}
+            roughness={0.8}
+            metalness={0}
+            side={THREE.DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
+          />
         </mesh>
       ) : null}
       {ground?.medians != null ? (

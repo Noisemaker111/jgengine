@@ -264,3 +264,41 @@ describe("touchButtonShape", () => {
     expect(touchButtonShape("interact")).toBe("circle");
   });
 });
+
+describe("touch control modes (#1370)", () => {
+  const INPUT = {
+    moveForward: ["KeyW"],
+    moveBack: ["KeyS"],
+    moveLeft: ["KeyA"],
+    moveRight: ["KeyD"],
+    jump: ["Space"],
+    fire: ["mouse0"],
+    flightAirbrake: ["KeyX"],
+    exitVehicle: ["KeyF"],
+  };
+  const CONFIG = {
+    buttons: ["fire", "jump"],
+    modes: {
+      car: { buttons: [{ action: "jump", label: "Handbrake" }, "exitVehicle"] },
+      aircraft: { buttons: ["flightAirbrake", "exitVehicle"], movement: { axis: "both" as const } },
+    },
+  };
+
+  test("base config applies when no mode is active", () => {
+    const scheme = deriveTouchScheme(INPUT, { reserved: RESERVED, firstPerson: false, config: CONFIG });
+    expect(scheme?.buttons.map((b) => b.action)).toEqual(["fire", "jump"]);
+  });
+
+  test("an active mode replaces the matching base fields", () => {
+    const scheme = deriveTouchScheme(INPUT, { reserved: RESERVED, firstPerson: false, config: CONFIG, mode: "car" });
+    expect(scheme?.buttons.map((b) => b.action)).toEqual(["jump", "exitVehicle"]);
+    expect(scheme?.buttons[0]?.label).toBe("Handbrake");
+    // Movement joystick still derives from the base fields the mode leaves untouched.
+    expect(scheme?.joystick?.up).toBe("moveForward");
+  });
+
+  test("an unknown mode falls back to the base config", () => {
+    const scheme = deriveTouchScheme(INPUT, { reserved: RESERVED, firstPerson: false, config: CONFIG, mode: "boat" });
+    expect(scheme?.buttons.map((b) => b.action)).toEqual(["fire", "jump"]);
+  });
+});

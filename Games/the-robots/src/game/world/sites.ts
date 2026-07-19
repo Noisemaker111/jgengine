@@ -1,4 +1,5 @@
 import { findEditorMarker } from "@jgengine/core/editor/document";
+import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { authoredScene } from "./level";
 import { HUB_ZONE_ID, ZONES, zoneById } from "./zones";
@@ -22,12 +23,14 @@ const newU = requiredSite("new_u_station");
 
 export const CORETOWN = hub.center;
 
-export const PLAYER_SPAWN: EntityPosition = [
+// Resolved through the shared spawn primitive so the capture-time `?spawn=` overlay
+// (shoot/drive `--spawn`) applies; falls back to the marker the primitive reads anyway.
+export const PLAYER_SPAWN: EntityPosition = (authoredSpawnPosition(authoredScene) ?? [
   playerSpawn.position.x,
   playerSpawn.position.y,
   playerSpawn.position.z,
-];
-export const PLAYER_SPAWN_YAW = playerSpawn.rotationY ?? 0;
+]) as EntityPosition;
+export const PLAYER_SPAWN_YAW = authoredSpawnRotation(authoredScene);
 
 export const BOLT_POS: EntityPosition = [bolt.position.x, bolt.position.y, bolt.position.z];
 export const BOLT_YAW = bolt.rotationY ?? 0;

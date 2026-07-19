@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
 import { Page } from "../components/Layout";
 import { gameCredit, gameTitle, isGameId } from "../lib/games";
@@ -16,6 +17,23 @@ export const Route = createFileRoute("/games/$id")({
 
 function GamePage() {
   const { id } = Route.useParams();
+  const frameWrapRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [supportsFullscreen, setSupportsFullscreen] = useState(false);
+
+  useEffect(() => {
+    setSupportsFullscreen(
+      typeof document !== "undefined" &&
+        document.fullscreenEnabled &&
+        typeof frameWrapRef.current?.requestFullscreen === "function",
+    );
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === frameWrapRef.current);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
   if (!isGameId(id)) {
     return (
       <Page>
@@ -30,8 +48,32 @@ function GamePage() {
   }
   const playUrl = `/play/?game=${id}`;
   const credit = gameCredit(id);
+
+  const handleFullscreenClick = async () => {
+    if (isFullscreen) {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen().catch(() => {});
+      }
+      return;
+    }
+    const el = frameWrapRef.current;
+    if (el && document.fullscreenEnabled && typeof el.requestFullscreen === "function") {
+      try {
+        await el.requestFullscreen();
+        const orientation = screen.orientation as ScreenOrientation & {
+          lock?: (orientation: string) => Promise<void>;
+        };
+        orientation.lock?.("landscape").catch(() => {});
+        return;
+      } catch {
+        // fall through to the new-tab fallback below
+      }
+    }
+    window.open(playUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <Page>
+    <Page stickyHeader={false}>
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6">
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-ink-deep/60 shadow-[0_24px_80px_-24px_rgba(2,3,8,0.95)]">
@@ -45,21 +87,27 @@ function GamePage() {
                 </Link>
                 <span className="truncate text-sm font-semibold text-slate-100">{gameTitle(id)}</span>
               </div>
-              <a
-                href={playUrl}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={handleFullscreenClick}
                 className="shrink-0 font-mono text-[11px] text-emerald-300/90 transition hover:text-emerald-200"
               >
-                fullscreen ↗
-              </a>
+                {isFullscreen ? "exit fullscreen" : supportsFullscreen ? "fullscreen ↗" : "open player ↗"}
+              </button>
             </div>
-            <iframe
-              src={playUrl}
-              title={`${gameTitle(id)} — JGengine`}
-              allow="fullscreen; xr-spatial-tracking; gamepad"
-              className="h-[78vh] min-h-[520px] w-full border-0 bg-neutral-950"
-            />
+            <div
+              ref={frameWrapRef}
+              className={isFullscreen ? "h-full w-full bg-neutral-950" : ""}
+            >
+              <iframe
+                src={playUrl}
+                title={`${gameTitle(id)} — JGengine`}
+                allow="fullscreen; xr-spatial-tracking; gamepad"
+                className={`w-full border-0 bg-neutral-950 ${
+                  isFullscreen ? "h-full" : "h-[78dvh] min-h-[320px] sm:min-h-[520px]"
+                }`}
+              />
+            </div>
           </div>
           <p className="mt-3 text-center text-xs text-slate-500">
             Runs entirely in your browser. Source:{" "}

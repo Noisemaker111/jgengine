@@ -345,6 +345,16 @@ export {
   type SelectionBookmarks,
   type SelectionPruneResult,
 } from "./scene/selectionBookmarks";
+export {
+  createSequenceDirector,
+  type CueListener,
+  type EmittedCue,
+  type SequenceCue,
+  type SequenceDirector,
+  type SequenceDirectorOptions,
+  type SequenceSnapshot,
+  type SequenceState,
+} from "./scene/sequenceDirector";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
@@ -360,8 +370,55 @@ export {
 export { type HiddenStateSource, type SensorProbeOptions, type SensorReading } from "./sensor/hiddenStateProbe";
 export { type RecordingBuffer, type RecordingBufferOptions } from "./sensor/recordingBuffer";
 export { type RevealHit, type RevealQuery } from "./sensor/revealQuery";
+export {
+  createDayNightCycle,
+  type DayNightCycle,
+  type DayNightCycleOptions,
+  type DayNightKeyframe,
+  type DayNightSample,
+  type DayNightSnapshot,
+} from "./time/dayNightCycle";
 export { getCurrentGameTimestamp, sanitizeGameTimeScale } from "./time/gameClock";
 export { type ClockSnapshot, type SimClock } from "./time/simClock";
+export {
+  createTimerSet,
+  type TimerDirection,
+  type TimerExpiryListener,
+  type TimerRead,
+  type TimerSet,
+  type TimerSetOptions,
+  type TimerSetSnapshot,
+  type TimerSnapshot,
+  type TimerStartOptions,
+} from "./time/timerSet";
+export {
+  createDamageDirectionTracker,
+  type DamageDirectionOptions,
+  type DamageDirectionSnapshot,
+  type DamageDirectionTracker,
+  type DamageIndicator,
+  type HitInput,
+} from "./vfx/damageDirection";
+export {
+  createParticleSystem,
+  type Curve,
+  type EmitterConfig,
+  type ParticleBuffers,
+  type ParticleSnapshot,
+  type ParticleSystem,
+  type Range,
+} from "./vfx/particles";
+export {
+  createScreenEffects,
+  type ScreenEffect,
+  type ScreenEffectEasing,
+  type ScreenEffectShape,
+  type ScreenEffectSpec,
+  type ScreenEffectsController,
+  type ScreenEffectsOptions,
+  type ScreenEffectsSnapshot,
+  type StoredScreenEffect,
+} from "./vfx/screenEffects";
 export { type BoundsSpec, type Vec3 } from "./visibility/bounds";
 export { type CameraVisibilityContext } from "./visibility/camera";
 export { type VisibilityConfig } from "./visibility/config";
@@ -381,8 +438,10 @@ export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from 
 export { catenaryCurve, sagCurve } from "./world/catenary";
 export { type CityBlockKind } from "./world/cityBlocks";
 export {
+  CITY_LANDMARK_CLASSES,
   CITY_LOT_CLASSES,
   CITY_TREE_SPECIES,
+  type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
   type CityPieceRole,
@@ -391,6 +450,22 @@ export {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./world/cityContent";
+export {
+  DEFAULT_CITY_LEVEL_BIAS,
+  DEFAULT_CITY_ZONE_MIXES,
+  DEFAULT_LANDMARK_SHARE,
+  LANDMARK_HARD_CAP,
+  generateCity,
+  resolveCityLotContent,
+  type CityContentOptions,
+  type CityContentOverrides,
+  type CityGeneratorOptions,
+  type CityLevelClassBias,
+  type CityZoneMixes,
+  type GeneratedCity,
+  type MassingFootprint,
+  type ResolvedCityLot,
+} from "./world/cityGenerator";
 export {
   CITY_DEFAULTS,
   CITY_KIND,
@@ -418,6 +493,14 @@ export {
 export { snapToNearest, socketWorldPosition, socketsCompatible, worldSockets } from "./world/connectors";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";
+export {
+  createFastTravelNetwork,
+  type FastTravelNetwork,
+  type FastTravelOptions,
+  type FastTravelSnapshot,
+  type TravelPointDef,
+  type TravelPointView,
+} from "./world/fastTravel";
 export {
   biomes,
   building,
@@ -465,6 +548,15 @@ export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { createLodScheduler } from "./world/lod";
+export {
+  createAnnotationLayer,
+  type AnnotationLayer,
+  type AnnotationLayerOptions,
+  type AnnotationSnapshot,
+  type MapNote,
+  type MapShapeAnnotation,
+  type MapStroke,
+} from "./world/mapAnnotations";
 export { mapLayerColor, type MapCellStates, type MapRoute, type MapZone } from "./world/mapLayers";
 export {
   DEFAULT_MARKER_KINDS,
@@ -552,7 +644,21 @@ export {
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
-export { buildRoadRibbon, dashSegments } from "./world/roads";
+export {
+  GROUND_DECAL_LAYERS,
+  buildJunctionSurface,
+  buildRoadRibbon,
+  buildTrimmedIntersections,
+  dashSegments,
+  trimPathAtJunctions,
+  type IntersectionStreet,
+  type JunctionApproach,
+  type JunctionGeometryOptions,
+  type RoadCut,
+  type RoadJunctionInput,
+  type TrimmedIntersections,
+  type TrimmedRoad,
+} from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
 export {
   CITY_BUILDING_BUDGET,

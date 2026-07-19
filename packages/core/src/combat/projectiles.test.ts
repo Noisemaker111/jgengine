@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createEffectSystem, type CombatSpatialDeps, type ReceiveMap } from "@jgengine/core/combat/effects";
-import { createProjectileSystem } from "@jgengine/core/combat/projectiles";
+import { createProjectileSystem, type ProjectileSettleReport } from "@jgengine/core/combat/projectiles";
 import { createBallisticSweep, type BallisticSweep } from "@jgengine/core/physics/ballisticSweep";
 import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { seedStatValues, type StatCatalog, type StatValueMap } from "@jgengine/core/scene/entityStats";
@@ -57,17 +57,19 @@ function createRange(
     getStat,
     spatial,
   });
+  const reports: ProjectileSettleReport[] = [];
   const projectiles = createProjectileSystem({
     effects,
     spatial,
     getStat,
     now: () => 0,
+    onSettle: (report) => reports.push(report),
     ...(objects !== undefined
       ? { objects: { list: () => objects, ...(halfExtents !== undefined ? { halfExtents } : {}) } }
       : {}),
     ...(sweepBallistic !== undefined ? { sweepBallistic } : {}),
   });
-  return { projectiles, stats };
+  return { projectiles, stats, reports };
 }
 
 const target = (position: [number, number, number]): RangeEntity => ({
@@ -213,6 +215,27 @@ describe("projectile system", () => {
     expect(settle.hits).toHaveLength(1);
     expect(settle.hits[0]!.instanceId).toBe("enemy");
     expect(stats["enemy"]!["health"]!.current).toBe(80);
+  });
+
+  test("settle report marks lobbed/exploding shots ballistic and direct-fire shots not", () => {
+    const { projectiles, reports } = createRange({ enemy: target([0, 0, 10]) });
+    projectiles.settleProjectile(
+      projectiles.fireProjectile({
+        from: "shooter",
+        via: { item: "pistol" },
+        aim: { origin: [0, 0, 0], direction: [0, 0, 1] },
+        effect: "damage",
+      }),
+    );
+    projectiles.settleProjectile(
+      projectiles.fireProjectile({
+        from: "shooter",
+        via: { item: "grenade" },
+        aim: { origin: [0, 1, 0], direction: [0, 1, 1] },
+        effect: "damage",
+      }),
+    );
+    expect(reports.map((r) => r.ballistic)).toEqual([false, true]);
   });
 });
 

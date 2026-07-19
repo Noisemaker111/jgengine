@@ -2,6 +2,18 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "extraKnownMarketplaces": {
+    "i-have-adhd": {
+      "source": {
+        "source": "github",
+        "repo": "ayghri/i-have-adhd",
+        "ref": "main"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "i-have-adhd@i-have-adhd": true
+  },
   "env": {
     "LANG": "C.UTF-8",
     "LC_ALL": "C.UTF-8",

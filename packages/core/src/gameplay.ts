@@ -99,6 +99,17 @@ export {
 export { defineSystem, type SystemDefinition, type SystemEventHandlers, type SystemTick } from "./game/defineSystem";
 export { createGameDialogue, dialogueSlot } from "./game/dialogue";
 export {
+  createDialogueRun,
+  selectDialogueView,
+  type DialogueGraph,
+  type DialogueGraphChoice,
+  type DialogueGraphNode,
+  type DialogueGraphSnapshot,
+  type DialogueGraphView,
+  type DialogueRun,
+  type DialogueRunOptions,
+} from "./game/dialogueGraph";
+export {
   createGameEvents,
   type CombatTelegraphEvent,
   type CombatVfxEvent,
@@ -144,6 +155,14 @@ export {
 } from "./game/lootPipeline";
 export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./game/lootTable";
 export { resolveOneShotClip } from "./game/modelAnimation";
+export {
+  createNotificationCenter,
+  type NotificationCenterOptions,
+  type NotificationEntry,
+  type NotificationFilter,
+  type NotificationInput,
+  type NotificationStore,
+} from "./game/notifications";
 export { evaluateObjective } from "./game/objectives";
 export {
   createLayerRegistry,
@@ -208,7 +227,16 @@ export {
   type LevelingConfig,
   type LevelingTrack,
 } from "./game/progression";
-export { createQuestJournal, type QuestDef, type QuestInstance, type QuestRewards } from "./game/quest";
+export {
+  createQuestJournal,
+  defaultObjectiveLabel,
+  describeTrackedQuest,
+  type QuestDef,
+  type QuestInstance,
+  type QuestRewards,
+  type TrackedObjectiveView,
+  type TrackedQuestView,
+} from "./game/quest";
 export {
   RaceState,
   createLapTimer,
@@ -268,6 +296,13 @@ export {
   compileSystemSchedule,
   type CompiledSystemSchedule,
 } from "./game/systemSchedule";
+export {
+  talentTreeView,
+  type TalentEdgeView,
+  type TalentNodeState,
+  type TalentNodeView,
+  type TalentTreeView,
+} from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { appendToast, createToastQueue, pruneToasts, type Toast } from "./game/toasts";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
@@ -299,6 +334,7 @@ export {
 export { createGestureSurfaceTracker } from "./input/gestureSurface";
 export { aimToPoint, type PointerHit, type PointerVec3 } from "./input/pointer";
 export { normalizePointerToAxis, type PointerAxisState } from "./input/pointerAxis";
+export { activeTouchControlsMode, setTouchControlsMode } from "./input/touchControlsMode";
 export { createTouchGestureTracker } from "./input/touchGestures";
 export {
   DEFAULT_TOUCH_STYLE,
@@ -311,6 +347,8 @@ export {
   type TouchAnchor,
   type TouchButton,
   type TouchButtonShape,
+  type TouchControlsConfig,
+  type TouchControlsModeConfig,
   type TouchJoystick,
   type TouchScheme,
   type TouchStyle,

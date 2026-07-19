@@ -14,7 +14,13 @@ import {
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
 
-import { TOUCH_STYLES, type TouchStyle } from "@jgengine/core/input/touchScheme";
+import {
+  DEFAULT_TOUCH_JOYSTICK_VARIANT,
+  TOUCH_JOYSTICK_VARIANTS,
+  TOUCH_STYLES,
+  type TouchJoystickVariant,
+  type TouchStyle,
+} from "@jgengine/core/input/touchScheme";
 
 import type { AudioEngine } from "../audio/audioEngine";
 
@@ -26,6 +32,15 @@ export function useTouchStyle(store: SettingsStore, fallback: TouchStyle): Touch
   useSettingsRevision(store);
   const raw = store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO);
   return TOUCH_STYLES.includes(raw as TouchStyle) ? (raw as TouchStyle) : fallback;
+}
+
+/** Shell-internal: binds the SettingsStore joystick-variant choice (fixed vs floating) to the touch renderer. @internal */
+export function useTouchJoystickVariant(store: SettingsStore): TouchJoystickVariant {
+  useSettingsRevision(store);
+  const raw = store.get(SETTING_IDS.touchJoystick, DEFAULT_TOUCH_JOYSTICK_VARIANT);
+  return TOUCH_JOYSTICK_VARIANTS.includes(raw as TouchJoystickVariant)
+    ? (raw as TouchJoystickVariant)
+    : DEFAULT_TOUCH_JOYSTICK_VARIANT;
 }
 
 export function useSettingsRevision(store: SettingsStore): number {

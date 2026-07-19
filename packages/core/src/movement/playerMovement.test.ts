@@ -129,7 +129,8 @@ describe("swim (heightfield)", () => {
 
   test("swim unset leaves the player on the (submerged) floor", () => {
     const ctx = context(["a"]);
-    driveWith(ctx, "a", [], 5, tuning({ ground: SUBMERGED_GROUND }));
+    // The 5m drop is taller than a step, so the player now genuinely falls before settling on the floor.
+    driveWith(ctx, "a", [], 60, tuning({ ground: SUBMERGED_GROUND }));
     expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(-5, 6);
   });
 });
@@ -258,10 +259,17 @@ describe("stepPlayerMovement object collision (mesh-accurate)", () => {
     expect(ctx.scene.entity.get("a")!.position[0]).toBeCloseTo(1.5, 6);
   });
 
-  test("without collideObjects the same off-centre player passes straight through", () => {
+  test("object collision is ON by default — the off-centre player is stopped without opting in", () => {
     const ctx = collisionContext(1.5);
     placeArchway(ctx);
     driveWith(ctx, "a", ["moveForward"], 120, FLAT, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThan(2);
+  });
+
+  test("collideObjects: false opts out — the same off-centre player passes straight through", () => {
+    const ctx = collisionContext(1.5);
+    placeArchway(ctx);
+    driveWith(ctx, "a", ["moveForward"], 120, resolvePlayerMovementTuning({ movement: { collideObjects: false } }), 0);
     expect(ctx.scene.entity.get("a")!.position[2]).toBeGreaterThan(2);
   });
 
@@ -277,6 +285,64 @@ describe("stepPlayerMovement object collision (mesh-accurate)", () => {
     reported.scene.object.place("platform", 0, 0, 2);
     driveWith(reported, "a", ["moveForward"], 120, COLLIDE, 0);
     expect(reported.scene.entity.get("a")!.position[2]).toBeLessThan(2);
+  });
+});
+
+/** Place a solid crate object at `(x, 0, z)` spanning `size` on each side, `height` tall (top at y=height). */
+function placeCrate(ctx: GameContext, x: number, z: number, size: number, height: number, catalogId = "crate"): void {
+  ctx.scene.object.reportBounds(catalogId, {
+    min: [-size / 2, 0, -size / 2],
+    max: [size / 2, height, size / 2],
+  });
+  ctx.scene.object.place(catalogId, x, 0, z);
+}
+
+describe("standing on and stepping over objects", () => {
+  test("a low curb is stepped up onto instead of blocking (and its top becomes the ground)", () => {
+    const ctx = collisionContext(0);
+    placeCrate(ctx, 0, 2, 2, 0.3, "curb"); // curb spans z∈[1,3], top y=0.3
+    driveWith(ctx, "a", ["moveForward"], 35, COLLIDE, 0);
+    const pos = ctx.scene.entity.get("a")!.position;
+    expect(pos[2]).toBeGreaterThan(1.2); // walked onto the curb, not stopped at its face
+    expect(pos[1]).toBeCloseTo(0.3, 6); // feet standing on the curb top
+  });
+
+  test("a chest-high crate blocks walking but is landed ON by a jump — not clipped inside", () => {
+    const ctx = collisionContext(0);
+    placeCrate(ctx, 0, 2, 3, 0.8); // spans z∈[0.5,3.5], top y=0.8
+    // Walking alone: blocked at the crate face (z=0.5 minus the 0.3 player radius), never lifted.
+    driveWith(ctx, "a", ["moveForward"], 90, COLLIDE, 0);
+    const walked = ctx.scene.entity.get("a")!.position;
+    expect(walked[2]).toBeLessThan(0.21);
+    expect(walked[1]).toBeCloseTo(0, 6);
+    // Jump while holding forward: clears the 0.8 top and lands standing on it.
+    driveWith(ctx, "a", ["moveForward", "jump"], 8, COLLIDE, 0);
+    driveWith(ctx, "a", ["moveForward"], 30, COLLIDE, 0);
+    const landed = ctx.scene.entity.get("a")!.position;
+    expect(landed[1]).toBeCloseTo(0.8, 6);
+    expect(landed[2]).toBeGreaterThan(0.5);
+    expect(landed[2]).toBeLessThan(3.5);
+  });
+
+  test("walking off a crate falls back to the terrain instead of hovering or sticking", () => {
+    const ctx = collisionContext(0);
+    placeCrate(ctx, 0, 2, 2, 0.8); // top spans z∈[1,3]
+    // Start standing on the crate top.
+    ctx.scene.entity.setPose("a", { position: [0, 0.8, 2], rotationY: 0, dt: 1 / 60 });
+    driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
+    const pos = ctx.scene.entity.get("a")!.position;
+    expect(pos[2]).toBeGreaterThan(3.3); // walked past the far edge (inflated footprint ends at 3.3)
+    expect(pos[1]).toBeCloseTo(0, 6); // and came back down to the ground
+  });
+
+  test("a building wider than the legacy 4m broadphase bound still blocks near its edge", () => {
+    const ctx = collisionContext(9);
+    // A 20m-wide building centred at x=0: its edge (x=10) is 10m from the centre point the broadphase
+    // indexes; the old hardcoded 4m reach missed it entirely and the player walked through its side.
+    ctx.scene.object.reportBounds("building", { min: [-10, 0, -1], max: [10, 6, 1] });
+    ctx.scene.object.place("building", 0, 0, 4); // wall spans z∈[3,5] at the player's x
+    driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThan(2.8);
   });
 });
 

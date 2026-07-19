@@ -88,6 +88,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/gameplay"`
 
+## dialogue-graph-view — select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph
+
+- `selectDialogueView` (function) · `import { selectDialogueView } from "@jgengine/core/gameplay"`
+
+## dialogue-run — walk a serializable branching dialogue graph — current node view, choose-to-advance traversal, visited history, snapshot/restore
+
+- `createDialogueRun` (function) · `import { createDialogueRun } from "@jgengine/core/gameplay"`
+
 ## durability — track item wear, breakage, and repair
 
 - `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
@@ -238,6 +246,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
 - `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
+## notification-center — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts
+
+- `createNotificationCenter` (function) · `import { createNotificationCenter } from "@jgengine/core/gameplay"`
+
 ## objectives — check progress of a threshold objective against a live metric
 
 - `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
@@ -312,6 +324,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/gameplay"`
 
+## quest-tracker-view — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
+
+- `describeTrackedQuest` (function) · `import { describeTrackedQuest } from "@jgengine/core/gameplay"`
+
 ## race-placements — look up one racer's place + win/lose within a finish order
 
 - `placementOf` (function) · `import { placementOf } from "@jgengine/core/gameplay"`
@@ -383,6 +399,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
 
+## talent-tree-view — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
+
+- `talentTreeView` (function) · `import { talentTreeView } from "@jgengine/core/gameplay"`
+
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 
 - `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
@@ -392,8 +412,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `appendToast` (function) · `import { appendToast } from "@jgengine/core/gameplay"`
 - `createToastQueue` (function) · `import { createToastQueue } from "@jgengine/core/gameplay"`
 
-## touch-controls — default on-screen button silhouette for a touch action
+## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 
+- `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/gameplay"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
 
 ## tribe-group — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log

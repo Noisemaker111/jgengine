@@ -572,16 +572,24 @@ export function ChaseRig(props: RigProps) {
       return;
     }
 
-    let anchorYaw = yaw;
+    // Anchor yaw always eases toward its target (#1370): with drift-lag configured the target is
+    // the velocity-blended yaw at velocityYawResponse, otherwise the raw body facing at
+    // yawResponse — so a strafe-flipped facing arcs the boom around the character instead of
+    // teleporting it to the far side. yawResponse: Infinity restores the legacy rigid follow.
+    let targetYaw = yaw;
+    let response = resolved.yawResponse;
     if (resolved.velocityYawBlend > 0) {
       const velocity: Vec3 =
         dt > 0
           ? { x: (follow.x - last.x) / dt, y: 0, z: (follow.z - last.z) / dt }
           : { x: 0, y: 0, z: 0 };
-      const targetYaw = velocityYawTarget(yaw, velocity, resolved);
-      anchorYaw = smoothYaw(anchorYawRef.current ?? targetYaw, targetYaw, resolved.velocityYawResponse, dt);
-      anchorYawRef.current = anchorYaw;
+      targetYaw = velocityYawTarget(yaw, velocity, resolved);
+      response = resolved.velocityYawResponse;
     }
+    const anchorYaw = Number.isFinite(response)
+      ? smoothYaw(anchorYawRef.current ?? targetYaw, targetYaw, response, dt)
+      : targetYaw;
+    anchorYawRef.current = anchorYaw;
     // Report camera yaw back to the shell like every other player-facing rig, so
     // on-foot movement and aim stay camera-relative instead of frozen at yaw 0.
     props.yawRef.current = anchorYaw;

@@ -57,6 +57,21 @@ function digitalTarget(binding: AxisBinding, isDown: (code: string) => boolean):
   return positive - negative;
 }
 
+/** Strongest magnitude across a side's codes — with a `value` source an analog stick contributes its actual deflection; without one this degrades to {@link digitalTarget}'s 0/1. */
+function sideValue(codes: readonly string[] | undefined, value: (code: string) => number): number {
+  if (codes === undefined) return 0;
+  let strongest = 0;
+  for (const code of codes) {
+    const magnitude = value(code);
+    if (magnitude > strongest) strongest = magnitude;
+  }
+  return strongest;
+}
+
+function analogTarget(binding: AxisBinding, value: (code: string) => number): number {
+  return sideValue(binding.positive, value) - sideValue(binding.negative, value);
+}
+
 /**
  * Analog control channel — distinct from the digital action bindings. Throttle/brake/steer/handbrake
  * are continuous values ramped from held keys (a keyboard feels like a pedal) or driven directly from
@@ -152,13 +167,15 @@ export function sampleAxisBindings<TAxes extends string>(
   isDown: (code: string) => boolean,
   pointer?: PointerAxisState | null,
   ranges?: Partial<Record<TAxes, AxisRange>>,
+  value?: (code: string) => number,
 ): Record<TAxes, number> {
   const out = {} as Record<TAxes, number>;
   for (const axis of Object.keys(bindings) as TAxes[]) {
     const binding = bindings[axis];
     const range = ranges?.[axis] ?? BIPOLAR_RANGE;
     const fromPointer = binding.pointer === undefined ? null : pointerAxisValue(binding.pointer, pointer ?? null);
-    out[axis] = clampAxis(fromPointer ?? digitalTarget(binding, isDown), range);
+    const fromBindings = value === undefined ? digitalTarget(binding, isDown) : analogTarget(binding, value);
+    out[axis] = clampAxis(fromPointer ?? fromBindings, range);
   }
   return out;
 }

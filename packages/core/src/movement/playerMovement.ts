@@ -13,6 +13,7 @@ import {
   createEmptyMovementKeys,
   createPlayerMotionState,
   DEFAULT_OBSTACLE_PLAYER_RADIUS,
+  obstacleSupportHeight,
   resolveMovementIntent,
   resolveObstacleStep,
   snapPositionToGrid,
@@ -36,6 +37,8 @@ const DEFAULT_SWIM_SPEED_MULTIPLIER = 0.65;
 const DEFAULT_MAX_CLIMB_NORMAL_Y = Math.cos((50 * Math.PI) / 180);
 /** Downhill slide speed (units/s) per unit of slope steepness while on too-steep ground. */
 const SLOPE_SLIDE_SPEED = 4;
+/** Tallest object ledge walked up (and largest ground drop still snapped down) without jumping/falling. */
+const DEFAULT_PLAYER_STEP_HEIGHT = 0.4;
 
 /** The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math. */
 export interface PlayerMovementTuning {
@@ -93,6 +96,8 @@ interface PlayerMovementState {
 interface CtxMovementStore {
   players: Map<string, PlayerMovementState>;
   solids: { count: number; set: Set<string> };
+  /** Cached broadphase reach — the scene's largest blocking-collider extent (see {@link obstacleReachFor}). */
+  obstacleReach: { count: number; value: number };
 }
 
 const stores = new WeakMap<GameContext, CtxMovementStore>();
@@ -100,7 +105,11 @@ const stores = new WeakMap<GameContext, CtxMovementStore>();
 function storeFor(ctx: GameContext): CtxMovementStore {
   let store = stores.get(ctx);
   if (store === undefined) {
-    store = { players: new Map(), solids: { count: -1, set: new Set() } };
+    store = {
+      players: new Map(),
+      solids: { count: -1, set: new Set() },
+      obstacleReach: { count: -1, value: OBSTACLE_MAX_HALF_EXTENT },
+    };
     stores.set(ctx, store);
   }
   return store;
@@ -196,7 +205,17 @@ export function stepPlayerMovement(
   keys.d = isDown("moveRight");
   keys.shift = isDown("sprint") && (tuning.movement?.canSprint?.(ctx) ?? true);
   keys.space = isDown("jump");
-  const intent = resolveMovementIntent(keys, true);
+  // A frame carrying analog magnitudes (virtual joystick, gamepad stick) walks at its deflection
+  // instead of slamming digital ±1 axes — the fix for "a slight stick tilt reads as a full strafe".
+  const analog = input.analog ?? null;
+  const analogMove =
+    analog === null
+      ? null
+      : {
+          forward: (analog.moveForward ?? 0) - (analog.moveBack ?? 0),
+          right: (analog.moveRight ?? 0) - (analog.moveLeft ?? 0),
+        };
+  const intent = resolveMovementIntent(keys, true, analogMove);
   const motionBatch = ctx.player.motionFor(userId).takePending();
   const walkSpeed = player.movement?.walkSpeed ?? DEFAULT_WALK_SPEED;
 
@@ -274,7 +293,11 @@ export function stepPlayerMovement(
   const motionOptions: MotionFrameOptions | undefined = submerged
     ? { speedScale: swimSpeedMultiplier, floating: true }
     : undefined;
+  const prevJumpOffset = motion.jumpOffset;
   const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics, motionOptions);
+  // Airborne means "not resting on the surface below": any jump/impulse height before or after this
+  // frame's integration. Grounded-only forgiveness (step-up) and airborne-only landing key off it.
+  const airborne = prevJumpOffset > 0 || motion.jumpOffset > 0;
   let stepX = step.stepX;
   let stepZ = step.stepZ;
   if (tuning.movement?.mode === "axis") {
@@ -282,9 +305,19 @@ export function stepPlayerMovement(
     stepX = constrained.stepX;
     stepZ = constrained.stepZ;
   }
-  if (tuning.movement?.collideObjects === true) {
-    const obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ);
-    const resolved = resolveObstacleStep(player.position, stepX, stepZ, obstacles);
+  const stepHeight = tuning.movement?.stepHeight ?? DEFAULT_PLAYER_STEP_HEIGHT;
+  let obstacles: CollisionObstacle[] | null = null;
+  if (tuning.movement?.collideObjects !== false) {
+    obstacles = gatherMovementObstacles(ctx, store, player.position, stepX, stepZ);
+    // While grounded, a box the player could simply step onto is a ledge, not a wall.
+    const resolved = resolveObstacleStep(
+      player.position,
+      stepX,
+      stepZ,
+      obstacles,
+      DEFAULT_OBSTACLE_PLAYER_RADIUS,
+      airborne ? 0 : stepHeight,
+    );
     stepX = resolved.stepX;
     stepZ = resolved.stepZ;
   }
@@ -309,11 +342,46 @@ export function stepPlayerMovement(
     }
   }
   const groundAtNext = tuning.ground.sampleHeight(nextX, nextZ);
-  let nextY = groundAtNext + motion.jumpOffset;
+  // Blocking colliders are walkable surfaces: the effective ground under the player is the higher of
+  // the terrain and the tallest object top the player can stand on here. While grounded a top within
+  // stepHeight above the feet is stepped onto (matching the obstruction's ledge forgiveness); while
+  // airborne only tops at/below the feet catch, so a jump lands ON a crate instead of sinking inside
+  // it and being rubber-banded out by depenetration.
+  const supportY =
+    obstacles !== null
+      ? obstacleSupportHeight(nextX, nextZ, player.position[1], airborne ? 0 : stepHeight, obstacles)
+      : null;
+  const effectiveGround = supportY !== null && supportY > groundAtNext ? supportY : groundAtNext;
+  let nextY: number;
+  if (airborne) {
+    // Integrate the jump arc in absolute space (previous feet + this frame's offset delta) so the
+    // arc stays continuous when the ground under the player changes mid-flight, and land on the
+    // effective ground — terrain or object top — the moment the descending feet reach it.
+    const nextFeet = player.position[1] + (motion.jumpOffset - prevJumpOffset);
+    if (nextFeet <= effectiveGround && motion.verticalVelocity <= 0) {
+      nextY = effectiveGround;
+      motion.jumpOffset = 0;
+      motion.verticalVelocity = 0;
+      motion.grounded = true;
+    } else {
+      nextY = Math.max(nextFeet, effectiveGround);
+      motion.jumpOffset = nextY - effectiveGround;
+      motion.grounded = false;
+    }
+  } else if (!submerged && player.position[1] - effectiveGround > stepHeight) {
+    // Walked off a ledge taller than a step (a crate edge, a cliff): fall under gravity from here
+    // instead of teleporting the feet down to the ground in one frame.
+    nextY = player.position[1];
+    motion.jumpOffset = nextY - effectiveGround;
+    motion.verticalVelocity = 0;
+    motion.grounded = false;
+  } else {
+    nextY = effectiveGround;
+  }
   if (motionBatch !== null && motionBatch.y !== null) {
     nextY = motionBatch.y;
-    motion.jumpOffset = motionBatch.y - groundAtNext;
-  } else if (swimEnabled && waterLevel !== undefined && groundAtNext < waterLevel) {
+    motion.jumpOffset = motionBatch.y - effectiveGround;
+  } else if (swimEnabled && waterLevel !== undefined && effectiveGround < waterLevel) {
     nextY = waterLevel;
   }
   if (tuning.movement?.beforeCommit !== undefined) {
@@ -349,37 +417,77 @@ export function stepPlayerMovement(
 /** Feet-to-head span the obstruction test uses; matches `movementModel`'s `OBSTACLE_PLAYER_HEIGHT`. */
 const OBSTACLE_PLAYER_HEIGHT = 1.8;
 /**
- * Largest collider half-extent the bounded broadphase assumes, so an object whose blocking box reaches
- * the player still has its center inside the `inBox` query — a ~4m wall (half-extent ~2m) is caught. An
- * object wider than this on an axis could be missed at its far edge; raise it if a wider blocker exists.
+ * Broadphase reach floor: the `inBox` query indexes objects by their center *point*, so the query must
+ * extend past the player by at least the largest blocking-collider extent in the scene or a wide
+ * object's edge is missed while its center sits outside the box (walking through the side of a big
+ * building). {@link obstacleReachFor} measures the real scene maximum; this floor covers the default
+ * unit box and keeps behavior for scenes measured smaller.
  */
 const OBSTACLE_MAX_HALF_EXTENT = 4;
 
 /**
+ * The largest reach (center-to-farthest-blocking-face distance, conservatively |offset| + extents per
+ * plane) of any blocking physical collider in the scene, floored at {@link OBSTACLE_MAX_HALF_EXTENT}.
+ * Cached per ctx and recomputed when the object count changes — the dominant invalidation (scene
+ * load/placement); a same-count collider swap wider than the cached reach is not tracked.
+ */
+function obstacleReachFor(ctx: GameContext, store: CtxMovementStore): number {
+  const objects = ctx.scene.object.list();
+  const cache = store.obstacleReach;
+  if (cache.count === objects.length) return cache.value;
+  let value = OBSTACLE_MAX_HALF_EXTENT;
+  for (const object of objects) {
+    const set = ctx.scene.object.collidersOf(object.instanceId);
+    if (set === null) continue;
+    for (const collider of resolveColliders(set)) {
+      if (!collider.blocks || collider.purpose !== "physical") continue;
+      const shape = collider.shape;
+      const offset = shape.offset;
+      const ox = offset !== undefined ? Math.abs(offset[0]) : 0;
+      const oy = offset !== undefined ? Math.abs(offset[1]) : 0;
+      const oz = offset !== undefined ? Math.abs(offset[2]) : 0;
+      if (shape.kind === "sphere") {
+        value = Math.max(value, ox + oz + shape.radius, oy + shape.radius);
+      } else {
+        // Horizontal bound sums both axes so any yaw of the box stays covered.
+        const h = shape.halfExtents;
+        value = Math.max(value, ox + oz + h[0] + h[2], oy + h[1]);
+      }
+    }
+  }
+  cache.count = objects.length;
+  cache.value = value;
+  return value;
+}
+
+/**
  * Gather the player's nearby blocking obstacles from resolved colliders — the mesh-accurate replacement
  * for the old `nearbyObstacles(list(), …)` which emitted a default 1×1×1 box per object. Bounded by an
- * `inBox` broadphase (reach ≥ player radius + max half-extent so wide walls can't be missed), then, per
- * candidate, keeps only blocking physical colliders and emits their real half-extents/offset (or, for a
- * mesh collider carrying `boxes`, the compound sub-boxes), conservatively yaw-rotated by the object's
- * `rotationY`. Objects with no resolved collider fall back to the default box; objects whose colliders
- * don't block stop obstructing. Runs for both the shell's local player and a host, so parity is automatic.
+ * `inBox` broadphase (reach ≥ player radius + the scene's max blocking extent so wide walls can't be
+ * missed), then, per candidate, keeps only blocking physical colliders and emits their real
+ * half-extents/offset (or, for a mesh collider carrying `boxes`, the compound sub-boxes),
+ * conservatively yaw-rotated by the object's `rotationY`. Objects with no resolved collider fall back
+ * to the default box; objects whose colliders don't block stop obstructing. Runs for both the shell's
+ * local player and a host, so parity is automatic.
  */
 function gatherMovementObstacles(
   ctx: GameContext,
+  store: CtxMovementStore,
   position: EntityPosition,
   stepX: number,
   stepZ: number,
 ): CollisionObstacle[] {
-  const reachX = Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS + OBSTACLE_MAX_HALF_EXTENT;
-  const reachZ = Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS + OBSTACLE_MAX_HALF_EXTENT;
+  const maxExtent = obstacleReachFor(ctx, store);
+  const reachX = Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS + maxExtent;
+  const reachZ = Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS + maxExtent;
   const min: EntityPosition = [
     position[0] - reachX,
-    position[1] - OBSTACLE_MAX_HALF_EXTENT,
+    position[1] - maxExtent,
     position[2] - reachZ,
   ];
   const max: EntityPosition = [
     position[0] + reachX,
-    position[1] + OBSTACLE_PLAYER_HEIGHT + OBSTACLE_MAX_HALF_EXTENT,
+    position[1] + OBSTACLE_PLAYER_HEIGHT + maxExtent,
     position[2] + reachZ,
   ];
   const obstacles: CollisionObstacle[] = [];
