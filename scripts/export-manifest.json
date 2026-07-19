@@ -2,6 +2,7 @@
   "@jgengine/core": [
     ".",
     "./ai/crowd",
+    "./ai/difficulty",
     "./ai/flock",
     "./ai/groupAssist",
     "./ai/heatSystem",

@@ -139,6 +139,38 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`
 
+## difficulty-ability-gate — spend-or-hold ability decision from a scored opportunity window
+
+- `shouldUseAbility` (function) · `import { shouldUseAbility } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-execution-error — symmetric aim/lead/timing error scaled by the profile
+
+- `executionError` (function) · `import { executionError } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-lookahead — depth/width-bounded deterministic planner for turn-based or sequential decisions
+
+- `planLookahead` (function) · `import { planLookahead } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-pick — noisy argmax over scored options; expert picks best, easy blunders
+
+- `pickScored` (function) · `import { pickScored } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-profile — derive a per-game decision-quality profile from a canonical tier
+
+- `difficultyProfile` (function) · `import { difficultyProfile } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-reaction-gate — delay acting on new information by the profile's reaction time
+
+- `advanceReactionGate` (function) · `import { advanceReactionGate } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-reaction-gate-state — fresh serializable reaction-gate state for one observed value
+
+- `createReactionGate` (function) · `import { createReactionGate } from "@jgengine/core/ai/difficulty"`
+
+## difficulty-tiers — canonical easy/standard/expert decision-quality profiles for any opponent
+
+- `DIFFICULTY_TIERS` (const) · `import { DIFFICULTY_TIERS } from "@jgengine/core/ai/difficulty"`
+
 ## elevation-readout — cursor height and delta-from-reference feedback
 
 - `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`

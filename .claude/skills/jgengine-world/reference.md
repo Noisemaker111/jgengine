@@ -259,3 +259,15 @@ Path progress adapter (`nav/pathFollow`): `PathProgress` is `{ kind: "normalized
 - **Preemption policy** on each issue: `replace` (preempt active + clear pending), `append` (shift-queue), `front` (jump the queue without dropping the active order), `reject` (refuse while busy). Mark an order `uninterruptible` and a replacing order waits until it finishes; explicit `cancelActive` still forces it.
 - **Order kinds** are `OrderKind<Ctx, Payload>` with `start`/`update`/`finish`, composed over two narrow adapters — `OrderMover` (`position`/`moveToward`/`halt`) and `OrderTargeting` (`acquire`/`positionOf`). Built-ins ship as ordinary compositions with a configurable `kind` string so a game re-skins a verb ("harvest") without engine edits: `defineMoveOrder`, `defineStopOrder`, `defineHoldOrder`, `defineAttackMoveOrder`, `defineTargetedOrder`, `definePatrolOrder`. Engagement verbs write `{ engaging, inRange }` into `order.state`; the game reads it to run the actual attack/effect, keeping combat resolution game-side.
 
+
+### AI decision quality (difficulty tiers)
+
+`ai/difficulty` — one serializable `DifficultyProfile` (reaction time, decision noise, execution jitter, ability discipline, perception scale, plan depth/width) owns *how well* any agent decides; the substrates above own *what* it can do. `DIFFICULTY_TIERS` ships canonical `easy`/`standard`/`expert`; `difficultyProfile(tier, overrides)` derives per-game variants. Appliers sit at the universal decision seams, all deterministic under an injected rng:
+
+- **React** — `createReactionGate(initial)` + `advanceReactionGate(state, dt, desired, profile)`: new information (best target, last-seen position) only takes effect after `reactionSeconds` of stability; feed the *returned* value into pursuit/aim, not the raw `desired`.
+- **Choose** — `pickScored(options, profile, rng)`: noisy argmax over any caller-scored list (acquisition candidates, abilities, retreat routes); expert plays optimally, easy blunders at `decisionNoise` rate.
+- **Execute** — `executionError(profile, rng, scale)`: symmetric aim/lead/timing error to add to a yaw, lead, or release time.
+- **Spend** — `shouldUseAbility(opportunity, profile, rng)`: score the moment `0..1` game-side (targets clumped, player mid-animation); low-discipline profiles waste cooldowns, high-discipline ones hold for strong windows.
+- **Plan** — `planLookahead(root, domain, profile, rng)`: depth/width-bounded negamax over a game-owned `LookaheadDomain` (`moves`/`apply`/`evaluate`, `adversarial: false` for own-sequence planning like rotations or build orders). Easy is greedy and walks into forks; expert finds multi-ply tactics. Run at decision cadence, not per frame.
+
+Compose, don't replace: scale `MobBrainConfig.aggroRadius` by `perceptionScale`, route `acquireTarget` scoring through `pickScored`, gate `advancePursuit` target swaps behind the reaction gate.
