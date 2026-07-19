@@ -319,6 +319,7 @@ export class CdpSession {
   >();
   private readonly ws: WebSocket;
   private readonly ownedTarget?: { debugPort: number; targetId: string };
+  private readonly eventHandlers = new Map<string, Array<(params: Record<string, unknown>) => void>>();
 
   private constructor(ws: WebSocket, ownedTarget?: { debugPort: number; targetId: string }) {
     this.ws = ws;
@@ -332,7 +333,14 @@ export class CdpSession {
       } catch {
         return;
       }
-      if (message.id === undefined) return;
+      if (message.id === undefined) {
+        if (message.method !== undefined) {
+          for (const handler of this.eventHandlers.get(message.method) ?? []) {
+            handler(message.params ?? {});
+          }
+        }
+        return;
+      }
       const waiter = this.pending.get(message.id);
       if (waiter === undefined) return;
       this.pending.delete(message.id);
@@ -361,6 +369,14 @@ export class CdpSession {
         reject(new Error(`CDP WebSocket error: ${url}`));
       });
     });
+  }
+
+  /** Subscribe to a CDP event (e.g. `Page.screencastFrame`). Handlers run for
+   * every matching event until the session closes; there is no unsubscribe. */
+  on(method: string, handler: (params: Record<string, unknown>) => void): void {
+    const handlers = this.eventHandlers.get(method) ?? [];
+    handlers.push(handler);
+    this.eventHandlers.set(method, handlers);
   }
 
   send(method: string, params?: Record<string, unknown>): Promise<Record<string, unknown>> {

@@ -147,9 +147,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/world"`
 
+## countdown-timers — named countdown/countup timer set on an injected clock — round timers, respawn clocks, ability cooldown/charge; read remaining/elapsed/progress + expiry, snapshot/restore
+
+- `createTimerSet` (function) · `import { createTimerSet } from "@jgengine/core/world"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
+
+## damage-direction — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging
+
+- `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/world"`
+
+## day-night-cycle — one wired model gives a moving day-night cycle — running clock plus keyframed phase labels and tint/light colors a game drives an existing sky/daylight seam from
+
+- `createDayNightCycle` (function) · `import { createDayNightCycle } from "@jgengine/core/world"`
 
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
@@ -198,6 +210,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
+
+## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
+
+- `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
 
 ## flight-dynamics — simulate fixed-wing, helicopter, and VTOL aircraft
 
@@ -326,6 +342,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
 
+## particle-system — deterministic pooled particle emitter with SoA render buffers, burst/continuous emission, gravity/drag, size/color/alpha-over-life, and serializable state
+
+- `createParticleSystem` (function) · `import { createParticleSystem } from "@jgengine/core/world"`
+
 ## path-follow-progress — read normalized/distance/segment progress from follow state
 
 - `pathFollowProgress` (function) · `import { pathFollowProgress } from "@jgengine/core/world"`
@@ -412,6 +432,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ScatterCoverageKind` (type) · `import { ScatterCoverageKind } from "@jgengine/core/world"`
 
+## screen-effects — serializable, pooled screen-feedback controller — transient flash/vignette and sustained low-health-style pulses with eased opacities, free-string kinds the game styles, and snapshot/restore
+
+- `createScreenEffects` (function) · `import { createScreenEffects } from "@jgengine/core/world"`
+
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
 - `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
@@ -419,6 +443,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## selection-bookmarks — keyed saved-set store (RTS control groups, camera bookmarks, saved squads) with prune + serialize
 
 - `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
+
+## sequence-director — data-driven cutscene timeline — fire typed camera/dialogue/event cues on one injected clock with play/pause/seek/skip and snapshot/restore
+
+- `createSequenceDirector` (function) · `import { createSequenceDirector } from "@jgengine/core/world"`
+
+## shared-annotations — broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed
+
+- `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
 
 ## skill-check — a timing-bar skill check where you release inside a zone
 
@@ -536,6 +568,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-intersections — trim streets at junctions and weld curb-return crossing surfaces in one call
 
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
+- `trimBandAtJunctions` (function) · `import { trimBandAtJunctions } from "@jgengine/core/world"`
 
 ## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
 

@@ -36,6 +36,17 @@ export const CITY_LOT_CLASSES: readonly CityLotClass[] = [
   "silo",
 ];
 
+/**
+ * Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high
+ * `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never
+ * weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with
+ * parking structures and warehouses/depots, mixed in with ordinary zone classes.
+ */
+export type CityFillerClass = "garage" | "depot";
+
+/** All filler classes, for validation and interior-pass allow-lists. */
+export const CITY_FILLER_CLASSES: readonly CityFillerClass[] = ["garage", "depot"];
+
 /** Zone band a lot falls in: dense core, middle ring, or the district edge. */
 export type CityZoneBand = "core" | "mid" | "edge";
 
@@ -80,7 +91,7 @@ interface ClassProfile {
   backRow: boolean;
 }
 
-const CLASS_PROFILES: Record<CityLotClass, ClassProfile> = {
+const CLASS_PROFILES: Record<CityLotClass | CityFillerClass, ClassProfile> = {
   tower: { width: [16, 24], depth: [14, 20], setbackFactor: 0.3, spacingFactor: 1, floors: [12, 34], backRow: true },
   slab: { width: [14, 20], depth: [11, 15], setbackFactor: 0.5, spacingFactor: 1, floors: [4, 9], backRow: true },
   shop: { width: [10, 15], depth: [8, 12], setbackFactor: 0.2, spacingFactor: 0.6, floors: [1, 2], backRow: true },
@@ -90,6 +101,9 @@ const CLASS_PROFILES: Record<CityLotClass, ClassProfile> = {
   farmhouse: { width: [11, 14], depth: [9, 12], setbackFactor: 2.8, spacingFactor: 4, floors: [2, 2], backRow: false },
   barn: { width: [12, 16], depth: [9, 13], setbackFactor: 3.6, spacingFactor: 5, floors: [1, 1], backRow: false },
   silo: { width: [5, 6], depth: [5, 6], setbackFactor: 4, spacingFactor: 3, floors: [1, 1], backRow: false },
+  // Interior-fill fillers: broad, plain footprints that pack the backs of dense blocks.
+  garage: { width: [18, 26], depth: [16, 22], setbackFactor: 0.3, spacingFactor: 0.4, floors: [2, 6], backRow: true },
+  depot: { width: [20, 30], depth: [18, 26], setbackFactor: 0.4, spacingFactor: 0.5, floors: [1, 2], backRow: true },
 };
 
 /** Placement numbers a resolved lot carries out of the class profile. @internal */
@@ -113,18 +127,21 @@ function range(rng: () => number, [lo, hi]: readonly [number, number]): number {
  * @internal
  */
 export function rollClassPlacement(
-  cls: CityLotClass,
+  cls: CityLotClass | CityFillerClass,
   rng: () => number,
   lotScale: number,
   floorsMin: number,
   floorsMax: number,
   setbackBase: number,
   spacingBase: number,
+  widthStretch = 1,
 ): ClassPlacement {
   const profile = CLASS_PROFILES[cls];
   const floors = Math.round(range(rng, profile.floors));
   return {
-    width: range(rng, profile.width) * lotScale,
+    // `widthStretch` (≥1, from the block-fill dial) is a post-multiply on the rolled width — it
+    // never changes the rng draw order, so the default (1) stays byte-identical.
+    width: range(rng, profile.width) * lotScale * widthStretch,
     depth: range(rng, profile.depth) * lotScale,
     setback: setbackBase * profile.setbackFactor * (0.9 + rng() * 0.2),
     gap: Math.max(0.2, spacingBase * profile.spacingFactor * (0.7 + rng() * 0.6)),
@@ -210,7 +227,7 @@ function gable(
  * @internal
  */
 export function buildLotPieces(
-  cls: CityLotClass,
+  cls: CityLotClass | CityFillerClass,
   width: number,
   depth: number,
   floors: number,
@@ -339,6 +356,30 @@ export function buildLotPieces(
         const sw = width * 0.55;
         pieces.push({ shape: "cylinder", offset: [width * 0.75, 0, 0], size: [sw, sh * 0.75, sw], rotationY: 0, role: "trim", grounded: true, banded: false });
         pieces.push({ shape: "dome", offset: [width * 0.75, sh * 0.75, 0], size: [sw, 1.3, sw], rotationY: 0, role: "roof", grounded: false, banded: false });
+      }
+      return pieces;
+    }
+    case "garage": {
+      // Parking structure: a plain banded box (the window bands read as deck slots) with a flat cap.
+      pieces.push(box([0, 0, 0], [width, H, depth], "wall", { grounded: true, banded: true }));
+      pieces.push(box([0, H, 0], [width * 1.02, 0.4, depth * 1.02], "trim"));
+      if (rng() < 0.6) {
+        // Stair/lift core poking above the roof deck.
+        const cx = (rng() - 0.5) * width * 0.5;
+        const cz = (rng() - 0.5) * depth * 0.4;
+        pieces.push(box([cx, H + 0.4, cz], [width * 0.16, 1.6 + rng() * 1.2, depth * 0.16], "accent"));
+      }
+      return pieces;
+    }
+    case "depot": {
+      // Warehouse/depot: a low broad box under a shallow gable, with an optional loading canopy.
+      const bw = width * 0.98;
+      const bd = depth * 0.96;
+      pieces.push(box([0, 0, 0], [bw, H, bd], "wall", { grounded: true }));
+      const roofH = Math.min(2.4 + rng() * 1.6, bd * 0.28);
+      pieces.push(gable([0, H, 0], [bw, roofH, bd]));
+      if (rng() < 0.5) {
+        pieces.push(box([0, Math.min(H - 0.4, 2.6), bd / 2 - 0.4], [bw * 0.55, 0.4, 0.8], "accent"));
       }
       return pieces;
     }

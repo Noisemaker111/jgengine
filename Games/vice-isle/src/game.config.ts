@@ -79,6 +79,9 @@ export const game = defineGame({
   },
   shadows: true,
   worldHealthBars: { roles: ["enemy", "hostile"] },
+  // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
+  // automatically so a lobbed round never draws a straight fake beam.
+  presentationEffects: { tracers: true },
   worldItem: {
     pickupRadius: 2.4,
     rarityStyle: {

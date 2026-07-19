@@ -698,6 +698,8 @@ describe("float text and projectile events", () => {
     expect(shots).toHaveLength(1);
     expect(shots[0]!.from).toBe(attacker);
     expect(shots[0]!.hit).toBe(true);
+    // A plain direct-fire shot (no fuseTime/explosion) is not ballistic, so tracers may draw it.
+    expect(shots[0]!.ballistic).toBe(false);
     expect(shots[0]!.origin[0]).toBeCloseTo(0);
     expect(shots[0]!.origin[1]).toBeCloseTo(1.4);
     expect(shots[0]!.origin[2]).toBeCloseTo(0.35);

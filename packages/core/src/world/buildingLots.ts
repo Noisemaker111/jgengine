@@ -40,6 +40,15 @@ export interface BuildingLotOptions {
   spacing?: number;
   /** Sidewalk strip between the curb (`width / 2`) and the building front, world units. Default 3. */
   setback?: number;
+  /**
+   * Manhattan streetwall dial (0..1). Omit (default) keeps the legacy look byte-for-byte. When set,
+   * frontage is compacted as it rises: the along-road gap between neighbours scales from `spacing` at
+   * `~0.45` down to 0 at 1 (buildings shoulder-to-shoulder), and each lot's frontage width widens by
+   * a modest factor above 0.45 so consecutive lots touch instead of leaving gaps. Below ~0.45 the gap
+   * grows past `spacing`, so a low dial reads sparser than the default. Depth is unchanged. This is
+   * pure frontage compaction; block-interior fill lives in the content pass (`resolveCityLotContent`).
+   */
+  blockFill?: number;
   /** Place lots on both sides of each road. Default true. */
   bothSides?: boolean;
   /** Clip region; lots whose center falls outside are dropped. Omit to keep every lot. */
@@ -71,6 +80,27 @@ export interface PlacedBuildingLot {
 }
 
 const DEFAULT_FOOTPRINT: WorldBounds = { w: 12, d: 10 };
+
+/**
+ * Frontage-fill reference point: at this dial value the compaction is a no-op (legacy spacing/width),
+ * so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
+ */
+export const FRONTAGE_FILL_REFERENCE = 0.45;
+/** Modest extra frontage-width growth applied at full fill so consecutive lots touch (edge-to-edge). */
+const FRONTAGE_WIDTH_OVERFILL = 0.1;
+
+/**
+ * Map a `blockFill` dial to frontage compaction factors. `undefined` ⇒ identity (legacy path stays
+ * byte-identical). At {@link FRONTAGE_FILL_REFERENCE} the factors are exactly `{1, 1}`; toward 1 the
+ * gap collapses and lots widen, toward 0 the gap grows (sparser than default). @internal
+ */
+export function frontageCompaction(blockFill: number | undefined): { spacingScale: number; widthScale: number } {
+  if (blockFill === undefined) return { spacingScale: 1, widthScale: 1 };
+  const f = Math.max(0, Math.min(1, blockFill));
+  const spacingScale = (1 - f) / (1 - FRONTAGE_FILL_REFERENCE);
+  const widthScale = 1 + (Math.max(0, f - FRONTAGE_FILL_REFERENCE) / (1 - FRONTAGE_FILL_REFERENCE)) * FRONTAGE_WIDTH_OVERFILL;
+  return { spacingScale, widthScale };
+}
 
 interface Station {
   p: Vec2;
@@ -134,11 +164,16 @@ export function facingRotation(outwardNormal: Vec2): number {
  * @capability building-lots derive street-facing building lots from road frontage
  */
 export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] {
-  const footprint = options.footprint ?? DEFAULT_FOOTPRINT;
-  const spacing = Math.max(0, options.spacing ?? 2);
+  const baseFootprint = options.footprint ?? DEFAULT_FOOTPRINT;
+  const baseSpacing = Math.max(0, options.spacing ?? 2);
   const setback = Math.max(0, options.setback ?? 3);
   const bothSides = options.bothSides ?? true;
   const maxLots = Math.max(0, Math.floor(options.maxLots ?? 400));
+  // `blockFill` compaction: widen each lot's frontage and shrink the along-road gap toward a
+  // Manhattan streetwall as the dial rises. Undefined ⇒ identity, so the classic path is untouched.
+  const { spacingScale, widthScale } = frontageCompaction(options.blockFill);
+  const footprint: WorldBounds = { w: baseFootprint.w * widthScale, d: baseFootprint.d };
+  const spacing = baseSpacing * spacingScale;
   const step = Math.max(1, footprint.w + spacing);
 
   const sides: readonly (1 | -1)[] = bothSides ? [1, -1] : [1];

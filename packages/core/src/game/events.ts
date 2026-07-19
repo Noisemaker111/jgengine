@@ -165,6 +165,11 @@ export interface ProjectileSettledEvent {
   at: [number, number, number];
   effect: string;
   hit: boolean;
+  /**
+   * True for arced/exploding shots (grenades, launchers), false for direct-fire (bullets, bolts).
+   * Straight muzzle→impact tracers only make sense for direct-fire shots, so renderers skip the arced ones.
+   */
+  ballistic: boolean;
 }
 
 export interface WorldItemDroppedEvent {

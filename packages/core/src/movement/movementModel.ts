@@ -321,12 +321,24 @@ interface ObstacleBounds {
   maxZ: number;
 }
 
+/**
+ * Swept clamp of a single-axis step against a box span. Entering from outside stops on the near
+ * face — including when the raw target would land *beyond* the far face (the old form returned the
+ * full step there, tunneling a fast mover straight through the box in one frame). Starting inside
+ * the span still permits full exits (the depenetration path owns true stuck-inside cases), and
+ * motion beginning at or past a face moving away is untouched.
+ */
 function clampAxisStep(originalCoord: number, step: number, min: number, max: number): number {
   if (step === 0) return 0;
   const target = originalCoord + step;
-  if (target <= min || target >= max) return step;
-  if (step > 0) return originalCoord <= min ? min - originalCoord : 0;
-  return originalCoord >= max ? max - originalCoord : 0;
+  if (step > 0) {
+    if (originalCoord >= max) return step;
+    if (originalCoord <= min) return target > min ? min - originalCoord : step;
+    return target >= max ? step : 0;
+  }
+  if (originalCoord <= min) return step;
+  if (originalCoord >= max) return target < max ? max - originalCoord : step;
+  return target <= min ? step : 0;
 }
 
 /**
@@ -337,6 +349,11 @@ function clampAxisStep(originalCoord: number, step: number, min: number, max: nu
  * by `playerRadius`; an obstacle whose vertical span misses the player's
  * feet-to-head span is skipped entirely. Callers should pre-filter to nearby
  * objects — this also early-exits per obstacle on horizontal distance.
+ *
+ * `stepUpHeight` treats boxes whose top sits within that height above the feet
+ * as walkable ledges instead of walls: they stop blocking here, and the caller
+ * stands the player on them via {@link obstacleSupportHeight} — a curb or stair
+ * tread is stepped up, not bumped into.
   * @internal
   */
 export function resolveObstacleStep(
@@ -345,6 +362,7 @@ export function resolveObstacleStep(
   stepZ: number,
   obstacles: readonly CollisionObstacle[],
   playerRadius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS,
+  stepUpHeight = 0,
 ): MovementFrameStep {
   const feetY = current[1];
   const headY = feetY + OBSTACLE_PLAYER_HEIGHT;
@@ -360,8 +378,9 @@ export function resolveObstacleStep(
     minZ: number,
     maxZ: number,
   ): void => {
-    // Vertical-span cull: a sub-box entirely above the head (walk under the lintel) or below the feet is skipped.
-    if (maxY <= feetY || minY >= headY) return;
+    // Vertical-span cull: a sub-box entirely above the head (walk under the lintel), below the feet,
+    // or low enough to step up onto (`stepUpHeight`) is skipped — walkable ledges don't wall.
+    if (maxY <= feetY + stepUpHeight || minY >= headY) return;
     const centerX = (minX + maxX) / 2;
     const centerZ = (minZ + maxZ) / 2;
     const halfX = (maxX - minX) / 2;
@@ -440,6 +459,54 @@ export function resolveObstacleStep(
   }
 
   return { stepX: resultX + escapeX, stepZ: resultZ + escapeZ };
+}
+
+/**
+ * Highest blocking-box top the player can stand on at `(x, z)`: among obstacles whose footprint
+ * (inflated by `playerRadius`, matching the blocking inflation so any horizontal contact that would
+ * block also supports) contains the point, the tallest top face at or below `feetY + maxClimb`.
+ * `null` when nothing supports. This is what turns a blocking collider into a walkable surface —
+ * step up a curb (`maxClimb` = step height while grounded), land a jump on a crate (`maxClimb` = 0
+ * while airborne, so only tops already below the feet catch), and stand on placed assets instead of
+ * sinking into them and being rubber-banded out by depenetration.
+ * @capability standing-on-objects a player steps up onto low ledges and lands ON a jumped-onto asset's top face instead of clipping inside it.
+ * @internal
+ */
+export function obstacleSupportHeight(
+  x: number,
+  z: number,
+  feetY: number,
+  maxClimb: number,
+  obstacles: readonly CollisionObstacle[],
+  playerRadius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS,
+): number | null {
+  const ceiling = feetY + maxClimb;
+  let best: number | null = null;
+  const considerTop = (minX: number, maxX: number, maxY: number, minZ: number, maxZ: number): void => {
+    if (maxY > ceiling) return;
+    if (best !== null && maxY <= best) return;
+    if (x < minX - playerRadius || x > maxX + playerRadius) return;
+    if (z < minZ - playerRadius || z > maxZ + playerRadius) return;
+    best = maxY;
+  };
+  for (const obstacle of obstacles) {
+    const px = obstacle.position[0];
+    const py = obstacle.position[1];
+    const pz = obstacle.position[2];
+    if (obstacle.boxes !== undefined && obstacle.boxes.length > 0) {
+      for (const box of obstacle.boxes) {
+        considerTop(px + box.min[0], px + box.max[0], py + box.max[1], pz + box.min[2], pz + box.max[2]);
+      }
+      continue;
+    }
+    const halfExtents = obstacle.halfExtents ?? DEFAULT_OBSTACLE_HALF_EXTENTS;
+    const offset = obstacle.offset;
+    const cx = px + (offset !== undefined ? offset[0] : 0);
+    const cy = py + (offset !== undefined ? offset[1] : 0);
+    const cz = pz + (offset !== undefined ? offset[2] : 0);
+    considerTop(cx - halfExtents[0], cx + halfExtents[0], cy + halfExtents[1], cz - halfExtents[2], cz + halfExtents[2]);
+  }
+  return best;
 }
 
 const OBSTACLE_GATHER_RADIUS = 3;

@@ -28,7 +28,21 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
-- _Nothing yet._
+- Walking-player object collision is now **on by default** (`PlayerMovementConfig.collideObjects`
+  defaults `true`): placed scene objects with blocking colliders stop, support, and are stood upon by
+  the player without opting in. A game that relies on walking through placed objects sets
+  `movement: { collideObjects: false }` (or gives those objects non-blocking colliders).
+- Ground drops taller than `movement.stepHeight` (default 0.4) now fall under gravity instead of
+  snapping the feet down in one frame. Games that teleport-spawned players high above the ground will
+  see them fall to it.
+- **Projectile tracers are now opt-in and never drawn for ballistic shots.** `presentationEffects.tracers`
+  defaults **off** (every other presentation channel still defaults on), so the shell no longer draws a
+  straight muzzle→impact line for a game that never asked for one — `fireProjectile` is a generic seam
+  (bullets, bolts, grenades, launchers), and a tracer only reads as a real shot for direct-fire weapons.
+  A game that wants bullet tracers now sets `presentationEffects: { tracers: true }`. Even with tracers on,
+  arced/exploding shots (anything ballistic — grenades, rocket/grenade launchers) never draw one, because a
+  straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
+  gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
 ### Added
 
@@ -38,6 +52,126 @@ At publish, rename this heading to the new version and mirror the entries into
   list keeps a stable identity for React. New `@jgengine/react` `Codex` gallery: category tabs, discovered vs.
   locked cards (secret entries masked until found), and a completion header. First adopter: the apps/dev
   `codex` demo.
+- **Generated street elevation** (`@jgengine/core/world/streetGenerator`) — new optional `elevation` (0..1 relief dial, default 0 = flat, byte-identical output) and `maxGrade` (default 0.07) rules: a seeded smooth field emits per-point `Street.heights` (grade-capped, loop-continuous across a circuit's start/finish) and a shared `StreetNetwork.elevationAt(x,z)` so renderers drape roads, junction welds, sidewalks, and building bases off one consistent surface. Distinct from `context.heightAt` terrain (bridges/tunnels unchanged).
+- **Per-corner radius classes on circuits** (`@jgengine/core/world/streetGenerator`) — circuit corners now fillet from a seeded radius mix (hairpins near `minCurveRadius`, standard corners at 2-4x, 1-3 sweepers per lap at 5-8x, inversely correlated with turn magnitude) so track layouts show genuinely different corner radii instead of one pinched minimum.
+- **`compactness` circuit dial — space-filling kart-style tracks** (`@jgengine/core/world/streetGenerator`) — 0..1 (default 0 = the open flowing hull loop, byte-identical): rising compactness lays the lap as the wall-follower cycle around a seeded direction-biased spanning tree on a corridor grid — provably one self-avoiding loop that folds back through its own footprint with parallel corridors at a clearance-safe pitch, switchback mazes, leaf hairpins, and a ≥3-pitch main straight — then runs the same spline/curvature-floor pipeline. At 1 a default-seed lap triples in length with 19-37 corners and ~61-77% footprint usage.
+- **`blockFill` density dial** (`@jgengine/core/world/cityGenerator` / `buildingLots`) — 0..1 (default 0.45 = today's look, byte-identical): rising fill collapses along-street spacing and widens lots to a touching streetwall, and the content pass packs block interiors with back-row lots including interior-only `garage`/`depot` filler classes while reserving a seeded fraction of blocks as parks — Manhattan-dense cities at 1 (~1.8x the buildings, frontage gaps <10%), sparse suburbs near 0. `ResolvedCityLot` gains `interior`/`park` flags.
+- **`trimBandAtJunctions`** (`@jgengine/core/world/roads`) — clip a sidewalk/parallel band polyline out of every junction apron (arm-derived radius widened by the band's half-width + clearance), returning the surviving sub-paths — so sidewalks end at crossings instead of sailing through them. The playground consumes it for `Street.sidewalks`.
+- **Shared map drawings (multiplayer).** `@jgengine/core/world/sharedAnnotations`' `createSharedAnnotations`
+  makes a map annotation layer collaborative: local `addStroke`/`addShape`/`addNote`/`remove`/`clear` apply
+  then broadcast a serializable edit over the party feed (the same seam `createPingSystem` pings ride), and
+  `apply` mirrors inbound edits from other players while dropping our own echoes. Ids are globally unique per
+  client (`owner:n`) so two players' strokes never collide; transport-agnostic (`ANNOTATION_FEED_ACTION` +
+  any replicated feed). Pings were already shared via `createPingSystem`; this completes the pair. Verified by
+  a two-client sync test.
+- **Terrain surface shading + layered grass wind** (`@jgengine/shell/terrain`, #1373) — plain (untextured) ground now reads as terrain instead of a two-tone gradient: `buildGroundGeometry`-based grounds (`ProceduralGround`, field ground) gain slope-aware darkening/desaturation and seeded, deterministic hash mottling, tunable via the new optional `TerrainSurfaceColorOptions` (`FieldGroundOptions.surface`; defaults in `DEFAULT_TERRAIN_SURFACE_COLOR`, strengths `0` restore the old flat lerp). Grass wind gains a layered rolling gust field (`GrassWindOptions.layered`, default on — three phase-offset directional waves so visible fronts sweep the meadow; `false` restores the single sine) plus a warm lit-tip sheen, and the default grass distance fade widens from 35–95 m to 55–150 m so meadows read expansive at no extra instance cost. `createProceduralGroundGeometry` now delegates to the shared ground builder (behavior-identical geometry, minus the duplication).
+- **Debounced control commits: `useDebouncedCommit`** (`@jgengine/react/useDebouncedCommit`, #1372) — a live-mirrored, trailing-debounced commit binding for slider/number/color/text controls whose commit path is expensive (scene-document patches that regenerate streets, scatter, or grass). The control renders from the local mirror for instant thumb/readout feedback; the real commit fires once per pause (default 180 ms) and flushes on release/blur/unmount; external changes (undo, RPC echo) resync the mirror unless a drag is in flight. The editor's inspector fields (`SchemaInspector`, `SliderRow`/`NumberField`, vegetation and scatter-coverage density) and the shell settings sliders now commit through it, so one drag lands one patch instead of ~50.
+- **Stage / objective banner.** `@jgengine/core/ui/objectiveBanner`' `createObjectiveBanner` is a genre-agnostic,
+  serializable announcement queue: a game calls `announce({ title, subtitle?, kind?, holdMs?, inMs?, outMs? })` and the
+  controller flies the classic transient centered title stamp ("WAVE 3", "VICTORY", "OBJECTIVE COMPLETE") in, holds it,
+  and fades it out — one banner at a time — on an injected clock (`advance()`), exposing the current banner plus its
+  phase (`in`/`hold`/`out`) and `progress` `0..1` for a renderer to animate. `kind` is a free label the game styles; the
+  model never interprets it. Allocation-aware (the `current()` view is pooled) with `subscribe` + `snapshot`/`restore`.
+  `@jgengine/react`' `ObjectiveBannerHost` subscribes, drives the clock per frame, and maps phase + progress to
+  opacity/scale/translate, HudTheme-skinnable and colorable per `kind` via `kindThemes`. Demo: `objective-banner`.
+- **Talent / skill-tree widget.** `@jgengine/react`'s `TalentTree` is a drop-in widget over the existing
+  talent model (`@jgengine/core/game/talents`): pass the node definitions plus a live `createTalentTree`
+  instance and it lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite
+  edges, styles each node learned/available/locked/maxed with an icon + rank badge, and fires
+  `onLearn(nodeId)` on allocatable clicks. A new thin core selector `@jgengine/core/game/talentTreeView`
+  (`talentTreeView`) flattens the model into a serializable per-node render view (tier, state, met/unmet
+  edges) so the widget never re-derives topology or eligibility. HudTheme-token skinned; node ids and
+  branches stay opaque game data.
+- **Countdown / timer HUD.** `@jgengine/core/time/timerSet`' `createTimerSet` is a serializable set of named
+  countdown/countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability
+  cooldown/charge (identical mechanics; `id`/labels are free strings the engine never interprets). Start, pause,
+  resume, stop, reset, and read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` per timer
+  (allocation-aware `read(id, out)`), observe structural changes via `subscribe` and expiry edges via
+  `poll`/`onExpire`, and `snapshot`/`restore` round-trip through a save. `@jgengine/react`'s `TimerReadout`
+  (live digital mm:ss/m:ss.d) and `TimerRing` (SVG radial fill/drain), plus the `useTimerRead` per-frame hook,
+  render it HudTheme-skinned — no hand-rolled interval math. See the `countdown-timer` dev demo.
+- **Branching dialogue UI.** `@jgengine/core/game/dialogueGraph`'s `createDialogueRun` / `selectDialogueView` add a
+  thin, serializable branching-conversation model over the existing `features.dialogue` open/close bridge — a graph of
+  nodes (free-string speaker + line + choices that name the node they lead to) with choose-to-advance traversal, visited
+  history, and snapshot/restore. `@jgengine/react`'s `DialogueView` (+ `useDialogueRun`) is the drop-in view: speaker
+  name, an optional portrait slot, the current line, and clickable response buttons that advance the run — a game passes
+  its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. Genre-agnostic:
+  speaker/choice `kind` are free strings the model never interprets, surfaced as `data-*` for game styling; HudTheme-skinned
+  via `--jg-*` tokens. See the `dialogue` demo.
+- **Damage-direction indicators.** `@jgengine/core/vfx/damageDirection`' `createDamageDirectionTracker` is a
+  serializable, allocation-aware "hit-from" brain: `registerHit({ angle, intensity?, kind? })` (angle in radians,
+  `0` = front, free-string `kind` never interpreted) turns each hit into a directional indicator that fades over a
+  duration on an injected clock, with `active()` reporting live indicators at eased current intensity, optional
+  same-direction merging, a bounded pool, `subscribe`, and `snapshot`/`restore`. `@jgengine/react`'s
+  `DamageDirectionOverlay` (+ `useDamageDirection` hook) renders the classic red arcs flaring around a center reticle
+  toward each recent hit, opacity/scale from intensity, color per `kind`/HudTheme, `pointer-events: none`. New
+  `damage-direction` dev demo. Genre-agnostic, renderer-free core.
+- **Turnkey day-night cycle.** `@jgengine/core/time/dayNightCycle`' `createDayNightCycle` is a genre-agnostic,
+  serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels
+  and tint/light colors (`DayNightKeyframe` → `DayNightSample`), with `pause`/`play`/`setSpeed`/`setDayFraction`,
+  `subscribe`, `snapshot`/`restore`, and a `calendar()` adapter so it drops straight into any `{ dayFraction }` sky
+  seam. The shell's `@jgengine/shell/environment` adds `DayNightSky`, a drop-in R3F presenter that drives the existing
+  `SkyDome` shader and lights from the model each frame — wire one thing for a moving, color-graded day-night sky
+  instead of hand-rolling a clock plus a color lerp. `phase`/`kind` strings stay free-form; the model never interprets
+  them. New `day-night` dev demo.
+- **Status-effect timeline HUD.** `@jgengine/react`'s `StatusEffectBar` renders active buffs/debuffs as a row of
+  painted icons, each with a radial countdown ring and stack-count badge, driven off the existing status model
+  (`combat/statusApplication`'s `StatusInstance`). A thin genre-agnostic core selector,
+  `@jgengine/core/combat`'s `toStatusEffectViews` / `toStatusEffectView` (+ `statusEffectRemainingFraction`),
+  adapts live `StatusInstance`s into serializable `StatusEffectView`s (`id`, free-string `kind`, `remainingMs`,
+  `durationMs`, `stacks`) so the widget re-derives no ring math or timers. `kind` is never interpreted by the engine —
+  the game supplies icon/color/label; icons come from the existing game-icons.net icon system. Demo: `status-effects`.
+- **Cutscene / sequence director.** `@jgengine/core/scene/sequenceDirector`' `createSequenceDirector` is a
+  serializable, genre-agnostic timeline: an ordered list of typed cues (`{ atMs, kind, payload }`) advanced by one
+  injected clock, firing each cue once and in order as its time passes — even across a large `seek` — with
+  `play`/`pause`/`seek`/`skip`/`stop` and `snapshot`/`restore`. The director only schedules and emits cues via
+  `onCue`; it never interprets a `kind`, so the same primitive drives camera moves, dialogue, fades, or any game
+  event without a genre kit. `@jgengine/react`'s `useSequenceDirector` runs the per-frame tick loop and exposes
+  playhead/progress + controls, and `CutsceneLetterbox` is a reskinnable cinematic bars + caption + Skip overlay.
+  See the `cutscene` dev demo.
+- **Modal / confirmation dialog system + reskinnable pause menu.** `@jgengine/core/ui/modalStack`'s
+  `createModalStack` is a genre-agnostic, serializable stack of opaque modal records (`push`/`pop`/`resolve` with a
+  free-form result, `top`/`isOpen`/`depth`, optional injected-clock auto-dismiss via `tick`/`timeRemaining`,
+  `subscribe`, `snapshot`/`restore`) that never interprets a modal's `kind` or result. `@jgengine/react`'s `ModalHost`
+  renders the top modal over a dimmed backdrop with a focus trap and Esc/backdrop-to-cancel, `ConfirmDialog` is a
+  generic two-button confirm/cancel dialog, and `PauseMenu` is a drop-in Resume + game-filled Settings/Quit slot list.
+  All `HudTheme`-token-driven common parts — the game owns final layout, terminology, and skin. Demo: `pause-menu`.
+- **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
+  serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
+  (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a
+  free-string `kind` the game styles, plus color, peak intensity, easing, and duration. It is clock-driven
+  (`advance()` against an injected `now`) and allocation-aware (the `composite()` array and entries are pooled, so
+  steady-state ticking never allocates), with `subscribe` + `snapshot`/`restore`. `@jgengine/shell/postfx`'
+  `ScreenEffectsOverlay` subscribes to the model and paints the composite as pointer-transparent color-grade layers
+  over the canvas. Demo: `screen-effects`. The model never interprets `kind`; flash/vignette/pulse are just
+  parameterizations of the same data (region shape, decay easing, sustained oscillation).
+- **Coach-marks / tutorial hints.** `@jgengine/core/ui/coachMarks`' `createCoachMarkSequence` is a genre-agnostic
+  onboarding model: an ordered list of `CoachMarkStep`s (title, body, optional `anchor`/`placement`, and a data-first
+  string `condition`), a persisted "seen" set so completed hints never re-show, condition-gating via `satisfy`/
+  `setSatisfied`, `current`/`advance`/`dismiss`/`skipAll`, `isComplete`/`remaining`, `subscribe`, and serializable
+  `snapshot`/`restore`. New `@jgengine/react`: `useCoachMarks` plus `CoachMark` and `CoachMarkHost` (anchored or
+  centered callout with an "N of M" counter, a dimmed spotlight backdrop, Next/Skip, and a `CoachMarkTheme` reskin).
+  New `coach-marks` demo.
+- **Fast-travel network.** `@jgengine/core/world/fastTravel`' `createFastTravelNetwork` is a genre-agnostic
+  discovered-destinations model: game-defined `TravelPointDef`s (world-XZ position, region, icon, `initial`)
+  with per-player discovery tracking — `discover`, `isDiscovered`, distance-sorted `list(from)` and
+  `destinations(from)`, `nearest(from, { exclude })`, a `canTravel` gate, `discoveredCount`/`total`, an
+  `onDiscover` seam, and serializable `snapshot`/`restore` (re-seeds `initial` points). New `@jgengine/react`:
+  `useFastTravel` (re-render on discovery) and `FastTravelMenu` (region-grouped, distance-labeled destination
+  picker with a discovery counter and "you are here" flag). New `fast-travel` demo.
+- **Generic particle system.** `@jgengine/core/vfx/particles`' `createParticleSystem` is a genre-agnostic,
+  deterministic, allocation-aware particle emitter: a fixed pool, data-only `EmitterConfig` (rate, position,
+  lifetime, speed, cone `spread`, `gravity`, `drag`, size/color/alpha over life), burst `emit(n)` and continuous
+  `rate`, `update(dt)` integration with swap-remove reaping, Structure-of-Arrays render `buffers()` (positions,
+  sizes, colors, alphas) clamped to the live count, injected-seed determinism, and serializable `snapshot`/
+  `restore`. New `@jgengine/shell/vfx/ParticleField` renders it as a one-draw-call soft-point GPU cloud with
+  per-particle size/color/alpha (additive or normal blending). New `particle-vfx` demo (fire / smoke / sparks).
+- **Notification center.** `@jgengine/core/game/notifications`' `createNotificationCenter` is a persistent,
+  read-tracked notification log (newest-first, capped, serializable, observable) — the durable counterpart to
+  transient toasts: `push`, `list({ kind, unreadOnly })`, `unreadCount`, `markRead`/`markAllRead`, `remove`,
+  `clear`, `snapshot`/`restore`. New `@jgengine/react`: `useNotifications`, `NotificationBell` (icon + unread
+  badge), and `NotificationCenter` (scrollable panel with kind markers, relative time, unread highlight, and
+  mark-all-read/clear). First adopter: the apps/dev `notification-center` demo.
 - **Photo mode.** `@jgengine/core/ui/photoMode`'s `createPhotoModeStore` is a serializable, observable
   photo-mode state (active + hide-HUD) a game binds its capture flow to. New `@jgengine/react`
   `usePhotoMode` + `PhotoModeControls` (hide-HUD toggle, capture, exit). New `@jgengine/shell/render/
@@ -143,11 +277,30 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Road ribbons no longer self-intersect at bends** (`@jgengine/core/world/roads`) — `buildRoadRibbon` now miter-joins the inner edge of a bend and welds any residual fold when the local turn radius drops under the half-width, so dense arc-sampled corners render as one clean surface instead of a doubled bowtie. Straight ribbons and terminal cross-sections stay byte-identical (junction welds unaffected).
+- **Junction surfaces stopped emitting sliver triangles** (`@jgengine/core/world/roads`) — `buildJunctionSurface` grouped approach corners globally by angle, which interleaved unequal-width approaches and produced shard/sliver fans; corners now stay grouped per approach with wrap-safe ordering and outward curb-return arcs, and the fan runs over an angle-monotonic simple boundary.
+- **Street corner arcs sample at ≤~9° per vertex** (`@jgengine/core/world/streetGenerator`) — corner fillets previously stepped up to `maxTurnAngle` (~28°) per vertex and read as hard polygons at road width; both net and circuit corners now sample finely, and sidewalk offsets became true parallel offsets (outside arcs, inside miter-clamp + weld) that never pinch into the road surface.
+- **Circuit centerlines are curve-first splines** (`@jgengine/core/world/streetGenerator`) — the folded layout polygon (hull + deep inward displacement, guaranteed hairpin/ess) now serves as control points for a periodic centripetal Catmull-Rom spline with a curvature floor at `minCurveRadius` (weighted Laplacian relaxation), so a lap is mostly flowing sweepers and continuous esses with 1-3 deliberate straights — not straight segments with corner caps. Fitted radii form a smooth continuum (~1.1-11x the floor); property tests pin curvature continuity, curved-share, and hairpin+sweeper coexistence.
+
 - **Chase camera yaw is smoothed by default** (`camera.chase.yawResponse`, `@jgengine/shell` chase rig, #1370) — the boom now eases toward the followed body's facing with `1-exp(-response*dt)` smoothing (default response 5) instead of rigidly equaling it every frame, so a strafe-flipped facing arcs the camera around the character rather than teleporting it to the far side. Set `yawResponse: Infinity` to restore the legacy rigid follow; drift-lag (`velocityYaw`) keeps its own response as before.
 - **Editor content-browser thumbnails no longer crash the editor when a GLB's textures fail** (`@jgengine/editor`, #1270) — `getGlbThumbnailState` (the `getSnapshot` behind `useGlbThumbnail`/`AssetThumbnail`) returned a fresh object literal on every call, violating the `useSyncExternalStore` stable-snapshot contract; React's post-commit consistency check then forced a re-render every commit ("Maximum update depth exceeded"), and the `GameUiErrorBoundary` blanked the whole editor chrome. It now reuses the prior snapshot object while a URL's observable state (idle/loading/ready/error) is unchanged, so a permanently-failing asset settles to a stable error/glyph fallback instead of looping. No API change; behavior only.
 - **Offline autosave no longer starves in a living world** (`@jgengine/core/runtime/runtimeSave`) — `autosave` mode previously debounced by *resetting* its timer on every world change, so an open world that mutates every frame (AI, physics, the day/night clock) pushed the timer forward faster than it could fire and never persisted; a game that drove no explicit `checkpoint()` effectively never saved. Autosave is now a trailing timer: the first unsaved change arms it, later changes ride the same timer, and it captures the latest snapshot when it fires — at most one write per `autosaveMs` and always within one interval, even while the world never idles. No API change; behavior only.
 - **Effect consolidation phase 2: subscriptions on `useSyncExternalStore`, dispose pairs on `useDisposable`** (`@jgengine/react`, `@jgengine/shell`, `@jgengine/editor`, #1304) — hand-rolled `subscribe(() => setTick)` re-render mirrors across the editor chrome/panels, shell settings (`useSettingsRevision`), camera director, WorldHud selection, and AuthoredScene live-document hook now ride `useSyncExternalStore` (fewer redundant render passes, identical update timing); ~15 shell renderers moved their `useMemo` + dispose-effect pairs onto `useDisposable`; derived-state/prop-reset/focus effects were removed in favor of render-time derivation and `autoFocus` (editor inspector fields, hierarchy active row, animation panel, play-control mirrors via the new shared `usePlayControl`, GamePlayerShell binding overrides — kills a one-frame stale-keybinds render on game switch; `GameViewport` now renders `data-jg-layout-collision` declaratively). No public API removals; `usePlayControl` (`@jgengine/editor`) is new.
 
+- **Blocking colliders are now walkable surfaces, and collision is on by default** (`@jgengine/core`
+  movement, #1402) — the walking controller treats placed objects' blocking colliders as ground:
+  `collideObjects` defaults `true`; a ledge within the new `PlayerMovementConfig.stepHeight`
+  (default 0.4) is stepped up instead of walling; a jump that clears an object's top **lands standing
+  on it** (new `obstacleSupportHeight`, integrated in absolute space so the arc stays continuous over
+  changing ground) instead of sinking inside the box and being rubber-banded out by depenetration; and
+  walking off a drop taller than a step falls under gravity instead of teleporting the feet down.
+- **Movement and vehicles no longer tunnel through solids** (`@jgengine/core`, #1402) — the shared
+  axis clamp in `resolveObstacleStep` is now swept: a step whose target lands *beyond* a box's far
+  face stops on the near face instead of passing straight through (fast cars, dashes/impulses, low-FPS
+  frames, thin walls). The walking broadphase also derives its reach from the scene's actual largest
+  blocking collider instead of a hardcoded 4 m bound, so the player no longer walks through the edges
+  of wide buildings whose center point sat outside the query; and the kinematic-vehicle clamp passes
+  collider `offset`/compound `boxes` through instead of silently dropping them.
 - **Walking collision now depenetrates instead of locking.** `resolveObstacleStep`
   (movement) previously slid along box faces but had no escape once the capsule was
   strictly *inside* a solid box — its per-axis clamps returned zero on both axes and the

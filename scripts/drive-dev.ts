@@ -36,6 +36,9 @@ import {
 } from "./browser-lib";
 import { summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
+import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
+import { assembleGif } from "./gif";
+import { assembleMp4 } from "./video";
 
 type Step =
   | { kind: "click"; text: string }
@@ -65,7 +68,13 @@ type Args = {
   softlockMs: number;
   epsilon: number;
   spawn?: string;
+  record?: string;
+  recordWidth: number;
 };
+
+/** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
+ * so a recorded clip actually animates in the PR body. */
+const RECORD_BUDGET_BYTES = 4_500_000;
 
 const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
 
@@ -84,6 +93,15 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       Compose an editor aerial in one call, e.g.
                       --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
                       region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
+  --record <name>     record the whole drive (every rendered frame, CDP screencast)
+                      to shots/<game>-<name>.gif — an animated GIF that plays
+                      inline in PR bodies and chat, auto-thinned under ~4.5MB
+                      (GitHub camo's limit) — plus shots/<game>-<name>.mp4, the
+                      full-fidelity real video: every frame, true timing, no size
+                      cap (GitHub links it for download; it cannot play inline).
+                      Pair both with pr-shots like any other capture
+  --record-width <px> screencast max width (default 640; smaller = more frames
+                      fit in the size budget)
   --probe [name]      print the game's live capture.probe metrics (e.g. player
                       position) as JSON — pair one before and one after a --key
                       hold to prove a non-zero movement delta via RPC, which is
@@ -129,6 +147,7 @@ function parseArgs(argv: string[]): Args {
     sampleMs: 250,
     softlockMs: 2000,
     epsilon: 1e-3,
+    recordWidth: 640,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -164,6 +183,13 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
     else if (value === "--spawn") args.spawn = argv[++index];
+    else if (value === "--record") {
+      const name = argv[++index] ?? "clip";
+      if (name.includes("/") || name.includes("\\")) {
+        throw new Error(`drive: --record takes a bare name, not a path (got "${name}") — output always lands in shots/<game>-<name>.gif`);
+      }
+      args.record = name;
+    } else if (value === "--record-width") args.recordWidth = Number(argv[++index] ?? args.recordWidth);
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
@@ -171,6 +197,7 @@ function parseArgs(argv: string[]): Args {
   if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive the-robots --click START");
   if (
     !args.playtest &&
+    args.record === undefined &&
     !args.steps.some((step) => step.kind === "shot" || step.kind === "rpc" || step.kind === "probe")
   ) {
     args.steps.push({ kind: "shot", name: "drive" });
@@ -367,6 +394,30 @@ const exitCode = await withBrowserSession(
       await new Promise((r) => setTimeout(r, 500));
       await installFrameCounter(session);
 
+      const recorded: TimedPng[] = [];
+      if (args.record !== undefined) {
+        session.on("Page.screencastFrame", (params) => {
+          const data = params.data;
+          const sessionId = params.sessionId;
+          const metadata = params.metadata as { timestamp?: number } | undefined;
+          if (typeof sessionId === "number" || typeof sessionId === "string") {
+            void session.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
+          }
+          if (typeof data !== "string" || data.length === 0) return;
+          const tSec = metadata?.timestamp;
+          recorded.push({
+            png: Buffer.from(data, "base64"),
+            tMs: typeof tSec === "number" ? tSec * 1000 : Date.now(),
+          });
+        });
+        await session.send("Page.startScreencast", {
+          format: "png",
+          maxWidth: args.recordWidth,
+          maxHeight: args.recordWidth,
+          everyNthFrame: 1,
+        });
+      }
+
       const samples: ProbeSample[] = [];
       let sampling = args.playtest;
       const sampleStart = Date.now();
@@ -389,6 +440,48 @@ const exitCode = await withBrowserSession(
           const metrics = await readProbe(session);
           console.log(JSON.stringify({ probe: step.name, metrics }));
         } else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
+      }
+
+      if (args.record !== undefined) {
+        await session.send("Page.stopScreencast");
+        // Let an in-flight frame land before assembling.
+        await new Promise((r) => setTimeout(r, 300));
+        let frames = framesFromTimeline(recorded);
+        if (frames.length === 0) {
+          console.error(`drive: --record captured no frames — the page never repainted during the drive`);
+          code = 1;
+        } else {
+          const fullFrames = frames;
+          const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
+          try {
+            assembleMp4(fullFrames, mp4Path);
+            console.log(mp4Path);
+          } catch (error) {
+            console.error(
+              `drive: mp4 encode failed (${error instanceof Error ? error.message : error}) — the GIF still carries the clip`,
+            );
+          }
+          let gif = assembleGif(frames);
+          let thinned = 0;
+          while (gif.length > RECORD_BUDGET_BYTES && frames.length > 2) {
+            frames = thinFrames(frames);
+            gif = assembleGif(frames);
+            thinned += 1;
+          }
+          const outPath = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.gif`);
+          writePngAtomic(outPath, gif);
+          console.log(outPath);
+          console.error(
+            `drive: recorded ${frames.length} frame(s), ${(gif.length / 1_000_000).toFixed(2)}MB animated GIF` +
+              (thinned > 0 ? ` (thinned x${thinned} to fit the ~4.5MB GitHub camo budget)` : ""),
+          );
+          if (gif.length > RECORD_BUDGET_BYTES) {
+            console.error(
+              `drive: clip is still over the ~4.5MB camo budget — rerun with a smaller --record-width (e.g. ${Math.round(args.recordWidth * 0.6)}) or a shorter drive`,
+            );
+            code = 1;
+          }
+        }
       }
 
       if (args.playtest) {
