@@ -37,3 +37,4 @@ export * from "./rotateDevice";
 export * from "./display";
 export * from "./map";
 export * from "./preview";
+export * from "./previewFixtures";

@@ -461,6 +461,7 @@
 - `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
 - `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
 - `MinimapTrackSpan` (interface): interface MinimapTrackSpan — A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`).
+- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `BarsPreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
 - `PanelHost` (function): function PanelHost({ manager, render, panels, variation, shape, width, zIndexBase = 40, className, windowClassName, windowStyle, bodyStyle, }: { manager: PanelsManager; /** Content for a panel by id. Takes precedence over `panels`. */ render?: (id: string) => ReactNode; /** Static content map by pan… — Renders the open panels of a {@link usePanels} manager as absolutely-positioned, draggable, closable windows in z-order — the WoW window layer. Each window uses {@link HudFrame} chrome, is dragged by its title bar, raises focus on pointer-down, and gets its content from the `render` prop (or a `panels` map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button; ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
 - `PanelKeyResult` (interface): interface PanelKeyResult — React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable, draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close). `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
 - `PanelsManager` (interface): interface PanelsManager — The live panel manager returned by {@link usePanels} and consumed by {@link PanelHost}.
@@ -473,6 +474,7 @@
 - `Popover` (function): function Popover({ open, anchorRef, side = "top", gap = 8, role = "tooltip", id, children, className, style, }: { open: boolean; anchorRef: { current: HTMLElement | null }; side?: PopoverSide; gap?: number; role?: string; id?: string; children: ReactNode; className?: string; style?: CSSProperties; }… — An accessible popover shell positioned by the pure {@link placePopover} math — flips and clamps against the viewport, renders nothing while closed, and defaults to `role="tooltip"`. Reuse it for an action's hover/focus description or any anchored panel.
 - `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
 - `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `PreviewFixture` (interface): interface PreviewFixture — One entry in the engine preview-fixture registry: a deterministic, engine-level preview component keyed by a stable id.
 - `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
@@ -560,8 +562,10 @@
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
+- `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
+- `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `schoolForAction` (function): function schoolForAction(action: string): IconSchool — Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches.
 - `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.
@@ -1004,6 +1008,13 @@
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
+
+## @jgengine/react/previewFixtures
+
+- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `BarsPreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
+- `PreviewFixture` (interface): interface PreviewFixture — One entry in the engine preview-fixture registry: a deterministic, engine-level preview component keyed by a stable id.
+- `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
+- `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
 
 ## @jgengine/react/provider
 
