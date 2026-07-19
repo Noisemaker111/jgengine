@@ -32,6 +32,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Photo mode.** `@jgengine/core/ui/photoMode`'s `createPhotoModeStore` is a serializable, observable
+  photo-mode state (active + hide-HUD) a game binds its capture flow to. New `@jgengine/react`
+  `usePhotoMode` + `PhotoModeControls` (hide-HUD toggle, capture, exit). New `@jgengine/shell/render/
+  sceneCapture`: `captureCanvas(gl)` reads the live frame to a PNG data URL (the shell canvas already sets
+  `preserveDrawingBuffer`), `downloadImage` saves it, and `SceneCaptureBinding` (mount in `WorldOverlay`)
+  hands the in-Canvas capture fn to the HUD's Capture button. The game reads `hideHud` to drop gameplay
+  chrome for a clean shot. First adopter: the apps/dev `photo-mode` demo.
 - **Welded street intersections** (`@jgengine/core/world/roads`, #1363) — `trimPathAtJunctions` cuts every road back to an arm-derived apron at each crossing (through-roads split in two) and `buildJunctionSurface` welds a curb-return-filleted junction polygon whose boundary vertices are bitwise-shared with the trimmed ribbon ends; `buildTrimmedIntersections` runs the whole pipeline for a street network in one call. Junctions read as real intersections instead of overlapping ribbons under a floating disc (`buildJunctionPatch` is deprecated but still works). The shell's authored-road and city renderers consume it out of the box.
 - **`GROUND_DECAL_LAYERS`** (`@jgengine/core/world/roads`, #1366) — one owning table for ground-decal elevations (terrain < road = junction < marking < glow) replacing scattered per-callsite Y epsilons; ribbon/junction builders default from it, and markings/glow overlays pair it with renderer-side `polygonOffset` so road surfaces stop z-fighting at distance.
 - **Real curves and sidewalks in the street generator** (`@jgengine/core/world/streetGenerator`, #1364, #1368) — corners are now sampled circular-arc fillets honoring `minCurveRadius` instead of single bevels; street hierarchy comes from sampled betweenness centrality with an arterial-connectivity repair pass instead of a length percentile; and boulevard/avenue/street chains carry `sidewalks` offset polylines (new optional `sidewalkWidth` rule, default 2).

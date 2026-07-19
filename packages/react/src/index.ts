@@ -11,6 +11,7 @@ export * from "./save";
 export * from "./achievements";
 export * from "./i18n";
 export * from "./accessibility";
+export * from "./photoMode";
 export * from "./radialMenu";
 export * from "./quickMenu";
 export * from "./questTracker";
