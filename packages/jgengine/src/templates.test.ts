@@ -112,7 +112,10 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const pkg = JSON.parse(fileOf(files, "package.json")) as { name: string; dependencies: Record<string, string> };
     expect(pkg.name).toBe("@games/probe-game");
     expect(pkg.dependencies["@jgengine/core"]).toBe("workspace:*");
-    expect(fileOf(files, "src/index.css")).toContain('@source "../../../packages/react/src"');
+    const css = fileOf(files, "src/index.css");
+    expect(css).toContain('@source "../../../packages/react/src"');
+    // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
+    expect(css).toContain('@source "../../../packages/editor/src"');
   });
 
   test("standalone: no workspace protocol, no monorepo paths, css @source points at node_modules", () => {
@@ -126,6 +129,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const css = fileOf(files, "src/index.css");
     expect(css).toContain('@source "../node_modules/@jgengine/react/dist"');
     expect(css).toContain('@source "../node_modules/@jgengine/shell/dist"');
+    // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
+    expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');
   });
 
   test("standalone: engine deps pin the CLI's own version", () => {
@@ -206,6 +211,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game.config.ts")).not.toContain("editorLayers");
     expect(fileOf(files, "src/loop.ts")).not.toContain("editorLayers");
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
+    // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
+    expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
   });
 
   test("templates carry the gameKit-first agent onboarding", () => {

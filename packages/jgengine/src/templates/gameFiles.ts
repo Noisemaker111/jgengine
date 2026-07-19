@@ -202,14 +202,17 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 )}
 `;
 
-const indexCss = (variant: TemplateVariant) => `@import "tailwindcss";
+// Tailwind v4 only emits utility classes it finds in @source-scanned files. The F2+E editor summon
+// (GameHost) mounts @jgengine/editor's chrome into THIS page, so its classes must be scanned here too
+// — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
+const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss";
 @import "./style.css";
 ${
   variant === "in-repo"
     ? `@source "../../../packages/react/src";
-@source "../../../packages/shell/src";`
+@source "../../../packages/shell/src";${editor ? `\n@source "../../../packages/editor/src";` : ""}`
     : `@source "../node_modules/@jgengine/react/dist";
-@source "../node_modules/@jgengine/shell/dist";`
+@source "../node_modules/@jgengine/shell/dist";${editor ? `\n@source "../node_modules/@jgengine/editor/dist";` : ""}`
 }
 `;
 
@@ -610,9 +613,9 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`index.css\`, \`style.css\` plus optional \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`; everything else under \`src/game/\`.
 - Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
-- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\` and \`@jgengine/shell\`${
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
-}, or the HUD is silently unstyled.
+}, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 `;
 
