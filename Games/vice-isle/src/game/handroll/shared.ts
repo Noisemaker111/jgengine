@@ -12,6 +12,8 @@ export const PURSUIT_STARS = 3;
 export const RIVAL_RACER_ID = "race_rival";
 
 export interface RaceSnapshot {
+  routeId: string;
+  label: string;
   active: boolean;
   checkpoint: number;
   total: number;
@@ -23,7 +25,8 @@ export interface RaceSnapshot {
 
 export interface VehicleTelemetry {
   mode: "ground" | "aircraft";
-  speedKmh: number;
+  /** Raw ground/air speed in meters per second; the HUD converts to km/h via `formatSpeed` at the edge. */
+  speedMs: number;
   altitude: number;
   verticalSpeed: number;
   gear: number;

@@ -6,7 +6,7 @@ import { ROOMS } from "./game/rooms/catalog";
 import { activeSpikeCells, type Latch, type RoomState } from "./game/rooms/engine";
 import { applyRoomVisuals, currentRoomState } from "./game/rooms/setup";
 import { advanceRoom, loadCurrentRoom, seatPlayer, startRun } from "./game/runtime";
-import { duetStore } from "./game/stores";
+import { duetStore, pruneToast, raiseToast } from "./game/stores";
 import { cellKey, HERO_IDS } from "./game/types";
 
 const SOLVE_HOLD_SECONDS = 1.4;
@@ -69,7 +69,7 @@ function onNewPlayer(ctx: GameContext): void {
 function onTick(ctx: GameContext, dt: number): void {
   const store = duetStore.read(ctx);
   if (store.status === "complete") {
-    tickToast(ctx, dt);
+    pruneToast(ctx);
     return;
   }
   const room = ROOMS[store.roomIndex];
@@ -91,7 +91,7 @@ function onTick(ctx: GameContext, dt: number): void {
       zapped = true;
     }
     if (zapped) {
-      duetStore.update(ctx, (s) => ({ ...s, toast: "Zapped! Retract the spikes first.", toastTimer: 2.2 }));
+      raiseToast(ctx, "Zapped! Retract the spikes first.");
       state = currentRoomState(ctx, room);
     }
   }
@@ -121,15 +121,7 @@ function onTick(ctx: GameContext, dt: number): void {
     else duetStore.update(ctx, (s) => ({ ...s, solveTimer: remaining }));
   }
 
-  tickToast(ctx, dt);
-}
-
-function tickToast(ctx: GameContext, dt: number): void {
-  const store = duetStore.read(ctx);
-  if (store.toast === null) return;
-  const remaining = store.toastTimer - dt;
-  if (remaining <= 0) duetStore.update(ctx, (s) => ({ ...s, toast: null, toastTimer: 0 }));
-  else duetStore.update(ctx, (s) => ({ ...s, toastTimer: remaining }));
+  pruneToast(ctx);
 }
 
 export const loop = { onInit, onNewPlayer, onTick };

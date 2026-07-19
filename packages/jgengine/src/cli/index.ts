@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 import { runCreate } from "../create";
+import { renderRecipe, renderRecipeList } from "../recipes";
 import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
 import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
@@ -42,6 +43,7 @@ usage: jgengine <command> [...args]
   editor [dir]          open the standalone 3D scene editor on a folder (default cwd) —
                         loads its editor.scene.json + models, Ctrl+S writes back
                         [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]
+  recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
@@ -49,6 +51,24 @@ usage: jgengine <command> [...args]
   versions              CLI + installed @jgengine/* versions
   help                  this map
 `;
+
+function runRecipe(argv: string[]): number {
+  const name = argv.find((arg) => !arg.startsWith("-"));
+  if (name === undefined) {
+    console.log("jgengine recipes — copy-paste wired compositions (intent → imports + snippet):\n");
+    console.log(renderRecipeList());
+    console.log("\nprint one: npx jgengine recipe <name>");
+    return 0;
+  }
+  const code = renderRecipe(name);
+  if (code === null) {
+    console.error(`unknown recipe: ${name}\n`);
+    console.error(renderRecipeList());
+    return 1;
+  }
+  console.log(code);
+  return 0;
+}
 
 function runVersions(): number {
   console.log(`jgengine ${cliVersion()}`);
@@ -144,6 +164,9 @@ const [command, ...rest] = process.argv.slice(2);
 switch (command) {
   case "create":
     process.exit(runCreate(rest));
+    break;
+  case "recipe":
+    process.exit(runRecipe(rest));
     break;
   case "desktop":
     runDesktop(rest);

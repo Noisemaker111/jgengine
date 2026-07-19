@@ -17,7 +17,7 @@ import type { TimeConfig } from "../time/simClock";
 import type { WorldFeature } from "../world/features";
 import { resolveWorldPhysics } from "../world/place";
 
-/** Tunes offline whole-world save (`defineGameDefinition({ persist })`). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
+/** Tunes offline whole-world save (`defineGameDefinition({ persist })`). Offline games already autosave to `localStorage` by default — pass this only to tune it (or `persist: false` to opt out). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
 export interface PersistConfig {
   /** `"autosave"` (default) writes on a debounce after any change; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
   mode?: RuntimeSaveMode;
@@ -207,7 +207,7 @@ export interface GameDefinition<
   server?: GameServerConfig;
   /** Hosted per-player save policy, read only by an authoritative multiplayer host. Solo games leave this unset (nothing persists by default) and use `persist` when they want a save at all. */
   save?: SaveConfig;
-  /** The one save knob for solo games: offline whole-world save. `true` autosaves the entire game to `localStorage`; a config object tunes the mode/cadence/target. Binds `ctx.game.save` — the game drives save points and restore. Ignored for multiplayer worlds (the host persists via `save`). */
+  /** The one save knob for solo games: offline whole-world save. **On by default** — an offline game autosaves the entire world to `localStorage` and binds `ctx.game.save` with no config at all; the game only drives save points and restore (`ctx.game.save.load()` at boot). Pass `false` to opt out entirely, or a config object to tune the mode/cadence/target (`storage: "memory"` for in-session-only). Ignored for multiplayer worlds (the host persists via `save`). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
   loop?: GameLoop<GameContext>;

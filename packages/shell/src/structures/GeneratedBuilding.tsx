@@ -64,6 +64,10 @@ export interface GeneratedBuildingProps {
 export interface InstancedBuildingPlacement {
   building: GeneratedBuildingData;
   position?: readonly [number, number, number];
+  /** Building yaw (radians) applied to the whole massing about `pivot` — street-aware facing. */
+  rotationY?: number;
+  /** World XZ the `rotationY` turns about (the building center); defaults to the world origin. */
+  pivot?: readonly [number, number];
 }
 
 export interface InstancedBuildingsProps {
@@ -144,24 +148,34 @@ function bucketPartMatrices(
   const buckets = new Map<BuildingPartKind, THREE.Matrix4[]>();
   for (const placement of buildings) {
     const [ox, oy, oz] = placement.position ?? [0, 0, 0];
+    // Building yaw turns the whole massing about its center. Engine Y-rotation convention (matches
+    // dummy.rotation.y below): a local vector (x, z) maps to (x·cos + z·sin, −x·sin + z·cos).
+    const yaw = placement.rotationY ?? 0;
+    const [px0, pz0] = placement.pivot ?? [0, 0];
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
     for (const part of placement.building.parts) {
       if (visible !== null && !visible.has(part.kind)) continue;
       const [nx, nz] = normalFor(part.facade);
       const offset = outwardOffset(part);
-      const px = ox + part.position[0] + nx * offset;
+      // Local offset from the pivot (part position + facade-normal nudge), then rotated by the yaw.
+      const lx = part.position[0] - px0 + nx * offset;
+      const lz = part.position[2] - pz0 + nz * offset;
+      const px = ox + px0 + lx * cos + lz * sin;
       const py = oy + part.position[1];
-      const pz = oz + part.position[2] + nz * offset;
+      const pz = oz + pz0 - lx * sin + lz * cos;
+      const partYaw = part.rotationY + yaw;
       let bucket = buckets.get(part.kind);
       if (bucket === undefined) {
         bucket = [];
         buckets.set(part.kind, bucket);
       }
       if (part.kind === "clothesline") {
-        const sin = Math.sin(part.rotationY);
-        const cos = Math.cos(part.rotationY);
+        const rowSin = Math.sin(partYaw);
+        const rowCos = Math.cos(partYaw);
         for (const row of CLOTHESLINE_ROW_OFFSETS) {
-          dummy.position.set(px + row * sin, py, pz + row * cos);
-          dummy.rotation.set(0, part.rotationY, 0);
+          dummy.position.set(px + row * rowSin, py, pz + row * rowCos);
+          dummy.rotation.set(0, partYaw, 0);
           dummy.scale.set(part.scale[0], Math.max(part.scale[1], 0.025), 0.025);
           dummy.updateMatrix();
           bucket.push(dummy.matrix.clone());
@@ -169,7 +183,7 @@ function bucketPartMatrices(
         continue;
       }
       dummy.position.set(px, py, pz);
-      dummy.rotation.set(0, part.rotationY, 0);
+      dummy.rotation.set(0, partYaw, 0);
       dummy.scale.set(part.scale[0], part.scale[1], part.scale[2]);
       dummy.updateMatrix();
       bucket.push(dummy.matrix.clone());

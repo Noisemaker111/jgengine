@@ -44,6 +44,11 @@ export function applyPoolDelta(map: StatValueMap, statId: string, amount: number
   }
   const change = changeStatPool(existing, amount);
   const stat = change.pool;
+  // No-op change: `changeStatPool` handed back the same pool reference, so keep
+  // the existing map too — callers can guard on reference identity.
+  if (stat === existing) {
+    return { status: "ok", map, stat, hitMin: change.hitMin, hitMax: change.hitMax };
+  }
   return {
     status: "ok",
     map: { ...map, [statId]: stat },
@@ -119,9 +124,11 @@ export function createEntityStatsApi(
     delta(instanceId, statId, amount) {
       const map = resolve(instanceId);
       if (map === undefined) return { reason: `unknown instance "${instanceId}"` };
+      const existing = map[statId];
       const result = applyPoolDelta(map, statId, amount);
       if (result.status === "rejected") return { reason: result.reason };
-      map[statId] = result.stat;
+      // Skip the store write when nothing moved so reference guards stay stable.
+      if (result.stat !== existing) map[statId] = result.stat;
       return null;
     },
   };

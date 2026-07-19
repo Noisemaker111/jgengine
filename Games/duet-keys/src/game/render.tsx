@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
+import { rolesFromClips } from "@jgengine/core/game/clipRoles";
 import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -128,7 +129,7 @@ function centeredPosition(entry: ModelAssetRef, baseY = 0, scale = 1): [number, 
   return [-scale * dims.center.x, baseY - scale * dims.minY, -scale * dims.center.z];
 }
 
-function useDungeonScene(id: string, material: ModelMaterialOverride | undefined, poseClip?: string) {
+function useDungeonScene(id: string, material: ModelMaterialOverride | undefined, idlePose = false) {
   const entry = resolveModel(id);
   const gltf = useLoader(gltfLoader, entry.url);
   const materialKey =
@@ -139,8 +140,10 @@ function useDungeonScene(id: string, material: ModelMaterialOverride | undefined
     () => {
       const cloned = cloneModelScene(gltf.scene);
       if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
-      if (poseClip !== undefined) {
-        const clip = THREE.AnimationClip.findByName(gltf.animations, poseClip);
+      if (idlePose) {
+        // Bake the rig's idle pose (frame 0) — clip name found by role, not hardcoded per pack.
+        const idle = rolesFromClips(gltf.animations.map((animationClip) => animationClip.name)).idle?.[0];
+        const clip = idle === undefined ? null : THREE.AnimationClip.findByName(gltf.animations, idle);
         if (clip !== null) {
           const mixer = new THREE.AnimationMixer(cloned);
           mixer.clipAction(clip).play();
@@ -150,7 +153,7 @@ function useDungeonScene(id: string, material: ModelMaterialOverride | undefined
       return cloned;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [gltf, materialKey, poseClip],
+    [gltf, materialKey, idlePose],
   );
   useEffect(() => () => disposeClonedMaterials(scene), [scene]);
   return { scene, entry };
@@ -183,7 +186,7 @@ function HeroMesh({ entity }: { entity: SceneEntity }) {
       emissive: hero.glow,
       emissiveIntensity: isActive ? 0.35 : 0.12,
     },
-    "Idle",
+    true,
   );
   const position = centeredPosition(entry, 0, HERO_SCALE);
   return (
