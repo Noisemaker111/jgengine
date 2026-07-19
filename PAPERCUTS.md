@@ -187,3 +187,7 @@ bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails 
 2026-07-18T23:42:10.479Z — fable — Claude
 
 drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
+
+2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
+
+verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
