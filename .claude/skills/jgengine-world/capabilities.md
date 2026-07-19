@@ -131,6 +131,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
+## city-generator — resolve bare city lots into zoned, classed, massed buildings
+
+- `resolveCityLotContent` (function) · `import { resolveCityLotContent } from "@jgengine/core/world"`
+
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
 
 - `resolveCompanionIntent` (function) · `import { resolveCompanionIntent } from "@jgengine/core/scene/companion"`
@@ -464,7 +468,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineStopOrder` (function) · `import { defineStopOrder } from "@jgengine/core/world"`
 
-## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, bridges, tunnels) from sliders
+## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
 
 - `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/world/streetGenerator"`
 
@@ -523,6 +527,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
+
+## world-intersections — trim streets at junctions and weld curb-return crossing surfaces in one call
+
+- `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
 
 ## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
 

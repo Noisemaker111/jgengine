@@ -708,8 +708,8 @@ export interface TrimmedIntersections {
 }
 
 /**
- * @capability world-intersections Trim a set of streets against a set of junctions and weld the
- * crossing surfaces in one call — the ergonomic entry the shell/playground consume for meshing.
+ * Trim a set of streets against a set of junctions and weld the crossing surfaces in one call — the
+ * ergonomic entry the shell/playground consume for meshing.
  *
  * Each street is trimmed by {@link trimPathAtJunctions} (through-streets split in two), each surviving
  * sub-path is meshed with {@link buildRoadRibbon}, and every junction that any ribbon actually ends
@@ -718,6 +718,8 @@ export interface TrimmedIntersections {
  * the seam — no overlap, no z-fighting, no floating disc. Ribbons and surfaces both live on the
  * seam-shared {@link GROUND_DECAL_LAYERS}.road/.junction layer. Deterministic (junctions emitted in
  * ascending index order) and bounded by the street/junction counts.
+ *
+ * @capability world-intersections trim streets at junctions and weld curb-return crossing surfaces in one call
  */
 export function buildTrimmedIntersections(
   streets: readonly IntersectionStreet[],
