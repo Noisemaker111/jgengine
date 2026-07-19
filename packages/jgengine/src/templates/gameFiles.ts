@@ -1439,6 +1439,19 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — the easiest way is \`bun run drive -- --rpc '{"method":"agent_status"}'\`, which boots the dev server and Chrome for you; a browser tool on the \`bun dev\` page works too. See the \`jgengine-editor\` skill.
 
+## Before you hand-roll UI or motion — check what's already shipped
+
+The engine ships far more drop-in building blocks than you'll discover by writing code. Reinventing them is the #1 way agents waste a build. **Before you write a window manager, a bag, a paperdoll, a keydown listener for a hotkey, a stat bar, a minimap, or a walk-cycle/bob, run \`npx jgengine find <intent>\`** — it searches every shipped capability by intent and prints the primitive + its import:
+
+\`\`\`sh
+npx jgengine find "toggleable window"   # → usePanels / PanelHost (hotkeys, ESC, drag, z-stack — all wired)
+npx jgengine find inventory             # → InventoryGrid (real drag/stack/split)
+npx jgengine find "character sheet"     # → CharacterSheet / Paperdoll
+npx jgengine find "3d portrait"         # → EntityPreview (live in-game model in a panel)
+\`\`\`
+
+If you catch yourself writing a \`z-index\` for a HUD window, a \`keydown\` listener to open a panel, a \`<div>\`-grid inventory, or a sine-wave limb bob, **stop and \`find\` it first** — a shipped, accessible, themeable version almost certainly exists. Games own their *look* (skin, layout, terminology, art direction) — compose and reskin the blocks; don't re-derive them from raw divs. Only genuinely game-specific content is hand-built.
+
 ## Hit an engine bug or gap? File it upstream, don't just work around it
 
 \`@jgengine/*\` is the shared engine, not your game. When a primitive misbehaves, clamps or ignores a value you passed, lacks a seam your game needs, or its API misled you into a false negative, that is an **engine** problem — every other game hits it too. Do not bury the finding in a local workaround comment, a hardcoded fallback, or your own notes. Keep your game moving with a minimal workaround if you must, then **file a short issue** at https://github.com/Noisemaker111/jgengine/issues (open it with your GitHub tooling, or hand the user the link) so it gets fixed once, for everyone. Include:

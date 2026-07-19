@@ -260,6 +260,9 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(agents).toContain("recipes/minimal-game.md");
     expect(agents).toContain("npx jgengine skills -p");
     expect(agents).toContain("--all");
+    // Briefed to discover shipped drop-ins before hand-rolling UI/motion.
+    expect(agents).toContain("npx jgengine find");
+    expect(agents).toContain("check what's already shipped");
     // Every new game is briefed to file engine bugs/gaps upstream instead of burying a workaround.
     expect(agents).toContain("File it upstream");
     expect(agents).toContain("https://github.com/Noisemaker111/jgengine/issues");
