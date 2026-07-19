@@ -172,3 +172,7 @@ Fan-out research with background subagents → each agent's final report arrives
 2026-07-19T06:22:33.518Z — claude-fable-5 — Claude
 
 running bun run gate on a fresh branch off main → check-content-gate red on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building already migrated); had to reseed the baseline inside an unrelated PR to get a green gate
+
+2026-07-19T07:37:41.988Z — claude-fable-5 — Claude
+
+screenshotting the website: 'bun run shoot --url http://localhost:3000/...' errors 'nothing is listening' even when our dev server owns that port — only http://127.0.0.1:... passes the allowlist, and the error message doesn't mention that 127.0.0.1 URLs are accepted
