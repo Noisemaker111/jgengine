@@ -32,6 +32,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Achievements / trophies** — `@jgengine/core/game/achievements`' `createAchievementTracker`
+  is a serializable tracker for counter-goal (`progress`/`setProgress`) and boolean (`unlock`)
+  achievements, with `score()`, `completion()`, an `onUnlock` seam (wire to a toast queue, feed,
+  or sound), and `snapshot`/`restore`; its view `list()` keeps a stable identity so React reads it
+  through `useSyncExternalStore` without re-projecting each frame. New `@jgengine/react` presentation:
+  `useAchievements(tracker)`, `AchievementGallery` (unlocked/locked grid with counter progress bars,
+  secret masking, and a completion/score header), and `AchievementToast` (unlock banner). Genre-agnostic
+  and additive — no defaults or content shipped.
 - **World-space pings** (`@jgengine/shell/world/WorldPings`, `@jgengine/shell/world/pingPulse`) — the
   in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a
   billboarded callout (glyph + `meta.callout`/`label`), colored by marker kind and fading in/out over the

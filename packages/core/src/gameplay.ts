@@ -68,6 +68,15 @@ export {
 export { type TechNodeDef } from "./economy/techTree";
 export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
 export {
+  createAchievementTracker,
+  type AchievementDef,
+  type AchievementSnapshot,
+  type AchievementTracker,
+  type AchievementTrackerOptions,
+  type AchievementUnlock,
+  type AchievementView,
+} from "./game/achievements";
+export {
   DEFAULT_CHAT_BODY_LENGTH,
   DEFAULT_CHAT_HISTORY_LIMIT,
   DEFAULT_CHAT_RATE_LIMIT,

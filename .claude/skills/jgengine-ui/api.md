@@ -324,6 +324,10 @@
 ## @jgengine/react
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
+- `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
+- `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
+- `AchievementToastProps` (interface): interface AchievementToastProps — Props for {@link AchievementToast}.
 - `ActionBar` (function): function ActionBar({ defs, columns, layout = "grid", wrap, hotkeys, itemSize, ariaLabel, onActivate, renderItem, className, style, }: { defs: readonly ActionDef[]; columns?: number; layout?: "grid" | "list"; wrap?: boolean; hotkeys?: boolean; itemSize?: number; ariaLabel?: string; onActivate?: (id: … — Convenience composition of {@link useActionBar} + glass {@link ActionBarChrome} for demos and scaffolding — not a shipped game face. Pass `defs`, choose `grid`/`list`, and hand it `onActivate`. Games that own their UI compose the headless hook + custom chrome (or swap `renderItem`) instead of shipping this default panel.
 - `ActionBarChrome` (function): function ActionBarChrome({ model, layout = "grid", itemSize = 52, gap = 6, ariaLabel = "Actions", renderItem, className, style, }: { model: ActionBarModel; layout?: "grid" | "list"; itemSize?: number; gap?: number; ariaLabel?: string; renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => … — The composable RENDERER: lay the model's actions out as a `grid` or `list` toolbar with roving tabindex, arrow-key navigation, and a moved DOM focus. `renderItem` swaps per-item chrome; omit it for {@link ActionButton}. A radial or bespoke UI can skip this entirely and read the model. Purely a wiring/behavior layer — no panel skin — so a game art-directs freely.
 - `ActionBarKeyResult` (interface): interface ActionBarKeyResult — The intent a key press resolves to over an action bar: move focus, activate, or ignore.
@@ -565,6 +569,7 @@
 - `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
+- `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
@@ -636,6 +641,14 @@
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+
+## @jgengine/react/achievements
+
+- `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
+- `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
+- `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
+- `AchievementToastProps` (interface): interface AchievementToastProps — Props for {@link AchievementToast}.
+- `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 
 ## @jgengine/react/actionHud
 
