@@ -18,6 +18,15 @@ name: pr-video
 permissions:
   contents: read
 
+# Two triggers for the same job:
+# - workflow_dispatch: the Run-workflow button (or an API caller with
+#   actions:write — the agents' GitHub App integration has no such scope).
+# - issue_comment (ChatOps): a comment starting with `/pr-video <clip_path>`
+#   on any PR or issue. Comment-triggered workflows always run from the
+#   default branch, and agents CAN post comments through repository-scoped
+#   APIs — this is the trigger agents use. The video lands as a follow-up
+#   comment on the same thread. Only comments by users with write/admin
+#   access are honored.
 on:
   workflow_dispatch:
     inputs:
@@ -29,9 +38,15 @@ on:
         description: "PR or issue number to comment the inline video on (omit to only print the URL)"
         required: false
         type: string
+  issue_comment:
+    types: [created]
 
 jobs:
   upload:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.comment.body, '/pr-video ') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -53,6 +68,22 @@ jobs:
             echo "::error::GH_SESSION_TOKEN Actions secret is not set. Add a github.com user_session cookie (bot account with write access) under Settings → Secrets and variables → Actions."
             exit 1
           fi
+      - name: Resolve inputs
+        id: params
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "clip_path=${{ inputs.clip_path }}" >> "$GITHUB_OUTPUT"
+            echo "target_number=${{ inputs.target_number }}" >> "$GITHUB_OUTPUT"
+          else
+            # ChatOps: `/pr-video <clip_path>` — first line only, target = the thread itself.
+            CLIP_ARG="$(printf '%s' "$COMMENT_BODY" | head -1 | sed 's|^/pr-video[[:space:]]*||' | tr -d '[:space:]')"
+            [ -n "$CLIP_ARG" ] || { echo "::error::usage: /pr-video <clip_path within the pr-shots branch>"; exit 1; }
+            echo "clip_path=$CLIP_ARG" >> "$GITHUB_OUTPUT"
+            echo "target_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload clip to user-attachments
         id: upload
         env:
@@ -60,8 +91,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          CLIP="$GITHUB_WORKSPACE/_clips/${{ inputs.clip_path }}"
-          [ -f "$CLIP" ] || { echo "::error::clip not found on pr-shots branch: ${{ inputs.clip_path }}"; exit 1; }
+          CLIP="$GITHUB_WORKSPACE/_clips/${{ steps.params.outputs.clip_path }}"
+          [ -f "$CLIP" ] || { echo "::error::clip not found on pr-shots branch: ${{ steps.params.outputs.clip_path }}"; exit 1; }
           # Minimal isolated install: pr-video.ts needs only the user-attachments
           # package, not the monorepo's workspace install.
           mkdir /tmp/pv && cp scripts/pr-video.ts /tmp/pv/
@@ -70,10 +101,10 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Uploaded: $URL"
       - name: Comment inline video on target
-        if: ${{ inputs.target_number != '' }}
+        if: ${{ steps.params.outputs.target_number != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           printf 'Gameplay clip (uploaded by the pr-video workflow — plays inline):\n\n%s\n' "${{ steps.upload.outputs.url }}" > body.md
-          gh issue comment "${{ inputs.target_number }}" --repo "${{ github.repository }}" --body-file body.md
+          gh issue comment "${{ steps.params.outputs.target_number }}" --repo "${{ github.repository }}" --body-file body.md
