@@ -535,6 +535,7 @@
     "./map",
     "./panels",
     "./preview",
+    "./previewFixtures",
     "./provider",
     "./rotateDevice",
     "./save",
@@ -546,6 +547,7 @@
     "./social",
     "./startScreen",
     "./store",
+    "./useDebouncedCommit",
     "./voice"
   ],
   "@jgengine/convex": [
@@ -933,6 +935,7 @@
     "./escapeHtml",
     "./find",
     "./gameShape",
+    "./harness",
     "./index",
     "./pkg",
     "./prototypeLook",

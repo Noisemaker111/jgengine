@@ -1,11 +1,13 @@
 import { scatterFootprintArea } from "@jgengine/core/world/scatterCoverage";
 import type {
+  ParamField,
   ParamSchema,
   ParsedParams,
   SceneKindCoverage,
   SceneKindObject,
   WeightedParamEntry,
 } from "@jgengine/core/scene/sceneKinds";
+import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
 
 import { MICRO_LABEL } from "./theme";
 
@@ -13,6 +15,48 @@ import { MICRO_LABEL } from "./theme";
 type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void;
 
 const fmt = (n: number): string => Math.round(n).toLocaleString();
+
+/**
+ * The hoisted density slider: live-mirrored thumb + readout, debounced commit flushed on release
+ * (#1372). Scatter/grass/city regen is heavy, so one write per pause instead of ~50 per drag.
+ */
+function CoverageDensitySlider({
+  field,
+  density,
+  densityKey,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "range" }>;
+  density: number;
+  densityKey: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: local, onInput, flush } = useDebouncedCommit(density, (next) => onMeta({ [densityKey]: next }, `kind:${densityKey}`));
+  return (
+    <label className="block space-y-1">
+      <span className="flex items-center justify-between">
+        <span className={MICRO_LABEL}>{field.label ?? field.key}</span>
+        <span className="text-cyan-200">
+          {local.toFixed(field.step !== undefined && field.step >= 1 ? 0 : 2)}
+          {field.unit ?? ""}
+        </span>
+      </span>
+      <input
+        type="range"
+        min={field.min}
+        max={field.max}
+        step={field.step ?? (field.max - field.min) / 100}
+        value={local}
+        className="w-full accent-emerald-400"
+        aria-label={`${field.label ?? field.key} density`}
+        onChange={(event) => onInput(Number(event.target.value))}
+        onPointerUp={flush}
+        onKeyUp={flush}
+        onBlur={flush}
+      />
+    </label>
+  );
+}
 
 /** One-line summary of a weighted "what fills it" palette: count + the leading item ids. */
 function assetsSummary(entries: readonly WeightedParamEntry[] | undefined): string | null {
@@ -73,25 +117,7 @@ export function CoverageSection({
         </div>
       ) : null}
       {densityField !== undefined && densityField.type === "range" ? (
-        <label className="block space-y-1">
-          <span className="flex items-center justify-between">
-            <span className={MICRO_LABEL}>{densityField.label ?? densityField.key}</span>
-            <span className="text-cyan-200">
-              {density.toFixed(densityField.step !== undefined && densityField.step >= 1 ? 0 : 2)}
-              {densityField.unit ?? ""}
-            </span>
-          </span>
-          <input
-            type="range"
-            min={densityField.min}
-            max={densityField.max}
-            step={densityField.step ?? (densityField.max - densityField.min) / 100}
-            value={density}
-            className="w-full accent-emerald-400"
-            aria-label={`${densityField.label ?? densityField.key} density`}
-            onChange={(event) => onMeta({ [coverage.densityKey]: Number(event.target.value) }, `kind:${coverage.densityKey}`)}
-          />
-        </label>
+        <CoverageDensitySlider field={densityField} density={density} densityKey={coverage.densityKey} onMeta={onMeta} />
       ) : null}
       {note !== undefined && note.length > 0 ? <div className="text-[10px] text-neutral-500">{note}</div> : null}
     </div>
