@@ -76,9 +76,31 @@ describe("ctx.game.save", () => {
     expect(ctx.game.save).toBeUndefined();
   });
 
-  test("no persist config leaves ctx.game.save undefined", () => {
+  test("no persist config auto-wires ctx.game.save for an offline game (localStorage by default)", () => {
     const ctx = createGameContext({
       definition: defineGameDefinition({ name: "Plain", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {},
+      player: { userId: "p1", isNew: true },
+    });
+    expect(ctx.game.save).toBeDefined();
+  });
+
+  test("persist:false opts an offline game out of the default save", () => {
+    const ctx = createGameContext({
+      definition: offlineGame(false),
+      content: {},
+      player: { userId: "p1", isNew: true },
+    });
+    expect(ctx.game.save).toBeUndefined();
+  });
+
+  test("a server-authoritative world stays unpersisted even with no persist config", () => {
+    const ctx = createGameContext({
+      definition: defineGameDefinition({
+        name: "HostedDefault",
+        assets: createAssetCatalog(),
+        multiplayer: convex({ authority: "server" }),
+      }),
       content: {},
       player: { userId: "p1", isNew: true },
     });
