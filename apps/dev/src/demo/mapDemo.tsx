@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import {
@@ -20,6 +20,7 @@ import { createFogField, type FogField } from "@jgengine/core/world/fog";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
 import { createWaypointStore, type WaypointStore } from "@jgengine/core/world/waypoints";
+import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/world/mapAnnotations";
 import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";
 import { usePlayer, useSceneEntities, useFeed } from "@jgengine/react/hooks";
 
@@ -73,6 +74,7 @@ const terrainField: TerrainField = resolveTerrainField(terrainFeature.terrain);
 const markerSet: MarkerSet = createMarkerSet();
 const fogField: FogField = createFogField({ bounds: BOUNDS, cellSize: FOG_CELL });
 const waypoints: WaypointStore = createWaypointStore({ markers: markerSet });
+const annotations: AnnotationLayer = createAnnotationLayer();
 
 let pingSystem: PingSystem | null = null;
 let raiderAngle = 0;
@@ -120,6 +122,7 @@ function onInit(ctx: GameContext): void {
   worldMapOpen = true;
   fogField.reset();
   waypoints.clear();
+  annotations.clear();
   seedMarkers();
 
   fogField.reveal(0, 0, 22);
@@ -174,6 +177,8 @@ function onNewPlayer(ctx: GameContext): void {
       object: null,
     }, "location");
   }
+  // Seed a demo annotation stroke so the drawn-route layer is visible on open.
+  annotations.addStroke([[-42, -30], [-20, -10], [4, -18], [26, 4], [40, -12]], { tone: "warning", width: 3 });
 }
 
 function onTick(ctx: GameContext, dt: number): void {
@@ -222,11 +227,21 @@ const WAYPOINT_LEGEND_LABELS: Record<string, string> = {
   danger: "Hazard",
 };
 
+function useAnnotationRoutes() {
+  return useSyncExternalStore(
+    (listener) => annotations.subscribe(listener),
+    () => annotations.routes(),
+    () => annotations.routes(),
+  );
+}
+
 function MapUI() {
   const player = usePlayer();
   const entities = useSceneEntities();
   const pings = useFeed({ action: PING_FEED_ACTION, limit: 3 });
   const open = useWorldMapOpen();
+  const [tool, setTool] = useState<"pan" | "draw">("pan");
+  const annotationRoutes = useAnnotationRoutes();
   useWaypointTracked();
   const self =
     entities.find((entity) => entity.id === player.userId) ??
@@ -254,14 +269,41 @@ function MapUI() {
             facingYaw={facingYaw}
             background={background}
             title="Sector Atlas"
+            tool={tool}
+            routes={annotationRoutes}
+            drawTone="warning"
             onClose={() => setWorldMapOpen(false)}
             onWorldClick={(world) => waypoints.place(world, { track: true, label: "Waypoint" })}
+            onStrokeComplete={(points) => annotations.addStroke(points, { tone: "warning" })}
           >
-            <div className="absolute left-4 top-4">
+            <div className="absolute left-4 top-4 flex flex-col gap-2">
               <MapLegend kinds={WAYPOINT_LEGEND_KINDS} labels={WAYPOINT_LEGEND_LABELS} />
+              <div className="pointer-events-auto flex gap-1 rounded-md border border-white/15 bg-neutral-900/80 p-1">
+                {(["pan", "draw"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setTool(mode)}
+                    className={`rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                      tool === mode ? "bg-amber-400/25 text-amber-200" : "text-white/55 hover:text-white/80"
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => annotations.clear()}
+                  className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/55 hover:text-white/80"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md border border-white/15 bg-neutral-900/80 px-3 py-2 text-[11px] text-white/70">
-              Click the map to drop a tracked waypoint · scroll to zoom · drag to pan
+              {tool === "draw"
+                ? "Drag to draw on the map · switch to Pan to place waypoints"
+                : "Click to drop a tracked waypoint · scroll to zoom · drag to pan · Draw to annotate"}
             </div>
           </FullscreenMap>
         </div>

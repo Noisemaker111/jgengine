@@ -170,6 +170,20 @@ describe("FullscreenMap", () => {
     const html = renderToStaticMarkup(createElement(FullscreenMap, { markers: [], bounds, open: false }));
     expect(html).toBe("");
   });
+
+  test("tool='draw' marks the viewport and forwards annotation routes to the surface", () => {
+    const routes = [{ id: "note-1", points: [[-10, -10], [10, 10]] as const }];
+    const html = renderToStaticMarkup(
+      createElement(FullscreenMap, { markers: [], bounds, tool: "draw", routes }),
+    );
+    expect(html).toContain('data-map-tool="draw"');
+    expect(html).toContain('data-map-route="note-1"'); // drawn strokes render through the map's route layer
+  });
+
+  test("defaults to the pan tool", () => {
+    const html = renderToStaticMarkup(createElement(FullscreenMap, { markers: [], bounds }));
+    expect(html).toContain('data-map-tool="pan"');
+  });
 });
 
 describe("MapLegend", () => {

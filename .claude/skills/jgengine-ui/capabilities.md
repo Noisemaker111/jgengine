@@ -109,7 +109,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/react"`
 
-## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, and click-to-place without firing a click after a pan
+## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`
 

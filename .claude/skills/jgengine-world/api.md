@@ -1442,6 +1442,9 @@
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
 - `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
 - `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
+- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
+- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
+- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
 - `AreaDistribution` (type): type AreaDistribution = "uniform" | "edge" — Fill policy for a rect/box: `"uniform"` = even coverage; `"edge"` = biased to a boundary band.
 - `AreaEffectEvent` (interface): interface AreaEffectEvent<P> — One membership edge emitted by `step`, `removeSource`, or `clear`.
 - `AreaEffectField` (interface): interface AreaEffectField<P> — Runtime handle tracking continuous area membership across ticks.
@@ -1622,7 +1625,10 @@
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
 - `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
+- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
 - `MapRoute` (interface): interface MapRoute — ⚠ undocumented
+- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
+- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
 - `MapZone` (interface): interface MapZone — ⚠ undocumented
 - `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
@@ -1914,6 +1920,7 @@
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
 - `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
 - `createAircraftDynamics` (function): function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
+- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
 - `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 - `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
@@ -2572,6 +2579,16 @@
 - `LodScheduler` (interface): interface LodScheduler — ⚠ undocumented
 - `LodSchedulerConfig` (interface): interface LodSchedulerConfig — ⚠ undocumented
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
+
+## @jgengine/core/world/mapAnnotations
+
+- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
+- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
+- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
+- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
+- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
+- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
+- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
 
 ## @jgengine/core/world/mapLayers
 
