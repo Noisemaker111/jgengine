@@ -10,6 +10,7 @@ import { runFind } from "../find";
 import { renderRecipe, renderRecipeList } from "../recipes";
 import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
+import { runHarness } from "../harness";
 import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } from "../pkg";
 import { runSkills } from "../skills";
 import { runUpgrade } from "../upgrade";
@@ -45,6 +46,13 @@ usage: jgengine <command> [...args]
   editor [dir]          open the standalone 3D scene editor on a folder (default cwd) —
                         loads its editor.scene.json + models, Ctrl+S writes back
                         [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]
+  shoot [...]           screenshot the current game (WebGL-safe, headless) to shots/shot.png —
+                        boots this project's dev server, waits for an honest frame, captures.
+                        [--device desktop|mobile|mobile-landscape] [--out <path>] [--url <page>]
+                        [--settle <ms>] [--timeout <s>] · needs Chrome/Chromium (CHROME_PATH) · --help
+  drive [...]           play/test the current game headlessly — ordered --click/--key/--wait/--shot
+                        steps, --rpc '{"method":"agent_status"}', and --playtest --strict for a
+                        softlock verdict. Same boot + capture engine as shoot. --help for all flags
   find <intent>         search what the engine already ships by intent (e.g. "toggleable window",
                         "inventory", "minimap") → the drop-in primitive + its import. Reach for
                         this before hand-rolling a HUD/inventory/window/rig — most already exist.
@@ -195,6 +203,12 @@ switch (command) {
     break;
   case "editor-mcp":
     process.exit(runEditorMcp(rest));
+    break;
+  case "shoot":
+    process.exit(runHarness("shoot", rest));
+    break;
+  case "drive":
+    process.exit(runHarness("drive", rest));
     break;
   case "upgrade":
     process.exit(await runUpgrade(rest));
