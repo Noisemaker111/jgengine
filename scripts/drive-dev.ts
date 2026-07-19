@@ -36,7 +36,8 @@ import {
 } from "./browser-lib";
 import { summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
-import { assembleApng, framesFromTimeline, thinFrames, type TimedPng } from "./apng";
+import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
+import { assembleGif } from "./gif";
 
 type Step =
   | { kind: "click"; text: string }
@@ -92,10 +93,10 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
                       region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
   --record <name>     record the whole drive (every rendered frame, CDP screencast)
-                      to shots/<game>-<name>.png as an animated PNG that GitHub
-                      renders inline — the PR-embeddable "video" of a play session.
-                      Auto-thins frames to stay under ~4.5MB (GitHub camo's limit);
-                      pair with pr-shots like any other capture
+                      to shots/<game>-<name>.gif — an animated GIF that plays
+                      inline in PR bodies and chat, the PR-embeddable "video" of a
+                      play session. Auto-thins frames to stay under ~4.5MB (GitHub
+                      camo's limit); pair with pr-shots like any other capture
   --record-width <px> screencast max width (default 640; smaller = more frames
                       fit in the size budget)
   --probe [name]      print the game's live capture.probe metrics (e.g. player
@@ -182,7 +183,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--record") {
       const name = argv[++index] ?? "clip";
       if (name.includes("/") || name.includes("\\")) {
-        throw new Error(`drive: --record takes a bare name, not a path (got "${name}") — output always lands in shots/<game>-<name>.png`);
+        throw new Error(`drive: --record takes a bare name, not a path (got "${name}") — output always lands in shots/<game>-<name>.gif`);
       }
       args.record = name;
     } else if (value === "--record-width") args.recordWidth = Number(argv[++index] ?? args.recordWidth);
@@ -447,21 +448,21 @@ const exitCode = await withBrowserSession(
           console.error(`drive: --record captured no frames — the page never repainted during the drive`);
           code = 1;
         } else {
-          let apng = assembleApng(frames);
+          let gif = assembleGif(frames);
           let thinned = 0;
-          while (apng.length > RECORD_BUDGET_BYTES && frames.length > 2) {
+          while (gif.length > RECORD_BUDGET_BYTES && frames.length > 2) {
             frames = thinFrames(frames);
-            apng = assembleApng(frames);
+            gif = assembleGif(frames);
             thinned += 1;
           }
-          const outPath = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.png`);
-          writePngAtomic(outPath, apng);
+          const outPath = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.gif`);
+          writePngAtomic(outPath, gif);
           console.log(outPath);
           console.error(
-            `drive: recorded ${frames.length} frame(s), ${(apng.length / 1_000_000).toFixed(2)}MB animated PNG` +
+            `drive: recorded ${frames.length} frame(s), ${(gif.length / 1_000_000).toFixed(2)}MB animated GIF` +
               (thinned > 0 ? ` (thinned x${thinned} to fit the ~4.5MB GitHub camo budget)` : ""),
           );
-          if (apng.length > RECORD_BUDGET_BYTES) {
+          if (gif.length > RECORD_BUDGET_BYTES) {
             console.error(
               `drive: clip is still over the ~4.5MB camo budget — rerun with a smaller --record-width (e.g. ${Math.round(args.recordWidth * 0.6)}) or a shorter drive`,
             );
