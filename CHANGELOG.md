@@ -34,6 +34,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Walking collision now depenetrates instead of locking.** `resolveObstacleStep`
+  (movement) previously slid along box faces but had no escape once the capsule was
+  strictly *inside* a solid box — its per-axis clamps returned zero on both axes and the
+  player was stuck forever. It now pushes an enclosed capsule out along the box's
+  shallowest face before sliding. Resting exactly on a face still reads as contact, so
+  normal wall-sliding is byte-for-byte unchanged; only the previously-unrecoverable
+  "wedged inside a building" case now frees itself.
+
 ### Removed
 
 ## 0.14.0
