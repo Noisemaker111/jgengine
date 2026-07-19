@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Branching dialogue UI.** `@jgengine/core/game/dialogueGraph`'s `createDialogueRun` / `selectDialogueView` add a
+  thin, serializable branching-conversation model over the existing `features.dialogue` open/close bridge — a graph of
+  nodes (free-string speaker + line + choices that name the node they lead to) with choose-to-advance traversal, visited
+  history, and snapshot/restore. `@jgengine/react`'s `DialogueView` (+ `useDialogueRun`) is the drop-in view: speaker
+  name, an optional portrait slot, the current line, and clickable response buttons that advance the run — a game passes
+  its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. Genre-agnostic:
+  speaker/choice `kind` are free strings the model never interprets, surfaced as `data-*` for game styling; HudTheme-skinned
+  via `--jg-*` tokens. See the `dialogue` demo.
 - **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
   serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
   (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a

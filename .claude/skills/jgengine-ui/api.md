@@ -469,6 +469,9 @@
 - `DialogueChoice` (interface): interface DialogueChoice — ⚠ undocumented
 - `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
+- `DialogueView` (function): function DialogueView({ run, renderPortrait, onChoose, onClose, closeLabel = "Close", theme, className, style, speakerClassName, textClassName, choicesClassName, choiceClassName, }: DialogueViewProps): ReactNode — A drop-in branching-conversation view over a {@link DialogueRun}: renders the current node's speaker name (+ an optional portrait slot), the line, and a list of clickable response choices that advance the conversation — the game passes its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. A choice with a destination advances the run; a terminal choice (or the Close control on a choiceless node) fires `onClose`. Speaker/choice `kind` are free strings surfaced as `data-*` attributes for the game to style; the view never interprets them. HudTheme-skinned via `--jg-*` tokens; reskin further with {@link DialogueViewTheme}.
+- `DialogueViewProps` (interface): interface DialogueViewProps — Props for {@link DialogueView}.
+- `DialogueViewTheme` (interface): interface DialogueViewTheme — Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token.
 - `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
 - `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -705,6 +708,7 @@
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
+- `useDialogueRun` (function): function useDialogueRun(run: DialogueRun): DialogueGraphView | null — Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset, returning the current node view (or `null` if the run's node id is unknown).
 - `useDomEvent` (function): function useDomEvent<E>(resolveTarget: () => DomEventTarget | null, type: string, handler: (event: E) => void, options?: { capture?: boolean; passive?: boolean }): void — Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The handler is kept in a ref, so a fresh closure per render never re-binds the listener. Re-binds only when `type` or `options.capture`/`options.passive` change.
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
@@ -902,6 +906,13 @@
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
+
+## @jgengine/react/dialogueView
+
+- `DialogueView` (function): function DialogueView({ run, renderPortrait, onChoose, onClose, closeLabel = "Close", theme, className, style, speakerClassName, textClassName, choicesClassName, choiceClassName, }: DialogueViewProps): ReactNode — A drop-in branching-conversation view over a {@link DialogueRun}: renders the current node's speaker name (+ an optional portrait slot), the line, and a list of clickable response choices that advance the conversation — the game passes its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. A choice with a destination advances the run; a terminal choice (or the Close control on a choiceless node) fires `onClose`. Speaker/choice `kind` are free strings surfaced as `data-*` attributes for the game to style; the view never interprets them. HudTheme-skinned via `--jg-*` tokens; reskin further with {@link DialogueViewTheme}.
+- `DialogueViewProps` (interface): interface DialogueViewProps — Props for {@link DialogueView}.
+- `DialogueViewTheme` (interface): interface DialogueViewTheme — Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token.
+- `useDialogueRun` (function): function useDialogueRun(run: DialogueRun): DialogueGraphView | null — Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset, returning the current node view (or `null` if the run's node id is unknown).
 
 ## @jgengine/react/display
 
