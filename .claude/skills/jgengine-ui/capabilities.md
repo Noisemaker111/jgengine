@@ -370,6 +370,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
+## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
+
+- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
+
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 
 - `SelectionCollectionChrome` (function) · `import { SelectionCollectionChrome } from "@jgengine/react"`

@@ -1797,6 +1797,11 @@
 
 - `PostProcessing` (function): function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
+## @jgengine/shell/postfx/ScreenEffectsOverlay
+
+- `ScreenEffectsOverlay` (function): function ScreenEffectsOverlay({ controller, blendMode = "normal", zIndex = 40, animate = true, }: ScreenEffectsOverlayProps): ReactNode — A DOM overlay that renders a {@link ScreenEffectsController} as full-screen color-grade layers over the game canvas — damage vignettes, heal flashes, a sustained low-health pulse — through the shell's postfx overlay layer, so a game gets screen feedback without hand-rolling shader or overlay timing. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and paints one absolutely-positioned, pointer-transparent layer per active effect at its eased opacity. Presentation only: all timing and state live in the core model, and `kind` is never interpreted here.
+- `ScreenEffectsOverlayProps` (interface): interface ScreenEffectsOverlayProps — Reskin tokens for {@link ScreenEffectsOverlay}.
+
 ## @jgengine/shell/postfx/gradeShader
 
 - `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass (lift/gain/gamma, saturation, vignette, grain). Advance `uniforms.uTime.value` each frame to animate the grain.
