@@ -68,6 +68,10 @@ try {
 }
 
 if (result.status === 2) {
-  console.error("skill-api: generated files kept; gate failures above still need fixing");
+  console.error(
+    "skill-api: generated files kept; gate failures above still need fixing. " +
+      "If they list newly tagged/exported symbols, run `bun run gen:capabilities` first, then re-run `bun run gen:skill-api` — " +
+      "skill-api reads the capability index, so a stale one reports symbols as undocumented until capabilities is regenerated.",
+  );
   process.exit(2);
 }
