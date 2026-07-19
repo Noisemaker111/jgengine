@@ -217,6 +217,11 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(agents).toContain("recipes/minimal-game.md");
     expect(agents).toContain("npx jgengine skills -p");
     expect(agents).toContain("--all");
+    // Every new game is briefed to file engine bugs/gaps upstream instead of burying a workaround.
+    expect(agents).toContain("File it upstream");
+    expect(agents).toContain("https://github.com/Noisemaker111/jgengine/issues");
+    expect(agents).toContain("[BUG]");
+    expect(agents).toContain("[FEATURE]");
     expect(agents).not.toContain("full export surface");
     expect(agents).not.toContain("full game not a slice");
   });

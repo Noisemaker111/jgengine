@@ -593,6 +593,18 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. See the \`jgengine-editor\` skill.
 
+## Hit an engine bug or gap? File it upstream, don't just work around it
+
+\`@jgengine/*\` is the shared engine, not your game. When a primitive misbehaves, clamps or ignores a value you passed, lacks a seam your game needs, or its API misled you into a false negative, that is an **engine** problem — every other game hits it too. Do not bury the finding in a local workaround comment, a hardcoded fallback, or your own notes. Keep your game moving with a minimal workaround if you must, then **file a short issue** at https://github.com/Noisemaker111/jgengine/issues (open it with your GitHub tooling, or hand the user the link) so it gets fixed once, for everyone. Include:
+
+- **What** you were doing and what you expected.
+- **Cause** — the underlying behavior you traced, precisely. e.g. *"\`HeadlessRunner.step(dt)\` clamps game-dt to \`maxStepSeconds\` (default 0.05s) regardless of the dt passed, so time-based tests need ~20 steps per second of game-time."*
+- **Why** it bit you — the false negative, wrong result, wasted time, or blocked path it caused.
+- **How** to reproduce (smallest steps) and, if you can see it, a suggested fix or the missing seam.
+- A **screenshot** whenever the problem is visual.
+
+Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing capability. One clear report beats a paragraph of workaround apologetics — the fix belongs in the engine, not in your game.
+
 ## Project rules
 
 - Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`index.css\`, \`style.css\` plus optional \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`; everything else under \`src/game/\`.
