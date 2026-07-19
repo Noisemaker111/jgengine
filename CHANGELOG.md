@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Status-effect timeline HUD.** `@jgengine/react`'s `StatusEffectBar` renders active buffs/debuffs as a row of
+  painted icons, each with a radial countdown ring and stack-count badge, driven off the existing status model
+  (`combat/statusApplication`'s `StatusInstance`). A thin genre-agnostic core selector,
+  `@jgengine/core/combat`'s `toStatusEffectViews` / `toStatusEffectView` (+ `statusEffectRemainingFraction`),
+  adapts live `StatusInstance`s into serializable `StatusEffectView`s (`id`, free-string `kind`, `remainingMs`,
+  `durationMs`, `stacks`) so the widget re-derives no ring math or timers. `kind` is never interpreted by the engine —
+  the game supplies icon/color/label; icons come from the existing game-icons.net icon system. Demo: `status-effects`.
 - **Cutscene / sequence director.** `@jgengine/core/scene/sequenceDirector`' `createSequenceDirector` is a
   serializable, genre-agnostic timeline: an ordered list of typed cues (`{ atMs, kind, payload }`) advanced by one
   injected clock, firing each cue once and in order as its time passes — even across a large `seek` — with
