@@ -42,6 +42,7 @@ World content routes editor-first: any request that adds, moves, restyles, or re
 
 Within each selected domain:
 
+0. Fastest start for a common composition: `npx jgengine recipe <name>` prints a vetted, SDK-typechecked snippet (imports + wired code) for `combat-loop`, `boss-telegraph`, `loot`, `quest`, `coop-presence`, `third-person-camera`; `npx jgengine recipe` lists them. Copy that instead of reconning per-file.
 1. Search `capabilities.md` by intent; it maps needs to imports.
 2. Open `api.md` only when exact signatures or export inventory are needed.
 3. Open the linked reference only for a deeper recipe or trap.
