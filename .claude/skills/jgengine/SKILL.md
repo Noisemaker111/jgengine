@@ -20,6 +20,8 @@ Treat the pitch as a unique composition of needs, not a genre to fill in — nev
 
 For a new in-repo game, scaffold with `bun run new:game "<id-or-title>"` (thin script alias for `jgengine create`, auto-detects the in-repo variant). Outside this monorepo, start with `npx jgengine create`; never copy `Games/*`.
 
+For an existing game asked to pick up a new engine release ("jgengine published a new version, grab it"), run `npx jgengine upgrade` in the project first: it diffs installed `@jgengine/*` versions against the latest release and prints every Migrate step and Adopt-worthy addition in between (`--json` for structured output). Bump, migrate oldest-first, then work the Adopt lists instead of reconstructing the changelog by hand.
+
 ## 2. Select domains
 
 Load only rows the target needs. Do not preload every domain.
