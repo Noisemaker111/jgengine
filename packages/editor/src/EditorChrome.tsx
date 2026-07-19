@@ -1039,6 +1039,7 @@ export function EditorChrome({
                   assets={liveAssets}
                   session={session}
                   api={api}
+                  ui={ui}
                   consoleStore={consoleStore}
                   perfHistory={perfHistory}
                   browserView={layoutState.browserView}
@@ -1086,6 +1087,7 @@ export function EditorChrome({
                 session={session}
                 ui={ui}
                 api={api}
+                assets={liveAssets}
                 tab={layoutState.inspectorTab}
                 onSelectTab={(tab) => layout.patch({ inspectorTab: tab })}
                 collapsed={layoutState.collapsed}

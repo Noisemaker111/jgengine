@@ -5,6 +5,7 @@ import type { EditorSession } from "@jgengine/core/editor/index";
 import type { EditorAssetEntry } from "../AssetBrowser";
 import { AgentPanel } from "../agent/AgentPanel";
 import type { EditorHostApi } from "../session";
+import type { EditorUiStore } from "../uiStore";
 import { AnimationPanel } from "./AnimationPanel";
 import { ConsolePanel } from "./ConsolePanel";
 import { ContentBrowser } from "./ContentBrowser";
@@ -26,6 +27,7 @@ export function BottomDock({
   assets,
   session,
   api,
+  ui,
   consoleStore,
   perfHistory,
   browserView,
@@ -40,6 +42,7 @@ export function BottomDock({
   assets: readonly EditorAssetEntry[];
   session: EditorSession;
   api: EditorHostApi;
+  ui: EditorUiStore;
   consoleStore: EditorConsoleStore;
   perfHistory: PerfHistoryStore;
   browserView: BrowserViewMode;
@@ -67,7 +70,7 @@ export function BottomDock({
   } else if (tab === "profiler") {
     content = <ProfilerPanel history={perfHistory} />;
   } else if (tab === "animation") {
-    content = <AnimationPanel session={session} api={api} />;
+    content = <AnimationPanel session={session} api={api} ui={ui} assets={assets} />;
   } else {
     content = <AgentPanel api={api} embedded />;
   }

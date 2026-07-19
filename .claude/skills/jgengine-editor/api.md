@@ -685,6 +685,26 @@
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
 
+## @jgengine/editor/modelAnimationAuthoring
+
+- `AnimationMode` (type): type AnimationMode = "default" | "auto" | "none" | "custom" — Which authoring mode a stored setting represents. `default` = no override key.
+- `AnimationSetting` (type): type AnimationSetting = AuthoredAnimationConfig | "auto" | "none" — The value stored at `meta.animation`.
+- `AuthoredAnimationConfig` (interface): interface AuthoredAnimationConfig — Structurally compatible with `ModelAnimationConfig`, but every field optional for authoring.
+- `AuthoredAnimationStates` (interface): interface AuthoredAnimationStates — Role->clip override map persisted inside an authored animation config.
+- `LOCOMOTION_NUMBERS` (const): const LOCOMOTION_NUMBERS: readonly ["walkSpeed", "runSpeed", "fadeSec"] — Numeric locomotion tunings (`ModelAnimationStates`).
+- `LocomotionNumber` (type): type LocomotionNumber = (typeof LOCOMOTION_NUMBERS)[number] — Numeric locomotion tuning field on an authored animation config (walkSpeed/runSpeed/fadeSec).
+- `LocomotionRole` (type): type LocomotionRole = (typeof LOCOMOTION_ROLES)[number] — Locomotion clip role a placement can override (idle/walk/run).
+- `ONE_SHOT_EVENTS` (const): const ONE_SHOT_EVENTS: readonly ["attack", "hit", "death", "jump", "interact", "cheer"] — One-shot event slots offered in the inspector. `hit` / `death` auto-fire on this entity's `combat.hitReaction` / `entity.died`; the rest fire when the game calls `playEntityAnimation`.
+- `OneShotEvent` (type): type OneShotEvent = (typeof ONE_SHOT_EVENTS)[number] — One-shot animation event a placement can bind a clip to (attack/hit/death/...).
+- `animationMetaPatch` (function): function animationMetaPatch(setting: AnimationSetting | undefined): { animation: AnimationSetting | undefined } — The meta patch that persists a setting (or clears the override when undefined). Shallow-merges onto `marker.meta` via `setMarker`; an undefined value drops out of the saved JSON document.
+- `animationMode` (function): function animationMode(setting: AnimationSetting | undefined): AnimationMode — The authoring mode a stored setting maps to.
+- `defaultCustomConfig` (function): function defaultCustomConfig(clips: readonly string[]): AuthoredAnimationConfig — A concrete custom config derived from a rigged asset's clip roles — the `custom` mode seed.
+- `readAnimationSetting` (function): function readAnimationSetting(meta: Record<string, unknown> | undefined): AnimationSetting | undefined — Reads and shape-validates the animation override from a marker's meta; undefined when absent/invalid.
+- `setAnimationMode` (function): function setAnimationMode(setting: AnimationSetting | undefined, mode: AnimationMode, clips: readonly string[] = []): AnimationSetting | undefined — Switches authoring mode. `custom` seeds from the asset's clip-role defaults (so the user starts from a working config, then overrides) when there is no existing object config; the other modes are the bare string/undefined values.
+- `setLocomotionClip` (function): function setLocomotionClip(setting: AnimationSetting | undefined, role: LocomotionRole, clipName: string | null): AuthoredAnimationConfig — Sets or clears (null) a locomotion state clip; forces the setting into `custom`.
+- `setLocomotionNumber` (function): function setLocomotionNumber(setting: AnimationSetting | undefined, key: LocomotionNumber, value: number | null): AuthoredAnimationConfig — Sets or clears (null) a numeric locomotion tuning.
+- `setOneShotClip` (function): function setOneShotClip(setting: AnimationSetting | undefined, event: string, clipName: string | null): AuthoredAnimationConfig — Binds or clears (null) a one-shot event to a clip.
+
 ## @jgengine/editor/networkSnapshot
 
 - `EditorNetworkAdapterKind` (type): type EditorNetworkAdapterKind = MultiplayerAdapterConfig["kind"] | "unknown" — Transport kind declared by the game, or `"unknown"` when the config is unreadable.
@@ -728,7 +748,7 @@
 
 ## @jgengine/editor/shell/BottomDock
 
-- `BottomDock` (function): function BottomDock({ tab, onSelectTab, onClose, assets, session, api, consoleStore, perfHistory, browserView, onSetBrowserView, onPlaceAsset, onImportModels, importBusy, }: { tab: BottomDockTab; onSelectTab: (tab: BottomDockTab) => void; onClose: () => void; assets: readonly EditorAssetEntry[]; ses… — Tabbed bottom dock: Content Browser, Console, Profiler, Animation (path flythrough scrub), and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
+- `BottomDock` (function): function BottomDock({ tab, onSelectTab, onClose, assets, session, api, ui, consoleStore, perfHistory, browserView, onSetBrowserView, onPlaceAsset, onImportModels, importBusy, }: { tab: BottomDockTab; onSelectTab: (tab: BottomDockTab) => void; onClose: () => void; assets: readonly EditorAssetEntry[];… — Tabbed bottom dock: Content Browser, Console, Profiler, Animation (path flythrough scrub), and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
 
 ## @jgengine/editor/shell/CommandPalette
 
@@ -783,6 +803,25 @@
 - `CameraTelemetry` (interface): interface CameraTelemetry — Per-frame camera orientation channel between the in-canvas probe and the DOM orientation widget. Deliberately a mutable record, not React state: the probe writes every frame and the widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
 - `createCameraTelemetry` (function): function createCameraTelemetry(): CameraTelemetry — Creates a telemetry record seeded at rest (identity basis).
 - `getCameraTelemetry` (function): function getCameraTelemetry(): CameraTelemetry — Shared telemetry singleton — probe and widget may mount in different React trees.
+
+## @jgengine/editor/shell/clipPreview
+
+- `ClipEntry` (interface): interface ClipEntry — One previewable clip with its detected semantic role (null when unclassified).
+- `ClipPreviewSession` (interface): interface ClipPreviewSession — The live clip-preview session shared across panels via the editor UI store: which asset is being previewed, the playback driver, and the selected clip's measured duration (published by the viewport layer once its GLB loads; 0 while unknown).
+- `ClipPreviewSource` (interface): interface ClipPreviewSource — A rigged asset resolved for viewport preview: its catalog id, label, GLB url, and clip names.
+- `ClipPreviewState` (interface): interface ClipPreviewState — Playback state of the clip preview driver. `time` is seconds into the clip.
+- `MAX_PREVIEW_SPEED` (const): const MAX_PREVIEW_SPEED: 4 — Upper bound for the clip-preview playback rate.
+- `MIN_PREVIEW_SPEED` (const): const MIN_PREVIEW_SPEED: 0.1 — Lowest / highest preview playback rate the speed control allows.
+- `advancePreview` (function): function advancePreview(state: ClipPreviewState, dt: number, duration: number): ClipPreviewState — Advances the playhead by `dt` seconds at the current speed, wrapping when looping and clamping (then stopping) at `duration` otherwise. No-op while paused, clip-less, or the duration is unknown (<= 0). Uses the same time += speed·dt formula the shell mixer runs, so a panel that ticks this in lockstep with the freerunning viewport mixer stays in sync.
+- `clipEntriesFromRef` (function): function clipEntriesFromRef(ref: ClipSourceRef | null | undefined): ClipEntry[] — Lists a rigged asset's clips with their classified roles, preserving catalog order. Empty when the ref carries no clips (not rigged, or clip metadata absent).
+- `initialClipPreviewState` (function): function initialClipPreviewState(clipName: string | null = null): ClipPreviewState — Fresh driver state for a clip (auto-plays when a clip is given, like the browser badge implies).
+- `previewAnimationConfig` (function): function previewAnimationConfig(state: ClipPreviewState): ModelAnimationConfig | undefined — The `ModelConfig.animation` config the preview layer feeds to `useModelAnimation`. Playing yields a freerunning single-clip config (mixer owns the clock, no per-frame churn); paused yields a held `paused`+`time` pose so a scrub renders the exact frame. Returns undefined with no clip (bind pose).
+- `scrubPreview` (function): function scrubPreview(state: ClipPreviewState, time: number): ClipPreviewState — Scrub to an absolute time (seconds). Pauses playback, matching the path-flythrough scrubber.
+- `selectPreviewClip` (function): function selectPreviewClip(state: ClipPreviewState, clipName: string): ClipPreviewState — Switch to a different clip: resets the playhead and starts playing it.
+- `setPreviewLoop` (function): function setPreviewLoop(state: ClipPreviewState, loop: boolean): ClipPreviewState — Sets whether the previewed clip loops when it reaches its end.
+- `setPreviewPlaying` (function): function setPreviewPlaying(state: ClipPreviewState, playing: boolean): ClipPreviewState — Sets whether the previewed clip is playing; pausing keeps the current scrub time.
+- `setPreviewSpeed` (function): function setPreviewSpeed(state: ClipPreviewState, speed: number): ClipPreviewState — Sets the preview playback rate, clamped to [MIN_PREVIEW_SPEED, MAX_PREVIEW_SPEED].
+- `togglePreviewPlaying` (function): function togglePreviewPlaying(state: ClipPreviewState): ClipPreviewState — Toggles play/pause of the previewed clip without losing the scrub position.
 
 ## @jgengine/editor/shell/commandRegistry
 
