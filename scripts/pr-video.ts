@@ -117,9 +117,12 @@ if (import.meta.main) {
     );
   }
 
-  const origin = execFileSync("git", ["remote", "get-url", "origin"], { encoding: "utf8" }).trim();
-  const parsed = repoArg !== null ? parseOriginRepo(repoArg) : parseOriginRepo(origin);
-  if (parsed === null) fail(`could not parse owner/repo from ${repoArg ?? origin}`);
+  // Only touch git when no --repo was given — the workflow runs this script
+  // from an isolated temp dir that is not a git checkout.
+  const source =
+    repoArg ?? execFileSync("git", ["remote", "get-url", "origin"], { encoding: "utf8" }).trim();
+  const parsed = parseOriginRepo(source);
+  if (parsed === null) fail(`could not parse owner/repo from ${source}`);
   const repoId = await repositoryId(parsed.owner, parsed.repo);
   const cookie = sessionCookie(secret);
 
