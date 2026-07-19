@@ -587,8 +587,8 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 \`GameHost\` owns the F2 chord family in every JGengine game, and it is **your** toolkit, not just the player's:
 
-- **F2+E — editor mode** (also \`?mode=editor\`): the scene editor on \`src/editor.scene.json\` — place spawns, props, zones, paths, vegetation; Ctrl+S saves.
-- **F2+D — debug mode**: engine devtools overlay (perf, logs, keybinds, live tunables with Save-to-source).
+- **F2+E — editor mode** (also \`?mode=editor\`): the scene editor on \`src/editor.scene.json\` — place spawns, props, zones, paths, vegetation; Ctrl+S saves. Leave it via the top-bar **Exit to game** button or **F2+Q**; the mode mirrors to the URL, so stripping \`?mode=editor\` (and reloading) also drops back to the game.
+- **F2+D — debug mode** (also \`?debug\`): engine devtools overlay (perf, logs, keybinds, live tunables with Save-to-source). Open/close mirrors to the \`?debug\` param — share the URL to reopen it, strip the param to close.
 - **F2+C — canvas mode**: drag/resize HUD panels; layout persists to the scene document's \`ui.panels\`.
 
 Author world content in the editor — never as coordinate tables in code. Agents drive all three headlessly through \`window.__jgengineAgent.handle({ method: ... })\` on any running game page (\`agent_status\`, \`debug_snapshot\`, \`canvas_move_panel\`, \`editor_summon\`, editor verbs, \`save_scene\`) — run \`bun dev\`, open the page in your browser tool, and call the bridge. See the \`jgengine-editor\` skill.

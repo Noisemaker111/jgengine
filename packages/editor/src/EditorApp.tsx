@@ -61,6 +61,12 @@ export interface EditorAppProps {
    * session identity and presence rows. Omit when the host has nothing live — the panel stays honest.
    */
   networkPresence?: EditorNetworkPresenceInput;
+  /**
+   * Called to close the editor and return to the game. Passed by `GameHost` when the editor was
+   * summoned over a running game; when set, the chrome shows an "Exit to game" control. Omit for the
+   * standalone editor, which has no game to return to.
+   */
+  onExitEditor?: () => void;
 }
 
 /** Persists an exported document JSON; resolves with where it landed or why it failed. */
@@ -390,7 +396,7 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor }: EditorAppProps) {
   const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
   const networkSnapshot = useMemo(
@@ -684,6 +690,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
           save={saveFn}
           networkSnapshot={networkSnapshot}
           onRegisterAsset={registerImportedAsset}
+          onExitEditor={onExitEditor}
         />
       );
     };
@@ -697,7 +704,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
       camera: inspectionCamera,
     };
-  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot]);
+  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot, onExitEditor]);
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 
