@@ -64,6 +64,7 @@ type Args = {
   sampleMs: number;
   softlockMs: number;
   epsilon: number;
+  spawn?: string;
 };
 
 const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
@@ -76,7 +77,13 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
   --shot <name>       screenshot to shots/<game>-<name>.png — pass a bare name,
                       not a path (a path/slash yields shots/<game>-<path>.png and ENOENTs)
-  --rpc <json>        call the page's agent/editor bridge with this JSON payload
+  --spawn <x,y,z>     override the authored player spawn for this run only (adds a
+                      ?spawn= overlay like ?cam=); never mutates editor.scene.json.
+                      Accepts x,y,z or x,y,z,yaw (yaw radians)
+  --rpc <json>        call the page's agent/editor bridge with this JSON payload.
+                      Compose an editor aerial in one call, e.g.
+                      --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
+                      region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
   --probe [name]      print the game's live capture.probe metrics (e.g. player
                       position) as JSON — pair one before and one after a --key
                       hold to prove a non-zero movement delta via RPC, which is
@@ -156,6 +163,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--sample") args.sampleMs = Number(argv[++index] ?? args.sampleMs);
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
+    else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
@@ -352,6 +360,7 @@ const exitCode = await withBrowserSession(
       url.searchParams.set("game", args.game);
       url.searchParams.set("mode", args.mode);
       url.searchParams.set("capture", "1");
+      if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
       await session.send("Page.navigate", { url: url.toString() });
       await waitCaptureReady(session, args.timeoutMs);

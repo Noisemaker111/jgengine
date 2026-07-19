@@ -6,6 +6,7 @@
  */
 import { installAssetBase } from "@jgengine/shell/render/assetBase";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
+import { installSpawnOverride, parseSpawnOverride } from "@jgengine/core/world/spawnOverride";
 
 // The site mounts this runner under /play/ — resolve games' root-absolute
 // /models and /materials paths against wherever the app is actually served.
@@ -26,6 +27,13 @@ export const RUN = (urlParams.get("run") ?? "")
   .map((name) => name.trim())
   .filter((name) => name.length > 0);
 export const CAM = urlParams.get("cam");
+/**
+ * `?spawn=x,y,z` (optionally `x,y,z,yaw`) overrides the authored player spawn for this capture only,
+ * mirroring `?cam=`. Installed at boot so games reading the shared `authoredSpawnPosition` primitive
+ * spawn at the override without any mutation to `editor.scene.json`; absent/malformed → no override.
+ */
+export const SPAWN = urlParams.get("spawn");
+installSpawnOverride(parseSpawnOverride(SPAWN));
 export const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 export const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 export const P2P_ROLE = urlParams.get("p2p");

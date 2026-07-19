@@ -1,4 +1,5 @@
 import type { SceneMarkerLike } from "./sceneShapes";
+import { readSpawnOverride } from "./spawnOverride";
 
 /** Minimal marker shape spawn queries read; any `EditorMarker` satisfies it. */
 export interface AuthoredSpawnMarkerLike extends SceneMarkerLike {
@@ -34,6 +35,15 @@ export interface AuthoredSpawnOptions {
 }
 
 /**
+ * True when a query targets the *default player spawn* (default kind, no explicit id) — the only
+ * resolution an installed {@link readSpawnOverride} may replace. Marker queries for other kinds or
+ * a named id always read the authored document, so a capture-time override cannot perturb them.
+ */
+function targetsDefaultPlayerSpawn(options: AuthoredSpawnOptions): boolean {
+  return options.id === undefined && (options.kind === undefined || options.kind === PLAYER_SPAWN_KIND);
+}
+
+/**
  * Position of the authored spawn marker as a spawn-ready `[x, y, z]` tuple, or null when the
  * document has none. Reads the first `player_spawn` marker by default, so dragging the marker in
  * the editor moves where players spawn — no coordinates copied into game code.
@@ -43,6 +53,10 @@ export function authoredSpawnPosition(
   document: AuthoredSpawnDocumentLike,
   options: AuthoredSpawnOptions = {},
 ): [number, number, number] | null {
+  if (targetsDefaultPlayerSpawn(options)) {
+    const override = readSpawnOverride();
+    if (override !== null) return [override.x, override.y, override.z];
+  }
   const kind = options.kind ?? PLAYER_SPAWN_KIND;
   const marker =
     options.id === undefined
@@ -61,6 +75,10 @@ export function authoredSpawnRotation(
   document: AuthoredSpawnDocumentLike,
   options: AuthoredSpawnOptions = {},
 ): number {
+  if (targetsDefaultPlayerSpawn(options)) {
+    const override = readSpawnOverride();
+    if (override?.rotationY !== undefined) return override.rotationY;
+  }
   const kind = options.kind ?? PLAYER_SPAWN_KIND;
   const marker =
     options.id === undefined
