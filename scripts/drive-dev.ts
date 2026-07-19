@@ -20,7 +20,7 @@
  * vite's ~60-90s boot and Chrome's cold launch. `--size half` halves both
  * dimensions (~1/4 the pixels) for cheap mid-loop judge shots.
  */
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   CdpSession,
@@ -95,15 +95,14 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       Compose an editor aerial in one call, e.g.
                       --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
                       region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
-  --record <name>     record the drive to shots/<game>-<name>.mp4 (full-fidelity
-                      video) + .gif (inline-embeddable preview, auto-thinned under
-                      ~4.5MB, GitHub camo's limit). Records in LOCKSTEP: Chrome's
-                      clock is virtualized and advanced one fixed tick per captured
-                      frame, so the clip plays smoothly at --record-fps no matter
-                      how slowly headless GL renders — but every output frame costs
-                      a real render, so choreograph drives short (10-20s of game
-                      time), not minutes. Pair with pr-shots / the /pr-video comment
-  --record-fps <n>    lockstep output frame rate (default 10; halve it to fit a
+  --record <name>     record the drive to shots/<game>-<name>.mp4. Records in
+                      LOCKSTEP: the page's rAF/clocks are taken over and game time
+                      advances one fixed tick per captured frame, so the clip plays
+                      smoothly at --record-fps no matter how slowly headless GL
+                      renders — but every output frame costs ~1s of real render, so
+                      choreograph drives short (8-15s of game time), not minutes.
+                      Share via pr-shots / the /pr-video comment
+  --record-fps <n>    lockstep output frame rate (default 24; lower it to fit a
                       longer drive in the same wall-clock budget)
   --record-realtime   old behavior: capture only the frames the page really renders
                       (CDP screencast, wall-clock timing — expect ~1fps on software
@@ -156,7 +155,7 @@ function parseArgs(argv: string[]): Args {
     softlockMs: 2000,
     epsilon: 1e-3,
     recordWidth: 640,
-    recordFps: 10,
+    recordFps: 24,
     recordRealtime: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -419,7 +418,14 @@ class LockstepRecorder {
   }
 
   private async captureFrame(): Promise<void> {
-    const shot = await this.session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
+    // JPEG: the composite dominates the cost either way (~1s on SwiftShader),
+    // but JPEG cuts the CDP transfer ~10x. Lockstep output is mp4-only, which
+    // takes JPEG frames directly.
+    const shot = await this.session.send("Page.captureScreenshot", {
+      format: "jpeg",
+      quality: 85,
+      fromSurface: true,
+    });
     const data = shot.data;
     if (typeof data !== "string" || data.length === 0) return;
     this.frames.push({ png: Buffer.from(data, "base64"), tMs: this.virtualNow });
@@ -487,7 +493,7 @@ const exitCode = await withBrowserSession(
             `drive: --record would capture ~${lockstepProjected} frames (${Math.round(lockstepVirtualMs / 1000)}s at ${args.recordFps}fps) — every frame costs a real render on software GL. Choreograph a shorter drive or lower --record-fps.`,
           );
         }
-        if (lockstepProjected > 300) {
+        if (lockstepProjected > 450) {
           console.error(
             `drive: --record will capture ~${lockstepProjected} frames — expect several minutes of wall clock; consider a shorter drive or lower --record-fps`,
           );
@@ -560,21 +566,32 @@ const exitCode = await withBrowserSession(
         } else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
       }
 
-      if (args.record !== undefined) {
-        if (recorder === null) {
-          await session.send("Page.stopScreencast");
-          // Let an in-flight frame land before assembling.
-          await new Promise((r) => setTimeout(r, 300));
+      if (recorder !== null) {
+        const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
+        if (recorder.frames.length === 0) {
+          console.error(`drive: --record captured no frames`);
+          code = 1;
+        } else {
+          const frames = recorder.frames.map((frame) => ({ png: frame.png, delayMs: recorder.frameMs }));
+          assembleMp4(frames, mp4Path);
+          console.log(mp4Path);
+          const bytes = statSync(mp4Path).size;
+          console.error(
+            `drive: recorded ${frames.length} frame(s) at ${args.recordFps}fps, ${(bytes / 1_000_000).toFixed(2)}MB mp4 (${(frames.length / args.recordFps).toFixed(1)}s of game time)`,
+          );
         }
-        let frames = framesFromTimeline(recorder !== null ? recorder.frames : recorded);
+      } else if (args.record !== undefined) {
+        await session.send("Page.stopScreencast");
+        // Let an in-flight frame land before assembling.
+        await new Promise((r) => setTimeout(r, 300));
+        let frames = framesFromTimeline(recorded);
         if (frames.length === 0) {
           console.error(`drive: --record captured no frames — the page never repainted during the drive`);
           code = 1;
         } else {
-          const fullFrames = frames;
           const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
           try {
-            assembleMp4(fullFrames, mp4Path);
+            assembleMp4(frames, mp4Path);
             console.log(mp4Path);
           } catch (error) {
             console.error(
@@ -595,12 +612,6 @@ const exitCode = await withBrowserSession(
             `drive: recorded ${frames.length} frame(s), ${(gif.length / 1_000_000).toFixed(2)}MB animated GIF` +
               (thinned > 0 ? ` (thinned x${thinned} to fit the ~4.5MB GitHub camo budget)` : ""),
           );
-          if (gif.length > RECORD_BUDGET_BYTES) {
-            console.error(
-              `drive: clip is still over the ~4.5MB camo budget — rerun with a smaller --record-width (e.g. ${Math.round(args.recordWidth * 0.6)}) or a shorter drive`,
-            );
-            code = 1;
-          }
         }
       }
 
