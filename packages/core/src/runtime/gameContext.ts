@@ -123,6 +123,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     entityColliders,
     entityCollidersOf,
     objectCollidersOf,
+    reportEntityBounds,
     entityVisualScaleOf,
     forms,
     paintLayer,
@@ -444,6 +445,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           signal.notify();
         },
         collidersOf: entityCollidersOf,
+        reportBounds: reportEntityBounds,
         visualScaleOf: entityVisualScaleOf,
         form: forms,
         paint: paintLayer,

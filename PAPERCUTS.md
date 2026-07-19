@@ -248,6 +248,13 @@ adding an apps/web route → bun --cwd apps/web run check-types is red on origin
 
 Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
 
+2026-07-19T01:55:01.074Z — claude-fable-5 — NoisemakerJon
+
+adding new tagged shell exports → first gen:skill-api run printed 'skill-api: generated files kept; gate failures above still need fixing' listing the new symbols, but an immediate identical re-run reported 'skill-api ok' — the transient failure message doesn't say the fix is just regenerating capabilities first (or the script should run gen:capabilities itself), so it reads like a real gate break
+
+2026-07-19T01:58:14.989Z — claude-fable-5 — NoisemakerJon
+
+regenerating scripts/export-manifest.json → gen-export-manifest reads dist, so orphaned dist files from incremental builds (deleted/renamed source never cleaned from dist) leak phantom public subpaths into the manifest and can mask real removals — found packages/core/dist/devtools/urlFlags.js orphaned with no src counterpart, and main's committed manifest still lists the deleted ./handlers/pathNetwork; the generator should cross-check dist entries against src (or builds should clean orphans)
 2026-07-19T02:05:06.250Z — claude-fable-5 — Claude
 
 switching task branches with stale dist: exportManifest test failed on leftover dist files built from another branch — build doesn't clean dist, needed rm -rf packages/*/dist + rebuild to get a truthful manifest; a dist-clean step or manifest test that ignores unbuilt-source strays would save the loop

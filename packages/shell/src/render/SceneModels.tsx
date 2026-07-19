@@ -7,6 +7,7 @@ import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengi
 import { useGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
+import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { useModelAnimation } from "./useModelAnimation";
 import { PartMotionRig } from "./PartMotion";
 import { applyMaterialOverride } from "../materialOverride";
@@ -53,16 +54,18 @@ class ModelFallbackBoundary extends Component<
 export function IsolatedEntityModel({
   model,
   instanceId,
+  measure,
   fallback,
 }: {
   model: ModelConfig;
   instanceId?: string;
+  measure?: MeasureTarget;
   fallback?: ReactNode;
 }) {
   return (
     <ModelFallbackBoundary fallback={fallback ?? null}>
       <Suspense fallback={null}>
-        <EntityModel model={model} instanceId={instanceId} />
+        <EntityModel model={model} instanceId={instanceId} measure={measure} />
       </Suspense>
     </ModelFallbackBoundary>
   );
@@ -151,7 +154,21 @@ function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps
   return null;
 }
 
-export function EntityModel({ model, instanceId }: { model: ModelConfig; instanceId?: string }) {
+/** Where a measured model reports its rendered bounds: an entity kind or an object catalog id. */
+export interface MeasureTarget {
+  target: "entity" | "object";
+  key: string;
+}
+
+export function EntityModel({
+  model,
+  instanceId,
+  measure,
+}: {
+  model: ModelConfig;
+  instanceId?: string;
+  measure?: MeasureTarget;
+}) {
   const gltf = useLoader(sharedGltfLoader, model.url);
   const ctx = useGameContext();
   const material = model.material;
@@ -192,6 +209,24 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
     },
     [scene],
   );
+
+  // A model without index-measured dims can't drive the fitted-collider path, so report the live
+  // measurement (the primitive mounts with only this uniform scale + position) instead of letting
+  // the kind fall back to a fixed-size box. Index dims keep priority — skip when they exist.
+  const measureTarget = measure?.target;
+  const measureKey = measure?.key;
+  const dimsMaxY = dims?.maxY;
+  const [positionX, positionY, positionZ] = position;
+  useEffect(() => {
+    if (measureTarget === undefined || measureKey === undefined || dimsMaxY !== undefined) return;
+    const raw = measureLocalBounds(scene);
+    if (raw === null) return;
+    reportMeasuredBounds(ctx, measureTarget, measureKey, {
+      min: [raw.min[0] * scale + positionX, raw.min[1] * scale + positionY, raw.min[2] * scale + positionZ],
+      max: [raw.max[0] * scale + positionX, raw.max[1] * scale + positionY, raw.max[2] * scale + positionZ],
+      meshCount: raw.meshCount,
+    });
+  }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey, dimsMaxY]);
 
   useModelAnimation(scene, gltf.animations, model.animation, instanceId);
 

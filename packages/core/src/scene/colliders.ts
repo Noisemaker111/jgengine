@@ -284,6 +284,80 @@ export function fittedObjectColliders(model: ModelBodySource): EntityColliderSet
   };
 }
 
+/**
+ * Entity-local AABB of what the renderer actually mounted for a kind — the runtime counterpart to
+ * index-measured `dims`. Reported through `ctx.scene.entity.reportBounds` /
+ * `ctx.scene.object.reportBounds` (the shell does this automatically for custom
+ * `renderEntity`/`renderObject` content and models without index dims) so collider resolution can
+ * wrap the real rendered shape instead of a fixed-size guess.
+ */
+export interface MeasuredBounds {
+  min: EntityPosition;
+  max: EntityPosition;
+}
+
+/** Thin measured axes (decals, blades, flat panels) keep at least this half-extent so the box stays hittable. */
+const MIN_MEASURED_HALF_EXTENT = 0.01;
+
+/** Tight AABB from measured bounds — `null` when inverted, non-finite, or a degenerate point. */
+function measuredBox(bounds: MeasuredBounds): { halfExtents: EntityPosition; offset: EntityPosition } | null {
+  const { min, max } = bounds;
+  let volume = 0;
+  for (let axis = 0; axis < 3; axis += 1) {
+    const lo = min[axis]!;
+    const hi = max[axis]!;
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi < lo) return null;
+    volume = Math.max(volume, hi - lo);
+  }
+  if (!(volume > 0)) return null;
+  return {
+    halfExtents: [
+      Math.max((max[0] - min[0]) / 2, MIN_MEASURED_HALF_EXTENT),
+      Math.max((max[1] - min[1]) / 2, MIN_MEASURED_HALF_EXTENT),
+      Math.max((max[2] - min[2]) / 2, MIN_MEASURED_HALF_EXTENT),
+    ],
+    offset: [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2],
+  };
+}
+
+/** Damage hitbox exactly wrapping runtime-measured render bounds — what `reportBounds` stores for an
+ * entity kind. `null` when the bounds are degenerate, keeping the caller's existing fallback.
+ * @internal
+ */
+export function measuredEntityColliders(bounds: MeasuredBounds): EntityColliderSet | null {
+  const box = measuredBox(bounds);
+  if (box === null) return null;
+  return {
+    hitboxes: [
+      {
+        name: "body",
+        purpose: "damage",
+        shape: { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset },
+        damageEligible: true,
+        blocks: false,
+      },
+    ],
+  };
+}
+
+/** Blocking physical body exactly wrapping runtime-measured render bounds — what `reportBounds`
+ * stores for an object catalog id. `null` when the bounds are degenerate.
+ * @internal
+ */
+export function measuredObjectColliders(bounds: MeasuredBounds): EntityColliderSet | null {
+  const box = measuredBox(bounds);
+  if (box === null) return null;
+  return {
+    body: {
+      name: "body",
+      purpose: "physical",
+      shape: { kind: "aabb", halfExtents: box.halfExtents, offset: box.offset },
+      damageEligible: false,
+      blocks: true,
+    },
+  };
+}
+
 /** @internal */
 export function resolveColliders(set: EntityColliderSet | null | undefined): ResolvedCollider[] {
   if (set === null || set === undefined) return [];
