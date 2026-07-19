@@ -286,6 +286,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
 
+## radial-menu — pointer/stick-driven radial quick menu (weapon/emote wheel) — angular slice selection with a neutral hub
+
+- `RadialMenu` (function) · `import { RadialMenu } from "@jgengine/react"`
+
+## radial-select — map a pointer/stick vector to a radial-menu slice index, with a neutral dead zone
+
+- `radialIndexFromVector` (function) · `import { radialIndexFromVector } from "@jgengine/core/ui"`
+
 ## raf-loop — run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`

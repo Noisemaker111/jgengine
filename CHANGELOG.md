@@ -32,6 +32,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Radial / quick menu (weapon/emote wheel).** `@jgengine/core/ui/radialMenu` ships the pure geometry —
+  `radialSlices`, `radialIndexFromAngle`, `radialIndexFromVector` (pointer/stick vector → slice with a
+  neutral dead zone), `radialSlicePosition` — with slices centered from "up" clockwise. New `@jgengine/react`
+  `RadialMenu` renders the wheel: pointer angle drives the highlight, the neutral hub closes, click/confirm
+  fires `onSelect`; the game supplies option icons/labels and skins it (`highlightIndex` for controller/test
+  control). First adopter: the apps/dev `radial-menu` demo.
 - **Accessibility options.** `@jgengine/core/ui/accessibility`'s `createAccessibilityStore` is a
   serializable, observable store of genre-agnostic accessibility preferences — reduced motion, high
   contrast, `textScale` (clamped), colorblind mode, and captions — with `snapshot`/`restore`. Ships the
