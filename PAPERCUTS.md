@@ -164,3 +164,11 @@ Running bun run gate on a fresh branch off origin/main → check-game-shape fail
 2026-07-19T20:41:47.420Z — claude-fable-5 — Claude
 
 test:all on a fresh branch → scripts/exportManifest.test.ts fails because export-manifest.json drift (editor ./camera/orbitFraming, ./harness) landed on main unregenerated — the PR quick CI job doesn't run this test, so drift only surfaces on later unrelated branches
+
+2026-07-19T21:06:59.865Z — claude-fable-5 — Claude
+
+recording a drive on the warm Chrome reused the profile's localStorage save — vice-isle restored the previous run's session and capture.probe read 0,0,0; fresh-profile drives (no --connect) were needed for honest recording runs
+
+2026-07-19T21:08:15.220Z — claude-fable-5 — Claude
+
+bun run gate fails on current main: check-game-shape rejects Games/vice-isle/src/editorKinds.ts(+test) from merged PR #1369 — either the files move under src/game/ or editorKinds*.ts joins the optional top-level extras
