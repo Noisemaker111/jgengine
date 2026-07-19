@@ -2,7 +2,7 @@ import type { ChaseCameraConfig, CinematicCameraConfig } from "../game/playableG
 
 /** Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), or a whole driving-feel overlay (speed→FOV, lead, bank, speed shake, drift-lag) applied only while a vehicle is piloted (#1299). */
 export type ChaseCameraTuning = Partial<
-  Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw">
+  Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse">
 >;
 
 export interface CameraDirector {

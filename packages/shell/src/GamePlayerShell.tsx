@@ -13,6 +13,7 @@ import {
 } from "@jgengine/core/input/actionBindings";
 import { RESERVED_INPUT_ACTIONS } from "./boundActionDispatch";
 import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
+import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
@@ -44,7 +45,7 @@ import { contextModels } from "./render/resolveModel";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { OrientationHint } from "./touch/OrientationHint";
-import { useTouchStyle, useGraphicsSettings } from "./settings/appliedSettings";
+import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "./settings/appliedSettings";
 import {
   logRuntimeError,
   type RuntimeDiagnostic,
@@ -158,6 +159,9 @@ export function GamePlayerShell({
     const state = pointerAxisRef.current;
     if (state !== null && state.active) pointerAxisRef.current = { ...state, active: false };
   };
+  // Reads fresh every render: the ctx-version useSyncExternalStore below re-renders on store
+  // writes, so a gameplay setTouchControlsMode("car") swaps the visible control set that frame.
+  const touchMode = ctx === null ? null : activeTouchControlsMode(ctx);
   const touchScheme = useMemo(
     () =>
       deriveTouchScheme(playable.game.input, {
@@ -167,13 +171,22 @@ export function GamePlayerShell({
             : RESERVED_INPUT_ACTIONS,
         firstPerson: resolveRigKind(playable.camera) === "first",
         config: playable.touch,
+        mode: touchMode,
       }),
-    [playable],
+    [playable, touchMode],
   );
   const touchStyle = useTouchStyle(settingsStore, touchScheme?.style ?? DEFAULT_TOUCH_STYLE);
+  const touchJoystickVariant = useTouchJoystickVariant(settingsStore);
   const { coarsePointer, portrait, compact } = useDisplayProfile();
+  const analogRef = useRef<Readonly<Record<string, number>> | null>(null);
   const touchSink = useMemo(
-    () => ({ onCodeDown: (code: string) => tracker.handleDown(code), onCodeUp: (code: string) => tracker.handleUp(code) }),
+    () => ({
+      onCodeDown: (code: string) => tracker.handleDown(code),
+      onCodeUp: (code: string) => tracker.handleUp(code),
+      onAnalog: (values: Readonly<Record<string, number>> | null) => {
+        analogRef.current = values;
+      },
+    }),
     [tracker],
   );
   const gateRef = useRef(false);
@@ -290,6 +303,8 @@ export function GamePlayerShell({
     pitchRef,
     touchScheme,
     touchSink,
+    touchJoystickVariant,
+    analogRef,
     orientationGate,
     orientationGateEl,
     coarsePointer,

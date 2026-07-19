@@ -339,7 +339,16 @@ export interface ResolvedChase {
   velocityYawMinSpeed: number;
   /** Exponential smoothing rate toward the blended anchor yaw (1-exp(-response*dt)). */
   velocityYawResponse: number;
+  /** Exponential smoothing rate the anchor yaw follows the body's facing with (#1370). `Infinity` restores the legacy rigid follow. */
+  yawResponse: number;
 }
+
+/**
+ * Default chase-yaw follow response: fast enough that the camera settles behind the runner in
+ * well under a second, slow enough that a strafe-flipped body facing arcs the boom around the
+ * character instead of teleporting it to the other side.
+ */
+const DEFAULT_CHASE_YAW_RESPONSE = 5;
 
 /** @internal */
 export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase {
@@ -357,6 +366,7 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
     velocityYawBlend: config?.velocityYaw === undefined ? 0 : config.velocityYaw.blend ?? 0.65,
     velocityYawMinSpeed: config?.velocityYaw?.minSpeed ?? 4,
     velocityYawResponse: config?.velocityYaw?.response ?? 6,
+    yawResponse: config?.yawResponse ?? DEFAULT_CHASE_YAW_RESPONSE,
   };
 }
 

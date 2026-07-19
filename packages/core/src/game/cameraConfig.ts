@@ -170,6 +170,13 @@ export interface ChaseCameraConfig {
    * (default 6) drives `1-exp(-response*dt)` smoothing toward the blended yaw.
    */
   velocityYaw?: { blend?: number; minSpeed?: number; response?: number };
+  /**
+   * Exponential response (`1-exp(-response*dt)`) the chase yaw follows the target's facing with
+   * (#1370). The default (5) arcs the boom smoothly behind a body whose facing flips from a strafe
+   * or direction change instead of teleporting it to the far side; `Infinity` restores the legacy
+   * rigid follow (yaw exactly equals body facing every frame).
+   */
+  yawResponse?: number;
   /** Which view to mount. Default "chase". */
   view?: ChaseView;
   /** Local offset for cockpit/hood/rear seats (relative to the vehicle, +z forward). */

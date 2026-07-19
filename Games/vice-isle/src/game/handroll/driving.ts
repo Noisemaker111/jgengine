@@ -18,6 +18,7 @@ import {
 } from "@jgengine/core/world";
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
+import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { createVehicleSeats, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
 import { streets } from "../../world";
@@ -295,12 +296,19 @@ export function createDriving(): Driving {
     if (ctx.input.justPressed("flightVectorToggle") && definition.dynamics.type === "aircraft" && definition.dynamics.tuning.kind === "vtol") {
       vtolModes.set(vehicleId, !(vtolModes.get(vehicleId) ?? true));
     }
+    // Analog stick sample (#1370): a touch joystick banks/pitches at its deflection; held keys
+    // still read as full ±1 through the same axis contract.
+    const stick = ctx.input.axis({
+      pitch: { positive: ["moveBack"], negative: ["moveForward"] },
+      roll: { positive: ["moveRight"], negative: ["moveLeft"] },
+      yaw: { positive: ["flightYawRight"], negative: ["flightYawLeft"] },
+    });
     const step = model.tick(dt, {
       throttle,
       collective: throttle,
-      pitch: (ctx.input.isDown("moveBack") ? 1 : 0) - (ctx.input.isDown("moveForward") ? 1 : 0),
-      roll: (ctx.input.isDown("moveRight") ? 1 : 0) - (ctx.input.isDown("moveLeft") ? 1 : 0),
-      yaw: (ctx.input.isDown("flightYawRight") ? 1 : 0) - (ctx.input.isDown("flightYawLeft") ? 1 : 0),
+      pitch: stick.pitch,
+      roll: stick.roll,
+      yaw: stick.yaw,
       airbrake: ctx.input.isDown("flightAirbrake") ? 1 : 0,
       afterburner: ctx.input.isDown("jump") ? 1 : 0,
       vectoring: vtolModes.get(vehicleId) === true ? 1 : 0,
@@ -362,6 +370,7 @@ export function createDriving(): Driving {
       ctx.camera.setChaseTuning(DRIVE_CAMERA_TUNING);
       setRiderSeated(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
       drivingStore.write(ctx, vehicleId);
+      setTouchControlsMode(ctx, definition.dynamics.type === "aircraft" ? "aircraft" : "car");
     },
     exitVehicle(ctx) {
       if (driving === null) return;
@@ -384,6 +393,7 @@ export function createDriving(): Driving {
       drivingAudio.stop(ctx);
       lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
       drivingStore.write(ctx, null);
+      setTouchControlsMode(ctx, null);
       ctx.camera.setChaseTuning(null);
       if (!result.ok) return;
       ctx.camera.follow(result.cameraTarget);
@@ -413,6 +423,7 @@ export function createDriving(): Driving {
         setRiderSeated(ctx, ctx.player.userId, false);
         ctx.scene.entity.setPose(ctx.player.userId, { position: at, rotationY: rider?.rotationY ?? 0 });
         drivingStore.write(ctx, null);
+        setTouchControlsMode(ctx, null);
         wasDriven = true;
       }
       dropCarSim(vehicleId);
