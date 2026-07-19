@@ -1,5 +1,5 @@
 import { KeyHint } from "@jgengine/react";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { IconTreatment, schoolForAction } from "@jgengine/react/iconTreatment";
 import { useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
 import { useGameContext } from "@jgengine/react/provider";
@@ -70,7 +70,7 @@ function Slot({
       }`}
       style={justCast ? { boxShadow: "0 0 10px #ffd100aa, inset 0 0 6px #ffd10066" } : undefined}
     >
-      <GameIcon name={ability.icon} size={26} />
+      <IconTreatment icon={ability.icon} school={schoolForAction(ability.id)} size={40} style={{ borderRadius: 4 }} />
       {cooldownFraction > 0 && !locked && (
         <span
           className="absolute inset-x-0 bottom-0 bg-black/75"
