@@ -366,6 +366,7 @@
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `ReceiveRule` (interface): interface ReceiveRule — ⚠ undocumented
 - `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput — ⚠ undocumented
+- `SlainIdentity` (interface): interface SlainIdentity — Identity of an entity slain by a lethal effect, captured before the death system despawns it. Serializable and genre-agnostic: `catalogId` is the slain entity's spawn kind/name (the same value the `entity.died` event carries), `name` an optional human-readable label for kill feeds, and `userId` the owning player when the slain unit was player-controlled. The slain entity's instance id is already {@link EffectResult.instanceId}.
 - `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal context.
 - `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
 
