@@ -24,6 +24,7 @@ export * from "./bars";
 export * from "./entityFrames";
 export * from "./barsPreview";
 export * from "./iconTreatment";
+export * from "./statusEffectBar";
 export * from "./iconsPreview";
 export * from "./slots";
 export * from "./inventoryGrid";

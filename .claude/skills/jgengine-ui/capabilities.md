@@ -378,6 +378,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
 
+## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
+
+- `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/react"`
+
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`

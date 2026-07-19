@@ -60,6 +60,7 @@
     "./combat/rewardAllocation",
     "./combat/shotOrigin",
     "./combat/statusApplication",
+    "./combat/statusEffectView",
     "./combat/telegraph",
     "./combat/thresholdCrossings",
     "./combat/vfxPresets",
@@ -565,6 +566,7 @@
     "./slots",
     "./social",
     "./startScreen",
+    "./statusEffectBar",
     "./store",
     "./voice"
   ],
