@@ -312,3 +312,7 @@ shipping a UI boundary check → check-export-manifest fails on main: scripts/ex
 2026-07-19T03:57:16.316Z — fable — Claude
 
 Adding an /agents.md server route to apps/web → Vite dev static middleware intercepts .md URLs and 404s before TanStack SSR sees them, while .txt/.xml server routes work; had to ship the brief as /llms-full.txt instead
+
+2026-07-19T04:40:07.134Z — fable — Claude
+
+verifying vice-isle movement fix → bun run drive --playtest in the cloud container runs headless Chrome at ~2 fps software GL (1.2M tris), so held-key movement barely advances and every game reads as a false SOFTLOCK (wreckway: 2 probe frames in 8s); playtest rung is unusable here, had to fall back to deterministic headless stepPlayerMovement evidence
