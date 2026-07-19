@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import type { GeneratedCity } from "@jgengine/core/world/cityGenerator";
-import { buildCityModel, buildGround, type CityModel, type CityPalette } from "./cityScene";
+import { buildCityModel, buildGround, makeElevationField, type CityModel, type CityPalette } from "./cityScene";
 import { disposeObject, mountLive, type LiveHandle } from "./mount";
 
 const INK = 0x04060c;
@@ -31,7 +31,20 @@ const PALETTE: CityPalette = {
 };
 
 export interface PlaygroundWorldHandle {
-  setCity(city: GeneratedCity, options: { seed: string; heightScale?: number; animate?: boolean }): void;
+  setCity(
+    city: GeneratedCity,
+    options: {
+      seed: string;
+      heightScale?: number;
+      animate?: boolean;
+      /** "circuit" gets track dressing + a rolling-lap framing; "city" gets gentle-hill framing. */
+      mode?: "city" | "circuit";
+      /** Elevation dial, 0..1 — scales the shared terrain field amplitude. */
+      elevation?: number;
+      /** World half-size the field wavelength scales from. */
+      extent?: number;
+    },
+  ): void;
   dispose(): void;
 }
 
@@ -39,6 +52,7 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
   let model: CityModel | null = null;
   let ground: THREE.Group | null = null;
   let modelElapsed = 0;
+  let lastMode: string | undefined;
 
   const handle: LiveHandle = mountLive(container, {
     fov: 46,
@@ -77,28 +91,61 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
   return {
     setCity(city, options) {
       model?.dispose();
+      const mode = options.mode ?? "city";
+      const circuit = mode === "circuit";
+      // Shared terrain field: prefer the network's own `elevationAt` (once the core contract lands),
+      // else synthesize a smooth field from the elevation dial so the world still rolls. Circuits get
+      // taller, tighter crests for a rolling lap; the city gets broad, gentle hills.
+      const elevation = options.elevation ?? 0;
+      const extent = options.extent ?? 260;
+      const networkField = (city.network as { elevationAt?: (x: number, z: number) => number }).elevationAt;
+      // Amplitudes chosen so the terrain reads: a circuit rolls over real crests (no buildings to hide
+      // relief), the city keeps gentle hills that vary building bases without becoming mountains.
+      const amplitude = elevation * (circuit ? 58 : 34);
+      const wavelength = extent * (circuit ? 1.05 : 1.7);
+      const sampleHeight = networkField ?? makeElevationField(options.seed, amplitude, wavelength);
       model = buildCityModel(city, PALETTE, {
         seed: options.seed,
         instant: handle.reducedMotion || options.animate !== true,
         heightScale: options.heightScale ?? 1,
+        sampleHeight,
+        trackDressing: circuit,
       });
       handle.scene.add(model.group);
-      if (options.animate === true) {
-        // First build: frame the whole generated extent once; after that the
-        // camera belongs to the user.
+      // Reframe on the first build AND whenever the mode flips (city ↔ circuit is a new kind of layout);
+      // between those the camera belongs to the user's orbiting.
+      const reframe = options.animate === true || (options.mode !== undefined && options.mode !== lastMode);
+      lastMode = options.mode;
+      if (reframe) {
+        // Frame the whole generated extent from a pleasing ~33–40° pitch orbit so first paint shows the
+        // layout and its rolling silhouette, not a half-empty low angle.
         const r = model.radius;
-        handle.camera.position.set(r * 0.95, r * 0.68, r * 0.95);
-        controls.target.set(0, 10, 0);
+        const horiz = circuit ? 0.95 : 0.92; // pull back enough that nothing clips at the frame edges
+        const lift = circuit ? 0.86 : 1.02; // pitch ≈ atan(lift / (horiz·√2))
+        handle.camera.position.set(r * horiz, r * lift, r * horiz);
+        controls.target.set(0, circuit ? 4 : 14, 0);
         controls.update();
       }
       const wantRadius = model.radius + 120;
-      if (ground === null || Math.abs(wantRadius - (ground.userData.radius as number)) > 60) {
+      const drape = elevation > 0 || networkField !== undefined;
+      // Rebuild the ground whenever the terrain it drapes could have changed: extent, seed, mode, or the
+      // elevation dial (the field is seeded from all of these), so raised roads never clip a stale disc.
+      if (
+        ground === null ||
+        Math.abs(wantRadius - (ground.userData.radius as number)) > 60 ||
+        ground.userData.seed !== options.seed ||
+        ground.userData.mode !== mode ||
+        ground.userData.elevation !== elevation
+      ) {
         if (ground !== null) {
           handle.scene.remove(ground);
           disposeObject(ground);
         }
-        ground = buildGround(wantRadius, PALETTE.glow);
+        ground = buildGround(wantRadius, PALETTE.glow, drape ? sampleHeight : undefined);
         ground.userData.radius = wantRadius;
+        ground.userData.seed = options.seed;
+        ground.userData.mode = mode;
+        ground.userData.elevation = elevation;
         handle.scene.add(ground);
       }
       modelElapsed = 0;

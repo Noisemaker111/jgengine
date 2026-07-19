@@ -32,6 +32,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Generated street elevation** (`@jgengine/core/world/streetGenerator`) — new optional `elevation` (0..1 relief dial, default 0 = flat, byte-identical output) and `maxGrade` (default 0.07) rules: a seeded smooth field emits per-point `Street.heights` (grade-capped, loop-continuous across a circuit's start/finish) and a shared `StreetNetwork.elevationAt(x,z)` so renderers drape roads, junction welds, sidewalks, and building bases off one consistent surface. Distinct from `context.heightAt` terrain (bridges/tunnels unchanged).
+- **Per-corner radius classes on circuits** (`@jgengine/core/world/streetGenerator`) — circuit corners now fillet from a seeded radius mix (hairpins near `minCurveRadius`, standard corners at 2-4x, 1-3 sweepers per lap at 5-8x, inversely correlated with turn magnitude) so track layouts show genuinely different corner radii instead of one pinched minimum.
 - **`trimBandAtJunctions`** (`@jgengine/core/world/roads`) — clip a sidewalk/parallel band polyline out of every junction apron (arm-derived radius widened by the band's half-width + clearance), returning the surviving sub-paths — so sidewalks end at crossings instead of sailing through them. The playground consumes it for `Street.sidewalks`.
 - **Photo mode.** `@jgengine/core/ui/photoMode`'s `createPhotoModeStore` is a serializable, observable
   photo-mode state (active + hide-HUD) a game binds its capture flow to. New `@jgengine/react`

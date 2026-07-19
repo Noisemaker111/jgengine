@@ -175,6 +175,7 @@ function pushRibbon(
   width: number,
   y: number,
   color: THREE.Color,
+  sampleHeight?: (x: number, z: number) => number,
 ): void {
   if (points.length < 2) return;
   const base = positions.length / 3;
@@ -189,7 +190,13 @@ function pushRibbon(
     dz /= len;
     const px = points[i]![0];
     const pz = points[i]![1];
-    positions.push(px - dz * half, y, pz + dx * half, px + dz * half, y, pz - dx * half);
+    const lx = px - dz * half;
+    const lz = pz + dx * half;
+    const rx = px + dz * half;
+    const rz = pz - dx * half;
+    const ly = sampleHeight ? sampleHeight(lx, lz) + y : y;
+    const ry = sampleHeight ? sampleHeight(rx, rz) + y : y;
+    positions.push(lx, ly, lz, rx, ry, rz);
     colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
   }
   for (let i = 0; i < points.length - 1; i += 1) {
@@ -534,11 +541,13 @@ function pushDome(
 interface TrafficStream {
   points: readonly (readonly [number, number])[];
   lengths: number[];
+  /** Per-point ground height (from `Street.heights` when the network drapes, else the sampled field). */
+  heights: number[];
   total: number;
   y: number;
 }
 
-function streamFrom(street: Street): TrafficStream {
+function streamFrom(street: Street, sampleHeight: (x: number, z: number) => number): TrafficStream {
   const lengths: number[] = [0];
   let total = 0;
   for (let i = 1; i < street.points.length; i += 1) {
@@ -548,7 +557,12 @@ function streamFrom(street: Street): TrafficStream {
     );
     lengths.push(total);
   }
-  return { points: street.points, lengths, total, y: ROAD_Y + 0.5 };
+  const perPoint = (street as { heights?: number[] }).heights;
+  const heights =
+    perPoint !== undefined && perPoint.length === street.points.length
+      ? perPoint
+      : street.points.map((p) => sampleHeight(p[0], p[1]));
+  return { points: street.points, lengths, heights, total, y: ROAD_Y + 0.5 };
 }
 
 function sampleStream(stream: TrafficStream, distance: number, out: THREE.Vector3): void {
@@ -558,7 +572,8 @@ function sampleStream(stream: TrafficStream, distance: number, out: THREE.Vector
   const t = (d - stream.lengths[i - 1]!) / Math.max(1e-6, stream.lengths[i]! - stream.lengths[i - 1]!);
   const a = stream.points[i - 1]!;
   const b = stream.points[i]!;
-  out.set(a[0] + (b[0] - a[0]) * t, stream.y, a[1] + (b[1] - a[1]) * t);
+  const h = stream.heights[i - 1]! + (stream.heights[i]! - stream.heights[i - 1]!) * t;
+  out.set(a[0] + (b[0] - a[0]) * t, stream.y + h, a[1] + (b[1] - a[1]) * t);
 }
 
 /** Role → flat tint resolver for non-banded massing pieces. */
@@ -609,12 +624,25 @@ function jitterColor(
 export function buildCityModel(
   city: GeneratedCity,
   palette: CityPalette,
-  options: { seed: string; instant?: boolean; heightScale?: number },
+  options: {
+    seed: string;
+    instant?: boolean;
+    heightScale?: number;
+    /** Shared terrain field the whole model drapes off. Falls back to the network's `elevationAt`,
+     *  then to a flat plane. Streets, sidewalks, junction surfaces, buildings, traffic, glow, ground. */
+    sampleHeight?: (x: number, z: number) => number;
+    /** Emit circuit dressing (corner kerbs + a checkered start/finish band) around the main loop. */
+    trackDressing?: boolean;
+  },
 ): CityModel {
   const heightScale = options.heightScale ?? 1;
   const group = new THREE.Group();
   const rng = seededStreams(`${options.seed}:render`);
   const streets = city.network.streets;
+  // Everything drapes off ONE height field so roads, buildings, and ground agree. Prefer the caller's
+  // field, then the network's shared `elevationAt` (once the core contract lands), then a flat plane.
+  const networkElevationAt = (city.network as { elevationAt?: (x: number, z: number) => number }).elevationAt;
+  const sampleHeight = options.sampleHeight ?? networkElevationAt ?? (() => 0);
 
   const levelColors = Object.fromEntries(
     Object.entries(palette.streets).map(([level, hex]) => [level, new THREE.Color(hex)]),
@@ -625,10 +653,9 @@ export function buildCityModel(
   let radius = 40;
   for (const street of streets) for (const [x, z] of street.points) radius = Math.max(radius, Math.hypot(x, z));
 
-  // --- streets: welded, trimmed intersections (no z-fighting, no floating discs) ---
-  const flat = () => 0;
+  // --- streets: welded, trimmed intersections (no z-fighting, no floating discs), draped over relief ---
   const intersectionStreets: IntersectionStreet[] = streets.map((s) => ({ path: s.points, width: s.width }));
-  const trimmed = buildTrimmedIntersections(intersectionStreets, city.network.junctions, flat);
+  const trimmed = buildTrimmedIntersections(intersectionStreets, city.network.junctions, sampleHeight);
 
   // Recover each ribbon's street level from an interior point of its trimmed sub-path (interior
   // vertices are original street points, so they map straight back to a level).
@@ -663,7 +690,7 @@ export function buildCityModel(
     if (s.level === "lane" || s.sidewalks === undefined) continue;
     for (const band of [s.sidewalks.left, s.sidewalks.right]) {
       for (const sub of trimBandAtJunctions(band, 2.2, city.network.junctions)) {
-        pushRibbon(streetPos, streetCol, streetIdx, sub, 2.2, ROAD_Y, sidewalkColor);
+        pushRibbon(streetPos, streetCol, streetIdx, sub, 2.2, ROAD_Y, sidewalkColor, sampleHeight);
       }
     }
   }
@@ -686,7 +713,7 @@ export function buildCityModel(
   const glowColor = new THREE.Color(palette.glow);
   for (const street of streets) {
     if (street.level !== "boulevard" && street.level !== "avenue") continue;
-    pushRibbon(glowPos, glowCol, glowIdx, street.points, street.level === "boulevard" ? 1.1 : 0.7, GROUND_DECAL_LAYERS.glow, glowColor);
+    pushRibbon(glowPos, glowCol, glowIdx, street.points, street.level === "boulevard" ? 1.1 : 0.7, GROUND_DECAL_LAYERS.glow, glowColor, sampleHeight);
   }
   const glowGeo = new THREE.BufferGeometry();
   glowGeo.setAttribute("position", new THREE.Float32BufferAttribute(glowPos, 3));
@@ -706,6 +733,16 @@ export function buildCityModel(
   const glowMesh = new THREE.Mesh(glowGeo, glowMat);
   glowMesh.renderOrder = 2;
   group.add(glowMesh);
+
+  // --- circuit dressing: red/white corner kerbs + a checkered start/finish band on the track ---
+  let dressingMesh: THREE.Mesh | null = null;
+  if (options.trackDressing === true) {
+    const loop = streets.find((s) => s.loop) ?? streets[0];
+    if (loop !== undefined && loop.points.length >= 6) {
+      dressingMesh = buildTrackDressing(loop, sampleHeight);
+      if (dressingMesh !== null) group.add(dressingMesh);
+    }
+  }
 
   // --- buildings ---
   const boxWriter = makeWriter(); // windowed walls + flat boxes
@@ -729,6 +766,7 @@ export function buildCityModel(
     const noFlood = new THREE.Color(0, 0, 0);
     for (const resolved of lotContent) {
       const [cx, cz] = resolved.center;
+      const baseY = sampleHeight(cx, cz); // lot sits on the terrain, all its pieces share the offset
       const lotRot = resolved.rotationY;
       const lc = Math.cos(lotRot);
       const ls = Math.sin(lotRot);
@@ -760,7 +798,7 @@ export function buildCityModel(
         const oz = piece.offset[2];
         const wx = cx + ox * lc + oz * ls;
         const wz = cz - ox * ls + oz * lc;
-        const y0 = piece.offset[1] * heightScale;
+        const y0 = piece.offset[1] * heightScale + baseY;
         const sh = Math.max(0.2, piece.size[1] * heightScale);
         const ry = lotRot + piece.rotationY;
         const g = delay + pi * 0.05;
@@ -811,18 +849,19 @@ export function buildCityModel(
       const delay = (Math.hypot(lot.center[0], lot.center[1]) / Math.max(1, radius)) * 1.5 + heightsRng() * 0.3;
       const w = lot.footprint.w * 0.92;
       const d = lot.footprint.d * 0.92;
+      const baseY = sampleHeight(lot.center[0], lot.center[1]);
       if (h > 26 && heightsRng() < 0.7) {
         const tiers = h > 42 && heightsRng() < 0.5 ? 3 : 2;
-        let y = 0;
+        let y = baseY;
         for (let t = 0; t < tiers; t += 1) {
           const frac = t === tiers - 1 ? 1 : 0.45 + heightsRng() * 0.25;
-          const topY = t === tiers - 1 ? h : y + (h - y) * frac;
+          const topY = t === tiers - 1 ? baseY + h : y + (baseY + h - y) * frac;
           const scale = 1 - t * (0.16 + heightsRng() * 0.12);
           pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w * scale, d * scale, y, topY, lot.rotationY, scratchShade, delay + t * 0.12, true, fallbackEmit);
           y = topY;
         }
       } else {
-        pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w, d, 0, h, lot.rotationY, scratchShade, delay, true, fallbackEmit);
+        pushBuildingBox(boxWriter, lot.center[0], lot.center[1], w, d, baseY, baseY + h, lot.rotationY, scratchShade, delay, true, fallbackEmit);
       }
     }
   }
@@ -919,7 +958,9 @@ export function buildCityModel(
   group.add(shapeMesh);
 
   // --- traffic: light dots flowing along street chains ---
-  const streams = streets.filter((street) => street.points.length >= 2 && street.level !== "lane").map(streamFrom);
+  const streams = streets
+    .filter((street) => street.points.length >= 2 && street.level !== "lane")
+    .map((street) => streamFrom(street, sampleHeight));
   const totalLength = streams.reduce((sum, stream) => sum + stream.total, 0);
   const dotCount = Math.min(220, Math.max(24, Math.floor(totalLength / 16)));
   const dots: { stream: TrafficStream; offset: number; speed: number }[] = [];
@@ -967,7 +1008,7 @@ export function buildCityModel(
   const lightColors = [palette.lightA, palette.lightB];
   junctions.slice(0, 2).forEach((junction, i) => {
     const light = new THREE.PointLight(lightColors[i], 8000, 260, 2);
-    light.position.set(junction.x, 26, junction.z);
+    light.position.set(junction.x, 26 + sampleHeight(junction.x, junction.z), junction.z);
     group.add(light);
   });
 
@@ -1017,6 +1058,10 @@ export function buildCityModel(
       buildingMesh.geometry.dispose();
       shapeMesh.geometry.dispose();
       dotGeo.dispose();
+      if (dressingMesh !== null) {
+        dressingMesh.geometry.dispose();
+        (dressingMesh.material as THREE.Material).dispose();
+      }
       windows.dispose();
       streetMat.dispose();
       glowMat.dispose();
@@ -1044,21 +1089,68 @@ function buildMeshFromWriter(writer: BoxWriter): THREE.Mesh {
   return new THREE.Mesh(geo);
 }
 
-/** Faded emerald grid ground shared by the hero and playground worlds. */
-export function buildGround(radius: number, gridColor: number): THREE.Group {
+/**
+ * A radially-segmented disc geometry laid in the XZ plane, its vertices displaced in Y by
+ * `sampleHeight` so the ground rolls with the terrain field. `y` carries the two coplanar layers
+ * (dark disc below, grid above) apart without a per-mesh offset that a slope could invert.
+ */
+function displacedDisc(radius: number, rings: number, segments: number, sampleHeight: (x: number, z: number) => number, y: number): THREE.BufferGeometry {
+  const pos: number[] = [0, sampleHeight(0, 0) + y, 0];
+  for (let r = 1; r <= rings; r += 1) {
+    const rad = (radius * r) / rings;
+    for (let s = 0; s < segments; s += 1) {
+      const a = (s / segments) * Math.PI * 2;
+      const x = Math.cos(a) * rad;
+      const z = Math.sin(a) * rad;
+      pos.push(x, sampleHeight(x, z) + y, z);
+    }
+  }
+  const idx: number[] = [];
+  for (let s = 0; s < segments; s += 1) idx.push(0, 1 + ((s + 1) % segments), 1 + s); // inner fan, +Y wound
+  for (let r = 1; r < rings; r += 1) {
+    const base = 1 + (r - 1) * segments;
+    const next = 1 + r * segments;
+    for (let s = 0; s < segments; s += 1) {
+      const a = base + s;
+      const b = base + ((s + 1) % segments);
+      const c = next + s;
+      const d = next + ((s + 1) % segments);
+      idx.push(a, d, c, a, b, d);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Faded emerald grid ground shared by the hero and playground worlds; drapes over `sampleHeight` when given. */
+export function buildGround(radius: number, gridColor: number, sampleHeight?: (x: number, z: number) => number): THREE.Group {
   const group = new THREE.Group();
+  const rolling = sampleHeight !== undefined;
+  // The disc sits WELL below the draped road decals: it is sampled coarsely, so at real relief its flat
+  // triangles would otherwise poke up through the finely-draped ribbons and z-fight them. A clear gap
+  // (roads live at ~+0.06) keeps the opaque base always under the road, no depth fighting at grazing angles.
+  const discGeo = rolling
+    ? displacedDisc(radius, 96, 120, sampleHeight, -0.45)
+    : new THREE.CircleGeometry(radius, 64).rotateX(-Math.PI / 2);
   const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(radius, 64).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x070b13, roughness: 1, metalness: 0 }),
+    discGeo,
+    new THREE.MeshStandardMaterial({ color: 0x070b13, roughness: 1, metalness: 0, side: rolling ? THREE.DoubleSide : THREE.FrontSide }),
   );
-  disc.position.y = -0.02;
+  if (!rolling) disc.position.y = -0.02;
   group.add(disc);
 
+  const gridGeo = rolling
+    ? displacedDisc(radius, 96, 120, sampleHeight, 0.02)
+    : new THREE.CircleGeometry(radius, 64).rotateX(-Math.PI / 2);
   const grid = new THREE.Mesh(
-    new THREE.CircleGeometry(radius, 64).rotateX(-Math.PI / 2),
+    gridGeo,
     new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
+      side: rolling ? THREE.DoubleSide : THREE.FrontSide,
       uniforms: {
         uColor: { value: new THREE.Color(gridColor) },
         uRadius: { value: radius },
@@ -1080,7 +1172,252 @@ export function buildGround(radius: number, gridColor: number): THREE.Group {
         }`,
     }),
   );
-  grid.position.y = 0.01;
+  if (!rolling) grid.position.y = 0.01;
   group.add(grid);
   return group;
+}
+
+// --- circuit dressing + shared terrain field ------------------------------------------------------
+
+/** One detected corner along a closed track loop: its apex point, fitted radius, and turn direction. */
+export interface TrackCorner {
+  /** Index of the apex (tightest) point in the loop's `points` array. */
+  apexIndex: number;
+  /** First/last point index of the high-curvature run. */
+  startIndex: number;
+  endIndex: number;
+  /** Fitted apex radius in world units (≈ meters). */
+  radius: number;
+  apex: readonly [number, number];
+  /** +1 left-hand corner, -1 right-hand. */
+  turnSign: number;
+}
+
+/**
+ * Detect corners along a closed loop centerline by fitting a circumradius over each sliding point
+ * triple and grouping consecutive high-curvature (radius &lt; `maxRadius`) runs into one corner.
+ * Deterministic, bounded by the point count. `points` may be the closed street points (first === last);
+ * indices returned are into that array's unique-point prefix. Corners come back in travel order.
+ */
+export function analyzeTrackCorners(
+  points: readonly (readonly [number, number])[],
+  options: { maxRadius?: number; mergeGap?: number } = {},
+): TrackCorner[] {
+  const maxRadius = options.maxRadius ?? 130;
+  const mergeGap = options.mergeGap ?? 2;
+  const isClosed =
+    points.length > 2 &&
+    Math.hypot(points[0]![0] - points[points.length - 1]![0], points[0]![1] - points[points.length - 1]![1]) < 1e-6;
+  const pts = isClosed ? points.slice(0, -1) : points.slice();
+  const n = pts.length;
+  if (n < 6) return [];
+  const radius = new Float64Array(n);
+  const sign = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) {
+    const a = pts[(i - 1 + n) % n]!;
+    const b = pts[i]!;
+    const c = pts[(i + 1) % n]!;
+    const la = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const lb = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    const lc = Math.hypot(a[0] - c[0], a[1] - c[1]);
+    const cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    const area = Math.abs(cross) / 2;
+    radius[i] = area < 1e-6 ? Infinity : (la * lb * lc) / (4 * area);
+    sign[i] = Math.sign(cross);
+  }
+  // Effective corner radius from the whole run: arc length / total heading change (R = L / Δθ) reads
+  // as the radius you'd actually drive, unlike a single filleted-apex triple whose circumradius spikes.
+  const turnAt = (j: number): number => {
+    const a = pts[(j - 1 + n) % n]!;
+    const b = pts[j]!;
+    const c = pts[(j + 1) % n]!;
+    const ux = b[0] - a[0];
+    const uz = b[1] - a[1];
+    const vx = c[0] - b[0];
+    const vz = c[1] - b[1];
+    const lu = Math.hypot(ux, uz);
+    const lv = Math.hypot(vx, vz);
+    if (lu < 1e-6 || lv < 1e-6) return 0;
+    return Math.acos(Math.max(-1, Math.min(1, (ux * vx + uz * vz) / (lu * lv))));
+  };
+  const corner = Array.from({ length: n }, (_, i) => radius[i]! < maxRadius);
+  // Group linearly (index 0 sits on the straightest edge — the start/finish — so no run wraps it),
+  // tolerating up to `mergeGap` shallow samples inside one corner.
+  const corners: TrackCorner[] = [];
+  let i = 0;
+  while (i < n) {
+    if (!corner[i]) {
+      i += 1;
+      continue;
+    }
+    let last = i;
+    let gap = 0;
+    let k = i;
+    while (k < n) {
+      if (corner[k]) {
+        last = k;
+        gap = 0;
+      } else if (++gap > mergeGap) {
+        break;
+      }
+      k += 1;
+    }
+    let apexIndex = i;
+    for (let j = i; j <= last; j += 1) if (radius[j]! < radius[apexIndex]!) apexIndex = j;
+    let arc = 0;
+    let turn = 0;
+    for (let j = i; j <= last; j += 1) {
+      const b = pts[j]!;
+      const c = pts[(j + 1) % n]!;
+      arc += Math.hypot(c[0] - b[0], c[1] - b[1]);
+      turn += turnAt(j);
+    }
+    const fitted = turn > 1e-2 ? Math.min(400, arc / turn) : radius[apexIndex]!;
+    corners.push({
+      apexIndex,
+      startIndex: i,
+      endIndex: last,
+      radius: Math.max(8, Math.round(fitted)),
+      apex: [pts[apexIndex]![0], pts[apexIndex]![1]],
+      turnSign: sign[apexIndex]! || 1,
+    });
+    i = last + 1;
+  }
+  return corners;
+}
+
+/**
+ * A smooth, deterministic multi-octave terrain field the playground drapes off when the street network
+ * does not (yet) publish a shared `elevationAt`. `amplitude` is the peak height in world units and
+ * `wavelength` the broad hump spacing; both are chosen by the caller from the elevation dial + mode.
+ */
+export function makeElevationField(seed: string, amplitude: number, wavelength: number): (x: number, z: number) => number {
+  if (amplitude <= 0 || wavelength <= 0) return () => 0;
+  const s = seededStreams(`${seed}:elevation`)("field");
+  const k1 = (Math.PI * 2) / (wavelength * (0.9 + s() * 0.4));
+  const k2 = (Math.PI * 2) / (wavelength * (0.9 + s() * 0.4));
+  const k3 = (Math.PI * 2) / (wavelength * (1.6 + s() * 0.8));
+  const p1 = s() * Math.PI * 2;
+  const p2 = s() * Math.PI * 2;
+  const p3 = s() * Math.PI * 2;
+  const p4 = s() * Math.PI * 2;
+  const ang = s() * Math.PI * 2;
+  const dx = Math.cos(ang);
+  const dz = Math.sin(ang);
+  return (x, z) => {
+    const broad = Math.sin(x * k1 + p1) * Math.cos(z * k2 + p2);
+    const ridge = Math.sin((x * dx + z * dz) * k3 + p3);
+    const fine = Math.sin(x * k2 * 1.7 + p4) * Math.sin(z * k1 * 1.7 + p3) * 0.5;
+    return amplitude * (0.55 * broad + 0.4 * ridge + 0.15 * fine);
+  };
+}
+
+const KERB_RED = new THREE.Color(0xd23a34);
+const KERB_WHITE = new THREE.Color(0xe8e8ea);
+const CHECK_DARK = new THREE.Color(0x101015);
+const CHECK_LIGHT = new THREE.Color(0xe8e8ea);
+
+/**
+ * Build the playground-local circuit dressing for a loop street: alternating red/white kerb strips
+ * hugging the OUTER edge of every detected corner, plus a checkered start/finish band laid across the
+ * track at `points[0]`. Pure vertex-color geometry draped over `sampleHeight`, subtle enough to keep
+ * the neon-night read. Returns null if the loop has no corners worth dressing.
+ */
+function buildTrackDressing(loop: Street, sampleHeight: (x: number, z: number) => number): THREE.Mesh | null {
+  const pts = loop.points;
+  const closed =
+    pts.length > 2 && Math.hypot(pts[0]![0] - pts[pts.length - 1]![0], pts[0]![1] - pts[pts.length - 1]![1]) < 1e-6;
+  const uniq = closed ? pts.slice(0, -1) : pts.slice();
+  const n = uniq.length;
+  if (n < 6) return null;
+  const half = loop.width / 2;
+  const kerbW = 1.15;
+  const y = ROAD_Y + 0.04;
+
+  const pos: number[] = [];
+  const col: number[] = [];
+  const idx: number[] = [];
+  const quad = (
+    ax: number, az: number, bx: number, bz: number, cx: number, cz: number, ex: number, ez: number,
+    color: THREE.Color,
+  ): void => {
+    const base = pos.length / 3;
+    const push = (x: number, z: number) => {
+      pos.push(x, sampleHeight(x, z) + y, z);
+      col.push(color.r, color.g, color.b);
+    };
+    push(ax, az); push(bx, bz); push(cx, cz); push(ex, ez);
+    idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  };
+  const normalAtIdx = (i: number): [number, number] => {
+    const p = uniq[(i - 1 + n) % n]!;
+    const q = uniq[(i + 1) % n]!;
+    let tx = q[0] - p[0];
+    let tz = q[1] - p[1];
+    const l = Math.hypot(tx, tz) || 1;
+    tx /= l;
+    tz /= l;
+    return [-tz, tx]; // left normal
+  };
+
+  // Kerbs on the outer edge of every real corner (tighter threshold than labels — only true corners).
+  const corners = analyzeTrackCorners(pts, { maxRadius: 95 });
+  let kerbSeg = 0;
+  for (const c of corners) {
+    for (let i = c.startIndex; i < c.endIndex; i += 1) {
+      const a = uniq[i]!;
+      const b = uniq[(i + 1) % n]!;
+      const [nax, naz] = normalAtIdx(i);
+      const [nbx, nbz] = normalAtIdx((i + 1) % n);
+      // Outer side = away from the turn centre (opposite the left normal for a left-hand corner).
+      const outer = -c.turnSign;
+      const a0x = a[0] + nax * outer * half;
+      const a0z = a[1] + naz * outer * half;
+      const a1x = a[0] + nax * outer * (half + kerbW);
+      const a1z = a[1] + naz * outer * (half + kerbW);
+      const b0x = b[0] + nbx * outer * half;
+      const b0z = b[1] + nbz * outer * half;
+      const b1x = b[0] + nbx * outer * (half + kerbW);
+      const b1z = b[1] + nbz * outer * (half + kerbW);
+      quad(a0x, a0z, a1x, a1z, b1x, b1z, b0x, b0z, kerbSeg % 2 === 0 ? KERB_RED : KERB_WHITE);
+      kerbSeg += 1;
+    }
+  }
+
+  // Checkered start/finish band across the track at points[0].
+  const s0 = uniq[0]!;
+  const [snx, snz] = normalAtIdx(0);
+  let tx = uniq[1]![0] - uniq[n - 1]![0];
+  let tz = uniq[1]![1] - uniq[n - 1]![1];
+  const tl = Math.hypot(tx, tz) || 1;
+  tx /= tl;
+  tz /= tl;
+  const cols = 10;
+  const rows = 2;
+  const depth = 5;
+  for (let r = 0; r < rows; r += 1) {
+    for (let cI = 0; cI < cols; cI += 1) {
+      const u0 = -half + (cI / cols) * 2 * half;
+      const u1 = -half + ((cI + 1) / cols) * 2 * half;
+      const v0 = -depth / 2 + (r / rows) * depth;
+      const v1 = -depth / 2 + ((r + 1) / rows) * depth;
+      const color = (cI + r) % 2 === 0 ? CHECK_DARK : CHECK_LIGHT;
+      const px = (u: number, v: number): [number, number] => [s0[0] + snx * u + tx * v, s0[1] + snz * u + tz * v];
+      const [aX, aZ] = px(u0, v0);
+      const [bX, bZ] = px(u1, v0);
+      const [cX, cZ] = px(u1, v1);
+      const [dX, dZ] = px(u0, v1);
+      quad(aX, aZ, bX, bZ, cX, cZ, dX, dZ, color);
+    }
+  }
+
+  if (idx.length === 0) return null;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 3;
+  return mesh;
 }
