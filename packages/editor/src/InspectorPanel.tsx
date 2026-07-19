@@ -53,6 +53,7 @@ import { INPUT } from "./chromeStyles";
 import { NumberField } from "./chromeFields";
 import { AxisNumberField, FieldRow, SectionAction } from "./shell/fields";
 import { Icon, kindIcon } from "./shell/icons";
+import { CoverageSection } from "./shell/scatterCoverage";
 import type { InspectorTab } from "./shell/layoutStore";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
 import { CollapsibleSection, EmptyState, IconButton, PanelTabs } from "./shell/ui";
@@ -138,16 +139,33 @@ function pathObject(path: NonNullable<ReturnType<typeof findEditorPath>>): Scene
 function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
   const definition = getSceneKind(object.kind);
   if (definition === undefined) return null;
-  const note = definition.note?.(object, parseParams(definition.schema, object.meta));
+  const params = parseParams(definition.schema, object.meta);
+  const note = definition.note?.(object, params);
+  const coverage = definition.coverage;
+  const accent = definition.accent ?? "#34d399";
   return (
-    <SchemaInspector
-      schema={definition.schema}
-      label={definition.label}
-      meta={meta}
-      onMeta={onMeta}
-      {...(definition.accent === undefined ? {} : { accent: definition.accent })}
-      {...(note === undefined ? {} : { note })}
-    />
+    <div className="space-y-2">
+      {coverage !== undefined ? (
+        <CoverageSection
+          schema={definition.schema}
+          coverage={coverage}
+          object={object}
+          params={params}
+          accent={accent}
+          onMeta={onMeta}
+          {...(note === undefined ? {} : { note })}
+        />
+      ) : null}
+      <SchemaInspector
+        schema={definition.schema}
+        label={definition.label}
+        meta={meta}
+        onMeta={onMeta}
+        {...(definition.accent === undefined ? {} : { accent: definition.accent })}
+        {...(coverage === undefined && note !== undefined ? { note } : {})}
+        {...(coverage === undefined ? {} : { hideKeys: [coverage.densityKey] })}
+      />
+    </div>
   );
 }
 

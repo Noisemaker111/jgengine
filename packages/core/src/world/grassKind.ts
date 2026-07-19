@@ -8,6 +8,7 @@
  * @capability grass-field editor-authorable GPU grass patch
  */
 import { registerSceneKind, type ParamSchema, type SceneKindObject } from "../scene/sceneKinds";
+import { budgetWarning, densityCoverage } from "./scatterCoverage";
 
 /** The editor volume kind marking a box as a GPU grass patch. */
 export const GRASS_FIELD_KIND = "grass_field";
@@ -128,12 +129,14 @@ export function registerGrassKind(): void {
     addCategory: "Studios",
     accent: "#7fbf4d",
     schema: GRASS_SCHEMA,
+    coverage: { spec: "grass_field", densityKey: "density" },
     resolve: (object) => resolveGrassObject(object),
     note: (object) => {
       const resolved = resolveGrassObject(object);
       if (resolved === null) return "Give the volume a box footprint.";
       const area = resolved.size[0] * resolved.size[1];
-      return `${Math.round(resolved.size[0])}×${Math.round(resolved.size[1])} m · ≈${Math.round(area * resolved.rules.density).toLocaleString()} blades`;
+      const coverage = densityCoverage("grass_field", area, resolved.rules.density);
+      return `${Math.round(resolved.size[0])}×${Math.round(resolved.size[1])} m · ≈ ${coverage.count.toLocaleString()} blades${budgetWarning(coverage)}`;
     },
   });
 }

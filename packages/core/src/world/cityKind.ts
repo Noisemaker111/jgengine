@@ -51,6 +51,7 @@ import {
   type CityZoneProfile,
 } from "./cityContent";
 import { furnitureSpots } from "./streets";
+import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "./scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { RoadPoint } from "./roads";
 import {
@@ -914,7 +915,8 @@ export interface CityResolveContext extends SceneKindResolveContext {
 
 /** Bounded-work caps so a huge volume can never generate unbounded content. */
 const MAX_STREETS = 320;
-const MAX_LOTS = 2600;
+/** Building budget — the shared scatterable cap so the inspector's "capped at N (budget)" note is truthful. */
+const MAX_LOTS = CITY_BUILDING_BUDGET;
 const MAX_INTERSECTIONS = 600;
 const MAX_TREES = 3200;
 const MAX_LIGHTS = 1200;
@@ -1938,6 +1940,7 @@ export function registerCityKind(): void {
     addCategory: "Studios",
     accent: "#8fa8c9",
     schema: CITY_SCHEMA,
+    coverage: { spec: "city", densityKey: "roadsideOccupancy" },
     resolve: (object, _params, context) => resolveCityObject(object, context),
     note: (object) => {
       const resolved = resolveCityObject(object);
@@ -1964,7 +1967,10 @@ export function registerCityKind(): void {
         resolved.tunnels.length > 0 ? `${resolved.tunnels.length} tunnels` : "",
       ].filter((s) => s.length > 0);
       const head = mode === "circuit" ? `circuit · ${resolved.streets.length} streets` : `${resolved.streets.length} streets`;
-      const fabric = resolved.rules.fabric ? ` · ${resolved.lots.length} buildings · ${resolved.parks.length} parks` : " · no fabric";
+      // Shared clamp-and-warn: when the block/parcel pipeline hits the building budget, surface it in
+      // the same "capped at N (budget)" wording grass and scatter use.
+      const buildingCap = resolved.rules.fabric ? budgetWarning(placedCoverage("city", 0, resolved.lots.length)) : "";
+      const fabric = resolved.rules.fabric ? ` · ${resolved.lots.length} buildings${buildingCap} · ${resolved.parks.length} parks` : " · no fabric";
       return `${head}${fabric}${feats.length > 0 ? ` · ${feats.join(" · ")}` : ""}`;
     },
   });

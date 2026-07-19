@@ -2,6 +2,8 @@
 
 Reference module for the [`jgengine-multiplayer` API](SKILL.md) skill. Load this when you need the transport/host/persistence seam.
 
+> Paths named below — `apps/dev/src/main.tsx`, `examples/convex-host`, `examples/HOSTED.md` — live in the JGengine engine monorepo and are **reference shapes to mirror**, not files a scaffolded consumer project ships with. In your own project the equivalent is a ~25-line `convex/` directory (schema + factory re-exports + crons) and a host that composes the resolvers; the factories and resolvers ship in the published `@jgengine/*` packages.
+
 ## Multiplayer and the backend seam
 
 **Convex is an adapter, not a dependency.** The engine owns the contracts; any backend implements them:

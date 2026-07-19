@@ -244,7 +244,13 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
     if (await isUp(finalBase)) return { child, port, base: finalBase };
   }
   child.kill();
-  throw new Error(`Dev server failed to start on :${port} for ${identity}`);
+  const viteInstalled =
+    existsSync(join(cwd, "node_modules", ".bin", "vite")) ||
+    existsSync(join(cwd, "node_modules", "vite"));
+  const hint = viteInstalled
+    ? "the apps/dev Vite server never became reachable — check for a port conflict or a Vite boot error"
+    : "node_modules looks incomplete (vite is missing) — run `bun scripts/ensure-ready.ts` (or `bun install`) first";
+  throw new Error(`Dev server failed to start on :${port} for ${identity} — ${hint}`);
 }
 
 /**

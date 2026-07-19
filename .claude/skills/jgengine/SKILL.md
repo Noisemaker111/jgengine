@@ -5,7 +5,7 @@ description: Route game work to the smallest useful JGengine guidance set.
 
 # JGengine intake and router
 
-Read the repository [README](../../../README.md) for package truth, commands, layering, and license. This skill decides what to load; it is not an engine manual.
+Read the JGengine README for package truth, commands, layering, and license — the repo-root [`README.md`](../../../README.md) in the monorepo, or [jgengine.com](https://jgengine.com) from a scaffolded consumer project (where the relative link does not resolve). This skill decides what to load; it is not an engine manual.
 
 ## 1. Establish the target
 
