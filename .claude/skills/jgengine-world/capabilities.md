@@ -432,6 +432,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSelectionBookmarks` (function) · `import { createSelectionBookmarks } from "@jgengine/core/world"`
 
+## sequence-director — data-driven cutscene timeline — fire typed camera/dialogue/event cues on one injected clock with play/pause/seek/skip and snapshot/restore
+
+- `createSequenceDirector` (function) · `import { createSequenceDirector } from "@jgengine/core/world"`
+
 ## skill-check — a timing-bar skill check where you release inside a zone
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`
