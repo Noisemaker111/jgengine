@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { useDisposable } from "../render/useDisposable";
 import type { WeatherVector } from "./weatherUniforms";
 
 export interface LightningStrikeProps {
@@ -132,8 +133,8 @@ export function LightningStrike({
 }: LightningStrikeProps) {
   const lifeRef = useRef(0);
   const lightRef = useRef<THREE.PointLight | null>(null);
-  const geometry = useMemo(() => new THREE.BufferGeometry(), []);
-  const material = useMemo(
+  const geometry = useDisposable(() => new THREE.BufferGeometry(), []);
+  const material = useDisposable(
     () =>
       new THREE.LineBasicMaterial({
         color,
@@ -150,10 +151,6 @@ export function LightningStrike({
     next.renderOrder = renderOrder;
     return next;
   }, [geometry, material, renderOrder]);
-
-  useEffect(() => {
-    material.color.set(color);
-  }, [color, material]);
 
   useEffect(() => {
     if (!visible) {
@@ -181,14 +178,6 @@ export function LightningStrike({
     material.opacity = amount * glow * flicker;
     if (lightRef.current !== null) lightRef.current.intensity = amount * impactLight * flicker;
   });
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
 
   return (
     <>

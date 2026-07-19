@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useAutoScroll } from "@jgengine/react/hooks";
 
 import { HudPanel } from "@/components/ui/hud-panel";
 
@@ -34,11 +34,7 @@ export function CombatLogPanel({
   height?: number;
   className?: string;
 }) {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const node = scrollRef.current;
-    if (node !== null) node.scrollTop = node.scrollHeight;
-  }, [lines.length]);
+  const scrollRef = useAutoScroll<HTMLDivElement>(lines.length);
   return (
     <div className={className} data-jg="combat-log-panel">
       <HudPanel title={title} width={width}>

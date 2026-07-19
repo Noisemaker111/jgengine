@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
+
+- `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
+
 ## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
@@ -57,9 +61,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
 
+## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
+
+- `useDisposable` (function) · `import { useDisposable } from "@jgengine/shell/render/useDisposable"`
+
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/ui"`
+
+## dom-event — attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects
+
+- `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/react"`
 
 ## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
 
@@ -140,6 +152,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-theme — game-authored token object for bars, frames, slots, and minimap ring
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`
+
+## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
+
+- `useTicker` (function) · `import { useTicker } from "@jgengine/react"`
 
 ## hud-vitals — atomic purpose-named vitals bars (token-themed parts, not a finished HUD)
 
@@ -229,6 +245,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
+
+## raf-loop — run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
+
+- `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
 
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 
