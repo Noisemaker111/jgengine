@@ -88,6 +88,7 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
       desktop: "jgengine desktop",
       preview: "vite preview",
       shoot: "node scripts/shoot.mjs",
+      drive: "node scripts/drive.mjs",
       "check-types": "tsc --noEmit -p tsconfig.json",
       test: "bun test src",
     },
@@ -131,6 +132,7 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       build: "vite build",
       desktop: "jgengine desktop",
       shoot: "node scripts/shoot.mjs",
+      drive: "node scripts/drive.mjs",
       "check-types": "tsgo --noEmit -p tsconfig.json",
       test: "bun test src",
     },
@@ -234,94 +236,34 @@ shots/
 .DS_Store
 `;
 
-// Dependency-free WebGL screenshot. Ships with every scaffold so a game built
-// outside the monorepo still has a reliable visual-capture rung (the engine's
-// own `bun run shoot` lives in apps/dev + scripts/ and does not travel with a
-// created game). Kept free of backticks and \${ so it embeds cleanly here.
-const shootMjs = `#!/usr/bin/env node
-/**
- * shoot.mjs — dependency-free WebGL/R3F screenshot for this JGengine game.
- *
- * Why this exists: generic "screenshot this tab" tools routinely fail on a
- * WebGL canvas. They grab a frame before the GPU has drawn, and
- * React-Three-Fiber's canvas stays stuck at its 300x150 default whenever its
- * parent never reports a real size. This script drives your own Vite dev
- * server through Chrome's DevTools Protocol instead: it forces a real viewport
- * (so the canvas sizes correctly), waits for an honestly-painted frame, then
- * pulls pixels with Page.captureScreenshot. No Playwright, no npm deps — just
- * Chrome/Chromium + Node 22+ (or Bun).
- *
- *   node scripts/shoot.mjs                          # 1600x900 -> shots/shot.png
- *   node scripts/shoot.mjs --device mobile          # 390x844
- *   node scripts/shoot.mjs --out shots/hud.png --settle 1500
- *   node scripts/shoot.mjs --url http://127.0.0.1:5173/?mode=editor
- *
- * Runs under 'bun scripts/shoot.mjs' too. If Chrome is not auto-detected, set
- * CHROME_PATH. The dev server is started for you when it is not already up.
+// Dependency-free WebGL capture/driving rung. Ships with every scaffold so a
+// game built outside the monorepo still has first-class screenshots AND a way
+// to play/test the running game (the engine's own `bun run shoot` / `drive`
+// live in apps/dev + scripts/ and do not travel with a created game).
+// browser.mjs holds the shared Chrome/CDP machinery; shoot.mjs captures,
+// drive.mjs interacts. Kept free of backticks and \${ so they embed cleanly.
+const browserMjs = `/**
+ * browser.mjs — shared, dependency-free Chrome/CDP machinery for this game's
+ * capture scripts: shoot.mjs (screenshots) and drive.mjs (clicks, keys, agent
+ * bridge RPC, bot playtest). No Playwright, no npm deps — just Chrome/Chromium
+ * + Node 22+ (or Bun). If Chrome is not auto-detected, set CHROME_PATH.
  */
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 
-const DEVICES = {
+export const DEVICES = {
   desktop: { width: 1600, height: 900, dsf: 1, mobile: false },
   mobile: { width: 390, height: 844, dsf: 2, mobile: true },
   "mobile-landscape": { width: 844, height: 390, dsf: 2, mobile: true },
 };
 
-const HELP = [
-  "shoot.mjs — screenshot this JGengine game (WebGL-safe, dependency-free)",
-  "",
-  "  --url <url>       page to capture (default http://127.0.0.1:<port>)",
-  "  --port <n>        dev-server port to use/start (default 5173)",
-  "  --device <name>   desktop | mobile | mobile-landscape (default desktop)",
-  "  --width <n>       viewport width override",
-  "  --height <n>      viewport height override",
-  "  --out <path>      output PNG (default shots/shot.png)",
-  "  --settle <ms>     extra wait after first honest frame (default 2000)",
-  "  --timeout <s>     max seconds to wait for a sized canvas (default 60)",
-  "  --help            show this text",
-  "",
-  "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
-].join("\\n");
-
-function parseArgs(argv) {
-  const args = {
-    url: undefined,
-    port: 5173,
-    device: "desktop",
-    width: undefined,
-    height: undefined,
-    out: undefined,
-    settle: 2000,
-    timeoutMs: 60_000,
-    help: false,
-  };
-  for (let i = 0; i < argv.length; i += 1) {
-    const v = argv[i];
-    if (v === "--url") args.url = argv[++i];
-    else if (v === "--port") args.port = Number(argv[++i]);
-    else if (v === "--device") args.device = argv[++i];
-    else if (v === "--width") args.width = Number(argv[++i]);
-    else if (v === "--height") args.height = Number(argv[++i]);
-    else if (v === "--out") args.out = argv[++i];
-    else if (v === "--settle") args.settle = Number(argv[++i]);
-    else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
-    else if (v === "--help" || v === "-h") args.help = true;
-    else throw new Error("unknown argument: " + v);
-  }
-  if (!DEVICES[args.device]) {
-    throw new Error("--device must be desktop, mobile, or mobile-landscape (got " + args.device + ")");
-  }
-  return args;
-}
-
-function sleep(ms) {
+export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function findChrome() {
+export function findChrome() {
   const candidates = [
     process.env.CHROME_PATH,
     process.env.JG_CHROME,
@@ -355,9 +297,9 @@ function findChrome() {
   throw new Error("No Chrome/Chromium found. Install Chrome or set CHROME_PATH.");
 }
 
-function launchChrome(port) {
+export function launchChrome(port, prefix) {
   const chrome = findChrome();
-  const userDataDir = join(tmpdir(), "jg-shoot-" + process.pid + "-" + port);
+  const userDataDir = join(tmpdir(), (prefix || "jg-shoot-") + process.pid + "-" + port);
   const child = spawn(
     chrome,
     [
@@ -384,7 +326,7 @@ function launchChrome(port) {
   return child;
 }
 
-async function isUp(url) {
+export async function isUp(url) {
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(1000) });
     return r.ok || r.status === 404; // a served-but-routed page still means Vite is up
@@ -393,7 +335,7 @@ async function isUp(url) {
   }
 }
 
-async function waitForDebugger(port, timeoutMs) {
+export async function waitForDebugger(port, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
@@ -408,7 +350,7 @@ async function waitForDebugger(port, timeoutMs) {
 }
 
 /** Start the game's Vite dev server if nothing is already serving base. */
-async function ensureDevServer(base, port) {
+export async function ensureDevServer(base, port) {
   if (await isUp(base)) return null;
   const bin = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite");
   if (!existsSync(bin)) {
@@ -429,7 +371,7 @@ async function ensureDevServer(base, port) {
   throw new Error("dev server failed to start on port " + port);
 }
 
-class Cdp {
+export class Cdp {
   constructor(ws) {
     this.ws = ws;
     this.nextId = 0;
@@ -490,7 +432,7 @@ class Cdp {
   }
 }
 
-async function openPage(debugPort) {
+export async function openPage(debugPort) {
   for (const method of ["PUT", "GET"]) {
     try {
       const r = await fetch("http://127.0.0.1:" + debugPort + "/json/new?about:blank", {
@@ -514,14 +456,14 @@ async function openPage(debugPort) {
 
 // Reads the honesty signals in one round-trip: the optional jgCapture handshake
 // (set by some hosts) plus the live canvas element size + backing-store size.
-const HONESTY_EXPR =
+export const HONESTY_EXPR =
   "(function(){var r=document.documentElement;var c=document.querySelector('canvas');" +
   "return {cap:r.dataset.jgCapture||null,err:r.dataset.jgCaptureError||null," +
   "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0};})()";
-const RAF_EXPR =
+export const RAF_EXPR =
   "new Promise(function(res){requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});})";
 
-function writePngAtomic(outPath, bytes) {
+export function writePngAtomic(outPath, bytes) {
   mkdirSync(dirname(outPath), { recursive: true });
   const tmp = outPath + ".tmp";
   writeFileSync(tmp, bytes);
@@ -529,7 +471,7 @@ function writePngAtomic(outPath, bytes) {
   renameSync(tmp, outPath);
 }
 
-async function waitForHonestFrame(session, url, timeoutMs) {
+export async function waitForHonestFrame(session, url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   let last;
   while (Date.now() < deadline) {
@@ -540,7 +482,7 @@ async function waitForHonestFrame(session, url, timeoutMs) {
     if (s && s.hasCanvas && s.cw > 10 && s.ch > 10) return s;
     await sleep(100);
   }
-  if (last && last.hasCanvas) return last; // canvas exists but small — capture it anyway, warn below
+  if (last && last.hasCanvas) return last; // canvas exists but small — capture it anyway, warn upstream
   throw new Error(
     "timed out after " +
       Math.round(timeoutMs / 1000) +
@@ -548,6 +490,108 @@ async function waitForHonestFrame(session, url, timeoutMs) {
       url +
       " — is the game being served there?",
   );
+}
+
+/** Tear down the Chrome we launched and (when we started it) the dev server. */
+export function shutdown(chrome, server) {
+  try {
+    chrome.kill();
+  } catch {
+    /* ignore */
+  }
+  if (server) {
+    try {
+      if (process.platform !== "win32" && server.pid) process.kill(-server.pid, "SIGKILL");
+      else server.kill();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+`;
+
+const shootMjs = `#!/usr/bin/env node
+/**
+ * shoot.mjs — dependency-free WebGL/R3F screenshot for this JGengine game.
+ *
+ * Why this exists: generic "screenshot this tab" tools routinely fail on a
+ * WebGL canvas. They grab a frame before the GPU has drawn, and
+ * React-Three-Fiber's canvas stays stuck at its 300x150 default whenever its
+ * parent never reports a real size. This script drives your own Vite dev
+ * server through Chrome's DevTools Protocol instead: it forces a real viewport
+ * (so the canvas sizes correctly), waits for an honestly-painted frame, then
+ * pulls pixels with Page.captureScreenshot. No Playwright, no npm deps — just
+ * Chrome/Chromium + Node 22+ (or Bun). To interact (click/keys/RPC) instead of
+ * only capturing, use scripts/drive.mjs.
+ *
+ *   node scripts/shoot.mjs                          # 1600x900 -> shots/shot.png
+ *   node scripts/shoot.mjs --device mobile          # 390x844
+ *   node scripts/shoot.mjs --out shots/hud.png --settle 1500
+ *   node scripts/shoot.mjs --url http://127.0.0.1:5173/?mode=editor
+ *
+ * Runs under 'bun scripts/shoot.mjs' too. If Chrome is not auto-detected, set
+ * CHROME_PATH. The dev server is started for you when it is not already up.
+ */
+import { join, resolve } from "node:path";
+
+import {
+  DEVICES,
+  ensureDevServer,
+  launchChrome,
+  openPage,
+  RAF_EXPR,
+  shutdown,
+  sleep,
+  waitForDebugger,
+  waitForHonestFrame,
+  writePngAtomic,
+} from "./browser.mjs";
+
+const HELP = [
+  "shoot.mjs — screenshot this JGengine game (WebGL-safe, dependency-free)",
+  "",
+  "  --url <url>       page to capture (default http://127.0.0.1:<port>)",
+  "  --port <n>        dev-server port to use/start (default 5173)",
+  "  --device <name>   desktop | mobile | mobile-landscape (default desktop)",
+  "  --width <n>       viewport width override",
+  "  --height <n>      viewport height override",
+  "  --out <path>      output PNG (default shots/shot.png)",
+  "  --settle <ms>     extra wait after first honest frame (default 2000)",
+  "  --timeout <s>     max seconds to wait for a sized canvas (default 60)",
+  "  --help            show this text",
+  "",
+  "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
+].join("\\n");
+
+function parseArgs(argv) {
+  const args = {
+    url: undefined,
+    port: 5173,
+    device: "desktop",
+    width: undefined,
+    height: undefined,
+    out: undefined,
+    settle: 2000,
+    timeoutMs: 60_000,
+    help: false,
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const v = argv[i];
+    if (v === "--url") args.url = argv[++i];
+    else if (v === "--port") args.port = Number(argv[++i]);
+    else if (v === "--device") args.device = argv[++i];
+    else if (v === "--width") args.width = Number(argv[++i]);
+    else if (v === "--height") args.height = Number(argv[++i]);
+    else if (v === "--out") args.out = argv[++i];
+    else if (v === "--settle") args.settle = Number(argv[++i]);
+    else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
+    else if (v === "--help" || v === "-h") args.help = true;
+    else throw new Error("unknown argument: " + v);
+  }
+  if (!DEVICES[args.device]) {
+    throw new Error("--device must be desktop, mobile, or mobile-landscape (got " + args.device + ")");
+  }
+  return args;
 }
 
 async function main() {
@@ -612,19 +656,7 @@ async function main() {
     exitCode = 1;
     console.error("shoot: " + (error instanceof Error ? error.message : String(error)));
   } finally {
-    try {
-      chrome.kill();
-    } catch {
-      /* ignore */
-    }
-    if (server) {
-      try {
-        if (process.platform !== "win32" && server.pid) process.kill(-server.pid, "SIGKILL");
-        else server.kill();
-      } catch {
-        /* ignore */
-      }
-    }
+    shutdown(chrome, server);
   }
   return exitCode;
 }
@@ -633,6 +665,379 @@ try {
   process.exit(await main());
 } catch (error) {
   console.error("shoot: " + (error instanceof Error ? error.message : String(error)));
+  process.exit(1);
+}
+`;
+
+const driveMjs = `#!/usr/bin/env node
+/**
+ * drive.mjs — dependency-free headless driver for this JGengine game: run
+ * ordered interactions (click text, hold keys, wait), screenshot at any point,
+ * call the page's agent bridge (window.__jgengineAgent) with --rpc, and run
+ * the bot-playtest rung against the game's capture.probe. This is THE
+ * supported way for an agent to play or test the running game — never
+ * hand-roll Playwright/Puppeteer/CDP glue or in-page canvas JavaScript to
+ * press keys, click buttons, or probe the scene.
+ *
+ *   node scripts/drive.mjs --click "START" --key KeyW:2500 --shot walked
+ *   node scripts/drive.mjs --rpc '{"method":"agent_status"}'
+ *   node scripts/drive.mjs --rpc '{"method":"debug_snapshot"}'
+ *   node scripts/drive.mjs --playtest --key KeyW:6000 --strict
+ *
+ * Steps run in the order given. Runs under 'bun scripts/drive.mjs' too. The
+ * dev server is started for you when it is not already up; Chrome/Chromium is
+ * auto-detected (set CHROME_PATH otherwise).
+ */
+import { join, resolve } from "node:path";
+
+import {
+  DEVICES,
+  ensureDevServer,
+  launchChrome,
+  openPage,
+  RAF_EXPR,
+  shutdown,
+  sleep,
+  waitForDebugger,
+  waitForHonestFrame,
+  writePngAtomic,
+} from "./browser.mjs";
+
+const HELP = [
+  "drive.mjs — play/test this JGengine game headlessly (WebGL-safe, dependency-free)",
+  "",
+  "  --url <url>       page to drive (default http://127.0.0.1:<port>)",
+  "  --port <n>        dev-server port to use/start (default 5173)",
+  "  --device <name>   desktop | mobile | mobile-landscape (default desktop)",
+  "  --settle <ms>     extra wait after the first honest frame (default 500)",
+  "  --timeout <s>     max seconds to wait for a sized canvas (default 60)",
+  "",
+  "steps (run in the order given; default when none: --shot drive):",
+  '  --click "<text>"  click the first visible element containing this text',
+  "  --key <CODE:ms>   hold a key (e.g. KeyW:2500) for the given milliseconds",
+  "  --wait <ms>       pause before the next step",
+  "  --shot <name>     screenshot to shots/<name>.png",
+  "  --rpc <json>      call window.__jgengineAgent.handle(<json>) and print the JSON reply",
+  "                    (agent_status, debug_snapshot, editor verbs, save_scene, ...)",
+  "",
+  "bot playtest (progress/softlock verdict from the game's capture.probe):",
+  "  --playtest        sample the probe while steps run, print a JSON verdict",
+  "  --strict          exit nonzero on a softlock or missing probe",
+  "  --seed <n>        forwarded as ?seed=n and echoed in the verdict (default 1)",
+  "  --sample <ms>     probe sampling interval (default 250)",
+  "  --softlock <ms>   flat-progress span under input that counts as a softlock (default 2000)",
+  "  --epsilon <n>     smallest metric change that counts as progress (default 0.001)",
+  "",
+  "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
+].join("\\n");
+
+function parseArgs(argv) {
+  const args = {
+    url: undefined,
+    port: 5173,
+    device: "desktop",
+    settle: 500,
+    timeoutMs: 60_000,
+    steps: [],
+    playtest: false,
+    strict: false,
+    seed: 1,
+    sampleMs: 250,
+    softlockMs: 2000,
+    epsilon: 0.001,
+    help: false,
+  };
+  for (let i = 0; i < argv.length; i += 1) {
+    const v = argv[i];
+    if (v === "--url") args.url = argv[++i];
+    else if (v === "--port") args.port = Number(argv[++i]);
+    else if (v === "--device") args.device = argv[++i];
+    else if (v === "--settle") args.settle = Number(argv[++i]);
+    else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
+    else if (v === "--click") args.steps.push({ kind: "click", text: argv[++i] ?? "" });
+    else if (v === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++i] ?? 500) });
+    else if (v === "--key") {
+      const spec = argv[++i] ?? "KeyW:1000";
+      const colon = spec.lastIndexOf(":");
+      const code = colon > 0 ? spec.slice(0, colon) : spec;
+      const holdMs = colon > 0 ? Number(spec.slice(colon + 1)) : 1000;
+      args.steps.push({ kind: "key", code, holdMs });
+    } else if (v === "--shot") args.steps.push({ kind: "shot", name: argv[++i] ?? "drive" });
+    else if (v === "--rpc") args.steps.push({ kind: "rpc", json: argv[++i] ?? "{}" });
+    else if (v === "--playtest") args.playtest = true;
+    else if (v === "--strict") args.strict = true;
+    else if (v === "--seed") args.seed = Number(argv[++i] ?? args.seed);
+    else if (v === "--sample") args.sampleMs = Number(argv[++i] ?? args.sampleMs);
+    else if (v === "--softlock") args.softlockMs = Number(argv[++i] ?? args.softlockMs);
+    else if (v === "--epsilon") args.epsilon = Number(argv[++i] ?? args.epsilon);
+    else if (v === "--help" || v === "-h") args.help = true;
+    else throw new Error("unknown argument: " + v);
+  }
+  if (!DEVICES[args.device]) {
+    throw new Error("--device must be desktop, mobile, or mobile-landscape (got " + args.device + ")");
+  }
+  if (!args.help && !args.playtest && !args.steps.some((s) => s.kind === "shot" || s.kind === "rpc")) {
+    args.steps.push({ kind: "shot", name: "drive" });
+  }
+  return args;
+}
+
+// Entrance animations and hydration shift element positions for ~2s, so a
+// click waits for its target's center to hold still across samples first.
+const SETTLE_EPSILON_PX = 0.5;
+const SETTLE_SAMPLES = 3;
+const SETTLE_INTERVAL_MS = 100;
+const SETTLE_TIMEOUT_MS = 5000;
+
+function clickPointExpr(text) {
+  return (
+    "(function(){var needle=" + JSON.stringify(text) + ".toLowerCase();" +
+    "var nodes=Array.prototype.slice.call(document.querySelectorAll('button, [role=button], a, span, div, h1, h2, h3'));" +
+    "var best=null;for(var i=0;i<nodes.length;i+=1){var node=nodes[i];" +
+    "var own=(node.textContent||'').trim().toLowerCase();" +
+    "if(own===''||own.indexOf(needle)<0)continue;" +
+    "if(best===null||own.length<best.len){var rect=node.getBoundingClientRect();" +
+    "if(rect.width>0&&rect.height>0){best={len:own.length,x:rect.left+rect.width/2,y:rect.top+rect.height/2};}}}" +
+    "return best===null?null:{x:best.x,y:best.y};})()"
+  );
+}
+
+async function findClickPoint(session, text) {
+  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
+  let last = null;
+  let stableRuns = 0;
+  while (Date.now() < deadline) {
+    const point = await session.evaluate(clickPointExpr(text));
+    if (
+      point && last &&
+      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
+      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
+    ) {
+      stableRuns += 1;
+      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
+    } else {
+      stableRuns = 0;
+    }
+    last = point || null;
+    await sleep(SETTLE_INTERVAL_MS);
+  }
+  if (last === null) throw new Error('drive: no visible element matching "' + text + '"');
+  return last;
+}
+
+async function click(session, text) {
+  const point = await findClickPoint(session, text);
+  for (const type of ["mousePressed", "mouseReleased"]) {
+    await session.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: "left", clickCount: 1 });
+  }
+}
+
+async function holdKey(session, code, holdMs) {
+  const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
+  await sleep(holdMs);
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
+}
+
+async function rpc(session, json) {
+  JSON.parse(json); // fail fast on malformed payloads before they reach the page
+  const expr =
+    "(async function(){var host=globalThis.__jgengineAgent||globalThis.__jgengineEditorHost;" +
+    "if(!host)return JSON.stringify({ok:false,error:'no agent bridge or editor host on this page'});" +
+    "return JSON.stringify(await host.handle(" + json + "));})()";
+  const value = await session.evaluate(expr, { awaitPromise: true });
+  console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
+}
+
+const PROBE_EXPR =
+  "(function(){var probe=globalThis.__jgProbe;if(typeof probe!=='function')return null;" +
+  "try{var value=probe();if(value===null||typeof value!=='object')return null;var out={};" +
+  "for(var key in value){var n=value[key];if(typeof n==='number'&&isFinite(n))out[key]=n;}return out;}" +
+  "catch(e){return null;}})()";
+
+async function screenshot(session, outPath) {
+  const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
+  if (typeof shot.data !== "string" || shot.data.length === 0) {
+    throw new Error("Page.captureScreenshot returned no data");
+  }
+  writePngAtomic(outPath, Buffer.from(shot.data, "base64"));
+  console.log(outPath);
+}
+
+function metricKeys(samples) {
+  const keys = new Set();
+  for (const sample of samples) for (const key of Object.keys(sample.metrics)) keys.add(key);
+  return [...keys];
+}
+
+function progressDelta(samples) {
+  const out = {};
+  for (const key of metricKeys(samples)) {
+    let first;
+    let last;
+    for (const sample of samples) {
+      const value = sample.metrics[key];
+      if (value === undefined) continue;
+      if (first === undefined) first = value;
+      last = value;
+    }
+    if (first !== undefined && last !== undefined) out[key] = last - first;
+  }
+  return out;
+}
+
+// Longest contiguous span (ms) where every metric's range stays within epsilon.
+// A bot circling back to its start still shows a wide range and reads as
+// moving; only a genuinely stuck loop stays flat.
+function longestFlatWindowMs(samples, epsilon) {
+  if (samples.length < 2) return 0;
+  const keys = metricKeys(samples);
+  let best = 0;
+  for (let start = 0; start < samples.length; start += 1) {
+    const min = {};
+    const max = {};
+    for (let end = start; end < samples.length; end += 1) {
+      const metrics = samples[end].metrics;
+      for (const key of keys) {
+        const value = metrics[key];
+        if (value === undefined) continue;
+        min[key] = key in min ? Math.min(min[key], value) : value;
+        max[key] = key in max ? Math.max(max[key], value) : value;
+      }
+      let flat = true;
+      for (const key of Object.keys(max)) {
+        if (max[key] - min[key] > epsilon) {
+          flat = false;
+          break;
+        }
+      }
+      if (!flat) break;
+      const span = samples[end].t - samples[start].t;
+      if (span > best) best = span;
+    }
+  }
+  return best;
+}
+
+function summarizePlaytest(samples, options) {
+  const probed = samples.length > 0;
+  const delta = progressDelta(samples);
+  const totalProgress = Object.values(delta).reduce((sum, value) => sum + Math.abs(value), 0);
+  const softlockWindowMs = longestFlatWindowMs(samples, options.epsilon);
+  const durationMs = probed ? samples[samples.length - 1].t - samples[0].t : 0;
+  const softlocked =
+    probed && durationMs >= options.softlockThresholdMs && softlockWindowMs >= options.softlockThresholdMs;
+  return {
+    seed: options.seed,
+    framesElapsed: samples.length,
+    durationMs,
+    progressDelta: delta,
+    totalProgress,
+    softlockWindowMs,
+    softlocked,
+    probed,
+  };
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    console.log(HELP);
+    return 0;
+  }
+
+  const profile = DEVICES[args.device];
+  const base = "http://127.0.0.1:" + args.port;
+  const target = new URL(args.url ?? base);
+  target.searchParams.set("capture", "1"); // honored by hosts that set data-jg-capture; ignored otherwise
+  if (args.playtest) target.searchParams.set("seed", String(args.seed));
+  const url = target.toString();
+  const shotsDir = resolve("shots");
+
+  const server = await ensureDevServer(args.url ?? base, args.port);
+  const debugPort = 9200 + Math.floor(Date.now() % 700);
+  const chrome = launchChrome(debugPort, "jg-drive-");
+
+  let exitCode = 0;
+  try {
+    await waitForDebugger(debugPort, 30_000);
+    const session = await openPage(debugPort);
+    try {
+      await session.send("Page.enable");
+      await session.send("Runtime.enable");
+      await session.send("Emulation.setDeviceMetricsOverride", {
+        width: profile.width,
+        height: profile.height,
+        deviceScaleFactor: profile.dsf,
+        mobile: profile.mobile,
+      });
+      await session.send("Page.navigate", { url });
+      await waitForHonestFrame(session, url, args.timeoutMs);
+      await session.evaluate(RAF_EXPR, { awaitPromise: true });
+      await sleep(Number.isFinite(args.settle) ? args.settle : 500);
+
+      const samples = [];
+      let sampling = args.playtest;
+      const sampleStart = Date.now();
+      const sampler = args.playtest
+        ? (async () => {
+            while (sampling) {
+              const metrics = await session.evaluate(PROBE_EXPR);
+              if (metrics) samples.push({ t: Date.now() - sampleStart, metrics });
+              await sleep(args.sampleMs);
+            }
+          })()
+        : Promise.resolve();
+
+      for (const step of args.steps) {
+        if (step.kind === "click") await click(session, step.text);
+        else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
+        else if (step.kind === "wait") await sleep(step.ms);
+        else if (step.kind === "rpc") await rpc(session, step.json);
+        else await screenshot(session, join(shotsDir, step.name + ".png"));
+      }
+
+      if (args.playtest) {
+        sampling = false;
+        await sampler;
+        const result = summarizePlaytest(samples, {
+          seed: args.seed,
+          softlockThresholdMs: args.softlockMs,
+          epsilon: args.epsilon,
+        });
+        console.log(JSON.stringify(result));
+        if (!result.probed) {
+          console.error(
+            "drive: no progress probe read — this game exposes no capture.probe (or it returned no metrics). " +
+              "Declare capture.probe to run the playtest rung.",
+          );
+          if (args.strict) exitCode = 1;
+        } else if (result.softlocked) {
+          console.error(
+            "drive: SOFTLOCK — progress stayed flat for " + result.softlockWindowMs + "ms under active input " +
+              "(threshold " + args.softlockMs + "ms, seed " + args.seed + "). The loop did not advance.",
+          );
+          if (args.strict) exitCode = 1;
+        } else if (args.steps.every((step) => step.kind !== "key")) {
+          console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
+        }
+      }
+    } finally {
+      session.close();
+    }
+  } catch (error) {
+    exitCode = 1;
+    console.error("drive: " + (error instanceof Error ? error.message : String(error)));
+  } finally {
+    shutdown(chrome, server);
+  }
+  return exitCode;
+}
+
+try {
+  process.exit(await main());
+} catch (error) {
+  console.error("drive: " + (error instanceof Error ? error.message : String(error)));
   process.exit(1);
 }
 `;
@@ -1030,10 +1435,13 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 }, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 - Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
+- Play/test the game: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly with ordered steps — \`--click "START"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` (any agent-bridge/editor verb, reply printed as JSON). \`--playtest --key KeyW:6000 --strict\` samples the game's \`capture.probe\` and rules progress vs softlock. Do **not** hand-roll Playwright/Puppeteer/CDP glue or in-page canvas JavaScript to press keys, click, or probe the scene — this script is that glue; \`--help\` for all flags.
 `;
 
 export {
   agentsMd,
+  browserMjs,
+  driveMjs,
   editorLayersTest,
   editorLayersTestFor,
   editorLayersTs,

@@ -49,6 +49,8 @@ When a game is reported slow, play it and pull the debug menu's perf data instea
 
 **Created standalone game (outside the monorepo):** run `bun run shoot` (or `node scripts/shoot.mjs`, shipped in the scaffold). It starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at R3F's 300×150 default, waits for an honest frame, and captures headless to `shots/shot.png` — no daemon, no npm deps. Flags: `--device desktop|mobile|mobile-landscape`, `--url`, `--out`, `--settle`, `--timeout`; `--help` for all. The daemon workflow below is the richer engine-monorepo path; the single-shot script is the portable rung the created game ships.
 
+**Created-game interaction and playtest (`bun run drive` / `node scripts/drive.mjs`, shipped in the scaffold):** the out-of-repo equivalent of the monorepo's `drive` rung, sharing `scripts/browser.mjs` with `shoot.mjs`. Ordered steps `--click "TEXT"`, `--key CODE:ms`, `--wait ms`, `--shot name`, `--rpc '{"method":...}'` (agent bridge / editor host, reply printed as JSON), plus `--playtest --strict --seed --sample --softlock --epsilon` sampling `capture.probe` for the same progress/softlock verdict. Never hand-roll Playwright/Puppeteer/CDP glue or in-page canvas JavaScript to press keys, click, read `agent_status`, or probe pixels in a created game — the shipped script is that glue; if it lacks a seam, file a `[FEATURE]` issue upstream.
+
 Inside the engine monorepo, start one managed capture session before the first visual shot:
 
 1. Run `bun run shoot daemon start`. The command must report a live Chrome/Vite pair; a non-zero exit means visual capture is unavailable, not permission to repeat cold foreground launches.

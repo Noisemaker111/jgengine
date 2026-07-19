@@ -31,7 +31,9 @@ const THIN_FILES = [
   "package.json",
   "tsconfig.json",
   ".gitignore",
+  "scripts/browser.mjs",
   "scripts/shoot.mjs",
+  "scripts/drive.mjs",
   "AGENTS.md",
   "src/index.css",
   "src/style.css",
@@ -106,14 +108,37 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
       expect(pkg.scripts?.shoot).toBe("node scripts/shoot.mjs");
       const script = fileOf(files, "scripts/shoot.mjs");
-      // No npm deps — only node: builtins and web globals.
+      // No npm deps — only node: builtins, web globals, and the shared browser lib.
       expect(script).not.toContain("playwright");
       expect(script).not.toContain("puppeteer");
+      expect(script).toContain('from "./browser.mjs"');
       // The two things that make WebGL capture reliable: a forced viewport and an honest-frame wait.
       expect(script).toContain("Emulation.setDeviceMetricsOverride");
       expect(script).toContain("Page.captureScreenshot");
+      const browser = fileOf(files, "scripts/browser.mjs");
+      expect(browser).toContain("waitForHonestFrame");
+      expect(browser).toContain("--remote-debugging-port=");
       // shots/ output is ignored so generated screenshots are never committed.
       expect(fileOf(files, ".gitignore")).toContain("shots/");
+    });
+
+    test(`${variant}: ships a dependency-free drive script wired to a drive command`, () => {
+      const files = render(variant);
+      const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
+      expect(pkg.scripts?.drive).toBe("node scripts/drive.mjs");
+      const script = fileOf(files, "scripts/drive.mjs");
+      // No npm deps — shares the Chrome/CDP machinery with shoot.mjs.
+      expect(script).not.toContain("playwright");
+      expect(script).not.toContain("puppeteer");
+      expect(script).toContain('from "./browser.mjs"');
+      // Interaction primitives: click by text, hold keys, agent-bridge RPC.
+      expect(script).toContain("Input.dispatchMouseEvent");
+      expect(script).toContain("Input.dispatchKeyEvent");
+      expect(script).toContain("__jgengineAgent");
+      // Bot-playtest rung: capture.probe sampling + softlock verdict.
+      expect(script).toContain("__jgProbe");
+      expect(script).toContain("softlockWindowMs");
+      expect(script).toContain("summarizePlaytest");
     });
   }
 
@@ -242,6 +267,9 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(agents).toContain("npx jgengine skills -p");
     expect(agents).toContain("--all");
     // Every new game is briefed to file engine bugs/gaps upstream instead of burying a workaround.
+    // Agents are pointed at the shipped drive script instead of hand-rolled browser glue.
+    expect(agents).toContain("drive.mjs");
+    expect(agents).toContain("hand-roll");
     expect(agents).toContain("File it upstream");
     expect(agents).toContain("https://github.com/Noisemaker111/jgengine/issues");
     expect(agents).toContain("[BUG]");

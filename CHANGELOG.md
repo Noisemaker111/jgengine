@@ -32,6 +32,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Game scaffolds ship a dependency-free drive/playtest script** (#1248) — `bun run drive` (`scripts/drive.mjs`, sharing `scripts/browser.mjs` Chrome/CDP machinery with `shoot.mjs`) plays and tests a created game headlessly: ordered `--click`/`--key`/`--wait`/`--shot` steps, `--rpc` into the agent bridge, and `--playtest --strict` sampling `capture.probe` for the same progress/softlock verdict as the monorepo rung — no more hand-rolled Playwright/CDP glue in out-of-repo games.
+
 ### Changed
 
 ### Removed
