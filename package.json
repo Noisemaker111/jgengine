@@ -57,6 +57,7 @@
     "drive": "bun scripts/guard.ts 300 'bun scripts/drive-dev.ts'",
     "new:game": "bun packages/jgengine/src/cli/index.ts create",
     "pr-shots": "bun scripts/pr-shots.ts",
+    "pr-video": "bun scripts/pr-video.ts",
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
     "papercut": "bun scripts/papercut.ts",
@@ -78,7 +79,8 @@
     "gifenc": "^1.0.3",
     "playwright-core": "^1.50.0",
     "ts-morph": "^28.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "user-attachments": "^2.0.2"
   },
   "packageManager": "bun@1.3.8"
 }
