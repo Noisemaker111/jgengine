@@ -48,6 +48,13 @@ At publish, rename this heading to the new version and mirror the entries into
   colorblind filter), `useAccessibility`, `usePrefersReducedMotion` (OS `prefers-reduced-motion`), and
   `ColorblindFilters`. Input rebinding already existed; this fills the rest of the a11y surface. First
   adopter: the apps/dev `accessibility` demo.
+- **Quest / objective tracker HUD.** `@jgengine/core/game/quest`'s `describeTrackedQuest(def, instance)`
+  joins a static `QuestDef` with a player's live `QuestInstance` into a flat, renderer-free `TrackedQuestView`
+  (title, status, labelled objective progress — `defaultObjectiveLabel` derives "Defeat 5 Wolves" and can be
+  overridden). New `@jgengine/react` `QuestTracker` draws it as a compact HUD panel: per-objective checkmark +
+  strike on complete, `progress/count`, and a thin progress bar, with `maxObjectives` truncation. A widget over
+  the existing quest models — no runtime coupling to `QuestJournal`. First adopter: the apps/dev `quest-tracker`
+  demo.
 - **Localization / i18n.** `@jgengine/core/i18n` (also on the `@jgengine/core/ui` barrel)'s `createI18n`
   translates a message `Catalog` with active-locale lookup, a fallback-locale chain, `{param}`
   interpolation, and `Intl.PluralRules`-based `plural(key, count)`; it's observable so `setLocale` re-renders

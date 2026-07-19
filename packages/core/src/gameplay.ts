@@ -208,7 +208,16 @@ export {
   type LevelingConfig,
   type LevelingTrack,
 } from "./game/progression";
-export { createQuestJournal, type QuestDef, type QuestInstance, type QuestRewards } from "./game/quest";
+export {
+  createQuestJournal,
+  defaultObjectiveLabel,
+  describeTrackedQuest,
+  type QuestDef,
+  type QuestInstance,
+  type QuestRewards,
+  type TrackedObjectiveView,
+  type TrackedQuestView,
+} from "./game/quest";
 export {
   RaceState,
   createLapTimer,
