@@ -106,6 +106,21 @@ export const BOUNTY_SPOTS: readonly BountySpot[] = editorLayers.markers
     position: editorMarkerPosition(marker),
   }));
 
+export interface StashSpot {
+  id: string;
+  label: string;
+  position: readonly [number, number, number];
+}
+
+/** Hidden-stash pickups scattered across the isle — the repeatable "collect them all" side hunt. */
+export const STASH_SPOTS: readonly StashSpot[] = editorLayers.markers
+  .filter((marker) => marker.kind === "stash")
+  .map((marker) => ({
+    id: marker.id,
+    label: marker.label ?? marker.id,
+    position: editorMarkerPosition(marker),
+  }));
+
 export function districtAt(x: number, z: number): District | null {
   let best: District | null = null;
   let bestDist = Number.POSITIVE_INFINITY;

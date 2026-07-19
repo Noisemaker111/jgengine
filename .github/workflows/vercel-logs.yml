@@ -1,5 +1,12 @@
 name: Vercel Deploy Logs
 
+# Observability only — this workflow prints the Vercel build log for each main
+# commit into its job summary. It does NOT gate: a Vercel deploy that reports
+# ERROR is already surfaced red by the "Vercel" commit status and CI's
+# `web-build` job, so this run stays green rather than double-reporting the same
+# failure. It only goes red when it cannot do its job at all (missing
+# VERCEL_TOKEN or a Vercel API error). See apps/web/README.md.
+
 on:
   push:
     branches: [main]

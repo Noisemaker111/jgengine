@@ -17,14 +17,6 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 ---
 
-2026-07-18T14:14:38.795Z — claude-fable-5 — Claude
-
-capturing editor screenshots via drive: camera_goto only pans the orbit target with no distance/pitch control and KeyF framing can bury the camera in terrain/buildings — getting a usable aerial of a district took ~8 drive round-trips of guessing y offsets
-
-2026-07-18T15:46:51.967Z — claude-fable-5 — NoisemakerJon
-
-Shooting close-ups from different vantage points → no way to override player spawn per-shot; had to mutate editor.scene.json player_spawn via python heredocs three times and hand-restore. shoot needs a --spawn x,y,z flag / ?spawn= URL param overlay (like ?cam=) so screenshots never mutate authored scene content.
-
 2026-07-18T16:51:34.018Z — claude-fable-5 — Claude
 
 capturing editor screenshots in the dev runner → 'assets pull' run from repo root provisions public/models at the repo root, but apps/dev serves apps/dev/public — the runtime error's suggested fix leaves the dev runner still 404ing until the pack is copied into apps/dev/public/models
@@ -89,25 +81,17 @@ running ship preflight immediately after the verified runtime-state commit -> or
 
 opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead
 
-2026-07-18T23:02:42.541Z — fable — Claude
-
-shoot daemon: after editing a game's scene/code while daemon is live, play capture fails twice with 'start menu still on screen' until daemon stop/start — daemon page goes stale on HMR
-
-2026-07-18T23:09:33.687Z — fable — Claude
-
-vice-isle drive rpc editor_summon: editor host mounts then React 'Maximum update depth exceeded' loop in editor shell ContentBrowser/AssetThumbnail — page goes black, editor verbs unreachable (wanted an editor-view screenshot of authored paths)
-
 2026-07-18T23:13:44.098Z — claude-fable-5 — NoisemakerJon
 
 Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstall.test.ts fails 3 tests because GNU tar treats C:\... as a remote host (Cannot connect to C: resolve failed); needs --force-local or forward-slash paths on win32
 
-2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
-
-bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
-
 2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
 
 verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <path> run <script>' (space form) mis-parses and prints bun-run help instead of running; only 'bun --cwd=<path> run <script>' (equals form) works. Docs/skills should switch to the = form or bun --filter.
+
+2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
+
+Consumer sim: WoW-like needed overhead enemy nameplates/healthbars; jgengine-ui has bars but no floating world-anchored entity-frame seam or recipe, so it drops off agent plans
 
 2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
 
@@ -117,14 +101,6 @@ Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive
 
 Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
 
-2026-07-18T23:42:10.479Z — fable — Claude
-
-drive vice-isle --key KeyW:12000: player never moves (three identical shots from spawn) — play-mode keys appear to need pointer lock or focus the drive script doesn't provide; blocks driving-to-location captures
-
-2026-07-19T01:16:07.023Z — opus — Claude
-
-PR #1220: Vercel preview *deployment* reported FAILED on the PR while GitHub CI (quick/ci) was green and a local 'vite build' of apps/web passed clean (17 pages prerendered) — the red Vercel status is environmental/deploy-config, not caused by the diff, but it looks like a blocking failure and invites chasing a non-issue. Would help to either not surface non-blocking Vercel deploy status as a PR failure signal, or document that it's independent of CI.
-
 2026-07-18T23:04:31.014Z — gpt-5.6-sol — NoisemakerJon
 
 running independent recipe/surface/test/type checks for portable damage in parallel -> automatic permission review timed out after several minutes before commands ran, so verification had to be retried as one bounded sequence
@@ -132,26 +108,6 @@ running independent recipe/surface/test/type checks for portable damage in paral
 2026-07-18T23:09:23.301Z — gpt-5.6-sol — NoisemakerJon
 
 running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh
-
-2026-07-19T00:30:01.147Z — claude-opus-4-8 — NoisemakerJon
-
-Opened the-robots/loopline editor (?mode=editor) → infinite React 'Maximum update depth exceeded' loop in useGlbThumbnail/AssetThumbnail (ContentBrowser/BottomDock), triggered when GLB model textures fail to load; the GameUiErrorBoundary then blanks the whole editor chrome. Standalone/spire-cards editors (no failing model assets) are unaffected.
-
-2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
-
-PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
-
-2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
-
-verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
-
-2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
-
-Shipping PR #1223 (merged, required CI green, typecheck clean across 32 workspaces) → Vercel preview deploy for apps/web reported FAILED/Error on the PR. Non-blocking (auto-merge still landed), but a red preview status on an otherwise-green additive PR is noise; worth confirming whether apps/web preview build fails independent of the change.
-
-2026-07-19T03:47:57.282Z — claude-opus-4-8 — Claude
-
-Wiring in-game before/after screenshots for HudTheme/IconTreatment adoption -> the deterministic engine preview fixtures (hudThemePreview/iconsPreview/barsPreview) render the REAL components but the shoot harness only auto-discovers Games/*/src/preview.tsx, so exported @jgengine/react previews have no capture route without a hand-rolled --url mount; games' own preview.tsx are static posters, not the real HUD, so painted-icon adoption can't be screenshotted without booting full --mode play.
 
 2026-07-19T04:40:07.134Z — fable — Claude
 
@@ -172,3 +128,15 @@ running bun run gate on a fresh branch off main → check-content-gate red on a 
 2026-07-19T07:09:44.388Z — claude-fable-5 — Claude
 
 gen:export-manifest reads built dist, so generating before a full package build silently omits new subpaths (bit #1300's useDisposable and nearly my ai/driver) — manifest check only fails later on a fully-built tree; generator should build or warn on stale dist
+
+2026-07-19T03:57:16.316Z — fable — Claude
+
+Adding an /agents.md server route to apps/web → Vite dev static middleware intercepts .md URLs and 404s before TanStack SSR sees them, while .txt/.xml server routes work; had to ship the brief as /llms-full.txt instead
+
+2026-07-19T04:20:12.828Z — claude-fable-5 — Claude
+
+Fixing production 404 for quaternius-modular-scifi models → content gate accepts 'provisioned' pack refs, but the Vercel /play build only ships committed packs, so games can merge referencing packs production can never serve (the-robots, tower-guard hit this); also kaykit-space-base was committed without a .gitignore whitelist entry
+
+2026-07-19T07:37:41.988Z — claude-fable-5 — Claude
+
+screenshotting the website: 'bun run shoot --url http://localhost:3000/...' errors 'nothing is listening' even when our dev server owns that port — only http://127.0.0.1:... passes the allowlist, and the error message doesn't mention that 127.0.0.1 URLs are accepted

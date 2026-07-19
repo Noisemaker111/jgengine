@@ -35,13 +35,19 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { summarizePlaytest, type ProbeSample } from "./playtest";
+import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 
 type Step =
   | { kind: "click"; text: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
   | { kind: "shot"; name: string }
-  | { kind: "rpc"; json: string };
+  | { kind: "rpc"; json: string }
+  | { kind: "probe"; name: string };
+
+/** Extra wall-clock a frame-starved page gets to render one frame under a held
+ * key before {@link holdKey} gives up (see {@link holdComplete}). */
+const FRAME_STARVE_GRACE_MS = 20_000;
 
 type Args = {
   game: string;
@@ -58,6 +64,7 @@ type Args = {
   sampleMs: number;
   softlockMs: number;
   epsilon: number;
+  spawn?: string;
 };
 
 const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
@@ -70,7 +77,18 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
   --shot <name>       screenshot to shots/<game>-<name>.png — pass a bare name,
                       not a path (a path/slash yields shots/<game>-<path>.png and ENOENTs)
-  --rpc <json>        call the page's agent/editor bridge with this JSON payload
+  --spawn <x,y,z>     override the authored player spawn for this run only (adds a
+                      ?spawn= overlay like ?cam=); never mutates editor.scene.json.
+                      Accepts x,y,z or x,y,z,yaw (yaw radians)
+  --rpc <json>        call the page's agent/editor bridge with this JSON payload.
+                      Compose an editor aerial in one call, e.g.
+                      --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
+                      region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
+  --probe [name]      print the game's live capture.probe metrics (e.g. player
+                      position) as JSON — pair one before and one after a --key
+                      hold to prove a non-zero movement delta via RPC, which is
+                      the honest movement check on a low-fps headless GL page
+                      where held-key motion is too small to read off screenshots
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this drive — pair with --connect <port>
@@ -133,7 +151,11 @@ function parseArgs(argv: string[]): Args {
       }
       args.steps.push({ kind: "shot", name });
     } else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
-    else if (value === "--connect") args.connect = Number(argv[++index]);
+    else if (value === "--probe") {
+      const next = argv[index + 1];
+      const name = next !== undefined && !next.startsWith("--") ? argv[++index]! : "probe";
+      args.steps.push({ kind: "probe", name });
+    } else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
     else if (value === "--playtest") args.playtest = true;
     else if (value === "--strict") args.strict = true;
@@ -141,12 +163,16 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--sample") args.sampleMs = Number(argv[++index] ?? args.sampleMs);
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
+    else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
   if (args.help) return args;
   if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive the-robots --click START");
-  if (!args.playtest && !args.steps.some((step) => step.kind === "shot" || step.kind === "rpc")) {
+  if (
+    !args.playtest &&
+    !args.steps.some((step) => step.kind === "shot" || step.kind === "rpc" || step.kind === "probe")
+  ) {
     args.steps.push({ kind: "shot", name: "drive" });
   }
   return args;
@@ -214,10 +240,52 @@ async function click(session: CdpSession, text: string): Promise<void> {
   }
 }
 
+/**
+ * Focus the game's key-input surface so CDP keys reach the play-mode handler
+ * (a React `onKeyDown` on the `tabIndex` wrapper) instead of `document.body`.
+ * Serialises {@link focusGameSurface} into the page. Returns whether a surface
+ * became the active element.
+ */
+async function focusSurface(session: CdpSession): Promise<boolean> {
+  const expression = `(${focusGameSurface.toString()})(document)`;
+  return (await session.evaluate<boolean>(expression)) ?? false;
+}
+
+/** Install a standalone rAF counter so the hold loop can tell when the page
+ * actually rendered a frame (one simulation step) under the held key. */
+async function installFrameCounter(session: CdpSession): Promise<void> {
+  await session.evaluate(`(() => {
+    if (globalThis.__jgFrames !== undefined) return;
+    globalThis.__jgFrames = 0;
+    const tick = () => { globalThis.__jgFrames++; requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  })()`);
+}
+
+async function readFrames(session: CdpSession): Promise<number> {
+  return (await session.evaluate<number>(`globalThis.__jgFrames ?? 0`)) ?? 0;
+}
+
+/**
+ * Hold a key so it moves the player. Focuses the surface first (keys are dead
+ * without it), then keeps the key down for the wall-clock budget and, on a
+ * frame-starved headless GL page, a bounded moment longer until at least one
+ * frame has rendered under it — otherwise the sim never steps and the player
+ * sits exactly at spawn (see {@link holdComplete}).
+ */
 async function holdKey(session: CdpSession, code: string, holdMs: number): Promise<void> {
   const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
+  await focusSurface(session);
+  const startFrames = await readFrames(session);
+  const start = Date.now();
+  const deadlineMs = start + holdMs;
+  const hardCapMs = deadlineMs + FRAME_STARVE_GRACE_MS;
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
-  await new Promise((r) => setTimeout(r, holdMs));
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 100));
+    const framesElapsed = (await readFrames(session)) - startFrames;
+    if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs, framesElapsed })) break;
+  }
   await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
 }
 
@@ -292,10 +360,12 @@ const exitCode = await withBrowserSession(
       url.searchParams.set("game", args.game);
       url.searchParams.set("mode", args.mode);
       url.searchParams.set("capture", "1");
+      if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
       await session.send("Page.navigate", { url: url.toString() });
       await waitCaptureReady(session, args.timeoutMs);
       await new Promise((r) => setTimeout(r, 500));
+      await installFrameCounter(session);
 
       const samples: ProbeSample[] = [];
       let sampling = args.playtest;
@@ -315,7 +385,10 @@ const exitCode = await withBrowserSession(
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
         else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
         else if (step.kind === "rpc") await rpc(session, step.json);
-        else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
+        else if (step.kind === "probe") {
+          const metrics = await readProbe(session);
+          console.log(JSON.stringify({ probe: step.name, metrics }));
+        } else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
       }
 
       if (args.playtest) {

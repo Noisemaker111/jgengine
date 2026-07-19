@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## achievements — track achievement/trophy unlocks over counter goals and boolean flags, with score, completion, an onUnlock seam, and serializable snapshot/restore
+
+- `createAchievementTracker` (function) · `import { createAchievementTracker } from "@jgengine/core/gameplay"`
+
 ## advance-ledger — settle due scheduled transactions through a policy pipeline
 
 - `advanceLedger` (function) · `import { advanceLedger } from "@jgengine/core/gameplay"`

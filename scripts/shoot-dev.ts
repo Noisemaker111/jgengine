@@ -37,6 +37,56 @@ import {
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
+import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
+
+/** One reload retry absorbs Vite's transient post-HMR rebuild window; see capture-retry.ts. */
+const CAPTURE_MAX_ATTEMPTS = 2;
+
+/**
+ * Navigate to `url` and wait for an honest frame, reloading fresh once if the
+ * first attempt lands in Vite's transient post-HMR rebuild window (stale module
+ * graph → "start menu still on screen" / readiness timeout). The retry waits for
+ * the dev server to settle, disables the page HTTP cache so no stale module is
+ * reused, and re-navigates — turning the old "fails twice until daemon stop/start"
+ * into an automatic in-invocation recovery. Deterministic failures (unknown state,
+ * unregistered command) are not stale-shaped, so they surface on the first attempt.
+ */
+async function navigateForCapture(
+  session: CdpSession,
+  url: string,
+  devBase: string,
+  timeoutMs: number,
+): Promise<void> {
+  for (let attempt = 1; ; attempt += 1) {
+    await session.send("Page.navigate", { url });
+    try {
+      await waitCaptureReady(session, timeoutMs);
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!shouldRetryCapture({ attempt, maxAttempts: CAPTURE_MAX_ATTEMPTS, message })) throw error;
+      const settleMs = retrySettleMs(attempt);
+      console.error(
+        `shoot: capture attempt ${attempt} hit a stale page after HMR (${message}) — settling ${settleMs}ms for the dev server, then reloading fresh`,
+      );
+      await settleDevServer(devBase, settleMs);
+      // Force the reload past any cached (pre-edit) module for the retry only,
+      // so the normal first-attempt path keeps the warm cache and its speed.
+      await session.send("Network.enable");
+      await session.send("Network.setCacheDisabled", { cacheDisabled: true });
+    }
+  }
+}
+
+/** Wait `waitMs` for Vite to finish an in-flight rebuild, then confirm it still serves. */
+async function settleDevServer(base: string, waitMs: number): Promise<void> {
+  await new Promise((r) => setTimeout(r, waitMs));
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    if (await isUp(base)) return;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
 
 type Mode = "ui" | "play" | "poster" | "preview";
 type DeviceArg = Device | "both";
@@ -49,8 +99,11 @@ type Args = {
   stage?: boolean;
   state?: string;
   preview?: string;
+  fixture?: string;
+  listFixtures: boolean;
   run?: string[];
   settle?: number;
+  spawn?: string;
   out?: string;
   url?: string;
   connect?: number;
@@ -69,8 +122,15 @@ const HELP = `bun run shoot [game] [options]
                       mid-loop judge shots — use full (default) for final/PR shots
   --state <name>      capture.states entry instead of live play
   --preview [key]     preview.tsx state instead of the full shell
+  --fixture [name]    capture an exported engine preview fixture (real @jgengine/react
+                      component) by name — no game boot, no hand-rolled --url page.
+                      With no name (or --list), prints the registered fixtures and exits
+  --list              list the registered engine preview fixtures and exit
   --run <cmd[,cmd]>   script past a start screen before capture
   --settle <ms>       wait past an intro before capture
+  --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
+                      ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
+                      Accepts x,y,z or x,y,z,yaw (yaw radians)
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
@@ -108,6 +168,7 @@ function parseArgs(argv: string[]): Args {
     keep: false,
     inspect: false,
     help: false,
+    listFixtures: false,
     timeoutMs: 60_000,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -132,6 +193,16 @@ function parseArgs(argv: string[]): Args {
       } else {
         args.preview = "";
       }
+    } else if (value === "--fixture") {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        args.fixture = next;
+        index += 1;
+      } else {
+        args.fixture = "";
+      }
+    } else if (value === "--list" || value === "--list-fixtures") {
+      args.listFixtures = true;
     } else if (value === "--run") {
       const list = (argv[++index] ?? "")
         .split(",")
@@ -139,6 +210,7 @@ function parseArgs(argv: string[]): Args {
         .filter((name) => name.length > 0);
       args.run = list.length > 0 ? list : args.run;
     } else if (value === "--settle") args.settle = Number(argv[++index]);
+    else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") args.url = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
@@ -166,6 +238,10 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     return `${resolved.slice(0, dot)}-mobile${resolved.slice(dot)}`;
   }
   const suffix = `${device === "mobile" ? "-mobile" : ""}${sizeSuffix(args.size)}`;
+  if (args.fixture !== undefined && args.fixture.length > 0) {
+    const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
+    return join(outDir, `fixture-${key}${suffix}.png`);
+  }
   if (args.state !== undefined) {
     const key = args.state.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `${args.game}-state-${key}${suffix}.png`);
@@ -184,6 +260,13 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     return url.toString();
   }
+  if (args.fixture !== undefined && args.fixture.length > 0) {
+    const url = new URL(devBase);
+    url.searchParams.set("fixture", args.fixture);
+    url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
+    url.searchParams.set("capture", "1");
+    return url.toString();
+  }
   const url = new URL(devBase);
   url.searchParams.set("game", args.game);
   url.searchParams.set("mode", args.mode);
@@ -194,6 +277,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
+  if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
   return url.toString();
 }
 
@@ -244,9 +328,7 @@ async function shootOne(
     await applyDevice(session, device, args.size);
     mark("setup");
     const url = targetUrl(args, device, devBase);
-    await session.send("Page.navigate", { url });
-    mark("navigate");
-    await waitCaptureReady(session, args.timeoutMs);
+    await navigateForCapture(session, url, devBase, args.timeoutMs);
     mark("ready");
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
@@ -319,6 +401,21 @@ if (isDaemonArgv(rawArgv)) {
 const args = parseArgs(rawArgv);
 if (args.help) {
   console.log(HELP);
+  process.exit(0);
+}
+
+// Discovery: `shoot --list` or `shoot --fixture` (no name) prints the registered
+// engine preview fixtures from the @jgengine/react registry (single source of truth).
+if (args.listFixtures || (args.fixture !== undefined && args.fixture.length === 0)) {
+  // The @jgengine/react registry is the single source of truth; scripts resolve it from
+  // source (bare `@jgengine/*` specifiers only type-resolve through dist, not at bun runtime).
+  const { PREVIEW_FIXTURES, previewFixtureNames } = await import(
+    resolve(import.meta.dir, "../packages/react/src/previewFixtures.ts")
+  );
+  console.log("engine preview fixtures (bun run shoot --fixture <name>):");
+  for (const name of previewFixtureNames()) {
+    console.log(`  ${name.padEnd(18)} ${PREVIEW_FIXTURES[name]!.description}`);
+  }
   process.exit(0);
 }
 

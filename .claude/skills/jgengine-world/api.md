@@ -2903,6 +2903,14 @@
 - `sphereRegion` (function): function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> — A filled ball. `"volume"` is volume-uniform (∛-corrected radius); `"radial"` is radius-uniform. Direction is drawn first (two draws), then radius.
 - `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 
+## @jgengine/core/world/spawnOverride
+
+- `SpawnOverride` (interface): interface SpawnOverride — Per-session player-spawn override — a capture-harness ergonomics seam that lets a single screenshot or drive run place the player somewhere other than the authored `player_spawn` marker *without mutating `editor.scene.json`*. The runner installs one from the `?spawn=` URL overlay (mirroring `?cam=`); {@link authoredSpawnPosition} consults it for the default player-spawn resolution only, so authored content is untouched and the override evaporates the moment the page reloads without the param.
+- `clearSpawnOverride` (function): function clearSpawnOverride(): void — Clear any installed player-spawn override.
+- `installSpawnOverride` (function): function installSpawnOverride(override: SpawnOverride | null): void — Install (or, with `null`, clear) the active player-spawn override. Idempotent; last write wins.
+- `parseSpawnOverride` (function): function parseSpawnOverride(raw: string | null | undefined): SpawnOverride | null — Parse a `?spawn=` / `--spawn` value into a {@link SpawnOverride}, or `null` when it is absent or malformed. Accepts `"x,y,z"` and `"x,y,z,yaw"` (yaw in radians); whitespace around components is tolerated. A non-finite or short tuple yields `null` so a typo never silently teleports the player to `NaN`.
+- `readSpawnOverride` (function): function readSpawnOverride(): SpawnOverride | null — The currently installed player-spawn override, or `null` when none is active.
+
 ## @jgengine/core/world/streetGenerator
 
 - `Street` (interface): interface Street — One chained through-street: a maximal run of edges through degree-2 nodes, for rendering + furniture.

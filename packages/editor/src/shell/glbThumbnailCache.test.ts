@@ -106,3 +106,85 @@ describe("glbThumbnailCache request path", () => {
     expect(getGlbThumbnailState(url)).toEqual({ status: "error", dataUrl: null });
   });
 });
+
+/**
+ * Regression for #1270: `getGlbThumbnailState` is the `getSnapshot` for
+ * `useSyncExternalStore`, which requires a referentially stable result while the
+ * underlying state is unchanged. A fresh object literal per call makes React's
+ * post-commit consistency check force a re-render every commit forever ("Maximum
+ * update depth exceeded"), which blanked the editor when a GLB's textures failed.
+ * We model that exact check here without react-dom: after each simulated commit
+ * React re-reads getSnapshot and, if `Object.is` differs from the value it
+ * rendered with, forces another render. A stable snapshot settles in one pass; an
+ * unstable one never settles.
+ */
+describe("getGlbThumbnailState snapshot stability (useSyncExternalStore contract)", () => {
+  /** Count forced re-renders React would perform; throws if it never settles. */
+  function forcedRerendersUntilStable(url: string, cap = 50): number {
+    let rendered = getGlbThumbnailState(url); // value used for this render
+    for (let i = 0; i < cap; i += 1) {
+      const reread = getGlbThumbnailState(url); // React's checkIfSnapshotChanged
+      if (Object.is(rendered, reread)) return i; // consistent -> no more forced renders
+      rendered = reread; // forced re-render adopts the new value, then re-checks
+    }
+    throw new Error(`snapshot never stabilized for ${url} (infinite render loop)`);
+  }
+
+  test("idle snapshot is a stable reference (never loops)", () => {
+    expect(forcedRerendersUntilStable("https://example.test/none.glb")).toBe(0);
+    expect(Object.is(getGlbThumbnailState(undefined), getGlbThumbnailState(""))).toBe(true);
+  });
+
+  test("failing-texture asset settles to a stable error snapshot (no infinite loop)", async () => {
+    setGlbThumbnailLoader(async () => {
+      throw new Error("texture 404");
+    });
+    const url = "https://example.test/broken-textures.glb";
+    requestGlbThumbnail(url);
+    await new Promise<void>((resolve) => {
+      const start = Date.now();
+      const tick = () => {
+        if (getGlbThumbnailState(url).status === "error" || Date.now() - start > 3000) {
+          resolve();
+          return;
+        }
+        setTimeout(tick, 10);
+      };
+      tick();
+    });
+    expect(getGlbThumbnailState(url).status).toBe("error");
+    // The crux: repeated reads in the terminal error state are Object.is-equal.
+    expect(forcedRerendersUntilStable(url)).toBe(0);
+    expect(Object.is(getGlbThumbnailState(url), getGlbThumbnailState(url))).toBe(true);
+  });
+
+  test("loading snapshot is stable, and transitions mint exactly one new reference", async () => {
+    setGlbThumbnailLoader(async () => {
+      const group = new THREE.Group();
+      group.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial()));
+      return group;
+    });
+    const url = "https://example.test/loads.glb";
+    requestGlbThumbnail(url);
+    expect(getGlbThumbnailState(url).status).toBe("loading");
+    const loadingA = getGlbThumbnailState(url);
+    const loadingB = getGlbThumbnailState(url);
+    expect(Object.is(loadingA, loadingB)).toBe(true); // stable while loading
+    expect(forcedRerendersUntilStable(url)).toBe(0);
+
+    await new Promise<void>((resolve) => {
+      const start = Date.now();
+      const tick = () => {
+        const s = getGlbThumbnailState(url).status;
+        if (s === "ready" || s === "error" || Date.now() - start > 5000) {
+          resolve();
+          return;
+        }
+        setTimeout(tick, 20);
+      };
+      tick();
+    });
+    // Exactly one reference change across the loading->terminal transition, then stable.
+    expect(forcedRerendersUntilStable(url)).toBe(0);
+  });
+});

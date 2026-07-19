@@ -324,6 +324,10 @@
 ## @jgengine/react
 
 - `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
+- `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
+- `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
+- `AchievementToastProps` (interface): interface AchievementToastProps — Props for {@link AchievementToast}.
 - `ActionBar` (function): function ActionBar({ defs, columns, layout = "grid", wrap, hotkeys, itemSize, ariaLabel, onActivate, renderItem, className, style, }: { defs: readonly ActionDef[]; columns?: number; layout?: "grid" | "list"; wrap?: boolean; hotkeys?: boolean; itemSize?: number; ariaLabel?: string; onActivate?: (id: … — Convenience composition of {@link useActionBar} + glass {@link ActionBarChrome} for demos and scaffolding — not a shipped game face. Pass `defs`, choose `grid`/`list`, and hand it `onActivate`. Games that own their UI compose the headless hook + custom chrome (or swap `renderItem`) instead of shipping this default panel.
 - `ActionBarChrome` (function): function ActionBarChrome({ model, layout = "grid", itemSize = 52, gap = 6, ariaLabel = "Actions", renderItem, className, style, }: { model: ActionBarModel; layout?: "grid" | "list"; itemSize?: number; gap?: number; ariaLabel?: string; renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => … — The composable RENDERER: lay the model's actions out as a `grid` or `list` toolbar with roving tabindex, arrow-key navigation, and a moved DOM focus. `renderItem` swaps per-item chrome; omit it for {@link ActionButton}. A radial or bespoke UI can skip this entirely and read the model. Purely a wiring/behavior layer — no panel skin — so a game art-directs freely.
 - `ActionBarKeyResult` (interface): interface ActionBarKeyResult — The intent a key press resolves to over an action bar: move focus, activate, or ignore.
@@ -463,6 +467,7 @@
 - `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
 - `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
 - `MinimapTrackSpan` (interface): interface MinimapTrackSpan — A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`).
+- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `BarsPreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
 - `PanelHost` (function): function PanelHost({ manager, render, panels, variation, shape, width, zIndexBase = 40, className, windowClassName, windowStyle, bodyStyle, }: { manager: PanelsManager; /** Content for a panel by id. Takes precedence over `panels`. */ render?: (id: string) => ReactNode; /** Static content map by pan… — Renders the open panels of a {@link usePanels} manager as absolutely-positioned, draggable, closable windows in z-order — the WoW window layer. Each window uses {@link HudFrame} chrome, is dragged by its title bar, raises focus on pointer-down, and gets its content from the `render` prop (or a `panels` map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button; ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
 - `PanelKeyResult` (interface): interface PanelKeyResult — React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable, draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close). `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
 - `PanelsManager` (interface): interface PanelsManager — The live panel manager returned by {@link usePanels} and consumed by {@link PanelHost}.
@@ -475,6 +480,7 @@
 - `Popover` (function): function Popover({ open, anchorRef, side = "top", gap = 8, role = "tooltip", id, children, className, style, }: { open: boolean; anchorRef: { current: HTMLElement | null }; side?: PopoverSide; gap?: number; role?: string; id?: string; children: ReactNode; className?: string; style?: CSSProperties; }… — An accessible popover shell positioned by the pure {@link placePopover} math — flips and clamps against the viewport, renders nothing while closed, and defaults to `role="tooltip"`. Reuse it for an action's hover/focus description or any anchored panel.
 - `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
 - `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `PreviewFixture` (interface): interface PreviewFixture — One entry in the engine preview-fixture registry: a deterministic, engine-level preview component keyed by a stable id.
 - `ProjectEntity` (type): type ProjectEntity = ( worldPosition: readonly [number, number, number], ) => EntityScreenProjection | null — Projects a world position to a screen point, or returns `null` to cull the entry entirely (e.g. outside the frustum). Caller-owned so this seam never depends on a specific camera or renderer.
 - `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -564,8 +570,10 @@
 - `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
 - `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
+- `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
+- `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `schoolForAction` (function): function schoolForAction(action: string): IconSchool — Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches.
 - `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.
@@ -573,6 +581,7 @@
 - `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
 - `useAbilitySlot` (function): function useAbilitySlot(kit: AbilityKit, slotId: string, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot | null — ⚠ undocumented
 - `useAbilitySlots` (function): function useAbilitySlots(kit: AbilityKit, resourceAvailable?: number, options?: AbilitySlotBindingOptions): AbilitySlotSnapshot[] — ⚠ undocumented
+- `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
@@ -644,6 +653,14 @@
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — ⚠ undocumented
+
+## @jgengine/react/achievements
+
+- `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
+- `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
+- `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
+- `AchievementToastProps` (interface): interface AchievementToastProps — Props for {@link AchievementToast}.
+- `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 
 ## @jgengine/react/actionHud
 
@@ -1010,6 +1027,13 @@
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
 - `GamePreviewProps` (type): type GamePreviewProps = { className?: string; } — ⚠ undocumented
 - `GamePreviewStates` (type): type GamePreviewStates = Record<string, GamePreviewComponent> — ⚠ undocumented
+
+## @jgengine/react/previewFixtures
+
+- `PREVIEW_FIXTURES` (const): const PREVIEW_FIXTURES: Record<string, PreviewFixture> — Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `BarsPreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game.
+- `PreviewFixture` (interface): interface PreviewFixture — One entry in the engine preview-fixture registry: a deterministic, engine-level preview component keyed by a stable id.
+- `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
+- `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
 
 ## @jgengine/react/provider
 

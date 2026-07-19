@@ -444,6 +444,45 @@ describe("editor host RPC", () => {
     dispose();
   });
 
+  test("camera_goto carries orbit placement so an aerial composes in one call", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: { markers: [{ id: "a", kind: "poi", position: { x: 5, y: 1, z: 7 } }] },
+    });
+    const response = api.handle({
+      method: "camera_goto",
+      x: 40,
+      z: -20,
+      distance: 80,
+      pitch: 55,
+      yaw: 30,
+    });
+    expect(response.ok).toBe(true);
+    expect(api.getFocusTarget()).toEqual({ x: 40, y: 0, z: -20, distance: 80, pitch: 55, yaw: 30 });
+    dispose();
+  });
+
+  test("camera_frame with a pitch auto-fits the region distance for an aerial", () => {
+    const { api, dispose } = createEditorHost({
+      gameId: "test",
+      layers: {
+        markers: [
+          { id: "a", kind: "poi", position: { x: -50, y: 0, z: -50 } },
+          { id: "b", kind: "poi", position: { x: 50, y: 0, z: 50 } },
+        ],
+      },
+    });
+    const response = api.handle({ method: "camera_frame", pitch: 60 });
+    expect(response.ok).toBe(true);
+    const focus = api.getFocusTarget();
+    expect(focus?.pitch).toBe(60);
+    // Center of the two markers, with an auto-derived fit distance (not left at 0/undefined).
+    expect(focus?.x).toBe(0);
+    expect(focus?.z).toBe(0);
+    expect(focus?.distance ?? 0).toBeGreaterThan(100);
+    dispose();
+  });
+
   test("live-sync: session edits publish document patches; reverse channel is ephemeral until write-back", () => {
     const { api, dispose } = createEditorHost({
       gameId: "test",
