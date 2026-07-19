@@ -74,7 +74,7 @@ export {
   type SpawnProviderContext,
 } from "./combat/encounterSequence";
 export { impactPresets, resolveHitReaction, type HitReactionConfig } from "./combat/hitReaction";
-export { createMagazine, type Magazine, type MagazineConfig, type MagazineReserve } from "./combat/magazine";
+export { createMagazine, type Magazine, type MagazineConfig, type MagazineReserve, type MagazineSnapshot } from "./combat/magazine";
 export {
   createFireCadence,
   createWeaponRuntime,
@@ -165,7 +165,7 @@ export {
 export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";
-export { createStats, type Stats } from "./stats/statModifiers";
+export { createStats, type Stats, type StatsSnapshot } from "./stats/statModifiers";
 export {
   applyStatPoolDelta,
   changeStatPool,

@@ -13,6 +13,16 @@ Native scene entity stats are a compatibility bridge over the same model. See
 the [portable stat-pool recipe](recipes/portable-stat-pools.md) for complete
 imports, adapter code, ownership, and JSON save/restore.
 
+## Portable runtime snapshots
+
+`createMagazine` (`combat/magazine`) and `createStats`
+(`stats/statModifiers`) retain their convenience APIs while exposing detached
+plain state through `snapshot()` / `restore(...)`. Magazine snapshots include
+loaded rounds, in-progress reload time, and finite/infinite reserve state;
+stat snapshots include base values plus ordered modifier sources and absolute
+expiry timestamps. Re-supply immutable config and the caller's injected clock
+when rebuilding. The [portable runtime-state recipe](recipes/portable-runtime-state.md)
+shows a complete existing-save round trip, including a caller-owned reserve.
 `createEffectSystem` (`combat/effects`) commits direct or area effects through
 the same `StatPoolAccess` contract. Receive rules still define deterministic
 shield/resource spill order, modifiers, and the final lethal pool; results
