@@ -8,6 +8,7 @@ import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
+import { PartMotionRig } from "./PartMotion";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,
@@ -410,7 +411,7 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
     );
   });
 
-  return (
+  const base = (
     <>
       <primitive object={scene} position={position} scale={[scale, scale, scale]} />
       {material?.maps !== undefined ? <ModelMaterialMapsApplier scene={scene} maps={material.maps} /> : null}
@@ -427,7 +428,29 @@ export function EntityModel({ model, instanceId }: { model: ModelConfig; instanc
           />
         ),
       )}
-      {(model.parts ?? []).map((part, index) =>
+    </>
+  );
+
+  const parts = model.parts ?? [];
+  // Any role-tagged part switches the composition onto the procedural part-motion rig:
+  // root bob/flinch/topple plus per-role limb swing, driven from the entity's live state.
+  if (parts.some((part) => part.role !== undefined)) {
+    return (
+      <PartMotionRig
+        parts={parts}
+        model={model}
+        instanceId={instanceId}
+        renderPart={(part) => (typeof part.model === "string" ? null : <EntityModel model={part.model} />)}
+      >
+        {base}
+      </PartMotionRig>
+    );
+  }
+
+  return (
+    <>
+      {base}
+      {parts.map((part, index) =>
         typeof part.model === "string" ? null : (
           <ModelPartGroup
             key={index}

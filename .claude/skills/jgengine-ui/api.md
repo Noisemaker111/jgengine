@@ -1409,6 +1409,10 @@
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
 
+## @jgengine/shell/render/PartMotion
+
+- `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
+
 ## @jgengine/shell/render/SceneLighting
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
