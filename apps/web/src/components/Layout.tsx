@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { ENTRY_PROMPT, REPO_URL } from "../lib/site";
 
@@ -79,66 +79,100 @@ export function PageHero({
   );
 }
 
+const NAV_LINKS = [
+  { to: "/why", label: "Why JGengine" },
+  { to: "/capabilities", label: "Capabilities" },
+  { to: "/adopt", label: "Adopt" },
+  { to: "/editor", label: "Editor" },
+  { to: "/games", label: "Games" },
+  { to: "/playground", label: "Playground" },
+] as const;
+
 export function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <header className="sticky top-0 z-20 px-3 pt-3 sm:px-4">
-      <div className="mx-auto flex max-w-6xl items-center justify-between rounded-2xl border border-white/[0.08] bg-ink/75 py-2.5 pl-4 pr-3 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl sm:pl-5">
-        <Link to="/" className="shrink-0 text-lg font-semibold tracking-tight text-white">
-          JGengine
-        </Link>
-        <nav className="flex min-w-0 flex-wrap items-center justify-end gap-0.5 text-sm text-slate-400 sm:gap-1">
+      <div className="mx-auto max-w-6xl rounded-2xl border border-white/[0.08] bg-ink/75 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl">
+        <div className="flex items-center justify-between py-2.5 pl-4 pr-3 sm:pl-5">
           <Link
-            to="/why"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+            to="/"
+            onClick={closeMenu}
+            className="shrink-0 text-lg font-semibold tracking-tight text-white"
           >
-            Why JGengine
+            JGengine
           </Link>
-          <Link
-            to="/capabilities"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-          >
-            Capabilities
-          </Link>
-          <Link
-            to="/adopt"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-          >
-            Adopt
-          </Link>
-          <Link
-            to="/editor"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-          >
-            Editor
-          </Link>
-          <Link
-            to="/games"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-          >
-            Games
-          </Link>
-          <Link
-            to="/playground"
-            className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-            activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-          >
-            Playground
-          </Link>
-          <a
-            href={REPO_URL}
-            className="ml-1.5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
-          >
-            <GitHubIcon />
-            <span className="hidden sm:inline">GitHub</span>
-          </a>
-        </nav>
+          {/* Inline nav on wider screens */}
+          <nav className="hidden items-center justify-end gap-0.5 text-sm text-slate-400 md:flex lg:gap-1">
+            {NAV_LINKS.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
+                activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
+              >
+                {label}
+              </Link>
+            ))}
+            <a
+              href={REPO_URL}
+              className="ml-1.5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
+            >
+              <GitHubIcon />
+              <span>GitHub</span>
+            </a>
+          </nav>
+          {/* Compact controls on narrow screens */}
+          <div className="flex items-center gap-1.5 md:hidden">
+            <a
+              href={REPO_URL}
+              aria-label="GitHub"
+              className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-2 text-slate-400 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
+            >
+              <GitHubIcon />
+            </a>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={menuOpen}
+              className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-2 text-slate-300 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
+            >
+              <MenuIcon open={menuOpen} />
+            </button>
+          </div>
+        </div>
+        {/* Mobile dropdown panel */}
+        {menuOpen && (
+          <nav className="flex flex-col gap-0.5 border-t border-white/[0.08] px-2 pb-2 pt-1.5 text-sm text-slate-300 md:hidden">
+            {NAV_LINKS.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={closeMenu}
+                className="rounded-lg px-3 py-2 transition hover:bg-white/[0.04] hover:text-slate-100"
+                activeProps={{ className: "rounded-lg bg-emerald-400/10 px-3 py-2 text-emerald-300" }}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     </header>
+  );
+}
+
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4" aria-hidden>
+      {open ? (
+        <path strokeLinecap="round" d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+      ) : (
+        <path strokeLinecap="round" d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />
+      )}
+    </svg>
   );
 }
 
