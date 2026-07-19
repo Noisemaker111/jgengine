@@ -58,6 +58,12 @@ export interface ProjectileSettleReport {
   at: EntityPosition;
   effect: string;
   hit: boolean;
+  /**
+   * True for lobbed/exploding shots (grenades, launchers, rockets) whose real path is an arc,
+   * false for direct-fire shots (bullets, bolts) that travel muzzle→impact in a straight line.
+   * Presentation uses it to keep straight-line tracers off arced projectiles.
+   */
+  ballistic: boolean;
 }
 
 export interface ProjectileObjectsDeps {
@@ -477,7 +483,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
           radius,
           falloff: splashRadius === null ? "none" : "linear",
         });
-        deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0 });
+        deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: true });
         return { status: "settled", shotId, at, hits, origin: originTuple };
       }
 
@@ -520,7 +526,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         at = missPoint(input);
       }
 
-      deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0 });
+      deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: false });
       return { status: "settled", shotId, at, hits, origin: originTuple };
     },
   };

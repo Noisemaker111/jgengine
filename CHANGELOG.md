@@ -35,6 +35,14 @@ At publish, rename this heading to the new version and mirror the entries into
 - Ground drops taller than `movement.stepHeight` (default 0.4) now fall under gravity instead of
   snapping the feet down in one frame. Games that teleport-spawned players high above the ground will
   see them fall to it.
+- **Projectile tracers are now opt-in and never drawn for ballistic shots.** `presentationEffects.tracers`
+  defaults **off** (every other presentation channel still defaults on), so the shell no longer draws a
+  straight muzzle→impact line for a game that never asked for one — `fireProjectile` is a generic seam
+  (bullets, bolts, grenades, launchers), and a tracer only reads as a real shot for direct-fire weapons.
+  A game that wants bullet tracers now sets `presentationEffects: { tracers: true }`. Even with tracers on,
+  arced/exploding shots (anything ballistic — grenades, rocket/grenade launchers) never draw one, because a
+  straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
+  gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
 ### Added
 

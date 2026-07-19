@@ -172,3 +172,7 @@ recording a drive on the warm Chrome reused the profile's localStorage save — 
 2026-07-19T21:08:15.220Z — claude-fable-5 — Claude
 
 bun run gate fails on current main: check-game-shape rejects Games/vice-isle/src/editorKinds.ts(+test) from merged PR #1369 — either the files move under src/game/ or editorKinds*.ts joins the optional top-level extras
+
+2026-07-19T21:58:56.045Z — claude-opus-4-8 — Claude
+
+driving the-robots for tracer evidence → 'bun run drive' crashes with 'Cannot find package gifenc from scripts/gif.ts'; gifenc not installed after agent:bootstrap

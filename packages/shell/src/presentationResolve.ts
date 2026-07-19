@@ -42,11 +42,15 @@ export interface ResolvedPresentationEffects {
   shake: boolean;
 }
 
-const ALL_ON: ResolvedPresentationEffects = {
+// Every channel defaults on EXCEPT tracers. `fireProjectile` is a generic seam (bullets,
+// bolts, grenades, launchers), so a muzzle→impact tracer line is only ever right for a subset
+// of shots — it must never appear in a game that never asked for it. Tracers are therefore
+// opt-in: a game turns them on with `presentationEffects: { tracers: true }`.
+const DEFAULTS: ResolvedPresentationEffects = {
   telegraphs: true,
   vfx: true,
   floatText: true,
-  tracers: true,
+  tracers: false,
   shake: true,
 };
 
@@ -60,21 +64,22 @@ const ALL_OFF: ResolvedPresentationEffects = {
 
 /**
  * Resolve `presentationEffects` for the 3D shell.
- * - `undefined` / `true` → all channels on (historical default).
+ * - `undefined` / `true` → default channels (telegraphs, vfx, floatText, shake on; tracers off).
  * - `false` → none.
- * - object → per-channel; missing keys default to on so games can disable one channel.
+ * - object → per-channel; missing keys default on, EXCEPT `tracers`, which is opt-in and only
+ *   enabled by an explicit `tracers: true`.
  * @internal
  */
 export function resolvePresentationEffects(
   config: boolean | PresentationEffectsConfig | undefined,
 ): ResolvedPresentationEffects {
   if (config === false) return ALL_OFF;
-  if (config === undefined || config === true) return ALL_ON;
+  if (config === undefined || config === true) return { ...DEFAULTS };
   return {
     telegraphs: config.telegraphs !== false,
     vfx: config.vfx !== false,
     floatText: config.floatText !== false,
-    tracers: config.tracers !== false,
+    tracers: config.tracers === true,
     shake: config.shake !== false,
   };
 }
