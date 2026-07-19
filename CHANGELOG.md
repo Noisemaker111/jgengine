@@ -54,6 +54,60 @@ At publish, rename this heading to the new version and mirror the entries into
   (`talentTreeView`) flattens the model into a serializable per-node render view (tier, state, met/unmet
   edges) so the widget never re-derives topology or eligibility. HudTheme-token skinned; node ids and
   branches stay opaque game data.
+- **Countdown / timer HUD.** `@jgengine/core/time/timerSet`' `createTimerSet` is a serializable set of named
+  countdown/countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability
+  cooldown/charge (identical mechanics; `id`/labels are free strings the engine never interprets). Start, pause,
+  resume, stop, reset, and read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` per timer
+  (allocation-aware `read(id, out)`), observe structural changes via `subscribe` and expiry edges via
+  `poll`/`onExpire`, and `snapshot`/`restore` round-trip through a save. `@jgengine/react`'s `TimerReadout`
+  (live digital mm:ss/m:ss.d) and `TimerRing` (SVG radial fill/drain), plus the `useTimerRead` per-frame hook,
+  render it HudTheme-skinned — no hand-rolled interval math. See the `countdown-timer` dev demo.
+- **Branching dialogue UI.** `@jgengine/core/game/dialogueGraph`'s `createDialogueRun` / `selectDialogueView` add a
+  thin, serializable branching-conversation model over the existing `features.dialogue` open/close bridge — a graph of
+  nodes (free-string speaker + line + choices that name the node they lead to) with choose-to-advance traversal, visited
+  history, and snapshot/restore. `@jgengine/react`'s `DialogueView` (+ `useDialogueRun`) is the drop-in view: speaker
+  name, an optional portrait slot, the current line, and clickable response buttons that advance the run — a game passes
+  its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. Genre-agnostic:
+  speaker/choice `kind` are free strings the model never interprets, surfaced as `data-*` for game styling; HudTheme-skinned
+  via `--jg-*` tokens. See the `dialogue` demo.
+- **Damage-direction indicators.** `@jgengine/core/vfx/damageDirection`' `createDamageDirectionTracker` is a
+  serializable, allocation-aware "hit-from" brain: `registerHit({ angle, intensity?, kind? })` (angle in radians,
+  `0` = front, free-string `kind` never interpreted) turns each hit into a directional indicator that fades over a
+  duration on an injected clock, with `active()` reporting live indicators at eased current intensity, optional
+  same-direction merging, a bounded pool, `subscribe`, and `snapshot`/`restore`. `@jgengine/react`'s
+  `DamageDirectionOverlay` (+ `useDamageDirection` hook) renders the classic red arcs flaring around a center reticle
+  toward each recent hit, opacity/scale from intensity, color per `kind`/HudTheme, `pointer-events: none`. New
+  `damage-direction` dev demo. Genre-agnostic, renderer-free core.
+- **Turnkey day-night cycle.** `@jgengine/core/time/dayNightCycle`' `createDayNightCycle` is a genre-agnostic,
+  serializable brain that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels
+  and tint/light colors (`DayNightKeyframe` → `DayNightSample`), with `pause`/`play`/`setSpeed`/`setDayFraction`,
+  `subscribe`, `snapshot`/`restore`, and a `calendar()` adapter so it drops straight into any `{ dayFraction }` sky
+  seam. The shell's `@jgengine/shell/environment` adds `DayNightSky`, a drop-in R3F presenter that drives the existing
+  `SkyDome` shader and lights from the model each frame — wire one thing for a moving, color-graded day-night sky
+  instead of hand-rolling a clock plus a color lerp. `phase`/`kind` strings stay free-form; the model never interprets
+  them. New `day-night` dev demo.
+- **Status-effect timeline HUD.** `@jgengine/react`'s `StatusEffectBar` renders active buffs/debuffs as a row of
+  painted icons, each with a radial countdown ring and stack-count badge, driven off the existing status model
+  (`combat/statusApplication`'s `StatusInstance`). A thin genre-agnostic core selector,
+  `@jgengine/core/combat`'s `toStatusEffectViews` / `toStatusEffectView` (+ `statusEffectRemainingFraction`),
+  adapts live `StatusInstance`s into serializable `StatusEffectView`s (`id`, free-string `kind`, `remainingMs`,
+  `durationMs`, `stacks`) so the widget re-derives no ring math or timers. `kind` is never interpreted by the engine —
+  the game supplies icon/color/label; icons come from the existing game-icons.net icon system. Demo: `status-effects`.
+- **Cutscene / sequence director.** `@jgengine/core/scene/sequenceDirector`' `createSequenceDirector` is a
+  serializable, genre-agnostic timeline: an ordered list of typed cues (`{ atMs, kind, payload }`) advanced by one
+  injected clock, firing each cue once and in order as its time passes — even across a large `seek` — with
+  `play`/`pause`/`seek`/`skip`/`stop` and `snapshot`/`restore`. The director only schedules and emits cues via
+  `onCue`; it never interprets a `kind`, so the same primitive drives camera moves, dialogue, fades, or any game
+  event without a genre kit. `@jgengine/react`'s `useSequenceDirector` runs the per-frame tick loop and exposes
+  playhead/progress + controls, and `CutsceneLetterbox` is a reskinnable cinematic bars + caption + Skip overlay.
+  See the `cutscene` dev demo.
+- **Modal / confirmation dialog system + reskinnable pause menu.** `@jgengine/core/ui/modalStack`'s
+  `createModalStack` is a genre-agnostic, serializable stack of opaque modal records (`push`/`pop`/`resolve` with a
+  free-form result, `top`/`isOpen`/`depth`, optional injected-clock auto-dismiss via `tick`/`timeRemaining`,
+  `subscribe`, `snapshot`/`restore`) that never interprets a modal's `kind` or result. `@jgengine/react`'s `ModalHost`
+  renders the top modal over a dimmed backdrop with a focus trap and Esc/backdrop-to-cancel, `ConfirmDialog` is a
+  generic two-button confirm/cancel dialog, and `PauseMenu` is a drop-in Resume + game-filled Settings/Quit slot list.
+  All `HudTheme`-token-driven common parts — the game owns final layout, terminology, and skin. Demo: `pause-menu`.
 - **Screen-state effects (postfx).** `@jgengine/core/vfx/screenEffects`' `createScreenEffects` is a genre-agnostic,
   serializable screen-feedback controller: a game triggers transient full-screen flashes and edge vignettes
   (`flash`/`vignette`) or sustained, optionally oscillating tints (`pulse`, e.g. a low-health breathe) — each a
