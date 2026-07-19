@@ -151,6 +151,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
+## damage-direction — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging
+
+- `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/world"`
+
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/procedural"`

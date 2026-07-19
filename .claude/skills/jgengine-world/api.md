@@ -1348,6 +1348,15 @@
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
 
+## @jgengine/core/vfx/damageDirection
+
+- `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
+- `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
+- `DamageDirectionTracker` (interface): interface DamageDirectionTracker — A serializable, allocation-aware brain that tracks where recent damage came from. Each registered hit becomes a directional indicator that fades over a fixed duration on the injected clock; {@link DamageDirectionTracker.active} reports the live ones with their eased current strength.
+- `DamageIndicator` (interface): interface DamageIndicator — A live directional indicator with its eased, time-decayed strength, produced by {@link DamageDirectionTracker.active}. The `intensity` here is the *current* eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
+- `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
+- `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
+
 ## @jgengine/core/vfx/particles
 
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
@@ -1575,6 +1584,10 @@
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
+- `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
+- `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
+- `DamageDirectionTracker` (interface): interface DamageDirectionTracker — A serializable, allocation-aware brain that tracks where recent damage came from. Each registered hit becomes a directional indicator that fades over a fixed duration on the injected clock; {@link DamageDirectionTracker.active} reports the live ones with their eased current strength.
+- `DamageIndicator` (interface): interface DamageIndicator — A live directional indicator with its eased, time-decayed strength, produced by {@link DamageDirectionTracker.active}. The `intensity` here is the *current* eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
 - `DrapeOptions` (interface): interface DrapeOptions — Shaping for surface draping: subdivision spacing and a lift to keep the line off the ground.
 - `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
@@ -1634,6 +1647,7 @@
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HeightSampler` (type): type HeightSampler = (x: number, z: number) => number — A height sampler over the ground: world elevation at any `x`/`z`.
 - `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
 - `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
 - `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
@@ -1985,6 +1999,7 @@
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
+- `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
 - `createEditableTerrain` (function): function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain — ⚠ undocumented
 - `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.

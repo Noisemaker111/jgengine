@@ -134,6 +134,7 @@ export const gameRegistry: GameRegistry = {
   "extraction-map": () => import("./demo/mapDemo").then((module) => module.mapDemoGame),
   "notification-center": () => import("./demo/notificationDemo").then((module) => module.notificationDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
+  "damage-direction": () => import("./demo/damageDirectionDemo").then((module) => module.damageDirectionDemoGame),
   "fast-travel": () => import("./demo/fastTravelDemo").then((module) => module.fastTravelDemoGame),
   "particle-vfx": () => import("./demo/particleDemo").then((module) => module.particleDemoGame),
   "photo-mode": () => import("./demo/photoModeDemo").then((module) => module.photoModeDemoGame),

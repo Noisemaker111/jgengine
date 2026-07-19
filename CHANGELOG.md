@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Damage-direction indicators.** `@jgengine/core/vfx/damageDirection`' `createDamageDirectionTracker` is a
+  serializable, allocation-aware "hit-from" brain: `registerHit({ angle, intensity?, kind? })` (angle in radians,
+  `0` = front, free-string `kind` never interpreted) turns each hit into a directional indicator that fades over a
+  duration on an injected clock, with `active()` reporting live indicators at eased current intensity, optional
+  same-direction merging, a bounded pool, `subscribe`, and `snapshot`/`restore`. `@jgengine/react`'s
+  `DamageDirectionOverlay` (+ `useDamageDirection` hook) renders the classic red arcs flaring around a center reticle
+  toward each recent hit, opacity/scale from intensity, color per `kind`/HudTheme, `pointer-events: none`. New
+  `damage-direction` dev demo. Genre-agnostic, renderer-free core.
 - **Coach-marks / tutorial hints.** `@jgengine/core/ui/coachMarks`' `createCoachMarkSequence` is a genre-agnostic
   onboarding model: an ordered list of `CoachMarkStep`s (title, body, optional `anchor`/`placement`, and a data-first
   string `condition`), a persisted "seen" set so completed hints never re-show, condition-gating via `satisfy`/
