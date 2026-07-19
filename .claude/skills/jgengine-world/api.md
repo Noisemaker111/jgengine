@@ -1017,7 +1017,7 @@
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
 - `EntityStore` (interface): interface EntityStore<TMeta = unknown> — ⚠ undocumented
-- `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "meta"> > & { /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `se… — ⚠ undocumented
+- `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "meta"> > & { /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not deriv… — ⚠ undocumented
 - `PoseConstraint` (type): type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void — Return a replacement position to constrain the step, or nothing to accept it.
 - `PoseConstraintFrame` (interface): interface PoseConstraintFrame — ⚠ undocumented
 - `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> — ⚠ undocumented

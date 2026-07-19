@@ -117,6 +117,10 @@ releasing 0.14.0 → bun test scripts fails on a clean main checkout: packages/c
 
 Fan-out research with background subagents → each agent's final report arrives truncated to ~2000 chars in the task-notification and asking the agent to Write its full report to the scratchpad silently fails (file never appears on disk, agent claims success); had to re-poke each agent to paste the full report inline as reply text, which does deliver in full.
 
+2026-07-19T06:14:30.443Z — claude-fable-5 — Claude
+
+Running bun run gate on a fresh branch off main → check-content-gate fails on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building) that main's own migration removed without reseeding — main's gate is red for unrelated work until someone runs check-content-gate --update
+
 2026-07-19T06:22:33.518Z — claude-fable-5 — Claude
 
 running bun run gate on a fresh branch off main → check-content-gate red on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building already migrated); had to reseed the baseline inside an unrelated PR to get a green gate
@@ -132,6 +136,10 @@ Adding an /agents.md server route to apps/web → Vite dev static middleware int
 2026-07-19T04:20:12.828Z — claude-fable-5 — Claude
 
 Fixing production 404 for quaternius-modular-scifi models → content gate accepts 'provisioned' pack refs, but the Vercel /play build only ships committed packs, so games can merge referencing packs production can never serve (the-robots, tower-guard hit this); also kaykit-space-base was committed without a .gitignore whitelist entry
+
+2026-07-19T07:37:41.988Z — claude-fable-5 — Claude
+
+screenshotting the website: 'bun run shoot --url http://localhost:3000/...' errors 'nothing is listening' even when our dev server owns that port — only http://127.0.0.1:... passes the allowlist, and the error message doesn't mention that 127.0.0.1 URLs are accepted
 
 2026-07-19T17:09:58.949Z — claude-fable-5 — Claude
 

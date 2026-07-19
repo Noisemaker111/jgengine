@@ -62,7 +62,7 @@ function EntityMarker({
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
     writeEntityPose(group, live);
-    group.visible = visibleRef.current(entityId);
+    group.visible = live.hidden !== true && visibleRef.current(entityId);
   });
 
   return (

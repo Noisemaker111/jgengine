@@ -42,10 +42,13 @@ export function createDrivingAudio(): DrivingAudio {
   let lastSmokeAt = -1;
   return {
     tick(ctx, params) {
+      // Rate spans under a musical fifth per gear sweep (0.62–1.55) instead of the old near-two-octave
+      // scream, and the gain floor sits low so an idling car hums instead of droning (#1299); a small
+      // rpm term keeps full-throttle high-rev pulls louder than clutch-slipping at idle.
       ctx.game.audio.loop(ENGINE_LOOP, "engine_loop");
       ctx.game.audio.setLoop(ENGINE_LOOP, {
-        rate: 0.55 + 1.45 * clamp01(params.normRpm),
-        gain: 0.45 + 0.35 * clamp01(params.throttle),
+        rate: 0.62 + 0.93 * clamp01(params.normRpm),
+        gain: 0.2 + 0.3 * clamp01(params.throttle) + 0.12 * clamp01(params.normRpm),
       });
 
       // Keep the squeal loop alive at gain 0 rather than stop/start it, so a hard slide fades in cleanly.

@@ -1,5 +1,6 @@
 import { cameraShake } from "@jgengine/shell/camera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { ChaseCameraTuning } from "@jgengine/core/runtime/cameraDirector";
 import type { AxisBindingMap } from "@jgengine/core/input/axisInput";
 import {
   createAircraftDynamics,
@@ -35,6 +36,20 @@ function offRoadDrag(x: number, z: number): number {
 }
 /** How far around a car to gather solids (buildings, other cars) for the obstacle clamp, world units. */
 const OBSTACLE_GATHER = 30;
+
+/**
+ * Driving-feel camera overlay (#1299): speed→FOV, velocity lead, bank-into-turns, speed shake, and
+ * drift-lag apply only while a vehicle is piloted. The static `camera.chase` config in game.config.ts
+ * is the on-foot baseline (flat FOV, none of these), so walking never pumps the lens or rolls the
+ * horizon; enter/exit/explode swap this patch in and out via `ctx.camera.setChaseTuning`.
+ */
+const DRIVE_CAMERA_TUNING: ChaseCameraTuning = {
+  fov: { base: 60, max: 86, speedForMax: 40 },
+  velocityYaw: { blend: 0.6, minSpeed: 16, response: 5 },
+  shakePerSpeed: 0.0015,
+  lead: { time: 0.22, max: 8 },
+  bank: { perYawRate: 0.09, max: 0.16, damping: 7 },
+};
 
 /** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
 const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
@@ -310,9 +325,11 @@ export function createDriving(): Driving {
     return step;
   }
 
-  function setRiderFrozen(ctx: GameContext, riderId: string, frozen: boolean): void {
+  /** Seated riders freeze their own movement AND stop rendering (#1299) — the character model
+   * otherwise pokes through the vehicle body it's posed inside every tick. */
+  function setRiderSeated(ctx: GameContext, riderId: string, seated: boolean): void {
     const rider = ctx.scene.entity.get(riderId);
-    ctx.scene.entity.update(riderId, { movement: { ...(rider?.movement ?? {}), frozen } });
+    ctx.scene.entity.update(riderId, { movement: { ...(rider?.movement ?? {}), frozen: seated }, hidden: seated });
   }
 
   function playerWorldPos(ctx: GameContext): readonly [number, number, number] | null {
@@ -342,7 +359,8 @@ export function createDriving(): Driving {
         carVehicleFor(ctx, vehicleId);
       }
       ctx.camera.follow(result.cameraTarget);
-      setRiderFrozen(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
+      ctx.camera.setChaseTuning(DRIVE_CAMERA_TUNING);
+      setRiderSeated(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
       drivingStore.write(ctx, vehicleId);
     },
     exitVehicle(ctx) {
@@ -366,9 +384,10 @@ export function createDriving(): Driving {
       drivingAudio.stop(ctx);
       lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
       drivingStore.write(ctx, null);
+      ctx.camera.setChaseTuning(null);
       if (!result.ok) return;
       ctx.camera.follow(result.cameraTarget);
-      setRiderFrozen(ctx, result.cameraTarget, result.riderMovementPatch.frozen);
+      setRiderSeated(ctx, result.cameraTarget, result.riderMovementPatch.frozen);
       ctx.scene.entity.setPose(ctx.player.userId, { position: result.placement.position, rotationY: result.placement.rotationY });
     },
     drivingVehicleId: () => driving,
@@ -389,8 +408,9 @@ export function createDriving(): Driving {
         drivingAudio.stop(ctx);
         lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
         ctx.camera.follow(ctx.player.userId);
+        ctx.camera.setChaseTuning(null);
         const rider = ctx.scene.entity.get(ctx.player.userId);
-        setRiderFrozen(ctx, ctx.player.userId, false);
+        setRiderSeated(ctx, ctx.player.userId, false);
         ctx.scene.entity.setPose(ctx.player.userId, { position: at, rotationY: rider?.rotationY ?? 0 });
         drivingStore.write(ctx, null);
         wasDriven = true;
