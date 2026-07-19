@@ -85,10 +85,6 @@ opening the verified runtime-state PR from PowerShell -> gh pr create split mult
 
 Running bun run gate on Windows for the 0.12.0 release → scripts/tarballInstall.test.ts fails 3 tests because GNU tar treats C:\... as a remote host (Cannot connect to C: resolve failed); needs --force-local or forward-slash paths on win32
 
-2026-07-18T23:13:44.222Z — claude-fable-5 — NoisemakerJon
-
-bun run gate on main (pre-release recon) → scripts/packTextures.test.ts fails for kaykit-skeletons, quaternius-medieval-village, quaternius-modular-scifi: external image URIs unresolved and packs not in KNOWN_UNRESOLVED_PACKS allowlist; failing on a clean main checkout on Windows
-
 2026-07-18T23:43:25.224Z — claude-opus-4-8 — NoisemakerJon
 
 verifying per-game adoption changes → the CLAUDE.md-documented 'bun --cwd <path> run <script>' (space form) mis-parses and prints bun-run help instead of running; only 'bun --cwd=<path> run <script>' (equals form) works. Docs/skills should switch to the = form or bun --filter.
@@ -120,10 +116,6 @@ running ship preflight after the green portable damage commit -> origin/main adv
 2026-07-19T00:49:32.509Z — claude-opus-4-8 — Claude
 
 PR #1207 (core-only change) got a Vercel preview 'Deployment has failed' status ~1min in; GitHub Actions CI passed. The 'Vercel Deploy Logs' workflow fails on nearly every push to main too, so the preview deploy is broken repo-wide and independent of the diff — noise on every PR's checks.
-
-2026-07-19T00:58:26.867Z — claude-fable-5 — Claude
-
-verifying starhome screenshots → every run logs 'THREE.GLTFLoader: Couldn't load texture Rocks_Diffuse.png / Mushrooms.png' — quaternius-stylized-nature GLBs reference external texture files the pull/extract doesn't place next to the models, so consoles are noisy on any game using that pack
 
 2026-07-19T01:39:48.041Z — claude-opus-4-8 — Claude
 
