@@ -86,6 +86,14 @@ export {
   type ChatRateLimit,
   type ChatSendResult,
 } from "./game/chat";
+export {
+  createCodex,
+  type Codex,
+  type CodexEntryDef,
+  type CodexEntryView,
+  type CodexOptions,
+  type CodexSnapshot,
+} from "./game/codex";
 export { playControlsActive } from "./game/controlGate";
 export { createCosmetics } from "./game/cosmetics";
 export {

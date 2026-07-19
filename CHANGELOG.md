@@ -32,6 +32,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Codex / bestiary.** `@jgengine/core/game/codex`' `createCodex` tracks discovery over a fixed set of
+  defined entries — `discover`, `isDiscovered`, category-filtered `list`, `categories`, `discoveredCount`/
+  `total`/`completion`, an `onDiscover` seam, secret masking, and serializable `snapshot`/`restore`; the view
+  list keeps a stable identity for React. New `@jgengine/react` `Codex` gallery: category tabs, discovered vs.
+  locked cards (secret entries masked until found), and a completion header. First adopter: the apps/dev
+  `codex` demo.
 - **Photo mode.** `@jgengine/core/ui/photoMode`'s `createPhotoModeStore` is a serializable, observable
   photo-mode state (active + hide-HUD) a game binds its capture flow to. New `@jgengine/react`
   `usePhotoMode` + `PhotoModeControls` (hide-HUD toggle, capture, exit). New `@jgengine/shell/render/

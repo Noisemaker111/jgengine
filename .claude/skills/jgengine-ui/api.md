@@ -431,6 +431,8 @@
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
+- `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
@@ -839,6 +841,11 @@
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
+
+## @jgengine/react/codex
+
+- `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
 
 ## @jgengine/react/components
 

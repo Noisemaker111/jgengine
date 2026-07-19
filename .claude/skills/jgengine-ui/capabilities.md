@@ -73,6 +73,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
+## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
+
+- `Codex` (function) · `import { Codex } from "@jgengine/react"`
+
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
