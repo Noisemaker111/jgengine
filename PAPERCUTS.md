@@ -176,3 +176,11 @@ bun run gate fails on current main: check-game-shape rejects Games/vice-isle/src
 2026-07-19T21:58:56.045Z — claude-opus-4-8 — Claude
 
 driving the-robots for tracer evidence → 'bun run drive' crashes with 'Cannot find package gifenc from scripts/gif.ts'; gifenc not installed after agent:bootstrap
+
+2026-07-19T22:40:53.030Z — claude-opus-4-8 — Claude
+
+bun run agent:bootstrap on a fresh worktree failed: shell build could not find @jgengine/core/vfx/screenEffects because core dist was stale/incomplete from a prior partial build; a plain rebuild of core then full build succeeded
+
+2026-07-19T22:40:53.111Z — claude-opus-4-8 — Claude
+
+bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/editorKinds.ts + .test.ts as game-specific files that must live under src/game/) — unrelated to my change but the && chain short-circuits before check-types-all runs, masking the real verdict

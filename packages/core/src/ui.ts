@@ -116,6 +116,18 @@ export {
   type HudViewportConfig,
 } from "./ui/hudScale";
 export {
+  MODAL_CANCEL,
+  MODAL_CONFIRM,
+  createModalStack,
+  type ModalInput,
+  type ModalRecord,
+  type ModalResolution,
+  type ModalStack,
+  type ModalStackEntry,
+  type ModalStackOptions,
+  type ModalStackSnapshot,
+} from "./ui/modalStack";
+export {
   createObjectiveBanner,
   type ObjectiveBannerAnnouncement,
   type ObjectiveBannerController,
