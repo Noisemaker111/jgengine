@@ -1,9 +1,9 @@
 import { type ThreeElements } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
+import { useDisposable } from "../render/useDisposable";
 import { createFieldGroundGeometry, type FieldGroundOptions } from "./terrainMath";
 
 export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
@@ -43,19 +43,15 @@ export function CarvedTerrain({
   epoch = 0,
   ...meshProps
 }: CarvedTerrainProps) {
-  const geometry = useMemo(
+  const geometry = useDisposable(
     () => createFieldGroundGeometry(field, { size, segments, center, colors, heightRange, paletteAt }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [field, size, segments, center, colors, heightRange, paletteAt, epoch],
   );
-  const defaultMaterial = useMemo(
+  const defaultMaterial = useDisposable(
     () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true }),
     [metalness, roughness],
   );
   const material = surfaceMaterial ?? defaultMaterial;
-
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  useEffect(() => () => defaultMaterial.dispose(), [defaultMaterial]);
 
   return <mesh {...meshProps} geometry={geometry} material={material} receiveShadow={receiveShadow} />;
 }

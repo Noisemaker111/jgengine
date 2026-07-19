@@ -1,5 +1,3 @@
-import { useEffect, useReducer } from "react";
-
 import { actionLabel, bindingLabel, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
@@ -21,7 +19,7 @@ import {
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
 import { TOUCH_STYLE_OPTIONS } from "@jgengine/core/input/touchScheme";
-import { TOUCH_STYLE_AUTO } from "./appliedSettings";
+import { TOUCH_STYLE_AUTO, useSettingsRevision } from "./appliedSettings";
 import {
   useSettingsStore,
   type SettingsActionView,
@@ -67,8 +65,7 @@ const TOUCH_STYLE_SELECT_OPTIONS: readonly SettingOption[] = [
 export function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] {
   const store = useSettingsStore();
   const fov = usePlayerFov();
-  const [, force] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => store.subscribe(() => force()), [store]);
+  useSettingsRevision(store);
 
   const hidden = new Set(config.hide);
   const extrasFor = (category: SettingCategory): SettingsRow[] =>

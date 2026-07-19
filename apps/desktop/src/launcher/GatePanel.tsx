@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useAutoScroll } from "@jgengine/react/hooks";
 
 import type { ProcessSnapshot } from "../project/client";
 
@@ -10,12 +10,7 @@ export function GatePanel(props: {
   onRun: () => void;
   onStop: () => void;
 }) {
-  const scroller = useRef<HTMLPreElement>(null);
-  useEffect(() => {
-    const node = scroller.current;
-    if (node === null) return;
-    node.scrollTop = node.scrollHeight;
-  }, [props.lines]);
+  const scroller = useAutoScroll<HTMLPreElement>(props.lines);
 
   const running = props.running || props.processes.some((proc) => proc.running);
 

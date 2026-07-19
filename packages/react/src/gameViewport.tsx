@@ -292,19 +292,16 @@ export function GameViewportProvider({
   const collisions = useMemo(() => detectLayoutCollisions(regions), [regions]);
   const forbidden = useMemo(() => collisions.filter((c) => c.severity === "forbid"), [collisions]);
 
-  useEffect(() => {
-    const root = rootRef.current;
-    if (root === null) return;
-    if (forbidden.length === 0) {
-      root.removeAttribute("data-jg-layout-collision");
-      return;
+  const collisionReport = forbidden.length === 0 ? undefined : JSON.stringify(forbidden);
+  const lastWarnedRef = useRef<string | undefined>(undefined);
+  if (collisionReport !== lastWarnedRef.current) {
+    lastWarnedRef.current = collisionReport;
+    if (collisionReport !== undefined) {
+      console.warn(
+        `[jgengine] ${formatLayoutCollisions(forbidden)}\n  mode=${layout.mode} viewport=${Math.round(vw)}x${Math.round(vh)} safe=${safeArea.top}/${safeArea.right}/${safeArea.bottom}/${safeArea.left}`,
+      );
     }
-    const report = JSON.stringify(forbidden);
-    root.setAttribute("data-jg-layout-collision", report);
-    console.warn(
-      `[jgengine] ${formatLayoutCollisions(forbidden)}\n  mode=${layout.mode} viewport=${Math.round(vw)}x${Math.round(vh)} safe=${safeArea.top}/${safeArea.right}/${safeArea.bottom}/${safeArea.left}`,
-    );
-  }, [forbidden, layout.mode, vw, vh, safeArea]);
+  }
 
   useEffect(() => {
     const ids = new Set<string>();
@@ -349,6 +346,7 @@ export function GameViewportProvider({
           data-jg-viewport=""
           data-jg-layout-mode={layout.mode}
           data-jg-orientation={layout.orientation}
+          data-jg-layout-collision={collisionReport}
           className={className}
           style={rootStyle}
         >

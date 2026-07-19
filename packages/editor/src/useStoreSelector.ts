@@ -34,6 +34,36 @@ export function useStoreSelector<S, T>(
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+/** A notification-only source — `subscribe` is all a coarse invalidation needs. */
+export interface SubscribableSource {
+  subscribe(listener: () => void): () => void;
+}
+
+/**
+ * Subscribe a component to **every** notification from one or more sources, returning a monotonic
+ * version number via `useSyncExternalStore`. For components that read `store.getState()` directly
+ * in render (whole-store chrome) or fan several sources into one coarse invalidation — the version
+ * is a `useMemo` cache key, not data.
+ * @internal
+ */
+export function useStoreVersion(...sources: readonly SubscribableSource[]): number {
+  const versionRef = useRef(0);
+  const subscribe = useCallback((onChange: () => void) => {
+    const unsubscribes = sources.map((source) =>
+      source.subscribe(() => {
+        versionRef.current += 1;
+        onChange();
+      }),
+    );
+    return () => {
+      for (const unsubscribe of unsubscribes) unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rest params: each source is a stable store/api object
+  }, sources);
+  const getVersion = useCallback(() => versionRef.current, []);
+  return useSyncExternalStore(subscribe, getVersion, getVersion);
+}
+
 /** Shallow array equality — for selectors that return id lists (`selection`) or small tuples. */
 export function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean {
   if (a === b) return true;

@@ -2,7 +2,17 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { Compass, Minimap, MinimapChrome, MinimapTrack, WorldMap, type MinimapChromeMarker } from "./map";
+import {
+  Compass,
+  FullscreenMap,
+  MapLegend,
+  Minimap,
+  MinimapChrome,
+  MinimapTrack,
+  WaypointArrow,
+  WorldMap,
+  type MinimapChromeMarker,
+} from "./map";
 import { createMarkerSet, createMarkerSource } from "@jgengine/core/world/markers";
 import type { MinimapView } from "@jgengine/core/world/minimap";
 
@@ -139,6 +149,50 @@ describe("MinimapChrome", () => {
     const markers: MinimapChromeMarker[] = [{ id: "far", position: [500, 0], clampToEdge: false }];
     const html = renderSvg({ view, markers });
     expect(html).not.toContain('data-minimap-marker="far"');
+  });
+});
+
+describe("FullscreenMap", () => {
+  const bounds = { minX: -50, minZ: -50, maxX: 50, maxZ: 50 };
+
+  test("renders the world-map surface under a content transform group", () => {
+    const markers = [{ id: "wp-1", position: [10, 0, -8] as const, kind: "waypoint", label: "Camp" }] as const;
+    const html = renderToStaticMarkup(createElement(FullscreenMap, { markers, bounds, title: "Atlas" }));
+    expect(html).toContain("data-fullscreen-map");
+    expect(html).toContain("data-world-map-canvas");
+    expect(html).toContain("data-world-map-content");
+    expect(html).toContain('data-world-marker="waypoint"');
+    expect(html).toContain("Camp");
+    expect(html).toContain("Atlas");
+  });
+
+  test("open=false renders nothing", () => {
+    const html = renderToStaticMarkup(createElement(FullscreenMap, { markers: [], bounds, open: false }));
+    expect(html).toBe("");
+  });
+});
+
+describe("MapLegend", () => {
+  test("keys each kind with its glyph and a human label", () => {
+    const html = renderToStaticMarkup(
+      createElement(MapLegend, { kinds: ["waypoint", "enemy"], labels: { waypoint: "Waypoint" } }),
+    );
+    expect(html).toContain('data-legend-kind="waypoint"');
+    expect(html).toContain('data-legend-kind="enemy"');
+    expect(html).toContain("Waypoint");
+    expect(html).toContain("⚑"); // the waypoint glyph from DEFAULT_MARKER_KINDS
+  });
+});
+
+describe("WaypointArrow", () => {
+  test("rotates the needle by the facing-relative bearing and shows a distance readout", () => {
+    const html = renderToStaticMarkup(
+      createElement(WaypointArrow, { relative: Math.PI / 2, distance: 128, label: "Camp" }),
+    );
+    expect(html).toContain("data-waypoint-arrow");
+    expect(html).toContain("rotate(90 22 22)");
+    expect(html).toContain("128m");
+    expect(html).toContain("Camp");
   });
 });
 

@@ -126,9 +126,12 @@ export function GamePlayerShell({
   const [bindingOverrides, setBindingOverrides] = useState<BindingOverrides>(() =>
     loadBindingOverrides(playable.game.name),
   );
-  useEffect(() => {
+  // Render-time reset (no stale-keybinds frame): reload persisted overrides once per playable change.
+  const [overridesPlayable, setOverridesPlayable] = useState(playable);
+  if (overridesPlayable !== playable) {
+    setOverridesPlayable(playable);
     setBindingOverrides(loadBindingOverrides(playable.game.name));
-  }, [playable]);
+  }
   const effectiveInput = useMemo(
     () => applyBindingOverrides(playable.game.input ?? {}, bindingOverrides),
     [playable, bindingOverrides],

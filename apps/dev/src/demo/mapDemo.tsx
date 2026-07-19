@@ -19,7 +19,8 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createFogField, type FogField } from "@jgengine/core/world/fog";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
-import { Compass, Minimap, WorldMap } from "@jgengine/react/map";
+import { createWaypointStore, type WaypointStore } from "@jgengine/core/world/waypoints";
+import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";
 import { usePlayer, useSceneEntities, useFeed } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
@@ -71,6 +72,7 @@ const HAZARDS: readonly [number, number, number][] = [[-12, 0, -6]];
 const terrainField: TerrainField = resolveTerrainField(terrainFeature.terrain);
 const markerSet: MarkerSet = createMarkerSet();
 const fogField: FogField = createFogField({ bounds: BOUNDS, cellSize: FOG_CELL });
+const waypoints: WaypointStore = createWaypointStore({ markers: markerSet });
 
 let pingSystem: PingSystem | null = null;
 let raiderAngle = 0;
@@ -117,6 +119,7 @@ function onInit(ctx: GameContext): void {
   lastPlayerXZ = null;
   worldMapOpen = true;
   fogField.reset();
+  waypoints.clear();
   seedMarkers();
 
   fogField.reveal(0, 0, 22);
@@ -202,11 +205,29 @@ function useWorldMapOpen(): boolean {
   );
 }
 
+function useWaypointTracked(): string | null {
+  return useSyncExternalStore(
+    (listener) => waypoints.subscribe(listener),
+    () => waypoints.tracked()?.id ?? null,
+    () => waypoints.tracked()?.id ?? null,
+  );
+}
+
+const WAYPOINT_LEGEND_KINDS = ["waypoint", "objective", "loot", "enemy", "danger"] as const;
+const WAYPOINT_LEGEND_LABELS: Record<string, string> = {
+  waypoint: "Waypoint",
+  objective: "Objective",
+  loot: "Cache",
+  enemy: "Raider",
+  danger: "Hazard",
+};
+
 function MapUI() {
   const player = usePlayer();
   const entities = useSceneEntities();
   const pings = useFeed({ action: PING_FEED_ACTION, limit: 3 });
   const open = useWorldMapOpen();
+  useWaypointTracked();
   const self =
     entities.find((entity) => entity.id === player.userId) ??
     entities.find((entity) => entity.role === "player") ??
@@ -215,6 +236,7 @@ function MapUI() {
   const facingYaw = self === null ? 0 : self.rotationY;
   const baked: BakedMap | null = useMemo(() => bakeTerrainMap(terrainField, BOUNDS, { resolution: 160 }), []);
   const background = baked?.url;
+  const guidance = waypoints.guidance(center, facingYaw);
 
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
@@ -223,23 +245,37 @@ function MapUI() {
       </div>
 
       {open ? (
-        <div className="pointer-events-auto absolute left-4 top-4">
-          <WorldMap
+        <div className="pointer-events-auto">
+          <FullscreenMap
             markers={markerSet}
             bounds={BOUNDS}
             fog={fogField}
             player={center}
             facingYaw={facingYaw}
             background={background}
-            width={340}
+            title="Sector Atlas"
             onClose={() => setWorldMapOpen(false)}
-          />
+            onWorldClick={(world) => waypoints.place(world, { track: true, label: "Waypoint" })}
+          >
+            <div className="absolute left-4 top-4">
+              <MapLegend kinds={WAYPOINT_LEGEND_KINDS} labels={WAYPOINT_LEGEND_LABELS} />
+            </div>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md border border-white/15 bg-neutral-900/80 px-3 py-2 text-[11px] text-white/70">
+              Click the map to drop a tracked waypoint · scroll to zoom · drag to pan
+            </div>
+          </FullscreenMap>
         </div>
       ) : (
         <div className="absolute left-4 top-16 rounded-md border border-white/15 bg-neutral-900/80 px-3 py-2 text-[11px] text-white/60">
           Press <span className="text-emerald-300">M</span> for the world map
         </div>
       )}
+
+      {guidance !== null ? (
+        <div className="absolute left-1/2 top-20 -translate-x-1/2">
+          <WaypointArrow relative={guidance.relative} distance={guidance.distance} label="Waypoint" />
+        </div>
+      ) : null}
 
       <div className="absolute bottom-4 right-4">
         <Minimap
