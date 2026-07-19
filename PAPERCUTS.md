@@ -21,10 +21,6 @@ Every so often these get swept: read the list, make the easy fixes, clear them.
 
 capturing editor screenshots via drive: camera_goto only pans the orbit target with no distance/pitch control and KeyF framing can bury the camera in terrain/buildings — getting a usable aerial of a district took ~8 drive round-trips of guessing y offsets
 
-2026-07-18T15:28:59.258Z — claude-fable-5 — NoisemakerJon
-
-driving screenshots via 'bun run drive' with --rpc JSON → guard.ts arg requoting corrupts the JSON payload (Unterminated string); had to invoke scripts/drive-dev.ts directly
-
 2026-07-18T15:46:51.967Z — claude-fable-5 — NoisemakerJon
 
 Shooting close-ups from different vantage points → no way to override player spawn per-shot; had to mutate editor.scene.json player_spawn via python heredocs three times and hand-restore. shoot needs a --spawn x,y,z flag / ?spawn= URL param overlay (like ?cam=) so screenshots never mutate authored scene content.
