@@ -48,6 +48,7 @@ export * from "./hudTheme";
 export * from "./hudThemePreview";
 export * from "./hudFrame";
 export * from "./keyHint";
+export * from "./interactionPrompt";
 export * from "./startScreen";
 export * from "./engineStore";
 export * from "./dragLayer";

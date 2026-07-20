@@ -137,6 +137,7 @@ export const gameRegistry: GameRegistry = {
   "floating-text": () => import("./demo/floatingTextDemo").then((module) => module.floatingTextDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),
+  "interaction-prompt": () => import("./demo/interactionPromptDemo").then((module) => module.interactionPromptDemoGame),
   "camera-shake": () => import("./demo/cameraShakeDemo").then((module) => module.cameraShakeDemoGame),
   "wave-director": () => import("./demo/waveDirectorDemo").then((module) => module.waveDirectorDemoGame),
   "combo-meter": () => import("./demo/comboMeterDemo").then((module) => module.comboMeterDemoGame),

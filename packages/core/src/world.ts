@@ -116,6 +116,12 @@ export {
   type LockTierSpec,
 } from "./interaction/lockpick";
 export {
+  createPromptRegistry,
+  type PositionedPromptPatch,
+  type PromptRegistry,
+  type PromptRegistrySnapshot,
+} from "./interaction/promptRegistry";
+export {
   command,
   gauge,
   keybind,

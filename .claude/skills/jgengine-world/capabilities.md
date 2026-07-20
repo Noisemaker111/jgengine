@@ -281,6 +281,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
 
+## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
+
+- `createPromptRegistry` (function) · `import { createPromptRegistry } from "@jgengine/core/world"`
+
 ## interest-census — running active/dormant gate tally folded into the caller's tick loop
 
 - `createInterestCensus` (function) · `import { createInterestCensus } from "@jgengine/core/world"`

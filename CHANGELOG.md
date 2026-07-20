@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Interaction prompt registry ("Press E to …").** `@jgengine/core/world` adds `createPromptRegistry()` — a thin
+  observable, serializable store over the existing `resolveActivePrompt` resolver that owns positioned proximity
+  prompts (`register`/`update`/`unregister`/`clear`/`all`), resolves the nearest in-range prompt as the player moves,
+  and notifies subscribers only when the active prompt *changes* (so a HUD does not thrash per frame), with
+  `snapshot`/`restore`. React `@jgengine/react` adds `InteractionPrompt` (a screen-anchored callout rendering the active
+  prompt — key cap + label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable) and
+  `useInteractionPrompt(registry, playerPosition)`. Demo: `interaction-prompt`.
 - **Seeded trauma-based camera shake.** `@jgengine/core/vfx/cameraShake` adds `createCameraShake(config?)` —
   a serializable, deterministic camera-shake/impulse controller: `add(amount, kind?)` raises trauma `0..1`
   on impacts (free-string `kind` the game styles), `update(dt)` decays it, and `offset()` returns a pooled
