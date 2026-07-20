@@ -21,7 +21,7 @@
  * dimensions (~1/4 the pixels) for cheap mid-loop judge shots.
  */
 import { existsSync, mkdirSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
   applyDevice,
@@ -44,7 +44,7 @@ type Step =
   | { kind: "click"; text: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
-  | { kind: "shot"; name: string }
+  | { kind: "shot"; name: string; out?: string }
   | { kind: "rpc"; json: string }
   | { kind: "probe"; name: string };
 
@@ -86,8 +86,9 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --click "<text>"    click the first visible element containing this text
   --wait <ms>         pause before the next step
   --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
-  --shot <name>       screenshot to shots/<game>-<name>.png — pass a bare name,
-                      not a path (a path/slash yields shots/<game>-<path>.png and ENOENTs)
+  --shot <name|path>  screenshot to shots/<game>-<name>.png for a bare name, or to
+                      an absolute path written verbatim (like shoot --out; no size
+                      suffix). Relative paths are rejected — they ENOENT.
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
                       Accepts x,y,z or x,y,z,yaw (yaw radians)
@@ -174,10 +175,15 @@ function parseArgs(argv: string[]): Args {
       args.steps.push({ kind: "key", code, holdMs });
     } else if (value === "--shot") {
       const name = argv[++index] ?? "drive";
-      if (name.includes("/") || name.includes("\\")) {
-        throw new Error(`drive: --shot takes a bare name, not a path (got "${name}") — output always lands in shots/<game>-<name>.png`);
+      if (isAbsolute(name)) {
+        args.steps.push({ kind: "shot", name, out: resolve(name) });
+      } else if (name.includes("/") || name.includes("\\")) {
+        throw new Error(
+          `drive: --shot takes a bare name or an absolute path, not a relative path (got "${name}") — a bare name lands in shots/<game>-<name>.png`,
+        );
+      } else {
+        args.steps.push({ kind: "shot", name });
       }
-      args.steps.push({ kind: "shot", name });
     } else if (value === "--rpc") args.steps.push({ kind: "rpc", json: argv[++index] ?? "{}" });
     else if (value === "--probe") {
       const next = argv[index + 1];
@@ -563,7 +569,7 @@ const exitCode = await withBrowserSession(
         else if (step.kind === "probe") {
           const metrics = await readProbe(session);
           console.log(JSON.stringify({ probe: step.name, metrics }));
-        } else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
+        } else await screenshot(session, step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
       }
 
       if (recorder !== null) {

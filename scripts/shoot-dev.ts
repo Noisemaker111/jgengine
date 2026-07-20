@@ -18,6 +18,7 @@ import {
   checkoutIdentity,
   ensureDevServer,
   isUp,
+  normalizeLoopbackUrl,
   openPageSession,
   parseSizeArg,
   sizeSuffix,
@@ -212,7 +213,10 @@ function parseArgs(argv: string[]): Args {
     } else if (value === "--settle") args.settle = Number(argv[++index]);
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--out") args.out = argv[++index];
-    else if (value === "--url") args.url = argv[++index];
+    else if (value === "--url") {
+      const raw = argv[++index];
+      args.url = raw === undefined ? undefined : normalizeLoopbackUrl(raw);
+    }
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
     else if (value === "--inspect") args.inspect = true;

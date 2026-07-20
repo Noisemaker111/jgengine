@@ -105,6 +105,28 @@ export function findChromeExecutable(): string {
   throw new Error("No Chrome/Chromium found. Set CHROME_PATH or install Chrome.");
 }
 
+/**
+ * Rewrite a `localhost` URL host to `127.0.0.1`. Node/Bun `fetch` (and the
+ * capture allowlist) treat the two as distinct: `fetch` resolves `localhost`
+ * to IPv6 `::1` first, so a dev server bound only to IPv4 `127.0.0.1` reads as
+ * down even while it is serving, and the allowlist only accepts `127.0.0.1`.
+ * Normalizing at the CLI entry point makes `--url http://localhost:…` behave
+ * identically to `--url http://127.0.0.1:…`. Non-URL or non-localhost inputs
+ * pass through untouched.
+ */
+export function normalizeLoopbackUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    if (url.hostname === "localhost") {
+      url.hostname = "127.0.0.1";
+      return url.toString();
+    }
+  } catch {
+    /* not a parseable URL — leave it for downstream handling */
+  }
+  return raw;
+}
+
 export async function isUp(url: string): Promise<boolean> {
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });

@@ -5,6 +5,7 @@ import type { AddressInfo } from "node:net";
 import {
   checkoutIdentity,
   closePageTarget,
+  normalizeLoopbackUrl,
   resolveDevPort,
   resolveWarmChromePort,
 } from "./browser-lib";
@@ -49,6 +50,32 @@ describe("worktree-scoped ports", () => {
     // Extremely small collision chance across 483 buckets; flaky only if both collide.
     expect(here === other || here !== other).toBe(true);
     expect(typeof other).toBe("number");
+  });
+});
+
+describe("normalizeLoopbackUrl", () => {
+  test("rewrites a localhost host to 127.0.0.1, preserving port and path", () => {
+    expect(normalizeLoopbackUrl("http://localhost:3000/play/foo")).toBe(
+      "http://127.0.0.1:3000/play/foo",
+    );
+  });
+
+  test("preserves the query string while rewriting the host", () => {
+    expect(normalizeLoopbackUrl("http://localhost:5173/?capture=1")).toBe(
+      "http://127.0.0.1:5173/?capture=1",
+    );
+  });
+
+  test("leaves a URL that is already 127.0.0.1 untouched", () => {
+    expect(normalizeLoopbackUrl("http://127.0.0.1:3000/x")).toBe("http://127.0.0.1:3000/x");
+  });
+
+  test("does not touch a non-loopback host", () => {
+    expect(normalizeLoopbackUrl("http://example.com:3000/x")).toBe("http://example.com:3000/x");
+  });
+
+  test("passes an unparseable value through unchanged", () => {
+    expect(normalizeLoopbackUrl("not a url")).toBe("not a url");
   });
 });
 
