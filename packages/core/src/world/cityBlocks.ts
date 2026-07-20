@@ -525,6 +525,8 @@ export interface GraphBlockEdge {
   points: readonly (readonly [number, number])[];
   width: number;
   level: FabricStreet["level"];
+  /** Owning street index, carried through to pruned dead-end corridors so callers can line them. */
+  street?: number;
 }
 
 /** One block from {@link extractGraphBlocks}: the face polygon and its inset land ring. */
@@ -549,7 +551,7 @@ export function extractGraphBlocks(
   nodes: readonly GraphBlockNode[],
   edges: readonly GraphBlockEdge[],
   params: { sidewalkBase: number; curbMargin: number },
-): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } {
+): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] } {
   // --- prune dangling chains: an edge touching a degree-1 node can't border a closed face ---
   const degree = new Array<number>(nodes.length).fill(0);
   const alive = edges.map((e) => e.a !== e.b && e.points.length >= 2);
@@ -558,7 +560,7 @@ export function extractGraphBlocks(
     degree[e.a] += 1;
     degree[e.b] += 1;
   });
-  const deadEnds: { pts: Vec2[]; width: number }[] = [];
+  const deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] = [];
   let pruned = true;
   while (pruned) {
     pruned = false;
@@ -567,7 +569,7 @@ export function extractGraphBlocks(
       const e = edges[i]!;
       if (degree[e.a] === 1 || degree[e.b] === 1) {
         alive[i] = false;
-        deadEnds.push({ pts: e.points.map((p) => [p[0], p[1]] as Vec2), width: e.width });
+        deadEnds.push({ pts: e.points.map((p) => [p[0], p[1]] as Vec2), width: e.width, level: e.level, street: e.street });
         degree[e.a] -= 1;
         degree[e.b] -= 1;
         pruned = true;

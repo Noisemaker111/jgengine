@@ -243,6 +243,11 @@ export interface StreetNetworkRules {
    *  surviving network is reduced to its largest connected component, so streets always connect.
    *  Only meaningful for the street net; ignored in circuit mode. */
   outline?: number;
+  /** Share (0..1) of branch spurs grown as RESIDENTIAL SIDE STREETS — winding 1–3-segment
+   *  street-level chains ending in cul-de-sac bulbs, optionally forking once — instead of the
+   *  legacy single-stub service alleys. 0 (default) keeps the alley-only behavior byte-identical.
+   *  `generateCity` defaults it to 0.6 for the suburb look. */
+  residentialBranches?: number;
   /** SPACE-FILLING circuit layout dial, 0..1. 0 (default) = the hull construction (a flowing loop around
    *  an empty middle), BYTE-IDENTICAL to a pre-compactness network. Rising values switch the circuit
    *  LAYOUT stage to a grid spanning-tree CYCLE that folds back through its own interior: parallel
@@ -703,31 +708,65 @@ function buildNet(
     }
   }
 
-  // 4. branching — spur lanes forking outward off existing nodes, ending in a fresh cul-de-sac node.
-  const laneCount = Math.min(Math.round(rules.branching * nodes.length * 0.6), MAX_LANES);
+  // 4. branching — spurs forking outward off existing nodes. A spur is either a service ALLEY
+  // (the legacy single lane-level stub) or — at `residentialBranches` > 0 — a RESIDENTIAL BRANCH:
+  // a short winding street-level chain of 1–3 segments — the "one street off the main with just
+  // houses on it" suburb move — ending in a dangling node that downstream becomes a cul-de-sac
+  // bulb, and occasionally forking once. At the 0 default the pass replays the legacy alley
+  // behavior byte-identically (same rng draw order, same acceptance rules).
+  const spurCount = Math.min(Math.round(rules.branching * nodes.length * 0.6), MAX_LANES);
+  const residentialShare = Math.max(0, Math.min(1, rules.residentialBranches ?? 0));
   const branchRng = streams("branches");
-  for (let b = 0; b < laneCount && nodes.length < MAX_NODES; b += 1) {
-    const host = Math.floor(branchRng() * nodes.length);
-    if (dead[host] === true) continue;
-    const hp = nodes[host]!;
-    const angle = branchRng() * TAU;
-    const len = rules.segmentLength * (0.6 + branchRng() * 0.7);
-    const nx = hp[0] + Math.cos(angle) * len;
-    const nz = hp[1] + Math.sin(angle) * len;
-    if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) continue;
-    if (inMask !== null && !inMask(nx, nz, hx, hz)) continue;
-    // Reject spurs that would spawn on top of an existing node.
-    let clash = false;
+  // Grow one spur segment from `from` toward `angle`; returns the new node id or -1 when rejected.
+  const growSegment = (from: number, angle: number, len: number, lane: boolean, clashRadius: number, crossCheck: boolean): number => {
+    const fp = nodes[from]!;
+    const nx = fp[0] + Math.cos(angle) * len;
+    const nz = fp[1] + Math.sin(angle) * len;
+    if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) return -1;
+    if (inMask !== null && !inMask(nx, nz, hx, hz)) return -1;
+    // Reject a segment that would land on an existing node…
     for (let m = 0; m < nodes.length; m += 1) {
-      if (Math.hypot(nodes[m]![0] - nx, nodes[m]![1] - nz) < rules.segmentLength * 0.45) {
-        clash = true;
-        break;
+      if (m === from) continue;
+      if (Math.hypot(nodes[m]![0] - nx, nodes[m]![1] - nz) < clashRadius) return -1;
+    }
+    // …or slice across an existing edge (a branch must stay a branch, never a fake crossing).
+    if (crossCheck) {
+      for (const e of edges) {
+        if (e.a === from || e.b === from) continue;
+        if (segSegDistance(fp, [nx, nz], nodes[e.a]!, nodes[e.b]!) < rules.width * 1.6) return -1;
       }
     }
-    if (clash) continue;
     const id = nodes.length;
     nodes.push([nx, nz]);
-    edges.push({ a: host, b: id, lane: true });
+    edges.push({ a: from, b: id, lane });
+    return id;
+  };
+  for (let b = 0; b < spurCount && nodes.length < MAX_NODES; b += 1) {
+    const host = Math.floor(branchRng() * nodes.length);
+    if (dead[host] === true) continue;
+    // Short-circuit keeps the rng draw order identical to the legacy path at share 0.
+    const residential = residentialShare > 0 && branchRng() < residentialShare;
+    if (!residential) {
+      // Service alley: one lane-level stub, the legacy look (legacy clash radius, no cross check).
+      growSegment(host, branchRng() * TAU, rules.segmentLength * (0.6 + branchRng() * 0.7), true, rules.segmentLength * 0.45, residentialShare > 0);
+      continue;
+    }
+    // Residential branch: 1–3 chained street-level segments with a drifting heading (reads as one
+    // winding side street once chained), with at most one early fork.
+    const segments = 1 + Math.floor(branchRng() * 3);
+    let heading = branchRng() * TAU;
+    let cursor = host;
+    for (let s = 0; s < segments && nodes.length < MAX_NODES; s += 1) {
+      const len = rules.segmentLength * (0.5 + branchRng() * 0.35);
+      const next = growSegment(cursor, heading, len, false, rules.segmentLength * 0.4, true);
+      if (next < 0) break;
+      if (s === 0 && branchRng() < 0.25) {
+        // Early fork: a short sibling street off the first branch node.
+        growSegment(next, heading + (branchRng() < 0.5 ? 1 : -1) * (0.9 + branchRng() * 0.5), rules.segmentLength * (0.45 + branchRng() * 0.3), false, rules.segmentLength * 0.4, true);
+      }
+      heading += (branchRng() - 0.5) * 1.1;
+      cursor = next;
+    }
   }
   let finalEdges = edges.slice(0, MAX_EDGES);
   if (inMask !== null && finalEdges.length > 0) {
@@ -1866,8 +1905,15 @@ function levelForStreets(
 ): StreetLevel[] {
   const levels = new Array<StreetLevel>(chains.length).fill("street");
   // Centrality score per non-lane chain: sum of endpoint-node betweenness weighted by chain length.
+  // A chain that DEAD-ENDS (an endpoint no other chain reaches — residential branches, cul-de-sacs)
+  // is never arterial: arterials are through-routes, and a bulb-capped boulevard reads absurd.
   const score = chains.map((c) => {
     if (c.lane) return -1;
+    if (!c.loop) {
+      const first = c.nodes[0]!;
+      const last = c.nodes[c.nodes.length - 1]!;
+      if ((ctx.chainsAt.get(first)?.length ?? 0) <= 1 || (ctx.chainsAt.get(last)?.length ?? 0) <= 1) return -1;
+    }
     let s = 0;
     for (const nid of c.nodes) s += ctx.bt[nid] ?? 0;
     return s * Math.max(1, c.length);
@@ -1886,6 +1932,7 @@ function levelForStreets(
     let bestScore = -Infinity;
     for (const ci of here) {
       if (ci === self || chains[ci]!.lane || arterial.has(ci)) continue;
+      if (score[ci]! < 0) continue; // never extend an artery into a dead-ending branch
       if (score[ci]! > bestScore) {
         bestScore = score[ci]!;
         best = ci;

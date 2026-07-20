@@ -53,7 +53,7 @@ const CITY_STREET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   gridness: 0.85,
   loopiness: 0.35,
   connectivity: 0.6,
-  branching: 0.25,
+  branching: 0.4,
   deadEnds: 0.15,
   segmentLength: 90,
   aspect: 1.4,
@@ -65,6 +65,8 @@ const CITY_STREET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   boulevards: 0.2,
   // Seed-unique silhouette by default: cities grow lobes and bays instead of filling the square.
   outline: 0.4,
+  // Suburb life: most spurs grow as winding cul-de-sac side streets lined with houses.
+  residentialBranches: 0.6,
 };
 
 /** Options for {@link generateCity}: a seed, street-dial overrides, and plot pass-through options. */
@@ -127,7 +129,7 @@ export interface CityPlot {
   frontage: CityPlotFrontage;
   /** Hierarchy level of the fronted street. */
   streetLevel: StreetLevel;
-  /** Index of the block the plot was cut from. */
+  /** Index of the block the plot was cut from; `-1` for plots lining a cul-de-sac/branch corridor. */
   block: number;
   tier: CityPlotTier;
   /** True when the plot wraps a block corner (two frontages meet inside it). */
@@ -323,11 +325,28 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
 
   const streets = network.streets;
   const streams = seededStreams(`${options.seed}:plots`);
+  // Node-pair → owning street index, so pruned dead-end corridors keep their street identity and
+  // cul-de-sacs can be lined with plots that reference a real street.
+  const edgeStreet = new Map<string, number>();
+  streets.forEach((s, si) => {
+    for (let i = 0; i + 1 < s.nodes.length; i += 1) {
+      const a = s.nodes[i]!;
+      const b = s.nodes[i + 1]!;
+      edgeStreet.set(a < b ? `${a}:${b}` : `${b}:${a}`, si);
+    }
+  });
   // Blocks from the network's EXACT graph (nodes/edges), not from re-welded polylines — wandered,
   // arc-filleted centerlines defeat proximity welding, and the graph is already the truth.
   const fabric = extractGraphBlocks(
     network.nodes,
-    network.edges.map((e) => ({ a: e.a, b: e.b, points: e.points, width: e.width, level: e.level })),
+    network.edges.map((e) => ({
+      a: e.a,
+      b: e.b,
+      points: e.points,
+      width: e.width,
+      level: e.level,
+      street: edgeStreet.get(e.a < e.b ? `${e.a}:${e.b}` : `${e.b}:${e.a}`),
+    })),
     { sidewalkBase: 2, curbMargin: 0.35 },
   );
 
@@ -466,8 +485,9 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
         cursor += frontW * 0.6;
         continue;
       }
-      // Rendered streets are arc-filleted, so they can cut inside a block's corner past the graph
-      // face the parcel was cut from — reject any building rect that would sit on pavement.
+      // Rendered streets are arc-filleted and junctions grow welded aprons past the ribbons, so
+      // both can cut inside a block's corner past the graph face the parcel was cut from — reject
+      // any building rect that would sit on pavement or inside a junction apron.
       const rc = Math.cos(rotationY);
       const rs = Math.sin(rotationY);
       const onPavement = [
@@ -479,7 +499,10 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
       ].some(([lx, lz]) => {
         const px = fit.cx + lx! * rc + lz! * rs;
         const pz = fit.cz - lx! * rs + lz! * rc;
-        return streets.some((s) => isOnRoad(s.points, s.width + 1.5, px, pz));
+        return (
+          streets.some((s) => isOnRoad(s.points, s.width + 3.5, px, pz)) ||
+          network.junctions.some((j) => Math.hypot(j.x - px, j.z - pz) < j.radius + 4)
+        );
       });
       if (onPavement) {
         cursor += frontW * 0.6;
@@ -517,6 +540,105 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
         blockHasGrand = true;
       }
       cursor += frontW + gap;
+    }
+  }
+
+  // --- cul-de-sac / branch-street frontage --------------------------------------------------------
+  // Dead-end corridors are pruned from the face graph (they border no closed block), but a
+  // residential branch is exactly the street that wants a row of small house plots down both sides
+  // — the "one street off the main with just houses on it" look. Step small/medium plots along each
+  // non-lane corridor, both sides, rejecting anything on pavement, outside the volume, or
+  // overlapping an existing plot. Bounded per corridor and by `maxPlots`.
+  const rectPoly = (cx: number, cz: number, hw: number, hd: number, yaw: number): Vec2[] => {
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    return ([
+      [-hw, -hd],
+      [hw, -hd],
+      [hw, hd],
+      [-hw, hd],
+    ] as const).map(([lx, lz]) => [cx + lx * c + lz * s, cz - lx * s + lz * c] as Vec2);
+  };
+  for (let di = 0; di < fabric.deadEnds.length && plots.length < maxPlots; di += 1) {
+    const corridor = fabric.deadEnds[di]!;
+    if (corridor.level === "lane" && !laneFrontage) continue;
+    if (corridor.street === undefined) continue;
+    const pts = corridor.pts;
+    let total = 0;
+    for (let i = 0; i + 1 < pts.length; i += 1) total += Math.hypot(pts[i + 1]![0] - pts[i]![0], pts[i + 1]![1] - pts[i]![1]);
+    if (total < 18) continue;
+    const rng = streams(`culdesac:${di}`);
+    const stationAt = (s: number): { p: Vec2; tangent: Vec2 } => {
+      let acc = 0;
+      for (let i = 0; i + 1 < pts.length; i += 1) {
+        const a = pts[i]!;
+        const b = pts[i + 1]!;
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (len < 1e-9) continue;
+        if (acc + len >= s || i + 2 === pts.length) {
+          const t = Math.max(0, Math.min(1, (s - acc) / len));
+          return { p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], tangent: [(b[0] - a[0]) / len, (b[1] - a[1]) / len] };
+        }
+        acc += len;
+      }
+      return { p: [pts[0]![0], pts[0]![1]], tangent: [1, 0] };
+    };
+    // Keep the corridor ends clear: the junction mouth at one end, the turning bulb at the other.
+    const endMargin = corridor.width * 1.4 + 3;
+    let placedHere = 0;
+    let s = endMargin + rng() * 4;
+    while (s < total - endMargin && placedHere < 14 && plots.length < maxPlots) {
+      const tier: CityPlotTier = rng() < 0.72 ? "small" : "medium";
+      const sizes = PLOT_TIER_SIZES[tier];
+      const frontW = (sizes.frontage[0] + rng() * (sizes.frontage[1] - sizes.frontage[0])) * wScale;
+      const depth = (sizes.depth[0] + rng() * (sizes.depth[1] - sizes.depth[0])) * dScale * 0.8;
+      const st = stationAt(s + frontW / 2);
+      for (const side of [1, -1] as const) {
+        if (plots.length >= maxPlots) break;
+        if (rng() > coverage) continue;
+        // Normal into the plot (away from the corridor centerline).
+        const nx = -st.tangent[1] * side;
+        const nz = st.tangent[0] * side;
+        const cx = st.p[0] + nx * (corridor.width / 2 + setback + depth / 2);
+        const cz = st.p[1] + nz * (corridor.width / 2 + setback + depth / 2);
+        if (Math.abs(cx) > hx || Math.abs(cz) > hz) continue;
+        const yaw = Math.atan2(-nx, -nz);
+        const w = Math.max(3, frontW - gap);
+        const corners: readonly (readonly [number, number])[] = [
+          [0, 0],
+          [w / 2, depth / 2],
+          [w / 2, -depth / 2],
+          [-w / 2, depth / 2],
+          [-w / 2, -depth / 2],
+        ];
+        const yc = Math.cos(yaw);
+        const ys = Math.sin(yaw);
+        const onPavement = corners.some(([lx, lz]) => {
+          const px = cx + lx * yc + lz * ys;
+          const pz = cz - lx * ys + lz * yc;
+          return (
+            streets.some((street) => isOnRoad(street.points, street.width + 3.5, px, pz)) ||
+            network.junctions.some((j) => Math.hypot(j.x - px, j.z - pz) < j.radius + 4)
+          );
+        });
+        if (onPavement) continue;
+        const poly = rectPoly(cx, cz, w / 2, depth / 2, yaw);
+        if (plots.some((other) => polygonsOverlap(poly, other.polygon, 0.18))) continue;
+        plots.push({
+          polygon: poly,
+          center: [cx, cz],
+          rotationY: yaw,
+          width: w,
+          depth,
+          frontage: { street: corridor.street, a: [st.p[0], st.p[1]], b: [st.p[0] + st.tangent[0] * frontW, st.p[1] + st.tangent[1] * frontW] },
+          streetLevel: corridor.level,
+          block: -1,
+          tier,
+          corner: false,
+        });
+        placedHere += 1;
+      }
+      s += frontW + gap;
     }
   }
   return { plots, parks };

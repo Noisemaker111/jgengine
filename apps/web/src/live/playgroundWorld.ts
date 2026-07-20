@@ -42,6 +42,9 @@ export interface PlaygroundWorldHandle {
       elevation?: number;
       /** World half-size the field wavelength scales from. */
       extent?: number;
+      /** Deterministic camera override: orbit target XZ, distance, and pitch (degrees). When set it
+       *  wins over the automatic framing on every rebuild — the close-up inspection seam. */
+      camera?: { x: number; z: number; radius: number; pitch: number };
     },
   ): void;
   dispose(): void;
@@ -115,7 +118,19 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
       // between those the camera belongs to the user's orbiting.
       const reframe = options.animate === true || (options.mode !== undefined && options.mode !== lastMode);
       lastMode = options.mode;
-      if (reframe) {
+      if (options.camera !== undefined) {
+        const cam = options.camera;
+        const pitch = (cam.pitch * Math.PI) / 180;
+        const groundY = sampleHeight(cam.x, cam.z);
+        const horiz = cam.radius * Math.cos(pitch);
+        handle.camera.position.set(
+          cam.x + horiz * Math.SQRT1_2,
+          groundY + cam.radius * Math.sin(pitch),
+          cam.z + horiz * Math.SQRT1_2,
+        );
+        controls.target.set(cam.x, groundY, cam.z);
+        controls.update();
+      } else if (reframe) {
         // Frame the whole generated extent from a pleasing ~33–40° pitch orbit so first paint shows the
         // layout and its rolling silhouette, not a half-empty low angle.
         const r = model.radius;

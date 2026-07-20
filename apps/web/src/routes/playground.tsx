@@ -348,6 +348,18 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
           />
         );
       })}
+      {/* Cul-de-sac turning bulbs capping dangling streets. */}
+      {network.streets.map((street, i) =>
+        street.bulb !== undefined ? (
+          <circle
+            key={`b${i}`}
+            cx={toX(street.bulb[0])}
+            cy={toZ(street.bulb[1])}
+            r={street.width * 0.95}
+            fill={LEVEL_COLOR[street.level] ?? "#94a3b8"}
+          />
+        ) : null,
+      )}
       {network.streets.flatMap((street, i) =>
         street.width >= 8
           ? trimPathAtJunctions(street.points, street.width, junctionInputs).map((sub, k) => (
@@ -416,10 +428,59 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
   );
 }
 
+/** Camera override parsed from `?cam=x,z,radius[,pitchDeg]` — the close-up inspection seam. */
+export interface PlaygroundCam {
+  x: number;
+  z: number;
+  radius: number;
+  pitch: number;
+}
+
+/**
+ * Seed/dial/camera overrides from the URL, so a capture loop (jgengine-verify `shoot --url`) can
+ * regrow the exact same city and park the camera over one junction or corner deterministically:
+ * `?seed=vice-isle&fill=1&cam=40,-25,60,35`. Dials it understands: seed, size, fill (blockFill),
+ * landmarks, winding, segmentLength, view (3d|map).
+ */
+function parseQuery(): { dials: Partial<Dials>; cam: PlaygroundCam | null; view: View | null } {
+  if (typeof window === "undefined") return { dials: {}, cam: null, view: null };
+  const q = new URLSearchParams(window.location.search);
+  const dials: Partial<Dials> = {};
+  const num = (key: string): number | undefined => {
+    const raw = q.get(key);
+    if (raw === null) return undefined;
+    const v = Number(raw);
+    return Number.isFinite(v) ? v : undefined;
+  };
+  const seed = q.get("seed");
+  if (seed !== null && seed.length > 0) dials.seed = seed;
+  const size = num("size");
+  if (size !== undefined) dials.size = size;
+  const fill = num("fill");
+  if (fill !== undefined) dials.blockFill = fill;
+  const landmarks = num("landmarks");
+  if (landmarks !== undefined) dials.landmarks = landmarks;
+  const winding = num("winding");
+  if (winding !== undefined) dials.winding = winding;
+  const segmentLength = num("segmentLength");
+  if (segmentLength !== undefined) dials.segmentLength = segmentLength;
+  let cam: PlaygroundCam | null = null;
+  const rawCam = q.get("cam");
+  if (rawCam !== null) {
+    const parts = rawCam.split(",").map(Number);
+    if (parts.length >= 3 && parts.every((v) => Number.isFinite(v))) {
+      cam = { x: parts[0]!, z: parts[1]!, radius: Math.max(8, parts[2]!), pitch: parts[3] ?? 35 };
+    }
+  }
+  const view = q.get("view") === "map" ? "map" : q.get("view") === "3d" ? "3d" : null;
+  return { dials, cam, view };
+}
+
 function Playground() {
+  const [query] = useState(parseQuery);
   const [mode, setMode] = useState<Mode>("city");
-  const [view, setView] = useState<View>("3d");
-  const [dials, setDials] = useState<Dials>(DEFAULTS);
+  const [view, setView] = useState<View>(query.view ?? "3d");
+  const [dials, setDials] = useState<Dials>({ ...DEFAULTS, ...query.dials });
   const [worldReady, setWorldReady] = useState(false);
   const viewerHost = useRef<HTMLDivElement>(null);
   const worldRef = useRef<PlaygroundWorldHandle | null>(null);
@@ -500,6 +561,7 @@ function Playground() {
       mode,
       elevation: dials.elevation,
       extent: dials.size,
+      camera: query.cam ?? undefined,
     });
     builtOnce.current = true;
     // Screenshot tooling (jgengine-verify) waits for this flag; give the
