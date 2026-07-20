@@ -84,6 +84,20 @@ describe("topology mode", () => {
 });
 
 describe("geometry sliders", () => {
+  test("every split degree-2 bend is owned by a welded two-arm junction", () => {
+    const net = generateStreets(rules({ seed: "vice-isle", gridness: 0.85, connectivity: 0.6, branching: 0.25, winding: 0.15 }), 260, 260);
+    const junctionAt = (x: number, z: number) => net.junctions.some((j) => Math.hypot(j.x - x, j.z - z) < 1e-6);
+    for (const node of net.nodes) {
+      if (node.degree !== 2) continue;
+      const endpoints = net.streets.filter((street) => {
+        const first = street.points[0]!;
+        const last = street.points[street.points.length - 1]!;
+        return Math.hypot(first[0] - node.x, first[1] - node.z) < 1e-6 || Math.hypot(last[0] - node.x, last[1] - node.z) < 1e-6;
+      });
+      if (endpoints.length >= 2) expect(junctionAt(node.x, node.z)).toBe(true);
+    }
+  });
+
   test("gridness 1 + zero winding gives axis-aligned atomic edges", () => {
     const net = generateStreets(rules({ gridness: 1, winding: 0, branching: 0 }), 240, 240);
     for (const edge of net.edges) {

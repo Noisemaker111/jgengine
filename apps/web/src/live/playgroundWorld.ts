@@ -83,7 +83,7 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.maxPolarAngle = Math.PI * 0.46;
-  controls.minDistance = 60;
+  controls.minDistance = 8;
   controls.maxDistance = 900;
   if (handle.reducedMotion) {
     // No RAF loop under reduced motion — render on demand as the user orbits.

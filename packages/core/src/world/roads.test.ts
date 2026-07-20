@@ -269,7 +269,8 @@ describe("buildJunctionSurface", () => {
         const area = Math.abs((cur[0]! - prev[0]!) * (next[1]! - prev[1]!) - (next[0]! - prev[0]!) * (cur[1]! - prev[1]!)) / 2;
         if (area > 1e-6) {
           const circum = (A * B * C) / (4 * area);
-          expect(circum).toBeCloseTo(radius, 3);
+          // Cubic quarter-circle approximation stays within a small fraction of the requested radius.
+          expect(circum).toBeCloseTo(radius, 1);
           checked += 1;
         }
       }
@@ -285,6 +286,61 @@ describe("buildJunctionSurface", () => {
 });
 
 describe("buildTrimmedIntersections", () => {
+  test("a two-arm right-angle turn rounds both curbs without a diagonal cap", () => {
+    const turn: RoadJunctionInput = {
+      x: 0,
+      z: 0,
+      arms: [
+        { angle: Math.PI / 2, width: 8 },
+        { angle: 0, width: 8 },
+      ],
+    };
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[0, 0], [30, 0]], width: 8 },
+        { path: [[0, 0], [0, 30]], width: 8 },
+      ],
+      [turn],
+      flatH,
+      { filletSegments: 8 },
+    );
+    expect(result.ribbons.length).toBe(2);
+    expect(result.junctions.length).toBe(1);
+    const ring = surfaceRing(result.junctions[0]!.positions);
+    expect(polygonIsSimple(ring)).toBe(true);
+    // Both the inside (+,+) and outside (-,-) returns contain sampled curvature.
+    expect(ring.filter(([x, z]) => x! > 0 && z! > 0).length).toBeGreaterThan(3);
+    expect(ring.some(([x, z]) => x! < 0 && z! < 0)).toBe(true);
+    for (let t = 0; t < result.junctions[0]!.indices.length; t += 3) {
+      const surface = result.junctions[0]!;
+      expect(triNormalY(surface.positions, surface.indices[t]!, surface.indices[t + 1]!, surface.indices[t + 2]!)).toBeGreaterThan(1e-6);
+    }
+  });
+
+  test("a near-parallel two-arm seam stays compact instead of following a remote tangent intersection", () => {
+    const separation = (5 * Math.PI) / 180;
+    const junction: RoadJunctionInput = {
+      x: 0,
+      z: 0,
+      arms: [
+        { angle: Math.PI / 2, width: 8 },
+        { angle: Math.PI / 2 - separation, width: 8 },
+      ],
+    };
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[0, 0], [40, 0]], width: 8 },
+        { path: [[0, 0], [40 * Math.cos(separation), 40 * Math.sin(separation)]], width: 8 },
+      ],
+      [junction],
+      flatH,
+      { filletSegments: 8 },
+    );
+    const ring = surfaceRing(result.junctions[0]!.positions);
+    expect(polygonIsSimple(ring)).toBe(true);
+    expect(Math.max(...ring.map(([x, z]) => Math.hypot(x, z)))).toBeLessThan(14);
+  });
+
   test("welds a 4-way node with boundary vertices bitwise-equal to the trimmed ribbon corners", () => {
     const streets = [
       { path: [[-30, 0], [0, 0], [30, 0]] as const, width: 8 }, // through E-W (vertex at node)
@@ -664,7 +720,14 @@ describe("buildJunctionSurface simple-boundary triangulation (defect 2: shards)"
       for (const ap of approaches) {
         expect(onRing(ap.left[0], ap.left[2])).toBe(true);
         expect(onRing(ap.right[0], ap.right[2])).toBe(true);
+        const left = ring.findIndex((p) => Math.hypot(p[0]! - ap.left[0], p[1]! - ap.left[2]) < 1e-3);
+        const right = ring.findIndex((p) => Math.hypot(p[0]! - ap.right[0], p[1]! - ap.right[2]) < 1e-3);
+        expect(Math.abs(left - right) === 1 || Math.abs(left - right) === ring.length - 1).toBe(true);
       }
+
+      // Curb returns may bow toward the crossing, never beyond the furthest trimmed approach corner.
+      const cornerExtent = Math.max(...approaches.flatMap((ap) => [Math.hypot(ap.left[0], ap.left[2]), Math.hypot(ap.right[0], ap.right[2])]));
+      expect(Math.max(...ring.map((p) => Math.hypot(p[0]!, p[1]!)))).toBeLessThanOrEqual(cornerExtent + 1e-3);
     });
   }
 });

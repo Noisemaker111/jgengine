@@ -817,9 +817,11 @@ export interface JunctionApproach {
  * Weld one triangulated junction surface onto the corner vertices its incident ribbons END at
  * (from {@link trimPathAtJunctions}). Corners are ordered by angle around the node; the two corners
  * of one approach are joined by the ribbon's straight end-edge (the shared seam), and the gap
- * between adjacent approaches is bridged by a sampled curb-return fillet arc of `curbReturnRadius`
- * (clamped so a circle through the two corners exists). The whole boundary is fan-triangulated from
- * the node center, every triangle wound so its normal points +Y. Draped height matches
+ * between adjacent approaches is bridged by a bounded tangent cubic approximating the requested
+ * `curbReturnRadius`. Two-arm turns curve both road edges
+ * with bounded tangent handles, so 90-degree and oblique bends have no diagonal cap. The grouped,
+ * potentially concave boundary is ear-clipped without separating either corner pair, and every
+ * triangle is wound so its normal points +Y. Draped height matches
  * {@link buildRoadRibbon}: `sampleHeight(x, z) + elevation`. Boundary vertices are the approach
  * corners verbatim — no overlap, no floating disc.
  */
@@ -888,6 +890,7 @@ export function buildJunctionSurface(
   ordered.sort((p, q) => p.outAngle - q.outAngle);
 
   const boundary: { x: number; y: number; z: number }[] = [];
+  let angularFallback = false;
   for (let k = 0; k < ordered.length; k += 1) {
     const ap = ordered[k]!;
     boundary.push(ap.first);
@@ -898,38 +901,81 @@ export function buildJunctionSurface(
     const to = nxt.first;
     const L = Math.hypot(to.x - cur.x, to.z - cur.z);
     if (L < 1e-6) continue;
+    if (ordered.length === 2) {
+      const armGap = Math.abs(wrapAngle(nxt.outAngle - ap.outAngle));
+      if (armGap < (35 * Math.PI) / 180) {
+        // Two strips this close already overlap around the node. Their four mouth corners form the
+        // only compact star-shaped union boundary; sampled returns interleave in polar order and
+        // self-cross. Keep the straight wedge while generated branches reject this topology upstream.
+        angularFallback = true;
+        continue;
+      }
+      // A hard degree-2 turn has two curb edges, not one intersection corner plus a diagonal cap.
+      // Aim each cubic handle at the road-edge tangent intersection, but cap its reach by the corner
+      // chord. Near-parallel arms otherwise put that intersection arbitrarily far away and recreate
+      // the giant blob. Independent handles preserve tangency at both ends after the cap.
+      const adx = Math.cos(ap.outAngle);
+      const adz = Math.sin(ap.outAngle);
+      const bdx = Math.cos(nxt.outAngle);
+      const bdz = Math.sin(nxt.outAngle);
+      const den = adx * bdz - adz * bdx;
+      if (Math.abs(den) > 1e-6) {
+        const qx = to.x - cur.x;
+        const qz = to.z - cur.z;
+        const alongA = (qx * bdz - qz * bdx) / den;
+        const alongB = (qx * adz - qz * adx) / den;
+        const maxHandle = Math.max(curbReturnRadius, L * 0.75);
+        const cap = (v: number): number => Math.max(-maxHandle, Math.min(maxHandle, v));
+        const aHandle = cap(alongA);
+        const bHandle = cap(alongB);
+        const controlAX = cur.x + adx * aHandle;
+        const controlAZ = cur.z + adz * aHandle;
+        const controlBX = to.x + bdx * bHandle;
+        const controlBZ = to.z + bdz * bHandle;
+        for (let s = 1; s < filletSegments; s += 1) {
+          const t = s / filletSegments;
+          const u = 1 - t;
+          const x = u * u * u * cur.x + 3 * u * u * t * controlAX + 3 * u * t * t * controlBX + t * t * t * to.x;
+          const z = u * u * u * cur.z + 3 * u * u * t * controlAZ + 3 * u * t * t * controlBZ + t * t * t * to.z;
+          boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
+        }
+      }
+      continue;
+    }
     // Skip the arc if the next approach angularly OVERLAPS this one (a straight seam chord keeps the
     // ring simple where a fillet would sweep backward across a corner).
     if (wrapAngle(nxt.firstAngle - ap.secondAngle) <= 1e-9) continue;
-    const radius = Math.max(curbReturnRadius, L / 2 + 1e-6);
-    const mx = (cur.x + to.x) / 2;
-    const mz = (cur.z + to.z) / 2;
-    let ox = mx - cx;
-    let oz = mz - cz;
-    const ol = Math.hypot(ox, oz) || 1;
-    ox /= ol;
-    oz /= ol;
-    // Arc centre sits on the node side so the arc bulges outward, away from the crossing.
-    const h = Math.sqrt(Math.max(0, radius * radius - (L / 2) * (L / 2)));
-    const ax = mx - ox * h;
-    const az = mz - oz * h;
-    const a0 = Math.atan2(cur.z - az, cur.x - ax);
-    const a1 = Math.atan2(to.z - az, to.x - ax);
-    const d = wrapAngle(a1 - a0);
-    for (let s = 1; s < filletSegments; s += 1) {
-      const t = s / filletSegments;
-      const ang = a0 + d * t;
-      const x = ax + Math.cos(ang) * radius;
-      const z = az + Math.sin(ang) * radius;
-      boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
+    const adx = Math.cos(ap.outAngle);
+    const adz = Math.sin(ap.outAngle);
+    const bdx = Math.cos(nxt.outAngle);
+    const bdz = Math.sin(nxt.outAngle);
+    const den = adx * bdz - adz * bdx;
+    if (Math.abs(den) > 1e-6) {
+      const qx = to.x - cur.x;
+      const qz = to.z - cur.z;
+      const alongA = (qx * bdz - qz * bdx) / den;
+      const alongB = (qx * adz - qz * adx) / den;
+      // A cubic quarter-circle uses a ~0.552R tangent handle. Also cap by the chord so acute or
+      // unequal-width approaches cannot push one return through a neighboring mouth.
+      const maxHandle = Math.min(curbReturnRadius * 0.55228475, L * 0.45);
+      const cap = (v: number): number => Math.max(-maxHandle, Math.min(maxHandle, v));
+      const controlAX = cur.x + adx * cap(alongA);
+      const controlAZ = cur.z + adz * cap(alongA);
+      const controlBX = to.x + bdx * cap(alongB);
+      const controlBZ = to.z + bdz * cap(alongB);
+      for (let s = 1; s < filletSegments; s += 1) {
+        const t = s / filletSegments;
+        const u = 1 - t;
+        const x = u * u * u * cur.x + 3 * u * u * t * controlAX + 3 * u * t * t * controlBX + t * t * t * to.x;
+        const z = u * u * u * cur.z + 3 * u * u * t * controlAZ + 3 * u * t * t * controlBZ + t * t * t * to.z;
+        boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
+      }
     }
   }
 
-  // Final guarantee of a strictly simple, star-shaped ring: order every boundary point (approach
-  // corners AND fillet-arc samples) by its angle around the node. A fan from the node over an
-  // angle-sorted point set is monotonic by construction, so it can never emit an overlapping sliver
-  // — even where a wide-spread approach or an over-long curb return would otherwise fold the ring.
-  boundary.sort((p, q) => Math.atan2(p.z - cz, p.x - cx) - Math.atan2(q.z - cz, q.x - cx));
+  if (angularFallback) {
+    boundary.sort((p, q) => Math.atan2(p.z - cz, p.x - cx) - Math.atan2(q.z - cz, q.x - cx));
+  }
 
   const m = boundary.length;
   const positions = new Float32Array((m + 1) * 3);
@@ -943,22 +989,61 @@ export function buildJunctionSurface(
     positions[base + 1] = p.y;
     positions[base + 2] = p.z;
   }
-  // Fan from the node; skip any near-zero-area triangle (an invisible gap, never a flipped sliver).
+  // Ear-clip the grouped ring. A center fan requires a star-shaped polygon and the old global angle
+  // sort made one by separating unequal-width approach corners, destroying the exact mouth seam and
+  // leaving visible triangular holes. Ear clipping keeps every grouped boundary edge intact.
   const idx: number[] = [];
-  for (let k = 0; k < m; k += 1) {
-    const a = boundary[k]!;
-    const b = boundary[(k + 1) % m]!;
-    const ai = k + 1;
-    const bi = ((k + 1) % m) + 1;
-    // Up-normal of triangle (node, a, b): flip the two ring verts if it would face −Y.
-    const ny = (a.z - positions[2]!) * (b.x - positions[0]!) - (a.x - positions[0]!) * (b.z - positions[2]!);
-    if (Math.abs(ny) <= 1e-9) continue; // degenerate: node collinear with the ring edge — drop it
-    idx.push(0);
-    if (ny >= 0) {
-      idx.push(ai, bi);
-    } else {
-      idx.push(bi, ai);
+  const signedCross = (a: number, b: number, c: number): number => {
+    const pa = boundary[a]!;
+    const pb = boundary[b]!;
+    const pc = boundary[c]!;
+    return (pb.x - pa.x) * (pc.z - pa.z) - (pb.z - pa.z) * (pc.x - pa.x);
+  };
+  let area = 0;
+  for (let i = 0; i < m; i += 1) {
+    const a = boundary[i]!;
+    const b = boundary[(i + 1) % m]!;
+    area += a.x * b.z - b.x * a.z;
+  }
+  const orientation = area >= 0 ? 1 : -1;
+  const pointInTriangle = (p: number, a: number, b: number, c: number): boolean => {
+    const ab = signedCross(a, b, p) * orientation;
+    const bc = signedCross(b, c, p) * orientation;
+    const ca = signedCross(c, a, p) * orientation;
+    return ab >= -1e-9 && bc >= -1e-9 && ca >= -1e-9;
+  };
+  const remaining = Array.from({ length: m }, (_, i) => i);
+  let guard = 0;
+  while (remaining.length > 3 && guard < m * m) {
+    guard += 1;
+    let clipped = false;
+    for (let i = 0; i < remaining.length; i += 1) {
+      const prev = remaining[(i - 1 + remaining.length) % remaining.length]!;
+      const ear = remaining[i]!;
+      const next = remaining[(i + 1) % remaining.length]!;
+      if (signedCross(prev, ear, next) * orientation <= 1e-9) continue;
+      let contains = false;
+      for (let j = 0; j < remaining.length; j += 1) {
+        const point = remaining[j]!;
+        if (point === prev || point === ear || point === next) continue;
+        if (pointInTriangle(point, prev, ear, next)) {
+          contains = true;
+          break;
+        }
+      }
+      if (contains) continue;
+      // Standard XZ CCW points down in Three's X/Y/Z winding, so reverse CCW rings for +Y.
+      if (orientation > 0) idx.push(prev + 1, next + 1, ear + 1);
+      else idx.push(prev + 1, ear + 1, next + 1);
+      remaining.splice(i, 1);
+      clipped = true;
+      break;
     }
+    if (!clipped) break;
+  }
+  if (remaining.length === 3) {
+    if (orientation > 0) idx.push(remaining[0]! + 1, remaining[2]! + 1, remaining[1]! + 1);
+    else idx.push(remaining[0]! + 1, remaining[1]! + 1, remaining[2]! + 1);
   }
   return { positions, indices: Uint32Array.from(idx) };
 }
