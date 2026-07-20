@@ -3,6 +3,7 @@ import { environment, road } from "./features";
 import { summarizeEnvironment } from "./environmentSummary";
 import {
   GROUND_DECAL_LAYERS,
+  buildJunctionConnector,
   buildJunctionPatch,
   buildJunctionSurface,
   buildRoadRibbon,
@@ -286,6 +287,26 @@ describe("buildJunctionSurface", () => {
 });
 
 describe("buildTrimmedIntersections", () => {
+  test("exposes approaches and connects linear dressing smoothly through a two-arm turn", () => {
+    const turn: RoadJunctionInput = {
+      x: 0,
+      z: 0,
+      arms: [{ angle: Math.PI / 2, width: 8 }, { angle: 0, width: 8 }],
+    };
+    const result = buildTrimmedIntersections(
+      [{ path: [[0, 0], [30, 0]], width: 8 }, { path: [[0, 0], [0, 30]], width: 8 }],
+      [turn],
+      flatH,
+    );
+    expect(result.junctionApproaches.length).toBe(1);
+    const connector = buildJunctionConnector(turn, result.junctionApproaches[0]!, 10)!;
+    expect(connector.length).toBe(11);
+    expect(connector[0]).toEqual(result.junctionApproaches[0]![0]!.center);
+    expect(connector[connector.length - 1]).toEqual(result.junctionApproaches[0]![1]!.center);
+    expect(connector.some(([x, z]) => x > 0 && z > 0)).toBe(true);
+    expect(buildJunctionConnector(turn, [...result.junctionApproaches[0]!, result.junctionApproaches[0]![0]!])).toBeNull();
+  });
+
   test("a two-arm right-angle turn rounds both curbs without a diagonal cap", () => {
     const turn: RoadJunctionInput = {
       x: 0,

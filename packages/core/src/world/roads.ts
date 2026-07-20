@@ -814,6 +814,50 @@ export interface JunctionApproach {
 }
 
 /**
+ * Build a tangent-continuous centerline through a two-arm junction. This is the shared path for
+ * paint, medians, curbs, or other linear dressing that should follow a bend but stop at crossings.
+ * Returns `null` for anything other than exactly two approaches.
+ * @capability world-intersections connect linear road dressing through two-arm bends
+ */
+export function buildJunctionConnector(
+  junction: { x: number; z: number },
+  approaches: readonly JunctionApproach[],
+  segments = 8,
+): RoadPoint[] | null {
+  if (approaches.length !== 2) return null;
+  const a = approaches[0]!.center;
+  const b = approaches[1]!.center;
+  let adx = a[0] - junction.x;
+  let adz = a[1] - junction.z;
+  let bdx = b[0] - junction.x;
+  let bdz = b[1] - junction.z;
+  const al = Math.hypot(adx, adz);
+  const bl = Math.hypot(bdx, bdz);
+  if (al < 1e-6 || bl < 1e-6) return null;
+  adx /= al;
+  adz /= al;
+  bdx /= bl;
+  bdz /= bl;
+  const chord = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const handle = Math.min(al, bl, chord * 0.45);
+  const c1x = a[0] - adx * handle;
+  const c1z = a[1] - adz * handle;
+  const c2x = b[0] - bdx * handle;
+  const c2z = b[1] - bdz * handle;
+  const count = Math.max(2, Math.floor(segments));
+  const path: RoadPoint[] = [];
+  for (let i = 0; i <= count; i += 1) {
+    const t = i / count;
+    const u = 1 - t;
+    path.push([
+      u * u * u * a[0] + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * b[0],
+      u * u * u * a[1] + 3 * u * u * t * c1z + 3 * u * t * t * c2z + t * t * t * b[1],
+    ]);
+  }
+  return path;
+}
+
+/**
  * Weld one triangulated junction surface onto the corner vertices its incident ribbons END at
  * (from {@link trimPathAtJunctions}). Corners are ordered by angle around the node; the two corners
  * of one approach are joined by the ribbon's straight end-edge (the shared seam), and the gap
@@ -1066,6 +1110,8 @@ export interface TrimmedIntersections {
   junctions: RoadRibbon[];
   /** Index into the input `junctions` for each surface, parallel to `junctions` above. */
   junctionIndices: number[];
+  /** Exact ribbon-mouth approaches for each surface, parallel to `junctions`; useful for dressing. */
+  junctionApproaches: JunctionApproach[][];
 }
 
 /**
@@ -1124,13 +1170,16 @@ export function buildTrimmedIntersections(
 
   const junctionSurfaces: RoadRibbon[] = [];
   const junctionIndices: number[] = [];
+  const junctionApproaches: JunctionApproach[][] = [];
   const sortedIndices = [...approachesByJunction.keys()].sort((p, q) => p - q);
   for (let i = 0; i < sortedIndices.length; i += 1) {
     const ji = sortedIndices[i]!;
     const j = junctions[ji]!;
-    junctionSurfaces.push(buildJunctionSurface(j, approachesByJunction.get(ji)!, sampleHeight, options));
+    const approaches = approachesByJunction.get(ji)!;
+    junctionSurfaces.push(buildJunctionSurface(j, approaches, sampleHeight, options));
     junctionIndices.push(ji);
+    junctionApproaches.push(approaches);
   }
 
-  return { ribbons, trimmed, junctions: junctionSurfaces, junctionIndices };
+  return { ribbons, trimmed, junctions: junctionSurfaces, junctionIndices, junctionApproaches };
 }

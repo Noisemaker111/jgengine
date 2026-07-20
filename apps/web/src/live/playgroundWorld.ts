@@ -45,6 +45,13 @@ export interface PlaygroundWorldHandle {
       /** Deterministic camera override: orbit target XZ, distance, and pitch (degrees). When set it
        *  wins over the automatic framing on every rebuild — the close-up inspection seam. */
       camera?: { x: number; z: number; radius: number; pitch: number };
+      sidewalks?: boolean;
+      sidewalkWidth?: number;
+      laneMarkings?: boolean;
+      laneMarkingWidth?: number;
+      laneMarkingOffset?: number;
+      laneMarkingDash?: number;
+      laneMarkingGap?: number;
     },
   ): void;
   dispose(): void;
@@ -112,6 +119,13 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         heightScale: options.heightScale ?? 1,
         sampleHeight,
         trackDressing: circuit,
+        sidewalks: options.sidewalks,
+        sidewalkWidth: options.sidewalkWidth,
+        laneMarkings: options.laneMarkings,
+        laneMarkingWidth: options.laneMarkingWidth,
+        laneMarkingOffset: options.laneMarkingOffset,
+        laneMarkingDash: options.laneMarkingDash,
+        laneMarkingGap: options.laneMarkingGap,
       });
       handle.scene.add(model.group);
       // Reframe on the first build AND whenever the mode flips (city ↔ circuit is a new kind of layout);

@@ -55,6 +55,11 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
+- **Generated street dressing now connects through bends and junctions.** `buildJunctionConnector`
+  exposes shared tangent-continuous connector paths for sidewalks, curbs, and markings; the website
+  playground renders continuous sidewalk aprons and lane paint, and its deterministic query controls
+  can focus a junction for close-up inspection. The capture workflow now also supports managed website
+  screenshots and videos with Chrome-safe ports, lazy Vite targets, and fail-fast navigation errors.
 - **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
   turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
   overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;
