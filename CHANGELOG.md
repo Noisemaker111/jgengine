@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Observable wave/spawn runner + drop-in HUD.** `@jgengine/core/ai/waveRunner` adds
+  `createWaveRunner(config)` — a thin, stateful, observable wrapper over the seeded `spawnDirector`
+  that owns a `SpawnDirectorState`, ticks it from `update(dt, ctx?)`, forwards each `SpawnRequest` to an
+  optional `onSpawn` sink (so the model never instantiates entities), and exposes a pooled `view()`
+  readout (1-based `WAVE N`, wave progress `0..1`, budget/alert, spawned-this-wave/total, done) plus
+  `forceNextWave`/`raiseAlert`/`subscribe`/`snapshot`/`restore`. `@jgengine/react/waveHud` adds
+  `WaveHud`/`useWaveRunner` — a theme-skinnable panel with a big WAVE N label, wave-progress bar, and
+  spawn/budget/alert readouts. Spawn-entry kinds stay free strings the runner never interprets.
 - **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
   `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
   layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node

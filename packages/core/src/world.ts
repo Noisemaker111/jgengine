@@ -37,6 +37,13 @@ export {
 } from "./ai/targetAcquisition";
 export { createThreatTable, type ThreatTable } from "./ai/threat";
 export {
+  createWaveRunner,
+  type WaveRunner,
+  type WaveRunnerConfig,
+  type WaveSpawnSink,
+  type WaveView,
+} from "./ai/waveRunner";
+export {
   createAreaEffectField,
   type AreaEffectEvent,
   type AreaEffectField,
