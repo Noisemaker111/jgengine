@@ -198,3 +198,7 @@ Running bun run check-types on a clean camera-shake feature branch -> check-game
 2026-07-20T01:07:21.998Z — claude-opus-4-8 — Claude
 
 running check-types on a fresh wave-director feature branch → gate fails on pre-existing Games/vice-isle editorKinds.ts game-shape violations on origin/main, blocking the real type check (check-types-all) that runs after it; had to run check-types-all.ts manually to confirm my code compiles
+
+2026-07-20T03:00:06.022Z — claude-opus-4-8 — Claude
+
+shipping #1319 re-exports: lane's focused verification (test + check-changelog + check-types) passed, but quick-CI check-skill-api failed — newly-exported types (ChargeResult/DefenseResolution/ResolvedShot) require JSDoc + a gen:skill-api regen. Focused-verification guidance for a barrel/export change should include 'if you export any new public symbol, run check-skill-api + gen:skill-api' so it doesn't only surface in CI.
