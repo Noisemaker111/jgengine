@@ -163,6 +163,14 @@
 - `SaveEndpointRequest` (type): type SaveEndpointRequest = | { kind: "editor-document"; gameId: string; json: string } | { kind: "tunables"; gameId: string; deltas: readonly { table: string; key: string; value: unknown }[]; } — One write request the dev save endpoint accepts: a scene document or tunable deltas.
 - `SaveEndpointResponse` (interface): interface SaveEndpointResponse — Result envelope the dev save endpoint returns for every write request.
 
+## @jgengine/core/devtools/textureErrors
+
+- `TextureLoadError` (interface): interface TextureLoadError — One texture (or other GLB sub-resource) that failed to load, plus how many times a load for that URL errored. Serializable so it flows through the `debug_snapshot` RPC exactly like {@link import("./fallbackSeams").FallbackSeamsReport}.
+- `armTextureErrors` (function): function armTextureErrors(on: boolean): void — Arm or disarm the texture-load-error diagnostic. Off by default; the shell arms it only when devtools is enabled (dev builds), so production is a pure no-op. Toggling clears the tally so a fresh observation starts empty and the opt-out path reports nothing.
+- `reportTextureLoadError` (function): function reportTextureLoadError(url: string): void — Record that a sub-resource load ERRORED for `url` (called from the shared GLB loading manager's `onError`, which fires for GLTF textures/images whose fetch 404s or otherwise fails — the failure the whole-model fallback probe never sees because the model itself still resolves). A pure, allocation-free no-op when disarmed. On the armed path it also emits ONE deduped devtools warn line per newly-seen failure set so a texture-404'd scene is loud, not silent.
+- `resetTextureErrors` (function): function resetTextureErrors(): void — Clear the texture-error tally without changing the armed state. Used to bracket a fresh observation (e.g. between scenes or in tests). No-op when disarmed.
+- `textureErrorsSnapshot` (function): function textureErrorsSnapshot(): TextureLoadError[] — Snapshot the current texture-load-error tally as a compact, serializable list (empty when nothing failed). Flows into the devtools `textureErrors` probe and the `debug_snapshot` RPC so `jgengine-verify` can treat a non-empty set exactly like a model fallback: content that resolved but is visibly broken.
+
 ## @jgengine/core/devtools/transformTunables
 
 - `TunableTransformResult` (interface): interface TunableTransformResult — ⚠ undocumented
