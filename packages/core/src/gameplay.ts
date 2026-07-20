@@ -282,6 +282,14 @@ export {
 } from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
 export {
+  createSaveSlots,
+  type SaveSlotMeta,
+  type SaveSlotWrite,
+  type SaveSlots,
+  type SaveSlotsConfig,
+  type SaveSlotsSnapshot,
+} from "./game/saveSlots";
+export {
   createSaveStore,
   localSaveBackend,
   memorySaveBackend,

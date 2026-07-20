@@ -375,6 +375,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
 
+## save-slots — serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore
+
+- `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`
+
 ## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
 
 - `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`

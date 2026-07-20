@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Save-slot / profile select menu.** `@jgengine/core/game/saveSlots` adds `createSaveSlots(config)` — a
+  serializable, observable index of per-slot *display* metadata (`{ id, name?, empty, savedAt?, meta }`
+  with free-string `meta` the game fills: level, playtime, chapter, thumbnail ref, …) that complements
+  `createSaveStore` (which owns the real payload). Ops: `write`/`clear`/`rename`/`get`/`list`/`mostRecent`
+  (powers Continue) plus `subscribe`/`snapshot`/`restore`. `@jgengine/react/saveSlots` ships the drop-in
+  `SaveSlotMenu` host (+ `useSaveSlots` hook) rendering the index as New / Continue / Load / Delete cards
+  with meta chips and relative save times, HudTheme-skinnable. Demo: `save-slots`.
 - **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
   observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
   free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
