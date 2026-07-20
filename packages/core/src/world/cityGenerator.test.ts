@@ -388,3 +388,35 @@ describe("plot contract (#1454)", () => {
     }
   });
 });
+
+describe("plot variety (#1454)", () => {
+  test("variant plots flow through generateCity and massing fits each plot", () => {
+    const city = generateCity(
+      {
+        seed: "variety-city",
+        lots: {
+          footprint: [
+            { w: 12, d: 10, weight: 2 },
+            { w: 6.6, d: 15, weight: 2 },
+            { w: 18, d: 12, weight: 1 },
+          ],
+        },
+        content: { landmarks: 0 },
+      },
+      260,
+      260,
+    );
+    const widths = new Set(city.lots.map((lot) => lot.footprint.w));
+    expect(widths.size).toBe(3);
+    for (const entry of city.lotContent!) {
+      expect(entry.footprint.w).toBeLessThanOrEqual(entry.lot.footprint.w + 1e-6);
+      expect(entry.footprint.d).toBeLessThanOrEqual(entry.lot.footprint.d + 1e-6);
+    }
+    // Class follows the plot: narrow slices never roll the wide detached classes.
+    for (const entry of city.lotContent!) {
+      if (entry.lot.footprint.w <= 7) {
+        expect(["tower", "mansion", "barn"]).not.toContain(entry.class);
+      }
+    }
+  });
+});

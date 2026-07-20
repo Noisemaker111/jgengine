@@ -17,6 +17,7 @@ import { deriveBuildingLots, type BuildingLotOptions, type PlacedBuildingLot } f
 import {
   buildLandmarkPieces,
   buildLotPieces,
+  classPlotFit,
   landmarkFloors,
   landmarkMinDepthFactor,
   pickClass,
@@ -428,7 +429,13 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
     const bandRoll = rng();
     const classRoll = rng();
     const zone = zoneBand(zoneMetric(lot.center[0], lot.center[1], hx, hz), profile, coreExtent, midExtent, bandRoll);
-    const mix = biasTable === null ? mixes[zone] : biasMix(mixes[zone], biasTable[streetLevel]);
+    const leveled = biasTable === null ? mixes[zone] : biasMix(mixes[zone], biasTable[streetLevel]);
+    // Fit the class to the PLOT: narrow slices roll terraces/rowhouses, wide parcels roll the
+    // detached classes — mixed plot sizes read as different building stock, not one clone.
+    const mix = leveled.map((entry) => ({
+      item: entry.item,
+      weight: entry.weight * classPlotFit(entry.item as CityLotClass, lot.footprint.w),
+    }));
     const cls = pickClass(mix, classRoll);
     const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing);
     // The plot is the contract: the frontage engine spaced plots of exactly `lot.footprint`, so a

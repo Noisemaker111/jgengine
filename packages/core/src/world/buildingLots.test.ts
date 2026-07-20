@@ -227,3 +227,42 @@ describe("deriveBuildingLots — plot spacing dial (#1454)", () => {
     }
   });
 });
+
+describe("deriveBuildingLots — plot variants (#1454)", () => {
+  const road: RoadFrontage[] = [{ path: [[-260, 0], [260, 0]], width: 10 }];
+  const variants = [
+    { w: 12, d: 10, weight: 2 },
+    { w: 6, d: 16, weight: 2 }, // apartment slice
+    { w: 20, d: 14, weight: 1 }, // wide detached parcel
+  ];
+
+  test("a weighted variant list mixes distinct plot sizes along one frontage", () => {
+    const lots = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    const sizes = new Set(lots.map((lot) => `${lot.footprint.w}x${lot.footprint.d}`));
+    expect(sizes.size).toBe(3);
+    expect(lots.length).toBeGreaterThan(10);
+  });
+
+  test("mixed sizes keep the plot contract — no overlaps, deterministic per seed", () => {
+    const a = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    const b = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    expect(a).toEqual(b);
+    for (let i = 0; i < a.length; i += 1) {
+      for (let j = i + 1; j < a.length; j += 1) {
+        expect(
+          rectsSeparated(
+            { x: a[i]!.center[0], z: a[i]!.center[1], hw: a[i]!.footprint.w / 2 - 0.05, hd: a[i]!.footprint.d / 2 - 0.05, angle: a[i]!.rotationY },
+            { x: a[j]!.center[0], z: a[j]!.center[1], hw: a[j]!.footprint.w / 2 - 0.05, hd: a[j]!.footprint.d / 2 - 0.05, angle: a[j]!.rotationY },
+          ),
+        ).toBe(true);
+      }
+    }
+  });
+
+  test("the two sides of a street roll independent variant runs", () => {
+    const lots = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    const key = (side: 1 | -1) =>
+      lots.filter((lot) => lot.side === side).map((lot) => lot.footprint.w).join(",");
+    expect(key(1)).not.toBe(key(-1));
+  });
+});

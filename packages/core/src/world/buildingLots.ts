@@ -13,6 +13,7 @@
  */
 import { rectClearsPolyline, rectsSeparated, type OrientedRect, type Vec2 } from "./cityGeometry";
 import type { WorldBounds } from "./features";
+import { seededStreams } from "../random/rng";
 
 /** One road the frontage placer lines with buildings: a centerline polyline and its full width. */
 export interface RoadFrontage {
@@ -30,12 +31,24 @@ export interface LotArea {
   halfExtents: Vec2;
 }
 
+/** One weighted plot size a frontage can mix in: `w` along the road, `d` into the block. */
+export interface PlotVariant extends WorldBounds {
+  /** Relative pick weight among the variants. Default 1. */
+  weight?: number;
+}
+
 /** Options for {@link deriveBuildingLots}. */
 export interface BuildingLotOptions {
   /** Roads whose frontage is lined with lots. */
   roads: readonly RoadFrontage[];
-  /** Lot footprint: `w` is frontage width (along the road), `d` is depth (into the block). Default `{ w: 12, d: 10 }`. */
-  footprint?: WorldBounds;
+  /**
+   * Plot size(s): `w` is frontage width (along the road), `d` is depth (into the block). Pass one
+   * {@link WorldBounds} for a uniform district, or a weighted {@link PlotVariant} list to mix plot
+   * sizes along the same frontage — narrow-deep apartment slices beside wide detached-house
+   * parcels beside tight terraces. Variant rolls are seeded per road AND side, so the two sides of
+   * a street can read differently. Default `{ w: 12, d: 10 }`.
+   */
+  footprint?: WorldBounds | readonly PlotVariant[];
   /** Gap between neighbouring lots along a frontage, world units. Default 2. */
   spacing?: number;
   /** Sidewalk strip between the curb (`width / 2`) and the building front, world units. Default 3. */
@@ -50,9 +63,10 @@ export interface BuildingLotOptions {
    */
   avoid?: readonly RoadFrontage[];
   /**
-   * Seed forwarded by callers for parity with other feature configs. Lot GEOMETRY is fully
-   * determined by the roads and dials (so a layout is identical without it); per-building variation
-   * (floors, massing) is seeded downstream where the lots become buildings.
+   * Seed for the plot-variant rolls when `footprint` is a variant list (identical inputs always
+   * yield the identical layout, with or without it). With a single footprint, lot geometry is
+   * fully determined by the roads and dials; per-building variation (floors, massing) is seeded
+   * downstream where the lots become buildings.
    */
   seed?: string;
   /** Hard cap on emitted lots so a long network stays bounded. Default 400. */
@@ -131,9 +145,10 @@ export function facingRotation(outwardNormal: Vec2): number {
 }
 
 /**
- * Derive street-aligned building lots (PLOTS) from road frontage. Lots are stepped along each road
- * at `footprint.w + spacing`, offset to each side by `width / 2 + setback + footprint.d / 2`, and
- * turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap
+ * Derive street-aligned building lots (PLOTS) from road frontage. Each side of each road walks the
+ * frontage placing plots at `plot.w + spacing` pitch — rolling the next plot size from the weighted
+ * `footprint` variants when several are given — offset outward by `width / 2 + setback + plot.d / 2`
+ * and turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap
  * (true oriented-rect separation with the spacing gap, so corners and curved frontage can't stack
  * buildings), and no plot footprint ever touches any road corridor in `roads` or `avoid` — not
  * just its own frontage road. Deterministic: identical inputs (including seed) always yield the
@@ -141,12 +156,25 @@ export function facingRotation(outwardNormal: Vec2): number {
  * @capability building-lots derive street-facing building lots from road frontage
  */
 export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] {
-  const footprint = options.footprint ?? DEFAULT_FOOTPRINT;
+  const raw = options.footprint ?? DEFAULT_FOOTPRINT;
+  const variants: PlotVariant[] = (Array.isArray(raw) ? (raw as readonly PlotVariant[]) : [raw as WorldBounds])
+    .filter((v) => v.w > 0.5 && v.d > 0.5)
+    .map((v) => ({ w: v.w, d: v.d, weight: Math.max(0, (v as PlotVariant).weight ?? 1) }));
+  if (variants.length === 0) variants.push({ ...DEFAULT_FOOTPRINT, weight: 1 });
+  const totalWeight = variants.reduce((sum, v) => sum + v.weight!, 0) || 1;
+  const pickVariant = (roll: number): PlotVariant => {
+    let cursor = roll * totalWeight;
+    for (const v of variants) {
+      cursor -= v.weight!;
+      if (cursor <= 0) return v;
+    }
+    return variants[0]!;
+  };
   const spacing = Math.max(0, options.spacing ?? 2);
   const setback = Math.max(0, options.setback ?? 3);
   const bothSides = options.bothSides ?? true;
   const maxLots = Math.max(0, Math.floor(options.maxLots ?? 400));
-  const step = Math.max(1, footprint.w + spacing);
+  const streams = seededStreams(`plots:${options.seed ?? ""}`);
 
   const sides: readonly (1 | -1)[] = bothSides ? [1, -1] : [1];
   const corridors: { path: readonly Vec2[]; half: number }[] = [];
@@ -155,8 +183,6 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
 
   const lots: PlacedBuildingLot[] = [];
   const accepted: OrientedRect[] = [];
-  const hw = footprint.w / 2;
-  const hd = footprint.d / 2;
   // Gap grown onto the candidate for the plot-vs-plot separation test. Just under half the
   // spacing keeps same-road neighbours (spaced exactly `spacing` apart) accepted while anything
   // closer — corner stacking, inside-of-curve pinches — is rejected. At `spacing` 0 the gap goes
@@ -173,23 +199,28 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
     const total = polylineLength(road.path);
     if (total < 1e-6) continue;
     const front = road.width / 2 + setback;
-    const offset = front + footprint.d / 2;
-    // Center the run so lots sit symmetrically and endpoints keep a half-step margin.
-    const count = Math.max(1, Math.floor(total / step));
-    const startS = (total - (count - 1) * step) / 2;
-    for (let i = 0; i < count && lots.length < maxLots; i += 1) {
-      const s = startS + i * step;
-      const station = stationAt(road.path, s);
-      const [tx, tz] = station.tangent;
-      // Left normal of the tangent (CCW): (-tz, tx). Right side negates it.
-      for (const side of sides) {
-        if (lots.length >= maxLots) break;
+    // Each side walks its own seeded cursor so variant runs differ across the street — terraces
+    // can face detached houses. With a single variant the walk degenerates to the fixed pitch.
+    for (const side of sides) {
+      const roll = variants.length > 1 ? streams(`road:${r}:side:${side}`) : null;
+      let cursor = spacing / 2 + 0.5;
+      while (cursor < total && lots.length < maxLots) {
+        const plot = roll === null ? variants[0]! : pickVariant(roll());
+        if (cursor + plot.w > total - 0.5) break;
+        const s = cursor + plot.w / 2;
+        cursor += plot.w + spacing;
+        const station = stationAt(road.path, s);
+        const [tx, tz] = station.tangent;
+        // Left normal of the tangent (CCW): (-tz, tx). Right side negates it.
         const nx = -tz * side;
         const nz = tx * side;
+        const offset = front + plot.d / 2;
         const cx = station.p[0] + nx * offset;
         const cz = station.p[1] + nz * offset;
         if (!inArea(options.area, cx, cz)) continue;
         const rotationY = facingRotation([nx, nz]);
+        const hw = plot.w / 2;
+        const hd = plot.d / 2;
         const rect: OrientedRect = { x: cx, z: cz, hw, hd, angle: rotationY };
         // Plot-vs-plot: reject any candidate whose rect (grown by the spacing gap) overlaps an
         // accepted plot — regardless of which road placed it.
@@ -215,7 +246,7 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
         lots.push({
           center: [cx, cz],
           rotationY,
-          footprint: { w: footprint.w, d: footprint.d },
+          footprint: { w: plot.w, d: plot.d },
           road: r,
           side,
           frontDistance: front,

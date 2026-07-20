@@ -134,6 +134,25 @@ export function rollClassPlacement(
 }
 
 /**
+ * Weight multiplier favouring classes whose natural frontage fits a plot of width `plotW`: a class
+ * far wider than the plot (a tower profile on a 6 m slice) is heavily downweighted, a class that
+ * would rattle around a much wider plot is mildly downweighted, and anything whose width range
+ * genuinely fits keeps weight 1. Pure data over {@link CLASS_PROFILES} — this is what turns a
+ * mixed-plot frontage into terraces on the slices and detached houses on the wide parcels.
+ * @internal
+ */
+export function classPlotFit(cls: CityLotClass, plotW: number): number {
+  const [lo, hi] = CLASS_PROFILES[cls].width;
+  if (plotW < lo * 0.6) return 0; // physically cannot fit — a tower never squeezes onto a slice
+  if (plotW < lo) {
+    const r = plotW / lo;
+    return Math.max(0.1, r * r);
+  }
+  if (plotW > hi * 1.7) return Math.max(0.35, (hi * 1.7) / plotW);
+  return 1;
+}
+
+/**
  * Normalized zone metric for a point in district-local space: 0 at the center line, 1 at the rim,
  * shaped to the district's rectangle (Chebyshev) so bands follow the volume's footprint.
  * @internal

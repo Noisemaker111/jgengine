@@ -581,52 +581,74 @@ function buildNet(
     }
   }
 
-  // 4. branching — spur lanes forking outward off existing nodes, ending in a fresh cul-de-sac node.
+  // 4. branching — spur lanes (alleys) forking off MID-BLOCK, ending in a fresh cul-de-sac node.
+  // An alley leaves its street at a right angle from the middle of a block face — never from a
+  // junction (where it would shadow a road) and never at a random diagonal (which reads as a
+  // glitch cutting through the grid). The host edge is split at the branch point so the graph
+  // stays planar and the crossing is a real T node.
   const laneCount = Math.min(Math.round(rules.branching * nodes.length * 0.6), MAX_LANES);
   const branchRng = streams("branches");
-  for (let b = 0; b < laneCount && nodes.length < MAX_NODES; b += 1) {
-    const host = Math.floor(branchRng() * nodes.length);
-    const hp = nodes[host]!;
-    const angle = branchRng() * TAU;
-    const len = rules.segmentLength * (0.6 + branchRng() * 0.7);
-    const nx = hp[0] + Math.cos(angle) * len;
-    const nz = hp[1] + Math.sin(angle) * len;
-    if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) continue;
-    // Reject spurs that would spawn on top of an existing node.
-    let clash = false;
-    for (let m = 0; m < nodes.length; m += 1) {
-      if (Math.hypot(nodes[m]![0] - nx, nodes[m]![1] - nz) < rules.segmentLength * 0.45) {
-        clash = true;
-        break;
-      }
-    }
-    if (clash) continue;
-    // Planarity + readability: the spur may not cross/shadow any edge it doesn't fork from, and at
-    // its host it must leave at a real angle instead of shadowing an incident road.
-    const tip: StreetVec2 = [nx, nz];
-    let blocked = false;
-    for (const e of edges) {
-      if (e.a === host || e.b === host) {
-        const other = nodes[e.a === host ? e.b : e.a]!;
-        const aSpur = Math.atan2(nz - hp[1], nx - hp[0]);
-        const aEdge = Math.atan2(other[1] - hp[1], other[0] - hp[0]);
-        let diff = Math.abs(aSpur - aEdge);
-        if (diff > Math.PI) diff = TAU - diff;
-        if (diff < Math.PI / 6) {
-          blocked = true;
+  for (let b = 0; b < laneCount && nodes.length + 2 <= MAX_NODES && edges.length + 2 <= MAX_EDGES; b += 1) {
+    const ei = Math.floor(branchRng() * edges.length);
+    const hostEdge = edges[ei]!;
+    const tRoll = 0.35 + branchRng() * 0.3;
+    const sideRoll = branchRng() < 0.5 ? Math.PI / 2 : -Math.PI / 2;
+    const jitter = (branchRng() - 0.5) * (1 - rules.gridness) * (Math.PI / 2) * 0.8;
+    const baseLen = rules.segmentLength * (0.6 + branchRng() * 0.7);
+    if (hostEdge.lane) continue; // alleys fork off streets, not off other alleys
+    const pa = nodes[hostEdge.a]!;
+    const pb = nodes[hostEdge.b]!;
+    const hostLen = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+    if (hostLen < rules.segmentLength * 0.5) continue; // too short a face to host an alley
+    const mid: StreetVec2 = [pa[0] + (pb[0] - pa[0]) * tRoll, pa[1] + (pb[1] - pa[1]) * tRoll];
+    const edgeDir = Math.atan2(pb[1] - pa[1], pb[0] - pa[0]);
+    // Try both perpendicular sides and progressively shorter lanes until one candidate keeps the
+    // graph planar and clear — a blocked alley shrinks before it is abandoned.
+    let tip: StreetVec2 | null = null;
+    for (const flip of [0, Math.PI]) {
+      if (tip !== null) break;
+      for (const lenF of [1, 0.72, 0.52]) {
+        const angle = edgeDir + sideRoll + flip + jitter;
+        const len = baseLen * lenF;
+        if (len < rules.segmentLength * 0.3) break;
+        const nx = mid[0] + Math.cos(angle) * len;
+        const nz = mid[1] + Math.sin(angle) * len;
+        if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) continue;
+        // Reject spurs whose tip would land on top of an existing node.
+        let clash = false;
+        for (let m = 0; m < nodes.length; m += 1) {
+          if (Math.hypot(nodes[m]![0] - nx, nodes[m]![1] - nz) < rules.segmentLength * 0.45) {
+            clash = true;
+            break;
+          }
+        }
+        if (clash) continue;
+        // Planarity: the spur may not cross/shadow any edge other than the host it forks from.
+        const candidate: StreetVec2 = [nx, nz];
+        let blocked = false;
+        for (let k = 0; k < edges.length; k += 1) {
+          if (k === ei) continue;
+          const e = edges[k]!;
+          if (segSegDistance(mid, candidate, nodes[e.a]!, nodes[e.b]!) < corridorClear) {
+            blocked = true;
+            break;
+          }
+        }
+        if (!blocked) {
+          tip = candidate;
           break;
         }
-        continue;
-      }
-      if (segSegDistance(hp, tip, nodes[e.a]!, nodes[e.b]!) < corridorClear) {
-        blocked = true;
-        break;
       }
     }
-    if (blocked) continue;
-    const id = nodes.length;
+    if (tip === null) continue;
+    const midId = nodes.length;
+    nodes.push(mid);
+    const tipId = nodes.length;
     nodes.push(tip);
-    edges.push({ a: host, b: id, lane: true });
+    // Split the host edge at the branch point; both halves keep the host's street role.
+    edges[ei] = { a: hostEdge.a, b: midId, lane: false };
+    edges.push({ a: midId, b: hostEdge.b, lane: false });
+    edges.push({ a: midId, b: tipId, lane: true });
   }
   return { nodes, edges: edges.slice(0, MAX_EDGES) };
 }

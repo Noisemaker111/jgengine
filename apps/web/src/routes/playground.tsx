@@ -34,6 +34,7 @@ interface Dials {
   lotD: number;
   setback: number;
   spacing: number;
+  variety: number;
   landmarks: number;
 }
 
@@ -50,6 +51,7 @@ const DEFAULTS: Dials = {
   lotD: 10,
   setback: 3,
   spacing: 2,
+  variety: 0.5,
   landmarks: 0.06,
 };
 
@@ -220,7 +222,22 @@ function Playground() {
           segmentLength: dials.segmentLength,
           boulevards: dials.boulevards,
         },
-        lots: { footprint: { w: dials.lotW, d: dials.lotD }, setback: dials.setback, spacing: dials.spacing },
+        lots: {
+          // Variety mixes weighted plot archetypes around the base size: apartment slices,
+          // cottages, wide detached parcels, estates. 0 = one uniform plot size.
+          footprint:
+            dials.variety <= 0
+              ? { w: dials.lotW, d: dials.lotD }
+              : [
+                  { w: dials.lotW, d: dials.lotD, weight: 3 },
+                  { w: dials.lotW * 0.55, d: dials.lotD * 1.5, weight: 3 * dials.variety },
+                  { w: dials.lotW * 0.8, d: dials.lotD * 0.8, weight: 2 * dials.variety },
+                  { w: dials.lotW * 1.5, d: dials.lotD * 1.2, weight: 2 * dials.variety },
+                  { w: dials.lotW * 2.1, d: dials.lotD * 1.6, weight: dials.variety },
+                ],
+          setback: dials.setback,
+          spacing: dials.spacing,
+        },
         content: { landmarks: dials.landmarks },
       },
       dials.size,
@@ -331,6 +348,7 @@ function Playground() {
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
               <Slider label="Plot spacing" value={dials.spacing} min={0} max={8} step={0.5} onChange={(v) => set({ spacing: v })} />
+              <Slider label="Plot variety" value={dials.variety} min={0} max={1} step={0.05} onChange={(v) => set({ variety: v })} />
               <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
             </>
           ) : null}
