@@ -54,6 +54,28 @@ At publish, rename this heading to the new version and mirror the entries into
   `forceNextWave`/`raiseAlert`/`subscribe`/`snapshot`/`restore`. `@jgengine/react/waveHud` adds
   `WaveHud`/`useWaveRunner` — a theme-skinnable panel with a big WAVE N label, wave-progress bar, and
   spawn/budget/alert readouts. Spawn-entry kinds stay free strings the runner never interprets.
+- **Count-based combo / multiplier meter.** `@jgengine/core/combat/comboMeter` adds
+  `createComboMeter({ windowMs, tiers?, dropStep?, multiplierPerTier? })` — an integer hit chain that
+  climbs on `hit(kind?)`, resets a decay window each hit, and drops (to 0, or by `dropStep`) when the
+  window elapses, driven by an injected `now` and/or `update(dt)`. Free-string `tiers` derive the active
+  `tier()` and a score `multiplier()`, with `peak()`, a pooled `view()`, `subscribe`, and
+  `snapshot`/`restore`. React `@jgengine/react/comboMeter` ships `ComboMeterHud` (big live count, tier
+  label, draining window bar, multiplier — per-tier colored from a caller map) and a `useComboMeter` hook.
+- **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
+  observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
+  free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
+  viewport, options?)` that passes an on-screen point through and clamps an off-screen or behind-camera
+  point to the viewport edge with a bearing `angle` — the edge-clamp/arrow half that `layoutEntityFrames`
+  culls. `@jgengine/react`'s `WaypointMarkers` renders on-screen pins and off-screen directional arrows
+  with distance labels over any caller-owned `project` (e.g. shell `useWorldProjection`), skinnable via
+  HudTheme tokens and a per-`kind` color map. Demo: `waypoint-markers`.
+
+- **Scoreboard / leaderboard ranking.** `@jgengine/core/game/leaderboardRank` adds `rankLeaderboard(rows, options)`
+  — a pure, allocation-bounded selector that turns raw leaderboard rows (accepts `LeaderboardRow[]` straight from
+  `createLeaderboard().snapshot()`) into a render-ready ranked table: stable value sort (`desc`/`asc`), correct tie
+  handling (`standard` → 1,2,2,4; `dense` → 1,2,2,3), `isTie`/`isLocal` flags via `highlightUserId`, and top-N `limit`
+  — plus `medalFor(rank)` returning free-string `gold`/`silver`/`bronze` podium tokens. `@jgengine/react`'s reskinnable
+  `Scoreboard` table renders it with medal-colored podium icons, a highlighted local row, and HudTheme `--jg-*` tokens.
 - **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
   `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
   layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node

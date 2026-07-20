@@ -507,6 +507,15 @@
 - `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef — ⚠ undocumented
 - `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 
+## @jgengine/core/game/leaderboardRank
+
+- `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
+- `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
+- `RankedEntry` (interface): interface RankedEntry — One render-ready row of the ranked table produced by {@link rankLeaderboard}.
+- `TieMode` (type): type TieMode = "standard" | "dense" — How equal scores share ranks: - `"standard"` (competition ranking): ties share a rank and the next distinct score skips ahead — `1, 2, 2, 4`. - `"dense"`: ties share a rank and the next distinct score is the very next integer — `1, 2, 2, 3`.
+- `medalFor` (function): function medalFor(rank: number): "gold" | "silver" | "bronze" | null — A free-string medal token for the top-three ranks — `"gold"` (1), `"silver"` (2), `"bronze"` (3) — or `null` for any other rank. It is a semantic token, not a color: the UI maps it to an icon/color/theme, and the model never styles. Feed it a {@link RankedEntry.rank}.
+- `rankLeaderboard` (function): function rankLeaderboard(rows: readonly RankableRow[], options: RankLeaderboardOptions = {}): RankedEntry[] — Turn raw leaderboard rows into a render-ready ranked table. Pure and allocation-bounded: it sorts a copy by `value` (descending by default), assigns 1-based ranks with correct tie handling (`"standard"` → `1, 2, 2, 4`; `"dense"` → `1, 2, 2, 3`), flags rows that share a score (`isTie`), marks the local player (`isLocal`, via `highlightUserId`), and finally applies `limit`. Sorting is stable, so rows with equal scores keep their input order. Nothing here styles or branches on game meaning — pair it with {@link medalFor} and a game-owned theme to render a reskinnable scoreboard. Accepts a {@link LeaderboardRow}`[]` straight from `leaderboard.snapshot()`/`getTop()` since those satisfy {@link RankableRow}.
+
 ## @jgengine/core/game/levelSequence
 
 - `CurrentLevel` (interface): interface CurrentLevel<TLevelConfig> — ⚠ undocumented
@@ -1172,6 +1181,9 @@
 - `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
 - `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
+- `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
+- `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
+- `RankedEntry` (interface): interface RankedEntry — One render-ready row of the ranked table produced by {@link rankLeaderboard}.
 - `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
 - `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
 - `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
@@ -1249,6 +1261,7 @@
 - `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
 - `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
 - `TickResult` (interface): interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> — Outcome of {@link tick}: advanced state plus the events produced.
+- `TieMode` (type): type TieMode = "standard" | "dense" — How equal scores share ranks: - `"standard"` (competition ranking): ties share a rank and the next distinct score skips ahead — `1, 2, 2, 4`. - `"dense"`: ties share a rank and the next distinct score is the very next integer — `1, 2, 2, 3`.
 - `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
@@ -1443,6 +1456,7 @@
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 - `matchesQuery` (function): function matchesQuery(identity: ItemIdentity, query: IdentityQuery): boolean — Test whether an identity satisfies a declarative {@link IdentityQuery}.
+- `medalFor` (function): function medalFor(rank: number): "gold" | "silver" | "bronze" | null — A free-string medal token for the top-three ranks — `"gold"` (1), `"silver"` (2), `"bronze"` (3) — or `null` for any other rank. It is a semantic token, not a color: the UI maps it to an icon/color/theme, and the model never styles. Feed it a {@link RankedEntry.rank}.
 - `memorySaveBackend` (function): function memorySaveBackend(): SaveBackend — A memory-only {@link SaveBackend} — saves survive a reload only within the same session. For tests, SSR, or a "no persistence" mode that still exercises the same save code path.
 - `missingRequiredSlots` (function): function missingRequiredSlots(def: ModularItemDef, installed: readonly InstalledPart[]): string[] — ⚠ undocumented
 - `moveCards` (function): function moveCards(state: CardPileState, ids: readonly string[], from: ZoneName, to: ZoneName, position: "top" | "bottom" = "top"): PileResult — ⚠ undocumented
@@ -1469,6 +1483,7 @@
 - `raceOutcomeOf` (function): function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome — The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the order counts as a `lose`.
 - `racePlacements` (function): function racePlacements(finishOrder: readonly string[], options?: PlacementOptions): readonly RacePlacement[] — Turn a finish-order ranking (index 0 = winner, e.g. the `ranking` of a `race.finished` event) into per-racer {@link RacePlacement}s — the `1st/2nd/3rd` + win/lose every results screen shows.
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
+- `rankLeaderboard` (function): function rankLeaderboard(rows: readonly RankableRow[], options: RankLeaderboardOptions = {}): RankedEntry[] — Turn raw leaderboard rows into a render-ready ranked table. Pure and allocation-bounded: it sorts a copy by `value` (descending by default), assigns 1-based ranks with correct tie handling (`"standard"` → `1, 2, 2, 4`; `"dense"` → `1, 2, 2, 3`), flags rows that share a score (`isTie`), marks the local player (`isLocal`, via `highlightUserId`), and finally applies `limit`. Sorting is stable, so rows with equal scores keep their input order. Nothing here styles or branches on game meaning — pair it with {@link medalFor} and a game-owned theme to render a reskinnable scoreboard. Accepts a {@link LeaderboardRow}`[]` straight from `leaderboard.snapshot()`/`getTop()` since those satisfy {@link RankableRow}.
 - `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
 - `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
 - `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
