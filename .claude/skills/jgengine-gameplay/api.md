@@ -232,6 +232,19 @@
 - `WalletBook` (interface): interface WalletBook — ⚠ undocumented
 - `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
 
+## @jgengine/core/economy/shopStock
+
+- `ShopBuyRejection` (type): type ShopBuyRejection = "unknown-item" | "out-of-stock" | "insufficient-funds" — Why a {@link ShopStock.buy} was refused.
+- `ShopBuyResult` (type): type ShopBuyResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopBuyRejection } — Result of {@link ShopStock.buy}: on success the caller receives the debited `wallet` to adopt and a snapshot of the purchased `entry` (post-decrement); on failure a `reason` and the wallet is untouched.
+- `ShopPrice` (interface): interface ShopPrice — A price tag: how much of a free-string `currency` an entry costs (buy) or returns (sell). `amount` is a non-negative finite number; `0` means free (no wallet charge/grant happens).
+- `ShopSellRejection` (type): type ShopSellRejection = "unknown-item" | "not-sellable" — Why a {@link ShopStock.sell} was refused.
+- `ShopSellResult` (type): type ShopSellResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopSellRejection } — Result of {@link ShopStock.sell}: on success the caller receives the credited `wallet` and a snapshot of the sold `entry` (post-restock); on failure a `reason` and the wallet is untouched.
+- `ShopStock` (interface): interface ShopStock — A live, observable vendor/shop stock operating over a caller-owned wallet.
+- `ShopStockConfig` (interface): interface ShopStockConfig — Config for {@link createShopStock}: the initial set of entries.
+- `ShopStockEntry` (interface): interface ShopStockEntry — One item a vendor stocks. Fully serializable; `kind` and `currency` are free strings the model never branches on.
+- `ShopStockSnapshot` (interface): interface ShopStockSnapshot — Serializable state of a shop's stock, for save/restore.
+- `createShopStock` (function): function createShopStock(config: ShopStockConfig = {}): ShopStock — A serializable, observable vendor/shop stock. Each entry carries a game-owned free-string `kind`, a `price` in a free-string `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice` buy-back. All currency math is delegated to the existing pure `wallet` model — `buy` charges and `sell` grants a **caller-owned** {@link WalletState} (the shop never holds the wallet, it returns the new wallet for the caller to adopt), so the same stock composes with any wallet the game owns. Nothing here is genre-specific: `kind` and `currency` are free labels the game styles and the model never branches on. `restock`/`setPrice`/`add`/`remove` mutate the catalog, `subscribe` observes every change, and `snapshot`/`restore` round-trips the whole stock through a save.
+
 ## @jgengine/core/economy/techTree
 
 - `TechCheck` (type): type TechCheck = { ok: true } | ({ ok: false } & TechRejection) — ⚠ undocumented
@@ -257,7 +270,7 @@
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `WalletState` (interface): interface WalletState — ⚠ undocumented
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
-- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — ⚠ undocumented
+- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
@@ -1221,6 +1234,15 @@
 - `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
 - `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
+- `ShopBuyRejection` (type): type ShopBuyRejection = "unknown-item" | "out-of-stock" | "insufficient-funds" — Why a {@link ShopStock.buy} was refused.
+- `ShopBuyResult` (type): type ShopBuyResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopBuyRejection } — Result of {@link ShopStock.buy}: on success the caller receives the debited `wallet` to adopt and a snapshot of the purchased `entry` (post-decrement); on failure a `reason` and the wallet is untouched.
+- `ShopPrice` (interface): interface ShopPrice — A price tag: how much of a free-string `currency` an entry costs (buy) or returns (sell). `amount` is a non-negative finite number; `0` means free (no wallet charge/grant happens).
+- `ShopSellRejection` (type): type ShopSellRejection = "unknown-item" | "not-sellable" — Why a {@link ShopStock.sell} was refused.
+- `ShopSellResult` (type): type ShopSellResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopSellRejection } — Result of {@link ShopStock.sell}: on success the caller receives the credited `wallet` and a snapshot of the sold `entry` (post-restock); on failure a `reason` and the wallet is untouched.
+- `ShopStock` (interface): interface ShopStock — A live, observable vendor/shop stock operating over a caller-owned wallet.
+- `ShopStockConfig` (interface): interface ShopStockConfig — Config for {@link createShopStock}: the initial set of entries.
+- `ShopStockEntry` (interface): interface ShopStockEntry — One item a vendor stocks. Fully serializable; `kind` and `currency` are free strings the model never branches on.
+- `ShopStockSnapshot` (interface): interface ShopStockSnapshot — Serializable state of a shop's stock, for save/restore.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
@@ -1325,6 +1347,7 @@
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
 - `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
+- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
 - `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
 - `cancelRule` (function): function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Remove a rule and its cursor entirely (hard cancellation).
@@ -1391,6 +1414,7 @@
 - `createRuleRegistry` (function): function createRuleRegistry<TPayload = unknown>(initial?: readonly RuleDef<TPayload>[]): RuleRegistry<TPayload> — Create a {@link RuleRegistry}. Rules install through `register` (duplicate ids throw); selection and `layersFor` are data-driven, so the core never branches on which mutators exist.
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createSaveStore` (function): function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> — Create a {@link SaveStore}. Same call for offline and cloud — only the `backend` differs (localStorage, memory, or an async DB/Convex endpoint). Turn on `autosave` and every `set`/`patch` persists on a debounce; leave it off and call `save()` at checkpoints. Bump `version` + pass `migrate` when the save shape changes so old players keep their progress.
+- `createShopStock` (function): function createShopStock(config: ShopStockConfig = {}): ShopStock — A serializable, observable vendor/shop stock. Each entry carries a game-owned free-string `kind`, a `price` in a free-string `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice` buy-back. All currency math is delegated to the existing pure `wallet` model — `buy` charges and `sell` grants a **caller-owned** {@link WalletState} (the shop never holds the wallet, it returns the new wallet for the caller to adopt), so the same stock composes with any wallet the game owns. Nothing here is genre-specific: `kind` and `currency` are free labels the game styles and the model never branches on. `restock`/`setPrice`/`add`/`remove` mutate the catalog, `subscribe` observes every change, and `snapshot`/`restore` round-trips the whole stock through a save.
 - `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
 - `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.

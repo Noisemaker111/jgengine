@@ -439,6 +439,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/react"`
 
+## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
+
+- `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/react"`
+
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
 - `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
@@ -510,6 +514,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
 - `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
+
+## use-shop-stock — React hook binding a shop-stock model — re-renders on any stock change and returns the entry list
+
+- `useShopStock` (function) · `import { useShopStock } from "@jgengine/react"`
 
 ## use-timer — React hook binding one timer to a component with a per-frame re-read
 

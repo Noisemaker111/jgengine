@@ -46,6 +46,15 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Vendor / shop stock + grid.** `@jgengine/core/economy/shopStock` adds a serializable, observable
+  `createShopStock({ entries })` — entries carry a free-string `kind`, a `price` in a free-string
+  `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice`. `buy`/`sell`
+  operate over a **caller-owned** `WalletState` (reusing the existing `wallet` model — `charge`/`grant`/
+  `canAfford`), returning the debited/credited wallet for the caller to adopt; plus `restock`/`setPrice`/
+  `add`/`remove`/`list`/`get`/`canAfford`/`subscribe`/`snapshot`/`restore`. `@jgengine/react`'s `ShopGrid`
+  host + `useShopStock` hook render it as a token-themed grid of item cards (icon, price with currency
+  glyph, stock count or "∞", afford-aware Buy, optional Sell) with a wallet balance readout.
+
 - **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
   observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
   free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
