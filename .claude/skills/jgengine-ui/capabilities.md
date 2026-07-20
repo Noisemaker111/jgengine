@@ -254,6 +254,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
 
+## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
+
+- `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -489,6 +493,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
+
+## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
+
+- `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/react"`
 
 ## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
 

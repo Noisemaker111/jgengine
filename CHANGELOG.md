@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Interaction prompt registry ("Press E to …").** `@jgengine/core/world` adds `createPromptRegistry()` — a thin
+  observable, serializable store over the existing `resolveActivePrompt` resolver that owns positioned proximity
+  prompts (`register`/`update`/`unregister`/`clear`/`all`), resolves the nearest in-range prompt as the player moves,
+  and notifies subscribers only when the active prompt *changes* (so a HUD does not thrash per frame), with
+  `snapshot`/`restore`. React `@jgengine/react` adds `InteractionPrompt` (a screen-anchored callout rendering the active
+  prompt — key cap + label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable) and
+  `useInteractionPrompt(registry, playerPosition)`. Demo: `interaction-prompt`.
 - **Scoreboard / leaderboard ranking.** `@jgengine/core/game/leaderboardRank` adds `rankLeaderboard(rows, options)`
   — a pure, allocation-bounded selector that turns raw leaderboard rows (accepts `LeaderboardRow[]` straight from
   `createLeaderboard().snapshot()`) into a render-ready ranked table: stable value sort (`desc`/`asc`), correct tie
