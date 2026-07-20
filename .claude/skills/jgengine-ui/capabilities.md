@@ -527,6 +527,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useT` (function) · `import { useT } from "@jgengine/react"`
 
+## use-wave-runner — React hook that subscribes to a wave runner and returns its pooled current-wave view
+
+- `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/react"`
+
 ## use-waypoints — React binding that returns a waypoint tracker's live list (or a passthrough array)
 
 - `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
@@ -534,6 +538,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vital-bar — compact current/max vital meter for an entity summary
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
+
+## wave-hud — drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable
+
+- `WaveHud` (function) · `import { WaveHud } from "@jgengine/react"`
 
 ## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
 

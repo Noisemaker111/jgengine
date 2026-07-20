@@ -17,6 +17,7 @@
     "./ai/spawnPoint",
     "./ai/targetAcquisition",
     "./ai/threat",
+    "./ai/waveRunner",
     "./anim/easing",
     "./anim/oscillator",
     "./area/areaEffectField",
@@ -538,7 +539,6 @@
     "./chatBubbles",
     "./coachMarks",
     "./codex",
-    "./comboMeter",
     "./components",
     "./cutscene",
     "./damageDirection",
@@ -594,7 +594,8 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice"
+    "./voice",
+    "./waveHud"
   ],
   "@jgengine/convex": [
     ".",

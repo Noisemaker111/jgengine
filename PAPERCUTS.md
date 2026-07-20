@@ -187,3 +187,7 @@ bun run agent:bootstrap on a fresh worktree failed: shell build could not find @
 2026-07-19T22:40:53.111Z — claude-opus-4-8 — Claude
 
 bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/editorKinds.ts + .test.ts as game-specific files that must live under src/game/) — unrelated to my change but the && chain short-circuits before check-types-all runs, masking the real verdict
+
+2026-07-20T01:07:21.998Z — claude-opus-4-8 — Claude
+
+running check-types on a fresh wave-director feature branch → gate fails on pre-existing Games/vice-isle editorKinds.ts game-shape violations on origin/main, blocking the real type check (check-types-all) that runs after it; had to run check-types-all.ts manually to confirm my code compiles
