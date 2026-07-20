@@ -46,6 +46,16 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **City plot contract + plot-size variety.** `deriveBuildingLots` now enforces placement as a hard
+  contract — no two plots ever overlap (true oriented-rect separation; `spacing: 0` packs plots
+  edge-to-edge, touching legal, overlap never) and no plot footprint touches any road corridor,
+  including non-frontage lanes via the new `avoid` option (`generateCity` feeds it automatically).
+  `footprint` also accepts a weighted `PlotVariant` list to mix plot sizes along one frontage
+  (apartment slices beside cottages beside wide detached parcels; each street side rolls its own
+  seeded run), and `resolveCityLotContent` clamps every massing silhouette to its plot and biases
+  the class mix by the new `classPlotFit` so building stock matches parcel shape. Landmark parcels
+  must clear all street corridors, never overlap each other, and swallow any lot they intersect.
+  `cityGeometry` gains the shared `rectsSeparated` / `rectClearsPolyline` primitives.
 - **Floating combat text / damage numbers.** `@jgengine/core/ui/floatingText`' `createFloatingTextField` is a
   genre-agnostic, deterministic, allocation-aware field of world-anchored text pops (damage, crits, heals, XP/gold,
   status, barks): `emit({ position, text, kind?, color?, size?, rise?, drift?, lifetime? })`, `update(dt)` (rise +
@@ -285,6 +295,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Street graph is planar by construction and wide roads never stub out.** `generateStreets`
+  rejects loop-reconnect chords that would cross or shadow an unrelated edge (its segment-distance
+  helper now reports 0 for crossing segments, also hardening circuit self-clearance against folded
+  loops); branch lanes fork mid-block at right angles through a real T node in the host street
+  instead of leaving junctions at random diagonals; and boulevard/avenue chains demote to local
+  streets when they would dead-end at an interior node (rim exits stay arterial). Kept dead ends
+  still emit cul-de-sac bulbs for renderers.
 - **Road ribbons no longer self-intersect at bends** (`@jgengine/core/world/roads`) — `buildRoadRibbon` now miter-joins the inner edge of a bend and welds any residual fold when the local turn radius drops under the half-width, so dense arc-sampled corners render as one clean surface instead of a doubled bowtie. Straight ribbons and terminal cross-sections stay byte-identical (junction welds unaffected).
 - **Junction surfaces stopped emitting sliver triangles** (`@jgengine/core/world/roads`) — `buildJunctionSurface` grouped approach corners globally by angle, which interleaved unequal-width approaches and produced shard/sliver fans; corners now stay grouped per approach with wrap-safe ordering and outward curb-return arcs, and the fan runs over an angle-monotonic simple boundary.
 - **Street corner arcs sample at ≤~9° per vertex** (`@jgengine/core/world/streetGenerator`) — corner fillets previously stepped up to `maxTurnAngle` (~28°) per vertex and read as hard polygons at road width; both net and circuit corners now sample finely, and sidewalk offsets became true parallel offsets (outside arcs, inside miter-clamp + weld) that never pinch into the road surface.
