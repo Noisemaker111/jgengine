@@ -401,6 +401,7 @@
     "./ui/panelModel",
     "./ui/photoMode",
     "./ui/radialMenu",
+    "./ui/screenMarkers",
     "./ui/selectionModel",
     "./ui/swingTimer",
     "./ui/tooltipModel",
@@ -590,7 +591,8 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice"
+    "./voice",
+    "./waypointMarkers"
   ],
   "@jgengine/convex": [
     ".",
@@ -774,6 +776,7 @@
     "./touch/TouchControlsOverlay",
     "./useShellMultiplayerSync",
     "./vfx/ParticleField",
+    "./vfx/WorldFloatingText",
     "./visibility/CullingProvider",
     "./vision/FrustumSensorHud",
     "./vision/HiddenStateProbeHud",

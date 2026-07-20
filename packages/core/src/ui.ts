@@ -169,6 +169,17 @@ export {
   type RadialVectorOptions,
 } from "./ui/radialMenu";
 export {
+  createWaypointTracker,
+  layoutScreenMarker,
+  type ScreenMarkerLayout,
+  type ScreenMarkerOptions,
+  type ScreenMarkerViewport,
+  type ScreenProjection,
+  type Waypoint,
+  type WaypointSnapshot,
+  type WaypointTracker,
+} from "./ui/screenMarkers";
+export {
   moveSelectionFocus,
   selectionWindow,
   summarizeSelection,
