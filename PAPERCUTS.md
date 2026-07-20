@@ -187,3 +187,7 @@ bun run agent:bootstrap on a fresh worktree failed: shell build could not find @
 2026-07-19T22:40:53.111Z — claude-opus-4-8 — Claude
 
 bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/editorKinds.ts + .test.ts as game-specific files that must live under src/game/) — unrelated to my change but the && chain short-circuits before check-types-all runs, masking the real verdict
+
+2026-07-20T01:33:39.073Z — fable — Claude
+
+overhauling generateCity onto the cityBlocks fabric → extractBlocks silently collapses on generateStreets output (wandered/arc-filleted centerlines defeat proximity welding: 38 streets → 2 faces, no warning), so the fabric looked adoptable but wasn't; had to add graph-exact extractGraphBlocks — extractBlocks should warn or assert when face count is implausibly low vs street count
