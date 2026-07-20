@@ -446,7 +446,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
 
-## talent-tree — drop-in skill/talent-tree widget over the talents model — branch/tier node layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
+## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 
 - `TalentTree` (function) · `import { TalentTree } from "@jgengine/react"`
 

@@ -407,6 +407,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `talentTreeView` (function) · `import { talentTreeView } from "@jgengine/core/gameplay"`
 
+## talent-tree-view-from — build a placed talent/upgrade-tree render view from any per-node unlock rule (points, currency, level, flag) — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
+
+- `talentTreeViewFrom` (function) · `import { talentTreeViewFrom } from "@jgengine/core/gameplay"`
+
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 
 - `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
