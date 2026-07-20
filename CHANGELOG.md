@@ -55,6 +55,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Result/option types of public barrel functions are now re-exported (#1319).** The
+  `@jgengine/core/gameplay` barrel re-exports `ChargeResult`, `ChargeOptions`, and `Overdraft`
+  alongside `charge`/`chargeAll`/`canAfford`, and `@jgengine/core/combat` re-exports
+  `DefenseResolution` (from `resolveDefense`) and `ResolvedShot` (from `resolveShot`). Consumers can
+  now name these return/parameter types directly instead of resorting to `ReturnType<>`/`Parameters<>`
+  gymnastics. Purely additive — no runtime or signature change.
 - **Conflict-aware key-rebinding session.** `@jgengine/core/input/rebindSession` adds
   `createRebindSession({ actions | input, overrides?, now? })` — an observable key-remap
   editor over the existing action-binding model: it tracks the effective binding per action
