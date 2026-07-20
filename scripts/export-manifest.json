@@ -131,6 +131,7 @@
     "./game/defineSystem",
     "./game/dialogue",
     "./game/dialogueGraph",
+    "./game/eventTicker",
     "./game/events",
     "./game/feed",
     "./game/gamePhase",
@@ -567,9 +568,9 @@
     "./iconsPreview",
     "./identity",
     "./index",
-    "./interactionPrompt",
     "./inventoryGrid",
     "./keyHint",
+    "./killFeed",
     "./liveBind",
     "./map",
     "./modals",
@@ -598,7 +599,8 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice"
+    "./voice",
+    "./waypointMarkers"
   ],
   "@jgengine/convex": [
     ".",

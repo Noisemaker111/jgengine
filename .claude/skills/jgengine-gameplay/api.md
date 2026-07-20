@@ -426,6 +426,16 @@
 - `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
 - `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
 
+## @jgengine/core/game/eventTicker
+
+- `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
+- `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
+- `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
+- `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
+- `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
+- `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
+- `createEventTicker` (function): function createEventTicker(config: EventTickerOptions = {}): EventTicker — A thin, serializable, observable event/kill-feed ticker over the flat {@link appendFeed} / {@link pruneFeed} feed helpers: a single rolling, count-capped, time-fading list of free-string entries. A game calls `push({ kind, text, icon? })` and the ticker stamps and caps it; `recent()` prunes expired entries and returns the live list newest-first, each with a `fade` `0..1` (age / `ttlMs`) for the renderer to drop opacity as entries age out. Nothing here is genre-specific: `kind`, `text`, and `icon` are free strings the game owns and styles, and the model never interprets them. `snapshot`/`restore` round-trips the buffer through a save, re-anchoring ages so fades resume correctly.
+
 ## @jgengine/core/game/events
 
 - `AudioLoopSetEvent` (interface): interface AudioLoopSetEvent — Live-update the retained loop `id`: `rate` re-pitches it (1 = authored, the shell clamps to 0.25–4), `gain` rescales its volume (0–1), and `at` repositions its emitter. Emitted every tick to track a live signal (RPM, tire slip); the shell smooths rate/gain and ignores an unknown `id` (#1051).
@@ -1052,6 +1062,12 @@
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
+- `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
+- `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
+- `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
+- `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
+- `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
+- `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
@@ -1357,6 +1373,7 @@
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
 - `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
+- `createEventTicker` (function): function createEventTicker(config: EventTickerOptions = {}): EventTicker — A thin, serializable, observable event/kill-feed ticker over the flat {@link appendFeed} / {@link pruneFeed} feed helpers: a single rolling, count-capped, time-fading list of free-string entries. A game calls `push({ kind, text, icon? })` and the ticker stamps and caps it; `recent()` prunes expired entries and returns the live list newest-first, each with a `fade` `0..1` (age / `ttlMs`) for the renderer to drop opacity as entries age out. Nothing here is genre-specific: `kind`, `text`, and `icon` are free strings the game owns and styles, and the model never interprets them. `snapshot`/`restore` round-trips the buffer through a save, re-anchoring ages so fades resume correctly.
 - `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
