@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { generateCity, type GeneratedCity } from "@jgengine/core/world/cityGenerator";
+import { generateCity, type CityPlotTier, type GeneratedCity } from "@jgengine/core/world/cityGenerator";
+import { trimPathAtJunctions } from "@jgengine/core/world/roads";
 import { generateStreets, type StreetNetwork, type StreetNetworkRules } from "@jgengine/core/world/streetGenerator";
 import { Page, PageHero } from "../components/Layout";
 import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
@@ -85,6 +86,17 @@ const LEVEL_COLOR: Record<string, string> = {
   street: "#94a3b8",
   lane: "#475569",
 };
+
+/** Plot fill by size tier — grand plots (the landmark-scale parcels) pop in blue. */
+const TIER_COLOR: Record<CityPlotTier, string> = {
+  small: "#6ee7b7",
+  medium: "#34d399",
+  large: "#0d9488",
+  grand: "#60a5fa",
+};
+
+/** Draw order: narrow levels first so wider roads overplot them and junctions read clean. */
+const LEVEL_DRAW_ORDER: Record<string, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
 
 function randomSeed(): string {
   const words = ["neon", "vice", "harbor", "palm", "dust", "loop", "ridge", "delta", "night", "coast"];
@@ -214,9 +226,30 @@ function circuitCorners(points: readonly Pt[], maxRadius = 130, mergeGap = 2): M
 }
 
 function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: GeneratedCity | null; size: number }) {
-  const view = size * 2 + 40;
-  const toX = (x: number) => x + view / 2;
-  const toZ = (z: number) => z + view / 2;
+  // Fit the view to what actually grew: organic outlines make each seed's silhouette (and center
+  // of mass) unique, so a fixed square viewBox would waste half the panel or clip the city.
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const street of network.streets) {
+    for (const [x, z] of street.points) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z);
+      maxZ = Math.max(maxZ, z);
+    }
+  }
+  if (!Number.isFinite(minX)) {
+    minX = -size;
+    maxX = size;
+    minZ = -size;
+    maxZ = size;
+  }
+  const pad = 30;
+  const view = Math.max(maxX - minX, maxZ - minZ) + pad * 2;
+  const toX = (x: number) => x - (minX + maxX) / 2 + view / 2;
+  const toZ = (z: number) => z - (minZ + maxZ) / 2 + view / 2;
 
   const loop = network.mode === "circuit" ? network.streets.find((s) => s.loop) ?? network.streets[0] : undefined;
   const loopPts = loop?.points ?? [];
@@ -284,44 +317,60 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
     startLabel = { x: toX(s0[0] + nx * (half + 10)), y: toZ(s0[1] + nz * (half + 10)) };
   }
 
+  // Streets sorted narrow→wide so wider roads overplot narrower ones and every junction reads as
+  // one clean surface; center dashes are trimmed out of junction aprons instead of sailing through.
+  const drawOrder = network.streets
+    .map((_, i) => i)
+    .sort((a, b) => (LEVEL_DRAW_ORDER[network.streets[a]!.level] ?? 1) - (LEVEL_DRAW_ORDER[network.streets[b]!.level] ?? 1));
+  const junctionInputs = network.junctions.map((j) => ({ x: j.x, z: j.z, arms: j.arms }));
+
   return (
     <svg viewBox={`0 0 ${view} ${view}`} className="h-full w-full">
-      {network.streets.map((street, i) => (
-        <polyline
-          key={`s${i}`}
-          points={street.points.map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
-          fill="none"
-          stroke={LEVEL_COLOR[street.level] ?? "#94a3b8"}
-          strokeWidth={street.width}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity={0.9}
+      {city?.parks.map((park, i) => (
+        <polygon
+          key={`p${i}`}
+          points={park.map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
+          fill="#14532d"
+          opacity={0.45}
         />
       ))}
-      {network.streets.map((street, i) =>
-        street.width >= 8 ? (
+      {drawOrder.map((i) => {
+        const street = network.streets[i]!;
+        return (
           <polyline
-            key={`m${i}`}
+            key={`s${i}`}
             points={street.points.map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
             fill="none"
-            stroke="#facc15"
-            strokeWidth={0.7}
-            strokeDasharray="6 5"
-            opacity={0.8}
+            stroke={LEVEL_COLOR[street.level] ?? "#94a3b8"}
+            strokeWidth={street.width}
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-        ) : null,
+        );
+      })}
+      {network.streets.flatMap((street, i) =>
+        street.width >= 8
+          ? trimPathAtJunctions(street.points, street.width, junctionInputs).map((sub, k) => (
+              <polyline
+                key={`m${i}:${k}`}
+                points={sub.path.map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
+                fill="none"
+                stroke="#facc15"
+                strokeWidth={0.7}
+                strokeDasharray="6 5"
+                opacity={0.8}
+              />
+            ))
+          : [],
       )}
-      {city?.lots.map((lot, i) => (
-        <rect
+      {city?.plots.map((plot, i) => (
+        <polygon
           key={`l${i}`}
-          x={toX(lot.center[0]) - lot.footprint.w / 2}
-          y={toZ(lot.center[1]) - lot.footprint.d / 2}
-          width={lot.footprint.w}
-          height={lot.footprint.d}
-          transform={`rotate(${(-lot.rotationY * 180) / Math.PI} ${toX(lot.center[0])} ${toZ(lot.center[1])})`}
-          fill="#34d399"
-          opacity={0.55}
-          rx={1}
+          points={plot.polygon.map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
+          fill={TIER_COLOR[plot.tier]}
+          opacity={plot.tier === "grand" ? 0.8 : 0.55}
+          stroke="#0b1017"
+          strokeWidth={0.5}
         />
       ))}
       {/* Numbered corners with fitted radii, labels pushed outward from the loop centroid. */}
@@ -443,7 +492,7 @@ function Playground() {
     if (!worldReady) return;
     const world = worldRef.current;
     if (world === null) return;
-    const city = result.city ?? { network: result.network, lots: [] };
+    const city = result.city ?? { network: result.network, lots: [], plots: [], parks: [] };
     world.setCity(city, {
       seed: dials.seed,
       heightScale: mode === "circuit" ? 0.5 : 1,
@@ -522,7 +571,7 @@ function Playground() {
               <Slider label="Lot frontage" value={dials.lotW} min={8} max={24} step={1} onChange={(v) => set({ lotW: v })} />
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
-              <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
+              <Slider label="Grand plots" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
               <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
           ) : (

@@ -129,10 +129,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
+- `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
-## city-generator — resolve bare city lots into zoned, classed, massed buildings
+## city-generator — subdivide street blocks into size-tiered street-fronting plots
 
+- `deriveCityPlots` (function) · `import { deriveCityPlots } from "@jgengine/core/world"`
 - `resolveCityLotContent` (function) · `import { resolveCityLotContent } from "@jgengine/core/world"`
 
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent

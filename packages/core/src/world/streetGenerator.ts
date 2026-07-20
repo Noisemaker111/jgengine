@@ -236,6 +236,13 @@ export interface StreetNetworkRules {
   elevation?: number;
   /** Maximum road slope (rise/run) the grade cap enforces on every street's height sequence. Default 0.07. */
   maxGrade?: number;
+  /** District OUTLINE irregularity, 0..1. 0 (default) keeps the full rectangular footprint —
+   *  byte-identical to a pre-outline network. Rising values clip the lattice to a seeded organic
+   *  boundary blob (low-frequency radial harmonics inside the `hx`/`hz` rect), so every seed grows a
+   *  differently-shaped city — lobes, bays, shaved corners — instead of the same filled square. The
+   *  surviving network is reduced to its largest connected component, so streets always connect.
+   *  Only meaningful for the street net; ignored in circuit mode. */
+  outline?: number;
   /** SPACE-FILLING circuit layout dial, 0..1. 0 (default) = the hull construction (a flowing loop around
    *  an empty middle), BYTE-IDENTICAL to a pre-compactness network. Rising values switch the circuit
    *  LAYOUT stage to a grid spanning-tree CYCLE that folds back through its own interior: parallel
@@ -527,6 +534,35 @@ function seedLattice(rules: StreetNetworkRules, hx: number, hz: number, rng: () 
   return { nodes, cols, rows, index: (i, j) => j * stride + i };
 }
 
+/**
+ * Seeded organic district boundary: a radial blob from 3 low-frequency harmonics over the
+ * normalized (u = x/hx, v = z/hz) footprint. Returns an inside-test. At `outline` 0 the caller
+ * skips the mask entirely, so the legacy full-rectangle footprint stays byte-identical.
+ */
+function makeOutlineMask(
+  outline: number,
+  rng: () => number,
+): (x: number, z: number, hx: number, hz: number) => boolean {
+  // Harmonic amplitudes/phases: k=2 gives lobes/ovals, k=3 tri-lobes, k=5 coastline nibble.
+  const amps = [0.28 + rng() * 0.3, 0.16 + rng() * 0.22, 0.06 + rng() * 0.12];
+  const phases = [rng() * TAU, rng() * TAU, rng() * TAU];
+  const ks = [2, 3, 5];
+  const strength = Math.max(0, Math.min(1, outline));
+  return (x, z, hx, hz) => {
+    const u = x / Math.max(1e-6, hx);
+    const v = z / Math.max(1e-6, hz);
+    const r = Math.hypot(u, v);
+    const theta = Math.atan2(v, u);
+    let h = 0;
+    for (let i = 0; i < ks.length; i += 1) h += amps[i]! * Math.sin(ks[i]! * theta + phases[i]!);
+    // Boundary radius in normalized space: shrinks with the dial, waves with the harmonics. The
+    // 1.16 base keeps mid-edge reach near the rim at low dials while corners (r≈1.41) get shaved —
+    // the mask nibbles lobes and bays out of the silhouette rather than gutting the net.
+    const boundary = 1.16 - strength * 0.24 + strength * 0.38 * h;
+    return r <= Math.max(0.4, boundary);
+  };
+}
+
 interface Uf {
   find: (a: number) => number;
   union: (a: number, b: number) => boolean;
@@ -586,19 +622,34 @@ function buildNet(
   const lattice = seedLattice(rules, hx, hz, streams("lattice"));
   const nodes = lattice.nodes;
   const { cols, rows, index } = lattice;
-  // Candidate lattice edges: right + down neighbors.
+  // Organic district outline: nodes outside the seeded boundary blob die before any edge exists,
+  // so the net grows into a seed-unique silhouette instead of always filling the rectangle.
+  const outline = rules.outline ?? 0;
+  const inMask =
+    outline > 0 ? makeOutlineMask(outline, streams("outline")) : null;
+  const dead = new Array<boolean>(nodes.length).fill(false);
+  if (inMask !== null) {
+    for (let n = 0; n < nodes.length; n += 1) {
+      if (!inMask(nodes[n]![0], nodes[n]![1], hx, hz)) dead[n] = true;
+    }
+    // Never let the mask eat the whole lattice (extreme dial + tiny grid): keep at least a 3×3 core.
+    let alive = 0;
+    for (let n = 0; n < nodes.length; n += 1) if (!dead[n]) alive += 1;
+    if (alive < 9) dead.fill(false);
+  }
+  // Candidate lattice edges: right + down neighbors (between surviving nodes only).
   const candidates: RawEdge[] = [];
   for (let j = 0; j <= rows; j += 1) {
     for (let i = 0; i <= cols; i += 1) {
       const here = index(i, j);
-      if (here >= nodes.length) continue;
+      if (here >= nodes.length || dead[here]) continue;
       if (i < cols) {
         const r = index(i + 1, j);
-        if (r < nodes.length) candidates.push({ a: here, b: r, lane: false });
+        if (r < nodes.length && !dead[r]) candidates.push({ a: here, b: r, lane: false });
       }
       if (j < rows) {
         const d = index(i, j + 1);
-        if (d < nodes.length) candidates.push({ a: here, b: d, lane: false });
+        if (d < nodes.length && !dead[d]) candidates.push({ a: here, b: d, lane: false });
       }
     }
   }
@@ -639,7 +690,7 @@ function buildNet(
     let best = -1;
     let bestD = Infinity;
     for (let m = 0; m < nodes.length; m += 1) {
-      if (m === n || adj.get(n)?.has(m)) continue;
+      if (m === n || dead[m] || adj.get(n)?.has(m)) continue;
       const d = Math.hypot(nodes[n]![0] - nodes[m]![0], nodes[n]![1] - nodes[m]![1]);
       if (d < bestD && d < rules.segmentLength * 1.8) {
         bestD = d;
@@ -657,12 +708,14 @@ function buildNet(
   const branchRng = streams("branches");
   for (let b = 0; b < laneCount && nodes.length < MAX_NODES; b += 1) {
     const host = Math.floor(branchRng() * nodes.length);
+    if (dead[host] === true) continue;
     const hp = nodes[host]!;
     const angle = branchRng() * TAU;
     const len = rules.segmentLength * (0.6 + branchRng() * 0.7);
     const nx = hp[0] + Math.cos(angle) * len;
     const nz = hp[1] + Math.sin(angle) * len;
     if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) continue;
+    if (inMask !== null && !inMask(nx, nz, hx, hz)) continue;
     // Reject spurs that would spawn on top of an existing node.
     let clash = false;
     for (let m = 0; m < nodes.length; m += 1) {
@@ -676,7 +729,28 @@ function buildNet(
     nodes.push([nx, nz]);
     edges.push({ a: host, b: id, lane: true });
   }
-  return { nodes, edges: edges.slice(0, MAX_EDGES) };
+  let finalEdges = edges.slice(0, MAX_EDGES);
+  if (inMask !== null && finalEdges.length > 0) {
+    // The blob can pinch the lattice into separate islands; keep only the largest component so the
+    // network stays one connected city.
+    const comp = makeUf(nodes.length);
+    for (const e of finalEdges) comp.union(e.a, e.b);
+    const sizes = new Map<number, number>();
+    for (const e of finalEdges) {
+      const root = comp.find(e.a);
+      sizes.set(root, (sizes.get(root) ?? 0) + 1);
+    }
+    let bestRoot = -1;
+    let bestSize = -1;
+    for (const [root, size] of sizes) {
+      if (size > bestSize) {
+        bestSize = size;
+        bestRoot = root;
+      }
+    }
+    finalEdges = finalEdges.filter((e) => comp.find(e.a) === bestRoot);
+  }
+  return { nodes, edges: finalEdges };
 }
 
 /** Convex hull (Andrew's monotone chain), returns hull points CCW. */

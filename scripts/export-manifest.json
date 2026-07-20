@@ -774,6 +774,7 @@
     "./touch/TouchControlsOverlay",
     "./useShellMultiplayerSync",
     "./vfx/ParticleField",
+    "./vfx/WorldFloatingText",
     "./visibility/CullingProvider",
     "./vision/FrustumSensorHud",
     "./vision/HiddenStateProbeHud",

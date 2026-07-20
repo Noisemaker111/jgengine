@@ -657,7 +657,7 @@ export function buildCityModel(
   const levelColors = Object.fromEntries(
     Object.entries(palette.streets).map(([level, hex]) => [level, new THREE.Color(hex)]),
   ) as Record<StreetLevel, THREE.Color>;
-  const junctionColor = new THREE.Color(palette.junction ?? palette.streets.boulevard).multiplyScalar(0.82);
+  const junctionColor = new THREE.Color(palette.junction ?? palette.streets.boulevard);
   const sidewalkColor = new THREE.Color(palette.sidewalk ?? palette.streets.street).lerp(new THREE.Color(0xffffff), 0.22);
 
   let radius = 40;
@@ -684,9 +684,19 @@ export function buildCityModel(
     return "street";
   };
 
+  // Three coplanar street layers, separated by polygonOffset instead of shared-buffer luck:
+  // sidewalks at the base depth, road ribbons pulled toward the camera, junction patches further
+  // still. Any residual overlap (curved corners, bands crossing a ribbon, weld epsilon) resolves to
+  // a deterministic layer instead of z-fighting.
+  const sidewalkPos: number[] = [];
+  const sidewalkCol: number[] = [];
+  const sidewalkIdx: number[] = [];
   const streetPos: number[] = [];
   const streetCol: number[] = [];
   const streetIdx: number[] = [];
+  const junctionPos: number[] = [];
+  const junctionCol: number[] = [];
+  const junctionIdx: number[] = [];
   // Widest levels first so the sweep reveals arterials before local streets.
   const order = trimmed.ribbons
     .map((_, i) => i)
@@ -694,27 +704,50 @@ export function buildCityModel(
   for (const i of order) {
     appendRibbon(streetPos, streetCol, streetIdx, trimmed.ribbons[i]!, levelColors[ribbonLevel(trimmed.trimmed[i]!.path)]);
   }
-  // Sidewalk bands flanking the arterials, at the road layer, a touch lighter — clipped out of every
-  // junction apron so they end at the crossing instead of sailing through it.
+  // Sidewalk bands flanking the arterials, a touch lighter — clipped out of every junction apron so
+  // they end at the crossing instead of sailing through it.
   for (const s of streets) {
     if (s.level === "lane" || s.sidewalks === undefined) continue;
     for (const band of [s.sidewalks.left, s.sidewalks.right]) {
       for (const sub of trimBandAtJunctions(band, 2.2, city.network.junctions)) {
-        pushRibbon(streetPos, streetCol, streetIdx, sub, 2.2, ROAD_Y, sidewalkColor, sampleHeight);
+        pushRibbon(sidewalkPos, sidewalkCol, sidewalkIdx, sub, 2.2, ROAD_Y, sidewalkColor, sampleHeight);
       }
     }
   }
-  // Welded junction surfaces last (they read as one clean crossing patch).
-  const streetSweepCount = streetIdx.length;
-  for (const surface of trimmed.junctions) appendRibbon(streetPos, streetCol, streetIdx, surface, junctionColor);
+  // Welded junction surfaces, colored like the crossing's widest street so the patch reads as road
+  // surface, not a foreign blob. A caller-supplied palette.junction still overrides.
+  const scratchJunction = new THREE.Color();
+  trimmed.junctions.forEach((surface, i) => {
+    const level = city.network.junctions[trimmed.junctionIndices[i]!]?.level ?? "street";
+    scratchJunction.copy(palette.junction !== undefined ? junctionColor : levelColors[level]);
+    appendRibbon(junctionPos, junctionCol, junctionIdx, surface, scratchJunction);
+  });
 
-  const streetGeo = new THREE.BufferGeometry();
-  streetGeo.setAttribute("position", new THREE.Float32BufferAttribute(streetPos, 3));
-  streetGeo.setAttribute("color", new THREE.Float32BufferAttribute(streetCol, 3));
-  streetGeo.setIndex(streetIdx);
-  const streetMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const streetMesh = new THREE.Mesh(streetGeo, streetMat);
-  group.add(streetMesh);
+  const makeRoadLayer = (
+    pos: number[],
+    col: number[],
+    idx: number[],
+    offset: number,
+  ): { geo: THREE.BufferGeometry; mat: THREE.MeshBasicMaterial; mesh: THREE.Mesh } => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    geo.setIndex(idx);
+    const mat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      side: THREE.DoubleSide,
+      ...(offset !== 0 ? { polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset } : {}),
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    group.add(mesh);
+    return { geo, mat, mesh };
+  };
+  const sidewalkLayer = makeRoadLayer(sidewalkPos, sidewalkCol, sidewalkIdx, 0);
+  const streetLayer = makeRoadLayer(streetPos, streetCol, streetIdx, -1);
+  const junctionLayer = makeRoadLayer(junctionPos, junctionCol, junctionIdx, -2);
+  const streetGeo = streetLayer.geo;
+  const sidewalkGeo = sidewalkLayer.geo;
+  const junctionMesh = junctionLayer.mesh;
 
   // --- boulevard/avenue centerline glow, additive, above markings with polygonOffset ---
   const glowPos: number[] = [];
@@ -1022,18 +1055,18 @@ export function buildCityModel(
     group.add(light);
   });
 
-  const totalIndices = streetSweepCount;
-  const junctionStart = streetSweepCount;
-  const junctionCount = streetIdx.length - streetSweepCount;
+  const totalIndices = streetIdx.length;
+  const sidewalkIndices = sidewalkIdx.length;
   const scratch = new THREE.Vector3();
   let settledAt = Number.POSITIVE_INFINITY;
 
   const update = (dt: number, elapsed: number) => {
     const sweep = options.instant === true ? 1 : Math.min(1, elapsed / BUILD_SWEEP_SECONDS);
     const eased = 1 - (1 - sweep) * (1 - sweep);
-    const revealed = Math.ceil((totalIndices / 6) * eased) * 6;
-    // Reveal the swept ribbons, then the welded junction patches once the sweep completes.
-    streetGeo.setDrawRange(0, sweep >= 1 ? totalIndices + junctionCount : Math.min(revealed, junctionStart));
+    // Reveal the swept ribbons + sidewalks, then the welded junction patches once the sweep completes.
+    streetGeo.setDrawRange(0, Math.min(Math.ceil((totalIndices / 6) * eased) * 6, totalIndices));
+    sidewalkGeo.setDrawRange(0, Math.min(Math.ceil((sidewalkIndices / 6) * eased) * 6, sidewalkIndices));
+    junctionMesh.visible = sweep >= 1;
     if (options.instant !== true) growUniform.value = elapsed - BUILD_SWEEP_SECONDS * 0.55;
     const fadeIn = options.instant === true ? 1 : Math.max(0, Math.min(1, (elapsed - 0.9) / 1.2));
     glowMat.opacity = fadeIn * (0.42 + Math.sin(elapsed * 1.7) * 0.1);
@@ -1064,6 +1097,10 @@ export function buildCityModel(
     dispose() {
       group.parent?.remove(group);
       streetGeo.dispose();
+      sidewalkLayer.geo.dispose();
+      sidewalkLayer.mat.dispose();
+      junctionLayer.geo.dispose();
+      junctionLayer.mat.dispose();
       glowGeo.dispose();
       buildingMesh.geometry.dispose();
       shapeMesh.geometry.dispose();
@@ -1073,7 +1110,7 @@ export function buildCityModel(
         (dressingMesh.material as THREE.Material).dispose();
       }
       windows.dispose();
-      streetMat.dispose();
+      streetLayer.mat.dispose();
       glowMat.dispose();
       buildingMat.dispose();
       shapeMat.dispose();
