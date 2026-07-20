@@ -120,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/gameplay"`
 
+## event-ticker — rolling capped, timed-fade event/kill-feed ticker of free-string entries over the feed helpers — push/recent-with-fade, snapshot/restore
+
+- `createEventTicker` (function) · `import { createEventTicker } from "@jgengine/core/gameplay"`
+
 ## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
 
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
@@ -374,6 +378,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## run-modifiers — a roguelike run built from stacking drafted modifier picks
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
+
+## save-slots — serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore
+
+- `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`
 
 ## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
 
