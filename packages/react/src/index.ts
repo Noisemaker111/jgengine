@@ -59,3 +59,4 @@ export * from "./display";
 export * from "./map";
 export * from "./preview";
 export * from "./previewFixtures";
+export * from "./cameraShake";

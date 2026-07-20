@@ -126,6 +126,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`
 
+## camera-shake — seeded serializable trauma-based camera shake/impulse controller (hit/explosion/landing juice) with pooled per-frame translation+rotation offset and snapshot/restore
+
+- `createCameraShake` (function) · `import { createCameraShake } from "@jgengine/core/world"`
+
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`

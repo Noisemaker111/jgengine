@@ -187,3 +187,7 @@ bun run agent:bootstrap on a fresh worktree failed: shell build could not find @
 2026-07-19T22:40:53.111Z — claude-opus-4-8 — Claude
 
 bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/editorKinds.ts + .test.ts as game-specific files that must live under src/game/) — unrelated to my change but the && chain short-circuits before check-types-all runs, masking the real verdict
+
+2026-07-20T01:10:10.411Z — claude-opus-4-8 — Claude
+
+Running bun run check-types on a clean camera-shake feature branch -> check-game-shape fails on pre-existing Games/vice-isle/src/editorKinds.ts + .test.ts (must live under src/game/), which also exists on origin/main and is unrelated to my diff; it blocks the content-gate/recipes/types stages from running.

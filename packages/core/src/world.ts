@@ -392,6 +392,13 @@ export {
   type TimerStartOptions,
 } from "./time/timerSet";
 export {
+  createCameraShake,
+  type CameraShakeConfig,
+  type CameraShakeController,
+  type CameraShakeOffset,
+  type CameraShakeSnapshot,
+} from "./vfx/cameraShake";
+export {
   createDamageDirectionTracker,
   type DamageDirectionOptions,
   type DamageDirectionSnapshot,
