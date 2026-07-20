@@ -33,10 +33,6 @@ Renaming a core export with a whole-word sed also rewrote import path specifiers
 
 recovering issue-1148 custom-UI branch after stash/branch switch mid-session → work was stashed onto main and branch deleted; had to restash-pop and re-apply later edits
 
-2026-07-18T20:24:06.560Z — gpt-5.6-sol — NoisemakerJon
-
-locating API adoption routing for the minimap slice -> the expected scripts/api-adoption.json path does not exist, so generator ownership was not discoverable by filename
-
 2026-07-18T20:41:24.709Z — gpt-5.6-sol — NoisemakerJon
 
 verifying the standalone portable-minimap dev server with the required agent-browser skill -> the agent-browser CLI is not installed or on PATH, so verification had to fall back to the repository's Chrome/CDP shoot --url path
@@ -113,14 +109,6 @@ releasing 0.14.0 → bun test scripts fails on a clean main checkout: packages/c
 
 Fan-out research with background subagents → each agent's final report arrives truncated to ~2000 chars in the task-notification and asking the agent to Write its full report to the scratchpad silently fails (file never appears on disk, agent claims success); had to re-poke each agent to paste the full report inline as reply text, which does deliver in full.
 
-2026-07-19T06:14:30.443Z — claude-fable-5 — Claude
-
-Running bun run gate on a fresh branch off main → check-content-gate fails on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building) that main's own migration removed without reseeding — main's gate is red for unrelated work until someone runs check-content-gate --update
-
-2026-07-19T06:22:33.518Z — claude-fable-5 — Claude
-
-running bun run gate on a fresh branch off main → check-content-gate red on a stale content-builder-baseline.json entry (Games/vice-isle/src/world.ts:building already migrated); had to reseed the baseline inside an unrelated PR to get a green gate
-
 2026-07-19T07:09:44.388Z — claude-fable-5 — Claude
 
 gen:export-manifest reads built dist, so generating before a full package build silently omits new subpaths (bit #1300's useDisposable and nearly my ai/driver) — manifest check only fails later on a fully-built tree; generator should build or warn on stale dist
@@ -136,10 +124,6 @@ Fixing production 404 for quaternius-modular-scifi models → content gate accep
 2026-07-19T17:09:58.949Z — claude-fable-5 — Claude
 
 bun run gate → packages/assets src/cli/pull.test.ts failed once in the full test:all run (offline pull found empty /tmp dir) but passes in isolation; flaky network/tmpdir-dependent test forced a full gate re-run
-
-2026-07-19T18:22:26.329Z — claude-opus — Claude
-
-capturing before/after terrain shots → 'bun run drive --shot' rejects an absolute path with a hard error (takes a bare name, output forced to shots/<game>-<name>.png), while 'bun run shoot --out' accepts a full path — the two capture entrypoints disagree on how you name the output file
 
 2026-07-19T21:06:59.865Z — claude-fable-5 — Claude
 
