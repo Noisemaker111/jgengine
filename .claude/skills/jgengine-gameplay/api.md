@@ -232,6 +232,19 @@
 - `WalletBook` (interface): interface WalletBook — ⚠ undocumented
 - `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
 
+## @jgengine/core/economy/shopStock
+
+- `ShopBuyRejection` (type): type ShopBuyRejection = "unknown-item" | "out-of-stock" | "insufficient-funds" — Why a {@link ShopStock.buy} was refused.
+- `ShopBuyResult` (type): type ShopBuyResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopBuyRejection } — Result of {@link ShopStock.buy}: on success the caller receives the debited `wallet` to adopt and a snapshot of the purchased `entry` (post-decrement); on failure a `reason` and the wallet is untouched.
+- `ShopPrice` (interface): interface ShopPrice — A price tag: how much of a free-string `currency` an entry costs (buy) or returns (sell). `amount` is a non-negative finite number; `0` means free (no wallet charge/grant happens).
+- `ShopSellRejection` (type): type ShopSellRejection = "unknown-item" | "not-sellable" — Why a {@link ShopStock.sell} was refused.
+- `ShopSellResult` (type): type ShopSellResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopSellRejection } — Result of {@link ShopStock.sell}: on success the caller receives the credited `wallet` and a snapshot of the sold `entry` (post-restock); on failure a `reason` and the wallet is untouched.
+- `ShopStock` (interface): interface ShopStock — A live, observable vendor/shop stock operating over a caller-owned wallet.
+- `ShopStockConfig` (interface): interface ShopStockConfig — Config for {@link createShopStock}: the initial set of entries.
+- `ShopStockEntry` (interface): interface ShopStockEntry — One item a vendor stocks. Fully serializable; `kind` and `currency` are free strings the model never branches on.
+- `ShopStockSnapshot` (interface): interface ShopStockSnapshot — Serializable state of a shop's stock, for save/restore.
+- `createShopStock` (function): function createShopStock(config: ShopStockConfig = {}): ShopStock — A serializable, observable vendor/shop stock. Each entry carries a game-owned free-string `kind`, a `price` in a free-string `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice` buy-back. All currency math is delegated to the existing pure `wallet` model — `buy` charges and `sell` grants a **caller-owned** {@link WalletState} (the shop never holds the wallet, it returns the new wallet for the caller to adopt), so the same stock composes with any wallet the game owns. Nothing here is genre-specific: `kind` and `currency` are free labels the game styles and the model never branches on. `restock`/`setPrice`/`add`/`remove` mutate the catalog, `subscribe` observes every change, and `snapshot`/`restore` round-trips the whole stock through a save.
+
 ## @jgengine/core/economy/techTree
 
 - `TechCheck` (type): type TechCheck = { ok: true } | ({ ok: false } & TechRejection) — ⚠ undocumented
@@ -257,7 +270,7 @@
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `WalletState` (interface): interface WalletState — ⚠ undocumented
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
-- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — ⚠ undocumented
+- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
@@ -425,6 +438,16 @@
 - `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
 - `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
 - `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
+
+## @jgengine/core/game/eventTicker
+
+- `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
+- `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
+- `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
+- `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
+- `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
+- `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
+- `createEventTicker` (function): function createEventTicker(config: EventTickerOptions = {}): EventTicker — A thin, serializable, observable event/kill-feed ticker over the flat {@link appendFeed} / {@link pruneFeed} feed helpers: a single rolling, count-capped, time-fading list of free-string entries. A game calls `push({ kind, text, icon? })` and the ticker stamps and caps it; `recent()` prunes expired entries and returns the live list newest-first, each with a `fade` `0..1` (age / `ttlMs`) for the renderer to drop opacity as entries age out. Nothing here is genre-specific: `kind`, `text`, and `icon` are free strings the game owns and styles, and the model never interprets them. `snapshot`/`restore` round-trips the buffer through a save, re-anchoring ages so fades resume correctly.
 
 ## @jgengine/core/game/events
 
@@ -793,6 +816,15 @@
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
 
+## @jgengine/core/game/saveSlots
+
+- `SaveSlotMeta` (interface): interface SaveSlotMeta — One entry in a {@link SaveSlots} index: a save/profile slot's *display* metadata, not its payload. The real save data lives in a `createSaveStore` slot; this record is only what a save-select menu renders — an id, an optional player-facing `name`, whether the slot is `empty`, when it was last written (`savedAt`), and a free-string `meta` bag the game fills with whatever the menu should show (level, playtime, location, chapter, a thumbnail ref, …). `meta` keys are opaque to this model — it never reads or branches on them.
+- `SaveSlotWrite` (interface): interface SaveSlotWrite — What a {@link SaveSlots.write} stamps onto a slot — a name and/or a fresh `meta` bag.
+- `SaveSlots` (interface): interface SaveSlots — A serializable, observable index of save/profile slot *metadata* that a save-select menu renders. It complements `createSaveStore` (which owns the actual save payload and named slots) by carrying the per-slot display fields the store does not: name, empty flag, last-saved time, and a free-string `meta` bag the game fills. Nothing here is genre-specific.
+- `SaveSlotsConfig` (interface): interface SaveSlotsConfig — How a {@link createSaveSlots} index is wired.
+- `SaveSlotsSnapshot` (interface): interface SaveSlotsSnapshot — Serializable state of a {@link SaveSlots} index, for save/restore.
+- `createSaveSlots` (function): function createSaveSlots(config: SaveSlotsConfig = {}): SaveSlots — Create a {@link SaveSlots} index — the serializable, observable list of save/profile slot metadata a save-select menu renders. It is a thin companion to `createSaveStore`: the store owns the real save payload keyed by slot, this owns only the display fields (name, empty, last-saved, and a free-string `meta` bag) the menu shows. `write` stamps a slot saved on the injected clock, `clear` empties one, `rename` relabels one, `mostRecent()` returns the newest non-empty slot to power a "Continue" button, and `list()` feeds the New / Continue / Load / Delete grid. `meta` keys are free strings the game owns — the model never interprets them — and `snapshot`/`restore` round-trips the whole index through a save.
+
 ## @jgengine/core/game/saveStore
 
 - `SaveAutoConfig` (interface): interface SaveAutoConfig — Autosave cadence: debounce writes `debounceMs` after the last edit, but never wait longer than `maxWaitMs` while edits keep coming (`0` removes the ceiling). `autosave: true` uses `{ debounceMs: 1000, maxWaitMs: 15000 }`.
@@ -1052,6 +1084,12 @@
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
+- `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
+- `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
+- `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
+- `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
+- `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
+- `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
@@ -1222,6 +1260,11 @@
 - `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
 - `SaleRecord` (interface): interface SaleRecord — One completed sale recorded into a {@link PriceHistory}.
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
+- `SaveSlotMeta` (interface): interface SaveSlotMeta — One entry in a {@link SaveSlots} index: a save/profile slot's *display* metadata, not its payload. The real save data lives in a `createSaveStore` slot; this record is only what a save-select menu renders — an id, an optional player-facing `name`, whether the slot is `empty`, when it was last written (`savedAt`), and a free-string `meta` bag the game fills with whatever the menu should show (level, playtime, location, chapter, a thumbnail ref, …). `meta` keys are opaque to this model — it never reads or branches on them.
+- `SaveSlotWrite` (interface): interface SaveSlotWrite — What a {@link SaveSlots.write} stamps onto a slot — a name and/or a fresh `meta` bag.
+- `SaveSlots` (interface): interface SaveSlots — A serializable, observable index of save/profile slot *metadata* that a save-select menu renders. It complements `createSaveStore` (which owns the actual save payload and named slots) by carrying the per-slot display fields the store does not: name, empty flag, last-saved time, and a free-string `meta` bag the game fills. Nothing here is genre-specific.
+- `SaveSlotsConfig` (interface): interface SaveSlotsConfig — How a {@link createSaveSlots} index is wired.
+- `SaveSlotsSnapshot` (interface): interface SaveSlotsSnapshot — Serializable state of a {@link SaveSlots} index, for save/restore.
 - `SaveStatus` (type): type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error" — Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write.
 - `SaveStore` (interface): interface SaveStore<T> — A pluggable-backend game save with autosave, named slots, and versioned migration. `value()`/`patch()` hold the live state; `load()` hydrates it from the backend; `save()` (or autosave) writes it back. Backend failures surface as `"error"` status and through `onError` — a save never throws into a tick.
 - `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
@@ -1229,6 +1272,15 @@
 - `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
 - `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
+- `ShopBuyRejection` (type): type ShopBuyRejection = "unknown-item" | "out-of-stock" | "insufficient-funds" — Why a {@link ShopStock.buy} was refused.
+- `ShopBuyResult` (type): type ShopBuyResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopBuyRejection } — Result of {@link ShopStock.buy}: on success the caller receives the debited `wallet` to adopt and a snapshot of the purchased `entry` (post-decrement); on failure a `reason` and the wallet is untouched.
+- `ShopPrice` (interface): interface ShopPrice — A price tag: how much of a free-string `currency` an entry costs (buy) or returns (sell). `amount` is a non-negative finite number; `0` means free (no wallet charge/grant happens).
+- `ShopSellRejection` (type): type ShopSellRejection = "unknown-item" | "not-sellable" — Why a {@link ShopStock.sell} was refused.
+- `ShopSellResult` (type): type ShopSellResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopSellRejection } — Result of {@link ShopStock.sell}: on success the caller receives the credited `wallet` and a snapshot of the sold `entry` (post-restock); on failure a `reason` and the wallet is untouched.
+- `ShopStock` (interface): interface ShopStock — A live, observable vendor/shop stock operating over a caller-owned wallet.
+- `ShopStockConfig` (interface): interface ShopStockConfig — Config for {@link createShopStock}: the initial set of entries.
+- `ShopStockEntry` (interface): interface ShopStockEntry — One item a vendor stocks. Fully serializable; `kind` and `currency` are free strings the model never branches on.
+- `ShopStockSnapshot` (interface): interface ShopStockSnapshot — Serializable state of a shop's stock, for save/restore.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
@@ -1333,6 +1385,7 @@
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
 - `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
+- `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
 - `cancelJob` (function): function cancelJob<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, id: JobId): CancelResult<TSpec, TReserve> — Cancel a job and compute its refund. Removes the job from the queue and returns a refund payload (full reservation by default, or `config.refund` applied to the job's progress for partial/no refund). Applying the refund is the caller's job.
 - `cancelRule` (function): function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Remove a rule and its cursor entirely (hard cancellation).
@@ -1365,6 +1418,7 @@
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
 - `createDurabilityTracker` (function): function createDurabilityTracker(): DurabilityTracker — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
+- `createEventTicker` (function): function createEventTicker(config: EventTickerOptions = {}): EventTicker — A thin, serializable, observable event/kill-feed ticker over the flat {@link appendFeed} / {@link pruneFeed} feed helpers: a single rolling, count-capped, time-fading list of free-string entries. A game calls `push({ kind, text, icon? })` and the ticker stamps and caps it; `recent()` prunes expired entries and returns the live list newest-first, each with a `fade` `0..1` (age / `ttlMs`) for the renderer to drop opacity as entries age out. Nothing here is genre-specific: `kind`, `text`, and `icon` are free strings the game owns and styles, and the model never interprets them. `snapshot`/`restore` round-trips the buffer through a save, re-anchoring ages so fades resume correctly.
 - `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
@@ -1399,7 +1453,9 @@
 - `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
 - `createRuleRegistry` (function): function createRuleRegistry<TPayload = unknown>(initial?: readonly RuleDef<TPayload>[]): RuleRegistry<TPayload> — Create a {@link RuleRegistry}. Rules install through `register` (duplicate ids throw); selection and `layersFor` are data-driven, so the core never branches on which mutators exist.
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
+- `createSaveSlots` (function): function createSaveSlots(config: SaveSlotsConfig = {}): SaveSlots — Create a {@link SaveSlots} index — the serializable, observable list of save/profile slot metadata a save-select menu renders. It is a thin companion to `createSaveStore`: the store owns the real save payload keyed by slot, this owns only the display fields (name, empty, last-saved, and a free-string `meta` bag) the menu shows. `write` stamps a slot saved on the injected clock, `clear` empties one, `rename` relabels one, `mostRecent()` returns the newest non-empty slot to power a "Continue" button, and `list()` feeds the New / Continue / Load / Delete grid. `meta` keys are free strings the game owns — the model never interprets them — and `snapshot`/`restore` round-trips the whole index through a save.
 - `createSaveStore` (function): function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> — Create a {@link SaveStore}. Same call for offline and cloud — only the `backend` differs (localStorage, memory, or an async DB/Convex endpoint). Turn on `autosave` and every `set`/`patch` persists on a debounce; leave it off and call `save()` at checkpoints. Bump `version` + pass `migrate` when the save shape changes so old players keep their progress.
+- `createShopStock` (function): function createShopStock(config: ShopStockConfig = {}): ShopStock — A serializable, observable vendor/shop stock. Each entry carries a game-owned free-string `kind`, a `price` in a free-string `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice` buy-back. All currency math is delegated to the existing pure `wallet` model — `buy` charges and `sell` grants a **caller-owned** {@link WalletState} (the shop never holds the wallet, it returns the new wallet for the caller to adopt), so the same stock composes with any wallet the game owns. Nothing here is genre-specific: `kind` and `currency` are free labels the game styles and the model never branches on. `restock`/`setPrice`/`add`/`remove` mutate the catalog, `subscribe` observes every change, and `snapshot`/`restore` round-trips the whole stock through a save.
 - `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
 - `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.

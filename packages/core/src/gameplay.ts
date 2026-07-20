@@ -65,8 +65,20 @@ export {
   type ScheduledRule,
   type ThresholdBand,
 } from "./economy/resourceLedger";
+export {
+  createShopStock,
+  type ShopBuyRejection,
+  type ShopBuyResult,
+  type ShopPrice,
+  type ShopSellRejection,
+  type ShopSellResult,
+  type ShopStock,
+  type ShopStockConfig,
+  type ShopStockEntry,
+  type ShopStockSnapshot,
+} from "./economy/shopStock";
 export { type TechNodeDef } from "./economy/techTree";
-export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
+export { balance, canAfford, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
 export {
   createAchievementTracker,
   type AchievementDef,
@@ -117,6 +129,15 @@ export {
   type DialogueRun,
   type DialogueRunOptions,
 } from "./game/dialogueGraph";
+export {
+  createEventTicker,
+  type EventTicker,
+  type EventTickerEntry,
+  type EventTickerInput,
+  type EventTickerOptions,
+  type EventTickerSnapshot,
+  type EventTickerView,
+} from "./game/eventTicker";
 export {
   createGameEvents,
   type CombatTelegraphEvent,
@@ -281,6 +302,14 @@ export {
   type RuleSelectionConfig,
 } from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
+export {
+  createSaveSlots,
+  type SaveSlotMeta,
+  type SaveSlotWrite,
+  type SaveSlots,
+  type SaveSlotsConfig,
+  type SaveSlotsSnapshot,
+} from "./game/saveSlots";
 export {
   createSaveStore,
   localSaveBackend,
