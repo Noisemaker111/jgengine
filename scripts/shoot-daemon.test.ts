@@ -8,8 +8,11 @@ import { join } from "node:path";
 import {
   clearDaemonState,
   daemonStatePath,
+  ensureDaemonTarget,
   isDaemonArgv,
   readDaemonState,
+  reapStaleDaemonState,
+  stopDaemon,
   waitForDaemonLive,
   writeDaemonState,
   type ShootDaemonState,
@@ -37,6 +40,8 @@ describe("shoot daemon state file", () => {
         chromePort: 9223,
         devPort: 4517,
         devBase: "http://127.0.0.1:4517",
+        webPort: 5017,
+        webBase: "http://127.0.0.1:5017",
         chromePid: 1,
         startedAt: new Date().toISOString(),
       };
@@ -65,10 +70,124 @@ describe("shoot daemon state file", () => {
       rmSync(cwd, { recursive: true, force: true });
     }
   });
+
+  test("lazily records the website target without requiring a game server", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-lazy-web-"));
+    try {
+      const state: ShootDaemonState = {
+        identity: checkoutIdentity(cwd),
+        chromePort: 9223,
+        startedAt: new Date().toISOString(),
+      };
+      writeDaemonState(state, cwd);
+      const server = await ensureDaemonTarget(state, "web", cwd, async (receivedCwd) => {
+        expect(receivedCwd).toBe(cwd);
+        return { child: null, port: 5712, base: "http://127.0.0.1:5712" };
+      });
+      expect(server.base).toBe("http://127.0.0.1:5712");
+      expect(readDaemonState(cwd)).toMatchObject({
+        chromePort: 9223,
+        webPort: 5712,
+        webBase: "http://127.0.0.1:5712",
+      });
+      expect(readDaemonState(cwd)?.devBase).toBeUndefined();
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("merges concurrent lazy game and website target activation", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-lazy-both-"));
+    try {
+      const initial: ShootDaemonState = {
+        identity: checkoutIdentity(cwd),
+        chromePort: 9223,
+        startedAt: new Date().toISOString(),
+      };
+      writeDaemonState(initial, cwd);
+      await Promise.all([
+        ensureDaemonTarget({ ...initial }, "dev", cwd, async () => ({
+          child: null,
+          port: 4517,
+          base: "http://127.0.0.1:4517",
+        })),
+        ensureDaemonTarget({ ...initial }, "web", cwd, async () => ({
+          child: null,
+          port: 5712,
+          base: "http://127.0.0.1:5712",
+        })),
+      ]);
+      expect(readDaemonState(cwd)).toMatchObject({
+        devBase: "http://127.0.0.1:4517",
+        webBase: "http://127.0.0.1:5712",
+      });
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("shoot daemon readiness", () => {
-  test("waits until both recorded endpoints are reachable", async () => {
+  test("reaps an unreachable recorded daemon before the next start", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-stale-"));
+    try {
+      writeDaemonState({
+        identity: checkoutIdentity(cwd),
+        chromePort: 1,
+        devPort: 1,
+        devBase: "http://127.0.0.1:1",
+        webPort: 1,
+        webBase: "http://127.0.0.1:1",
+        startedAt: new Date().toISOString(),
+      }, cwd);
+      await expect(reapStaleDaemonState(cwd)).resolves.toBe(true);
+      expect(readDaemonState(cwd)).toBeNull();
+      await expect(reapStaleDaemonState(cwd)).resolves.toBe(false);
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("refuses to reap state owned by another checkout", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-foreign-"));
+    try {
+      writeDaemonState({
+        identity: "C:/another/checkout",
+        chromePort: 1,
+        devPort: 1,
+        devBase: "http://127.0.0.1:1",
+        webPort: 1,
+        webBase: "http://127.0.0.1:1",
+        startedAt: new Date().toISOString(),
+      }, cwd);
+      await expect(reapStaleDaemonState(cwd)).rejects.toThrow("state port collision");
+      expect(readDaemonState(cwd)?.identity).toBe("C:/another/checkout");
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("refuses to stop state owned by another checkout", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-foreign-stop-"));
+    try {
+      writeDaemonState({
+        identity: "C:/another/checkout",
+        chromePort: 1,
+        startedAt: new Date().toISOString(),
+      }, cwd);
+      await expect(stopDaemon({ cwd })).rejects.toThrow("refusing to stop daemon owned by");
+      expect(readDaemonState(cwd)?.identity).toBe("C:/another/checkout");
+    } finally {
+      clearDaemonState(cwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("waits until the recorded Chrome endpoint is reachable", async () => {
     const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-ready-"));
     const server = createServer((_request, response) => {
       response.writeHead(200, { "content-type": "application/json" });
@@ -83,6 +202,8 @@ describe("shoot daemon readiness", () => {
         chromePort: address.port,
         devPort: address.port,
         devBase: `http://127.0.0.1:${address.port}`,
+        webPort: address.port,
+        webBase: `http://127.0.0.1:${address.port}`,
         chromePid: process.pid,
         startedAt: new Date().toISOString(),
       };

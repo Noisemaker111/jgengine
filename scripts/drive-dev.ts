@@ -14,11 +14,9 @@
  * checks to time out on hover overlays. Keys dispatch
  * keyDown/keyUp with the given code, held for the given milliseconds.
  *
- * Warm loop: `--keep` on the first drive leaves the dev server and Chrome
- * (fixed debug port) running after this process exits; later drives in the
- * same edit/re-shoot loop pass `--connect <port>` to reuse both, skipping
- * vite's ~60-90s boot and Chrome's cold launch. `--size half` halves both
- * dimensions (~1/4 the pixels) for cheap mid-loop judge shots.
+ * Managed warm loop: `shoot daemon start` keeps Chrome warm and lazily retains
+ * the requested game or website Vite target. Manual `--keep`/`--connect` also
+ * remains available. `--size half` is the cheap iteration mode.
  */
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
@@ -26,14 +24,16 @@ import {
   CdpSession,
   applyDevice,
   ensureDevServer,
+  ensureWebServer,
+  navigateCapturePageWithRetry,
   openPageSession,
   parseSizeArg,
   sizeSuffix,
-  waitCaptureReady,
   withBrowserSession,
   writePngAtomic,
   type SizeMode,
 } from "./browser-lib";
+import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
@@ -60,6 +60,7 @@ type Args = {
   keep: boolean;
   help: boolean;
   timeoutMs: number;
+  timeoutExplicit: boolean;
   steps: Step[];
   playtest: boolean;
   strict: boolean;
@@ -68,6 +69,7 @@ type Args = {
   softlockMs: number;
   epsilon: number;
   spawn?: string;
+  site?: string;
   record?: string;
   recordWidth: number;
   recordFps: number;
@@ -91,7 +93,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       suffix). Relative paths are rejected — they ENOENT.
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
-                      Accepts x,y,z or x,y,z,yaw (yaw radians)
+                       Accepts x,y,z or x,y,z,yaw (yaw radians)
+  --site <path>       drive a route from the managed apps/web server instead of a game
   --rpc <json>        call the page's agent/editor bridge with this JSON payload.
                       Compose an editor aerial in one call, e.g.
                       --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
@@ -119,7 +122,7 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this drive — pair with --connect <port>
                       on every following drive in the loop (warm-loop pattern)
-  --timeout <s>       page-ready timeout in seconds (default 60)
+  --timeout <s>       page-ready timeout (default 60; --site: 10 local, 30 Linux/CI)
   --playtest          bot-playtest rung: drive input, sample the game's
                       capture.probe over time, print a progress/softlock verdict
                       as JSON (needs a --key hold to drive; game must expose
@@ -133,6 +136,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --help              show this text
 
 Warm loop:
+  bun run shoot daemon start
+  bun run drive --site '/playground' --wait 1000 --shot website
   bun run drive <game> --click START --shot before --keep                       # first: cold boot, stays warm
   bun run drive <game> --click START --shot after --connect <port> --size half  # <10s, cheap judge PNG
   bun run drive <game> --click START --shot final --connect <port>              # final full-res shot for the PR
@@ -148,6 +153,7 @@ function parseArgs(argv: string[]): Args {
     keep: false,
     help: false,
     timeoutMs: 60_000,
+    timeoutExplicit: false,
     steps: [],
     playtest: false,
     strict: false,
@@ -164,7 +170,10 @@ function parseArgs(argv: string[]): Args {
     if (value === "--mode") args.mode = argv[++index] ?? args.mode;
     else if (value === "--size") {
       args.size = parseSizeArg(argv[++index]);
-    } else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
+    } else if (value === "--timeout") {
+      args.timeoutMs = Number(argv[++index]) * 1000;
+      args.timeoutExplicit = true;
+    }
     else if (value === "--click") args.steps.push({ kind: "click", text: argv[++index] ?? "" });
     else if (value === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++index] ?? 500) });
     else if (value === "--key") {
@@ -198,6 +207,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
     else if (value === "--spawn") args.spawn = argv[++index];
+    else if (value === "--site") args.site = argv[++index];
     else if (value === "--record") {
       const name = argv[++index] ?? "clip";
       if (name.includes("/") || name.includes("\\")) {
@@ -211,7 +221,13 @@ function parseArgs(argv: string[]): Args {
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
   if (args.help) return args;
-  if (args.game === "") throw new Error("drive: pass a game id, e.g. bun run drive the-robots --click START");
+  if (args.game === "" && args.site === undefined) {
+    throw new Error("drive: pass a game id or --site <path>, e.g. bun run drive the-robots --click START");
+  }
+  if (args.game === "") args.game = "site";
+  if (args.site !== undefined && !args.timeoutExplicit) {
+    args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
+  }
   if (
     !args.playtest &&
     args.record === undefined &&
@@ -372,8 +388,8 @@ async function readProbe(session: CdpSession): Promise<Record<string, number> | 
  * exactly ONE rendered frame per `1000/fps` ms tick, captured after it draws.
  * The sim sees ordinary frame deltas, so the assembled clip plays smoothly at
  * the target fps no matter how slowly software GL actually renders. (CDP
- * virtual time is the wrong tool here: it fires rAF at 60 virtual fps, costing
- * six SwiftShader renders per captured frame.) The honest cost is wall-clock —
+ * virtual time is the wrong tool here: it fires rAF at 60 virtual fps, causing
+ * several unnecessary renders per captured frame.) The honest cost is wall-clock —
  * one real render per output frame — so choreograph recorded drives in seconds
  * of game time, not minutes.
  */
@@ -424,8 +440,8 @@ class LockstepRecorder {
   }
 
   private async captureFrame(): Promise<void> {
-    // JPEG: the composite dominates the cost either way (~1s on SwiftShader),
-    // but JPEG cuts the CDP transfer ~10x. Lockstep output is mp4-only, which
+    // JPEG cuts the CDP transfer substantially, especially on software GL.
+    // Lockstep output is mp4-only, which
     // takes JPEG frames directly.
     const shot = await this.session.send("Page.captureScreenshot", {
       format: "jpeg",
@@ -455,7 +471,10 @@ if (args.help) {
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
-const dev = await ensureDevServer();
+const daemon = args.connect === undefined ? await attachDaemon() : null;
+const dev = daemon === null
+  ? args.site === undefined ? await ensureDevServer() : await ensureWebServer()
+  : await ensureDaemonTarget(daemon, args.site === undefined ? "dev" : "web");
 
 const lockstep = args.record !== undefined && !args.recordRealtime && !args.playtest;
 const lockstepVirtualMs = args.steps.reduce(
@@ -470,6 +489,9 @@ const exitCode = await withBrowserSession(
     connect: args.connect,
     timeoutMs: args.timeoutMs,
     server: dev.child,
+    debugPort: daemon?.chromePort,
+    attach: daemon !== null,
+    leaveWarm: args.keep || daemon !== null,
     chromePrefix: "jg-drive-",
     // One real render + capture per output frame — give the watchdog room.
     ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),
@@ -481,14 +503,16 @@ const exitCode = await withBrowserSession(
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await applyDevice(session, "desktop", args.size);
-      const url = new URL(dev.base);
-      url.searchParams.set("game", args.game);
-      url.searchParams.set("mode", args.mode);
+      const path = args.site === undefined ? "/" : args.site.startsWith("/") ? args.site : `/${args.site}`;
+      const url = new URL(path, dev.base);
+      if (args.site === undefined) {
+        url.searchParams.set("game", args.game);
+        url.searchParams.set("mode", args.mode);
+      }
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
-      await session.send("Page.navigate", { url: url.toString() });
-      await waitCaptureReady(session, args.timeoutMs);
+      await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs);
       await new Promise((r) => setTimeout(r, 500));
       await installFrameCounter(session);
 
@@ -601,8 +625,9 @@ const exitCode = await withBrowserSession(
             console.log(mp4Path);
           } catch (error) {
             console.error(
-              `drive: mp4 encode failed (${error instanceof Error ? error.message : error}) — the GIF still carries the clip`,
+              `drive: mp4 encode failed (${error instanceof Error ? error.message : error}) — no usable video evidence was produced`,
             );
+            code = 1;
           }
           let gif = assembleGif(frames);
           let thinned = 0;

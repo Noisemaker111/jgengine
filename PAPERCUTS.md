@@ -91,3 +91,7 @@ running the final gate after adding StreetGeometryPreview and regenerating expor
 2026-07-20T06:27:26.719Z — openai/gpt-5.6-sol — NoisemakerJon
 
 running ship:preflight immediately before commit as the workflow directs -> preflight rejects every uncommitted change as dirty and reports no net branch diff, so it can only run after the commit
+
+2026-07-20T23:12:46.770Z — openai/gpt-5.6-sol — NoisemakerJon
+
+bun run gate after capture workflow integration -> no engine file references the throwaway studios timed out at 5s after taking 6.8s, failing an otherwise 7475-pass gate

@@ -19,13 +19,15 @@ import type {
 } from "@jgengine/core/world/cityContent";
 import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
 import {
+  buildJunctionConnector,
   buildTrimmedIntersections,
+  dashSegments,
   GROUND_DECAL_LAYERS,
-  trimBandAtJunctions,
   trimPathAtJunctions,
   type IntersectionStreet,
   type RoadRibbon,
 } from "@jgengine/core/world/roads";
+import { offsetPath } from "@jgengine/core/world/streets";
 import { seededStreams } from "@jgengine/core/random/rng";
 
 export interface CityPalette {
@@ -49,6 +51,8 @@ export interface CityPalette {
   junction?: number;
   /** Sidewalk band color. Defaults to a lightened `streets.street`. */
   sidewalk?: number;
+  /** Lane-paint color. Defaults to a cool off-white. */
+  marking?: number;
   /** Roof piece flat shade. Defaults to a darkened `building`. */
   roof?: number;
   /** Trim piece flat shade (parapets, cornices, posts). Defaults to a lightened `building`. */
@@ -776,6 +780,20 @@ export function buildCityModel(
     sampleHeight?: (x: number, z: number) => number;
     /** Emit circuit dressing (corner kerbs + a checkered start/finish band) around the main loop. */
     trackDressing?: boolean;
+    /** Render welded sidewalk bands around paved streets. Default true. */
+    sidewalks?: boolean;
+    /** Visible sidewalk width beyond each carriageway edge. Default 2.2. */
+    sidewalkWidth?: number;
+    /** Render dashed lane markings and arterial centerline glow. Default true. */
+    laneMarkings?: boolean;
+    /** Lane-paint ribbon width. Default 0.18. */
+    laneMarkingWidth?: number;
+    /** Lateral marking offset from the street centerline, in world units. Default 0. */
+    laneMarkingOffset?: number;
+    /** Painted dash length. Default 4.8. */
+    laneMarkingDash?: number;
+    /** Gap between painted dashes. Default 4. */
+    laneMarkingGap?: number;
   },
 ): CityModel {
   const heightScale = options.heightScale ?? 1;
@@ -792,6 +810,7 @@ export function buildCityModel(
   ) as Record<StreetLevel, THREE.Color>;
   const junctionColor = new THREE.Color(palette.junction ?? palette.streets.boulevard);
   const sidewalkColor = new THREE.Color(palette.sidewalk ?? palette.streets.street).lerp(new THREE.Color(0xffffff), 0.22);
+  const markingColor = new THREE.Color(palette.marking ?? 0xdbeafe);
 
   let radius = 40;
   for (const street of streets) for (const [x, z] of street.points) radius = Math.max(radius, Math.hypot(x, z));
@@ -829,6 +848,7 @@ export function buildCityModel(
   }
   const newArrays = (): LayerArrays => ({ pos: [], col: [], idx: [] });
   const sidewalkArrays = newArrays();
+  const markingArrays = newArrays();
   const streetArrays: Record<StreetLevel, LayerArrays> = {
     lane: newArrays(),
     street: newArrays(),
@@ -841,6 +861,21 @@ export function buildCityModel(
     avenue: newArrays(),
     boulevard: newArrays(),
   };
+  const sidewalkWidth = Math.max(0, options.sidewalkWidth ?? 2.2);
+  const showSidewalks = options.sidewalks !== false && sidewalkWidth > 0;
+  if (showSidewalks) {
+    const expandedStreets = streets
+      .filter((street) => street.level !== "lane")
+      .map((street) => ({ path: street.points, width: street.width + sidewalkWidth * 2 }));
+    const expandedJunctions = city.network.junctions.map((junction) => ({
+      x: junction.x,
+      z: junction.z,
+      arms: junction.arms.map((arm) => ({ angle: arm.angle, width: arm.width + sidewalkWidth * 2 })),
+    }));
+    const sidewalks = buildTrimmedIntersections(expandedStreets, expandedJunctions, sampleHeight);
+    for (const ribbon of sidewalks.ribbons) appendRibbon(sidewalkArrays.pos, sidewalkArrays.col, sidewalkArrays.idx, ribbon, sidewalkColor);
+    for (const surface of sidewalks.junctions) appendRibbon(sidewalkArrays.pos, sidewalkArrays.col, sidewalkArrays.idx, surface, sidewalkColor);
+  }
   // Widest levels first so the sweep reveals arterials before local streets.
   const order = trimmed.ribbons
     .map((_, i) => i)
@@ -849,45 +884,6 @@ export function buildCityModel(
     const level = ribbonLevel(trimmed.trimmed[i]!.path);
     const layer = streetArrays[level];
     appendRibbon(layer.pos, layer.col, layer.idx, trimmed.ribbons[i]!, levelColors[level]);
-  }
-  // Sidewalk bands flanking the arterials, a touch lighter — clipped out of every junction apron so
-  // they end at the crossing instead of sailing through it, and out of the street's own cul-de-sac
-  // bulb so they don't plough across the turning circle.
-  const splitBandOutsideDisc = (
-    band: readonly (readonly [number, number])[],
-    center: readonly [number, number],
-    clearance: number,
-  ): (readonly [number, number])[][] => {
-    const runs: (readonly [number, number])[][] = [];
-    let current: (readonly [number, number])[] = [];
-    for (const p of band) {
-      if (Math.hypot(p[0] - center[0], p[1] - center[1]) > clearance) {
-        current.push(p);
-      } else if (current.length > 0) {
-        if (current.length >= 2) runs.push(current);
-        current = [];
-      }
-    }
-    if (current.length >= 2) runs.push(current);
-    return runs;
-  };
-  const bandLength = (pts: readonly (readonly [number, number])[]): number => {
-    let sum = 0;
-    for (let i = 0; i + 1 < pts.length; i += 1) sum += Math.hypot(pts[i + 1]![0] - pts[i]![0], pts[i + 1]![1] - pts[i]![1]);
-    return sum;
-  };
-  for (const s of streets) {
-    if (s.level === "lane" || s.sidewalks === undefined) continue;
-    for (const band of [s.sidewalks.left, s.sidewalks.right]) {
-      for (const sub of trimBandAtJunctions(band, 2.2, city.network.junctions)) {
-        const pieces = s.bulb !== undefined ? splitBandOutsideDisc(sub, s.bulb, s.width * 0.95 + 1.4) : [sub];
-        for (const piece of pieces) {
-          // A leftover stub shorter than a stride renders as a crumpled sliver fan — drop it.
-          if (bandLength(piece) < 3) continue;
-          pushRibbon(sidewalkArrays.pos, sidewalkArrays.col, sidewalkArrays.idx, piece, 2.2, ROAD_Y, sidewalkColor, sampleHeight);
-        }
-      }
-    }
   }
   // Welded junction surfaces, colored like the crossing's widest street so the patch reads as road
   // surface, not a foreign blob. A caller-supplied palette.junction still overrides.
@@ -898,12 +894,53 @@ export function buildCityModel(
     const layer = junctionArrays[level];
     appendRibbon(layer.pos, layer.col, layer.idx, drapeSurface(surface, sampleHeight, ROAD_Y), scratchJunction);
   });
+  if (options.laneMarkings !== false) {
+    const markingWidth = Math.max(0.04, options.laneMarkingWidth ?? 0.18);
+    const dashLength = Math.max(0.5, options.laneMarkingDash ?? 4.8);
+    const dashGap = Math.max(0.25, options.laneMarkingGap ?? 4);
+    for (const street of streets) {
+      if (street.level === "lane") continue;
+      const limit = Math.max(0, street.width / 2 - markingWidth);
+      const offset = Math.max(-limit, Math.min(limit, options.laneMarkingOffset ?? 0));
+      for (const sub of trimPathAtJunctions(street.points, street.width, city.network.junctions)) {
+        const path = Math.abs(offset) < 1e-6 ? sub.path : offsetPath(sub.path, offset);
+        for (const dash of dashSegments(path, dashLength, dashGap)) {
+          pushRibbon(markingArrays.pos, markingArrays.col, markingArrays.idx, dash, markingWidth, GROUND_DECAL_LAYERS.marking, markingColor, sampleHeight);
+        }
+      }
+    }
+    trimmed.junctionIndices.forEach((junctionIndex, i) => {
+      const junction = city.network.junctions[junctionIndex]!;
+      const connector = buildJunctionConnector(junction, trimmed.junctionApproaches[i]!);
+      if (connector === null) return;
+      const maxOffset = Math.max(0, Math.min(...junction.arms.map((arm) => arm.width / 2)) - markingWidth);
+      const offset = Math.max(-maxOffset, Math.min(maxOffset, options.laneMarkingOffset ?? 0));
+      const path = Math.abs(offset) < 1e-6 ? connector : offsetPath(connector, offset);
+      for (const dash of dashSegments(path, dashLength, dashGap)) {
+        pushRibbon(markingArrays.pos, markingArrays.col, markingArrays.idx, dash, markingWidth, GROUND_DECAL_LAYERS.marking, markingColor, sampleHeight);
+      }
+    });
+  }
   // Cul-de-sac turning bulbs: a draped disc fan capping each dangling street, in its level's
   // junction layer so it overlays its own ribbon without z-fighting.
   for (const s of streets) {
     if (s.bulb === undefined) continue;
     const [bx, bz] = s.bulb;
     const r = s.width * 0.95;
+    if (showSidewalks && s.level !== "lane") {
+      const base = sidewalkArrays.pos.length / 3;
+      sidewalkArrays.pos.push(bx, ROAD_Y + sampleHeight(bx, bz), bz);
+      sidewalkArrays.col.push(sidewalkColor.r, sidewalkColor.g, sidewalkColor.b);
+      const outer = r + sidewalkWidth;
+      for (let k = 0; k < 18; k += 1) {
+        const a = (k / 18) * Math.PI * 2;
+        const px = bx + Math.cos(a) * outer;
+        const pz = bz + Math.sin(a) * outer;
+        sidewalkArrays.pos.push(px, ROAD_Y + sampleHeight(px, pz), pz);
+        sidewalkArrays.col.push(sidewalkColor.r, sidewalkColor.g, sidewalkColor.b);
+      }
+      for (let k = 0; k < 18; k += 1) sidewalkArrays.idx.push(base, base + 1 + k, base + 1 + ((k + 1) % 18));
+    }
     const color = levelColors[s.level];
     const layer = junctionArrays[s.level];
     const base = layer.pos.length / 3;
@@ -946,13 +983,15 @@ export function buildCityModel(
   const sidewalkLayer = makeRoadLayer(sidewalkArrays, 0);
   const streetLayers = LEVEL_ORDER.map((level) => makeRoadLayer(streetArrays[level], RIBBON_OFFSET[level]));
   const junctionLayers = LEVEL_ORDER.map((level) => makeRoadLayer(junctionArrays[level], JUNCTION_OFFSET[level]));
+  const markingLayer = makeRoadLayer(markingArrays, -3.25);
+  markingLayer.mesh.renderOrder = 1;
 
   // --- boulevard/avenue centerline glow, additive, above markings with polygonOffset ---
   const glowPos: number[] = [];
   const glowCol: number[] = [];
   const glowIdx: number[] = [];
   const glowColor = new THREE.Color(palette.glow);
-  for (const street of streets) {
+  for (const street of options.laneMarkings === false ? [] : streets) {
     if (street.level !== "boulevard" && street.level !== "avenue") continue;
     // Trimmed out of junction aprons: on sloped ground a glow line crossing another road's ribbon
     // genuinely interpenetrates it (different drape heights), which reads as z-fighting sparkle.
@@ -1303,7 +1342,7 @@ export function buildCityModel(
     update,
     dispose() {
       group.parent?.remove(group);
-      for (const layer of [sidewalkLayer, ...streetLayers, ...junctionLayers]) {
+      for (const layer of [sidewalkLayer, ...streetLayers, ...junctionLayers, markingLayer]) {
         layer.geo.dispose();
         layer.mat.dispose();
       }

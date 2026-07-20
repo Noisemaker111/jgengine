@@ -1,4 +1,5 @@
 import {
+  buildJunctionConnector,
   buildTrimmedIntersections,
   type IntersectionStreet,
   type RoadJunctionInput,
@@ -95,6 +96,10 @@ function triangles(ribbon: RoadRibbon, scale: number, cx: number, cy: number): s
   return result;
 }
 
+function linePoints(path: readonly (readonly [number, number])[], scale: number, cx: number, cy: number): string {
+  return path.map(([x, z]) => `${cx + x * scale},${cy + z * scale}`).join(" ");
+}
+
 /**
  * Deterministic close-up gallery of the shared road/junction mesh seam.
  * @capability world-intersections inspect turns and junction meshes in a deterministic preview fixture
@@ -105,12 +110,19 @@ export function StreetGeometryPreview({ className }: { className?: string }) {
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         <h1 style={{ margin: "0 0 6px", fontSize: 24 }}>Street geometry close-ups</h1>
         <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 13 }}>
-          Exact trimmed ribbons and welded surfaces. Blue is junction-owned pavement; gray is road-owned pavement.
+          Exact road, sidewalk, and marking geometry. Pale bands are welded sidewalks; blue is junction-owned pavement.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
           {cases.map((entry) => {
             const geometry = buildTrimmedIntersections(entry.streets, [entry.junction], () => 0, { filletSegments: 10 });
+            const sidewalkGeometry = buildTrimmedIntersections(
+              entry.streets.map((street) => ({ path: street.path, width: street.width + 4.4 })),
+              [{ ...entry.junction, arms: entry.junction.arms.map((arm) => ({ ...arm, width: arm.width + 4.4 })) }],
+              () => 0,
+              { filletSegments: 10 },
+            );
             const surface = geometry.junctions[0]!;
+            const connector = buildJunctionConnector(entry.junction, geometry.junctionApproaches[0]!) ?? [];
             let extent = 0;
             for (let i = 3; i < surface.positions.length; i += 3) {
               extent = Math.max(extent, Math.hypot(surface.positions[i]!, surface.positions[i + 2]!));
@@ -128,12 +140,24 @@ export function StreetGeometryPreview({ className }: { className?: string }) {
                     </pattern>
                   </defs>
                   <rect width="280" height="240" fill={`url(#grid-${entry.name})`} />
+                  {sidewalkGeometry.ribbons.flatMap((ribbon, ri) => triangles(ribbon, 3.2, 140, 120).map((points, ti) => (
+                    <polygon key={`s-r-${ri}-${ti}`} points={points} fill="#cbd5e1" stroke="#cbd5e1" strokeWidth="0.35" />
+                  )))}
+                  {sidewalkGeometry.junctions.flatMap((junction, ji) => triangles(junction, 3.2, 140, 120).map((points, ti) => (
+                    <polygon key={`s-j-${ji}-${ti}`} points={points} fill="#cbd5e1" stroke="#cbd5e1" strokeWidth="0.35" />
+                  )))}
                   {geometry.ribbons.flatMap((ribbon, ri) => triangles(ribbon, 3.2, 140, 120).map((points, ti) => (
                     <polygon key={`r-${ri}-${ti}`} points={points} fill="#64748b" stroke="#64748b" strokeWidth="0.35" />
                   )))}
                   {triangles(surface, 3.2, 140, 120).map((points, ti) => (
                     <polygon key={`j-${ti}`} points={points} fill="#0284c7" stroke="#0284c7" strokeWidth="0.35" />
                   ))}
+                  {geometry.trimmed.map((road, i) => (
+                    <polyline key={`m-${i}`} points={linePoints(road.path, 3.2, 140, 120)} fill="none" stroke="#f8fafc" strokeWidth="0.7" strokeDasharray="5 4" />
+                  ))}
+                  {connector.length > 0 && (
+                    <polyline points={linePoints(connector, 3.2, 140, 120)} fill="none" stroke="#f8fafc" strokeWidth="0.7" strokeDasharray="5 4" />
+                  )}
                   <circle cx="140" cy="120" r="2.5" fill="#f8fafc" />
                 </svg>
               </section>
