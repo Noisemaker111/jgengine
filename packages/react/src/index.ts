@@ -20,6 +20,7 @@ export * from "./codex";
 export * from "./notifications";
 export * from "./coachMarks";
 export * from "./objectiveBanner";
+export * from "./shopGrid";
 export * from "./killFeed";
 export * from "./waveHud";
 export * from "./comboMeter";

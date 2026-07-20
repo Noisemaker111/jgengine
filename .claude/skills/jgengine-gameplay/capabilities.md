@@ -395,6 +395,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
 
+## shop-grid — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore
+
+- `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
+
 ## social-emotes — emotes and social interactions between nearby players
 
 - `createSocial` (function) · `import { createSocial } from "@jgengine/core/gameplay"`

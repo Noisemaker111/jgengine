@@ -65,8 +65,20 @@ export {
   type ScheduledRule,
   type ThresholdBand,
 } from "./economy/resourceLedger";
+export {
+  createShopStock,
+  type ShopBuyRejection,
+  type ShopBuyResult,
+  type ShopPrice,
+  type ShopSellRejection,
+  type ShopSellResult,
+  type ShopStock,
+  type ShopStockConfig,
+  type ShopStockEntry,
+  type ShopStockSnapshot,
+} from "./economy/shopStock";
 export { type TechNodeDef } from "./economy/techTree";
-export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
+export { balance, canAfford, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
 export {
   createAchievementTracker,
   type AchievementDef,

@@ -85,6 +85,7 @@ export function isOverdrawn(state: WalletState, currency: string): boolean {
   return balance(state, currency) < 0;
 }
 
+/** True when every currency in `costs` has at least that much balance (a pure, non-mutating check). */
 export function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean {
   return Object.entries(costs).every(([currency, amount]) => balance(state, currency) >= amount);
 }

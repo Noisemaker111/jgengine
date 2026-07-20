@@ -137,6 +137,7 @@ export const gameRegistry: GameRegistry = {
   "floating-text": () => import("./demo/floatingTextDemo").then((module) => module.floatingTextDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),
+  "shop-grid": () => import("./demo/shopGridDemo").then((module) => module.shopGridDemoGame),
   "save-slots": () => import("./demo/saveSlotsDemo").then((module) => module.saveSlotsDemoGame),
   "kill-feed": () => import("./demo/killFeedDemo").then((module) => module.killFeedDemoGame),
   "interaction-prompt": () => import("./demo/interactionPromptDemo").then((module) => module.interactionPromptDemoGame),
