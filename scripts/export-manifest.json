@@ -37,6 +37,7 @@
     "./combat/attackTags",
     "./combat/breakMeters",
     "./combat/castRunner",
+    "./combat/comboMeter",
     "./combat/comboPoints",
     "./combat/comboString",
     "./combat/damageInterceptors",
@@ -537,6 +538,7 @@
     "./chatBubbles",
     "./coachMarks",
     "./codex",
+    "./comboMeter",
     "./components",
     "./cutscene",
     "./damageDirection",
@@ -592,8 +594,7 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice",
-    "./waypointMarkers"
+    "./voice"
   ],
   "@jgengine/convex": [
     ".",
